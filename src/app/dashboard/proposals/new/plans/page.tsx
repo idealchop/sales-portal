@@ -40,7 +40,6 @@ type Plan = {
   liters: string;
   bottles: string;
   rate: string;
-  idealFor: string;
   inclusions: string;
   employees: string;
   stations: string;
@@ -54,7 +53,6 @@ const smallPlans: Plan[] = [
     liters: '500 L',
     bottles: '≈ 26 bottles',
     rate: '₱2.50',
-    idealFor: 'Small kiosks / home offices',
     inclusions: 'Free delivery; refill tracking via app',
     employees: '5 – 10',
     stations: '1 Station',
@@ -65,7 +63,6 @@ const smallPlans: Plan[] = [
     liters: '1,000 L',
     bottles: '≈ 53 bottles',
     rate: '₱2.40',
-    idealFor: 'Small offices / retail',
     inclusions: '+ 1 Free Dispenser; compliance monitoring',
     employees: '10 – 20',
     stations: '1 Station',
@@ -76,7 +73,6 @@ const smallPlans: Plan[] = [
     liters: '5,000 L',
     bottles: '≈ 263 bottles',
     rate: '₱2.20',
-    idealFor: 'Medium offices / branches',
     inclusions: '+ 2 Free Dispensers; priority delivery',
     employees: '50 – 75',
     stations: '2 Stations',
@@ -90,7 +86,6 @@ const mediumPlans: Plan[] = [
     liters: '4,255 L',
     bottles: '≈ 224 bottles',
     rate: '₱2.35',
-    idealFor: 'Growing offices / small warehouses',
     inclusions: '+ 2 Free Dispensers; analytics dashboard; scheduled delivery',
     employees: '150 – 250',
     stations: '2 – 3 Stations',
@@ -101,7 +96,6 @@ const mediumPlans: Plan[] = [
     liters: '6,383 L',
     bottles: '≈ 336 bottles',
     rate: '₱2.35',
-    idealFor: 'Expanding companies / multi-branch offices',
     inclusions: '+ 3 Free Dispensers; compliance tools; analytics access',
     employees: '300 – 450',
     stations: '3 – 4 Stations',
@@ -112,7 +106,6 @@ const mediumPlans: Plan[] = [
     liters: '30,000 L',
     bottles: '≈ 1,579 bottles',
     rate: '₱1.90',
-    idealFor: 'Multi-site companies',
     inclusions: '+ 6 Free Dispensers; centralized reporting',
     employees: '500+',
     stations: '5+ Stations',
@@ -126,7 +119,6 @@ const largePlans: Plan[] = [
         liters: 'Unlimited *',
         bottles: '—',
         rate: '—',
-        idealFor: '24 / 7 operations / food industries',
         inclusions: 'Unlimited dispenser support; dedicated account manager',
         employees: 'Flexible',
         stations: 'Dynamic Allocation (Multiple Stations)',
@@ -137,7 +129,6 @@ const largePlans: Plan[] = [
         liters: '40,000 L',
         bottles: '≈ 2,105 bottles',
         rate: '₱1.88',
-        idealFor: 'Large enterprises, BPOs',
         inclusions: 'Dedicated support; advanced analytics',
         employees: '750+',
         stations: '8+ Stations',
@@ -148,7 +139,6 @@ const largePlans: Plan[] = [
         liters: '60,000 L',
         bottles: '≈ 3,158 bottles',
         rate: '₱1.67',
-        idealFor: 'Corporate headquarters, large-scale manufacturing',
         inclusions: 'Full-time account manager; custom API integration',
         employees: '1000+',
         stations: '12+ Stations',
@@ -159,7 +149,6 @@ const largePlans: Plan[] = [
         liters: 'Flexible',
         bottles: 'Flexible',
         rate: 'Based on volume',
-        idealFor: 'Corporations, government, or industrial users',
         inclusions: 'Custom liters, billing cycles, and multi-location integration',
         employees: '—',
         stations: 'Assigned Based on Coverage Area',
@@ -204,7 +193,6 @@ function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string
                     <TableHead>Monthly Fee</TableHead>
                     <TableHead>Included Liters</TableHead>
                     <TableHead>Est. Bottles</TableHead>
-                    <TableHead>Ideal For</TableHead>
                     <TableHead>Inclusions</TableHead>
                     <TableHead>Water Stations Provider</TableHead>
                 </TableRow>
@@ -221,7 +209,6 @@ function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string
                     <TableCell>{plan.monthlyFee}</TableCell>
                     <TableCell>{plan.liters}</TableCell>
                     <TableCell>{plan.bottles}</TableCell>
-                    <TableCell>{plan.idealFor}</TableCell>
                     <TableCell>{plan.inclusions}</TableCell>
                     <TableCell>{plan.stations}</TableCell>
                     </TableRow>
