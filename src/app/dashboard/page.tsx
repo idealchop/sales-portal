@@ -23,8 +23,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { proposals, revenueData } from '@/lib/data';
+import { proposals, revenueData, clients } from '@/lib/data';
 import { RevenueChart } from '@/components/revenue-chart';
+import { ClientPopover } from '@/components/client-popover';
+import type { Client } from '@/lib/definitions';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -34,6 +36,10 @@ const statusStyles: { [key: string]: string } = {
 };
 
 export default function DashboardPage() {
+  const getClientById = (id: string): Client | undefined => {
+    return clients.find(c => c.id === id);
+  }
+
   return (
     <div className="flex flex-col gap-8">
        <div className="flex-1">
@@ -129,10 +135,18 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {proposals.slice(0, 5).map((proposal) => (
-                  <TableRow key={proposal.id}>
+                {proposals.slice(0, 5).map((proposal) => {
+                  const client = getClientById(proposal.client.id);
+                  return (
+                    <TableRow key={proposal.id}>
                     <TableCell>
-                      <div className="font-medium">{proposal.client.companyName}</div>
+                      {client ? (
+                        <ClientPopover client={client}>
+                          <div className="font-medium cursor-pointer hover:underline">{proposal.client.companyName}</div>
+                        </ClientPopover>
+                      ) : (
+                        <div className="font-medium">{proposal.client.companyName}</div>
+                      )}
                       <div className="text-sm text-muted-foreground hidden md:inline">
                         {proposal.client.contactName}
                       </div>
@@ -146,7 +160,8 @@ export default function DashboardPage() {
                         {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
           </CardContent>
