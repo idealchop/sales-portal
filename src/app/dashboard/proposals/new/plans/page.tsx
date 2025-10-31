@@ -30,7 +30,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
+import { Building, Building2, Store } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
 
 const partnerPerks = {
     micro: [
@@ -163,7 +166,7 @@ const mediumPlans: Plan[] = [
     perks: partnerPerks.pro,
   },
   {
-    name: 'Enterprise+',
+    name: 'Enterprise',
     monthlyFee: '₱35,000',
     liters: '30,000 L',
     bottles: '≈ 1,579 bottles',
@@ -178,7 +181,7 @@ const mediumPlans: Plan[] = [
 
 const largePlans: Plan[] = [
   {
-    name: 'Unlimited+',
+    name: 'Enterprise 50k',
     monthlyFee: '₱50,000',
     liters: 'Unlimited *',
     bottles: '—',
@@ -226,6 +229,8 @@ const largePlans: Plan[] = [
     perks: [],
   },
 ];
+
+type BusinessSize = 'small' | 'medium' | 'large';
 
 
 function PerksDialog({ perks, planName }: { perks: Perk[], planName: string }) {
@@ -318,8 +323,64 @@ function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string
     );
 }
 
+function BusinessSizeSelector({
+    selectedSize,
+    onSelectSize,
+}: {
+    selectedSize: BusinessSize | null;
+    onSelectSize: (size: BusinessSize) => void;
+}) {
+    const sizes: { id: BusinessSize, icon: React.ReactNode, title: string, description: string }[] = [
+        { id: 'small', icon: <Store className="h-8 w-8 text-primary" />, title: 'Small Business', description: 'For small teams, kiosks, and home offices.' },
+        { id: 'medium', icon: <Building className="h-8 w-8 text-primary" />, title: 'Medium Business', description: 'For growing offices and warehouses.' },
+        { id: 'large', icon: <Building2 className="h-8 w-8 text-primary" />, title: 'Large Enterprise', description: 'For multi-site companies and BPOs.' },
+    ];
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {sizes.map((size) => (
+                <Card
+                    key={size.id}
+                    onClick={() => onSelectSize(size.id)}
+                    className={cn(
+                        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50',
+                        selectedSize === size.id ? 'border-primary shadow-lg' : ''
+                    )}
+                >
+                    <CardHeader className="flex flex-row items-center gap-4">
+                        {size.icon}
+                        <div>
+                            <CardTitle>{size.title}</CardTitle>
+                            <CardDescription>{size.description}</CardDescription>
+                        </div>
+                    </CardHeader>
+                </Card>
+            ))}
+        </div>
+    );
+}
+
 
 export default function PlansPage() {
+    const [selectedSize, setSelectedSize] = useState<BusinessSize | null>('pro');
+
+    const handleSizeSelect = (size: BusinessSize) => {
+        setSelectedSize(size);
+    };
+    
+    const renderPlans = () => {
+        switch (selectedSize) {
+            case 'small':
+                return <PlansTable plans={smallPlans} defaultPlan="pro" />;
+            case 'medium':
+                return <PlansTable plans={mediumPlans} defaultPlan="business" />;
+            case 'large':
+                return <PlansTable plans={largePlans} defaultPlan="enterprise 50k" />;
+            default:
+                return null;
+        }
+    };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -343,28 +404,24 @@ export default function PlansPage() {
         <CardHeader>
           <CardTitle>Plan Overview</CardTitle>
           <CardDescription>
-          Unlimited and Automated Reliable Drinking Water Supply for Every Business Size. Smart Refill combines liter-based allocation with monthly subscription flexibility, providing predictable billing, automated refills, and no wasted water through roll-over credits.
+          Select the client's business size to see the recommended plans.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="small">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="small">Small Business</TabsTrigger>
-              <TabsTrigger value="medium">Medium Business</TabsTrigger>
-              <TabsTrigger value="large">Large Business</TabsTrigger>
-            </TabsList>
-            <TabsContent value="small">
-                <PlansTable plans={smallPlans} defaultPlan="pro" />
-            </TabsContent>
-            <TabsContent value="medium">
-                <PlansTable plans={mediumPlans} defaultPlan="business" />
-            </TabsContent>
-            <TabsContent value="large">
-                <PlansTable plans={largePlans} defaultPlan="unlimited+" />
-            </TabsContent>
-          </Tabs>
+          <BusinessSizeSelector selectedSize={selectedSize} onSelectSize={handleSizeSelect} />
         </CardContent>
       </Card>
+      
+      {selectedSize && (
+        <Card>
+            <CardContent className="pt-6">
+                 {renderPlans()}
+            </CardContent>
+        </Card>
+      )}
+
     </div>
   );
 }
+
+    
