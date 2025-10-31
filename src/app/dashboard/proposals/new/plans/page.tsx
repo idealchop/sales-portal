@@ -234,12 +234,12 @@ export default function PlansPage() {
         <div>
           <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
           <p className="text-muted-foreground">
-            Step 2: Select a Subscription Plan
+            Step 3: Select a Subscription Plan
           </p>
         </div>
         <div className="flex gap-2">
             <Button variant="outline" asChild>
-                <Link href="/dashboard/proposals/new">Previous</Link>
+                <Link href="/dashboard/proposals/new/about">Previous</Link>
             </Button>
             <Button asChild>
                 <Link href="/dashboard/proposals/new/inclusions">Next Step</Link>
