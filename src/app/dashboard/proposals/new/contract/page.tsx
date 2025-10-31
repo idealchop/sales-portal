@@ -92,25 +92,11 @@ const inclusions = [
 
 const addons = [
   {
-    id: 'emergency-support',
-    name: '24/7 Emergency Support',
-    description: 'On-call assistance for urgent refills or technical issues',
-    fee: '₱750 / month',
-    feeValue: 750,
-  },
-  {
     id: 'weekly-sanitation',
     name: 'Weekly Sanitation',
     description: 'Increase sanitation visits to weekly for high-traffic areas.',
     fee: '₱1200 / month',
     feeValue: 1200,
-  },
-  {
-    id: 'multi-location',
-    name: 'Multi-Location Coordination',
-    description: 'Centralized scheduling, billing, and delivery management for multiple branches',
-    fee: 'Custom',
-    feeValue: 0,
   },
 ];
 
@@ -362,9 +348,7 @@ export default function ContractPage() {
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
-    'emergency-support': false,
     'weekly-sanitation': false,
-    'multi-location': false,
   });
   const [additionalDispensers, setAdditionalDispensers] = useState(0);
 
@@ -470,7 +454,7 @@ export default function ContractPage() {
                         <TimelineItem 
                             icon={<CheckCircle className="h-5 w-5" />}
                             title="Account Activation"
-                            description="Portal set up in 24 hours after signing and payment."
+                            description="Client portal is set up within 24 hours of signing and making payment."
                         />
                         <TimelineItem 
                             icon={<CalendarCheck className="h-5 w-5" />}
@@ -609,3 +593,4 @@ export default function ContractPage() {
     </div>
   );
 }
+
