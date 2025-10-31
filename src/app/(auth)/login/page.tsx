@@ -8,7 +8,7 @@ import { Logo } from '@/components/logo';
 
 export default function LoginPage() {
   return (
-    <div className="flex w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div className="flex w-full max-w-7xl overflow-hidden rounded-2xl bg-white shadow-2xl">
       <div className="w-full p-8 md:w-1/2 lg:p-12 flex flex-col justify-center">
         <div className="mb-8 text-center">
             <div className="flex justify-center mb-4">
@@ -55,7 +55,6 @@ export default function LoginPage() {
                 className="object-cover"
                 data-ai-hint="sales team"
             />
-             <div className="absolute inset-0 bg-gradient-to-t from-primary/50 to-transparent"></div>
         </div>
       </div>
     </div>
