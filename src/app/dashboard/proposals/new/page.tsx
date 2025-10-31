@@ -137,12 +137,12 @@ export default function NewProposalPage() {
             </div>
           </div>
       </div>
-      <div className="pointer-events-none absolute bottom-0 left-0 w-full h-1/2">
+      <div className="pointer-events-none absolute bottom-0 left-0 w-full h-1/2 z-[-1]">
         <Image
           src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FBG_Web_v2.png?alt=media&token=e944282b-6f8d-4cdd-8463-eeaf96746522"
           alt="background"
           layout="fill"
-          objectFit="contain"
+          objectFit="cover"
           objectPosition="bottom"
         />
       </div>
