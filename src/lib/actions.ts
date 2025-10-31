@@ -36,7 +36,7 @@ export async function generateDraftAction(data: { clientId: string; clientNeeds:
       clientName: client.companyName,
       clientNeeds: validatedFields.data.clientNeeds,
       recommendedPlans: validatedFields.data.recommendedPlans,
-      companyName: 'SmartSales AI',
+      companyName: 'Smart Refill Sales Portal',
       companyDescription: 'Your partner in scalable sales solutions, providing cutting-edge technology to streamline your sales process and drive growth.',
     });
     return {

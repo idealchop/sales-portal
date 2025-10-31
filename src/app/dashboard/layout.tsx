@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import {
   Sidebar,
   SidebarProvider,
@@ -10,7 +11,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DashboardNav } from '@/components/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { Logo } from '@/components/logo';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -18,8 +18,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Sidebar side="left" variant="sidebar" collapsible="icon">
         <SidebarHeader className="border-b">
            <div className="flex items-center gap-2">
-            <Logo className="h-8 w-8 text-primary" />
-            <span className="text-lg font-semibold font-headline">SmartSales AI</span>
+            <Image src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2FAsset%2022.png?alt=media&token=f7458efe-afd7-4006-862e-40c8d524c080" width={32} height={32} alt="Smart Refill Logo" />
+            <span className="text-lg font-semibold font-headline">Smart Refill Sales Portal</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
