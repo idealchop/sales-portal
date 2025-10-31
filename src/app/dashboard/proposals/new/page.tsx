@@ -56,7 +56,7 @@ export default function NewProposalPage() {
       </div>
 
       <div className="relative overflow-hidden p-6 md:p-8 rounded-lg bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground shadow-lg">
-          <div className="space-y-4">
+          <div className="space-y-4 pb-16">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
                 id="company-name"
