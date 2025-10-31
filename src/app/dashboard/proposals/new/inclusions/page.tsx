@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -141,6 +142,11 @@ export default function InclusionsPage() {
               </div>
             ))}
           </CardContent>
+          <CardFooter>
+            <p className="text-sm text-muted-foreground">
+              Partner perks are available depending on the selected plan.
+            </p>
+          </CardFooter>
         </Card>
 
         <Card>
