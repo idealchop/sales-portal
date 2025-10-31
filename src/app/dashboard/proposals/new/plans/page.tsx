@@ -34,59 +34,6 @@ import { useState } from 'react';
 import { Building, Building2, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-
-const partnerPerks = {
-    micro: [
-        {
-            partnerName: 'Commune Cafe',
-            logoUrl: 'https://picsum.photos/seed/commune/100/40',
-            description: '10% off on all coffee beverages for your team.',
-            instructions: 'Present your Smart Refill client ID at any branch.'
-        }
-    ],
-    starter: [
-        {
-            partnerName: 'Commune Cafe',
-            logoUrl: 'https://picsum.photos/seed/commune/100/40',
-            description: '15% off on all coffee beverages for your team.',
-            instructions: 'Present your Smart Refill client ID at any branch.'
-        },
-        {
-            partnerName: 'The Office Cleaners',
-            logoUrl: 'https://picsum.photos/seed/cleaners/100/40',
-            description: 'First monthly office cleaning for free.',
-            instructions: 'Use code SMARTREFILL when booking online.'
-        }
-    ],
-    pro: [
-        {
-            partnerName: 'Commune Cafe',
-            logoUrl: 'https://picsum.photos/seed/commune/100/40',
-            description: '15% off on all coffee beverages for your team.',
-            instructions: 'Present your Smart Refill client ID at any branch.'
-        },
-        {
-            partnerName: 'The Office Cleaners',
-            logoUrl: 'https://picsum.photos/seed/cleaners/100/40',
-            description: 'First monthly office cleaning for free.',
-            instructions: 'Use code SMARTREFILL when booking online.'
-        },
-        {
-            partnerName: 'Supply Co.',
-            logoUrl: 'https://picsum.photos/seed/supplyco/100/40',
-            description: '20% discount on your first order of office supplies.',
-            instructions: 'Link your Smart Refill account on their website.'
-        }
-    ],
-}
-
-type Perk = {
-    partnerName: string;
-    logoUrl: string;
-    description: string;
-    instructions: string;
-}
-
 type Plan = {
   name: string;
   monthlyFee: string;
@@ -97,7 +44,6 @@ type Plan = {
   inclusions: string;
   employees: string;
   stations: string;
-  perks: Perk[];
 };
 
 
@@ -112,7 +58,6 @@ const smallPlans: Plan[] = [
     inclusions: 'Free delivery; refill tracking via app',
     employees: '5 – 10',
     stations: '1 Station',
-    perks: partnerPerks.micro,
   },
   {
     name: 'Starter',
@@ -124,7 +69,6 @@ const smallPlans: Plan[] = [
     inclusions: '+ 1 Free Dispenser; compliance monitoring',
     employees: '10 – 20',
     stations: '1 Station',
-    perks: partnerPerks.starter,
   },
   {
     name: 'Pro',
@@ -136,7 +80,6 @@ const smallPlans: Plan[] = [
     inclusions: '+ 2 Free Dispensers; priority delivery',
     employees: '50 – 75',
     stations: '2 Stations',
-    perks: partnerPerks.pro,
   },
 ];
 
@@ -151,7 +94,6 @@ const mediumPlans: Plan[] = [
     inclusions: '+ 2 Free Dispensers; analytics dashboard; scheduled delivery',
     employees: '150 – 250',
     stations: '2 – 3 Stations',
-    perks: partnerPerks.pro,
   },
   {
     name: 'Business',
@@ -163,10 +105,9 @@ const mediumPlans: Plan[] = [
     inclusions: '+ 3 Free Dispensers; compliance tools; analytics access',
     employees: '300 – 450',
     stations: '3 – 4 Stations',
-    perks: partnerPerks.pro,
   },
   {
-    name: 'Enterprise',
+    name: 'Enterprise+',
     monthlyFee: '₱35,000',
     liters: '30,000 L',
     bottles: '≈ 1,579 bottles',
@@ -175,59 +116,54 @@ const mediumPlans: Plan[] = [
     inclusions: '+ 6 Free Dispensers; centralized reporting',
     employees: '500+',
     stations: '5+ Stations',
-    perks: partnerPerks.pro,
   },
 ];
 
 const largePlans: Plan[] = [
-  {
-    name: 'Enterprise 50k',
-    monthlyFee: '₱50,000',
-    liters: 'Unlimited *',
-    bottles: '—',
-    rate: '—',
-    idealFor: '24 / 7 operations / food industries',
-    inclusions: 'Unlimited dispenser support; dedicated account manager',
-    employees: 'Flexible',
-    stations: 'Dynamic Allocation (Multiple Stations)',
-    perks: [],
-  },
-  {
-    name: 'Enterprise 75k',
-    monthlyFee: '₱75,000',
-    liters: '40,000 L',
-    bottles: '≈ 2,105 bottles',
-    rate: '₱1.88',
-    idealFor: 'Large enterprises, BPOs',
-    inclusions: 'Dedicated support; advanced analytics',
-    employees: '750+',
-    stations: '8+ Stations',
-    perks: partnerPerks.pro,
-  },
     {
-    name: 'Enterprise 100k',
-    monthlyFee: '₱100,000',
-    liters: '60,000 L',
-    bottles: '≈ 3,158 bottles',
-    rate: '₱1.67',
-    idealFor: 'Corporate headquarters, large-scale manufacturing',
-    inclusions: 'Full-time account manager; custom API integration',
-    employees: '1000+',
-    stations: '12+ Stations',
-    perks: partnerPerks.pro,
-  },
-  {
-    name: 'Customized',
-    monthlyFee: 'Flexible',
-    liters: 'Flexible',
-    bottles: 'Flexible',
-    rate: 'Based on volume',
-    idealFor: 'Corporations, government, or industrial users',
-    inclusions: 'Custom liters, billing cycles, and multi-location integration',
-    employees: '—',
-    stations: 'Assigned Based on Coverage Area',
-    perks: [],
-  },
+        name: 'Unlimited+',
+        monthlyFee: '₱50,000',
+        liters: 'Unlimited *',
+        bottles: '—',
+        rate: '—',
+        idealFor: '24 / 7 operations / food industries',
+        inclusions: 'Unlimited dispenser support; dedicated account manager',
+        employees: 'Flexible',
+        stations: 'Dynamic Allocation (Multiple Stations)',
+    },
+    {
+        name: 'Enterprise 75k',
+        monthlyFee: '₱75,000',
+        liters: '40,000 L',
+        bottles: '≈ 2,105 bottles',
+        rate: '₱1.88',
+        idealFor: 'Large enterprises, BPOs',
+        inclusions: 'Dedicated support; advanced analytics',
+        employees: '750+',
+        stations: '8+ Stations',
+    },
+    {
+        name: 'Enterprise 100k',
+        monthlyFee: '₱100,000',
+        liters: '60,000 L',
+        bottles: '≈ 3,158 bottles',
+        rate: '₱1.67',
+        idealFor: 'Corporate headquarters, large-scale manufacturing',
+        inclusions: 'Full-time account manager; custom API integration',
+        employees: '1000+',
+        stations: '12+ Stations',
+    },
+    {
+        name: 'Customized',
+        monthlyFee: 'Flexible',
+        liters: 'Flexible',
+        bottles: 'Flexible',
+        rate: 'Based on volume',
+        idealFor: 'Corporations, government, or industrial users',
+        inclusions: 'Custom liters, billing cycles, and multi-location integration',
+        employees: '—',
+        stations: 'Assigned Based on Coverage Area',
+    },
 ];
 
 const billingCycles = [
@@ -257,51 +193,6 @@ const billingCycles = [
 type BusinessSize = 'small' | 'medium' | 'large';
 
 
-function PerksDialog({ perks, planName }: { perks: Perk[], planName: string }) {
-    if (!perks || perks.length === 0) {
-        return null;
-    }
-    
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="link" className="p-0 h-auto">View Perks</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Partner Perks for {planName} Plan</DialogTitle>
-                    <DialogDescription>
-                        Enjoy these exclusive benefits from our partners.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6">
-                    {perks.map((perk, index) => (
-                        <div key={index}>
-                            <div className="flex items-center gap-4">
-                                <Image 
-                                    src={perk.logoUrl}
-                                    alt={`${perk.partnerName} logo`}
-                                    width={100}
-                                    height={40}
-                                    className="object-contain rounded-md bg-white p-1"
-                                />
-                                <div>
-                                    <h4 className="font-semibold">{perk.partnerName}</h4>
-                                    <p className="text-sm text-muted-foreground">{perk.description}</p>
-                                </div>
-                            </div>
-                            <div className="mt-2 text-xs bg-muted p-2 rounded-md">
-                                <span className="font-semibold">How to redeem:</span> {perk.instructions}
-                            </div>
-                            {index < perks.length - 1 && <Separator className="mt-6" />}
-                        </div>
-                    ))}
-                </div>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
 function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string }) {
     return (
         <RadioGroup defaultValue={defaultPlan}>
@@ -315,7 +206,7 @@ function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string
                     <TableHead>Est. Bottles</TableHead>
                     <TableHead>Ideal For</TableHead>
                     <TableHead>Inclusions</TableHead>
-                    <TableHead>Perks</TableHead>
+                    <TableHead>Water Stations Provider</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -332,13 +223,7 @@ function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string
                     <TableCell>{plan.bottles}</TableCell>
                     <TableCell>{plan.idealFor}</TableCell>
                     <TableCell>{plan.inclusions}</TableCell>
-                    <TableCell>
-                        {plan.perks && plan.perks.length > 0 ? (
-                            <PerksDialog perks={plan.perks} planName={plan.name} />
-                        ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                    </TableCell>
+                    <TableCell>{plan.stations}</TableCell>
                     </TableRow>
                 ))}
                 </TableBody>
@@ -399,7 +284,7 @@ export default function PlansPage() {
             case 'medium':
                 return <PlansTable plans={mediumPlans} defaultPlan="business" />;
             case 'large':
-                return <PlansTable plans={largePlans} defaultPlan="enterprise 50k" />;
+                return <PlansTable plans={largePlans} defaultPlan="unlimited+" />;
             default:
                 return null;
         }
@@ -502,3 +387,5 @@ export default function PlansPage() {
     </div>
   );
 }
+
+    
