@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const comparisonData = [
   {
@@ -61,33 +62,6 @@ const comparisonData = [
   },
 ];
 
-function ComparisonRow({ aspect, traditional, smartRefill, advantage }: { aspect: string, traditional: string, smartRefill: string, advantage: string }) {
-    return (
-        <div className="border-b last:border-b-0 py-6">
-            <h3 className="text-lg font-semibold mb-4">{aspect}</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                        <XCircle className="h-5 w-5 text-destructive" />
-                        <h4 className="font-semibold text-muted-foreground">Traditional Model</h4>
-                    </div>
-                    <p className="text-sm pl-7">{traditional}</p>
-                </div>
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-primary" />
-                        <h4 className="font-semibold text-primary">Smart Refill Model</h4>
-                    </div>
-                    <p className="text-sm pl-7">{smartRefill}</p>
-                </div>
-            </div>
-            <div className="mt-4 pl-7">
-                 <p className="text-sm font-semibold text-primary">{advantage}</p>
-            </div>
-        </div>
-    );
-}
-
 
 export default function ComparisonPage() {
   return (
@@ -110,10 +84,37 @@ export default function ComparisonPage() {
       </div>
 
        <Card>
-        <CardContent className="divide-y">
+        <CardContent className="p-0">
+          <Accordion type="single" collapsible defaultValue={comparisonData[0].aspect}>
             {comparisonData.map((item) => (
-                <ComparisonRow key={item.aspect} {...item} />
+              <AccordionItem value={item.aspect} key={item.aspect}>
+                <AccordionTrigger className="px-6 text-base font-semibold">
+                  {item.aspect}
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <div className="grid md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2 rounded-lg border border-dashed p-4">
+                        <div className="flex items-center gap-2">
+                            <XCircle className="h-5 w-5 text-destructive" />
+                            <h4 className="font-semibold text-muted-foreground">Traditional Model</h4>
+                        </div>
+                        <p className="text-sm pl-7">{item.traditional}</p>
+                    </div>
+                    <div className="space-y-2 rounded-lg border border-primary/50 bg-primary/5 p-4">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-primary" />
+                            <h4 className="font-semibold text-primary">Smart Refill Model</h4>
+                        </div>
+                        <p className="text-sm pl-7">{item.smartRefill}</p>
+                    </div>
+                </div>
+                <div className="mt-4 pl-7">
+                    <p className="text-sm font-semibold text-primary">{item.advantage}</p>
+                </div>
+                </AccordionContent>
+              </AccordionItem>
             ))}
+          </Accordion>
         </CardContent>
        </Card>
     </div>
