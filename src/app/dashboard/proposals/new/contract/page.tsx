@@ -358,6 +358,8 @@ export default function ContractPage() {
         description: "Your proposal has been saved as a draft.",
     });
   }
+  
+  const estimatedBottles = Math.round((5000 + additionalLiters) / 19);
 
   return (
     <div className="flex flex-col gap-6">
@@ -395,7 +397,7 @@ export default function ContractPage() {
                             <GlassWater className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">5,000 L</div>
+                            <div className="text-2xl font-bold">{5000 + additionalLiters} L</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -422,7 +424,7 @@ export default function ContractPage() {
                             <GlassWater className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">≈ 263 bottles</div>
+                            <div className="text-2xl font-bold">≈ {estimatedBottles} bottles</div>
                         </CardContent>
                     </Card>
                 </div>
