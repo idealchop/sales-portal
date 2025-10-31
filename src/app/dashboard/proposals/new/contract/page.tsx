@@ -404,9 +404,9 @@ export default function ContractPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Review &amp; Sign</h1>
+          <h1 className="text-2xl font-bold">Finalize Proposal</h1>
           <p className="text-muted-foreground">
-            Step 4: Review inclusions, add-ons, and sign the agreement.
+            Step 6: Review inclusions, add-ons, and sign the agreement.
           </p>
         </div>
         <div className="flex gap-2">
@@ -626,6 +626,3 @@ export default function ContractPage() {
     </div>
   );
 }
-
-    
-    
