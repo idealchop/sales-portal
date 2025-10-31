@@ -91,8 +91,8 @@ export default function PaymentPage() {
                 <CardTitle>Additional Terms</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>Clients may change their billing cycle upon renewal by notifying Smart Refill™ at least **15 days before the next billing period**.</p>
-                <p>All payments are **prepaid** and **non-refundable** once activated.</p>
+                <p>Clients may change their billing cycle upon renewal by notifying Smart Refill™ at least 15 days before the next billing period.</p>
+                <p>All payments are prepaid and non-refundable once activated.</p>
                 <p>Unused liters roll over according to the selected plan’s policy.</p>
                 <p>Any unpaid add-on liters or rentals will be billed separately in the next cycle.</p>
             </CardContent>
@@ -102,11 +102,11 @@ export default function PaymentPage() {
                 <CardTitle>Accepted Payment Methods</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>Bank Transfer (**BPI, BDO, UnionBank**)</p>
-                <p>**GCash** or **Maya**</p>
-                <p>**Debit/Credit Card** via the Smart Refill™ Platform</p>
-                <p>**Corporate Billing** (available for Enterprise+ clients only)</p>
-                <p className="pt-4 text-foreground">All payments must be made in **Philippine Pesos (₱)** and confirmed before deliveries continue or new allocations are released.</p>
+                <p>Bank Transfer (BPI, BDO, UnionBank)</p>
+                <p>GCash or Maya</p>
+                <p>Debit/Credit Card via the Smart Refill™ Platform</p>
+                <p>Corporate Billing (available for Enterprise+ clients only)</p>
+                <p className="pt-4 text-foreground">All payments must be made in Philippine Pesos (₱) and confirmed before deliveries continue or new allocations are released.</p>
             </CardContent>
         </Card>
       </div>
