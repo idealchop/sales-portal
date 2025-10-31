@@ -134,7 +134,7 @@ export default function NewProposalPage() {
               />
             </div>
           </div>
-          <div className="relative mt-8 h-48">
+          <div className="relative mt-16 h-48">
             <Image
               src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FBG_Web_v2.png?alt=media&token=e944282b-6f8d-4cdd-8463-eeaf96746522"
               alt="background"
