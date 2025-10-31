@@ -43,9 +43,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <div className="flex flex-col flex-1">
         <DashboardHeader />
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-            <div className="mx-auto max-w-7xl">
-                {children}
-            </div>
+            {children}
         </main>
       </div>
     </SidebarProvider>
