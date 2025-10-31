@@ -18,7 +18,6 @@ import {
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/clients', icon: UsersRound, label: 'Clients' },
   { href: '/dashboard/proposals', icon: FileText, label: 'Proposals' },
   { href: '/dashboard/materials', icon: BookCopy, label: 'Materials' },
   { href: '/dashboard/commissions', icon: CircleDollarSign, label: 'Commissions' },
@@ -34,7 +33,7 @@ export function DashboardNav() {
         <SidebarMenuItem key={item.href}>
           <SidebarMenuButton
             asChild
-            isActive={pathname === item.href}
+            isActive={pathname.startsWith(item.href) && (item.href === '/dashboard' ? pathname === item.href : true)}
             tooltip={{ children: item.label }}
             variant="default"
             className="text-sidebar-foreground/70 hover:text-sidebar-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
