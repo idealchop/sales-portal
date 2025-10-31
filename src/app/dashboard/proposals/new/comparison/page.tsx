@@ -6,16 +6,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 const comparisonData = [
   {
@@ -68,14 +62,38 @@ const comparisonData = [
   },
 ];
 
+function ComparisonCard({ aspect, traditional, smartRefill, advantage }: { aspect: string, traditional: string, smartRefill: string, advantage: string }) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">{aspect}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground">Traditional Model</h4>
+                    <p className="text-sm">{traditional}</p>
+                </div>
+                <Separator />
+                <div>
+                    <h4 className="font-semibold text-sm text-primary">Smart Refill Model</h4>
+                    <p className="text-sm">{smartRefill}</p>
+                </div>
+            </CardContent>
+            <CardFooter className="bg-muted/50 p-4 rounded-b-lg">
+                 <p className="text-sm font-semibold text-primary">{advantage}</p>
+            </CardFooter>
+        </Card>
+    );
+}
+
 export default function ComparisonPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Smart Refill vs. Traditional</h1>
+          <h1 className="text-2xl font-bold">The Smart Refill Advantage</h1>
           <p className="text-muted-foreground">
-            Step 3: The Smart Refill Advantage
+            Step 3: A clear comparison against the traditional model.
           </p>
         </div>
         <div className="flex gap-2">
@@ -88,36 +106,11 @@ export default function ComparisonPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>💎 Smart Refill vs. Traditional Per-Bottle Pricing</CardTitle>
-          <CardDescription>
-            Here's how Smart Refill provides a competitive advantage over traditional water suppliers.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-bold">Aspect</TableHead>
-                <TableHead>Traditional Per-Bottle Model</TableHead>
-                <TableHead>Smart Refill Hybrid Subscription Model</TableHead>
-                <TableHead className="font-bold">Your Competitive Advantage</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {comparisonData.map((row) => (
-                <TableRow key={row.aspect}>
-                  <TableCell className="font-semibold">{row.aspect}</TableCell>
-                  <TableCell>{row.traditional}</TableCell>
-                  <TableCell>{row.smartRefill}</TableCell>
-                  <TableCell>{row.advantage}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {comparisonData.map((item) => (
+                <ComparisonCard key={item.aspect} {...item} />
+            ))}
+       </div>
     </div>
   );
 }
