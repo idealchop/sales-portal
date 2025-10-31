@@ -26,6 +26,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Download, Send } from 'lucide-react';
 
 function ContractText() {
     return (
@@ -174,11 +175,11 @@ function PreviewDialog({
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     return (
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
                 <DialogTitle>Proposal & Contract Preview</DialogTitle>
                 <DialogDescription>
-                    Review the complete details of the proposal before finalizing.
+                    Review the complete details of the proposal before finalizing. This is a preview of what the client will see.
                 </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-[70vh] pr-6">
@@ -188,7 +189,7 @@ function PreviewDialog({
                             <CardTitle>Client & Proposal Details</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Client Name</p>
                                     <p className="font-semibold">{clientName || "N/A"}</p>
@@ -206,9 +207,26 @@ function PreviewDialog({
                                     <p className="font-semibold">{planName}</p>
                                 </div>
                             </div>
-                            <Separator />
+                        </CardContent>
+                    </Card>
+
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Cost Breakdown</CardTitle>
+                            <CardDescription>Itemized list of all costs.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Pro Plan (Monthly)</span>
+                                <span className="font-semibold">₱7,500.00</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Express Delivery (Add-on)</span>
+                                <span className="font-semibold">₱500.00</span>
+                            </div>
+                             <Separator />
                             <div className="flex justify-between items-center font-bold text-lg">
-                                <span>Total Amount</span>
+                                <span>Total Amount Due</span>
                                 <span>{totalAmount}</span>
                             </div>
                         </CardContent>
@@ -227,10 +245,12 @@ function PreviewDialog({
                     </Card>
                 </div>
             </ScrollArea>
-            <DialogFooter>
+            <DialogFooter className="gap-2 sm:justify-end">
                 <DialogTrigger asChild>
-                    <Button type="button">Close</Button>
+                    <Button type="button" variant="outline">Close</Button>
                 </DialogTrigger>
+                <Button type="button"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                <Button type="button"><Send className="mr-2 h-4 w-4" /> Send to Client</Button>
             </DialogFooter>
         </DialogContent>
     )
