@@ -13,6 +13,7 @@ import {
   FileText,
   BookCopy,
   CircleDollarSign,
+  Settings,
 } from 'lucide-react';
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { href: '/dashboard/proposals', icon: FileText, label: 'Proposals' },
   { href: '/dashboard/materials', icon: BookCopy, label: 'Materials' },
   { href: '/dashboard/commissions', icon: CircleDollarSign, label: 'Commissions' },
+  { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function DashboardNav() {
