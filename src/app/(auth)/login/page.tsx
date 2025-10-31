@@ -49,7 +49,7 @@ export default function LoginPage() {
         </div>
         <div className="relative hidden md:block">
             <Image
-                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSales%20Mats.jpg?alt=media&token=455c3120-2c77-4163-9c30-af7f186682d9"
+                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSales%20Mats_v2.jpg?alt=media&token=6aec65a2-57f3-425d-a5d8-d7dced6c8f3e"
                 alt="Smart Refill sales team"
                 fill
                 className="object-cover"
