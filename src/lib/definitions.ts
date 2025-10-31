@@ -35,3 +35,8 @@ export type SalesMaterial = {
   url: string;
   imageId: string;
 };
+
+export type Revenue = {
+  month: string;
+  revenue: number;
+};

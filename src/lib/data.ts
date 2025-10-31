@@ -1,4 +1,4 @@
-import type { Client, Commission, Proposal } from '@/lib/definitions';
+import type { Client, Commission, Proposal, Revenue } from '@/lib/definitions';
 
 export const clients: Client[] = [
   { id: '1', companyName: 'Innovate Corp', contactName: 'John Doe', contactEmail: 'john.doe@innovate.com', status: 'active', address: '123 Tech Lane, Silicon Valley, CA', consumptionData: 1500 },
@@ -22,4 +22,13 @@ export const commissions: Commission[] = [
     { id: 'C002', salesRep: 'Bob Williams', clientName: 'MegaCorp', proposalId: 'P00X', amount: 15000, commissionAmount: 1500, status: 'pending', date: '2023-11-20' },
     { id: 'C003', salesRep: 'Alice Johnson', clientName: 'Global Solutions', proposalId: 'P00Y', amount: 9500, commissionAmount: 950, status: 'unpaid', date: '2023-10-15' },
     { id: 'C004', salesRep: 'Charlie Brown', clientName: 'TechPioneers', proposalId: 'P00Z', amount: 25000, commissionAmount: 2500, status: 'paid', date: '2023-09-30' },
+];
+
+export const revenueData: Revenue[] = [
+  { month: 'Jan', revenue: 350000 },
+  { month: 'Feb', revenue: 375000 },
+  { month: 'Mar', revenue: 425000 },
+  { month: 'Apr', revenue: 400000 },
+  { month: 'May', revenue: 450000 },
+  { month: 'Jun', revenue: 480000 },
 ];

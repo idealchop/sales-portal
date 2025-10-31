@@ -23,7 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { proposals } from '@/lib/data';
+import { proposals, revenueData } from '@/lib/data';
+import { RevenueChart } from '@/components/revenue-chart';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -91,7 +92,18 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+         <Card>
+          <CardHeader>
+            <CardTitle>Revenue Over Time</CardTitle>
+             <CardDescription>
+              A summary of the last 6 months of revenue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RevenueChart data={revenueData} />
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center">
              <div className="grid gap-2">
