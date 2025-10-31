@@ -49,7 +49,7 @@ export default function LoginPage() {
         <div className="relative h-full w-full">
             <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px]"></div>
             <Image
-                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales_Smartreill.png?alt=media&token=b55f3099-38a1-45f9-98d8-cd530fb7b427"
+                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSales%20Mats.jpg?alt=media&token=455c3120-2c77-4163-9c30-af7f186682d9"
                 alt="Smart Refill sales team"
                 fill
                 className="object-cover"
