@@ -80,15 +80,6 @@ function SmartRefillIntro() {
             </div>
         </div>
         
-        <div className="text-center space-y-2">
-            <p className="font-semibold text-foreground">
-                Smart Refill — Safe. Automated. Simplified.
-            </p>
-            <p className="text-sm text-muted-foreground">
-                We handle the refills. You handle the business.
-            </p>
-        </div>
-        
         <div className="relative aspect-video rounded-lg overflow-hidden">
             <Image 
                 src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_02.jpg?alt=media&token=a39726f6-1ed3-436c-8636-25cb4f297aab"
