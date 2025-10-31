@@ -201,7 +201,7 @@ function PreviewDialog({
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Pro Plan (Monthly)</span>
+                                <span className="text-muted-foreground">Pro Plan ({billingCycleLabel})</span>
                                 <span className="font-semibold">{currencyFormatter.format(7500)}</span>
                             </div>
                             {addons.map((addon) => (
@@ -543,7 +543,7 @@ export default function ContractPage() {
                 <CardContent className="space-y-4">
                     <div>
                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Pro Plan (Monthly)</span>
+                            <span className="text-muted-foreground">Pro Plan ({billingCycleLabel})</span>
                             <span className="font-semibold">₱7,500.00</span>
                         </div>
                          <ul className="text-xs text-muted-foreground mt-1 list-disc pl-5">
@@ -616,4 +616,6 @@ export default function ContractPage() {
 }
 
     
+    
+
     
