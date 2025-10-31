@@ -74,9 +74,9 @@ export default function InclusionsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Service Details</h1>
+          <h1 className="text-2xl font-bold">Benefits and Inclusions</h1>
           <p className="text-muted-foreground">
-            Step 3: Review Inclusions
+            Step 5: A clear comparison against the traditional model.
           </p>
         </div>
         <div className="flex gap-2">
