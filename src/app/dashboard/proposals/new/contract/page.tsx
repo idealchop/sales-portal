@@ -436,57 +436,54 @@ export default function ContractPage() {
             </CardContent>
         </Card>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 flex flex-col gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Included in Every Plan</CardTitle>
-                        <CardDescription>
-                            Core services that come with every Smart Refill subscription.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-6 sm:grid-cols-2">
-                        {inclusions.slice(0, 8).map((item) => (
-                        <div key={item.title} className="flex items-start gap-3">
-                            <div>{item.icon}</div>
-                            <div>
-                            <h3 className="font-semibold text-sm">{item.title}</h3>
-                            <p className="text-xs text-muted-foreground">
-                                {item.description}
-                            </p>
-                            </div>
+        <div className="w-full flex flex-col gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Included in Every Plan</CardTitle>
+                    <CardDescription>
+                        Core services that come with every Smart Refill subscription.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-6 sm:grid-cols-2">
+                    {inclusions.slice(0, 8).map((item) => (
+                    <div key={item.title} className="flex items-start gap-3">
+                        <div>{item.icon}</div>
+                        <div>
+                        <h3 className="font-semibold text-sm">{item.title}</h3>
+                        <p className="text-xs text-muted-foreground">
+                            {item.description}
+                        </p>
                         </div>
-                        ))}
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
-                        <CardDescription>Key milestones for service activation.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
+                    </div>
+                    ))}
+                </CardContent>
+            </Card>
+                <Card>
+                <CardHeader>
+                    <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
+                    <CardDescription>Key milestones for service activation.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <TimelineItem 
+                        icon={<CheckCircle className="h-4 w-4" />}
+                        title="Account Activation"
+                        description="Client portal is set up within 24 hours of signing and making payment."
+                    />
+                    <TimelineItem 
+                        icon={<CalendarCheck className="h-4 w-4" />}
+                        title="Onboarding &amp; Scheduling"
+                        description="Initial delivery schedule set within 48 hours."
+                    />
                         <TimelineItem 
-                            icon={<CheckCircle className="h-4 w-4" />}
-                            title="Account Activation"
-                            description="Client portal is set up within 24 hours of signing and making payment."
-                        />
-                        <TimelineItem 
-                            icon={<CalendarCheck className="h-4 w-4" />}
-                            title="Onboarding &amp; Scheduling"
-                            description="Initial delivery schedule set within 48 hours."
-                        />
-                         <TimelineItem 
-                            icon={<Ship className="h-4 w-4" />}
-                            title="First Delivery"
-                            description="Equipment and first batch of water arrive in 3-5 business days."
-                            isLast
-                        />
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="md:col-span-1" />
+                        icon={<Ship className="h-4 w-4" />}
+                        title="First Delivery"
+                        description="Equipment and first batch of water arrive in 3-5 business days."
+                        isLast
+                    />
+                </CardContent>
+            </Card>
         </div>
-
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
                 <CardHeader>
