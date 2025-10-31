@@ -463,7 +463,7 @@ export default function ContractPage() {
                     <TimelineItem 
                         icon={<CheckCircle className="h-4 w-4" />}
                         title="Account Activation"
-                        description="Client portal is set up within 24 hours of signing."
+                        description="Client portal is set up within 24 hours of signing and making payment."
                     />
                     <TimelineItem 
                         icon={<CalendarCheck className="h-4 w-4" />}
