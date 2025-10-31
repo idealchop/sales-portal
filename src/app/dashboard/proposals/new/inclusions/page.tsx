@@ -114,7 +114,9 @@ export default function InclusionsPage() {
           <Button variant="outline" asChild>
             <Link href="/dashboard/proposals/new/plans">Previous</Link>
           </Button>
-          <Button>Next Step</Button>
+          <Button asChild>
+            <Link href="/dashboard/proposals/new/payment">Next Step</Link>
+          </Button>
         </div>
       </div>
 
