@@ -82,23 +82,17 @@ const inclusions = [
 
 const addons = [
   {
-    id: 'express-delivery',
-    name: 'Express Delivery Upgrade',
-    description: 'Priority delivery during peak hours for uninterrupted operations',
-    fee: '₱500 / month',
+    id: 'weekly-sanitation',
+    name: 'Weekly Sanitation',
+    description: 'Increase sanitation visits to weekly for high-traffic areas.',
+    fee: '₱1200 / month',
   },
   {
-    id: 'emergency-support',
-    name: '24/7 Emergency Support',
-    description: 'On-call assistance for urgent refills or technical issues',
-    fee: '₱750 / month',
-  },
-  {
-    id: 'multi-location',
-    name: 'Multi-Location Coordination',
-    description: 'Centralized scheduling, billing, and delivery management for multiple branches',
-    fee: 'Custom',
-  },
+    id: 'additional-dispensers',
+    name: 'Additional Dispensers',
+    description: 'Rent extra dispensers for more convenience.',
+    fee: '₱250 / month / unit',
+  }
 ];
 
 export default function InclusionsPage() {
@@ -116,7 +110,7 @@ export default function InclusionsPage() {
             <Link href="/dashboard/proposals/new/plans">Previous</Link>
           </Button>
           <Button asChild>
-            <Link href="/dashboard/proposals/new/payment">Next Step</Link>
+            <Link href="/dashboard/proposals/new/contract">Next Step</Link>
           </Button>
         </div>
       </div>
