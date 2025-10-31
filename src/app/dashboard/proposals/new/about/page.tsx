@@ -33,7 +33,7 @@ function SmartRefillIntro() {
             quality standards.
             </p>
             <p>
-            With Smart Refill, businesses no longer need to worry about reordering
+            Businesses no longer need to worry about reordering
             water — refills are delivered automatically. You can easily monitor
             consumption, providers, and payments, and scale your operations
             anytime, all through one Smart Refill Client Portal.
