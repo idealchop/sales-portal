@@ -107,13 +107,6 @@ const addons = [
     feeValue: 1200,
   },
   {
-    id: 'additional-dispenser',
-    name: 'Additional Dispenser Rental',
-    description: 'Rent an extra dispenser unit for high-demand locations.',
-    fee: '₱300 / month',
-    feeValue: 300,
-  },
-  {
     id: 'multi-location',
     name: 'Multi-Location Coordination',
     description: 'Centralized scheduling, billing, and delivery management for multiple branches',
@@ -122,6 +115,7 @@ const addons = [
   },
 ];
 
+const additionalDispenserCost = 300;
 
 function PreviewDialog({ 
     totalAmount,
@@ -129,12 +123,14 @@ function PreviewDialog({
     discount,
     basePrice,
     selectedAddons,
+    additionalDispensers
 }: { 
     totalAmount: string,
     billingCycleLabel: string,
     discount: number,
     basePrice: number,
     selectedAddons: { [key: string]: boolean },
+    additionalDispensers: number,
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
     const [clientName, setClientName] = useState('');
@@ -178,8 +174,9 @@ function PreviewDialog({
     const addonsCost = addons.reduce((total, addon) => {
         return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
     }, 0);
-
-    const subtotal = 7500 + addonsCost;
+    
+    const dispensersCost = additionalDispensers * additionalDispenserCost;
+    const subtotal = 7500 + addonsCost + dispensersCost;
 
     return (
         <DialogContent className="sm:max-w-5xl">
@@ -253,6 +250,12 @@ function PreviewDialog({
                                     </div>
                                 )
                             ))}
+                            {additionalDispensers > 0 && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
+                                    <span className="font-semibold">{currencyFormatter.format(dispensersCost)}</span>
+                                </div>
+                            )}
                              <Separator className="my-2" />
                              <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Subtotal</span>
@@ -360,9 +363,9 @@ export default function ContractPage() {
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
     'emergency-support': false,
     'weekly-sanitation': false,
-    'additional-dispenser': false,
     'multi-location': false,
   });
+  const [additionalDispensers, setAdditionalDispensers] = useState(0);
 
   const handleAddonToggle = (addonId: string) => {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
@@ -373,8 +376,9 @@ export default function ContractPage() {
     const addonsCost = addons.reduce((total, addon) => {
         return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
     }, 0);
+    const dispensersCost = additionalDispensers * additionalDispenserCost;
 
-    const currentBasePrice = proPlanCost + addonsCost;
+    const currentBasePrice = proPlanCost + addonsCost + dispensersCost;
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
     const discountAmount = currentBasePrice * selectedCycle.discount;
     const finalAmount = currentBasePrice - discountAmount;
@@ -385,7 +389,7 @@ export default function ContractPage() {
         billingCycleLabel: selectedCycle.label,
         basePrice: currentBasePrice,
     }
-  }, [billingCycle, selectedAddons]);
+  }, [billingCycle, selectedAddons, additionalDispensers]);
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
@@ -540,6 +544,12 @@ export default function ContractPage() {
                         <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
                     </div>
                  ))}
+                 {additionalDispensers > 0 && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
+                        <span className="font-semibold">{currencyFormatter.format(additionalDispensers * additionalDispenserCost)}</span>
+                    </div>
+                 )}
                 <Separator />
                 <div className='space-y-2'>
                     <Label htmlFor="billing-cycle">Payment Schedule</Label>
@@ -555,6 +565,17 @@ export default function ContractPage() {
                             ))}
                         </SelectContent>
                     </Select>
+                </div>
+                <div className='space-y-2'>
+                    <Label htmlFor="additional-dispensers">Additional Dispensers ({currencyFormatter.format(additionalDispenserCost)}/mo)</Label>
+                    <Input 
+                        id="additional-dispensers"
+                        type="number"
+                        min="0"
+                        value={additionalDispensers}
+                        onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
+                        placeholder="e.g., 1"
+                    />
                 </div>
                  <div className="flex justify-between items-center text-lg font-bold">
                     <span>Total Due</span>
@@ -572,6 +593,7 @@ export default function ContractPage() {
                         discount={discount}
                         basePrice={basePrice}
                         selectedAddons={selectedAddons}
+                        additionalDispensers={additionalDispensers}
                     />
                 </Dialog>
             </CardFooter>
@@ -580,5 +602,7 @@ export default function ContractPage() {
     </div>
   );
 }
+
+    
 
     
