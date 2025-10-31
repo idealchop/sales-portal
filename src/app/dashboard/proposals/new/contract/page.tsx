@@ -24,9 +24,10 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, CheckCircle, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { ContractText } from '@/components/contract-text';
@@ -111,29 +112,58 @@ const addons = [
 
 
 function PreviewDialog({ 
-    clientName, 
-    clientCompany, 
-    planName, 
     totalAmount,
     billingCycleLabel,
     discount,
     basePrice
 }: { 
-    clientName: string, 
-    clientCompany: string, 
-    planName: string, 
     totalAmount: string,
     billingCycleLabel: string,
     discount: number,
     basePrice: number
 }) {
+    const signaturePadRef = useRef<SignaturePadRef>(null);
+    const [clientName, setClientName] = useState('');
+    const [clientCompany, setClientCompany] = useState('');
+    const { toast } = useToast();
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const proposalId = useMemo(() => `SR${new Date().getFullYear()}${Math.floor(100000 + Math.random() * 900000)}`, []);
 
+    const handleFinalize = () => {
+        const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
+        if (signaturePadRef.current?.isEmpty()) {
+            toast({
+                variant: "destructive",
+                title: "Signature Required",
+                description: "Please provide a signature before finalizing.",
+            });
+            return;
+        }
+
+        if (!clientName || !clientCompany) {
+            toast({
+                variant: "destructive",
+                title: "Client Information Required",
+                description: "Please enter the client's name and company.",
+            });
+            return;
+        }
+
+        const year = new Date().getFullYear().toString().slice(-2);
+        const randomNumber = Math.floor(100000 + Math.random() * 900000); 
+        const clientID = `SC${year}${randomNumber}`;
+
+
+        toast({
+            title: "Contract Finalized!",
+            description: `Client ID ${clientID} has been generated. The signed contract has been saved.`,
+        });
+    };
+
     return (
-        <DialogContent className="sm:max-w-4xl">
-            <ScrollArea className="h-[80vh] pr-6">
+        <DialogContent className="sm:max-w-5xl">
+            <ScrollArea className="h-[85vh] pr-6">
                 <div className="space-y-6 p-2">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-4">
@@ -169,7 +199,7 @@ function PreviewDialog({
                             </div>
                            <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                                 <span className="text-muted-foreground">Plan:</span>
-                                <span className="font-semibold">{planName}</span>
+                                <span className="font-semibold">Pro Plan</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -227,35 +257,49 @@ function PreviewDialog({
                             <ContractText />
                         </CardContent>
                     </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Signatures</CardTitle>
+                            <CardDescription>Please sign below to finalize the agreement.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                        <div className="space-y-6 pt-4">
+                            <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
+                                <div className="space-y-2">
+                                    <Label htmlFor="name-preview">Name:</Label>
+                                    <Input id="name-preview" placeholder="Full Name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="company-preview">Company:</Label>
+                                    <Input id="company-preview" placeholder="Company Name" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Date:</Label>
+                                    <Input placeholder="Date" value={today} readOnly />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Signature:</Label>
+                                    <SignaturePad ref={signaturePadRef} />
+                                </div>
+                        </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </ScrollArea>
-            <DialogFooter className="gap-2 sm:justify-end">
-                <DialogTrigger asChild>
+            <DialogFooter className="gap-2 sm:justify-end border-t pt-4">
+                <DialogClose asChild>
                     <Button type="button" variant="outline">Close</Button>
-                </DialogTrigger>
+                </DialogClose>
                 <Button type="button"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
-                <Button type="button"><Send className="mr-2 h-4 w-4" /> Send to Client</Button>
+                <Button type="button" onClick={handleFinalize}><Send className="mr-2 h-4 w-4" /> Finalize & Send</Button>
             </DialogFooter>
         </DialogContent>
     )
 }
 
-function ServiceDetailItem({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
-    return (
-        <div className="flex items-start gap-3">
-            <div className="pt-1">{icon}</div>
-            <div className="text-sm text-muted-foreground">{children}</div>
-        </div>
-    );
-}
-
 export default function ContractPage() {
-  const signaturePadRef = useRef<SignaturePadRef>(null);
-  const [clientName, setClientName] = useState('');
-  const [clientCompany, setClientCompany] = useState('');
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
-  const { toast } = useToast();
-
   const basePrice = 8000; // Pro Plan (7500) + Express Delivery (500)
 
   const { totalAmount, discount, billingCycleLabel } = useMemo(() => {
@@ -268,29 +312,6 @@ export default function ContractPage() {
         billingCycleLabel: selectedCycle.label,
     }
   }, [billingCycle, basePrice]);
-
-  const handleFinalize = () => {
-    const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
-    if (signaturePadRef.current?.isEmpty()) {
-        toast({
-            variant: "destructive",
-            title: "Signature Required",
-            description: "Please provide a signature before finalizing.",
-        });
-        return;
-    }
-
-    const year = new Date().getFullYear().toString().slice(-2);
-    const randomNumber = Math.floor(100000 + Math.random() * 900000); 
-    const clientID = `SC${year}${randomNumber}`;
-
-
-    toast({
-        title: "Contract Finalized!",
-        description: `Client ID ${clientID} has been generated. The signed contract has been saved.`,
-    });
-  };
-
 
   return (
     <div className="flex flex-col gap-6">
@@ -307,13 +328,10 @@ export default function ContractPage() {
                 <Link href="/dashboard/proposals/new/payment">Previous</Link>
             </Button>
             <DialogTrigger asChild>
-                <Button variant="outline">Preview</Button>
+                <Button>Review & Sign</Button>
             </DialogTrigger>
-            <Button onClick={handleFinalize}>Finalize & Send</Button>
             </div>
             <PreviewDialog 
-                clientName={clientName} 
-                clientCompany={clientCompany}
                 planName="Pro Plan"
                 totalAmount={totalAmount}
                 billingCycleLabel={billingCycleLabel}
@@ -420,36 +438,10 @@ export default function ContractPage() {
                     </div>
                 </CardContent>
             </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Signatures</CardTitle>
-                    <CardDescription>Please sign below to finalize the agreement.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                   <div className="space-y-6 pt-4">
-                     <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Name:</Label>
-                            <Input id="name" placeholder="Full Name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="company">Company:</Label>
-                            <Input id="company" placeholder="Company Name" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Date:</Label>
-                             <Input placeholder="Date" value={new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} readOnly />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Signature:</Label>
-                            <SignaturePad ref={signaturePadRef} />
-                        </div>
-                   </div>
-                </CardContent>
-            </Card>
         </div>
       </div>
     </div>
   );
 }
+
+    
