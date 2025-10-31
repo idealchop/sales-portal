@@ -1,5 +1,8 @@
 
+'use client';
+
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,6 +21,67 @@ import {
 } from '@/components/ui/table';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Separator } from '@/components/ui/separator';
+
+const partnerPerks = {
+    micro: [
+        {
+            partnerName: 'Commune Cafe',
+            logoUrl: 'https://picsum.photos/seed/commune/100/40',
+            description: '10% off on all coffee beverages for your team.',
+            instructions: 'Present your Smart Refill client ID at any branch.'
+        }
+    ],
+    starter: [
+        {
+            partnerName: 'Commune Cafe',
+            logoUrl: 'https://picsum.photos/seed/commune/100/40',
+            description: '15% off on all coffee beverages for your team.',
+            instructions: 'Present your Smart Refill client ID at any branch.'
+        },
+        {
+            partnerName: 'The Office Cleaners',
+            logoUrl: 'https://picsum.photos/seed/cleaners/100/40',
+            description: 'First monthly office cleaning for free.',
+            instructions: 'Use code SMARTREFILL when booking online.'
+        }
+    ],
+    pro: [
+        {
+            partnerName: 'Commune Cafe',
+            logoUrl: 'https://picsum.photos/seed/commune/100/40',
+            description: '15% off on all coffee beverages for your team.',
+            instructions: 'Present your Smart Refill client ID at any branch.'
+        },
+        {
+            partnerName: 'The Office Cleaners',
+            logoUrl: 'https://picsum.photos/seed/cleaners/100/40',
+            description: 'First monthly office cleaning for free.',
+            instructions: 'Use code SMARTREFILL when booking online.'
+        },
+        {
+            partnerName: 'Supply Co.',
+            logoUrl: 'https://picsum.photos/seed/supplyco/100/40',
+            description: '20% discount on your first order of office supplies.',
+            instructions: 'Link your Smart Refill account on their website.'
+        }
+    ],
+}
+
+type Perk = {
+    partnerName: string;
+    logoUrl: string;
+    description: string;
+    instructions: string;
+}
 
 const plans = [
   {
@@ -30,6 +94,7 @@ const plans = [
     inclusions: 'Free delivery; refill tracking via app',
     employees: '5 – 10',
     stations: '1 Station',
+    perks: partnerPerks.micro,
   },
   {
     name: 'Starter',
@@ -41,6 +106,7 @@ const plans = [
     inclusions: '+ 1 Free Dispenser; compliance monitoring',
     employees: '10 – 20',
     stations: '1 Station',
+    perks: partnerPerks.starter,
   },
   {
     name: 'Pro',
@@ -52,6 +118,7 @@ const plans = [
     inclusions: '+ 2 Free Dispensers; priority delivery',
     employees: '50 – 75',
     stations: '2 Stations',
+    perks: partnerPerks.pro,
   },
   {
     name: 'Growth',
@@ -63,6 +130,7 @@ const plans = [
     inclusions: '+ 2 Free Dispensers; analytics dashboard; scheduled delivery',
     employees: '150 – 250',
     stations: '2 – 3 Stations',
+    perks: partnerPerks.pro,
   },
   {
     name: 'Business',
@@ -74,6 +142,7 @@ const plans = [
     inclusions: '+ 3 Free Dispensers; compliance tools; analytics access',
     employees: '300 – 450',
     stations: '3 – 4 Stations',
+    perks: partnerPerks.pro,
   },
   {
     name: 'Enterprise+',
@@ -85,6 +154,7 @@ const plans = [
     inclusions: '+ 6 Free Dispensers; centralized reporting',
     employees: '500+',
     stations: '5+ Stations',
+    perks: partnerPerks.pro,
   },
   {
     name: 'Unlimited+',
@@ -96,6 +166,7 @@ const plans = [
     inclusions: 'Unlimited dispenser support; dedicated account manager',
     employees: 'Flexible',
     stations: 'Dynamic Allocation (Multiple Stations)',
+    perks: [],
   },
   {
     name: 'Customized',
@@ -107,8 +178,54 @@ const plans = [
     inclusions: 'Custom liters, billing cycles, and multi-location integration',
     employees: '—',
     stations: 'Assigned Based on Coverage Area',
+    perks: [],
   },
 ];
+
+function PerksDialog({ perks, planName }: { perks: Perk[], planName: string }) {
+    if (!perks || perks.length === 0) {
+        return null;
+    }
+    
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="link" className="p-0 h-auto">View Perks</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Partner Perks for {planName} Plan</DialogTitle>
+                    <DialogDescription>
+                        Enjoy these exclusive benefits from our partners.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6">
+                    {perks.map((perk, index) => (
+                        <div key={index}>
+                            <div className="flex items-center gap-4">
+                                <Image 
+                                    src={perk.logoUrl}
+                                    alt={`${perk.partnerName} logo`}
+                                    width={100}
+                                    height={40}
+                                    className="object-contain rounded-md bg-white p-1"
+                                />
+                                <div>
+                                    <h4 className="font-semibold">{perk.partnerName}</h4>
+                                    <p className="text-sm text-muted-foreground">{perk.description}</p>
+                                </div>
+                            </div>
+                            <div className="mt-2 text-xs bg-muted p-2 rounded-md">
+                                <span className="font-semibold">How to redeem:</span> {perk.instructions}
+                            </div>
+                            {index < perks.length - 1 && <Separator className="mt-6" />}
+                        </div>
+                    ))}
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export default function PlansPage() {
   return (
@@ -149,6 +266,7 @@ export default function PlansPage() {
                   <TableHead>Est. Bottles</TableHead>
                   <TableHead>Ideal For</TableHead>
                   <TableHead>Inclusions</TableHead>
+                  <TableHead>Perks</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -165,6 +283,13 @@ export default function PlansPage() {
                     <TableCell>{plan.bottles}</TableCell>
                     <TableCell>{plan.idealFor}</TableCell>
                     <TableCell>{plan.inclusions}</TableCell>
+                    <TableCell>
+                        {plan.perks && plan.perks.length > 0 ? (
+                            <PerksDialog perks={plan.perks} planName={plan.name} />
+                        ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
