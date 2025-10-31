@@ -242,7 +242,7 @@ export default function PlansPage() {
                 <Link href="/dashboard/proposals/new">Previous</Link>
             </Button>
             <Button asChild>
-                <Link href="/dashboard/proposals/new/payment">Next Step</Link>
+                <Link href="/dashboard/proposals/new/inclusions">Next Step</Link>
             </Button>
         </div>
       </div>

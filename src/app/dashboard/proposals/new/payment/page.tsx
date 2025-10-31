@@ -52,7 +52,7 @@ export default function PaymentPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/dashboard/proposals/new/plans">Previous</Link>
+            <Link href="/dashboard/proposals/new/inclusions">Previous</Link>
           </Button>
           <Button asChild>
             <Link href="/dashboard/proposals/new/contract">Next Step</Link>
