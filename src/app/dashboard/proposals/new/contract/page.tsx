@@ -115,7 +115,7 @@ const addons = [
   },
 ];
 
-const additionalDispenserCost = 300;
+const additionalDispenserCost = 250;
 
 function PreviewDialog({ 
     totalAmount,
@@ -602,6 +602,8 @@ export default function ContractPage() {
     </div>
   );
 }
+
+    
 
     
 
