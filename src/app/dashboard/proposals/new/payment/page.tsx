@@ -55,7 +55,7 @@ export default function PaymentPage() {
             <Link href="/dashboard/proposals/new/inclusions">Previous</Link>
           </Button>
           <Button asChild>
-            <Link href="/dashboard/proposals/new/generate">Next Step</Link>
+            <Link href="/dashboard/proposals/new/contract">Next Step</Link>
           </Button>
         </div>
       </div>
