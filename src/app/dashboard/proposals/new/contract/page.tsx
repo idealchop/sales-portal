@@ -1,4 +1,6 @@
 
+'use client';
+
 import Link from 'next/link';
 import {
   Card,
@@ -11,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SignaturePad } from '@/components/signature-pad';
 
 function ContractSection({
   title,
@@ -41,19 +44,13 @@ function SignatureBlock({ title }: { title: string }) {
                     <Input id="company" placeholder="Company Name" />
                 </div>
             )}
-             {title.includes('Provider') && (
-                 <div className="space-y-2">
-                    <Label htmlFor="position">Position:</Label>
-                    <Input id="position" placeholder="Position" />
-                </div>
-            )}
             <div className="space-y-2">
                 <Label>Date:</Label>
                 <div className="w-full border-b pt-8"></div>
             </div>
             <div className="space-y-2">
                 <Label>Signature:</Label>
-                <div className="w-full border rounded-md h-24 bg-gray-50"></div>
+                <SignaturePad />
             </div>
         </div>
     )
@@ -233,8 +230,6 @@ export default function ContractPage() {
                 </CardHeader>
                 <CardContent>
                    <div className="space-y-8">
-                     <SignatureBlock title="Authorized Representative (River Tech Group, Inc. / Provider)" />
-                     <Separator />
                      <SignatureBlock title="Client Representative (Subscriber)" />
                    </div>
                 </CardContent>
