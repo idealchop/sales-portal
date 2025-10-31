@@ -65,7 +65,7 @@ function SmartRefillIntro() {
         
         <div className="relative aspect-video rounded-lg overflow-hidden">
             <Image 
-                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_02.jpg?alt=media&token=7a99ee31-3d47-46dd-84db-3e4b2e0a4560"
+                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_02.jpg?alt=media&token=a39726f6-1ed3-436c-8636-25cb4f297aab"
                 alt="Smart Refill service infographic"
                 fill
                 className="object-cover"
