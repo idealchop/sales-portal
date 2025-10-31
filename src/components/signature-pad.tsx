@@ -1,15 +1,21 @@
 
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Button } from './ui/button';
 import { RotateCcw } from 'lucide-react';
 
-export function SignaturePad() {
+export type SignaturePadRef = {
+  getSignatureDataUrl: () => string | undefined;
+  isEmpty: () => boolean;
+};
+
+export const SignaturePad = forwardRef<SignaturePadRef, {}>((props, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
   const lastX = useRef(0);
   const lastY = useRef(0);
+  const signatureData = useRef<string | undefined>();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -18,17 +24,21 @@ export function SignaturePad() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Set canvas dimensions based on its container for responsiveness
     const resizeCanvas = () => {
       const parent = canvas.parentElement;
       if (parent) {
         const { width } = parent.getBoundingClientRect();
         canvas.width = width;
-        canvas.height = 200; // Fixed height
+        canvas.height = 200;
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 2;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        if (signatureData.current) {
+            const img = new Image();
+            img.src = signatureData.current;
+            img.onload = () => ctx.drawImage(img, 0, 0);
+        }
       }
     };
 
@@ -69,7 +79,11 @@ export function SignaturePad() {
     };
 
     const stopDrawing = () => {
+      if (!isDrawing.current) return;
       isDrawing.current = false;
+      if (canvas) {
+        signatureData.current = canvas.toDataURL('image/png');
+      }
     };
     
     resizeCanvas();
@@ -103,7 +117,29 @@ export function SignaturePad() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    signatureData.current = undefined;
   };
+
+  useImperativeHandle(ref, () => ({
+    getSignatureDataUrl: () => {
+        if (canvasRef.current && !isEmpty()) {
+            return canvasRef.current.toDataURL('image/png');
+        }
+        return undefined;
+    },
+    isEmpty: () => {
+        return !signatureData.current;
+    }
+  }));
+
+  const isEmpty = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return true;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return true;
+    const pixelBuffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+    return !pixelBuffer.some(color => color !== 0);
+  }
 
   return (
     <div className="w-full space-y-2">
@@ -117,4 +153,6 @@ export function SignaturePad() {
       </Button>
     </div>
   );
-}
+});
+
+SignaturePad.displayName = 'SignaturePad';

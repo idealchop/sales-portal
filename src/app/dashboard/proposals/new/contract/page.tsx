@@ -13,7 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { SignaturePad } from '@/components/signature-pad';
+import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
+import { useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 function ContractSection({
   title,
@@ -30,33 +32,58 @@ function ContractSection({
   );
 }
 
-function SignatureBlock({ title }: { title: string }) {
+function SignatureBlock({ signatureRef }: { signatureRef: React.RefObject<SignaturePadRef> }) {
     return (
         <div className="space-y-6 pt-4">
-            <p className="font-semibold text-foreground">{title}</p>
+            <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
             <div className="space-y-2">
                 <Label htmlFor="name">Name:</Label>
                 <Input id="name" placeholder="Full Name" />
             </div>
-            {title.includes('Client') && (
-                 <div className="space-y-2">
-                    <Label htmlFor="company">Company:</Label>
-                    <Input id="company" placeholder="Company Name" />
-                </div>
-            )}
+            <div className="space-y-2">
+                <Label htmlFor="company">Company:</Label>
+                <Input id="company" placeholder="Company Name" />
+            </div>
             <div className="space-y-2">
                 <Label>Date:</Label>
                 <div className="w-full border-b pt-8"></div>
             </div>
             <div className="space-y-2">
                 <Label>Signature:</Label>
-                <SignaturePad />
+                <SignaturePad ref={signatureRef} />
             </div>
         </div>
     )
 }
 
 export default function ContractPage() {
+  const signaturePadRef = useRef<SignaturePadRef>(null);
+  const { toast } = useToast();
+
+  const handleFinalize = () => {
+    const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
+    if (signaturePadRef.current?.isEmpty()) {
+        toast({
+            variant: "destructive",
+            title: "Signature Required",
+            description: "Please provide a signature before finalizing.",
+        });
+        return;
+    }
+
+    // In a real application, you would send this data to a backend.
+    console.log("Signature Data URL:", signatureDataUrl);
+
+    toast({
+        title: "Contract Finalized!",
+        description: "The signed contract has been saved and sent.",
+    });
+
+    // You would typically navigate to a confirmation page or back to the dashboard.
+    // router.push('/dashboard/proposals');
+  };
+
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -70,7 +97,7 @@ export default function ContractPage() {
           <Button variant="outline" asChild>
             <Link href="/dashboard/proposals/new/payment">Previous</Link>
           </Button>
-          <Button>Finalize & Send</Button>
+          <Button onClick={handleFinalize}>Finalize & Send</Button>
         </div>
       </div>
 
@@ -230,7 +257,7 @@ export default function ContractPage() {
                 </CardHeader>
                 <CardContent>
                    <div className="space-y-8">
-                     <SignatureBlock title="Client Representative (Subscriber)" />
+                     <SignatureBlock signatureRef={signaturePadRef} />
                    </div>
                 </CardContent>
             </Card>
