@@ -93,13 +93,6 @@ const inclusions = [
 
 const addons = [
   {
-    id: 'express-delivery',
-    name: 'Express Delivery Upgrade',
-    description: 'Priority delivery during peak hours for uninterrupted operations',
-    fee: '₱250 / month',
-    feeValue: 250,
-  },
-  {
     id: 'emergency-support',
     name: '24/7 Emergency Support',
     description: 'On-call assistance for urgent refills or technical issues',
@@ -365,7 +358,6 @@ export default function ContractPage() {
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
-    'express-delivery': false,
     'emergency-support': false,
     'weekly-sanitation': false,
     'additional-dispenser': false,
