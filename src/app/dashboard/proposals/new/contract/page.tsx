@@ -28,7 +28,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, Save } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, Save, Bot } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { ContractText } from '@/components/contract-text';
@@ -338,21 +338,23 @@ function DetailItem({ icon, label, value }: { icon: React.ReactNode, label: stri
     );
 }
 
-function TimelineItem({ icon, title, description, isLast = false }: { icon: React.ReactNode, title: string, description: string, isLast?: boolean }) {
+function TimelineItem({ icon, title, description, isLast = false }: { icon: React.ReactNode; title: string; description: string; isLast?: boolean; }) {
     return (
-        <div className="flex gap-4">
-            <div className="flex flex-col items-center">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <div className="relative flex-1">
+            <div className="flex flex-col items-center text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground mb-2">
                     {icon}
                 </div>
-                {!isLast && <div className="w-px flex-1 bg-border" />}
+                <h4 className="font-semibold text-sm">{title}</h4>
+                <p className="text-xs text-muted-foreground mt-1 px-2">{description}</p>
             </div>
-            <div>
-                <h4 className="font-semibold">{title}</h4>
-                <p className="text-sm text-muted-foreground">{description}</p>
-            </div>
+            {!isLast && (
+                <div className="absolute top-5 left-1/2 w-full -translate-x-1/2">
+                    <div className="w-full border-t-2 border-dashed border-border -z-10 absolute top-0 left-full"></div>
+                </div>
+            )}
         </div>
-    )
+    );
 }
 
 
@@ -458,28 +460,35 @@ export default function ContractPage() {
                     ))}
                 </CardContent>
             </Card>
-                <Card>
+            <Card>
                 <CardHeader>
                     <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
                     <CardDescription>Key milestones for service activation.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    <TimelineItem 
-                        icon={<CheckCircle className="h-4 w-4" />}
-                        title="Account Activation"
-                        description="Client portal is set up within 24 hours of signing and making payment."
-                    />
-                    <TimelineItem 
-                        icon={<CalendarCheck className="h-4 w-4" />}
-                        title="Onboarding &amp; Scheduling"
-                        description="Initial delivery schedule set within 48 hours."
-                    />
+                <CardContent className="pt-8">
+                     <div className="relative flex justify-between">
                         <TimelineItem 
-                        icon={<Ship className="h-4 w-4" />}
-                        title="First Delivery"
-                        description="Equipment and first batch of water arrive in 3-5 business days."
-                        isLast
-                    />
+                            icon={<CheckCircle className="h-5 w-5" />}
+                            title="Account Activation"
+                            description="Portal set up in 24 hours after signing and payment."
+                        />
+                        <TimelineItem 
+                            icon={<CalendarCheck className="h-5 w-5" />}
+                            title="Onboarding"
+                            description="Initial delivery schedule set within 48 hours."
+                        />
+                        <TimelineItem 
+                            icon={<Ship className="h-5 w-5" />}
+                            title="First Delivery"
+                            description="Equipment and first water batch arrive in 3-5 business days."
+                        />
+                        <TimelineItem 
+                            icon={<Bot className="h-5 w-5" />}
+                            title="Automated Refill"
+                            description="System manages refills based on your consumption."
+                            isLast
+                        />
+                    </div>
                 </CardContent>
             </Card>
         </div>
