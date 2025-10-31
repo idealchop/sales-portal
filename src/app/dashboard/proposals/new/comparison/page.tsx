@@ -6,10 +6,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 const comparisonData = [
   {
@@ -62,29 +61,33 @@ const comparisonData = [
   },
 ];
 
-function ComparisonCard({ aspect, traditional, smartRefill, advantage }: { aspect: string, traditional: string, smartRefill: string, advantage: string }) {
+function ComparisonRow({ aspect, traditional, smartRefill, advantage }: { aspect: string, traditional: string, smartRefill: string, advantage: string }) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-lg">{aspect}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground">Traditional Model</h4>
-                    <p className="text-sm">{traditional}</p>
+        <div className="border-b last:border-b-0 py-6">
+            <h3 className="text-lg font-semibold mb-4">{aspect}</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <XCircle className="h-5 w-5 text-destructive" />
+                        <h4 className="font-semibold text-muted-foreground">Traditional Model</h4>
+                    </div>
+                    <p className="text-sm pl-7">{traditional}</p>
                 </div>
-                <Separator />
-                <div>
-                    <h4 className="font-semibold text-sm text-primary">Smart Refill Model</h4>
-                    <p className="text-sm">{smartRefill}</p>
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                        <h4 className="font-semibold text-primary">Smart Refill Model</h4>
+                    </div>
+                    <p className="text-sm pl-7">{smartRefill}</p>
                 </div>
-            </CardContent>
-            <CardFooter className="bg-muted/50 p-4 rounded-b-lg">
+            </div>
+            <div className="mt-4 pl-7">
                  <p className="text-sm font-semibold text-primary">{advantage}</p>
-            </CardFooter>
-        </Card>
+            </div>
+        </div>
     );
 }
+
 
 export default function ComparisonPage() {
   return (
@@ -106,11 +109,13 @@ export default function ComparisonPage() {
         </div>
       </div>
 
-       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+       <Card>
+        <CardContent className="divide-y">
             {comparisonData.map((item) => (
-                <ComparisonCard key={item.aspect} {...item} />
+                <ComparisonRow key={item.aspect} {...item} />
             ))}
-       </div>
+        </CardContent>
+       </Card>
     </div>
   );
 }
