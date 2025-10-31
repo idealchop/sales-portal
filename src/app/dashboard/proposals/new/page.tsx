@@ -41,7 +41,7 @@ function InputField({
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
           {icon}
         </div>
-        <Input id={id} className="pl-10" {...props} />
+        <Input id={id} className="pl-10 bg-background/20 placeholder:text-primary-foreground/70" {...props} />
       </div>
     </div>
   );
@@ -65,10 +65,10 @@ export default function NewProposalPage() {
 
       <Card className="overflow-hidden">
         <div className="grid md:grid-cols-2">
-          <div className="p-6">
+          <div className="p-6 bg-primary text-primary-foreground">
             <CardHeader className="p-0 mb-6">
               <CardTitle>Client Details</CardTitle>
-              <CardDescription>
+              <CardDescription className="text-primary-foreground/80">
                 Enter the prospective client's information. This will be used to tailor the proposal.
               </CardDescription>
             </CardHeader>
@@ -77,13 +77,13 @@ export default function NewProposalPage() {
                 <InputField
                   id="company-name"
                   label="Company Name"
-                  icon={<Building className="h-4 w-4 text-muted-foreground" />}
+                  icon={<Building className="h-4 w-4 text-primary-foreground" />}
                   placeholder="e.g., Innovate Corp"
                 />
                 <InputField
                   id="contact-name"
                   label="Contact Person"
-                  icon={<User className="h-4 w-4 text-muted-foreground" />}
+                  icon={<User className="h-4 w-4 text-primary-foreground" />}
                   placeholder="e.g., John Doe"
                 />
               </div>
@@ -92,14 +92,14 @@ export default function NewProposalPage() {
                   id="email"
                   label="Email Address"
                   type="email"
-                  icon={<Mail className="h-4 w-4 text-muted-foreground" />}
+                  icon={<Mail className="h-4 w-4 text-primary-foreground" />}
                   placeholder="e.g., john.doe@example.com"
                 />
                 <InputField
                   id="phone"
                   label="Phone Number"
                   type="tel"
-                  icon={<Phone className="h-4 w-4 text-muted-foreground" />}
+                  icon={<Phone className="h-4 w-4 text-primary-foreground" />}
                   placeholder="e.g., (0917) 123 4567"
                 />
               </div>
@@ -108,10 +108,10 @@ export default function NewProposalPage() {
                     <Label htmlFor="industry">Type of Industry</Label>
                     <div className="relative">
                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                            <Briefcase className="h-4 w-4 text-primary-foreground" />
                         </div>
                         <Select>
-                            <SelectTrigger id="industry" className="pl-10">
+                            <SelectTrigger id="industry" className="pl-10 bg-background/20 placeholder:text-primary-foreground/70">
                                 <SelectValue placeholder="Select an industry" />
                             </SelectTrigger>
                             <SelectContent>
@@ -129,7 +129,7 @@ export default function NewProposalPage() {
                  <InputField
                   id="address"
                   label="Company Address"
-                  icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
+                  icon={<MapPin className="h-4 w-4 text-primary-foreground" />}
                   placeholder="e.g., 123 Tech Lane, BGC, Taguig"
                 />
               </div>
@@ -138,14 +138,14 @@ export default function NewProposalPage() {
                   id="employees"
                   label="Number of Employees"
                   type="number"
-                  icon={<Users className="h-4 w-4 text-muted-foreground" />}
+                  icon={<Users className="h-4 w-4 text-primary-foreground" />}
                   placeholder="e.g., 50"
                 />
                 <InputField
                   id="bottles"
                   label="Estimated Bottles per Month"
                   type="number"
-                  icon={<GlassWater className="h-4 w-4 text-muted-foreground" />}
+                  icon={<GlassWater className="h-4 w-4 text-primary-foreground" />}
                   placeholder="e.g., 100"
                 />
               </div>
