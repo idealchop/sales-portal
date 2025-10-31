@@ -124,7 +124,9 @@ export default function PlansPage() {
             <Button variant="outline" asChild>
                 <Link href="/dashboard/proposals/new">Previous</Link>
             </Button>
-            <Button>Next Step</Button>
+            <Button asChild>
+                <Link href="/dashboard/proposals/new/inclusions">Next Step</Link>
+            </Button>
         </div>
       </div>
 
