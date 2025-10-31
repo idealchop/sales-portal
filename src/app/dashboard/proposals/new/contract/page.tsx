@@ -28,6 +28,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Download, Send } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Logo } from '@/components/logo';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0 },
@@ -188,49 +189,68 @@ function PreviewDialog({
 }) {
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const proposalId = useMemo(() => `SR${new Date().getFullYear()}${Math.floor(100000 + Math.random() * 900000)}`, []);
 
     return (
         <DialogContent className="sm:max-w-4xl">
-            <DialogHeader>
-                <DialogTitle>Proposal & Contract Preview</DialogTitle>
-                <DialogDescription>
-                    Review the complete details of the proposal before finalizing. This is a preview of what the client will see.
-                </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="h-[70vh] pr-6">
-                <div className="space-y-6">
+            <ScrollArea className="h-[80vh] pr-6">
+                <div className="space-y-6 p-2">
+                    <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-4">
+                            <Logo className="h-12 w-12" />
+                            <div>
+                                <h2 className="text-2xl font-bold text-primary">Smart Refill</h2>
+                                <p className="text-muted-foreground">Sales Illustration</p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                             <p className="font-mono text-sm text-muted-foreground">{proposalId}</p>
+                        </div>
+                    </div>
+                    
+                    <Separator />
+
                     <Card>
                         <CardHeader>
-                            <CardTitle>Client & Proposal Details</CardTitle>
+                            <CardTitle>For the Proposed Client</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Client Name</p>
-                                    <p className="font-semibold">{clientName || "N/A"}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Company</p>
-                                    <p className="font-semibold">{clientCompany || "N/A"}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Date</p>
-                                    <p className="font-semibold">{today}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Selected Plan</p>
-                                    <p className="font-semibold">{planName}</p>
-                                </div>
+                        <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                            <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                <span className="text-muted-foreground">Name:</span>
+                                <span className="font-semibold">{clientName || "N/A"}</span>
                             </div>
+                             <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                <span className="text-muted-foreground">Date:</span>
+                                <span className="font-semibold">{today}</span>
+                            </div>
+                             <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                <span className="text-muted-foreground">Company:</span>
+                                <span className="font-semibold">{clientCompany || "N/A"}</span>
+                            </div>
+                           <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                <span className="text-muted-foreground">Plan:</span>
+                                <span className="font-semibold">{planName}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="pt-6">
+                            <p className="text-muted-foreground">
+                                Thank you for considering Smart Refill for your business's water supply needs. We are excited to present this proposal for our automated and reliable water refill service. This document outlines the plan details, benefits, and the terms of our partnership.
+                            </p>
+                            <p className="text-muted-foreground mt-4">
+                                At Smart Refill, we are committed to providing a seamless, compliant, and cost-effective solution, so you can focus on what matters most—running your business.
+                            </p>
                         </CardContent>
                     </Card>
 
                      <Card>
                         <CardHeader>
                             <CardTitle>Cost Breakdown</CardTitle>
-                            <CardDescription>Itemized list of all costs.</CardDescription>
+                            <CardDescription>Itemized list of all costs associated with this proposal.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Pro Plan (Monthly)</span>
                                 <span className="font-semibold">{currencyFormatter.format(7500)}</span>
@@ -239,16 +259,16 @@ function PreviewDialog({
                                 <span className="text-muted-foreground">Express Delivery (Add-on)</span>
                                 <span className="font-semibold">{currencyFormatter.format(500)}</span>
                             </div>
-                             <Separator />
+                             <Separator className="my-2" />
                              <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Subtotal</span>
                                 <span className="font-semibold">{currencyFormatter.format(basePrice)}</span>
                             </div>
                              <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Billing Cycle Discount ({billingCycleLabel})</span>
-                                <span className="font-semibold text-green-600">-{currencyFormatter.format(basePrice * discount)}</span>
+                                <span className="font-semibold text-primary">-{currencyFormatter.format(basePrice * discount)}</span>
                             </div>
-                            <Separator />
+                            <Separator className="my-2" />
                             <div className="flex justify-between items-center font-bold text-lg">
                                 <span>Total Amount Due</span>
                                 <span>{totalAmount}</span>
@@ -444,6 +464,3 @@ export default function ContractPage() {
     </div>
   );
 }
-
-
-    
