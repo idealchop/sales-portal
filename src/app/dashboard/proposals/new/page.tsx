@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  FileText,
   User,
   Building,
   Mail,
@@ -18,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 function SmartRefillIntro() {
   return (
@@ -118,7 +118,9 @@ export default function NewProposalPage() {
                 Step 1: Enter Client Information
             </p>
         </div>
-        <Button>Next Step</Button>
+        <Button asChild>
+          <Link href="/dashboard/proposals/new/plans">Next Step</Link>
+        </Button>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
