@@ -30,6 +30,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const partnerPerks = {
     micro: [
@@ -83,7 +84,21 @@ type Perk = {
     instructions: string;
 }
 
-const plans = [
+type Plan = {
+  name: string;
+  monthlyFee: string;
+  liters: string;
+  bottles: string;
+  rate: string;
+  idealFor: string;
+  inclusions: string;
+  employees: string;
+  stations: string;
+  perks: Perk[];
+};
+
+
+const smallPlans: Plan[] = [
   {
     name: 'Micro',
     monthlyFee: '₱1,000',
@@ -120,6 +135,9 @@ const plans = [
     stations: '2 Stations',
     perks: partnerPerks.pro,
   },
+];
+
+const mediumPlans: Plan[] = [
   {
     name: 'Growth',
     monthlyFee: '₱10,000',
@@ -156,6 +174,9 @@ const plans = [
     stations: '5+ Stations',
     perks: partnerPerks.pro,
   },
+];
+
+const largePlans: Plan[] = [
   {
     name: 'Unlimited+',
     monthlyFee: '₱50,000',
@@ -167,6 +188,30 @@ const plans = [
     employees: 'Flexible',
     stations: 'Dynamic Allocation (Multiple Stations)',
     perks: [],
+  },
+  {
+    name: 'Enterprise 75k',
+    monthlyFee: '₱75,000',
+    liters: '40,000 L',
+    bottles: '≈ 2,105 bottles',
+    rate: '₱1.88',
+    idealFor: 'Large enterprises, BPOs',
+    inclusions: 'Dedicated support; advanced analytics',
+    employees: '750+',
+    stations: '8+ Stations',
+    perks: partnerPerks.pro,
+  },
+    {
+    name: 'Enterprise 100k',
+    monthlyFee: '₱100,000',
+    liters: '60,000 L',
+    bottles: '≈ 3,158 bottles',
+    rate: '₱1.67',
+    idealFor: 'Corporate headquarters, large-scale manufacturing',
+    inclusions: 'Full-time account manager; custom API integration',
+    employees: '1000+',
+    stations: '12+ Stations',
+    perks: partnerPerks.pro,
   },
   {
     name: 'Customized',
@@ -181,6 +226,7 @@ const plans = [
     perks: [],
   },
 ];
+
 
 function PerksDialog({ perks, planName }: { perks: Perk[], planName: string }) {
     if (!perks || perks.length === 0) {
@@ -227,6 +273,52 @@ function PerksDialog({ perks, planName }: { perks: Perk[], planName: string }) {
     )
 }
 
+function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string }) {
+    return (
+        <RadioGroup defaultValue={defaultPlan}>
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Monthly Fee</TableHead>
+                    <TableHead>Included Liters</TableHead>
+                    <TableHead>Est. Bottles</TableHead>
+                    <TableHead>Ideal For</TableHead>
+                    <TableHead>Inclusions</TableHead>
+                    <TableHead>Perks</TableHead>
+                </TableRow>
+                </TableHeader>
+                <TableBody>
+                {plans.map((plan) => (
+                    <TableRow key={plan.name}>
+                    <TableCell>
+                        <RadioGroupItem value={plan.name.toLowerCase()} id={plan.name.toLowerCase()} />
+                    </TableCell>
+                    <TableCell>
+                        <Label htmlFor={plan.name.toLowerCase()} className="font-semibold">{plan.name}</Label>
+                    </TableCell>
+                    <TableCell>{plan.monthlyFee}</TableCell>
+                    <TableCell>{plan.liters}</TableCell>
+                    <TableCell>{plan.bottles}</TableCell>
+                    <TableCell>{plan.idealFor}</TableCell>
+                    <TableCell>{plan.inclusions}</TableCell>
+                    <TableCell>
+                        {plan.perks && plan.perks.length > 0 ? (
+                            <PerksDialog perks={plan.perks} planName={plan.name} />
+                        ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                    </TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+        </RadioGroup>
+    );
+}
+
+
 export default function PlansPage() {
   return (
     <div className="flex flex-col gap-6">
@@ -255,46 +347,22 @@ export default function PlansPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup defaultValue="pro">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Monthly Fee</TableHead>
-                  <TableHead>Included Liters</TableHead>
-                  <TableHead>Est. Bottles</TableHead>
-                  <TableHead>Ideal For</TableHead>
-                  <TableHead>Inclusions</TableHead>
-                  <TableHead>Perks</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {plans.map((plan) => (
-                  <TableRow key={plan.name}>
-                    <TableCell>
-                      <RadioGroupItem value={plan.name.toLowerCase()} id={plan.name.toLowerCase()} />
-                    </TableCell>
-                    <TableCell>
-                      <Label htmlFor={plan.name.toLowerCase()} className="font-semibold">{plan.name}</Label>
-                    </TableCell>
-                    <TableCell>{plan.monthlyFee}</TableCell>
-                    <TableCell>{plan.liters}</TableCell>
-                    <TableCell>{plan.bottles}</TableCell>
-                    <TableCell>{plan.idealFor}</TableCell>
-                    <TableCell>{plan.inclusions}</TableCell>
-                    <TableCell>
-                        {plan.perks && plan.perks.length > 0 ? (
-                            <PerksDialog perks={plan.perks} planName={plan.name} />
-                        ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </RadioGroup>
+          <Tabs defaultValue="small">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="small">Small Business</TabsTrigger>
+              <TabsTrigger value="medium">Medium Business</TabsTrigger>
+              <TabsTrigger value="large">Large Business</TabsTrigger>
+            </TabsList>
+            <TabsContent value="small">
+                <PlansTable plans={smallPlans} defaultPlan="pro" />
+            </TabsContent>
+            <TabsContent value="medium">
+                <PlansTable plans={mediumPlans} defaultPlan="business" />
+            </TabsContent>
+            <TabsContent value="large">
+                <PlansTable plans={largePlans} defaultPlan="unlimited+" />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
