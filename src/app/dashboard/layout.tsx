@@ -16,16 +16,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <Sidebar side="left" variant="sidebar" collapsible="icon">
-        <SidebarHeader className="border-b">
-           <div className="flex items-center gap-2">
+        <SidebarHeader className="border-b border-sidebar-border">
+           <div className="flex items-center gap-3 p-2">
             <Image src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2FAsset%2022.png?alt=media&token=f7458efe-afd7-4006-862e-40c8d524c080" width={32} height={32} alt="Smart Refill Logo" />
-            <span className="text-lg font-semibold font-headline">Smart Refill Sales Portal</span>
+            <span className="text-lg font-semibold font-headline text-sidebar-primary-foreground">Smart Refill</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <DashboardNav />
         </SidebarContent>
-        <SidebarFooter className='border-t'>
+        <SidebarFooter className='border-t border-sidebar-border'>
           <div className="flex items-center gap-3 p-2">
             <Avatar className="h-9 w-9">
               <AvatarImage src="https://picsum.photos/seed/avatar/36/36" alt="User Avatar" />
@@ -38,9 +38,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="flex flex-col">
+      <SidebarInset className="flex flex-col bg-muted/40">
         <DashboardHeader />
-        <main className="flex-1 overflow-auto p-4 sm:px-6 sm:py-0">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

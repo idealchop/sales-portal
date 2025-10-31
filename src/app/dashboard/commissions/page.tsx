@@ -62,7 +62,7 @@ export default function CommissionsPage() {
                       {commission.date}
                     </TableCell>
                     <TableCell className="text-right">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(commission.commissionAmount)}
+                        {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(commission.commissionAmount)}
                     </TableCell>
                   </TableRow>
                 ))}

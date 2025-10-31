@@ -89,7 +89,7 @@ export default function ProposalsPage() {
                     <TableCell className="hidden md:table-cell">
                       {proposal.createdAt}
                     </TableCell>
-                    <TableCell className="text-right">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(proposal.amount)}</TableCell>
+                    <TableCell className="text-right">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

@@ -27,13 +27,15 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className="p-2">
       {navItems.map((item) => (
         <SidebarMenuItem key={item.href}>
           <SidebarMenuButton
             asChild
             isActive={pathname === item.href}
             tooltip={{ children: item.label }}
+            variant="default"
+            className="text-sidebar-foreground/70 hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
           >
             <Link href={item.href}>
               <item.icon />

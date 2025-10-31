@@ -5,11 +5,7 @@ import {
   FileText,
   UsersRound,
 } from 'lucide-react';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,17 +34,17 @@ const statusStyles: { [key: string]: string } = {
 
 export default function DashboardPage() {
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <div className="flex flex-col gap-8">
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Total Revenue
             </CardTitle>
-            <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+            <CircleDollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
+            <div className="text-2xl font-bold">₱2,545,231.89</div>
             <p className="text-xs text-muted-foreground">
               +20.1% from last month
             </p>
@@ -57,7 +53,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
-            <UsersRound className="h-4 w-4 text-muted-foreground" />
+            <UsersRound className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+23</div>
@@ -69,7 +65,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Open Proposals</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
@@ -81,7 +77,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-            <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+            <ArrowUpRight className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">31.4%</div>
@@ -93,8 +89,13 @@ export default function DashboardPage() {
       </div>
       <div>
         <Card>
-          <CardHeader className="flex items-center gap-4">
-            <CardTitle>Recent Proposals</CardTitle>
+          <CardHeader className="flex flex-row items-center">
+             <div className="grid gap-2">
+                <CardTitle>Recent Proposals</CardTitle>
+                <CardDescription>
+                    Review your most recent sales proposals.
+                </CardDescription>
+            </div>
             <Button asChild size="sm" className="ml-auto gap-1">
               <Link href="/dashboard/proposals">
                 View All
@@ -107,7 +108,7 @@ export default function DashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Client</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden sm:table-cell">Status</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
@@ -116,17 +117,17 @@ export default function DashboardPage() {
                   <TableRow key={proposal.id}>
                     <TableCell>
                       <div className="font-medium">{proposal.client.companyName}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground hidden md:inline">
                         {proposal.client.contactName}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge className={`capitalize ${statusStyles[proposal.status]}`} variant="outline">
                         {proposal.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(proposal.amount)}
+                        {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}
                     </TableCell>
                   </TableRow>
                 ))}
