@@ -28,12 +28,12 @@ function InputField({
 } & React.ComponentProps<typeof Input>) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-primary-foreground">{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
           {icon}
         </div>
-        <Input id={id} className="pl-10 bg-white text-black placeholder:text-muted-foreground" {...props} />
+        <Input id={id} className="pl-10" {...props} />
       </div>
     </div>
   );
@@ -55,7 +55,7 @@ export default function NewProposalPage() {
         </Button>
       </div>
 
-      <div className="relative overflow-hidden p-6 md:p-8 rounded-lg bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground shadow-lg">
+      <div className="relative overflow-hidden p-6 md:p-8 rounded-lg border bg-card text-card-foreground shadow-sm">
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
@@ -89,13 +89,13 @@ export default function NewProposalPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                  <Label htmlFor="industry" className="text-primary-foreground">Type of Industry</Label>
+                  <Label htmlFor="industry">Type of Industry</Label>
                   <div className="relative">
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                           <Briefcase className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <Select>
-                          <SelectTrigger id="industry" className="pl-10 bg-white text-black placeholder:text-muted-foreground">
+                          <SelectTrigger id="industry" className="pl-10">
                               <SelectValue placeholder="Select an industry" />
                           </SelectTrigger>
                           <SelectContent>
