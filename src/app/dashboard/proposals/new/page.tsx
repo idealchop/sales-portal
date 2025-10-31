@@ -58,7 +58,7 @@ export default function NewProposalPage() {
 
         <div className="p-6 md:p-8 rounded-lg bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground shadow-lg">
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <InputField
                   id="company-name"
                   label="Company Name"
@@ -72,7 +72,7 @@ export default function NewProposalPage() {
                   placeholder="e.g., John Doe"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <InputField
                   id="email"
                   label="Email Address"
@@ -88,7 +88,7 @@ export default function NewProposalPage() {
                   placeholder="e.g., (0917) 123 4567"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="industry" className="text-primary-foreground">Type of Industry</Label>
                     <div className="relative">
@@ -118,7 +118,7 @@ export default function NewProposalPage() {
                   placeholder="e.g., 123 Tech Lane, BGC, Taguig"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <InputField
                   id="employees"
                   label="Number of Employees"
