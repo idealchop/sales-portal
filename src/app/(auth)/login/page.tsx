@@ -25,6 +25,19 @@ export default function LoginPage() {
             Login Now
           </Button>
         </div>
+        <div className="mt-8 text-center text-sm">
+          <p className="text-muted-foreground">
+            By continuing, you agree to our{' '}
+            <Link href="#" className="underline underline-offset-4 hover:text-primary">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="#" className="underline underline-offset-4 hover:text-primary">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </div>
       </div>
       <div className="relative hidden w-1/2 items-center justify-center bg-primary md:flex">
         <div className="relative h-full w-full">
