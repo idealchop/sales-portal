@@ -41,7 +41,7 @@ export function DashboardHeader() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="overflow-hidden rounded-full">
             <Avatar className="h-9 w-9">
-                <AvatarImage src="https://picsum.photos/seed/avatar/36/36" alt="User Avatar" />
+                <AvatarImage src="https://picsum.photos/seed/avatar/32/32" alt="User Avatar" />
                 <AvatarFallback>SA</AvatarFallback>
             </Avatar>
           </Button>
