@@ -1,4 +1,5 @@
 
+
 import {
   Card,
   CardContent,
@@ -22,7 +23,7 @@ function SmartRefillIntro() {
       </CardHeader>
       <CardContent className="space-y-8">
         <div className="grid md:grid-cols-2 gap-8 items-start text-sm text-muted-foreground prose">
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-prose">
                 <p className="font-semibold text-foreground">
                 Smart Refill is the Philippines’ first automated water refill system
                 for businesses — built to make water supply safe, seamless, and
