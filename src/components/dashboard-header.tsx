@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Dialog,
@@ -30,6 +29,7 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import React from 'react';
+import { Input } from './ui/input';
 
 
 export function DashboardHeader() {
@@ -61,6 +61,9 @@ export function DashboardHeader() {
                         <p className="text-xs leading-none text-muted-foreground">
                             sandra.adams@example.com
                         </p>
+                        <p className="text-xs leading-none text-muted-foreground pt-1">
+                            Employee ID: 0000000001
+                        </p>
                     </div>
                 </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -70,7 +73,9 @@ export function DashboardHeader() {
                   <span>Edit Profile</span>
                 </DropdownMenuItem>
               </DialogTrigger>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/settings">Settings</Link>
+              </DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
