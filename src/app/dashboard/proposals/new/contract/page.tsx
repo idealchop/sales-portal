@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -95,8 +96,8 @@ const addons = [
     id: 'express-delivery',
     name: 'Express Delivery Upgrade',
     description: 'Priority delivery during peak hours for uninterrupted operations',
-    fee: '₱500 / month',
-    feeValue: 500,
+    fee: '₱250 / month',
+    feeValue: 250,
   },
   {
     id: 'emergency-support',
@@ -111,6 +112,13 @@ const addons = [
     description: 'Increase sanitation visits to weekly for high-traffic areas.',
     fee: '₱1200 / month',
     feeValue: 1200,
+  },
+  {
+    id: 'additional-dispenser',
+    name: 'Additional Dispenser Rental',
+    description: 'Rent an extra dispenser unit for high-demand locations.',
+    fee: '₱300 / month',
+    feeValue: 300,
   },
   {
     id: 'multi-location',
@@ -360,6 +368,7 @@ export default function ContractPage() {
     'express-delivery': false,
     'emergency-support': false,
     'weekly-sanitation': false,
+    'additional-dispenser': false,
     'multi-location': false,
   });
 
