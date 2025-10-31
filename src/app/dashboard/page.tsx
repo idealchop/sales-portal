@@ -35,6 +35,10 @@ const statusStyles: { [key: string]: string } = {
 export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
+       <div className="flex-1">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Welcome back, Sandra!</p>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
