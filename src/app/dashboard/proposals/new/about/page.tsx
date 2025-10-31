@@ -110,7 +110,7 @@ export default function AboutPage() {
                         <Link href="/dashboard/proposals/new">Previous</Link>
                     </Button>
                     <Button asChild>
-                        <Link href="/dashboard/proposals/new/plans">Next Step</Link>
+                        <Link href="/dashboard/proposals/new/comparison">Next Step</Link>
                     </Button>
                 </div>
             </div>
