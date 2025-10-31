@@ -459,31 +459,32 @@ export default function ContractPage() {
                         ))}
                     </CardContent>
                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
+                        <CardDescription>Key milestones for service activation.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <TimelineItem 
+                            icon={<CheckCircle className="h-4 w-4" />}
+                            title="Account Activation"
+                            description="Client portal is set up within 24 hours of signing and making payment."
+                        />
+                        <TimelineItem 
+                            icon={<CalendarCheck className="h-4 w-4" />}
+                            title="Onboarding &amp; Scheduling"
+                            description="Initial delivery schedule set within 48 hours."
+                        />
+                         <TimelineItem 
+                            icon={<Ship className="h-4 w-4" />}
+                            title="First Delivery"
+                            description="Equipment and first batch of water arrive in 3-5 business days."
+                            isLast
+                        />
+                    </CardContent>
+                </Card>
             </div>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
-                    <CardDescription>Key milestones for service activation.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <TimelineItem 
-                        icon={<CheckCircle className="h-4 w-4" />}
-                        title="Account Activation"
-                        description="Client portal is set up within 24 hours of signing and making payment."
-                    />
-                    <TimelineItem 
-                        icon={<CalendarCheck className="h-4 w-4" />}
-                        title="Onboarding &amp; Scheduling"
-                        description="Initial delivery schedule set within 48 hours."
-                    />
-                     <TimelineItem 
-                        icon={<Ship className="h-4 w-4" />}
-                        title="First Delivery"
-                        description="Equipment and first batch of water arrive in 3-5 business days."
-                        isLast
-                    />
-                </CardContent>
-            </Card>
+            <div className="md:col-span-1" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
