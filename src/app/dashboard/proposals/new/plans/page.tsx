@@ -204,6 +204,7 @@ function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string
                     <TableHead>Included Liters</TableHead>
                     <TableHead>Est. Bottles</TableHead>
                     <TableHead>Inclusions</TableHead>
+                    <TableHead>Employees Covered</TableHead>
                     <TableHead>Water Stations Provider</TableHead>
                 </TableRow>
                 </TableHeader>
@@ -220,6 +221,7 @@ function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string
                     <TableCell>{plan.liters}</TableCell>
                     <TableCell>{plan.bottles}</TableCell>
                     <TableCell>{plan.inclusions}</TableCell>
+                    <TableCell>{plan.employees}</TableCell>
                     <TableCell>{plan.stations}</TableCell>
                     </TableRow>
                 ))}
