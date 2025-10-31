@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -319,7 +318,7 @@ function PreviewDialog({
                     <Button type="button" variant="outline">Close</Button>
                 </DialogClose>
                 <Button type="button"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
-                <Button type="button" onClick={handleFinalize}><Send className="mr-2 h-4 w-4" /> Finalize & Send</Button>
+                <Button type="button" onClick={handleFinalize}><Send className="mr-2 h-4 w-4" /> Finalize &amp; Send</Button>
             </DialogFooter>
         </DialogContent>
     )
@@ -487,124 +486,119 @@ export default function ContractPage() {
             </Card>
         </div>
 
-
-        <Card>
-            <CardHeader>
-                <CardTitle>Optional Add-Ons</CardTitle>
-                <CardDescription>
-                Enhance your Smart Refill experience with premium service options designed to make water operations even faster, safer, and more efficient.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                <TableHeader>
-                    <TableRow>
-                    <TableHead className="w-[50px]"></TableHead>
-                    <TableHead>Add-On</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Monthly Fee</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {addons.map((addon) => (
-                    <TableRow key={addon.id}>
-                        <TableCell>
-                        <Checkbox 
-                            id={addon.id} 
-                            onCheckedChange={() => handleAddonToggle(addon.id)}
-                            checked={selectedAddons[addon.id]}
-                            disabled={addon.fee === 'Custom'}
-                        />
-                        </TableCell>
-                        <TableCell>
-                        <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                        </TableCell>
-                        <TableCell>{addon.description}</TableCell>
-                        <TableCell className="text-right">{addon.fee}</TableCell>
-                    </TableRow>
-                    ))}
-                </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-        
-        <Card>
-            <CardHeader>
-                <CardTitle>Summary &amp; Final Amount</CardTitle>
-                <CardDescription>Review the final costs before proceeding.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Pro Plan (Monthly)</span>
-                    <span className="font-semibold">₱7,500.00</span>
-                </div>
-                 {addons.map(addon => selectedAddons[addon.id] && (
-                    <div key={addon.id} className="flex justify-between items-center">
-                        <span className="text-muted-foreground">{addon.name}</span>
-                        <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
-                    </div>
-                 ))}
-                 {additionalDispensers > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2">
+                <CardHeader>
+                    <CardTitle>Optional Add-Ons</CardTitle>
+                    <CardDescription>
+                    Enhance your Smart Refill experience with premium service options designed to make water operations even faster, safer, and more efficient.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead>Add-On</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Monthly Fee</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {addons.map((addon) => (
+                        <TableRow key={addon.id}>
+                            <TableCell>
+                            <Checkbox 
+                                id={addon.id} 
+                                onCheckedChange={() => handleAddonToggle(addon.id)}
+                                checked={selectedAddons[addon.id]}
+                                disabled={addon.fee === 'Custom'}
+                            />
+                            </TableCell>
+                            <TableCell>
+                            <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                            </TableCell>
+                            <TableCell>{addon.description}</TableCell>
+                            <TableCell className="text-right">{addon.fee}</TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Summary &amp; Final Amount</CardTitle>
+                    <CardDescription>Review the final costs before proceeding.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
-                        <span className="font-semibold">{currencyFormatter.format(additionalDispensers * additionalDispenserCost)}</span>
+                        <span className="text-muted-foreground">Pro Plan (Monthly)</span>
+                        <span className="font-semibold">₱7,500.00</span>
                     </div>
-                 )}
-                <Separator />
-                <div className='space-y-2'>
-                    <Label htmlFor="billing-cycle">Payment Schedule</Label>
-                     <Select value={billingCycle} onValueChange={setBillingCycle}>
-                        <SelectTrigger id="billing-cycle">
-                            <SelectValue placeholder="Select a cycle" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {billingCycles.map((cycle) => (
-                                <SelectItem key={cycle.value} value={cycle.value}>
-                                    {cycle.label} ({cycle.discount * 100}% discount)
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className='space-y-2'>
-                    <Label htmlFor="additional-dispensers">Additional Dispensers ({currencyFormatter.format(additionalDispenserCost)}/mo)</Label>
-                    <Input 
-                        id="additional-dispensers"
-                        type="number"
-                        min="0"
-                        value={additionalDispensers}
-                        onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
-                        placeholder="e.g., 1"
-                    />
-                </div>
-                 <div className="flex justify-between items-center text-lg font-bold">
-                    <span>Total Due</span>
-                    <span>{totalAmount}</span>
-                </div>
-            </CardContent>
-            <CardFooter className="justify-end">
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button>Review &amp; Sign</Button>
-                    </DialogTrigger>
-                    <PreviewDialog 
-                        totalAmount={totalAmount}
-                        billingCycleLabel={billingCycleLabel}
-                        discount={discount}
-                        basePrice={basePrice}
-                        selectedAddons={selectedAddons}
-                        additionalDispensers={additionalDispensers}
-                    />
-                </Dialog>
-            </CardFooter>
-        </Card>
+                     {addons.map(addon => selectedAddons[addon.id] && (
+                        <div key={addon.id} className="flex justify-between items-center">
+                            <span className="text-muted-foreground">{addon.name}</span>
+                            <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
+                        </div>
+                     ))}
+                     {additionalDispensers > 0 && (
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
+                            <span className="font-semibold">{currencyFormatter.format(additionalDispensers * additionalDispenserCost)}</span>
+                        </div>
+                     )}
+                    <Separator />
+                    <div className='space-y-2'>
+                        <Label htmlFor="billing-cycle">Payment Schedule</Label>
+                         <Select value={billingCycle} onValueChange={setBillingCycle}>
+                            <SelectTrigger id="billing-cycle">
+                                <SelectValue placeholder="Select a cycle" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {billingCycles.map((cycle) => (
+                                    <SelectItem key={cycle.value} value={cycle.value}>
+                                        {cycle.label} ({cycle.discount * 100}% discount)
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className='space-y-2'>
+                        <Label htmlFor="additional-dispensers">Additional Dispensers ({currencyFormatter.format(additionalDispenserCost)}/mo)</Label>
+                        <Input 
+                            id="additional-dispensers"
+                            type="number"
+                            min="0"
+                            value={additionalDispensers}
+                            onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
+                            placeholder="e.g., 1"
+                        />
+                    </div>
+                     <div className="flex justify-between items-center text-lg font-bold">
+                        <span>Total Due</span>
+                        <span>{totalAmount}</span>
+                    </div>
+                </CardContent>
+                <CardFooter className="justify-end">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button>Review &amp; Sign</Button>
+                        </DialogTrigger>
+                        <PreviewDialog 
+                            totalAmount={totalAmount}
+                            billingCycleLabel={billingCycleLabel}
+                            discount={discount}
+                            basePrice={basePrice}
+                            selectedAddons={selectedAddons}
+                            additionalDispensers={additionalDispensers}
+                        />
+                    </Dialog>
+                </CardFooter>
+            </Card>
+        </div>
       </div>
     </div>
   );
 }
-
-    
-
-    
-
-    
