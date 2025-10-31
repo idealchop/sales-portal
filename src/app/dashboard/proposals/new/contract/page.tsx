@@ -433,27 +433,29 @@ export default function ContractPage() {
         </Card>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-2">
-                <CardHeader>
-                    <CardTitle>Included in Every Plan</CardTitle>
-                    <CardDescription>
-                        Core services that come with every Smart Refill subscription.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-6 sm:grid-cols-2">
-                    {inclusions.slice(0, 8).map((item) => (
-                    <div key={item.title} className="flex items-start gap-3">
-                        <div>{item.icon}</div>
-                        <div>
-                        <h3 className="font-semibold text-sm">{item.title}</h3>
-                        <p className="text-xs text-muted-foreground">
-                            {item.description}
-                        </p>
+            <div className="md:col-span-2 flex flex-col gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Included in Every Plan</CardTitle>
+                        <CardDescription>
+                            Core services that come with every Smart Refill subscription.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-6 sm:grid-cols-2">
+                        {inclusions.slice(0, 8).map((item) => (
+                        <div key={item.title} className="flex items-start gap-3">
+                            <div>{item.icon}</div>
+                            <div>
+                            <h3 className="font-semibold text-sm">{item.title}</h3>
+                            <p className="text-xs text-muted-foreground">
+                                {item.description}
+                            </p>
+                            </div>
                         </div>
-                    </div>
-                    ))}
-                </CardContent>
-            </Card>
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
              <Card>
                 <CardHeader>
                     <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
