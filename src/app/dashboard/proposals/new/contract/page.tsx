@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -9,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -28,7 +28,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, PlusCircleIcon } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, Save } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { ContractText } from '@/components/contract-text';
@@ -354,6 +354,7 @@ function TimelineItem({ icon, title, description, isLast = false }: { icon: Reac
 
 
 export default function ContractPage() {
+  const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
     'express-delivery': false,
@@ -387,6 +388,13 @@ export default function ContractPage() {
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
+  const handleSaveProposal = () => {
+    toast({
+        title: "Proposal Saved!",
+        description: "Your proposal has been saved as a draft.",
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -396,23 +404,15 @@ export default function ContractPage() {
             Step 4: Review inclusions, add-ons, and sign the agreement.
           </p>
         </div>
-        <Dialog>
-            <div className="flex gap-2">
+        <div className="flex gap-2">
             <Button variant="outline" asChild>
                 <Link href="/dashboard/proposals/new/payment">Previous</Link>
             </Button>
-            <DialogTrigger asChild>
-                <Button>Review &amp; Sign</Button>
-            </DialogTrigger>
-            </div>
-            <PreviewDialog 
-                totalAmount={totalAmount}
-                billingCycleLabel={billingCycleLabel}
-                discount={discount}
-                basePrice={basePrice}
-                selectedAddons={selectedAddons}
-            />
-        </Dialog>
+            <Button onClick={handleSaveProposal}>
+                <Save className="mr-2 h-4 w-4" />
+                Save Proposal
+            </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-6">
@@ -524,7 +524,7 @@ export default function ContractPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Summary &amp; Final Amount</CardTitle>
-                <CardDescription>Review the final costs before signing.</CardDescription>
+                <CardDescription>Review the final costs before proceeding.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
@@ -558,10 +558,22 @@ export default function ContractPage() {
                     <span>{totalAmount}</span>
                 </div>
             </CardContent>
+            <CardFooter className="justify-end">
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button>Review &amp; Sign</Button>
+                    </DialogTrigger>
+                    <PreviewDialog 
+                        totalAmount={totalAmount}
+                        billingCycleLabel={billingCycleLabel}
+                        discount={discount}
+                        basePrice={basePrice}
+                        selectedAddons={selectedAddons}
+                    />
+                </Dialog>
+            </CardFooter>
         </Card>
       </div>
     </div>
   );
 }
-
-    
