@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -213,6 +214,10 @@ function PreviewDialog({
 
     return (
         <DialogContent className="sm:max-w-5xl">
+            <DialogHeader className="sr-only">
+                <DialogTitle>Proposal Preview</DialogTitle>
+                <DialogDescription>A preview of the sales proposal for the client to review and sign.</DialogDescription>
+            </DialogHeader>
             <ScrollArea className="h-[85vh] pr-6">
                 <div className="space-y-6 p-2">
                     <div className="flex justify-between items-start">
@@ -438,7 +443,7 @@ export default function ContractPage() {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
   }
 
-  const estimatedGallons = Math.round((5000 + additionalLiters) / 19 * 0.264172);
+  const estimatedGallons = Math.round((5000 + additionalLiters) * 0.264172);
 
   const { totalAmount, discount, billingCycleLabel, basePrice } = useMemo(() => {
     const proPlanCost = 7500;
@@ -728,6 +733,8 @@ export default function ContractPage() {
 }
 
     
+    
+
     
 
     
