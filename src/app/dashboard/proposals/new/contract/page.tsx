@@ -443,7 +443,7 @@ export default function ContractPage() {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
   }
 
-  const estimatedGallons = Math.round((5000 + additionalLiters) * 0.264172);
+  const estimatedBottles = Math.round((5000 + additionalLiters) / 19);
 
   const { totalAmount, discount, billingCycleLabel, basePrice } = useMemo(() => {
     const proPlanCost = 7500;
@@ -538,11 +538,11 @@ export default function ContractPage() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Est. Gallons</CardTitle>
+                            <CardTitle className="text-sm font-medium">Est. Bottles</CardTitle>
                             <GlassWater className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">≈ {estimatedGallons} gal</div>
+                            <div className="text-2xl font-bold">≈ {estimatedBottles} bottles</div>
                         </CardContent>
                     </Card>
                 </div>
@@ -666,7 +666,7 @@ export default function ContractPage() {
                          <ul className="text-xs text-muted-foreground mt-1 list-disc pl-5">
                             <li>{5000 + additionalLiters}L water</li>
                             <li>2 free dispensers</li>
-                            <li>≈{estimatedGallons} gal</li>
+                            <li>≈{estimatedBottles} bottles</li>
                             <li>Free delivery</li>
                         </ul>
                     </div>
@@ -733,8 +733,6 @@ export default function ContractPage() {
 }
 
     
-    
-
     
 
     
