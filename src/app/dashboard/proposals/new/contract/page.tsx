@@ -34,6 +34,7 @@ import { Logo } from '@/components/logo';
 import { ContractText } from '@/components/contract-text';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Slider } from '@/components/ui/slider';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0 },
@@ -58,10 +59,19 @@ const addons = [
     fee: '₱250 / month / unit',
     feeValue: 250,
     type: 'quantity',
+  },
+  {
+    id: 'additional-liters',
+    name: 'Additional Liters',
+    description: 'Pre-purchase extra liters for the upcoming cycle.',
+    fee: '₱3.00 / liter',
+    feeValue: 3,
+    type: 'slider',
   }
 ];
 
 const additionalDispenserCost = 250;
+const additionalLiterCost = 3;
 
 function PreviewDialog({ 
     totalAmount,
@@ -69,7 +79,8 @@ function PreviewDialog({
     discount,
     basePrice,
     selectedAddons,
-    additionalDispensers
+    additionalDispensers,
+    additionalLiters
 }: { 
     totalAmount: string,
     billingCycleLabel: string,
@@ -77,6 +88,7 @@ function PreviewDialog({
     basePrice: number,
     selectedAddons: { [key: string]: boolean },
     additionalDispensers: number,
+    additionalLiters: number,
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
     const [clientName, setClientName] = useState('');
@@ -125,7 +137,8 @@ function PreviewDialog({
     }, 0);
     
     const dispensersCost = additionalDispensers * additionalDispenserCost;
-    const subtotal = 7500 + addonsCost + dispensersCost;
+    const litersCost = additionalLiters * additionalLiterCost;
+    const subtotal = 7500 + addonsCost + dispensersCost + litersCost;
 
     return (
         <DialogContent className="sm:max-w-5xl">
@@ -203,6 +216,12 @@ function PreviewDialog({
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
                                     <span className="font-semibold">{currencyFormatter.format(dispensersCost)}</span>
+                                </div>
+                            )}
+                            {additionalLiters > 0 && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Additional Liters ({additionalLiters} L)</span>
+                                    <span className="font-semibold">{currencyFormatter.format(litersCost)}</span>
                                 </div>
                             )}
                              <Separator className="my-2" />
@@ -301,6 +320,7 @@ export default function ContractPage() {
     'weekly-sanitation': false,
   });
   const [additionalDispensers, setAdditionalDispensers] = useState(0);
+  const [additionalLiters, setAdditionalLiters] = useState(0);
 
   const handleAddonToggle = (addonId: string) => {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
@@ -315,8 +335,9 @@ export default function ContractPage() {
         return total;
     }, 0);
     const dispensersCost = additionalDispensers * additionalDispenserCost;
+    const litersCost = additionalLiters * additionalLiterCost;
 
-    const currentBasePrice = proPlanCost + addonsCost + dispensersCost;
+    const currentBasePrice = proPlanCost + addonsCost + dispensersCost + litersCost;
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
     const discountAmount = currentBasePrice * selectedCycle.discount;
     const finalAmount = currentBasePrice - discountAmount;
@@ -327,7 +348,7 @@ export default function ContractPage() {
         billingCycleLabel: selectedCycle.label,
         basePrice: currentBasePrice,
     }
-  }, [billingCycle, selectedAddons, additionalDispensers]);
+  }, [billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
@@ -457,49 +478,53 @@ export default function ContractPage() {
                         <TableHead className="w-[50px]"></TableHead>
                         <TableHead>Add-On</TableHead>
                         <TableHead>Description</TableHead>
-                        <TableHead className="w-[150px]">Quantity</TableHead>
+                        <TableHead className="w-[200px]">Quantity</TableHead>
                         <TableHead className="text-right">Monthly Fee</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {addons.map((addon) => (
                         <TableRow key={addon.id}>
-                             {addon.type === 'checkbox' ? (
-                                <>
-                                    <TableCell>
-                                        <Checkbox 
-                                            id={addon.id} 
-                                            onCheckedChange={() => handleAddonToggle(addon.id)}
-                                            checked={selectedAddons[addon.id]}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                                    </TableCell>
-                                    <TableCell>{addon.description}</TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell className="text-right">{addon.fee}</TableCell>
-                                </>
-                            ) : (
-                                <>
-                                    <TableCell></TableCell>
-                                    <TableCell>
-                                        <Label className="font-semibold">{addon.name}</Label>
-                                    </TableCell>
-                                    <TableCell>{addon.description}</TableCell>
-                                    <TableCell>
-                                        <Input 
+                            <TableCell>
+                                {addon.type === 'checkbox' && (
+                                    <Checkbox 
+                                        id={addon.id} 
+                                        onCheckedChange={() => handleAddonToggle(addon.id)}
+                                        checked={selectedAddons[addon.id]}
+                                    />
+                                )}
+                            </TableCell>
+                            <TableCell>
+                                <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                            </TableCell>
+                            <TableCell>{addon.description}</TableCell>
+                            <TableCell>
+                                {addon.type === 'quantity' && (
+                                    <Input 
+                                        id={addon.id}
+                                        type="number"
+                                        min="0"
+                                        value={additionalDispensers}
+                                        onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
+                                        className="w-24"
+                                    />
+                                )}
+                                {addon.type === 'slider' && (
+                                    <div className="flex items-center gap-4">
+                                        <Slider
                                             id={addon.id}
-                                            type="number"
-                                            min="0"
-                                            value={additionalDispensers}
-                                            onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
-                                            className="w-24"
+                                            min={0}
+                                            max={1000}
+                                            step={50}
+                                            value={[additionalLiters]}
+                                            onValueChange={(value) => setAdditionalLiters(value[0])}
+                                            className="w-[120px]"
                                         />
-                                    </TableCell>
-                                    <TableCell className="text-right">{addon.fee}</TableCell>
-                                </>
-                            )}
+                                        <span className="text-sm font-medium w-[60px] text-right">{additionalLiters} L</span>
+                                    </div>
+                                )}
+                            </TableCell>
+                            <TableCell className="text-right">{addon.fee}</TableCell>
                         </TableRow>
                         ))}
                     </TableBody>
@@ -532,6 +557,12 @@ export default function ContractPage() {
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
                             <span className="font-semibold">{currencyFormatter.format(additionalDispensers * additionalDispenserCost)}</span>
+                        </div>
+                     )}
+                     {additionalLiters > 0 && (
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Additional Liters ({additionalLiters} L)</span>
+                            <span className="font-semibold">{currencyFormatter.format(additionalLiters * additionalLiterCost)}</span>
                         </div>
                      )}
                     <Separator />
@@ -567,6 +598,7 @@ export default function ContractPage() {
                             basePrice={basePrice}
                             selectedAddons={selectedAddons}
                             additionalDispensers={additionalDispensers}
+                            additionalLiters={additionalLiters}
                         />
                     </Dialog>
                 </CardFooter>
