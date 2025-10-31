@@ -56,7 +56,7 @@ export default function NewProposalPage() {
       </div>
 
       <div className="relative overflow-hidden p-6 md:p-8 rounded-lg bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground shadow-lg">
-          <div className="space-y-4 pb-24">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
                 id="company-name"
@@ -134,14 +134,13 @@ export default function NewProposalPage() {
               />
             </div>
           </div>
-          <div className="pointer-events-none absolute bottom-0 left-0 w-full h-1/2 z-0">
+          <div className="relative mt-8 h-48">
             <Image
               src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FBG_Web_v2.png?alt=media&token=e944282b-6f8d-4cdd-8463-eeaf96746522"
               alt="background"
               layout="fill"
               objectFit="cover"
               objectPosition="bottom"
-              className="opacity-20"
             />
           </div>
         </div>
