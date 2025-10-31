@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -27,6 +27,14 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Download, Send } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const billingCycles = [
+  { value: 'monthly', label: 'Monthly', discount: 0 },
+  { value: 'quarterly', label: 'Quarterly', discount: 0.03 },
+  { value: 'semi-annually', label: 'Semi-Annually', discount: 0.05 },
+  { value: 'annually', label: 'Annually', discount: 0.10 },
+];
 
 function ContractText() {
     return (
@@ -165,14 +173,21 @@ function PreviewDialog({
     clientName, 
     clientCompany, 
     planName, 
-    totalAmount 
+    totalAmount,
+    billingCycleLabel,
+    discount,
+    basePrice
 }: { 
     clientName: string, 
     clientCompany: string, 
     planName: string, 
-    totalAmount: string 
+    totalAmount: string,
+    billingCycleLabel: string,
+    discount: number,
+    basePrice: number
 }) {
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     return (
         <DialogContent className="sm:max-w-4xl">
@@ -218,13 +233,22 @@ function PreviewDialog({
                         <CardContent className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Pro Plan (Monthly)</span>
-                                <span className="font-semibold">₱7,500.00</span>
+                                <span className="font-semibold">{currencyFormatter.format(7500)}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Express Delivery (Add-on)</span>
-                                <span className="font-semibold">₱500.00</span>
+                                <span className="font-semibold">{currencyFormatter.format(500)}</span>
                             </div>
                              <Separator />
+                             <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Subtotal</span>
+                                <span className="font-semibold">{currencyFormatter.format(basePrice)}</span>
+                            </div>
+                             <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Billing Cycle Discount ({billingCycleLabel})</span>
+                                <span className="font-semibold text-green-600">-{currencyFormatter.format(basePrice * discount)}</span>
+                            </div>
+                            <Separator />
                             <div className="flex justify-between items-center font-bold text-lg">
                                 <span>Total Amount Due</span>
                                 <span>{totalAmount}</span>
@@ -260,7 +284,21 @@ export default function ContractPage() {
   const signaturePadRef = useRef<SignaturePadRef>(null);
   const [clientName, setClientName] = useState('');
   const [clientCompany, setClientCompany] = useState('');
+  const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const { toast } = useToast();
+
+  const basePrice = 8000; // Pro Plan (7500) + Express Delivery (500)
+
+  const { totalAmount, discount, billingCycleLabel } = useMemo(() => {
+    const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
+    const discountAmount = basePrice * selectedCycle.discount;
+    const finalAmount = basePrice - discountAmount;
+    return {
+        totalAmount: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
+        discount: selectedCycle.discount,
+        billingCycleLabel: selectedCycle.label,
+    }
+  }, [billingCycle, basePrice]);
 
   const handleFinalize = () => {
     const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
@@ -313,7 +351,10 @@ export default function ContractPage() {
                 clientName={clientName} 
                 clientCompany={clientCompany}
                 planName="Pro Plan"
-                totalAmount="₱8,000.00"
+                totalAmount={totalAmount}
+                billingCycleLabel={billingCycleLabel}
+                discount={discount}
+                basePrice={basePrice}
             />
         </Dialog>
       </div>
@@ -349,9 +390,24 @@ export default function ContractPage() {
                         <span className="font-semibold">₱500.00</span>
                     </div>
                     <Separator />
+                    <div className='space-y-2'>
+                        <Label htmlFor="billing-cycle">Payment Schedule</Label>
+                         <Select value={billingCycle} onValueChange={setBillingCycle}>
+                            <SelectTrigger id="billing-cycle">
+                                <SelectValue placeholder="Select a cycle" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {billingCycles.map((cycle) => (
+                                    <SelectItem key={cycle.value} value={cycle.value}>
+                                        {cycle.label} ({cycle.discount * 100}% discount)
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                      <div className="flex justify-between items-center text-lg font-bold">
                         <span>Total Due</span>
-                        <span>₱8,000.00</span>
+                        <span>{totalAmount}</span>
                     </div>
                 </CardContent>
             </Card>
@@ -388,3 +444,6 @@ export default function ContractPage() {
     </div>
   );
 }
+
+
+    
