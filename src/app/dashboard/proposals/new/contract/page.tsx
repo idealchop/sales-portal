@@ -368,37 +368,37 @@ export default function ContractPage() {
             </CardHeader>
             <CardContent>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card>
+                    <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Liters</CardTitle>
-                            <GlassWater className="h-4 w-4 text-muted-foreground" />
+                            <GlassWater className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">5,000 L</div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Employees Covered</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <Users className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">50 – 75</div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Free Dispensers</CardTitle>
-                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <Package className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">2 Units</div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Est. Bottles</CardTitle>
-                            <GlassWater className="h-4 w-4 text-muted-foreground" />
+                            <GlassWater className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">≈ 263 bottles</div>
