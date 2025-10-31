@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -95,18 +96,21 @@ const addons = [
     name: 'Express Delivery Upgrade',
     description: 'Priority delivery during peak hours for uninterrupted operations',
     fee: '₱500 / month',
+    feeValue: 500,
   },
   {
     id: 'emergency-support',
     name: '24/7 Emergency Support',
     description: 'On-call assistance for urgent refills or technical issues',
     fee: '₱750 / month',
+    feeValue: 750,
   },
   {
     id: 'multi-location',
     name: 'Multi-Location Coordination',
     description: 'Centralized scheduling, billing, and delivery management for multiple branches',
     fee: 'Custom',
+    feeValue: 0,
   },
 ];
 
@@ -115,12 +119,14 @@ function PreviewDialog({
     totalAmount,
     billingCycleLabel,
     discount,
-    basePrice
+    basePrice,
+    selectedAddons,
 }: { 
     totalAmount: string,
     billingCycleLabel: string,
     discount: number,
-    basePrice: number
+    basePrice: number,
+    selectedAddons: { [key: string]: boolean },
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
     const [clientName, setClientName] = useState('');
@@ -160,6 +166,12 @@ function PreviewDialog({
             description: `Client ID ${clientID} has been generated. The signed contract has been saved.`,
         });
     };
+
+    const addonsCost = addons.reduce((total, addon) => {
+        return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
+    }, 0);
+
+    const subtotal = 7500 + addonsCost;
 
     return (
         <DialogContent className="sm:max-w-5xl">
@@ -225,18 +237,22 @@ function PreviewDialog({
                                 <span className="text-muted-foreground">Pro Plan (Monthly)</span>
                                 <span className="font-semibold">{currencyFormatter.format(7500)}</span>
                             </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Express Delivery (Add-on)</span>
-                                <span className="font-semibold">{currencyFormatter.format(500)}</span>
-                            </div>
+                            {addons.map((addon) => (
+                                selectedAddons[addon.id] && (
+                                    <div key={addon.id} className="flex justify-between items-center">
+                                        <span className="text-muted-foreground">{addon.name}</span>
+                                        <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
+                                    </div>
+                                )
+                            ))}
                              <Separator className="my-2" />
                              <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Subtotal</span>
-                                <span className="font-semibold">{currencyFormatter.format(basePrice)}</span>
+                                <span className="font-semibold">{currencyFormatter.format(subtotal)}</span>
                             </div>
                              <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Billing Cycle Discount ({billingCycleLabel})</span>
-                                <span className="font-semibold text-primary">-{currencyFormatter.format(basePrice * discount)}</span>
+                                <span className="font-semibold text-primary">-{currencyFormatter.format(subtotal * discount)}</span>
                             </div>
                             <Separator className="my-2" />
                             <div className="flex justify-between items-center font-bold text-lg">
@@ -332,18 +348,36 @@ function TimelineItem({ icon, title, description, isLast = false }: { icon: Reac
 
 export default function ContractPage() {
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
-  const basePrice = 8000; // Pro Plan (7500) + Express Delivery (500)
+  const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
+    'express-delivery': false,
+    'emergency-support': false,
+    'multi-location': false,
+  });
 
-  const { totalAmount, discount, billingCycleLabel } = useMemo(() => {
+  const handleAddonToggle = (addonId: string) => {
+    setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
+  }
+
+  const { totalAmount, discount, billingCycleLabel, basePrice } = useMemo(() => {
+    const proPlanCost = 7500;
+    const addonsCost = addons.reduce((total, addon) => {
+        return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
+    }, 0);
+
+    const currentBasePrice = proPlanCost + addonsCost;
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
-    const discountAmount = basePrice * selectedCycle.discount;
-    const finalAmount = basePrice - discountAmount;
+    const discountAmount = currentBasePrice * selectedCycle.discount;
+    const finalAmount = currentBasePrice - discountAmount;
+    
     return {
         totalAmount: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
         discount: selectedCycle.discount,
         billingCycleLabel: selectedCycle.label,
+        basePrice: currentBasePrice,
     }
-  }, [billingCycle, basePrice]);
+  }, [billingCycle, selectedAddons]);
+
+  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
   return (
     <div className="flex flex-col gap-6">
@@ -368,6 +402,7 @@ export default function ContractPage() {
                 billingCycleLabel={billingCycleLabel}
                 discount={discount}
                 basePrice={basePrice}
+                selectedAddons={selectedAddons}
             />
         </Dialog>
       </div>
@@ -459,7 +494,12 @@ export default function ContractPage() {
                     {addons.map((addon) => (
                     <TableRow key={addon.id}>
                         <TableCell>
-                        <Checkbox id={addon.id} />
+                        <Checkbox 
+                            id={addon.id} 
+                            onCheckedChange={() => handleAddonToggle(addon.id)}
+                            checked={selectedAddons[addon.id]}
+                            disabled={addon.fee === 'Custom'}
+                        />
                         </TableCell>
                         <TableCell>
                         <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
@@ -483,10 +523,12 @@ export default function ContractPage() {
                     <span className="text-muted-foreground">Pro Plan (Monthly)</span>
                     <span className="font-semibold">₱7,500.00</span>
                 </div>
-                 <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Express Delivery</span>
-                    <span className="font-semibold">₱500.00</span>
-                </div>
+                 {addons.map(addon => selectedAddons[addon.id] && (
+                    <div key={addon.id} className="flex justify-between items-center">
+                        <span className="text-muted-foreground">{addon.name}</span>
+                        <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
+                    </div>
+                 ))}
                 <Separator />
                 <div className='space-y-2'>
                     <Label htmlFor="billing-cycle">Payment Schedule</Label>
