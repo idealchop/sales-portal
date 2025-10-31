@@ -26,10 +26,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, CheckCircle, Rocket, Computer, CalendarClock } from 'lucide-react';
+import { Download, Send, CheckCircle, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { ContractText } from '@/components/contract-text';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0 },
@@ -37,6 +39,76 @@ const billingCycles = [
   { value: 'semi-annually', label: 'Semi-Annually', discount: 0.05 },
   { value: 'annually', label: 'Annually', discount: 0.10 },
 ];
+
+const inclusions = [
+    {
+        icon: <Computer className="h-5 w-5 text-primary" />,
+        title: 'Smart Client Portal',
+        description: 'Monitor consumption, providers, deliveries, and payments in real time.',
+    },
+    {
+        icon: <CalendarClock className="h-5 w-5 text-primary" />,
+        title: 'Automated Scheduling & Delivery',
+        description: 'No manual ordering; Smart Refill handles refills automatically.',
+    },
+    {
+        icon: <RotateCw className="h-5 w-5 text-primary" />,
+        title: 'Roll-Over Liters',
+        description: 'Unused liters carry over to the next cycle.',
+    },
+    {
+        icon: <AreaChart className="h-5 w-5 text-primary" />,
+        title: 'Transparent Tracking',
+        description: 'Full visibility for operations and accounting.',
+    },
+    {
+        icon: <Thermometer className="h-5 w-5 text-primary" />,
+        title: 'Free Dispensers, Bottles & Sanitary Items',
+        description: 'Included based on your plan.',
+    },
+    {
+        icon: <Wrench className="h-5 w-5 text-primary" />,
+        title: 'Monthly Sanitation Visit',
+        description: 'Regular cleaning and compliance check for your dispensers.',
+    },
+    {
+        icon: <CircleHelp className="h-5 w-5 text-primary" />,
+        title: 'Guaranteed Water Compliance',
+        description: 'All partner stations meet strict sanitation and quality standards.',
+    },
+    {
+        icon: <Phone className="h-5 w-5 text-primary" />,
+        title: 'Customer Support',
+        description: 'Assistance available for any service or delivery concerns.',
+    },
+    {
+        icon: <Rocket className="h-5 w-5 text-primary" />,
+        title: 'Custom & Scalable Plans',
+        description: 'Adjust liters, branches, and schedules as your business grows.',
+    },
+];
+
+const addons = [
+  {
+    id: 'express-delivery',
+    name: 'Express Delivery Upgrade',
+    description: 'Priority delivery during peak hours for uninterrupted operations',
+    fee: '₱500 / month',
+  },
+  {
+    id: 'emergency-support',
+    name: '24/7 Emergency Support',
+    description: 'On-call assistance for urgent refills or technical issues',
+    fee: '₱750 / month',
+  },
+  {
+    id: 'multi-location',
+    name: 'Multi-Location Coordination',
+    description: 'Centralized scheduling, billing, and delivery management for multiple branches',
+    fee: 'Custom',
+  },
+];
+
 
 function PreviewDialog({ 
     clientName, 
@@ -208,10 +280,8 @@ export default function ContractPage() {
         return;
     }
 
-    // In a real application, you would send this data to a backend.
-    // For this prototype, we'll simulate ID generation.
     const year = new Date().getFullYear().toString().slice(-2);
-    const randomNumber = Math.floor(100000 + Math.random() * 900000); // For demonstration
+    const randomNumber = Math.floor(100000 + Math.random() * 900000); 
     const clientID = `SC${year}${randomNumber}`;
 
 
@@ -219,9 +289,6 @@ export default function ContractPage() {
         title: "Contract Finalized!",
         description: `Client ID ${clientID} has been generated. The signed contract has been saved.`,
     });
-
-    // You would typically navigate to a confirmation page or back to the dashboard.
-    // router.push('/dashboard/proposals');
   };
 
 
@@ -229,9 +296,9 @@ export default function ContractPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Contract & Signature</h1>
+          <h1 className="text-2xl font-bold">Review & Sign</h1>
           <p className="text-muted-foreground">
-            Step 5: Review and sign the agreement.
+            Step 4: Review inclusions, add-ons, and sign the agreement.
           </p>
         </div>
         <Dialog>
@@ -257,35 +324,61 @@ export default function ContractPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
             <Card>
-                 <CardHeader>
-                    <CardTitle>Service Details</CardTitle>
-                    <CardDescription>A final summary of the services, inclusions, and add-ons for the Pro Plan.</CardDescription>
+                <CardHeader>
+                    <CardTitle>Included in Every Plan</CardTitle>
+                    <CardDescription>
+                        Smart Refill gives your business a complete, automated water operations system — designed for convenience, compliance, and continuous supply.
+                    </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    <div>
-                        <h3 className="font-semibold text-foreground mb-4">Key Inclusions</h3>
-                        <div className="space-y-3">
-                             <ServiceDetailItem icon={<Computer className="h-5 w-5 text-primary" />}>
-                                <strong>Smart Client Portal:</strong> Monitor consumption, providers, deliveries, and payments in real time.
-                            </ServiceDetailItem>
-                             <ServiceDetailItem icon={<CalendarClock className="h-5 w-5 text-primary" />}>
-                                <strong>Automated Scheduling & Delivery:</strong> No manual ordering; Smart Refill handles refills automatically.
-                            </ServiceDetailItem>
-                            <ServiceDetailItem icon={<CheckCircle className="h-5 w-5 text-primary" />}>
-                                <strong>Guaranteed Water Compliance:</strong> All partner stations meet strict sanitation and quality standards.
-                            </ServiceDetailItem>
+                <CardContent className="grid gap-6 sm:grid-cols-2">
+                    {inclusions.map((item) => (
+                    <div key={item.title} className="flex items-start gap-3">
+                        <div>{item.icon}</div>
+                        <div>
+                        <h3 className="font-semibold text-sm">{item.title}</h3>
+                        <p className="text-xs text-muted-foreground">
+                            {item.description}
+                        </p>
                         </div>
                     </div>
-                     <div>
-                        <h3 className="font-semibold text-foreground mb-4">Selected Add-ons</h3>
-                         <div className="space-y-3">
-                             <ServiceDetailItem icon={<Rocket className="h-5 w-5 text-primary" />}>
-                                <strong>Express Delivery Upgrade:</strong> Priority delivery during peak hours for uninterrupted operations.
-                            </ServiceDetailItem>
-                        </div>
-                    </div>
+                    ))}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Optional Add-Ons</CardTitle>
+                    <CardDescription>
+                    Enhance your Smart Refill experience with premium service options designed to make water operations even faster, safer, and more efficient.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead>Add-On</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Monthly Fee</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {addons.map((addon) => (
+                        <TableRow key={addon.id}>
+                            <TableCell>
+                            <Checkbox id={addon.id} />
+                            </TableCell>
+                            <TableCell>
+                            <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                            </TableCell>
+                            <TableCell>{addon.description}</TableCell>
+                            <TableCell className="text-right">{addon.fee}</TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         </div>
