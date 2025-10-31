@@ -274,20 +274,6 @@ function PreviewDialog({
     )
 }
 
-function DetailItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
-    return (
-      <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          {icon}
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="font-semibold">{value}</p>
-        </div>
-      </div>
-    );
-}
-
 function TimelineItem({ icon, title, description, isLast = false }: { icon: React.ReactNode; title: string; description: string; isLast?: boolean; }) {
     return (
         <div className="relative flex-1">
@@ -373,7 +359,6 @@ export default function ContractPage() {
       </div>
 
       <div className="flex flex-col gap-6">
-
         <Card>
             <CardHeader>
                 <CardTitle>Plan Summary: Pro Plan</CardTitle>
@@ -381,11 +366,45 @@ export default function ContractPage() {
                     A summary of the selected subscription plan details.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                 <DetailItem icon={<GlassWater className="h-5 w-5" />} label="Total Liters" value="5,000 L" />
-                 <DetailItem icon={<Users className="h-5 w-5" />} label="Employees Covered" value="50 – 75" />
-                 <DetailItem icon={<Package className="h-5 w-5" />} label="Free Dispensers" value="2 Units" />
-                 <DetailItem icon={<GlassWater className="h-5 w-5" />} label="Est. Bottles" value="≈ 263 bottles" />
+            <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Liters</CardTitle>
+                            <GlassWater className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">5,000 L</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Employees Covered</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">50 – 75</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Free Dispensers</CardTitle>
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">2 Units</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Est. Bottles</CardTitle>
+                            <GlassWater className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">≈ 263 bottles</div>
+                        </CardContent>
+                    </Card>
+                </div>
             </CardContent>
         </Card>
         
@@ -557,3 +576,5 @@ export default function ContractPage() {
     </div>
   );
 }
+
+    
