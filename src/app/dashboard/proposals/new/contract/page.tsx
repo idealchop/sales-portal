@@ -97,7 +97,16 @@ const addons = [
     description: 'Increase sanitation visits to weekly for high-traffic areas.',
     fee: '₱1200 / month',
     feeValue: 1200,
+    type: 'checkbox',
   },
+  {
+    id: 'additional-dispensers',
+    name: 'Additional Dispensers',
+    description: 'Rent extra dispensers for more convenience.',
+    fee: '₱250 / month / unit',
+    feeValue: 250,
+    type: 'quantity',
+  }
 ];
 
 const additionalDispenserCost = 250;
@@ -157,7 +166,10 @@ function PreviewDialog({
     };
 
     const addonsCost = addons.reduce((total, addon) => {
-        return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
+        if (addon.type === 'checkbox') {
+             return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
+        }
+        return total;
     }, 0);
     
     const dispensersCost = additionalDispensers * additionalDispenserCost;
@@ -228,7 +240,7 @@ function PreviewDialog({
                                 <span className="font-semibold">{currencyFormatter.format(7500)}</span>
                             </div>
                             {addons.map((addon) => (
-                                selectedAddons[addon.id] && (
+                                addon.type === 'checkbox' && selectedAddons[addon.id] && (
                                     <div key={addon.id} className="flex justify-between items-center">
                                         <span className="text-muted-foreground">{addon.name}</span>
                                         <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
@@ -359,7 +371,10 @@ export default function ContractPage() {
   const { totalAmount, discount, billingCycleLabel, basePrice } = useMemo(() => {
     const proPlanCost = 7500;
     const addonsCost = addons.reduce((total, addon) => {
-        return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
+        if (addon.type === 'checkbox') {
+            return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
+        }
+        return total;
     }, 0);
     const dispensersCost = additionalDispensers * additionalDispenserCost;
 
@@ -492,25 +507,49 @@ export default function ContractPage() {
                         <TableHead className="w-[50px]"></TableHead>
                         <TableHead>Add-On</TableHead>
                         <TableHead>Description</TableHead>
+                        <TableHead className="w-[150px]">Quantity</TableHead>
                         <TableHead className="text-right">Monthly Fee</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {addons.map((addon) => (
                         <TableRow key={addon.id}>
-                            <TableCell>
-                            <Checkbox 
-                                id={addon.id} 
-                                onCheckedChange={() => handleAddonToggle(addon.id)}
-                                checked={selectedAddons[addon.id]}
-                                disabled={addon.fee === 'Custom'}
-                            />
-                            </TableCell>
-                            <TableCell>
-                            <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                            </TableCell>
-                            <TableCell>{addon.description}</TableCell>
-                            <TableCell className="text-right">{addon.fee}</TableCell>
+                             {addon.type === 'checkbox' ? (
+                                <>
+                                    <TableCell>
+                                        <Checkbox 
+                                            id={addon.id} 
+                                            onCheckedChange={() => handleAddonToggle(addon.id)}
+                                            checked={selectedAddons[addon.id]}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                                    </TableCell>
+                                    <TableCell>{addon.description}</TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell className="text-right">{addon.fee}</TableCell>
+                                </>
+                            ) : (
+                                <>
+                                    <TableCell></TableCell>
+                                    <TableCell>
+                                        <Label className="font-semibold">{addon.name}</Label>
+                                    </TableCell>
+                                    <TableCell>{addon.description}</TableCell>
+                                    <TableCell>
+                                        <Input 
+                                            id={addon.id}
+                                            type="number"
+                                            min="0"
+                                            value={additionalDispensers}
+                                            onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
+                                            className="w-24"
+                                        />
+                                    </TableCell>
+                                    <TableCell className="text-right">{addon.fee}</TableCell>
+                                </>
+                            )}
                         </TableRow>
                         ))}
                     </TableBody>
@@ -528,7 +567,7 @@ export default function ContractPage() {
                         <span className="text-muted-foreground">Pro Plan (Monthly)</span>
                         <span className="font-semibold">₱7,500.00</span>
                     </div>
-                     {addons.map(addon => selectedAddons[addon.id] && (
+                     {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
                         <div key={addon.id} className="flex justify-between items-center">
                             <span className="text-muted-foreground">{addon.name}</span>
                             <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
@@ -556,17 +595,6 @@ export default function ContractPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className='space-y-2'>
-                        <Label htmlFor="additional-dispensers">Additional Dispensers ({currencyFormatter.format(additionalDispenserCost)}/mo)</Label>
-                        <Input 
-                            id="additional-dispensers"
-                            type="number"
-                            min="0"
-                            value={additionalDispensers}
-                            onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
-                            placeholder="e.g., 1"
-                        />
-                    </div>
                      <div className="flex justify-between items-center text-lg font-bold">
                         <span>Total Due</span>
                         <span>{totalAmount}</span>
@@ -593,4 +621,3 @@ export default function ContractPage() {
     </div>
   );
 }
-
