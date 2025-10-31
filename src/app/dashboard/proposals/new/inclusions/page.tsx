@@ -19,6 +19,10 @@ import {
     CircleHelp,
     Rocket,
     Phone,
+    HeartPulse,
+    Coffee,
+    Building,
+    Car,
 } from 'lucide-react';
 
 const inclusions = [
@@ -69,6 +73,29 @@ const inclusions = [
     },
 ];
 
+const perks = [
+    {
+        icon: <HeartPulse className="h-8 w-8 text-muted-foreground" />,
+        partner: 'HealthFirst Clinic',
+        benefit: '15% discount on annual physical exams for all employees.',
+    },
+    {
+        icon: <Coffee className="h-8 w-8 text-muted-foreground" />,
+        partner: 'The Daily Grind Cafe',
+        benefit: '10% off on all bulk coffee bean orders for the office pantry.',
+    },
+    {
+        icon: <Building className="h-8 w-8 text-muted-foreground" />,
+        partner: 'FlexiSpace Co-Working',
+        benefit: 'One free day pass per month at any FlexiSpace location nationwide.',
+    },
+    {
+        icon: <Car className="h-8 w-8 text-muted-foreground" />,
+        partner: 'EcoDrive Car Service',
+        benefit: '20% discount on all corporate car wash and detailing services.',
+    }
+]
+
 export default function InclusionsPage() {
   return (
     <div className="flex flex-col gap-6">
@@ -115,6 +142,26 @@ export default function InclusionsPage() {
               Partner perks are available depending on the selected plan.
             </p>
           </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Partner Perks</CardTitle>
+            <CardDescription>
+              Exclusive benefits from our partners when you subscribe to any of our plans.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-8 sm:grid-cols-2">
+            {perks.map((perk) => (
+                <div key={perk.partner} className="flex items-start gap-4">
+                    {perk.icon}
+                    <div>
+                        <h3 className="font-semibold">{perk.partner}</h3>
+                        <p className="text-sm text-muted-foreground">{perk.benefit}</p>
+                    </div>
+                </div>
+            ))}
+          </CardContent>
         </Card>
       </div>
     </div>
