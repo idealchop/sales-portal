@@ -14,8 +14,17 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 function ContractSection({
   title,
@@ -56,8 +65,48 @@ function SignatureBlock({ signatureRef }: { signatureRef: React.RefObject<Signat
     )
 }
 
+function PreviewDialog({ clientName, clientCompany, planName, totalAmount }: { clientName: string, clientCompany: string, planName: string, totalAmount: string }) {
+    return (
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Proposal Preview</DialogTitle>
+                <DialogDescription>
+                    Review the key details of the proposal before finalizing.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Client</Label>
+                    <span className="col-span-3 font-medium">{clientName || "N/A"}</span>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Company</Label>
+                    <span className="col-span-3 font-medium">{clientCompany || "N/A"}</span>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Plan</Label>
+                    <span className="col-span-3 font-medium">{planName}</span>
+                </div>
+                <Separator />
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right font-bold">Total</Label>
+                    <span className="col-span-3 font-bold text-lg">{totalAmount}</span>
+                </div>
+            </div>
+            <DialogFooter>
+                <DialogTrigger asChild>
+                    <Button type="button">Close</Button>
+                </DialogTrigger>
+            </DialogFooter>
+        </DialogContent>
+    )
+}
+
+
 export default function ContractPage() {
   const signaturePadRef = useRef<SignaturePadRef>(null);
+  const [clientName, setClientName] = useState('');
+  const [clientCompany, setClientCompany] = useState('');
   const { toast } = useToast();
 
   const handleFinalize = () => {
@@ -72,11 +121,15 @@ export default function ContractPage() {
     }
 
     // In a real application, you would send this data to a backend.
-    console.log("Signature Data URL:", signatureDataUrl);
+    // For this prototype, we'll simulate ID generation.
+    const year = new Date().getFullYear().toString().slice(-2);
+    const randomNumber = Math.floor(100000 + Math.random() * 900000); // For demonstration
+    const clientID = `SC${year}${randomNumber}`;
+
 
     toast({
         title: "Contract Finalized!",
-        description: "The signed contract has been saved and sent.",
+        description: `Client ID ${clientID} has been generated. The signed contract has been saved.`,
     });
 
     // You would typically navigate to a confirmation page or back to the dashboard.
@@ -93,12 +146,23 @@ export default function ContractPage() {
             Step 5: Review and sign the agreement.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/proposals/new/payment">Previous</Link>
-          </Button>
-          <Button onClick={handleFinalize}>Finalize & Send</Button>
-        </div>
+        <Dialog>
+            <div className="flex gap-2">
+            <Button variant="outline" asChild>
+                <Link href="/dashboard/proposals/new/payment">Previous</Link>
+            </Button>
+            <DialogTrigger asChild>
+                <Button variant="outline">Preview</Button>
+            </DialogTrigger>
+            <Button onClick={handleFinalize}>Finalize & Send</Button>
+            </div>
+            <PreviewDialog 
+                clientName={clientName} 
+                clientCompany={clientCompany}
+                planName="Pro Plan"
+                totalAmount="₱8,000.00"
+            />
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -256,8 +320,24 @@ export default function ContractPage() {
                     <CardDescription>Please sign below to finalize the agreement.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                   <div className="space-y-8">
-                     <SignatureBlock signatureRef={signaturePadRef} />
+                   <div className="space-y-6 pt-4">
+                     <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name:</Label>
+                            <Input id="name" placeholder="Full Name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="company">Company:</Label>
+                            <Input id="company" placeholder="Company Name" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Date:</Label>
+                            <div className="w-full border-b pt-8"></div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Signature:</Label>
+                            <SignaturePad ref={signaturePadRef} />
+                        </div>
                    </div>
                 </CardContent>
             </Card>
@@ -266,3 +346,5 @@ export default function ContractPage() {
     </div>
   );
 }
+
+    
