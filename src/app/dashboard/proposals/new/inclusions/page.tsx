@@ -10,16 +10,6 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import {
     Computer,
     CalendarClock,
     RotateCw,
@@ -29,7 +19,6 @@ import {
     CircleHelp,
     Rocket,
     Phone,
-    Building2,
 } from 'lucide-react';
 
 const inclusions = [
@@ -80,21 +69,6 @@ const inclusions = [
     },
 ];
 
-const addons = [
-  {
-    id: 'weekly-sanitation',
-    name: 'Weekly Sanitation',
-    description: 'Increase sanitation visits to weekly for high-traffic areas.',
-    fee: '₱1200 / month',
-  },
-  {
-    id: 'additional-dispensers',
-    name: 'Additional Dispensers',
-    description: 'Rent extra dispensers for more convenience.',
-    fee: '₱250 / month / unit',
-  }
-];
-
 export default function InclusionsPage() {
   return (
     <div className="flex flex-col gap-6">
@@ -102,7 +76,7 @@ export default function InclusionsPage() {
         <div>
           <h1 className="text-2xl font-bold">Service Details</h1>
           <p className="text-muted-foreground">
-            Step 3: Review Inclusions & Select Add-ons
+            Step 3: Review Inclusions
           </p>
         </div>
         <div className="flex gap-2">
@@ -115,7 +89,7 @@ export default function InclusionsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Included in Every Plan</CardTitle>
@@ -141,41 +115,6 @@ export default function InclusionsPage() {
               Partner perks are available depending on the selected plan.
             </p>
           </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Optional Add-Ons</CardTitle>
-            <CardDescription>
-              Enhance your Smart Refill experience with premium service options designed to make water operations even faster, safer, and more efficient.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>Add-On</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Monthly Fee</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {addons.map((addon) => (
-                  <TableRow key={addon.id}>
-                    <TableCell>
-                      <Checkbox id={addon.id} />
-                    </TableCell>
-                    <TableCell>
-                      <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                    </TableCell>
-                    <TableCell>{addon.description}</TableCell>
-                    <TableCell className="text-right">{addon.fee}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
         </Card>
       </div>
     </div>
