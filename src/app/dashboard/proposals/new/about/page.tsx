@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
+import { RefreshCw, Globe, LayoutDashboard, ShieldCheck, Scaling } from 'lucide-react';
 
 function SmartRefillIntro() {
   return (
@@ -44,13 +45,38 @@ function SmartRefillIntro() {
             <div>
                 <h3 className="font-semibold text-foreground text-base">⚙️ What We Do</h3>
                 <p className="mt-2">Smart Refill powers your business with:</p>
-                <ul className="list-disc pl-5 space-y-1 mt-2">
-                    <li>Automated Refills – No more texts, calls, or manual orders.</li>
-                    <li>Nationwide Access – Refill anywhere in the Philippines with verified partners.</li>
-                    <li>Centralized Dashboard – Monitor water usage, billing, and deliveries in real time.</li>
-                    <li>Compliance Assurance – Every refill meets sanitation and safety standards.</li>
-                    <li>Scalable Plans – Flexible liters and billing for every business size.</li>
-                </ul>
+                <div className="space-y-4 mt-4">
+                    <div className="flex items-start gap-3">
+                        <RefreshCw className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                        <div>
+                            <span className="font-semibold text-foreground">Automated Refills</span> – No more texts, calls, or manual orders.
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3">
+                        <Globe className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                        <div>
+                            <span className="font-semibold text-foreground">Nationwide Access</span> – Refill anywhere in the Philippines with verified partners.
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3">
+                        <LayoutDashboard className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                        <div>
+                            <span className="font-semibold text-foreground">Centralized Dashboard</span> – Monitor water usage, billing, and deliveries in real time.
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3">
+                        <ShieldCheck className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                        <div>
+                            <span className="font-semibold text-foreground">Compliance Assurance</span> – Every refill meets sanitation and safety standards.
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3">
+                        <Scaling className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                        <div>
+                            <span className="font-semibold text-foreground">Scalable Plans</span> – Flexible liters and billing for every business size.
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
