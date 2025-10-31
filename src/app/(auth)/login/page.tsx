@@ -8,18 +8,9 @@ import { Logo } from '@/components/logo';
 
 export default function LoginPage() {
   return (
-    <div className="relative min-h-screen w-full">
-        <Image
-            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSales%20Mats.jpg?alt=media&token=455c3120-2c77-4163-9c30-af7f186682d9"
-            alt="Smart Refill sales team"
-            fill
-            className="object-cover"
-            data-ai-hint="sales team"
-        />
-        <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px]"></div>
-
-        <div className="relative z-10 flex min-h-screen items-center justify-start">
-            <div className="w-full max-w-md bg-white/80 backdrop-blur-md rounded-r-2xl p-8 shadow-2xl md:p-12">
+    <div className="min-h-screen w-full grid grid-cols-1 md:grid-cols-2">
+        <div className="flex items-center justify-center p-8">
+            <div className="w-full max-w-md">
                 <div className="mb-8 text-center">
                     <div className="flex justify-center mb-4">
                         <Logo />
@@ -55,6 +46,15 @@ export default function LoginPage() {
                   </p>
                 </div>
             </div>
+        </div>
+        <div className="relative hidden md:block">
+            <Image
+                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSales%20Mats.jpg?alt=media&token=455c3120-2c77-4163-9c30-af7f186682d9"
+                alt="Smart Refill sales team"
+                fill
+                className="object-cover"
+                data-ai-hint="sales team"
+            />
         </div>
     </div>
   );
