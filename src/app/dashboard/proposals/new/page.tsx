@@ -63,9 +63,9 @@ export default function NewProposalPage() {
         </Button>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden rounded-lg">
         <div className="grid md:grid-cols-2">
-          <div className="p-6 bg-primary text-primary-foreground">
+          <div className="p-6 bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
             <CardHeader className="p-0 mb-6">
               <CardTitle>Client Details</CardTitle>
               <CardDescription className="text-primary-foreground/80">
