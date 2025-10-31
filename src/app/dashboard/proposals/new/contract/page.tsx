@@ -27,7 +27,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { ContractText } from '@/components/contract-text';
@@ -298,6 +298,38 @@ function PreviewDialog({
     )
 }
 
+function DetailItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
+    return (
+      <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          {icon}
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="font-semibold">{value}</p>
+        </div>
+      </div>
+    );
+}
+
+function TimelineItem({ icon, title, description, isLast = false }: { icon: React.ReactNode, title: string, description: string, isLast?: boolean }) {
+    return (
+        <div className="flex gap-4">
+            <div className="flex flex-col items-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    {icon}
+                </div>
+                {!isLast && <div className="w-px flex-1 bg-border" />}
+            </div>
+            <div>
+                <h4 className="font-semibold">{title}</h4>
+                <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+        </div>
+    )
+}
+
+
 export default function ContractPage() {
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const basePrice = 8000; // Pro Plan (7500) + Express Delivery (500)
@@ -317,7 +349,7 @@ export default function ContractPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Review & Sign</h1>
+          <h1 className="text-2xl font-bold">Review &amp; Sign</h1>
           <p className="text-muted-foreground">
             Step 4: Review inclusions, add-ons, and sign the agreement.
           </p>
@@ -328,7 +360,7 @@ export default function ContractPage() {
                 <Link href="/dashboard/proposals/new/payment">Previous</Link>
             </Button>
             <DialogTrigger asChild>
-                <Button>Review & Sign</Button>
+                <Button>Review &amp; Sign</Button>
             </DialogTrigger>
             </div>
             <PreviewDialog 
@@ -341,27 +373,70 @@ export default function ContractPage() {
       </div>
 
       <div className="flex flex-col gap-6">
+
         <Card>
             <CardHeader>
-                <CardTitle>Included in Every Plan</CardTitle>
+                <CardTitle>Plan Summary: Pro Plan</CardTitle>
                 <CardDescription>
-                    Smart Refill gives your business a complete, automated water operations system — designed for convenience, compliance, and continuous supply.
+                    A summary of the selected subscription plan details.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-6 sm:grid-cols-2">
-                {inclusions.map((item) => (
-                <div key={item.title} className="flex items-start gap-3">
-                    <div>{item.icon}</div>
-                    <div>
-                    <h3 className="font-semibold text-sm">{item.title}</h3>
-                    <p className="text-xs text-muted-foreground">
-                        {item.description}
-                    </p>
-                    </div>
-                </div>
-                ))}
+            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                 <DetailItem icon={<GlassWater className="h-5 w-5" />} label="Total Liters" value="5,000 L" />
+                 <DetailItem icon={<Users className="h-5 w-5" />} label="Employees Covered" value="50 – 75" />
+                 <DetailItem icon={<Package className="h-5 w-5" />} label="Free Dispensers" value="2 Units" />
+                 <DetailItem icon={<GlassWater className="h-5 w-5" />} label="Est. Bottles" value="≈ 263 bottles" />
             </CardContent>
         </Card>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2">
+                <CardHeader>
+                    <CardTitle>Included in Every Plan</CardTitle>
+                    <CardDescription>
+                        Core services that come with every Smart Refill subscription.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-6 sm:grid-cols-2">
+                    {inclusions.slice(0, 8).map((item) => (
+                    <div key={item.title} className="flex items-start gap-3">
+                        <div>{item.icon}</div>
+                        <div>
+                        <h3 className="font-semibold text-sm">{item.title}</h3>
+                        <p className="text-xs text-muted-foreground">
+                            {item.description}
+                        </p>
+                        </div>
+                    </div>
+                    ))}
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
+                    <CardDescription>Key milestones for service activation.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <TimelineItem 
+                        icon={<CheckCircle className="h-4 w-4" />}
+                        title="Account Activation"
+                        description="Client portal is set up within 24 hours of signing."
+                    />
+                    <TimelineItem 
+                        icon={<CalendarCheck className="h-4 w-4" />}
+                        title="Onboarding &amp; Scheduling"
+                        description="Initial delivery schedule set within 48 hours."
+                    />
+                     <TimelineItem 
+                        icon={<Ship className="h-4 w-4" />}
+                        title="First Delivery"
+                        description="Equipment and first batch of water arrive in 3-5 business days."
+                        isLast
+                    />
+                </CardContent>
+            </Card>
+        </div>
+
 
         <Card>
             <CardHeader>
@@ -400,7 +475,7 @@ export default function ContractPage() {
         
         <Card>
             <CardHeader>
-                <CardTitle>Summary & Final Amount</CardTitle>
+                <CardTitle>Summary &amp; Final Amount</CardTitle>
                 <CardDescription>Review the final costs before signing.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -438,7 +513,3 @@ export default function ContractPage() {
     </div>
   );
 }
-
-    
-
-    
