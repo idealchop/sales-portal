@@ -54,7 +54,9 @@ export default function PaymentPage() {
           <Button variant="outline" asChild>
             <Link href="/dashboard/proposals/new/inclusions">Previous</Link>
           </Button>
-          <Button>Next Step</Button>
+          <Button asChild>
+            <Link href="/dashboard/proposals/new/generate">Next Step</Link>
+          </Button>
         </div>
       </div>
       <Card>
@@ -106,7 +108,7 @@ export default function PaymentPage() {
                 <p>GCash or Maya</p>
                 <p>Debit/Credit Card via the Smart Refill™ Platform</p>
                 <p>Corporate Billing (available for Enterprise+ clients only)</p>
-                <p className="pt-4 text-foreground">All payments must be made in Philippine Pesos (₱) and confirmed before deliveries continue or new allocations are released.</p>
+                <p className="pt-4 font-semibold text-foreground">All payments must be made in Philippine Pesos (₱) and confirmed before deliveries continue or new allocations are released.</p>
             </CardContent>
         </Card>
       </div>

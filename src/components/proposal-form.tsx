@@ -116,8 +116,8 @@ export function ProposalForm({ clients }: { clients: Client[] }) {
           <div className="lg:col-span-1 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Client Details</CardTitle>
-                <CardDescription>Provide the details needed to generate the proposal.</CardDescription>
+                <CardTitle>AI Draft Generation</CardTitle>
+                <CardDescription>Provide the details needed to generate the proposal draft.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
                 <FormField
