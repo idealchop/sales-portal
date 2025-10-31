@@ -144,6 +144,16 @@ const largePlans: Plan[] = [
         stations: '12+ Stations',
     },
     {
+        name: 'Flow Plan',
+        monthlyFee: 'Consumption-based',
+        liters: 'Unlimited',
+        bottles: '—',
+        rate: '₱3.00',
+        inclusions: 'Billed only based on consumption, real-time tracking.',
+        employees: 'Flexible',
+        stations: 'Dynamic Allocation',
+    },
+    {
         name: 'Customized',
         monthlyFee: 'Flexible',
         liters: 'Flexible',
@@ -271,7 +281,7 @@ export default function PlansPage() {
             case 'medium':
                 return <PlansTable plans={mediumPlans} defaultPlan="business" />;
             case 'large':
-                return <PlansTable plans={largePlans} defaultPlan="unlimited+" />;
+                return <PlansTable plans={largePlans} defaultPlan="flow plan" />;
             default:
                 return null;
         }
@@ -374,5 +384,3 @@ export default function PlansPage() {
     </div>
   );
 }
-
-    
