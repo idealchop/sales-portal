@@ -127,8 +127,8 @@ export default function NewProposalPage() {
                   placeholder="e.g., 50"
                 />
                 <InputField
-                  id="bottles"
-                  label="Estimated Bottles per Month"
+                  id="gallons"
+                  label="Estimated gallons per month"
                   type="number"
                   icon={<GlassWater className="h-4 w-4 text-muted-foreground" />}
                   placeholder="e.g., 100"
