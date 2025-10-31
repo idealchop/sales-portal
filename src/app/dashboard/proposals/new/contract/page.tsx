@@ -411,7 +411,7 @@ export default function ContractPage() {
         </div>
         <div className="flex gap-2">
             <Button variant="outline" asChild>
-                <Link href="/dashboard/proposals/new/payment">Previous</Link>
+                <Link href="/dashboard/proposals/new/inclusions">Previous</Link>
             </Button>
             <Button onClick={handleSaveProposal}>
                 <Save className="mr-2 h-4 w-4" />
@@ -627,4 +627,5 @@ export default function ContractPage() {
   );
 }
 
+    
     
