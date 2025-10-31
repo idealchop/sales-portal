@@ -28,7 +28,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, Save, Bot } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, Bot, Save } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { ContractText } from '@/components/contract-text';
@@ -40,54 +40,6 @@ const billingCycles = [
   { value: 'quarterly', label: 'Quarterly', discount: 0.03 },
   { value: 'semi-annually', label: 'Semi-Annually', discount: 0.05 },
   { value: 'annually', label: 'Annually', discount: 0.10 },
-];
-
-const inclusions = [
-    {
-        icon: <Computer className="h-5 w-5 text-primary" />,
-        title: 'Smart Client Portal',
-        description: 'Monitor consumption, providers, deliveries, and payments in real time.',
-    },
-    {
-        icon: <CalendarClock className="h-5 w-5 text-primary" />,
-        title: 'Automated Scheduling & Delivery',
-        description: 'No manual ordering; Smart Refill handles refills automatically.',
-    },
-    {
-        icon: <RotateCw className="h-5 w-5 text-primary" />,
-        title: 'Roll-Over Liters',
-        description: 'Unused liters carry over to the next cycle.',
-    },
-    {
-        icon: <AreaChart className="h-5 w-5 text-primary" />,
-        title: 'Transparent Tracking',
-        description: 'Full visibility for operations and accounting.',
-    },
-    {
-        icon: <Thermometer className="h-5 w-5 text-primary" />,
-        title: 'Free Dispensers, Bottles & Sanitary Items',
-        description: 'Included based on your plan.',
-    },
-    {
-        icon: <Wrench className="h-5 w-5 text-primary" />,
-        title: 'Monthly Sanitation Visit',
-        description: 'Regular cleaning and compliance check for your dispensers.',
-    },
-    {
-        icon: <CircleHelp className="h-5 w-5 text-primary" />,
-        title: 'Guaranteed Water Compliance',
-        description: 'All partner stations meet strict sanitation and quality standards.',
-    },
-    {
-        icon: <Phone className="h-5 w-5 text-primary" />,
-        title: 'Customer Support',
-        description: 'Assistance available for any service or delivery concerns.',
-    },
-    {
-        icon: <Rocket className="h-5 w-5 text-primary" />,
-        title: 'Custom & Scalable Plans',
-        description: 'Adjust liters, branches, and schedules as your business grows.',
-    },
 ];
 
 const addons = [
@@ -438,27 +390,6 @@ export default function ContractPage() {
         </Card>
         
         <div className="w-full flex flex-col gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Included in Every Plan</CardTitle>
-                    <CardDescription>
-                        Core services that come with every Smart Refill subscription.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-6 sm:grid-cols-2">
-                    {inclusions.slice(0, 8).map((item) => (
-                    <div key={item.title} className="flex items-start gap-3">
-                        <div>{item.icon}</div>
-                        <div>
-                        <h3 className="font-semibold text-sm">{item.title}</h3>
-                        <p className="text-xs text-muted-foreground">
-                            {item.description}
-                        </p>
-                        </div>
-                    </div>
-                    ))}
-                </CardContent>
-            </Card>
             <Card>
                 <CardHeader>
                     <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
