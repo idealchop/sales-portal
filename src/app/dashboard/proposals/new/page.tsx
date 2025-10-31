@@ -13,7 +13,7 @@ import {
   Mail,
   Phone,
   Users,
-  Bottle,
+  GlassWater,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -173,7 +173,7 @@ export default function NewProposalPage() {
               id="bottles"
               label="Estimated Bottles per Month"
               type="number"
-              icon={<Bottle className="h-4 w-4 text-muted-foreground" />}
+              icon={<GlassWater className="h-4 w-4 text-muted-foreground" />}
               placeholder="e.g., 100"
             />
           </CardContent>
