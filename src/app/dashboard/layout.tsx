@@ -40,10 +40,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <DashboardSidebar />
-      <SidebarInset className="flex flex-col">
+      <div className="flex flex-col flex-1">
         <DashboardHeader />
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">{children}</main>
-      </SidebarInset>
+      </div>
     </SidebarProvider>
   );
 }
