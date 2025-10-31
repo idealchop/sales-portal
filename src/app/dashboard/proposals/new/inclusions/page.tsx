@@ -97,13 +97,13 @@ export default function InclusionsPage() {
                 Smart Refill gives your business a complete, automated water operations system — designed for convenience, compliance, and continuous supply.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="grid gap-6 sm:grid-cols-2">
             {inclusions.map((item) => (
-              <div key={item.title} className="flex items-start gap-4">
+              <div key={item.title} className="flex items-start gap-3">
                 <div>{item.icon}</div>
                 <div>
-                  <h3 className="font-semibold">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-sm">{item.title}</h3>
+                  <p className="text-xs text-muted-foreground">
                     {item.description}
                   </p>
                 </div>
