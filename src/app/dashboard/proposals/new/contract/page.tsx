@@ -326,6 +326,8 @@ export default function ContractPage() {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
   }
 
+  const estimatedBottles = Math.round((5000 + additionalLiters) / 19);
+
   const { totalAmount, discount, billingCycleLabel, basePrice } = useMemo(() => {
     const proPlanCost = 7500;
     const addonsCost = addons.reduce((total, addon) => {
@@ -359,7 +361,6 @@ export default function ContractPage() {
     });
   }
   
-  const estimatedBottles = Math.round((5000 + additionalLiters) / 19);
 
   return (
     <div className="flex flex-col gap-6">
@@ -546,9 +547,9 @@ export default function ContractPage() {
                             <span className="font-semibold">₱7,500.00</span>
                         </div>
                          <ul className="text-xs text-muted-foreground mt-1 list-disc pl-5">
-                            <li>5,000L water</li>
+                            <li>{5000 + additionalLiters}L water</li>
                             <li>2 free dispensers</li>
-                            <li>~263 bottles</li>
+                            <li>≈{estimatedBottles} bottles</li>
                             <li>Free delivery</li>
                         </ul>
                     </div>
@@ -614,4 +615,5 @@ export default function ContractPage() {
   );
 }
 
+    
     
