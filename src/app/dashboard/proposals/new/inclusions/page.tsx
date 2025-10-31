@@ -162,6 +162,11 @@ export default function InclusionsPage() {
                 </div>
             ))}
           </CardContent>
+           <CardFooter>
+            <p className="text-sm text-muted-foreground">
+                Terms: All employees of the subscribed company are eligible for these perks. To redeem, employees must present their company ID at partner establishments.
+            </p>
+          </CardFooter>
         </Card>
       </div>
     </div>
