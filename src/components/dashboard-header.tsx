@@ -40,14 +40,21 @@ export function DashboardHeader() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="overflow-hidden rounded-full">
-            <Avatar>
-                <AvatarImage src="https://picsum.photos/seed/avatar/32/32" alt="User Avatar" />
+            <Avatar className="h-9 w-9">
+                <AvatarImage src="https://picsum.photos/seed/avatar/36/36" alt="User Avatar" />
                 <AvatarFallback>SA</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">Sandra Adams</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                        sandra.adams@example.com
+                    </p>
+                </div>
+            </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>Settings</DropdownMenuItem>
           <DropdownMenuItem>Support</DropdownMenuItem>
