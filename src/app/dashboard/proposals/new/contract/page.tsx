@@ -332,7 +332,6 @@ export default function ContractPage() {
             </DialogTrigger>
             </div>
             <PreviewDialog 
-                planName="Pro Plan"
                 totalAmount={totalAmount}
                 billingCycleLabel={billingCycleLabel}
                 discount={discount}
@@ -341,107 +340,105 @@ export default function ContractPage() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Included in Every Plan</CardTitle>
-                    <CardDescription>
-                        Smart Refill gives your business a complete, automated water operations system — designed for convenience, compliance, and continuous supply.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-6 sm:grid-cols-2">
-                    {inclusions.map((item) => (
-                    <div key={item.title} className="flex items-start gap-3">
-                        <div>{item.icon}</div>
-                        <div>
-                        <h3 className="font-semibold text-sm">{item.title}</h3>
-                        <p className="text-xs text-muted-foreground">
-                            {item.description}
-                        </p>
-                        </div>
+      <div className="flex flex-col gap-6">
+        <Card>
+            <CardHeader>
+                <CardTitle>Included in Every Plan</CardTitle>
+                <CardDescription>
+                    Smart Refill gives your business a complete, automated water operations system — designed for convenience, compliance, and continuous supply.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 sm:grid-cols-2">
+                {inclusions.map((item) => (
+                <div key={item.title} className="flex items-start gap-3">
+                    <div>{item.icon}</div>
+                    <div>
+                    <h3 className="font-semibold text-sm">{item.title}</h3>
+                    <p className="text-xs text-muted-foreground">
+                        {item.description}
+                    </p>
                     </div>
+                </div>
+                ))}
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Optional Add-Ons</CardTitle>
+                <CardDescription>
+                Enhance your Smart Refill experience with premium service options designed to make water operations even faster, safer, and more efficient.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>Add-On</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Monthly Fee</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {addons.map((addon) => (
+                    <TableRow key={addon.id}>
+                        <TableCell>
+                        <Checkbox id={addon.id} />
+                        </TableCell>
+                        <TableCell>
+                        <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                        </TableCell>
+                        <TableCell>{addon.description}</TableCell>
+                        <TableCell className="text-right">{addon.fee}</TableCell>
+                    </TableRow>
                     ))}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Optional Add-Ons</CardTitle>
-                    <CardDescription>
-                    Enhance your Smart Refill experience with premium service options designed to make water operations even faster, safer, and more efficient.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead className="w-[50px]"></TableHead>
-                        <TableHead>Add-On</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Monthly Fee</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {addons.map((addon) => (
-                        <TableRow key={addon.id}>
-                            <TableCell>
-                            <Checkbox id={addon.id} />
-                            </TableCell>
-                            <TableCell>
-                            <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                            </TableCell>
-                            <TableCell>{addon.description}</TableCell>
-                            <TableCell className="text-right">{addon.fee}</TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
-
-        <div className="lg:col-span-1 space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Summary & Final Amount</CardTitle>
-                    <CardDescription>Review the final costs before signing.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Pro Plan (Monthly)</span>
-                        <span className="font-semibold">₱7,500.00</span>
-                    </div>
-                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Express Delivery</span>
-                        <span className="font-semibold">₱500.00</span>
-                    </div>
-                    <Separator />
-                    <div className='space-y-2'>
-                        <Label htmlFor="billing-cycle">Payment Schedule</Label>
-                         <Select value={billingCycle} onValueChange={setBillingCycle}>
-                            <SelectTrigger id="billing-cycle">
-                                <SelectValue placeholder="Select a cycle" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {billingCycles.map((cycle) => (
-                                    <SelectItem key={cycle.value} value={cycle.value}>
-                                        {cycle.label} ({cycle.discount * 100}% discount)
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                     <div className="flex justify-between items-center text-lg font-bold">
-                        <span>Total Due</span>
-                        <span>{totalAmount}</span>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle>Summary & Final Amount</CardTitle>
+                <CardDescription>Review the final costs before signing.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Pro Plan (Monthly)</span>
+                    <span className="font-semibold">₱7,500.00</span>
+                </div>
+                 <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Express Delivery</span>
+                    <span className="font-semibold">₱500.00</span>
+                </div>
+                <Separator />
+                <div className='space-y-2'>
+                    <Label htmlFor="billing-cycle">Payment Schedule</Label>
+                     <Select value={billingCycle} onValueChange={setBillingCycle}>
+                        <SelectTrigger id="billing-cycle">
+                            <SelectValue placeholder="Select a cycle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {billingCycles.map((cycle) => (
+                                <SelectItem key={cycle.value} value={cycle.value}>
+                                    {cycle.label} ({cycle.discount * 100}% discount)
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div className="flex justify-between items-center text-lg font-bold">
+                    <span>Total Due</span>
+                    <span>{totalAmount}</span>
+                </div>
+            </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
+
+    
 
     
