@@ -543,9 +543,12 @@ export default function ContractPage() {
                             <span className="text-muted-foreground">Pro Plan (Monthly)</span>
                             <span className="font-semibold">₱7,500.00</span>
                         </div>
-                         <p className="text-xs text-muted-foreground mt-1">
-                            5,000L water, 2 free dispensers, ~263 bottles, free delivery
-                        </p>
+                         <ul className="text-xs text-muted-foreground mt-1 list-disc pl-5">
+                            <li>5,000L water</li>
+                            <li>2 free dispensers</li>
+                            <li>~263 bottles</li>
+                            <li>Free delivery</li>
+                        </ul>
                     </div>
                      {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
                         <div key={addon.id} className="flex justify-between items-center">
