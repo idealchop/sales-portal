@@ -28,7 +28,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, PlusCircleIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { ContractText } from '@/components/contract-text';
@@ -104,6 +104,13 @@ const addons = [
     description: 'On-call assistance for urgent refills or technical issues',
     fee: '₱750 / month',
     feeValue: 750,
+  },
+  {
+    id: 'weekly-sanitation',
+    name: 'Weekly Sanitation',
+    description: 'Increase sanitation visits to weekly for high-traffic areas.',
+    fee: '₱1200 / month',
+    feeValue: 1200,
   },
   {
     id: 'multi-location',
@@ -351,6 +358,7 @@ export default function ContractPage() {
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
     'express-delivery': false,
     'emergency-support': false,
+    'weekly-sanitation': false,
     'multi-location': false,
   });
 
@@ -555,3 +563,5 @@ export default function ContractPage() {
     </div>
   );
 }
+
+    
