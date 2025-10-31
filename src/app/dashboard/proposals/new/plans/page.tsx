@@ -124,7 +124,7 @@ const largePlans: Plan[] = [
         stations: 'Dynamic Allocation (Multiple Stations)',
     },
     {
-        name: 'Enterprise 75k',
+        name: 'Enterprise 75',
         monthlyFee: '₱75,000',
         liters: '40,000 L',
         bottles: '≈ 2,105 bottles',
@@ -134,7 +134,7 @@ const largePlans: Plan[] = [
         stations: '8+ Stations',
     },
     {
-        name: 'Enterprise 100k',
+        name: 'Enterprise 100',
         monthlyFee: '₱100,000',
         liters: '60,000 L',
         bottles: '≈ 3,158 bottles',
