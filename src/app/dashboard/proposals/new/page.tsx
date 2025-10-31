@@ -1,12 +1,4 @@
 
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   User,
   Building,
@@ -36,7 +28,7 @@ function InputField({
 } & React.ComponentProps<typeof Input>) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="text-primary-foreground">{label}</Label>
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
           {icon}
@@ -50,29 +42,22 @@ function InputField({
 
 export default function NewProposalPage() {
   return (
-    <div className="flex flex-col gap-6">
-       <div className="flex items-center justify-between">
-        <div>
-            <h1 className="text-2xl font-bold">Create a New Proposal</h1>
-            <p className="text-muted-foreground">
-                Step 1: Enter Client Information
-            </p>
+    <div className="relative flex min-h-[calc(100vh-10rem)] flex-col justify-between">
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div>
+              <h1 className="text-2xl font-bold">Create a New Proposal</h1>
+              <p className="text-muted-foreground">
+                  Step 1: Enter Client Information
+              </p>
+          </div>
+          <Button asChild>
+            <Link href="/dashboard/proposals/new/about">Next Step</Link>
+          </Button>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/proposals/new/about">Next Step</Link>
-        </Button>
-      </div>
 
-      <Card className="overflow-hidden rounded-lg">
-        <div className="grid md:grid-cols-2">
-          <div className="p-6 bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
-            <CardHeader className="p-0 mb-6">
-              <CardTitle>Client Details</CardTitle>
-              <CardDescription className="text-primary-foreground/80">
-                Enter the prospective client's information. This will be used to tailor the proposal.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 space-y-4">
+        <div className="p-6 md:p-8 rounded-lg bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground shadow-lg">
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputField
                   id="company-name"
@@ -105,7 +90,7 @@ export default function NewProposalPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="industry">Type of Industry</Label>
+                    <Label htmlFor="industry" className="text-primary-foreground">Type of Industry</Label>
                     <div className="relative">
                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
@@ -149,19 +134,18 @@ export default function NewProposalPage() {
                   placeholder="e.g., 100"
                 />
               </div>
-            </CardContent>
+            </div>
           </div>
-          <div className="hidden md:block relative">
-              <Image 
-                  src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FRefillBusiness_Markets.png?alt=media&token=a309ddb1-0953-4be7-ac29-02c252f6830d"
-                  alt="Smart Refill Markets"
-                  fill
-                  className="object-cover"
-                  data-ai-hint="business markets"
-              />
-          </div>
-        </div>
-      </Card>
+      </div>
+      <div className="pointer-events-none absolute bottom-0 left-0 w-full h-1/2">
+        <Image
+          src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FBG_Web_v2.png?alt=media&token=4f891401-7239-4cc8-8dc1-2ff80163885a"
+          alt="background"
+          layout="fill"
+          objectFit="contain"
+          objectPosition="bottom"
+        />
+      </div>
     </div>
   );
 }
