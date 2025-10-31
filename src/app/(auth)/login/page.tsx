@@ -52,7 +52,7 @@ export default function LoginPage() {
                 src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSales_Mats_v3.png?alt=media&token=5e2fc62e-0082-4c37-9078-e1cf5e188635"
                 alt="Smart Refill sales team"
                 fill
-                className="object-cover"
+                className="object-contain"
                 data-ai-hint="sales team"
             />
         </div>
