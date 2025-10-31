@@ -143,6 +143,7 @@ export default function NewProposalPage() {
               layout="fill"
               objectFit="cover"
               objectPosition="bottom"
+              className="rounded-b-lg"
             />
           </div>
         </div>
