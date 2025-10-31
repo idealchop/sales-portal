@@ -35,7 +35,7 @@ export function DashboardNav() {
             isActive={pathname === item.href}
             tooltip={{ children: item.label }}
             variant="default"
-            className="text-sidebar-foreground/70 hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
+            className="text-sidebar-foreground/70 hover:text-sidebar-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
           >
             <Link href={item.href}>
               <item.icon />
