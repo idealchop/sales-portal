@@ -393,7 +393,7 @@ function PlansGrid({
     };
 
     let gridColsClass = 'lg:grid-cols-3';
-    if (businessSize === 'sme') {
+    if (businessSize === 'sme' || businessSize === 'commercial') {
         gridColsClass = 'md:grid-cols-2 lg:grid-cols-2';
     }
      if (businessSize === 'corporate') {
@@ -898,3 +898,5 @@ export default function PlansPage() {
     );
 }
 
+
+    
