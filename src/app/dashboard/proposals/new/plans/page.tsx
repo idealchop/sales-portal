@@ -266,7 +266,8 @@ const flowPlans: Plan[] = [
 
 export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...flowPlans];
 
-type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'flow';
+type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'enterprise';
+type EnterpriseType = 'customized' | 'flowing';
 
 
 const deliveryFrequencies = [
@@ -391,7 +392,7 @@ function PlansGrid({
         return `~${Math.round(estimatedEmployees / 10) * 10}`;
     };
 
-    const gridColsClass = businessSize === 'corporate' || businessSize === 'flow' ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
+    const gridColsClass = businessSize === 'corporate' || businessSize === 'enterprise' ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
 
     return (
     <RadioGroup
@@ -401,7 +402,7 @@ function PlansGrid({
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
-        const isCustom = businessSize === 'flow' && (plan.id === 'enterprise-customized');
+        const isCustom = businessSize === 'enterprise' && (plan.id === 'enterprise-customized');
         const isDisabled = plan.id === 'enterprise-overflow';
 
         let employees = plan.employees;
@@ -415,7 +416,6 @@ function PlansGrid({
         const cardContent = (
             <Label 
                 htmlFor={plan.id} 
-                key={plan.id} 
                 className={cn(
                     "cursor-pointer h-full", 
                     isCustom && "md:col-span-2",
@@ -543,7 +543,7 @@ const businessSizes = [
         },
     },
     { 
-        id: 'flow' as BusinessSize, 
+        id: 'enterprise' as BusinessSize, 
         title: 'Enterprise', 
         description: 'Customize and pay based on consumption.', 
         image: {
@@ -552,6 +552,27 @@ const businessSizes = [
             imageHint: "data flow"
         },
     },
+];
+
+const enterpriseTypes = [
+    {
+        id: 'customized' as EnterpriseType,
+        title: 'Customized Plan',
+        description: 'Tailored for predictable, prepaid enterprise solutions.',
+        image: {
+            imageUrl: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGFncmVlbWVudHxlbnwwfHx8fDE3NjE5NzYyNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+            imageHint: 'business agreement',
+        }
+    },
+    {
+        id: 'flowing' as EnterpriseType,
+        title: 'Flowing Plan',
+        description: 'For pure usage-based, pay-as-you-go enterprise clients.',
+        image: {
+            imageUrl: 'https://images.unsplash.com/photo-1629904853716-f0bc64219b1f?ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwYXltZW50JTIwZmxvd3xlbnwwfHx8fDE3NjE5NzYyNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+            imageHint: 'payment flow',
+        }
+    }
 ];
 
 function BusinessSizeSelector({
@@ -602,21 +623,73 @@ function BusinessSizeSelector({
     );
 }
 
+function EnterpriseTypeSelector({
+    selectedType,
+    onSelectType,
+}: {
+    selectedType: EnterpriseType | null;
+    onSelectType: (type: EnterpriseType) => void;
+}) {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             {enterpriseTypes.map((type) => (
+                <Card
+                    key={type.id}
+                    onClick={() => onSelectType(type.id)}
+                    className={cn(
+                        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 overflow-hidden flex flex-col',
+                        selectedType === type.id ? 'border-primary shadow-lg border-2' : ''
+                    )}
+                >
+                    {type.image && (
+                         <div className="relative aspect-video">
+                            <Image
+                                src={type.image.imageUrl}
+                                alt={type.image.description}
+                                fill
+                                className="object-cover"
+                                data-ai-hint={type.image.imageHint}
+                            />
+                        </div>
+                    )}
+                    <CardHeader className="flex-1">
+                        <div>
+                            <CardTitle>{type.title}</CardTitle>
+                            <CardDescription>{type.description}</CardDescription>
+                        </div>
+                    </CardHeader>
+                </Card>
+            ))}
+        </div>
+    );
+}
+
 
 export default function PlansPage() {
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
+    const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [customCalculatedValues, setCustomCalculatedValues] = useState<{ totalLiters: number } | null>(null);
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
-        if (size === 'flow') {
-            setSelectedPlan('enterprise-customized');
+        setSelectedEnterpriseType(null); // Reset enterprise type
+        if (size === 'enterprise') {
+            setSelectedPlan(null);
         } else {
             setSelectedPlan(null); // Reset plan selection when size changes
         }
         setCustomCalculatedValues(null);
     };
+
+    const handleEnterpriseTypeSelect = (type: EnterpriseType) => {
+        setSelectedEnterpriseType(type);
+        if (type === 'customized') {
+            setSelectedPlan('enterprise-customized');
+        } else if (type === 'flowing') {
+            setSelectedPlan('enterprise-overflow');
+        }
+    }
 
     const handlePlanSelect = (planId: string) => {
         const plan = allPlans.find(p => p.id === planId);
@@ -626,31 +699,45 @@ export default function PlansPage() {
     const handleCustomCalculated = useCallback((values: { totalLiters: number }) => {
         setCustomCalculatedValues(values);
     }, []);
+
+    const resetSelection = () => {
+        setSelectedSize(null);
+        setSelectedEnterpriseType(null);
+        setSelectedPlan(null);
+    }
     
     const renderPlans = () => {
         let plansToRender: Plan[] = [];
         let defaultPlanId = '';
 
-        switch (selectedSize) {
-            case 'sme':
-                plansToRender = smePlans;
-                defaultPlanId = 'professional';
-                break;
-            case 'commercial':
-                plansToRender = commercialPlans;
-                defaultPlanId = 'pro';
-                break;
-            case 'corporate':
-                plansToRender = corporatePlans;
-                defaultPlanId = 'enterprise-plus';
-                break;
-            case 'flow':
-                plansToRender = flowPlans;
-                defaultPlanId = 'enterprise-customized';
-                break;
-            default:
-                return null;
+        if (selectedSize === 'enterprise' && selectedEnterpriseType) {
+            if (selectedEnterpriseType === 'customized') {
+                 plansToRender = [flowPlans.find(p => p.id === 'enterprise-customized')!];
+                 defaultPlanId = 'enterprise-customized';
+            } else if (selectedEnterpriseType === 'flowing') {
+                plansToRender = [flowPlans.find(p => p.id === 'enterprise-overflow')!];
+                defaultPlanId = 'enterprise-overflow';
+            }
+        } else {
+            switch (selectedSize) {
+                case 'sme':
+                    plansToRender = smePlans;
+                    defaultPlanId = 'professional';
+                    break;
+                case 'commercial':
+                    plansToRender = commercialPlans;
+                    defaultPlanId = 'pro';
+                    break;
+                case 'corporate':
+                    plansToRender = corporatePlans;
+                    defaultPlanId = 'enterprise-plus';
+                    break;
+                default:
+                    return null;
+            }
         }
+
+        if (!plansToRender.length) return null;
 
         return <PlansGrid 
                     plans={plansToRender} 
@@ -695,9 +782,9 @@ export default function PlansPage() {
                         </CardDescription>
                     </div>
                     {selectedSize && (
-                        <Button variant="outline" onClick={() => { setSelectedSize(null); setSelectedPlan(null); }}>
-                        <RefreshCcw className="mr-2 h-4 w-4" />
-                        Change
+                        <Button variant="outline" onClick={resetSelection}>
+                            <RefreshCcw className="mr-2 h-4 w-4" />
+                            Change
                         </Button>
                     )}
                 </div>
@@ -713,13 +800,21 @@ export default function PlansPage() {
                     </div>
                     {selectedSize && (
                         <div className="lg:col-span-2">
-                            <Card>
+                             <Card>
                                 <CardHeader>
-                                    <CardTitle>2. Choose a Plan</CardTitle>
-                                    <CardDescription>Select the best plan for your client from the options below.</CardDescription>
+                                    <CardTitle>
+                                        {selectedSize === 'enterprise' ? '2. Select Enterprise Type' : '2. Choose a Plan'}
+                                    </CardTitle>
+                                     <CardDescription>
+                                        {selectedSize === 'enterprise' ? 'Select the type of enterprise plan needed.' : 'Select the best plan for your client from the options below.'}
+                                    </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {renderPlans()}
+                                    {selectedSize === 'enterprise' && !selectedEnterpriseType ? (
+                                        <EnterpriseTypeSelector selectedType={selectedEnterpriseType} onSelectType={handleEnterpriseTypeSelect} />
+                                    ) : (
+                                        renderPlans()
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
@@ -788,6 +883,3 @@ export default function PlansPage() {
         </div>
     );
 }
-
-
-    
