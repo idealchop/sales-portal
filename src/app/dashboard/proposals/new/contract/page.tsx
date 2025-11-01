@@ -29,12 +29,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, Bot, Save } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
+import Image from 'next/image';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0 },
@@ -142,26 +143,30 @@ const inclusions = [
 
 const perks = [
     {
-        icon: <HeartPulse className="h-8 w-8 text-muted-foreground" />,
+        logoUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FPartner%20Logos%2FHealthFirst_Logo.png?alt=media&token=c1529141-83b3-496a-8d19-335c4641951f',
         partner: 'HealthFirst Clinic',
+        details: 'A leading network of multi-specialty medical clinics offering comprehensive healthcare services. They are dedicated to providing accessible and high-quality outpatient care with modern facilities and a team of experienced medical professionals.',
         benefit: '15% discount on annual physical exams for all employees.',
     },
     {
-        icon: <Coffee className="h-8 w-8 text-muted-foreground" />,
+        logoUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FPartner%20Logos%2FTheDailyGrind_Logo.png?alt=media&token=a6883a48-8ec0-4a87-849c-f23c915f013b',
         partner: 'The Daily Grind Cafe',
+        details: 'A specialty coffee shop that prides itself on sourcing premium beans and crafting the perfect brew. They offer a cozy ambiance for coffee lovers and a selection of pastries and snacks to complement their beverages.',
         benefit: '10% off on all bulk coffee bean orders for the office pantry.',
     },
     {
-        icon: <Building className="h-8 w-8 text-muted-foreground" />,
+        logoUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FPartner%20Logos%2FFlexiSpace_Logo.png?alt=media&token=963e6399-6f91-49b5-9f5b-5f3333333333',
         partner: 'FlexiSpace Co-Working',
+        details: 'A dynamic co-working provider that offers flexible and modern office solutions for freelancers, startups, and enterprises. Their spaces are designed to foster collaboration and productivity with high-speed internet and premium amenities.',
         benefit: 'One free day pass per month at any FlexiSpace location nationwide.',
     },
     {
-        icon: <Car className="h-8 w-8 text-muted-foreground" />,
+        logoUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FPartner%20Logos%2FEcoDrive_Logo.png?alt=media&token=d378e9b6-8e52-4fe2-9b2f-76a0a0333333',
         partner: 'EcoDrive Car Service',
+        details: 'An eco-friendly car care company that provides water-saving car wash and detailing services. They use biodegradable products and innovative techniques to deliver a premium finish while minimizing environmental impact.',
         benefit: '20% discount on all corporate car wash and detailing services.',
     }
-]
+];
 
 function ContractSection({
   title,
@@ -492,12 +497,13 @@ function PreviewDialog({
                             <CardTitle>Partner Perks</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-8 sm:grid-cols-2">
-                            {perks.map((perk) => (
+                           {perks.map((perk) => (
                                 <div key={perk.partner} className="flex items-start gap-4">
-                                    {perk.icon}
+                                    <Image src={perk.logoUrl} alt={`${perk.partner} logo`} width={48} height={48} className="rounded-md object-contain h-12 w-12" />
                                     <div>
                                         <h3 className="font-semibold">{perk.partner}</h3>
-                                        <p className="text-sm text-muted-foreground">{perk.benefit}</p>
+                                        <p className="text-sm text-muted-foreground mt-1">{perk.details}</p>
+                                        <p className="text-sm font-semibold text-primary mt-2">{perk.benefit}</p>
                                     </div>
                                 </div>
                             ))}
@@ -880,7 +886,7 @@ export default function ContractPage() {
         </div>
 
         <div className="grid gap-6">
-            <Card>
+            <Card className='col-span-full'>
                 <CardHeader>
                 <CardTitle>Flexible Payment Schedules</CardTitle>
                 <CardDescription>
