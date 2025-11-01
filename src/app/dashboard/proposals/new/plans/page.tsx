@@ -256,10 +256,10 @@ const flowPlans: Plan[] = [
     {
         id: 'enterprise-overflow',
         name: 'Enterprise Overflow',
-        monthlyFee: 'Usage-Based',
-        liters: 'No cap',
+        monthlyFee: '₱50,000',
+        liters: 'Usage-Based',
         refillFrequency: 'On-demand',
-        inclusions: ['Pay only for what you use', 'Ideal for unpredictable consumption', 'Minimum of ₱50,000/month'],
+        inclusions: ['Initial top-up of ₱50,000.', 'Pay only for what you use.', 'Ideal for unpredictable consumption.'],
         employees: '—',
         stations: '—',
     }
@@ -287,12 +287,16 @@ function CustomPlanCalculator({
     title = 'Custom Plan Calculator',
     description = 'Calculate a custom plan based on your client\'s needs.',
     minimumCost = 0,
+    isFixedPrice = false,
+    fixedPrice = 0,
 }: {
     pricePerLiter?: number;
     onCalculated: (values: { totalLiters: number, totalCost: number }) => void;
     title?: string;
     description?: string;
     minimumCost?: number;
+    isFixedPrice?: boolean;
+    fixedPrice?: number;
 }) {
     const [bottles, setBottles] = useState(10);
     const [deliveries, setDeliveries] = useState(1);
@@ -300,9 +304,9 @@ function CustomPlanCalculator({
 
     const { totalLiters, totalCost } = useMemo(() => {
         const liters = bottles * deliveries * 4 * litersPerBottle;
-        const cost = liters * pricePerLiter;
-        return { totalLiters: liters, totalCost: cost };
-    }, [bottles, deliveries, pricePerLiter]);
+        const cost = isFixedPrice ? fixedPrice : liters * pricePerLiter;
+        return { totalLiters: liters, totalCost: cost ?? 0 };
+    }, [bottles, deliveries, pricePerLiter, isFixedPrice, fixedPrice]);
 
     useEffect(() => {
         onCalculated({ totalLiters, totalCost });
@@ -343,27 +347,29 @@ function CustomPlanCalculator({
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
                      <div className="flex justify-between items-center">
-                        <span className="text-primary-foreground/80">Total Liters per Month</span>
+                        <span className="text-primary-foreground/80">Est. Liters per Month</span>
                         <span className="font-bold">{totalLiters.toLocaleString()} L</span>
                     </div>
                     <Separator className="bg-primary-foreground/20" />
-                    <div className="flex justify-between items-center">
-                        <span className="text-primary-foreground/80">Price per Liter</span>
-                        <span className="font-semibold">{currencyFormatter.format(pricePerLiter)}</span>
-                    </div>
+                    {!isFixedPrice && (
+                        <div className="flex justify-between items-center">
+                            <span className="text-primary-foreground/80">Price per Liter</span>
+                            <span className="font-semibold">{currencyFormatter.format(pricePerLiter)}</span>
+                        </div>
+                    )}
                      <div className="flex justify-between items-center">
-                        <span className="font-bold">Estimated Monthly Cost</span>
+                        <span className="font-bold">{isFixedPrice ? 'Top-Up Amount' : 'Estimated Monthly Cost'}</span>
                         <span className="font-bold text-lg">{currencyFormatter.format(totalCost)}</span>
                     </div>
                     {minimumCost > 0 && (
                         <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
                             'mt-4', 
                             isMinimumMet 
-                                ? 'bg-green-500/10 border-green-500/30 text-green-300' 
-                                : 'bg-red-900 border-red-500/50 text-red-200'
+                                ? 'bg-green-500/20 border-green-500/40 text-green-200' 
+                                : 'bg-red-900/80 border-red-500/60 text-red-200'
                         )}>
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle className={cn(!isMinimumMet && 'text-red-100 font-bold')}>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
+                            <AlertTitle className={cn('font-bold', !isMinimumMet && 'text-red-100')}>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
                             <AlertDescription className={cn('text-base', !isMinimumMet && 'text-red-200')}>
                                 {isMinimumMet
                                     ? `The estimated cost meets the ${currencyFormatter.format(minimumCost)} minimum.`
@@ -458,8 +464,9 @@ function PlansGrid({
         if (isOverflow && overflowCalculatedValues) {
             employees = getEmployees(overflowCalculatedValues.totalLiters);
             stations = getStations(overflowCalculatedValues.totalLiters);
-            monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(overflowCalculatedValues.totalCost);
-            liters = `${overflowCalculatedValues.totalLiters.toLocaleString()} L`;
+            // Keep the monthly fee as the fixed top-up, but liters are calculated
+            monthlyFee = '₱50,000';
+            liters = `${overflowCalculatedValues.totalLiters.toLocaleString()} L (estimated)`;
         }
 
 
@@ -492,7 +499,8 @@ function PlansGrid({
                     <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
                     <div className="flex items-baseline gap-2">
                         {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{monthlyFee}</span>}
-                        {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                        {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && !isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                        {isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Top-up</span>}
                          {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
                     </div>
                     </CardHeader>
@@ -527,8 +535,9 @@ function PlansGrid({
                         <CustomPlanCalculator 
                             onCalculated={onOverflowCalculated} 
                             pricePerLiter={2.5} 
-                            title="Overflow Plan Calculator"
-                            minimumCost={50000}
+                            title="Estimate Monthly Usage"
+                            isFixedPrice={true}
+                            fixedPrice={50000}
                         />
                     )}
 
@@ -825,8 +834,7 @@ export default function PlansPage() {
                 />;
     };
     
-    const isOverflowMinimumMet = overflowCalculatedValues ? overflowCalculatedValues.totalCost >= 50000 : false;
-    const isNextDisabled = !selectedPlan || (selectedPlan === 'enterprise-overflow' && !isOverflowMinimumMet);
+    const isNextDisabled = !selectedPlan;
 
     const getNextLink = () => {
         if (!selectedPlan) return '#';
@@ -835,7 +843,8 @@ export default function PlansPage() {
             link += `&liters=${customCalculatedValues.totalLiters}&cost=${customCalculatedValues.totalCost}`;
         }
         if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
-            link += `&liters=${overflowCalculatedValues.totalLiters}&cost=${overflowCalculatedValues.totalCost}`;
+            // For overflow, cost is fixed, but we pass the estimated liters
+            link += `&liters=${overflowCalculatedValues.totalLiters}&cost=50000`;
         }
         return link;
     };
