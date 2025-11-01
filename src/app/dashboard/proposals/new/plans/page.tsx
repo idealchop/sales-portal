@@ -270,7 +270,18 @@ const flowPlans: Plan[] = [
     }
 ]
 
-export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...flowPlans];
+const customSmeCommercialPlan: Plan = {
+    id: 'custom-plan',
+    name: 'Customize Your Plan',
+    monthlyFee: 'Custom',
+    liters: 'Custom',
+    refillFrequency: 'Custom',
+    inclusions: ['Priced at ₱4.50 per liter', 'Perfect for unique consumption needs', 'All standard benefits included'],
+    employees: '—',
+    stations: '—',
+};
+
+export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...flowPlans, customSmeCommercialPlan];
 
 type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'enterprise';
 type EnterpriseType = 'customized' | 'flowing';
@@ -400,6 +411,8 @@ function PlansGrid({
     onCustomCalculated,
     overflowCalculatedValues,
     onOverflowCalculated,
+    smeCommercialCustomValues,
+    onSmeCommercialCustomCalculated
 }: { 
     plans: Plan[], 
     defaultPlan: string, 
@@ -410,6 +423,8 @@ function PlansGrid({
     onCustomCalculated: (values: { totalLiters: number, totalCost: number }) => void;
     overflowCalculatedValues: { totalLiters: number, totalCost: number } | null;
     onOverflowCalculated: (values: { totalLiters: number, totalCost: number }) => void;
+    smeCommercialCustomValues: { totalLiters: number, totalCost: number } | null;
+    onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number }) => void;
 }) {
     const getStations = (liters: number) => {
         if (liters <= 2000) return '1 Station';
@@ -437,6 +452,8 @@ function PlansGrid({
     
     const isSingleCustomPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-customized';
     const isSingleOverflowPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-overflow';
+    const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'commercial') && selectedPlan === 'custom-plan';
+
 
     return (
     <RadioGroup
@@ -445,13 +462,14 @@ function PlansGrid({
         className={cn(
             "grid grid-cols-1 md:grid-cols-2 gap-6 items-start",
             gridColsClass,
-            (isSingleCustomPlan || isSingleOverflowPlan) && 'md:grid-cols-1 lg:grid-cols-1'
+            (isSingleCustomPlan || isSingleOverflowPlan || isSmeCommercialCustom) && 'md:grid-cols-1 lg:grid-cols-1'
         )}
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
         const isCustom = businessSize === 'enterprise' && (plan.id === 'enterprise-customized');
         const isOverflow = businessSize === 'enterprise' && (plan.id === 'enterprise-overflow');
+        const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'commercial') && (plan.id === 'custom-plan');
         const isDisabled = false;
 
         let employees = plan.employees;
@@ -472,6 +490,13 @@ function PlansGrid({
             // Keep the monthly fee as the fixed top-up, but liters are calculated
             monthlyFee = '₱50,000';
             liters = `${overflowCalculatedValues.totalLiters.toLocaleString()} L (estimated)`;
+        }
+
+        if (isCustomSmeCommercial && smeCommercialCustomValues) {
+            employees = getEmployees(smeCommercialCustomValues.totalLiters);
+            stations = getStations(smeCommercialCustomValues.totalLiters);
+            monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(smeCommercialCustomValues.totalCost);
+            liters = `${smeCommercialCustomValues.totalLiters.toLocaleString()} L`;
         }
 
 
@@ -504,7 +529,7 @@ function PlansGrid({
                     <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
                     <div className="flex items-baseline gap-2">
                         {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{monthlyFee}</span>}
-                        {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && !isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                        {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && !isOverflow && plan.id !== 'custom-plan' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                         {isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Top-up</span>}
                          {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
                     </div>
@@ -546,6 +571,14 @@ function PlansGrid({
                             fixedPrice={50000}
                         />
                     )}
+                    
+                    {plan.id === 'custom-plan' && isSelected && (
+                        <CustomPlanCalculator
+                            onCalculated={onSmeCommercialCustomCalculated}
+                            pricePerLiter={4.5}
+                            title="Customize SME/Commercial Plan"
+                        />
+                    )}
 
 
                     <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
@@ -585,7 +618,9 @@ function PlansGrid({
             )
         }
 
-        return <div key={plan.id} className={cn((isCustom || isOverflow) && isSelected && 'col-span-full')}>{cardContent}</div>;
+        const colSpanClass = (isCustom || isOverflow || isCustomSmeCommercial) && isSelected ? 'col-span-full' : 'col-span-1';
+
+        return <div key={plan.id} className={cn(colSpanClass)}>{cardContent}</div>;
       })}
     </RadioGroup>
   );
@@ -753,17 +788,15 @@ export default function PlansPage() {
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [customCalculatedValues, setCustomCalculatedValues] = useState<{ totalLiters: number, totalCost: number } | null>(null);
     const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ totalLiters: number, totalCost: number } | null>(null);
+    const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number } | null>(null);
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
         setSelectedEnterpriseType(null); 
-        if (size === 'enterprise') {
-            setSelectedPlan(null);
-        } else {
-            setSelectedPlan(null); 
-        }
+        setSelectedPlan(null); 
         setCustomCalculatedValues(null);
         setOverflowCalculatedValues(null);
+        setSmeCommercialCustomValues(null);
     };
 
     const handleEnterpriseTypeSelect = (type: EnterpriseType) => {
@@ -788,6 +821,10 @@ export default function PlansPage() {
         setOverflowCalculatedValues(values);
     }, []);
 
+    const handleSmeCommercialCustomCalculated = useCallback((values: { totalLiters: number, totalCost: number }) => {
+        setSmeCommercialCustomValues(values);
+    }, []);
+
     const resetSelection = () => {
         setSelectedSize(null);
         setSelectedEnterpriseType(null);
@@ -809,11 +846,11 @@ export default function PlansPage() {
         } else {
             switch (selectedSize) {
                 case 'sme':
-                    plansToRender = smePlans;
+                    plansToRender = [...smePlans, customSmeCommercialPlan];
                     defaultPlanId = 'professional';
                     break;
                 case 'commercial':
-                    plansToRender = commercialPlans;
+                    plansToRender = [...commercialPlans, customSmeCommercialPlan];
                     defaultPlanId = 'pro';
                     break;
                 case 'corporate':
@@ -837,6 +874,8 @@ export default function PlansPage() {
                     onCustomCalculated={handleCustomCalculated}
                     overflowCalculatedValues={overflowCalculatedValues}
                     onOverflowCalculated={handleOverflowCalculated}
+                    smeCommercialCustomValues={smeCommercialCustomValues}
+                    onSmeCommercialCustomCalculated={handleSmeCommercialCustomCalculated}
                 />;
     };
     
@@ -845,8 +884,11 @@ export default function PlansPage() {
         if (selectedPlan === 'enterprise-customized') {
             return !customCalculatedValues || customCalculatedValues.totalCost < 30000;
         }
+        if (selectedPlan === 'custom-plan') {
+            return !smeCommercialCustomValues || smeCommercialCustomValues.totalCost <= 0;
+        }
         return false;
-    }, [selectedPlan, customCalculatedValues]);
+    }, [selectedPlan, customCalculatedValues, smeCommercialCustomValues]);
 
     const getNextLink = () => {
         if (!selectedPlan) return '#';
@@ -855,8 +897,10 @@ export default function PlansPage() {
             link += `&liters=${customCalculatedValues.totalLiters}&cost=${customCalculatedValues.totalCost}`;
         }
         if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
-            // For overflow, cost is fixed, but we pass the estimated liters
             link += `&liters=${overflowCalculatedValues.totalLiters}&cost=50000`;
+        }
+        if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
+            link += `&liters=${smeCommercialCustomValues.totalLiters}&cost=${smeCommercialCustomValues.totalCost}`;
         }
         return link;
     };

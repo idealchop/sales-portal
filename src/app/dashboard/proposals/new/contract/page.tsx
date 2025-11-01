@@ -623,7 +623,7 @@ function ContractPageContent() {
     const basePlan = allPlans.find(p => p.id === planId);
     if (!basePlan) return null;
 
-    if ((planId === 'enterprise-customized' || planId === 'enterprise-overflow') && customLiters && customCost) {
+    if ((planId === 'enterprise-customized' || planId === 'enterprise-overflow' || planId === 'custom-plan') && customLiters && customCost) {
         return {
             ...basePlan,
             liters: `${customLiters} L`,
@@ -991,5 +991,6 @@ export default function ContractPage() {
     
 
     
+
 
 
