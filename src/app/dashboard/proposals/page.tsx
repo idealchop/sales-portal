@@ -132,6 +132,7 @@ export default function ProposalsPage() {
               <TableRow>
                 <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Plan</TableHead>
                 <TableHead className="hidden lg:table-cell">
                   Monthly Consumption
                 </TableHead>
@@ -153,6 +154,16 @@ export default function ProposalsPage() {
                     <Badge className={`capitalize ${clientStatusStyles[client.status]}`} variant="outline">
                       {client.status}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {client.subscription ? (
+                        <div>
+                            <div className="font-medium">{client.subscription.planName}</div>
+                            <div className="text-sm text-muted-foreground">{client.subscription.liters.toLocaleString()} Liters</div>
+                        </div>
+                    ) : (
+                        <span className="text-muted-foreground">N/A</span>
+                    )}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     {client.consumptionData.toLocaleString()} Liters

@@ -5,7 +5,11 @@ export type Client = {
   contactEmail: string;
   status: 'active' | 'inactive' | 'lead';
   address: string;
-  consumptionData: number;
+  consumptionData: number; // This is monthly consumption in liters
+  subscription?: {
+    planName: string;
+    liters: number;
+  };
 };
 
 export type Proposal = {
