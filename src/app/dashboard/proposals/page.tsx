@@ -50,7 +50,71 @@ const clientStatusStyles: { [key: string]: string } = {
   lead: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 
+type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
+
 export default function ProposalsPage() {
+  const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'accepted', 'sent', 'draft', 'rejected'];
+
+  const renderProposalsTable = (status: ProposalStatus | 'all') => {
+    const filteredProposals = status === 'all' ? proposals : proposals.filter(p => p.status === status);
+    
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Client</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="hidden md:table-cell">
+              Created At
+            </TableHead>
+            <TableHead className="text-right">Amount</TableHead>
+            <TableHead>
+              <span className="sr-only">Actions</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredProposals.map((proposal) => (
+            <TableRow key={proposal.id}>
+              <TableCell className="font-medium">
+                {proposal.client.companyName}
+              </TableCell>
+              <TableCell>
+                <Badge className={`capitalize ${proposalStatusStyles[proposal.status]}`} variant="outline">
+                  {proposal.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="hidden md:table-cell">
+                {proposal.createdAt}
+              </TableCell>
+              <TableCell className="text-right">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}</TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      aria-haspopup="true"
+                      size="icon"
+                      variant="ghost"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Toggle menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem>View</DropdownMenuItem>
+                    <DropdownMenuItem>Edit</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center gap-4">
@@ -67,69 +131,33 @@ export default function ProposalsPage() {
           </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Proposals</CardTitle>
-          <CardDescription>
-            View, manage, and create sales proposals.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">
-                  Created At
-                </TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {proposals.map((proposal) => (
-                <TableRow key={proposal.id}>
-                  <TableCell className="font-medium">
-                    {proposal.client.companyName}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`capitalize ${proposalStatusStyles[proposal.status]}`} variant="outline">
-                      {proposal.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {proposal.createdAt}
-                  </TableCell>
-                  <TableCell className="text-right">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          aria-haspopup="true"
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View</DropdownMenuItem>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="all">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>All Proposals</CardTitle>
+                <CardDescription>
+                  View, manage, and create sales proposals.
+                </CardDescription>
+              </div>
+              <TabsList>
+                {proposalStatuses.map(status => (
+                  <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {proposalStatuses.map(status => (
+              <TabsContent key={status} value={status}>
+                {renderProposalsTable(status)}
+              </TabsContent>
+            ))}
+          </CardContent>
+        </Card>
+      </Tabs>
+
 
        <Tabs defaultValue="all">
         <div className="flex items-center">
