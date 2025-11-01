@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw } from 'lucide-react';
 import type { Client } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
@@ -149,7 +149,30 @@ export function ClientOverviewDialog({
                                 <div className="space-y-2">
                                     <h3 className="text-lg font-bold">{client.subscription.planName}</h3>
                                     <p className="text-2xl font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)} / month</p>
-                                    <p className="text-muted-foreground">{client.subscription.liters.toLocaleString()} Liters included</p>
+                                </div>
+                                <Separator />
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <GlassWater className="h-4 w-4 text-primary" />
+                                        <div>
+                                            <p className="text-muted-foreground">Liters / Gallons</p>
+                                            <p className="font-semibold">{client.subscription.liters.toLocaleString()}L / {client.subscription.gallons.toLocaleString()} gal</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Users className="h-4 w-4 text-primary" />
+                                        <div>
+                                            <p className="text-muted-foreground">Employees</p>
+                                            <p className="font-semibold">{client.subscription.employees}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <RefreshCcw className="h-4 w-4 text-primary" />
+                                        <div>
+                                            <p className="text-muted-foreground">Refill Frequency</p>
+                                            <p className="font-semibold">{client.subscription.refillFrequency}</p>
+                                        </div>
+                                    </div>
                                 </div>
                                 <Button className="w-full">Upgrade Plan</Button>
                             </CardContent>

@@ -11,6 +11,9 @@ export type Client = {
     planName: string;
     liters: number;
     amount: number;
+    refillFrequency: string;
+    employees: string;
+    gallons: number;
   };
 };
 
