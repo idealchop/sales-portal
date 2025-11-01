@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
-import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check } from 'lucide-react';
+import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -305,32 +305,58 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
   );
 }
 
+const businessSizes: { id: BusinessSize, title: string, description: string, image: any, idealFor: string[] }[] = [
+    { 
+        id: 'small', 
+        title: 'SME', 
+        description: 'For small teams, kiosks, and home offices.', 
+        image: {
+            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartrefill_SME.png?alt=media&token=eda50afe-7dd2-494c-ab48-0508dd3be81a",
+            description: "An office with a few people",
+            imageHint: "small office"
+        },
+        idealFor: ['Small offices & clinics', 'Retail stores & cafes', 'Home-based businesses']
+    },
+    { 
+        id: 'medium', 
+        title: 'Medium Business', 
+        description: 'For growing offices and warehouses.', 
+        image: PlaceHolderImages.find(p => p.title === 'medium-business'),
+        idealFor: ['Growing companies', 'Mid-sized offices', 'Warehouse facilities']
+    },
+    { 
+        id: 'large', 
+        title: 'Large Enterprise', 
+        description: 'For multi-site companies and BPOs.', 
+        image: PlaceHolderImages.find(p => p.title === 'large-business'),
+        idealFor: ['BPOs & call centers', 'Multi-site corporations', 'Hotel & restaurant chains']
+    },
+    { 
+        id: 'flow', 
+        title: 'Smart Flow Plan', 
+        description: 'Pay based on your actual water consumption.', 
+        image: PlaceHolderImages.find(p => p.title === 'flow-plan'),
+        idealFor: ['Businesses with fluctuating demand', 'Event-based water needs', 'Seasonal operations']
+    },
+];
+
 function BusinessSizeSelector({
     selectedSize,
     onSelectSize,
+    hiddenSizes = [],
 }: {
     selectedSize: BusinessSize | null;
     onSelectSize: (size: BusinessSize) => void;
+    hiddenSizes?: BusinessSize[];
 }) {
-    const smallBusinessImage = {
-        imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartrefill_SME.png?alt=media&token=eda50afe-7dd2-494c-ab48-0508dd3be81a",
-        description: "An office with a few people",
-        imageHint: "small office"
-    };
-    const mediumBusinessImage = PlaceHolderImages.find(p => p.title === 'medium-business');
-    const largeBusinessImage = PlaceHolderImages.find(p => p.title === 'large-business');
-    const flowPlanImage = PlaceHolderImages.find(p => p.title === 'flow-plan');
-
-    const sizes: { id: BusinessSize, title: string, description: string, image: any }[] = [
-        { id: 'small', title: 'SME', description: 'For small teams, kiosks, and home offices.', image: smallBusinessImage },
-        { id: 'medium', title: 'Medium Business', description: 'For growing offices and warehouses.', image: mediumBusinessImage },
-        { id: 'large', title: 'Large Enterprise', description: 'For multi-site companies and BPOs.', image: largeBusinessImage },
-        { id: 'flow', title: 'Smart Flow Plan', description: 'Pay based on your actual water consumption.', image: flowPlanImage },
-    ];
+    const isItemSelected = selectedSize !== null;
+    const gridCols = isItemSelected ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2';
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {sizes.map((size) => (
+        <div className={cn("grid gap-4", gridCols)}>
+            {businessSizes
+              .filter(size => !hiddenSizes.includes(size.id))
+              .map((size) => (
                 <Card
                     key={size.id}
                     onClick={() => onSelectSize(size.id)}
@@ -360,10 +386,7 @@ function BusinessSizeSelector({
                         <div className="text-sm space-y-2">
                            <p className="font-semibold">Ideal for:</p>
                             <ul className="list-disc list-inside text-muted-foreground text-xs">
-                                {size.id === 'small' && <><li>Small offices & clinics</li><li>Retail stores & cafes</li><li>Home-based businesses</li></>}
-                                {size.id === 'medium' && <><li>Growing companies</li><li>Mid-sized offices</li><li>Warehouse facilities</li></>}
-                                {size.id === 'large' && <><li>BPOs & call centers</li><li>Multi-site corporations</li><li>Hotel & restaurant chains</li></>}
-                                {size.id === 'flow' && <><li>Businesses with fluctuating demand</li><li>Event-based water needs</li><li>Seasonal operations</li></>}
+                                {size.idealFor.map(item => <li key={item}>{item}</li>)}
                             </ul>
                         </div>
                     </CardFooter>
@@ -375,7 +398,7 @@ function BusinessSizeSelector({
 
 
 export default function PlansPage() {
-    const [selectedSize, setSelectedSize] = useState<BusinessSize | null>('small');
+    const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
@@ -417,27 +440,47 @@ export default function PlansPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>1. Select Business Size</CardTitle>
-          <CardDescription>
-            Choose the client's business size to see the recommended plans.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>1. Select Business Size</CardTitle>
+                <CardDescription>
+                  Choose the client's business size to see the recommended plans.
+                </CardDescription>
+              </div>
+              {selectedSize && (
+                <Button variant="outline" onClick={() => setSelectedSize(null)}>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Change
+                </Button>
+              )}
+          </div>
         </CardHeader>
         <CardContent>
-          <BusinessSizeSelector selectedSize={selectedSize} onSelectSize={handleSizeSelect} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-3")}>
+                    <BusinessSizeSelector 
+                        selectedSize={selectedSize} 
+                        onSelectSize={handleSizeSelect}
+                        hiddenSizes={selectedSize ? businessSizes.map(s => s.id).filter(id => id !== selectedSize) : []}
+                    />
+                </div>
+                {selectedSize && (
+                     <div className="lg:col-span-2">
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>2. Choose a Plan</CardTitle>
+                                <CardDescription>Select the best plan for your client from the options below.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {renderPlans()}
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+            </div>
         </CardContent>
       </Card>
 
-      {selectedSize && (
-        <Card>
-            <CardHeader>
-                <CardTitle>2. Choose a Plan</CardTitle>
-                <CardDescription>Select the best plan for your client from the options below.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {renderPlans()}
-            </CardContent>
-        </Card>
-      )}
 
       <div className="grid gap-6">
         <Card>
@@ -496,6 +539,3 @@ export default function PlansPage() {
     </div>
   );
 }
-
-
-
