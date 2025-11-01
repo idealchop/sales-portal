@@ -392,13 +392,13 @@ function PlansGrid({
         return `~${Math.round(estimatedEmployees / 10) * 10}`;
     };
 
-    const gridColsClass = businessSize === 'corporate' || businessSize === 'enterprise' ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
+    const gridColsClass = businessSize === 'corporate' ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
 
     return (
     <RadioGroup
         value={selectedPlan ?? defaultPlan} 
         onValueChange={onSelectPlan}
-        className={cn("grid grid-cols-1 md:grid-cols-2 gap-6 items-start", gridColsClass)}
+        className={cn("grid grid-cols-1 md:grid-cols-2 gap-6 items-start", gridColsClass, selectedPlan === 'enterprise-customized' && 'md:grid-cols-1' )}
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
@@ -418,7 +418,7 @@ function PlansGrid({
                 htmlFor={plan.id} 
                 className={cn(
                     "cursor-pointer h-full", 
-                    isCustom && "md:col-span-2",
+                    isCustom && selectedPlan === 'enterprise-customized' && "md:col-span-2",
                     isDisabled && "cursor-not-allowed opacity-70"
                 )}
             >
@@ -505,7 +505,7 @@ function PlansGrid({
             )
         }
 
-        return <div key={plan.id}>{cardContent}</div>;
+        return <div key={plan.id} className={cn(isCustom && selectedPlan === 'enterprise-customized' && 'md:col-span-2' )}>{cardContent}</div>;
       })}
     </RadioGroup>
   );
