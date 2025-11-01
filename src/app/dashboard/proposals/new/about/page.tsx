@@ -44,8 +44,7 @@ function SmartRefillIntro() {
             </div>
             
             <div>
-                <h3 className="font-semibold text-foreground text-base">⚙️ What We Do</h3>
-                <p className="mt-2">Smart Refill powers your business with:</p>
+                <h3 className="font-semibold text-foreground text-base">Smart Refill powers your business with:</h3>
                 <div className="space-y-4 mt-4">
                     <div className="flex items-start gap-3">
                         <RefreshCw className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
