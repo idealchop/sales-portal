@@ -155,8 +155,15 @@ export function ClientOverviewDialog({
                                     <div className="flex items-center gap-2">
                                         <GlassWater className="h-4 w-4 text-primary" />
                                         <div>
-                                            <p className="text-muted-foreground">Liters / Gallons</p>
-                                            <p className="font-semibold">{client.subscription.liters.toLocaleString()}L / {client.subscription.gallons.toLocaleString()} gal</p>
+                                            <p className="text-muted-foreground">Total Liters</p>
+                                            <p className="font-semibold">{client.subscription.liters.toLocaleString()}L</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Package className="h-4 w-4 text-primary" />
+                                        <div>
+                                            <p className="text-muted-foreground">Est. Bottles</p>
+                                            <p className="font-semibold">~{Math.round(client.subscription.liters / 19)}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -171,13 +178,6 @@ export function ClientOverviewDialog({
                                         <div>
                                             <p className="text-muted-foreground">Refill Frequency</p>
                                             <p className="font-semibold">{client.subscription.refillFrequency}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Package className="h-4 w-4 text-primary" />
-                                        <div>
-                                            <p className="text-muted-foreground">Est. Bottles</p>
-                                            <p className="font-semibold">~{Math.round(client.subscription.liters / 19)}</p>
                                         </div>
                                     </div>
                                 </div>
