@@ -884,7 +884,7 @@ export default function ContractPage() {
             </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6">
             <Card>
                 <CardHeader>
                 <CardTitle>Flexible Payment Schedules</CardTitle>
@@ -913,20 +913,19 @@ export default function ContractPage() {
                 </Table>
                 </CardContent>
             </Card>
-
+            <Card>
+                <CardHeader>
+                    <CardTitle>Accepted Payment Methods</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                    <p>Bank Transfer (BPI, BDO, UnionBank)</p>
+                    <p>GCash or Maya</p>
+                    <p>Debit/Credit Card via the Smart Refill™ Platform</p>
+                    <p>Corporate Billing (available for Enterprise+ clients only)</p>
+                    <p className="pt-4 font-semibold text-foreground">All payments must be made in Philippine Pesos (₱) and confirmed before deliveries continue or new allocations are released.</p>
+                </CardContent>
+            </Card>
         </div>
-        <Card>
-            <CardHeader>
-                <CardTitle>Accepted Payment Methods</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>Bank Transfer (BPI, BDO, UnionBank)</p>
-                <p>GCash or Maya</p>
-                <p>Debit/Credit Card via the Smart Refill™ Platform</p>
-                <p>Corporate Billing (available for Enterprise+ clients only)</p>
-                <p className="pt-4 font-semibold text-foreground">All payments must be made in Philippine Pesos (₱) and confirmed before deliveries continue or new allocations are released.</p>
-            </CardContent>
-        </Card>
       </div>
     </div>
   );
