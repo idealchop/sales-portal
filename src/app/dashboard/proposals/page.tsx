@@ -52,31 +52,18 @@ const clientStatusStyles: { [key: string]: string } = {
 };
 
 type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
+type ClientStatus = 'active' | 'inactive' | 'lead';
 
 export default function ProposalsPage() {
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'accepted', 'sent', 'draft', 'rejected'];
+  const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'lead', 'inactive'];
 
   const renderProposalsTable = (status: ProposalStatus | 'all') => {
     const filteredProposals = status === 'all' ? proposals : proposals.filter(p => p.status === status);
     
     return (
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>All Proposals</CardTitle>
-              <CardDescription>
-                View, manage, and create sales proposals.
-              </CardDescription>
-            </div>
-             <TabsList>
-                {proposalStatuses.map(status => (
-                  <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
-                ))}
-              </TabsList>
-          </div>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Table>
             <TableHeader>
               <TableRow>
@@ -135,11 +122,87 @@ export default function ProposalsPage() {
     )
   }
 
+  const renderClientsTable = (status: ClientStatus | 'all') => {
+    const filteredClients = status === 'all' ? clients : clients.filter(c => c.status === status);
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Company</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  Address
+                </TableHead>
+                <TableHead className="hidden lg:table-cell">
+                  Monthly Consumption
+                </TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredClients.map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell className="font-medium">
+                      <div className="font-medium">{client.companyName}</div>
+                      <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`capitalize ${clientStatusStyles[client.status]}`} variant="outline">
+                      {client.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {client.address}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {client.consumptionData.toLocaleString()} Liters
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    )
+  }
+
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold">Proposals & Clients</h1>
-          <div className="ml-auto">
+      </div>
+
+      <Tabs defaultValue="proposals" className="space-y-4">
+          <div className="flex items-center">
+            <TabsList>
+                <TabsTrigger value="proposals">Proposals</TabsTrigger>
+                <TabsTrigger value="clients">Clients</TabsTrigger>
+            </TabsList>
+            <div className="ml-auto">
                 <Button asChild size="sm" className="h-8 gap-1">
                   <Link href="/dashboard/proposals/new">
                       <PlusCircle className="h-3.5 w-3.5" />
@@ -149,102 +212,70 @@ export default function ProposalsPage() {
                   </Link>
               </Button>
           </div>
-      </div>
-
-      <Tabs defaultValue="all">
-        {proposalStatuses.map(status => (
-          <TabsContent key={status} value={status}>
-            {renderProposalsTable(status)}
-          </TabsContent>
-        ))}
-      </Tabs>
-
-
-       <Tabs defaultValue="all">
-        <div className="flex items-center">
-          <TabsList>
-            <TabsTrigger value="all">All Clients</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="lead">Lead</TabsTrigger>
-            <TabsTrigger value="inactive" className="hidden sm:flex">
-              Inactive
-            </TabsTrigger>
-          </TabsList>
-          <div className="ml-auto flex items-center gap-2">
-            <Button size="sm" variant="outline">
-              Import
-            </Button>
-            <Button size="sm" className="h-8 gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Add Client
-              </span>
-            </Button>
           </div>
-        </div>
-        <TabsContent value="all">
-          <Card>
-            <CardHeader>
-              <CardTitle>Clients</CardTitle>
-              <CardDescription>
-                Manage your clients and view their sales history.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Consumption
-                    </TableHead>
-                    <TableHead>
-                      <span className="sr-only">Actions</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {clients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">
-                          <div className="font-medium">{client.companyName}</div>
-                          <div className="text-sm text-muted-foreground">{client.contactEmail}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`capitalize ${clientStatusStyles[client.status]}`} variant="outline">
-                          {client.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {client.consumptionData} kWh
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="proposals">
+             <Tabs defaultValue="all">
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>All Proposals</CardTitle>
+                                <CardDescription>
+                                    View, manage, and create sales proposals.
+                                </CardDescription>
+                            </div>
+                            <TabsList>
+                                {proposalStatuses.map(status => (
+                                <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
+                                ))}
+                            </TabsList>
+                        </div>
+                    </CardHeader>
+                    {proposalStatuses.map(status => (
+                        <TabsContent key={status} value={status}>
+                            {renderProposalsTable(status)}
+                        </TabsContent>
+                    ))}
+                </Card>
+            </Tabs>
+          </TabsContent>
+          <TabsContent value="clients">
+            <Tabs defaultValue="all">
+                <Card>
+                    <CardHeader>
+                         <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>Clients</CardTitle>
+                                <CardDescription>
+                                    Manage your clients and view their sales history.
+                                </CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <TabsList>
+                                    {clientStatuses.map(status => (
+                                    <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
+                                    ))}
+                                </TabsList>
+                                 <Button size="sm" variant="outline">
+                                    Import
+                                </Button>
+                                <Button size="sm" className="h-8 gap-1">
+                                <PlusCircle className="h-3.5 w-3.5" />
+                                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                                    Add Client
+                                </span>
+                                </Button>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    {clientStatuses.map(status => (
+                        <TabsContent key={status} value={status}>
+                            {renderClientsTable(status)}
+                        </TabsContent>
+                    ))}
+                </Card>
+            </Tabs>
+          </TabsContent>
       </Tabs>
     </div>
   );
