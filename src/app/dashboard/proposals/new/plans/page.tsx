@@ -360,7 +360,7 @@ function CustomPlanCalculator({
                             'mt-4', 
                             isMinimumMet 
                                 ? 'bg-green-500/10 border-green-500/30 text-green-300' 
-                                : 'bg-red-500/20 border-red-500/50 text-red-200'
+                                : 'bg-red-900 border-red-500/50 text-red-200'
                         )}>
                             <AlertCircle className="h-4 w-4" />
                             <AlertTitle className={cn(!isMinimumMet && 'text-red-100 font-bold')}>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
@@ -418,7 +418,7 @@ function PlansGrid({
 
     let gridColsClass = 'lg:grid-cols-3';
     if ((businessSize === 'sme' || businessSize === 'commercial') && plans.length === 3) {
-        gridColsClass = 'md:grid-cols-2 lg:grid-cols-2';
+        gridColsClass = 'lg:grid-cols-2';
     }
      if (businessSize === 'corporate') {
         gridColsClass = 'lg:grid-cols-2';
@@ -828,6 +828,18 @@ export default function PlansPage() {
     const isOverflowMinimumMet = overflowCalculatedValues ? overflowCalculatedValues.totalCost >= 50000 : false;
     const isNextDisabled = !selectedPlan || (selectedPlan === 'enterprise-overflow' && !isOverflowMinimumMet);
 
+    const getNextLink = () => {
+        if (!selectedPlan) return '#';
+        let link = `/dashboard/proposals/new/contract?plan=${selectedPlan}`;
+        if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
+            link += `&liters=${customCalculatedValues.totalLiters}&cost=${customCalculatedValues.totalCost}`;
+        }
+        if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
+            link += `&liters=${overflowCalculatedValues.totalLiters}&cost=${overflowCalculatedValues.totalCost}`;
+        }
+        return link;
+    };
+
 
     return (
         <div className="flex flex-col gap-6">
@@ -843,7 +855,7 @@ export default function PlansPage() {
                     <Link href="/dashboard/proposals/new/comparison">Previous</Link>
                 </Button>
                 <Button asChild={!isNextDisabled} disabled={isNextDisabled}>
-                    <Link href={selectedPlan ? `/dashboard/proposals/new/contract?plan=${selectedPlan}` : '#'}>Next Step</Link>
+                    <Link href={getNextLink()}>Next Step</Link>
                 </Button>
             </div>
         </div>

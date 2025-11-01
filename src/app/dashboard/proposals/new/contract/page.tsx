@@ -18,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -312,7 +312,8 @@ function PreviewDialog({
     selectedAddons,
     additionalDispensers,
     additionalLiters,
-    plan
+    plan,
+    finalPlan
 }: { 
     totalAmount: string,
     billingCycleLabel: string,
@@ -321,7 +322,8 @@ function PreviewDialog({
     selectedAddons: { [key: string]: boolean },
     additionalDispensers: number,
     additionalLiters: number,
-    plan: any
+    plan: any,
+    finalPlan: any
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
     const [clientName, setClientName] = useState('');
@@ -362,7 +364,7 @@ function PreviewDialog({
         });
     };
 
-    const planBaseCost = plan ? parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) : 0;
+    const planBaseCost = parseFloat(finalPlan.monthlyFee.replace(/[^0-9.-]+/g, ''));
     const addonsCost = addons.reduce((total, addon) => {
         if (addon.type === 'checkbox') {
              return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
@@ -439,7 +441,7 @@ function PreviewDialog({
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">{plan.name} Plan ({billingCycleLabel})</span>
+                                <span className="text-muted-foreground">{finalPlan.name} Plan ({billingCycleLabel})</span>
                                 <span className="font-semibold">{currencyFormatter.format(planBaseCost)}</span>
                             </div>
                             {addons.map((addon) => (
@@ -605,7 +607,8 @@ function TimelineItem({ icon, title, description, isLast = false }: { icon: Reac
 function ContractPageContent() {
   const searchParams = useSearchParams();
   const planId = searchParams.get('plan');
-  const plan = allPlans.find(p => p.id === planId);
+  const customLiters = searchParams.get('liters');
+  const customCost = searchParams.get('cost');
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -615,6 +618,20 @@ function ContractPageContent() {
   const [additionalDispensers, setAdditionalDispensers] = useState(0);
   const [additionalLiters, setAdditionalLiters] = useState(0);
 
+  const plan = useMemo(() => {
+    const basePlan = allPlans.find(p => p.id === planId);
+    if (!basePlan) return null;
+
+    if ((planId === 'enterprise-customized' || planId === 'enterprise-overflow') && customLiters && customCost) {
+        return {
+            ...basePlan,
+            liters: `${customLiters} L`,
+            monthlyFee: `₱${parseFloat(customCost).toLocaleString()}`,
+        };
+    }
+    return basePlan;
+  }, [planId, customLiters, customCost]);
+
   const handleAddonToggle = (addonId: string) => {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
   }
@@ -622,7 +639,6 @@ function ContractPageContent() {
   const { totalAmount, discount, billingCycleLabel, basePrice } = useMemo(() => {
     const planBaseCost = plan ? parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) : 0;
     if (isNaN(planBaseCost)) {
-      // Handle cases like "Usage-Based" or "Custom"
       return { totalAmount: plan?.monthlyFee || 'N/A', discount: 0, billingCycleLabel: 'N/A', basePrice: 0 };
     }
 
@@ -647,6 +663,16 @@ function ContractPageContent() {
         basePrice: currentBasePrice,
     }
   }, [plan, billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
+  
+  const finalPlan = useMemo(() => {
+    if (!plan) return null;
+    const planLitersNum = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
+    return {
+        ...plan,
+        liters: `${planLitersNum + additionalLiters} L`
+    }
+  }, [plan, additionalLiters]);
+
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
@@ -677,7 +703,7 @@ function ContractPageContent() {
     )
   }
 
-  const planLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
+  const planLiters = parseInt(finalPlan?.liters.replace(/[^0-9]/g, '') || '0');
 
   return (
     <div className="flex flex-col gap-6">
@@ -702,7 +728,7 @@ function ContractPageContent() {
       <div className="flex flex-col gap-6">
         <Card>
             <CardHeader>
-                <CardTitle>Plan Summary: {plan.name} Plan</CardTitle>
+                <CardTitle>Plan Summary: {finalPlan.name} Plan</CardTitle>
                 <CardDescription>
                     A summary of the selected subscription plan details.
                 </CardDescription>
@@ -715,7 +741,7 @@ function ContractPageContent() {
                             <Waves className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{plan.liters !== 'Custom' && plan.liters !== 'No cap' ? `${planLiters + additionalLiters} L` : plan.liters }</div>
+                            <div className="text-2xl font-bold">{finalPlan.liters}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -724,7 +750,7 @@ function ContractPageContent() {
                             <Users className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{plan.employees}</div>
+                            <div className="text-2xl font-bold">{finalPlan.employees}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -733,7 +759,7 @@ function ContractPageContent() {
                             <Package className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{plan.stations}</div>
+                            <div className="text-2xl font-bold">{finalPlan.stations}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -742,7 +768,7 @@ function ContractPageContent() {
                             <RefreshCcw className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{plan.refillFrequency}</div>
+                            <div className="text-2xl font-bold">{finalPlan.refillFrequency}</div>
                         </CardContent>
                     </Card>
                 </div>
@@ -860,13 +886,13 @@ function ContractPageContent() {
                 <CardContent className="space-y-4">
                     <div>
                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">{plan.name} Plan ({billingCycleLabel})</span>
+                            <span className="text-muted-foreground">{finalPlan.name} Plan ({billingCycleLabel})</span>
                             <span className="font-semibold">{currencyFormatter.format(basePrice - (basePrice * discount))}</span>
                         </div>
                          <ul className="text-xs text-muted-foreground mt-1 list-disc pl-5">
-                            <li>{plan.liters !== 'Custom' && plan.liters !== 'No cap' ? `${planLiters + additionalLiters} L water` : plan.liters}</li>
-                            <li>{plan.inclusions[0]}</li>
-                            <li>Refill Frequency: {plan.refillFrequency}</li>
+                            <li>{finalPlan.liters}</li>
+                            <li>{finalPlan.inclusions[0]}</li>
+                            <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                         </ul>
                     </div>
                      {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
@@ -922,6 +948,7 @@ function ContractPageContent() {
                             additionalDispensers={additionalDispensers}
                             additionalLiters={additionalLiters}
                             plan={plan}
+                            finalPlan={finalPlan}
                         />
                     </Dialog>
                 </CardFooter>
