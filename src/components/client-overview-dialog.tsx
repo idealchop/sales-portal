@@ -11,13 +11,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck } from 'lucide-react';
 import type { Client } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
@@ -47,9 +47,11 @@ const getPlanImage = (planId?: string) => {
 export function ClientOverviewDialog({
   children,
   client,
+  view,
 }: {
   children: React.ReactNode;
   client: Client;
+  view: 'proposals' | 'clients';
 }) {
   const getInitials = (name: string) => {
     return name
@@ -243,6 +245,45 @@ export function ClientOverviewDialog({
                         )}
                     </Card>
                  </div>
+                 
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Payment Confirmation</CardTitle>
+                        <CardDescription>
+                            {view === 'proposals'
+                                ? 'Upload the client’s payment confirmation to finalize the subscription.'
+                                : 'Review the payment confirmation provided by the client.'
+                            }
+                        </CardDescription>
+                    </CardHeader>
+                    {view === 'proposals' ? (
+                        <CardFooter>
+                            <Button className="w-full">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload Confirmation
+                            </Button>
+                        </CardFooter>
+                    ) : (
+                        <CardContent className="space-y-4">
+                            <div className="aspect-square w-full relative rounded-md overflow-hidden border">
+                                <Image
+                                    src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Freceipt-placeholder.png?alt=media&token=e9e8f498-38f3-4e4c-b5f7-91a5823158f1"
+                                    alt="Payment Receipt"
+                                    fill
+                                    className="object-contain p-4"
+                                    data-ai-hint="receipt"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <Badge variant="outline" className="bg-green-100 text-green-800">
+                                    <FileCheck className="mr-2 h-4 w-4" />
+                                    Verified
+                                </Badge>
+                                <Button variant="secondary">Review</Button>
+                            </div>
+                        </CardContent>
+                    )}
+                </Card>
                 
                  <Dialog>
                     <DialogTrigger asChild>

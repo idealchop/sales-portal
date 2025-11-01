@@ -32,6 +32,8 @@ import { proposals, clients } from '@/lib/data';
 import {
   Tabs,
   TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@/components/ui/tabs';
 import { ClientOverviewDialog } from "@/components/client-overview-dialog";
 import type { Client } from "@/lib/definitions";
@@ -129,7 +131,7 @@ export default function ProposalsPage() {
                 if (!client) return null;
 
                 return (
-                  <ClientOverviewDialog key={proposal.id} client={client}>
+                  <ClientOverviewDialog key={proposal.id} client={client} view="proposals">
                     <TableRow className="cursor-pointer">
                       <TableCell>
                           <div className="font-bold">{client.companyName}</div>
@@ -181,7 +183,7 @@ export default function ProposalsPage() {
             </TableHeader>
             <TableBody>
               {filteredClients.map((client) => (
-                <ClientOverviewDialog key={client.id} client={client}>
+                <ClientOverviewDialog key={client.id} client={client} view="clients">
                   <TableRow className="cursor-pointer">
                     <TableCell>
                         <div className="font-bold">{client.companyName}</div>
