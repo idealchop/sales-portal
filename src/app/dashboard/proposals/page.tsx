@@ -6,7 +6,6 @@ import {
   PlusCircle,
   FileText,
   Users,
-  CircleDollarSign
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -27,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { proposals, clients, commissions } from '@/lib/data';
+import { proposals, clients } from '@/lib/data';
 import {
   Tabs,
   TabsContent,
@@ -51,15 +50,9 @@ const clientStatusStyles: { [key: string]: string } = {
   lead: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 
-const commissionStatusStyles: { [key: string]: string } = {
-  paid: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
-  unpaid: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-};
-
 type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
 type ClientStatus = 'active' | 'inactive' | 'lead';
-type ActiveView = 'proposals' | 'clients' | 'commissions';
+type ActiveView = 'proposals' | 'clients';
 
 function NavLink({
   icon,
@@ -200,53 +193,6 @@ export default function ProposalsPage() {
     )
   }
 
-  const renderCommissionsTable = () => {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Commission History</CardTitle>
-                <CardDescription>
-                A record of all sales commissions.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                <TableHeader>
-                    <TableRow>
-                    <TableHead>Sales Rep</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden md:table-cell">Date</TableHead>
-                    <TableHead className="text-right">Commission</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {commissions.map((commission) => (
-                    <TableRow key={commission.id}>
-                        <TableCell className="font-medium">
-                        {commission.salesRep}
-                        </TableCell>
-                        <TableCell>{commission.clientName}</TableCell>
-                        <TableCell>
-                          <Badge className={`capitalize ${commissionStatusStyles[commission.status]}`} variant="outline">
-                            {commission.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                        {commission.date}
-                        </TableCell>
-                        <TableCell className="text-right">
-                            {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(commission.commissionAmount)}
-                        </TableCell>
-                    </TableRow>
-                    ))}
-                </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -277,14 +223,6 @@ export default function ProposalsPage() {
                     label="Clients"
                     isActive={activeView === 'clients'}
                     onClick={() => setActiveView('clients')}
-                />
-            </div>
-            <div className="relative">
-                <NavLink
-                    icon={<CircleDollarSign />}
-                    label="Commissions"
-                    isActive={activeView === 'commissions'}
-                    onClick={() => setActiveView('commissions')}
                 />
             </div>
         </nav>
@@ -345,11 +283,7 @@ export default function ProposalsPage() {
                 </Card>
             </Tabs>
           )}
-          {activeView === 'commissions' && (
-            renderCommissionsTable()
-          )}
       </div>
     </div>
   );
 }
-

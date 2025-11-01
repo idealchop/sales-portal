@@ -27,17 +27,6 @@ export type Proposal = {
   createdAt: string;
 };
 
-export type Commission = {
-  id: string;
-  salesRep: string;
-  clientName: string;
-  proposalId: string;
-  amount: number;
-  commissionAmount: number;
-  status: 'pending' | 'paid' | 'unpaid';
-  date: string;
-};
-
 export type SalesMaterial = {
   id: string;
   title: string;

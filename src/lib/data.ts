@@ -1,4 +1,4 @@
-import type { Client, Commission, Proposal, Revenue } from '@/lib/definitions';
+import type { Client, Proposal, Revenue } from '@/lib/definitions';
 
 export const clients: Client[] = [
   { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe', contactEmail: 'john.doe@innovate.com', contactPhone: '(0917) 123-4567', status: 'active', address: '123 Tech Lane, Silicon Valley, CA', subscription: { planId: 'professional', planName: 'Professional', liters: 2000, amount: 6000, refillFrequency: '3–4/week', employees: '20 – 40', gallons: 528, inclusions: ['2 Free Dispensers', 'Monthly Sanitation'], addons: ['Weekly Sanitation'] } },
@@ -15,13 +15,6 @@ export const proposals: Proposal[] = [
   { id: 'SR2023912374', client: { id: 'SC24958823', companyName: 'QuantumLeap Co.', contactName: 'Mary Johnson' }, status: 'draft', amount: 3200, createdAt: '2023-11-12' },
   { id: 'SR2023193847', client: { id: 'SC24899145', companyName: 'Apex Industries', contactName: 'David Wilson' }, status: 'rejected', amount: 12000, createdAt: '2023-09-15' },
   { id: 'SR2023182736', client: { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'sent', amount: 8800, createdAt: '2023-11-18' },
-];
-
-export const commissions: Commission[] = [
-    { id: 'C001', salesRep: 'Alice Johnson', clientName: 'Innovate Corp', proposalId: 'SR2023746382', amount: 5000, commissionAmount: 500, status: 'paid', date: '2023-11-01' },
-    { id: 'C002', salesRep: 'Bob Williams', clientName: 'MegaCorp', proposalId: 'SR2023123456', amount: 15000, commissionAmount: 1500, status: 'pending', date: '2023-11-20' },
-    { id: 'C003', salesRep: 'Alice Johnson', clientName: 'Global Solutions', proposalId: 'SR2023654321', amount: 9500, commissionAmount: 950, status: 'unpaid', date: '2023-10-15' },
-    { id: 'C004', salesRep: 'Charlie Brown', clientName: 'TechPioneers', proposalId: 'SR2023987654', amount: 25000, commissionAmount: 2500, status: 'paid', date: '2023-09-30' },
 ];
 
 export const revenueData: Revenue[] = [
