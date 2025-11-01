@@ -385,7 +385,7 @@ function PlansGrid({
     <RadioGroup
         value={selectedPlan ?? defaultPlan} 
         onValueChange={onSelectPlan}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 items-start"
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
