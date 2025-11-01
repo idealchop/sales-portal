@@ -624,14 +624,14 @@ function ContractPageContent() {
     let basePlan = allPlans.find(p => p.id === planId);
     if (!basePlan) return null;
 
-    if (planId === 'custom-plan' && customLiters && customCost) {
+    if (planId === 'custom-plan') {
         basePlan = {
             ...basePlan,
             name: 'Custom Plan',
-            liters: `${customLiters} L`,
-            monthlyFee: `₱${parseFloat(customCost).toLocaleString()}`,
         };
-    } else if (customLiters && customCost) {
+    }
+
+    if (customLiters && customCost) {
          basePlan = {
             ...basePlan,
             liters: `${customLiters} L`,
@@ -705,7 +705,7 @@ function ContractPageContent() {
     });
   }
   
-  if (!plan) {
+  if (!plan || !finalPlan) {
     return (
         <div className="flex flex-col gap-6 items-center justify-center h-full">
             <Card className="w-full max-w-md">
@@ -726,6 +726,8 @@ function ContractPageContent() {
   }
 
   const planLiters = parseInt(finalPlan?.liters.replace(/[^0-9]/g, '') || '0');
+  
+  const summaryTitle = finalPlan.name.includes('Plan') ? finalPlan.name : `${finalPlan.name} Plan`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -750,7 +752,7 @@ function ContractPageContent() {
       <div className="flex flex-col gap-6">
         <Card>
             <CardHeader>
-                <CardTitle>Plan Summary: {finalPlan.name} Plan</CardTitle>
+                <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
                 <CardDescription>
                     A summary of the selected subscription plan details.
                 </CardDescription>
@@ -908,7 +910,7 @@ function ContractPageContent() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <div className="flex justify-between font-semibold">
-                            <span>{finalPlan.name} Plan ({billingCycleLabel})</span>
+                            <span>{summaryTitle} ({billingCycleLabel})</span>
                             <span>{currencyFormatter.format(basePrice - (basePrice * discount))}</span>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
@@ -1012,6 +1014,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
