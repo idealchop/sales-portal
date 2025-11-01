@@ -358,11 +358,13 @@ function CustomPlanCalculator({
                     {minimumCost > 0 && (
                         <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
                             'mt-4', 
-                            isMinimumMet ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-red-500/10 border-red-500/30 text-red-300'
+                            isMinimumMet 
+                                ? 'bg-green-500/10 border-green-500/30 text-green-300' 
+                                : 'bg-red-500/20 border-red-500/50 text-red-200'
                         )}>
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
-                            <AlertDescription>
+                            <AlertTitle className={cn(!isMinimumMet && 'text-red-100 font-bold')}>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
+                            <AlertDescription className={cn('text-base', !isMinimumMet && 'text-red-200')}>
                                 {isMinimumMet
                                     ? `The estimated cost meets the ${currencyFormatter.format(minimumCost)} minimum.`
                                     : `This plan requires a minimum monthly spend of ${currencyFormatter.format(minimumCost)}.`
@@ -623,7 +625,7 @@ const enterpriseTypes = [
         title: 'Customized Plan',
         description: 'Tailored for predictable, prepaid enterprise solutions.',
         image: {
-            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5a',
+            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5',
             description: 'A person using a water dispenser.',
             imageHint: 'water dispenser',
         }
@@ -633,7 +635,7 @@ const enterpriseTypes = [
         title: 'Flowing Plan',
         description: 'For pure usage-based, pay-as-you-go enterprise clients.',
         image: {
-            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5a',
+            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5',
             description: 'Water flowing from a tap.',
             imageHint: 'water tap',
         }
