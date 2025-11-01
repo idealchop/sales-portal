@@ -7,6 +7,7 @@ import {
   FileText,
   Users,
   Search,
+  Filter,
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -31,12 +32,11 @@ import { proposals, clients } from '@/lib/data';
 import {
   Tabs,
   TabsContent,
-  TabsList,
-  TabsTrigger,
 } from '@/components/ui/tabs';
 import { ClientOverviewDialog } from "@/components/client-overview-dialog";
 import type { Client } from "@/lib/definitions";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const proposalStatusStyles: { [key: string]: string } = {
@@ -89,6 +89,8 @@ export default function ProposalsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'accepted', 'sent', 'draft', 'rejected'];
   const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'lead', 'inactive'];
+  const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('all');
+  const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
 
   const getClientById = (id: string): Client | undefined => {
     return clients.find(c => c.id === id);
@@ -247,41 +249,45 @@ export default function ProposalsPage() {
 
       <div className="space-y-4">
           {activeView === 'proposals' && (
-             <Tabs defaultValue="all">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex-1">
-                                <CardTitle>All Proposals</CardTitle>
-                                <CardDescription>
-                                    View, manage, and create sales proposals.
-                                </CardDescription>
-                            </div>
-                            <div className="w-full max-w-sm">
-                                <div className="relative">
-                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                  <Input 
-                                    placeholder="Search proposals..." 
-                                    className="pl-10" 
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                  />
-                                </div>
-                            </div>
+             <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                            <CardTitle>All Proposals</CardTitle>
+                            <CardDescription>
+                                View, manage, and create sales proposals.
+                            </CardDescription>
                         </div>
-                        <TabsList className="mt-4">
-                            {proposalStatuses.map(status => (
-                            <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
-                            ))}
-                        </TabsList>
-                    </CardHeader>
-                    {proposalStatuses.map(status => (
-                        <TabsContent key={status} value={status}>
-                            {renderProposalsTable(status)}
-                        </TabsContent>
-                    ))}
-                </Card>
-            </Tabs>
+                        <div className="flex items-center gap-2">
+                           <div className="w-full max-w-sm">
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input 
+                                  placeholder="Search proposals..." 
+                                  className="pl-10" 
+                                  value={searchQuery}
+                                  onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                              </div>
+                          </div>
+                          <Select value={proposalStatusFilter} onValueChange={(value) => setProposalStatusFilter(value as ProposalStatus | 'all')}>
+                            <SelectTrigger className="w-[180px]">
+                              <div className="flex items-center gap-2">
+                                <Filter className="h-4 w-4" />
+                                <SelectValue placeholder="Filter by status" />
+                              </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {proposalStatuses.map(status => (
+                                <SelectItem key={status} value={status} className="capitalize">{status}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                    </div>
+                </CardHeader>
+                {renderProposalsTable(proposalStatusFilter)}
+            </Card>
           )}
           {activeView === 'clients' && (
             <Tabs defaultValue="all">
@@ -294,29 +300,35 @@ export default function ProposalsPage() {
                                     Manage your clients and view their sales history.
                                 </CardDescription>
                             </div>
-                             <div className="w-full max-w-sm">
-                                <div className="relative">
-                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                  <Input 
-                                    placeholder="Search clients..." 
-                                    className="pl-10" 
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                  />
-                                </div>
+                            <div className="flex items-center gap-2">
+                               <div className="w-full max-w-sm">
+                                  <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input 
+                                      placeholder="Search clients..." 
+                                      className="pl-10" 
+                                      value={searchQuery}
+                                      onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                  </div>
+                              </div>
+                               <Select value={clientStatusFilter} onValueChange={(value) => setClientStatusFilter(value as ClientStatus | 'all')}>
+                                <SelectTrigger className="w-[180px]">
+                                  <div className="flex items-center gap-2">
+                                    <Filter className="h-4 w-4" />
+                                    <SelectValue placeholder="Filter by status" />
+                                  </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {clientStatuses.map(status => (
+                                    <SelectItem key={status} value={status} className="capitalize">{status}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                         </div>
-                        <TabsList className="mt-4">
-                            {clientStatuses.map(status => (
-                            <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
-                            ))}
-                        </TabsList>
                     </CardHeader>
-                    {clientStatuses.map(status => (
-                        <TabsContent key={status} value={status}>
-                            {renderClientsTable(status)}
-                        </TabsContent>
-                    ))}
+                    {renderClientsTable(clientStatusFilter)}
                 </Card>
             </Tabs>
           )}
