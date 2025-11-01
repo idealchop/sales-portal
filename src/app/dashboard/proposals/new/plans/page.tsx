@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -261,7 +260,7 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
             <Card className={cn(
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
-                ? "bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground border-primary shadow-2xl" 
+                ? "bg-gradient-to-r from-primary to-[#43c4bf] text-primary-foreground border-primary shadow-2xl" 
                 : "bg-card text-card-foreground border-transparent hover:border-primary/50"
             )}>
                 {plan.isRecommended && !isSelected && (
@@ -397,7 +396,7 @@ function BusinessSizeSelector({
                     )}
                 >
                     {size.image && (
-                         <div className="relative aspect-[4/3]">
+                         <div className="relative aspect-video">
                             <Image
                                 src={size.image.imageUrl}
                                 alt={size.image.description}
