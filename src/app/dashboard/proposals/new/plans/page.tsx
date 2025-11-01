@@ -454,6 +454,12 @@ function PlansGrid({
     const isSingleOverflowPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-overflow';
     const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'commercial') && selectedPlan === 'custom-plan';
 
+    const visiblePlans = useMemo(() => {
+        if (isSmeCommercialCustom) {
+            return plans.filter(p => p.id === 'custom-plan');
+        }
+        return plans;
+    }, [plans, isSmeCommercialCustom]);
 
     return (
     <RadioGroup
@@ -465,7 +471,7 @@ function PlansGrid({
             (isSingleCustomPlan || isSingleOverflowPlan || isSmeCommercialCustom) && 'md:grid-cols-1 lg:grid-cols-1'
         )}
     >
-      {plans.map((plan) => {
+      {visiblePlans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
         const isCustom = businessSize === 'enterprise' && (plan.id === 'enterprise-customized');
         const isOverflow = businessSize === 'enterprise' && (plan.id === 'enterprise-overflow');
@@ -1036,5 +1042,7 @@ export default function PlansPage() {
         </div>
     );
 }
+
+    
 
     
