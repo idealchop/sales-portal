@@ -295,14 +295,6 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                         </div>
                     </div>
                     </div>
-                    <ul className={cn("space-y-2 text-sm", isSelected ? 'text-primary/90' : 'text-muted-foreground')}>
-                        {plan.inclusions.map((item, index) => (
-                            <li key={index} className="flex items-center gap-2">
-                                <Check className={cn("h-4 w-4", isSelected ? "text-primary" : "text-primary")} />
-                                <span>{item}</span>
-                            </li>
-                        ))}
-                    </ul>
                 </CardContent>
                 <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-primary/10" : "bg-muted")}>
                     <div className={cn("flex justify-between items-center w-full text-sm", isSelected ? "text-primary" : "")}>
