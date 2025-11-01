@@ -133,9 +133,6 @@ export default function ProposalsPage() {
                 <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead className="hidden lg:table-cell">
-                  Monthly Consumption
-                </TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -164,9 +161,6 @@ export default function ProposalsPage() {
                     ) : (
                         <span className="text-muted-foreground">N/A</span>
                     )}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {client.consumptionData.toLocaleString()} Liters
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
