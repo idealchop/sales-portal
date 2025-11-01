@@ -287,46 +287,46 @@ function CustomPlanCalculator() {
 
     return (
         <div className="p-6 space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="bottles">5-Gallon Bottles per Delivery</Label>
+                    <Label htmlFor="bottles" className="text-sm font-medium text-primary-foreground/80">5-Gallon Bottles per Delivery</Label>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" onClick={() => setBottles(Math.max(1, bottles - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="bottles" type="number" value={bottles} onChange={(e) => setBottles(parseInt(e.target.value) || 0)} className="text-center" />
-                        <Button variant="outline" size="icon" onClick={() => setBottles(bottles + 1)}><Plus className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setBottles(Math.max(1, bottles - 1))}><Minus className="h-4 w-4" /></Button>
+                        <Input id="bottles" type="number" value={bottles} onChange={(e) => setBottles(parseInt(e.target.value) || 0)} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
+                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setBottles(bottles + 1)}><Plus className="h-4 w-4" /></Button>
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="deliveries">Deliveries per Week</Label>
+                    <Label htmlFor="deliveries" className="text-sm font-medium text-primary-foreground/80">Deliveries per Week</Label>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" onClick={() => setDeliveries(Math.max(1, deliveries - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="deliveries" type="number" value={deliveries} onChange={(e) => setDeliveries(parseInt(e.target.value) || 0)} className="text-center" />
-                        <Button variant="outline" size="icon" onClick={() => setDeliveries(deliveries + 1)}><Plus className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setDeliveries(Math.max(1, deliveries - 1))}><Minus className="h-4 w-4" /></Button>
+                        <Input id="deliveries" type="number" value={deliveries} onChange={(e) => setDeliveries(parseInt(e.target.value) || 0)} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
+                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setDeliveries(deliveries + 1)}><Plus className="h-4 w-4" /></Button>
                     </div>
                 </div>
             </div>
 
-            <Card className="bg-muted/50">
+            <Card className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
                 <CardHeader>
-                    <CardTitle>Custom Plan Summary</CardTitle>
+                    <CardTitle className="text-base text-primary-foreground">Custom Plan Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 text-sm">
                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Total Liters per Month</span>
-                        <span className="font-bold text-lg">{totalLiters.toLocaleString()} L</span>
+                        <span className="text-primary-foreground/80">Total Liters per Month</span>
+                        <span className="font-bold">{totalLiters.toLocaleString()} L</span>
                     </div>
                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Recommended Stations</span>
+                        <span className="text-primary-foreground/80">Recommended Stations</span>
                         <span className="font-semibold">{getStations(totalLiters)}</span>
                     </div>
                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Avg. Refill Frequency</span>
+                        <span className="text-primary-foreground/80">Avg. Refill Frequency</span>
                         <span className="font-semibold">{getFrequency(deliveries)}</span>
                     </div>
-                    <Separator />
+                    <Separator className="bg-primary-foreground/20" />
                      <div className="flex justify-between items-center">
-                        <span className="text-primary font-bold">Estimated Monthly Cost</span>
-                        <span className="font-bold text-lg text-primary">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(totalCost)}</span>
+                        <span className="font-bold">Estimated Monthly Cost</span>
+                        <span className="font-bold text-lg">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(totalCost)}</span>
                     </div>
                 </CardContent>
             </Card>
@@ -366,22 +366,20 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
                 </div>
                 )}
                 <CardHeader className="flex-1">
-                <CardTitle>{plan.name}</CardTitle>
+                <CardTitle className={cn(isSelected && "text-primary-foreground")}>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
                     <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>
                     {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-4 text-left">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.liters}</p>
-                        </div>
-                        <p className={cn("text-sm -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
+                    <div className="space-y-1">
+                        <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.liters}</p>
+                        <p className={cn("text-sm", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
                     </div>
-                     <div className="space-y-2">
+                     <div className="space-y-1">
                         <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.refillFrequency}</p>
-                        <p className={cn("text-sm -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
+                        <p className={cn("text-sm", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
                     </div>
                 </CardContent>
                 
@@ -390,11 +388,11 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
                 <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
                     <div className="flex justify-between items-center w-full text-sm">
                         <div className="flex items-center gap-2">
-                            <Users className={cn(isSelected && "text-primary-foreground/80")} />
+                            <Users className={cn(isSelected ? "text-primary-foreground/80" : "text-muted-foreground")} />
                             <span className={cn(isSelected && "text-primary-foreground")}>{plan.employees}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Building2 className={cn(isSelected && "text-primary-foreground/80")} />
+                            <Building2 className={cn(isSelected ? "text-primary-foreground/80" : "text-muted-foreground")} />
                             <span className={cn(isSelected && "text-primary-foreground")}>{plan.stations}</span>
                         </div>
                         <RadioGroupItem 
