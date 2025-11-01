@@ -50,7 +50,7 @@ const inclusions = [
     {
         icon: <Computer className="h-5 w-5 text-primary" />,
         title: 'Smart Client Portal',
-        description: 'Monitor consumption, providers, deliveries, and payments in real time.',
+        description: 'Monitor consumption, compliance, water providers, and payments in real time.',
     },
     {
         icon: <CalendarClock className="h-5 w-5 text-primary" />,
@@ -386,7 +386,7 @@ export default function PlansPage() {
           <CardHeader>
             <CardTitle>Included in Every Plan</CardTitle>
             <CardDescription>
-                Smart Refill gives your business a complete, automated water operations system — designed for convenience, compliance, and continuous supply. Every subscription plan includes full access to our growing network of partner perks.
+                Every subscription plan includes full access to our growing network of partner perks.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 sm:grid-cols-2">

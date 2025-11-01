@@ -102,7 +102,7 @@ const inclusions = [
     {
         icon: <Computer className="h-5 w-5 text-primary" />,
         title: 'Smart Client Portal',
-        description: 'Monitor consumption, providers, deliveries, and payments in real time.',
+        description: 'Monitor consumption, compliance, water providers, and payments in real time.',
     },
     {
         icon: <CalendarClock className="h-5 w-5 text-primary" />,
