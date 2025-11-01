@@ -272,7 +272,7 @@ const deliveryFrequencies = [
     { value: 7, label: 'Daily' },
 ];
 
-function CustomPlanCalculator({pricePerLiter = 5}: {pricePerLiter?: number}) {
+function CustomPlanCalculator({pricePerLiter = 3}: {pricePerLiter?: number}) {
     const [bottles, setBottles] = useState(10);
     const [deliveries, setDeliveries] = useState(1);
     const litersPerBottle = 19;
@@ -695,5 +695,3 @@ export default function PlansPage() {
         </div>
     );
 }
-
-    
