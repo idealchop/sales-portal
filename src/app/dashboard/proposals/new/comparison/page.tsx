@@ -81,50 +81,52 @@ export default function ComparisonPage() {
         </div>
       </div>
 
-      <div className="relative aspect-video rounded-lg overflow-hidden">
-        <Image 
-            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_06.png?alt=media&token=7fa3a2b5-5173-4508-bf0c-8324c5d704e2"
-            alt="Smart Refill Advantage"
-            fill
-            className="object-cover"
-            data-ai-hint="business meeting"
-        />
-      </div>
+      <div className="grid md:grid-cols-2 gap-6 items-start">
+        <div className="relative aspect-video rounded-lg overflow-hidden">
+            <Image 
+                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_06.png?alt=media&token=7fa3a2b5-5173-4508-bf0c-8324c5d704e2"
+                alt="Smart Refill Advantage"
+                fill
+                className="object-cover"
+                data-ai-hint="business meeting"
+            />
+        </div>
 
-       <Card>
-        <CardContent className="p-0">
-          <Accordion type="single" collapsible defaultValue={comparisonData[0].aspect}>
-            {comparisonData.map((item) => (
-              <AccordionItem value={item.aspect} key={item.aspect}>
-                <AccordionTrigger className="px-6 text-base font-semibold">
-                  {item.aspect}
-                </AccordionTrigger>
-                <AccordionContent className="bg-muted/30 px-6 pb-6">
-                  <div className="grid md:grid-cols-2 gap-6 pt-4">
-                    <div className="space-y-2 rounded-lg bg-background p-4 border">
-                        <div className="flex items-center gap-2">
-                            <XCircle className="h-5 w-5 text-destructive" />
-                            <h4 className="font-semibold text-muted-foreground">Traditional Model</h4>
+        <Card>
+            <CardContent className="p-0">
+            <Accordion type="single" collapsible defaultValue={comparisonData[0].aspect}>
+                {comparisonData.map((item) => (
+                <AccordionItem value={item.aspect} key={item.aspect}>
+                    <AccordionTrigger className="px-6 text-base font-semibold">
+                    {item.aspect}
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                    <div className="grid gap-4 pt-4">
+                        <div className="space-y-2 rounded-lg bg-background p-4 border">
+                            <div className="flex items-center gap-2">
+                                <XCircle className="h-5 w-5 text-destructive" />
+                                <h4 className="font-semibold text-muted-foreground">Traditional Model</h4>
+                            </div>
+                            <p className="text-sm pl-7">{item.traditional}</p>
                         </div>
-                        <p className="text-sm pl-7">{item.traditional}</p>
+                        <div className="space-y-2 rounded-lg bg-primary/10 p-4 border border-primary/20">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle className="h-5 w-5 text-primary" />
+                                <h4 className="font-semibold text-primary">Smart Refill Model</h4>
+                            </div>
+                            <p className="text-sm pl-7">{item.smartRefill}</p>
+                            <div className="mt-2 pl-7">
+                                <p className="text-sm font-semibold text-primary">{item.advantage}</p>
+                            </div>
+                        </div>
                     </div>
-                    <div className="space-y-2 rounded-lg bg-primary/10 p-4 border border-primary/20">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle className="h-5 w-5 text-primary" />
-                            <h4 className="font-semibold text-primary">Smart Refill Model</h4>
-                        </div>
-                        <p className="text-sm pl-7">{item.smartRefill}</p>
-                         <div className="mt-2 pl-7">
-                            <p className="text-sm font-semibold text-primary">{item.advantage}</p>
-                        </div>
-                    </div>
-                </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </CardContent>
-       </Card>
+                    </AccordionContent>
+                </AccordionItem>
+                ))}
+            </Accordion>
+            </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
