@@ -100,7 +100,7 @@ export default function ComparisonPage() {
                   {item.aspect}
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-6">
-                  <div className="space-y-4 pt-4">
+                  <div className="grid md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2 rounded-lg border border-dashed p-4">
                         <div className="flex items-center gap-2">
                             <XCircle className="h-5 w-5 text-destructive" />
@@ -108,7 +108,7 @@ export default function ComparisonPage() {
                         </div>
                         <p className="text-sm pl-7">{item.traditional}</p>
                     </div>
-                    <div className="space-y-2 rounded-lg border border-primary/50 bg-primary/5 p-4">
+                    <div className="space-y-2 rounded-lg border border-primary/50 bg-[#F1F8E9] dark:bg-primary/10 p-4">
                         <div className="flex items-center gap-2">
                             <CheckCircle className="h-5 w-5 text-primary" />
                             <h4 className="font-semibold text-primary">Smart Refill Model</h4>
