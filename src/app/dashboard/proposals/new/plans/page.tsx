@@ -276,7 +276,7 @@ const customSmeCommercialPlan: Plan = {
     monthlyFee: 'Custom',
     liters: 'Custom',
     refillFrequency: 'Custom',
-    inclusions: ['Priced at ₱4.50 per liter', 'Perfect for unique consumption needs', 'All standard benefits included'],
+    inclusions: ['Priced at ₱3.00 per liter', 'Perfect for unique consumption needs', 'All standard benefits included'],
     employees: '—',
     stations: '—',
 };
@@ -382,7 +382,7 @@ function CustomPlanCalculator({
                             'mt-4', 
                             isMinimumMet 
                                 ? 'bg-green-500/20 border-green-500/40 text-green-200' 
-                                : 'bg-red-900/80 border-red-500/60 text-red-200'
+                                : 'bg-red-500/10 border-red-500/30 text-red-300'
                         )}>
                             <AlertCircle className="h-4 w-4" />
                             <AlertTitle className={cn('font-bold', !isMinimumMet && 'text-red-100')}>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
@@ -443,11 +443,14 @@ function PlansGrid({
     };
 
     let gridColsClass = 'lg:grid-cols-3';
-    if (businessSize === 'commercial' || businessSize === 'sme') {
+    if (businessSize === 'commercial') {
         gridColsClass = 'lg:grid-cols-2';
     }
      if (businessSize === 'corporate') {
         gridColsClass = 'lg:grid-cols-2';
+    }
+     if (businessSize === 'sme') {
+        gridColsClass = 'md:grid-cols-2';
     }
     
     const isSingleCustomPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-customized';
@@ -466,7 +469,7 @@ function PlansGrid({
         value={selectedPlan ?? defaultPlan} 
         onValueChange={onSelectPlan}
         className={cn(
-            "grid grid-cols-1 md:grid-cols-2 gap-6 items-start",
+            "grid grid-cols-1 gap-6 items-start",
             gridColsClass,
             (isSingleCustomPlan || isSingleOverflowPlan || isSmeCommercialCustom) && 'md:grid-cols-1 lg:grid-cols-1'
         )}
@@ -581,7 +584,7 @@ function PlansGrid({
                     {plan.id === 'custom-plan' && isSelected && (
                         <CustomPlanCalculator
                             onCalculated={onSmeCommercialCustomCalculated}
-                            pricePerLiter={4.5}
+                            pricePerLiter={3}
                             title="Customize SME/Commercial Plan"
                         />
                     )}
