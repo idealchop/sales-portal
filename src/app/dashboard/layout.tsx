@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -15,12 +16,13 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { cn } from '@/lib/utils';
 
 function DashboardSidebar() {
+  const { state } = useSidebar();
   return (
       <Sidebar side="left" variant="floating" collapsible="icon">
         <SidebarHeader className="border-b border-sidebar-border">
            <div className="flex items-center gap-3 p-2">
             <Image src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2FAsset%2022.png?alt=media&token=f7458efe-afd7-4006-862e-40c8d524c080" width={32} height={32} alt="Smart Refill Logo" />
-            <div className="flex flex-col transition-opacity duration-200 group-data-[collapsed=icon]:opacity-0">
+            <div className={cn("flex flex-col transition-opacity duration-200", state === "collapsed" ? "opacity-0" : "opacity-100")}>
                 <span className="text-lg font-semibold font-headline text-sidebar-foreground whitespace-nowrap">
                     Smart Refill
                 </span>
