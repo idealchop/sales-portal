@@ -82,8 +82,8 @@ export default function ComparisonPage() {
       </div>
 
       <div className="container mx-auto px-0">
-        <div className="grid md:grid-cols-2 gap-6 items-start">
-            <div className="relative aspect-video rounded-lg overflow-hidden">
+        <div className="grid md:grid-cols-2 gap-6 items-start rounded-lg border bg-card text-card-foreground shadow-lg p-6">
+            <div className="relative aspect-video rounded-lg overflow-hidden shadow-md">
                 <Image 
                     src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_06.png?alt=media&token=7fa3a2b5-5173-4508-bf0c-8324c5d704e2"
                     alt="Smart Refill Advantage"
@@ -93,7 +93,7 @@ export default function ComparisonPage() {
                 />
             </div>
 
-            <Card>
+            <Card className="shadow-md">
                 <CardContent className="p-0">
                 <Accordion type="single" collapsible defaultValue={comparisonData[0].aspect}>
                     {comparisonData.map((item) => (
