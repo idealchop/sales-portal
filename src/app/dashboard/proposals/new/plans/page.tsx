@@ -366,7 +366,7 @@ function CustomPlanCalculator({
                         <span className="font-bold">{isFixedPrice ? 'Top-Up Amount' : 'Estimated Monthly Cost'}</span>
                         <span className="font-bold text-lg">{currencyFormatter.format(totalCost)}</span>
                     </div>
-                    {minimumCost > 0 && (
+                    {minimumCost > 0 && !isFixedPrice && (
                         <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
                             'mt-4', 
                             isMinimumMet 
@@ -428,7 +428,7 @@ function PlansGrid({
     };
 
     let gridColsClass = 'lg:grid-cols-3';
-    if ((businessSize === 'sme' || businessSize === 'commercial') && plans.length === 3) {
+    if (businessSize === 'commercial' || (businessSize === 'sme' && plans.length === 3)) {
         gridColsClass = 'lg:grid-cols-2';
     }
      if (businessSize === 'corporate') {
@@ -532,6 +532,7 @@ function PlansGrid({
                         <CustomPlanCalculator 
                             onCalculated={onCustomCalculated} 
                             pricePerLiter={3} 
+                            minimumCost={30000}
                             title="Customized Plan Calculator"
                         />
                     )}
@@ -839,7 +840,13 @@ export default function PlansPage() {
                 />;
     };
     
-    const isNextDisabled = !selectedPlan;
+    const isNextDisabled = useMemo(() => {
+        if (!selectedPlan) return true;
+        if (selectedPlan === 'enterprise-customized') {
+            return !customCalculatedValues || customCalculatedValues.totalCost < 30000;
+        }
+        return false;
+    }, [selectedPlan, customCalculatedValues]);
 
     const getNextLink = () => {
         if (!selectedPlan) return '#';
