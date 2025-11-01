@@ -1,7 +1,7 @@
 
 'use client';
 import Link from 'next/link';
-import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight } from 'lucide-react';
+import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users } from 'lucide-react';
 import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
@@ -85,20 +85,10 @@ export function DashboardHeader() {
                 <Separator />
 
                 <div className="p-4 text-sm">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Star className="h-4 w-4" />
-                            <span>Current Tier</span>
-                        </div>
-                        <span className="font-semibold">Gold Tier</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Percent className="h-4 w-4" />
-                            <span>Commission Rate</span>
-                        </div>
-                        <span className="font-semibold">5%</span>
-                    </div>
+                    <Button variant="outline" className="w-full">
+                        <Users className="mr-2 h-4 w-4" />
+                        Refer a friend to join the team
+                    </Button>
                 </div>
 
                 <Separator />
