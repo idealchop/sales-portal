@@ -561,6 +561,7 @@ const enterpriseTypes = [
         description: 'Tailored for predictable, prepaid enterprise solutions.',
         image: {
             imageUrl: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGFncmVlbWVudHxlbnwwfHx8fDE3NjE5NzYyNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+            description: 'Two people shaking hands over a contract.',
             imageHint: 'business agreement',
         }
     },
@@ -570,6 +571,7 @@ const enterpriseTypes = [
         description: 'For pure usage-based, pay-as-you-go enterprise clients.',
         image: {
             imageUrl: 'https://images.unsplash.com/photo-1629904853716-f0bc64219b1f?ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwYXltZW50JTIwZmxvd3xlbnwwfHx8fDE3NjE5NzYyNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+            description: 'A diagram of a payment flow.',
             imageHint: 'payment flow',
         }
     }
