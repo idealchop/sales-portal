@@ -1,11 +1,9 @@
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle } from 'lucide-react';
@@ -81,6 +79,16 @@ export default function ComparisonPage() {
                 <Link href="/dashboard/proposals/new/plans">Next Step</Link>
             </Button>
         </div>
+      </div>
+
+      <div className="relative aspect-video rounded-lg overflow-hidden">
+        <Image 
+            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_05.jpg?alt=media&token=c8bb02fa-d6d8-406d-b4ae-a0ee53ee8457"
+            alt="Smart Refill Advantage"
+            fill
+            className="object-cover"
+            data-ai-hint="business meeting"
+        />
       </div>
 
        <Card>
