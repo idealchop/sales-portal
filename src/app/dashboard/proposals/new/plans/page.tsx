@@ -368,7 +368,7 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
                 <CardHeader className="flex-1">
                 <CardTitle className={cn(isSelected && "text-primary-foreground")}>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
-                    <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>
+                    {plan.id !== 'enterprise-customized' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
                     {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
@@ -387,13 +387,13 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
 
                 <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
                     <div className="flex justify-between items-center w-full text-sm">
-                        <div className="flex items-center gap-2">
-                            <Users className={cn(isSelected ? "text-primary-foreground/80" : "text-muted-foreground")} />
-                            <span className={cn(isSelected && "text-primary-foreground")}>{plan.employees}</span>
+                        <div className={cn("flex items-center gap-2", isSelected && "text-primary-foreground")}>
+                            <Users className="text-inherit" />
+                            <span className="text-inherit">{plan.employees}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Building2 className={cn(isSelected ? "text-primary-foreground/80" : "text-muted-foreground")} />
-                            <span className={cn(isSelected && "text-primary-foreground")}>{plan.stations}</span>
+                        <div className={cn("flex items-center gap-2", isSelected && "text-primary-foreground")}>
+                            <Building2 className="text-inherit" />
+                            <span className="text-inherit">{plan.stations}</span>
                         </div>
                         <RadioGroupItem 
                         value={plan.id} 
