@@ -123,16 +123,36 @@ export function ClientOverviewDialog({
                                 <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
                                 <div className='flex-1'>
                                     <p className="font-semibold">{client.address}</p>
-                                    <div className="aspect-video w-full overflow-hidden rounded-lg mt-2">
-                                        <iframe
-                                            width="100%"
-                                            height="100%"
-                                            style={{ border: 0 }}
-                                            loading="lazy"
-                                            allowFullScreen
-                                            src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed`}
-                                        ></iframe>
-                                    </div>
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <div className="aspect-video w-full overflow-hidden rounded-lg mt-2 cursor-pointer">
+                                                <iframe
+                                                    width="100%"
+                                                    height="100%"
+                                                    style={{ border: 0, pointerEvents: 'none' }}
+                                                    loading="lazy"
+                                                    allowFullScreen
+                                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed&z=15`}
+                                                ></iframe>
+                                            </div>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-3xl h-[80vh]">
+                                            <DialogHeader>
+                                                <DialogTitle>Location: {client.companyName}</DialogTitle>
+                                                <DialogDescription>{client.address}</DialogDescription>
+                                            </DialogHeader>
+                                            <div className="w-full h-full rounded-lg overflow-hidden">
+                                                <iframe
+                                                    width="100%"
+                                                    height="100%"
+                                                    style={{ border: 0 }}
+                                                    loading="lazy"
+                                                    allowFullScreen
+                                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed&z=17`}
+                                                ></iframe>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
                                 </div>
                             </div>
                         </CardContent>
@@ -286,5 +306,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
