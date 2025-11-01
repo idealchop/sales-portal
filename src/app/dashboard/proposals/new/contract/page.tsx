@@ -1,6 +1,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -380,6 +381,8 @@ function PreviewDialog({
     const litersCost = additionalLiters * additionalLiterCost;
     const subtotal = planBaseCost + addonsCost + dispensersCost + litersCost;
 
+    const summaryTitle = finalPlan.name.includes("Plan") ? finalPlan.name : `${finalPlan.name} Plan`;
+
     return (
         <DialogContent className="sm:max-w-5xl">
             <DialogHeader className="sr-only">
@@ -403,29 +406,62 @@ function PreviewDialog({
                     
                     <Separator />
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>For the Proposed Client</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                            <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                <span className="text-muted-foreground">Name:</span>
-                                <span className="font-semibold">{clientName || "N/A"}</span>
-                            </div>
-                             <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                <span className="text-muted-foreground">Date:</span>
-                                <span className="font-semibold">{today}</span>
-                            </div>
-                             <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                <span className="text-muted-foreground">Company:</span>
-                                <span className="font-semibold">{clientCompany || "N/A"}</span>
-                            </div>
-                           <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                <span className="text-muted-foreground">Plan:</span>
-                                <span className="font-semibold">{plan?.name || "Not Selected"}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div className="grid grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Client Information</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 gap-x-8 gap-y-4 text-sm">
+                                <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                    <span className="text-muted-foreground">Name:</span>
+                                    <span className="font-semibold">{clientName || "N/A"}</span>
+                                </div>
+                                 <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                    <span className="text-muted-foreground">Company:</span>
+                                    <span className="font-semibold">{clientCompany || "N/A"}</span>
+                                </div>
+                                <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                    <span className="text-muted-foreground">Date:</span>
+                                    <span className="font-semibold">{today}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Plan Details: {summaryTitle}</CardTitle>
+                            </CardHeader>
+                             <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Waves className="h-4 w-4 text-primary" />
+                                    <div>
+                                        <p className="text-muted-foreground">Total Liters</p>
+                                        <p className="font-semibold">{finalPlan.liters}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-primary" />
+                                    <div>
+                                        <p className="text-muted-foreground">Employees</p>
+                                        <p className="font-semibold">{finalPlan.employees}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Package className="h-4 w-4 text-primary" />
+                                    <div>
+                                        <p className="text-muted-foreground">Stations</p>
+                                        <p className="font-semibold">{finalPlan.stations}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <RefreshCcw className="h-4 w-4 text-primary" />
+                                    <div>
+                                        <p className="text-muted-foreground">Refill Frequency</p>
+                                        <p className="font-semibold">{finalPlan.refillFrequency}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
                     <Card>
                         <CardContent className="pt-6">
@@ -1035,6 +1071,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
