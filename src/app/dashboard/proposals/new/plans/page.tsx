@@ -713,59 +713,61 @@ export default function PlansPage() {
         </Card>
 
 
-        <div className="grid gap-6">
-            <Card>
-            <CardHeader>
-                <CardTitle>Included in Every Plan</CardTitle>
-                <CardDescription>
-                    Every subscription plan includes full access to our growing network of partner perks.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6 sm:grid-cols-2">
-                {inclusions.map((item) => (
-                <div key={item.title} className="flex items-start gap-3">
-                    <div>{item.icon}</div>
-                    <div>
-                    <h3 className="font-semibold text-sm">{item.title}</h3>
-                    <p className="text-xs text-muted-foreground">
-                        {item.description}
-                    </p>
-                    </div>
-                </div>
-                ))}
-            </CardContent>
-            </Card>
+        {selectedSize && (
+          <div className="grid gap-6">
+              <Card>
+              <CardHeader>
+                  <CardTitle>Included in Every Plan</CardTitle>
+                  <CardDescription>
+                      Every subscription plan includes full access to our growing network of partner perks.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-6 sm:grid-cols-2">
+                  {inclusions.map((item) => (
+                  <div key={item.title} className="flex items-start gap-3">
+                      <div>{item.icon}</div>
+                      <div>
+                      <h3 className="font-semibold text-sm">{item.title}</h3>
+                      <p className="text-xs text-muted-foreground">
+                          {item.description}
+                      </p>
+                      </div>
+                  </div>
+                  ))}
+              </CardContent>
+              </Card>
 
-            <Card>
-            <CardHeader>
-                <CardTitle>Partner Perks</CardTitle>
-                <CardDescription>
-                Every premium plan includes access to our growing network of partner benefits.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-8 sm:grid-cols-2">
-                {perks.map((perk) => (
-                    <div key={perk.partner} className="flex items-start gap-4">
-                        {perk.icon}
-                        <div className="space-y-1">
-                            <h3 className="font-semibold">{perk.partner}</h3>
-                            <p className="text-sm text-muted-foreground">{perk.description}</p>
-                            <p className="text-sm font-medium text-primary">{perk.benefit}</p>
-                        </div>
-                    </div>
-                ))}
-            </CardContent>
-            <CardFooter>
-                <div className="text-sm text-muted-foreground space-y-2">
-                <p className="font-semibold text-foreground">Terms:</p>
-                <ul className="list-disc list-inside space-y-1">
-                        <li>All employees of the subscribed company are eligible for these perks.</li>
-                        <li>To redeem, employees must present their company ID at partner establishments.</li>
-                </ul>
-                </div>
-            </CardFooter>
-            </Card>
-        </div>
+              <Card>
+              <CardHeader>
+                  <CardTitle>Partner Perks</CardTitle>
+                  <CardDescription>
+                  Every premium plan includes access to our growing network of partner benefits.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-8 sm:grid-cols-2">
+                  {perks.map((perk) => (
+                      <div key={perk.partner} className="flex items-start gap-4">
+                          {perk.icon}
+                          <div className="space-y-1">
+                              <h3 className="font-semibold">{perk.partner}</h3>
+                              <p className="text-sm text-muted-foreground">{perk.description}</p>
+                              <p className="text-sm font-medium text-primary">{perk.benefit}</p>
+                          </div>
+                      </div>
+                  ))}
+              </CardContent>
+              <CardFooter>
+                  <div className="text-sm text-muted-foreground space-y-2">
+                  <p className="font-semibold text-foreground">Terms:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                          <li>All employees of the subscribed company are eligible for these perks.</li>
+                          <li>To redeem, employees must present their company ID at partner establishments.</li>
+                  </ul>
+                  </div>
+              </CardFooter>
+              </Card>
+          </div>
+        )}
 
         </div>
     );
