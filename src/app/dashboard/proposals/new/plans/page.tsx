@@ -407,6 +407,9 @@ export default function PlansPage() {
         <Card>
           <CardHeader>
             <CardTitle>Partner Perks</CardTitle>
+            <CardDescription>
+                Enhance your subscription with exclusive benefits from our partners, included with every plan.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-8 sm:grid-cols-2">
             {perks.map((perk) => (
