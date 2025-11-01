@@ -63,11 +63,6 @@ const inclusions = [
         description: 'Unused liters carry over to the next cycle.',
     },
     {
-        icon: <AreaChart className="h-5 w-5 text-primary" />,
-        title: 'Transparent Tracking',
-        description: 'Full visibility for operations and accounting.',
-    },
-    {
         icon: <Thermometer className="h-5 w-5 text-primary" />,
         title: 'Free Dispensers, Bottles & Sanitary Items',
         description: 'Included based on your plan.',

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -86,11 +87,6 @@ const inclusions = [
         icon: <RotateCw className="h-5 w-5 text-primary" />,
         title: 'Roll-Over Liters',
         description: 'Unused liters carry over to the next cycle.',
-    },
-    {
-        icon: <AreaChart className="h-5 w-5 text-primary" />,
-        title: 'Transparent Tracking',
-        description: 'Full visibility for operations and accounting.',
     },
     {
         icon: <Thermometer className="h-5 w-5 text-primary" />,
