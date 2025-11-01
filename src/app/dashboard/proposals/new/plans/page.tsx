@@ -308,7 +308,7 @@ const businessSizes: { id: BusinessSize, title: string, description: string, ima
         title: 'SME', 
         description: 'For small teams, kiosks, and home offices.', 
         image: {
-            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartrefill_SME.png?alt=media&token=eda50afe-7dd2-494c-ab48-0508dd3be81a",
+            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_SME.png?alt=media&token=e6beeb7b-3ed1-4e51-87cf-1b65b49041a1",
             description: "An office with a few people",
             imageHint: "small office"
         },
@@ -317,19 +317,31 @@ const businessSizes: { id: BusinessSize, title: string, description: string, ima
         id: 'commercial', 
         title: 'Commercial', 
         description: 'For growing offices and warehouses.', 
-        image: PlaceHolderImages.find(p => p.title === 'medium-business'),
+        image: {
+            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_Business.png?alt=media&token=b8536b3c-5199-460a-8612-003c99139d7c",
+            description: "A medium-sized office building.",
+            imageHint: "office building"
+        },
     },
     { 
         id: 'corporate', 
         title: 'Corporate', 
         description: 'For multi-site companies and BPOs.', 
-        image: PlaceHolderImages.find(p => p.title === 'large-business'),
+        image: {
+            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_Enterprise.png?alt=media&token=29e0d6a7-41f7-4511-a8b6-0369989421bd",
+            description: "A large corporate building.",
+            imageHint: "corporate building"
+        },
     },
     { 
         id: 'flow', 
         title: 'Flowing Plans', 
         description: 'Pay based on your actual water consumption.', 
-        image: PlaceHolderImages.find(p => p.title === 'flow-plan'),
+        image: {
+            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63",
+            description: "An abstract representation of a data flow.",
+            imageHint: "data flow"
+        },
     },
 ];
 
