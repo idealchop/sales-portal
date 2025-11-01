@@ -31,7 +31,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -551,26 +551,28 @@ function PreviewDialog({
                             <CardTitle>Signatures</CardTitle>
                             <CardDescription>Please sign below to finalize the agreement.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                        <div className="space-y-6 pt-4">
+                        <CardContent className="space-y-4 pt-4">
                             <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="name-preview">Name:</Label>
+                                    <Label htmlFor="name-preview">Name</Label>
                                     <Input id="name-preview" placeholder="Full Name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="company-preview">Company:</Label>
+                                    <Label htmlFor="company-preview">Company</Label>
                                     <Input id="company-preview" placeholder="Company Name" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Date:</Label>
-                                    <Input placeholder="Date" value={today} readOnly />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Signature:</Label>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label>Signature</Label>
                                     <SignaturePad ref={signaturePadRef} />
                                 </div>
-                        </div>
+                                <div className="space-y-2">
+                                    <Label>Date</Label>
+                                    <Input placeholder="Date" value={today} readOnly />
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -920,7 +922,7 @@ function ContractPageContent() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <div className="flex justify-between font-semibold">
-                            <span>{summaryTitle} ({billingCycleLabel})</span>
+                            <span>{summaryTitle.includes("Plan") ? summaryTitle : `${summaryTitle} Plan`} ({billingCycleLabel})</span>
                             <span>{currencyFormatter.format(basePrice - (basePrice * discount))}</span>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
@@ -1024,6 +1026,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
