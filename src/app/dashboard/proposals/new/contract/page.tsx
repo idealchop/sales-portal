@@ -833,7 +833,7 @@ export default function ContractPage() {
                          <ul className="text-xs text-muted-foreground mt-1 list-disc pl-5">
                             <li>{5000 + additionalLiters}L water</li>
                             <li>2 free dispensers</li>
-                            <li>≈{estimatedBottles} bottles</li>
+                            <li>Refill Frequency: 5-6/week</li>
                             <li>Free delivery</li>
                         </ul>
                     </div>
@@ -941,5 +941,7 @@ export default function ContractPage() {
     </div>
   );
 }
+
+    
 
     
