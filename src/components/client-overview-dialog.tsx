@@ -118,10 +118,20 @@ export function ClientOverviewDialog({
                                     <p className="font-semibold">{client.contactPhone}</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <MapPin className="h-5 w-5 text-muted-foreground" />
-                                <div>
+                            <div className="flex items-start gap-3">
+                                <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
+                                <div className='flex-1'>
                                     <p className="font-semibold">{client.address}</p>
+                                    <div className="aspect-video w-full overflow-hidden rounded-lg mt-2">
+                                        <iframe
+                                            width="100%"
+                                            height="100%"
+                                            style={{ border: 0 }}
+                                            loading="lazy"
+                                            allowFullScreen
+                                            src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed`}
+                                        ></iframe>
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>
@@ -154,23 +164,6 @@ export function ClientOverviewDialog({
                     </Card>
                  </div>
                 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Client Location</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="aspect-video w-full overflow-hidden rounded-lg">
-                        <iframe
-                            width="100%"
-                            height="100%"
-                            style={{ border: 0 }}
-                            loading="lazy"
-                            allowFullScreen
-                            src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed`}
-                        ></iframe>
-                        </div>
-                    </CardContent>
-                </Card>
                  <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:bg-accent transition-colors">
