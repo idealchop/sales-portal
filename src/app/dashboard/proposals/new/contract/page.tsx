@@ -3,6 +3,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -36,6 +37,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
+import { allPlans } from '../plans/page';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0 },
@@ -308,7 +310,8 @@ function PreviewDialog({
     basePrice,
     selectedAddons,
     additionalDispensers,
-    additionalLiters
+    additionalLiters,
+    plan
 }: { 
     totalAmount: string,
     billingCycleLabel: string,
@@ -317,6 +320,7 @@ function PreviewDialog({
     selectedAddons: { [key: string]: boolean },
     additionalDispensers: number,
     additionalLiters: number,
+    plan: any
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
     const [clientName, setClientName] = useState('');
@@ -357,6 +361,7 @@ function PreviewDialog({
         });
     };
 
+    const planBaseCost = plan ? parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) : 0;
     const addonsCost = addons.reduce((total, addon) => {
         if (addon.type === 'checkbox') {
              return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
@@ -366,7 +371,7 @@ function PreviewDialog({
     
     const dispensersCost = additionalDispensers * additionalDispenserCost;
     const litersCost = additionalLiters * additionalLiterCost;
-    const subtotal = 7500 + addonsCost + dispensersCost + litersCost;
+    const subtotal = planBaseCost + addonsCost + dispensersCost + litersCost;
 
     return (
         <DialogContent className="sm:max-w-5xl">
@@ -410,7 +415,7 @@ function PreviewDialog({
                             </div>
                            <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                                 <span className="text-muted-foreground">Plan:</span>
-                                <span className="font-semibold">Pro Plan</span>
+                                <span className="font-semibold">{plan?.name || "Not Selected"}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -433,8 +438,8 @@ function PreviewDialog({
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Pro Plan ({billingCycleLabel})</span>
-                                <span className="font-semibold">{currencyFormatter.format(7500)}</span>
+                                <span className="text-muted-foreground">{plan.name} Plan ({billingCycleLabel})</span>
+                                <span className="font-semibold">{currencyFormatter.format(planBaseCost)}</span>
                             </div>
                             {addons.map((addon) => (
                                 addon.type === 'checkbox' && selectedAddons[addon.id] && (
@@ -596,8 +601,11 @@ function TimelineItem({ icon, title, description, isLast = false }: { icon: Reac
     );
 }
 
+function ContractPageContent() {
+  const searchParams = useSearchParams();
+  const planId = searchParams.get('plan');
+  const plan = allPlans.find(p => p.id === planId);
 
-export default function ContractPage() {
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
@@ -611,7 +619,12 @@ export default function ContractPage() {
   }
 
   const { totalAmount, discount, billingCycleLabel, basePrice } = useMemo(() => {
-    const proPlanCost = 7500;
+    const planBaseCost = plan ? parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) : 0;
+    if (isNaN(planBaseCost)) {
+      // Handle cases like "Usage-Based" or "Custom"
+      return { totalAmount: plan?.monthlyFee || 'N/A', discount: 0, billingCycleLabel: 'N/A', basePrice: 0 };
+    }
+
     const addonsCost = addons.reduce((total, addon) => {
         if (addon.type === 'checkbox') {
             return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
@@ -621,7 +634,7 @@ export default function ContractPage() {
     const dispensersCost = additionalDispensers * additionalDispenserCost;
     const litersCost = additionalLiters * additionalLiterCost;
 
-    const currentBasePrice = proPlanCost + addonsCost + dispensersCost + litersCost;
+    const currentBasePrice = planBaseCost + addonsCost + dispensersCost + litersCost;
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
     const discountAmount = currentBasePrice * selectedCycle.discount;
     const finalAmount = currentBasePrice - discountAmount;
@@ -632,7 +645,7 @@ export default function ContractPage() {
         billingCycleLabel: selectedCycle.label,
         basePrice: currentBasePrice,
     }
-  }, [billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
+  }, [plan, billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
@@ -643,6 +656,27 @@ export default function ContractPage() {
     });
   }
   
+  if (!plan) {
+    return (
+        <div className="flex flex-col gap-6 items-center justify-center h-full">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle>No Plan Selected</CardTitle>
+                    <CardDescription>
+                        Please go back and select a plan to continue.
+                    </CardDescription>
+                </CardHeader>
+                <CardFooter>
+                    <Button asChild className="w-full">
+                        <Link href="/dashboard/proposals/new/plans">Go to Plans</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    )
+  }
+
+  const planLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -667,7 +701,7 @@ export default function ContractPage() {
       <div className="flex flex-col gap-6">
         <Card>
             <CardHeader>
-                <CardTitle>Plan Summary: Pro Plan</CardTitle>
+                <CardTitle>Plan Summary: {plan.name} Plan</CardTitle>
                 <CardDescription>
                     A summary of the selected subscription plan details.
                 </CardDescription>
@@ -680,7 +714,7 @@ export default function ContractPage() {
                             <Waves className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{5000 + additionalLiters} L</div>
+                            <div className="text-2xl font-bold">{plan.liters !== 'Custom' && plan.liters !== 'No cap' ? `${planLiters + additionalLiters} L` : plan.liters }</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -689,16 +723,16 @@ export default function ContractPage() {
                             <Users className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">50 – 75</div>
+                            <div className="text-2xl font-bold">{plan.employees}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Free Dispensers</CardTitle>
+                            <CardTitle className="text-sm font-medium">Water Stations</CardTitle>
                             <Package className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">2 Units</div>
+                            <div className="text-2xl font-bold">{plan.stations}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -707,7 +741,7 @@ export default function ContractPage() {
                             <RefreshCcw className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">5-6/week</div>
+                            <div className="text-2xl font-bold">{plan.refillFrequency}</div>
                         </CardContent>
                     </Card>
                 </div>
@@ -825,14 +859,13 @@ export default function ContractPage() {
                 <CardContent className="space-y-4">
                     <div>
                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Pro Plan ({billingCycleLabel})</span>
+                            <span className="text-muted-foreground">{plan.name} Plan ({billingCycleLabel})</span>
                             <span className="font-semibold">{currencyFormatter.format(basePrice - (basePrice * discount))}</span>
                         </div>
                          <ul className="text-xs text-muted-foreground mt-1 list-disc pl-5">
-                            <li>{5000 + additionalLiters}L water</li>
-                            <li>2 free dispensers</li>
-                            <li>Refill Frequency: 5-6/week</li>
-                            <li>Free delivery</li>
+                            <li>{plan.liters !== 'Custom' && plan.liters !== 'No cap' ? `${planLiters + additionalLiters} L water` : plan.liters}</li>
+                            <li>{plan.inclusions[0]}</li>
+                            <li>Refill Frequency: {plan.refillFrequency}</li>
                         </ul>
                     </div>
                      {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
@@ -887,6 +920,7 @@ export default function ContractPage() {
                             selectedAddons={selectedAddons}
                             additionalDispensers={additionalDispensers}
                             additionalLiters={additionalLiters}
+                            plan={plan}
                         />
                     </Dialog>
                 </CardFooter>
@@ -940,6 +974,14 @@ export default function ContractPage() {
   );
 }
 
+export default function ContractPage() {
+    return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <ContractPageContent />
+        </React.Suspense>
+    )
+}
     
 
     
+

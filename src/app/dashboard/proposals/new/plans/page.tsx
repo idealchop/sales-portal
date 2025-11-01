@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type Plan = {
+  id: string;
   name: string;
   monthlyFee: string;
   liters: string;
@@ -119,6 +120,7 @@ const perks = [
 
 const smePlans: Plan[] = [
   {
+    id: 'micro',
     name: 'Micro',
     monthlyFee: '₱1,500',
     liters: '500 L',
@@ -128,6 +130,7 @@ const smePlans: Plan[] = [
     stations: '1 Station',
   },
   {
+    id: 'starter',
     name: 'Starter',
     monthlyFee: '₱3,000',
     liters: '1,000 L',
@@ -137,6 +140,7 @@ const smePlans: Plan[] = [
     stations: '1 Station',
   },
   {
+    id: 'professional',
     name: 'Professional',
     monthlyFee: '₱6,000',
     liters: '2,000 L',
@@ -150,6 +154,7 @@ const smePlans: Plan[] = [
 
 const commercialPlans: Plan[] = [
   {
+    id: 'growth',
     name: 'Growth',
     monthlyFee: '₱9,000',
     liters: '3,000 L',
@@ -159,6 +164,7 @@ const commercialPlans: Plan[] = [
     stations: '2 Stations',
   },
   {
+    id: 'pro',
     name: 'Pro',
     monthlyFee: '₱12,000',
     liters: '4,000 L',
@@ -169,6 +175,7 @@ const commercialPlans: Plan[] = [
     isRecommended: true,
   },
   {
+    id: 'business',
     name: 'Business',
     monthlyFee: '₱18,000',
     liters: '6,000 L',
@@ -181,6 +188,7 @@ const commercialPlans: Plan[] = [
 
 const corporatePlans: Plan[] = [
     {
+        id: 'enterprise-basic',
         name: 'Enterprise Basic',
         monthlyFee: '₱30,000',
         liters: '10,000 L',
@@ -190,6 +198,7 @@ const corporatePlans: Plan[] = [
         stations: '2 – 3 Stations',
     },
     {
+        id: 'enterprise-plus',
         name: 'Enterprise Plus',
         monthlyFee: '₱50,000',
         liters: '16,600 L',
@@ -200,6 +209,7 @@ const corporatePlans: Plan[] = [
         isRecommended: true,
     },
     {
+        id: 'enterprise-elite',
         name: 'Enterprise Elite',
         monthlyFee: '₱75,000',
         liters: '25,000 L',
@@ -209,6 +219,7 @@ const corporatePlans: Plan[] = [
         stations: '3 – 4 Stations',
     },
     {
+        id: 'enterprise-pro',
         name: 'Enterprise Pro',
         monthlyFee: '₱100,000+',
         liters: '33,000+ L',
@@ -221,6 +232,7 @@ const corporatePlans: Plan[] = [
 
 const flowPlans: Plan[] = [
     {
+        id: 'enterprise-customized',
         name: 'Enterprise Customized',
         monthlyFee: 'Fixed (Prepaid)',
         liters: 'Custom',
@@ -231,6 +243,7 @@ const flowPlans: Plan[] = [
         isRecommended: true,
     },
     {
+        id: 'enterprise-overflow',
         name: 'Enterprise Overflow',
         monthlyFee: 'Usage-Based',
         liters: 'No cap',
@@ -241,22 +254,23 @@ const flowPlans: Plan[] = [
     },
 ]
 
+export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...flowPlans];
+
 type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'flow';
 
 
-function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string }) {
-    const [selectedPlan, setSelectedPlan] = useState(defaultPlan);
+function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan }: { plans: Plan[], defaultPlan: string, selectedPlan: string | null, onSelectPlan: (planId: string) => void }) {
 
   return (
-    <RadioGroup 
-        value={selectedPlan} 
-        onValueChange={setSelectedPlan}
+    <RadioGroup
+        value={selectedPlan ?? defaultPlan} 
+        onValueChange={onSelectPlan}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start"
     >
       {plans.map((plan) => {
-        const isSelected = selectedPlan === plan.name.toLowerCase().replace(/ /g, '-');
+        const isSelected = selectedPlan === plan.id;
         return (
-            <Label htmlFor={plan.name.toLowerCase().replace(/ /g, '-')} key={plan.name} className="cursor-pointer h-full">
+            <Label htmlFor={plan.id} key={plan.name} className="cursor-pointer h-full">
             <Card className={cn(
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
@@ -274,24 +288,27 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                 </div>
                 )}
                 <CardHeader className="flex-1">
-                <CardTitle className={cn(isSelected ? "text-primary-foreground" : "")}>{plan.name}</CardTitle>
+                <CardTitle>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
-                    <span className={cn("text-3xl font-bold", isSelected ? "text-primary-foreground" : "")}>{plan.monthlyFee}</span>
+                    <span className="text-3xl font-bold">{plan.monthlyFee}</span>
                     {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-4 text-left">
-                    <div className="space-y-1">
-                        <p className={cn("text-lg font-bold", isSelected ? "text-primary-foreground" : "")}>{plan.liters}</p>
-                        <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Liters Included</p>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <GlassWater className="h-5 w-5"/>
+                            <p className="text-lg font-bold">{plan.liters}</p>
+                        </div>
+                        <p className="text-sm ml-7 -mt-2 text-muted-foreground">Liters Included</p>
                     </div>
-                    <div className="space-y-1">
-                        <p className={cn("text-lg font-bold", isSelected ? "text-primary-foreground" : "")}>{plan.refillFrequency}</p>
-                        <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Avg. Refill Frequency</p>
+                    <div className="space-y-2">
+                        <p className="text-lg font-bold ml-7">{plan.refillFrequency}</p>
+                        <p className="text-sm ml-7 -mt-2 text-muted-foreground">Avg. Refill Frequency</p>
                     </div>
                 </CardContent>
-                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/10" : "bg-muted")}>
-                    <div className={cn("flex justify-between items-center w-full text-sm", isSelected ? "text-primary-foreground" : "")}>
+                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
+                    <div className="flex justify-between items-center w-full text-sm">
                         <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
                             <span>{plan.employees}</span>
@@ -301,8 +318,8 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                             <span>{plan.stations}</span>
                         </div>
                         <RadioGroupItem 
-                        value={plan.name.toLowerCase().replace(/ /g, '-')} 
-                        id={plan.name.toLowerCase().replace(/ /g, '-')} 
+                        value={plan.id} 
+                        id={plan.id}
                         className="sr-only"
                         />
                     </div>
@@ -409,21 +426,27 @@ function BusinessSizeSelector({
 
 export default function PlansPage() {
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
+    const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
+        setSelectedPlan(null); // Reset plan selection when size changes
     };
+
+    const handlePlanSelect = (planId: string) => {
+        setSelectedPlan(planId);
+    }
     
     const renderPlans = () => {
         switch (selectedSize) {
             case 'sme':
-                return <PlansGrid plans={smePlans} defaultPlan="professional" />;
+                return <PlansGrid plans={smePlans} defaultPlan="professional" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} />;
             case 'commercial':
-                return <PlansGrid plans={commercialPlans} defaultPlan="pro" />;
+                return <PlansGrid plans={commercialPlans} defaultPlan="pro" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} />;
             case 'corporate':
-                return <PlansGrid plans={corporatePlans} defaultPlan="enterprise-plus" />;
+                return <PlansGrid plans={corporatePlans} defaultPlan="enterprise-plus" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} />;
             case 'flow':
-                return <PlansGrid plans={flowPlans} defaultPlan="enterprise-customized" />;
+                return <PlansGrid plans={flowPlans} defaultPlan="enterprise-customized" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} />;
             default:
                 return null;
         }
@@ -442,8 +465,8 @@ export default function PlansPage() {
             <Button variant="outline" asChild>
                 <Link href="/dashboard/proposals/new/comparison">Previous</Link>
             </Button>
-            <Button asChild>
-                <Link href="/dashboard/proposals/new/contract">Next Step</Link>
+            <Button asChild={!!selectedPlan} disabled={!selectedPlan}>
+                <Link href={selectedPlan ? `/dashboard/proposals/new/contract?plan=${selectedPlan}` : '#'}>Next Step</Link>
             </Button>
         </div>
       </div>
@@ -458,7 +481,7 @@ export default function PlansPage() {
                 </CardDescription>
               </div>
               {selectedSize && (
-                <Button variant="outline" onClick={() => setSelectedSize(null)}>
+                <Button variant="outline" onClick={() => { setSelectedSize(null); setSelectedPlan(null); }}>
                   <RefreshCcw className="mr-2 h-4 w-4" />
                   Change
                 </Button>
