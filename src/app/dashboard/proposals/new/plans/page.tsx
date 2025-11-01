@@ -329,7 +329,7 @@ function BusinessSizeSelector({
     ];
 
     return (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {sizes.map((size) => (
                 <Card
                     key={size.id}
@@ -415,35 +415,24 @@ export default function PlansPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Plan Overview</CardTitle>
-              <CardDescription>
-              Select the client's business size to see the recommended plans.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <BusinessSizeSelector selectedSize={selectedSize} onSelectSize={handleSizeSelect} />
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="lg:col-span-2">
-           <Card>
-              <CardHeader>
-                <CardTitle>Plan Details</CardTitle>
-                <CardDescription>
-                  Choose the best plan for your client.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                  {renderPlans()}
-              </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Plan Selection</CardTitle>
+          <CardDescription>
+            Select the client's business size to see the recommended plans, then choose the best plan for your client.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <div className="lg:col-span-1">
+            <h3 className="text-lg font-semibold mb-4">1. Select Business Size</h3>
+            <BusinessSizeSelector selectedSize={selectedSize} onSelectSize={handleSizeSelect} />
+          </div>
+          <div className="lg:col-span-1">
+             <h3 className="text-lg font-semibold mb-4">2. Choose a Plan</h3>
+              {renderPlans()}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6">
         <Card>
@@ -502,4 +491,5 @@ export default function PlansPage() {
     </div>
   );
 }
+
 
