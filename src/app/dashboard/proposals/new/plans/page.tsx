@@ -236,7 +236,7 @@ const flowPlans: Plan[] = [
     {
         id: 'enterprise-customized',
         name: 'Enterprise Customized',
-        monthlyFee: 'Fixed (Prepaid)',
+        monthlyFee: 'Custom',
         liters: 'Custom',
         refillFrequency: 'Scheduled',
         inclusions: ['Starts at ₱100,000 / month', 'Tailored setup, custom liters, flexible billing', 'Dedicated account manager'],
@@ -261,11 +261,10 @@ export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...
 type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'flow';
 
 
-function CustomPlanCalculator() {
+function CustomPlanCalculator({pricePerLiter = 5}: {pricePerLiter?: number}) {
     const [bottles, setBottles] = useState(10);
     const [deliveries, setDeliveries] = useState(1);
     const litersPerBottle = 19;
-    const pricePerLiter = 5;
 
     const totalLiters = bottles * deliveries * 4; // 4 weeks in a month
     const totalCost = totalLiters * pricePerLiter;
@@ -346,9 +345,19 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
         const isCustom = businessSize === 'flow' && plan.id === 'enterprise-customized';
+        const isOverflow = businessSize === 'flow' && plan.id === 'enterprise-overflow';
+        const isDisabled = isOverflow;
 
         return (
-            <Label htmlFor={plan.id} key={plan.name} className={cn("cursor-pointer h-full", isCustom && "md:col-span-2 lg:col-span-3")}>
+            <Label 
+                htmlFor={plan.id} 
+                key={plan.name} 
+                className={cn(
+                    "cursor-pointer h-full", 
+                    (isCustom || isOverflow) && "md:col-span-2 lg:col-span-3",
+                    isDisabled && "cursor-not-allowed opacity-70"
+                )}
+            >
             <Card className={cn(
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
@@ -360,7 +369,7 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
                     Recommended
                 </div>
                 )}
-                 {isSelected && (
+                 {isSelected && !isDisabled && (
                 <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
                     <Check className="h-4 w-4 text-primary" />
                 </div>
@@ -368,38 +377,39 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
                 <CardHeader className="flex-1">
                 <CardTitle className={cn(isSelected && "text-primary-foreground")}>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
-                    {plan.id !== 'enterprise-customized' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
+                    {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
                     {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
-                <CardContent className="flex-1 space-y-4 text-left">
-                    <div className="space-y-1">
-                        <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.liters}</p>
+                <CardContent className="flex-1 text-left space-y-4">
+                    <div className="space-y-2">
                         <p className={cn("text-sm", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
+                        <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.liters}</p>
                     </div>
-                     <div className="space-y-1">
-                        <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.refillFrequency}</p>
+                    <div className="space-y-2">
                         <p className={cn("text-sm", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
+                        <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.refillFrequency}</p>
                     </div>
                 </CardContent>
                 
                 {isCustom && isSelected && <CustomPlanCalculator />}
+                {isOverflow && isSelected && <CustomPlanCalculator pricePerLiter={3.00} />}
 
                 <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
                     <div className="flex justify-between items-center w-full text-sm">
-                        <div className={cn("flex items-center gap-2", isSelected && "text-primary-foreground")}>
+                        <div className={cn("flex items-center gap-2", isSelected ? "text-primary-foreground" : "text-muted-foreground")}>
                             <Users className="text-inherit" />
                             <span className="text-inherit">{plan.employees}</span>
                         </div>
-                        <div className={cn("flex items-center gap-2", isSelected && "text-primary-foreground")}>
+                        <div className={cn("flex items-center gap-2", isSelected ? "text-primary-foreground" : "text-muted-foreground")}>
                             <Building2 className="text-inherit" />
                             <span className="text-inherit">{plan.stations}</span>
                         </div>
                         <RadioGroupItem 
-                        value={plan.id} 
-                        id={plan.id}
-                        className="sr-only"
-                        disabled={businessSize === 'flow' && plan.id === 'enterprise-overflow'}
+                            value={plan.id} 
+                            id={plan.id}
+                            className="sr-only"
+                            disabled={isDisabled}
                         />
                     </div>
                 </CardFooter>
@@ -517,6 +527,10 @@ export default function PlansPage() {
     };
 
     const handlePlanSelect = (planId: string) => {
+        const plan = allPlans.find(p => p.id === planId);
+        if(plan?.id === 'enterprise-overflow') {
+            return;
+        }
         setSelectedPlan(planId);
     }
     
