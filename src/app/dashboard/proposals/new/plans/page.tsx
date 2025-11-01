@@ -252,6 +252,16 @@ const flowPlans: Plan[] = [
         stations: '5+ Verified Stations',
         isRecommended: true,
     },
+    {
+        id: 'enterprise-overflow',
+        name: 'Enterprise Overflow',
+        monthlyFee: 'Usage-Based',
+        liters: 'No cap',
+        refillFrequency: 'On-demand',
+        inclusions: ['Pay only for what you use', 'Ideal for unpredictable consumption', 'Rate varies by station'],
+        employees: '—',
+        stations: '—',
+    }
 ]
 
 export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...flowPlans];
@@ -381,7 +391,7 @@ function PlansGrid({
         return `~${Math.round(estimatedEmployees / 10) * 10}`;
     };
 
-    const gridColsClass = businessSize === 'corporate' ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
+    const gridColsClass = businessSize === 'corporate' || businessSize === 'flow' ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
 
     return (
     <RadioGroup
@@ -392,7 +402,7 @@ function PlansGrid({
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
         const isCustom = businessSize === 'flow' && (plan.id === 'enterprise-customized');
-        const isDisabled = false;
+        const isDisabled = plan.id === 'enterprise-overflow';
 
         let employees = plan.employees;
         let stations = plan.stations;
@@ -408,7 +418,7 @@ function PlansGrid({
                 key={plan.id} 
                 className={cn(
                     "cursor-pointer h-full", 
-                    isCustom && "md:col-span-2 lg:col-span-3",
+                    isCustom && "md:col-span-2",
                     isDisabled && "cursor-not-allowed opacity-70"
                 )}
             >
@@ -433,7 +443,8 @@ function PlansGrid({
                     <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
                     <div className="flex items-baseline gap-2">
                         {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{plan.monthlyFee}</span>}
-                        {plan.name !== 'Enterprise Customized' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                        {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                         {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
                     </div>
                     </CardHeader>
                     <CardContent className="flex-1 text-left space-y-4">
@@ -450,6 +461,9 @@ function PlansGrid({
                                 <span>{plan.refillFrequency}</span>
                             </div>
                         </div>
+                         <ul className={cn('text-sm space-y-1 pl-4 list-disc', isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground')}>
+                            {plan.inclusions.map((inclusion) => <li key={inclusion}>{inclusion}</li>)}
+                        </ul>
                     </CardContent>
                     
                     {plan.id === 'enterprise-customized' && isSelected && <CustomPlanCalculator onCalculated={onCustomCalculated} pricePerLiter={3} />}
@@ -484,14 +498,14 @@ function PlansGrid({
                             <div>{cardContent}</div>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <p>This is a usage-based plan. Please use the calculator for estimation purposes. Contact support for contract generation.</p>
+                            <p>This is a usage-based plan. Please contact sales for a custom quote.</p>
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             )
         }
 
-        return cardContent;
+        return <div key={plan.id}>{cardContent}</div>;
       })}
     </RadioGroup>
   );
@@ -649,7 +663,7 @@ export default function PlansPage() {
                 />;
     };
     
-    const isNextDisabled = !selectedPlan;
+    const isNextDisabled = !selectedPlan || selectedPlan === 'enterprise-overflow';
 
 
     return (
@@ -774,3 +788,6 @@ export default function PlansPage() {
         </div>
     );
 }
+
+
+    
