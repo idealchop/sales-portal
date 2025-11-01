@@ -386,7 +386,7 @@ export default function PlansPage() {
           <CardHeader>
             <CardTitle>Included in Every Plan</CardTitle>
             <CardDescription>
-                Smart Refill gives your business a complete, automated water operations system — designed for convenience, compliance, and continuous supply.
+                Smart Refill gives your business a complete, automated water operations system — designed for convenience, compliance, and continuous supply. Every subscription plan includes full access to our growing network of partner perks.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 sm:grid-cols-2">
@@ -424,9 +424,13 @@ export default function PlansPage() {
             ))}
           </CardContent>
            <CardFooter>
-            <p className="text-sm text-muted-foreground">
-                Every subscription plan includes full access to our growing network of partner perks.
-            </p>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p className="font-semibold text-foreground">Terms:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>All employees of the subscribed company are eligible for these perks.</li>
+                <li>To redeem, employees must present their company ID at partner establishments.</li>
+              </ul>
+            </div>
           </CardFooter>
         </Card>
       </div>
