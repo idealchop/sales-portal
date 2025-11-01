@@ -96,7 +96,7 @@ export default function ComparisonPage() {
           <Accordion type="single" collapsible defaultValue={comparisonData[0].aspect}>
             {comparisonData.map((item) => (
               <AccordionItem value={item.aspect} key={item.aspect}>
-                <AccordionTrigger className="px-6 text-base font-semibold">
+                <AccordionTrigger className="px-6 text-base font-semibold data-[state=open]:text-primary">
                   {item.aspect}
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-6">
