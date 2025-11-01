@@ -280,21 +280,17 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                     {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
-                <CardContent className="flex-1 space-y-4">
-                    <div className={cn("rounded-lg p-4", isSelected ? "bg-primary/10" : "bg-muted")}>
-                    <div className="flex justify-around text-center text-sm">
-                        <div className="flex flex-col items-center gap-1">
-                            <GlassWater className={cn("h-5 w-5", isSelected ? 'text-primary' : 'text-muted-foreground')} />
-                            <p className={cn("font-bold text-lg", isSelected ? "text-primary" : "")}>{plan.liters}</p>
-                            <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Liters</p>
-                        </div>
-                        <div className="flex flex-col items-center gap-1">
-                            <RefreshCcw className={cn("h-5 w-5", isSelected ? 'text-primary' : 'text-muted-foreground')} />
-                            <p className={cn("font-bold text-lg", isSelected ? "text-primary" : "")}>{plan.refillFrequency}</p>
-                            <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Refills</p>
-                        </div>
-                    </div>
-                    </div>
+                <CardContent className="flex-1 space-y-4 text-center">
+                  <div className="flex flex-col items-center gap-1">
+                      <GlassWater className={cn("h-5 w-5", isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                      <p className={cn("font-bold text-lg", isSelected ? "text-primary" : "")}>{plan.liters}</p>
+                      <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Liters</p>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                      <RefreshCcw className={cn("h-5 w-5", isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                      <p className={cn("font-bold text-lg", isSelected ? "text-primary" : "")}>{plan.refillFrequency}</p>
+                      <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Refills</p>
+                  </div>
                 </CardContent>
                 <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-primary/10" : "bg-muted")}>
                     <div className={cn("flex justify-between items-center w-full text-sm", isSelected ? "text-primary" : "")}>
