@@ -885,36 +885,41 @@ function ContractPageContent() {
                     <CardDescription>Review the final costs before proceeding.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">{finalPlan.name} Plan ({billingCycleLabel})</span>
-                            <span className="font-semibold">{currencyFormatter.format(basePrice - (basePrice * discount))}</span>
+                    <div className="space-y-2">
+                        <div className="flex justify-between font-semibold">
+                            <span>{finalPlan.name} Plan ({billingCycleLabel})</span>
+                            <span>{currencyFormatter.format(basePrice - (basePrice * discount))}</span>
                         </div>
-                         <ul className="text-xs text-muted-foreground mt-1 list-disc pl-5">
+                        <ul className="text-xs text-muted-foreground list-disc pl-5">
                             <li>{finalPlan.liters}</li>
-                            <li>{finalPlan.inclusions[0]}</li>
+                             {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
                             <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                         </ul>
                     </div>
-                     {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
-                        <div key={addon.id} className="flex justify-between items-center">
-                            <span className="text-muted-foreground">{addon.name}</span>
-                            <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
-                        </div>
-                     ))}
-                     {additionalDispensers > 0 && (
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
-                            <span className="font-semibold">{currencyFormatter.format(additionalDispensers * additionalDispenserCost)}</span>
-                        </div>
-                     )}
-                     {additionalLiters > 0 && (
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Additional Liters ({additionalLiters} L)</span>
-                            <span className="font-semibold">{currencyFormatter.format(additionalLiters * additionalLiterCost)}</span>
-                        </div>
-                     )}
+
+                    <div className="space-y-2">
+                        {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
+                            <div key={addon.id} className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">{addon.name}</span>
+                                <span className="font-medium">{currencyFormatter.format(addon.feeValue)}</span>
+                            </div>
+                        ))}
+                        {additionalDispensers > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
+                                <span className="font-medium">{currencyFormatter.format(additionalDispensers * additionalDispenserCost)}</span>
+                            </div>
+                        )}
+                        {additionalLiters > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Additional Liters ({additionalLiters} L)</span>
+                                <span className="font-medium">{currencyFormatter.format(additionalLiters * additionalLiterCost)}</span>
+                            </div>
+                        )}
+                    </div>
+                    
                     <Separator />
+                    
                     <div className='space-y-2'>
                         <Label>Payment Schedule</Label>
                         <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1">
@@ -928,7 +933,10 @@ function ContractPageContent() {
                             ))}
                         </RadioGroup>
                     </div>
-                     <div className="flex justify-between items-center text-lg font-bold">
+
+                    <Separator />
+
+                    <div className="flex justify-between items-center text-lg font-bold">
                         <span>Total Due</span>
                         <span>{totalAmount}</span>
                     </div>
@@ -983,4 +991,5 @@ export default function ContractPage() {
     
 
     
+
 
