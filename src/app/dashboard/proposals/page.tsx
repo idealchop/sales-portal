@@ -268,12 +268,12 @@ export default function ProposalsPage() {
                                   />
                                 </div>
                             </div>
-                            <TabsList>
-                                {proposalStatuses.map(status => (
-                                <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
-                                ))}
-                            </TabsList>
                         </div>
+                        <TabsList className="mt-4">
+                            {proposalStatuses.map(status => (
+                            <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
+                            ))}
+                        </TabsList>
                     </CardHeader>
                     {proposalStatuses.map(status => (
                         <TabsContent key={status} value={status}>
@@ -305,14 +305,12 @@ export default function ProposalsPage() {
                                   />
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <TabsList>
-                                    {clientStatuses.map(status => (
-                                    <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
-                                    ))}
-                                </TabsList>
-                            </div>
                         </div>
+                        <TabsList className="mt-4">
+                            {clientStatuses.map(status => (
+                            <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
+                            ))}
+                        </TabsList>
                     </CardHeader>
                     {clientStatuses.map(status => (
                         <TabsContent key={status} value={status}>
@@ -326,5 +324,3 @@ export default function ProposalsPage() {
     </div>
   );
 }
-
-    
