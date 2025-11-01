@@ -398,7 +398,7 @@ function PlansGrid({
     <RadioGroup
         value={selectedPlan ?? defaultPlan} 
         onValueChange={onSelectPlan}
-        className={cn("grid grid-cols-1 md:grid-cols-2 gap-6 items-start", gridColsClass, selectedPlan === 'enterprise-customized' && 'md:grid-cols-1 lg:grid-cols-1' )}
+        className={cn("grid grid-cols-1 md:grid-cols-2 gap-6 items-start", gridColsClass, (selectedPlan === 'enterprise-customized' || selectedPlan === 'enterprise-overflow') && 'md:grid-cols-1 lg:grid-cols-1' )}
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
@@ -495,7 +495,7 @@ function PlansGrid({
                 <TooltipProvider key={plan.id}>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div>{cardContent}</div>
+                            <div className={cn(isSelected && 'md:col-span-2 lg:col-span-1')}>{cardContent}</div>
                         </TooltipTrigger>
                         <TooltipContent>
                             <p>This is a usage-based plan. Please contact sales for a custom quote.</p>
