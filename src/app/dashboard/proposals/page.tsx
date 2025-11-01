@@ -104,7 +104,8 @@ export default function ProposalsPage() {
         return (
           proposal.id.toLowerCase().includes(searchTerm) ||
           client?.id.toLowerCase().includes(searchTerm) ||
-          client?.companyName.toLowerCase().includes(searchTerm)
+          client?.companyName.toLowerCase().includes(searchTerm) ||
+          client?.contactName.toLowerCase().includes(searchTerm)
         );
       });
     
