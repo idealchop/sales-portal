@@ -19,6 +19,8 @@ import { Button } from './ui/button';
 import { Phone, Mail, MapPin, Building, Briefcase, FileText } from 'lucide-react';
 import type { Client } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -54,7 +56,7 @@ export function ClientOverviewDialog({
       .map((n) => n[0])
       .join('');
   };
-
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const planImage = getPlanImage(client.subscription?.planId);
 
   return (
@@ -174,6 +176,36 @@ export function ClientOverviewDialog({
                         <ScrollArea className="h-[70vh] pr-6">
                             <div className="space-y-6 py-4">
                                 <ContractText />
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Signatures</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4 pt-4">
+                                        <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="name-preview">Name</Label>
+                                                    <Input id="name-preview" placeholder="Full Name" value={client.contactName} readOnly />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="company-preview">Company</Label>
+                                                    <Input id="company-preview" placeholder="Company Name" value={client.companyName} readOnly />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Date Signed</Label>
+                                                    <Input placeholder="Date" value={today} readOnly />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Signature</Label>
+                                                <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
+                                                    <p className="text-muted-foreground">Signature Placeholder</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             </div>
                         </ScrollArea>
                     </DialogContent>
