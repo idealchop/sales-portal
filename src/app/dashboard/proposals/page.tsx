@@ -30,6 +30,7 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { ClientOverviewDialog } from "@/components/client-overview-dialog";
+import type { Client } from "@/lib/definitions";
 
 
 const proposalStatusStyles: { [key: string]: string } = {
@@ -58,6 +59,10 @@ export default function ProposalsPage() {
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'accepted', 'sent', 'draft', 'rejected'];
   const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'lead', 'inactive'];
 
+  const getClientById = (id: string): Client | undefined => {
+    return clients.find(c => c.id === id);
+  }
+
   const renderProposalsTable = (status: ProposalStatus | 'all') => {
     const filteredProposals = status === 'all' ? proposals : proposals.filter(p => p.status === status);
     
@@ -76,22 +81,30 @@ export default function ProposalsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProposals.map((proposal) => (
-                <TableRow key={proposal.id}>
-                  <TableCell className="font-medium">
-                    {proposal.client.companyName}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`capitalize ${proposalStatusStyles[proposal.status]}`} variant="outline">
-                      {proposal.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {proposal.createdAt}
-                  </TableCell>
-                  <TableCell className="text-right">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}</TableCell>
-                </TableRow>
-              ))}
+              {filteredProposals.map((proposal) => {
+                const client = getClientById(proposal.client.id);
+                if (!client) return null;
+
+                return (
+                  <ClientOverviewDialog key={proposal.id} client={client}>
+                    <TableRow className="cursor-pointer">
+                      <TableCell>
+                          <div className="font-bold">{client.companyName}</div>
+                          <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`capitalize ${proposalStatusStyles[proposal.status]}`} variant="outline">
+                          {proposal.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {proposal.createdAt}
+                      </TableCell>
+                      <TableCell className="text-right">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}</TableCell>
+                    </TableRow>
+                  </ClientOverviewDialog>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>

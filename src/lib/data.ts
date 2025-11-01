@@ -10,11 +10,11 @@ export const clients: Client[] = [
 ];
 
 export const proposals: Proposal[] = [
-  { id: 'P001', client: { id: '1', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'accepted', amount: 6000, createdAt: '2023-10-26' },
-  { id: 'P002', client: { id: '2', companyName: 'Solutions Inc.', contactName: 'Jane Smith' }, status: 'sent', amount: 9000, createdAt: '2023-11-05' },
-  { id: 'P003', client: { id: '4', companyName: 'QuantumLeap Co.', contactName: 'Mary Johnson' }, status: 'draft', amount: 3200, createdAt: '2023-11-12' },
-  { id: 'P004', client: { id: '5', companyName: 'Apex Industries', contactName: 'David Wilson' }, status: 'rejected', amount: 12000, createdAt: '2023-09-15' },
-  { id: 'P005', client: { id: '1', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'sent', amount: 8800, createdAt: '2023-11-18' },
+  { id: 'P001', client: { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'accepted', amount: 6000, createdAt: '2023-10-26' },
+  { id: 'P002', client: { id: 'SC24495882', companyName: 'Solutions Inc.', contactName: 'Jane Smith' }, status: 'sent', amount: 9000, createdAt: '2023-11-05' },
+  { id: 'P003', client: { id: 'SC24958823', companyName: 'QuantumLeap Co.', contactName: 'Mary Johnson' }, status: 'draft', amount: 3200, createdAt: '2023-11-12' },
+  { id: 'P004', client: { id: 'SC24899145', companyName: 'Apex Industries', contactName: 'David Wilson' }, status: 'rejected', amount: 12000, createdAt: '2023-09-15' },
+  { id: 'P005', client: { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'sent', amount: 8800, createdAt: '2023-11-18' },
 ];
 
 export const commissions: Commission[] = [
