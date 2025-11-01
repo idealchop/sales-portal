@@ -34,6 +34,7 @@ import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
 import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type Plan = {
   name: string;
@@ -288,11 +289,16 @@ function BusinessSizeSelector({
     selectedSize: BusinessSize | null;
     onSelectSize: (size: BusinessSize) => void;
 }) {
-    const sizes: { id: BusinessSize, icon: React.ReactNode, title: string, description: string }[] = [
-        { id: 'small', icon: <Store className="h-8 w-8 text-primary" />, title: 'Small Business', description: 'For small teams, kiosks, and home offices.' },
-        { id: 'medium', icon: <Building className="h-8 w-8 text-primary" />, title: 'Medium Business', description: 'For growing offices and warehouses.' },
-        { id: 'large', icon: <Building2 className="h-8 w-8 text-primary" />, title: 'Large Enterprise', description: 'For multi-site companies and BPOs.' },
-        { id: 'flow', icon: <Bot className="h-8 w-8 text-primary" />, title: 'Smart Flow Plan', description: 'Pay based on your actual water consumption.' },
+    const smallBusinessImage = PlaceHolderImages.find(p => p.title === 'small-business');
+    const mediumBusinessImage = PlaceHolderImages.find(p => p.title === 'medium-business');
+    const largeBusinessImage = PlaceHolderImages.find(p => p.title === 'large-business');
+    const flowPlanImage = PlaceHolderImages.find(p => p.title === 'flow-plan');
+
+    const sizes: { id: BusinessSize, icon: React.ReactNode, title: string, description: string, image: any }[] = [
+        { id: 'small', icon: <Store className="h-8 w-8 text-primary" />, title: 'Small Business', description: 'For small teams, kiosks, and home offices.', image: smallBusinessImage },
+        { id: 'medium', icon: <Building className="h-8 w-8 text-primary" />, title: 'Medium Business', description: 'For growing offices and warehouses.', image: mediumBusinessImage },
+        { id: 'large', icon: <Building2 className="h-8 w-8 text-primary" />, title: 'Large Enterprise', description: 'For multi-site companies and BPOs.', image: largeBusinessImage },
+        { id: 'flow', icon: <Bot className="h-8 w-8 text-primary" />, title: 'Smart Flow Plan', description: 'Pay based on your actual water consumption.', image: flowPlanImage },
     ];
 
     return (
@@ -302,10 +308,21 @@ function BusinessSizeSelector({
                     key={size.id}
                     onClick={() => onSelectSize(size.id)}
                     className={cn(
-                        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50',
+                        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 overflow-hidden',
                         selectedSize === size.id ? 'border-primary shadow-lg' : ''
                     )}
                 >
+                    {size.image && (
+                         <div className="aspect-video relative">
+                            <Image
+                                src={size.image.imageUrl}
+                                alt={size.image.description}
+                                fill
+                                className="object-cover"
+                                data-ai-hint={size.image.imageHint}
+                            />
+                        </div>
+                    )}
                     <CardHeader className="flex flex-row items-center gap-4">
                         {size.icon}
                         <div>
@@ -424,12 +441,12 @@ export default function PlansPage() {
             ))}
           </CardContent>
            <CardFooter>
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p className="font-semibold text-foreground">Terms:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>All employees of the subscribed company are eligible for these perks.</li>
-                <li>To redeem, employees must present their company ID at partner establishments.</li>
-              </ul>
+             <div className="text-sm text-muted-foreground space-y-2">
+               <p className="font-semibold text-foreground">Terms:</p>
+               <ul className="list-disc list-inside space-y-1">
+                    <li>All employees of the subscribed company are eligible for these perks.</li>
+                    <li>To redeem, employees must present their company ID at partner establishments.</li>
+               </ul>
             </div>
           </CardFooter>
         </Card>
@@ -438,5 +455,7 @@ export default function PlansPage() {
     </div>
   );
 }
+
+    
 
     
