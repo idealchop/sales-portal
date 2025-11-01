@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText } from 'lucide-react';
 import type { Client } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 
@@ -151,18 +151,33 @@ export function ClientOverviewDialog({
                         )}
                     </Card>
                  </div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Smart Refill™ Water Supply Subscription Agreement</CardTitle>
-                            <CardDescription>
-                            Between: River Tech Group, Inc. (“Provider”) and {client.companyName} (“Client”).
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6 max-h-96 overflow-y-auto">
-                        <ContractText />
-                    </CardContent>
-                </Card>
+                
+                 <Dialog>
+                    <DialogTrigger asChild>
+                         <Card className="cursor-pointer hover:bg-accent transition-colors">
+                            <CardHeader className="flex-row items-center gap-4 space-y-0">
+                                <FileText className="h-6 w-6 text-primary" />
+                                <div>
+                                    <CardTitle className="text-base">View Signed Contract</CardTitle>
+                                    <CardDescription>Click to view the full agreement.</CardDescription>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-3xl">
+                        <DialogHeader>
+                            <DialogTitle>Smart Refill™ Water Supply Subscription Agreement</DialogTitle>
+                            <DialogDescription>
+                                Between: River Tech Group, Inc. (“Provider”) and {client.companyName} (“Client”).
+                            </DialogDescription>
+                        </DialogHeader>
+                        <ScrollArea className="h-[70vh] pr-6">
+                            <div className="space-y-6 py-4">
+                                <ContractText />
+                            </div>
+                        </ScrollArea>
+                    </DialogContent>
+                </Dialog>
             </div>
         </ScrollArea>
       </DialogContent>
