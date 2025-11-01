@@ -247,7 +247,7 @@ const flowPlans: Plan[] = [
         monthlyFee: 'Custom',
         liters: 'Custom',
         refillFrequency: 'Scheduled',
-        inclusions: ['Starts at ₱100,000 / month', 'Tailored setup, custom liters, flexible billing', 'Dedicated account manager'],
+        inclusions: ['Starts at ₱30,000 / month', 'Tailored setup, custom liters, flexible billing', 'Dedicated account manager'],
         employees: '—',
         stations: '5+ Verified Stations',
         isRecommended: true,
@@ -506,7 +506,7 @@ function PlansGrid({
         }
 
         return <div key={plan.id} className={cn(
-          (isCustom && selectedPlan === 'enterprise-customized') && 'md:col-span-2',
+          (isCustom && selectedPlan === 'enterprise-customized') && 'col-span-full',
           (isSelected && (plan.id === 'enterprise-customized' || plan.id === 'enterprise-overflow')) && 'col-span-full'
         )}>{cardContent}</div>;
       })}
@@ -563,7 +563,7 @@ const enterpriseTypes = [
         title: 'Customized Plan',
         description: 'Tailored for predictable, prepaid enterprise solutions.',
         image: {
-            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5',
+            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5a',
             description: 'A person using a water dispenser.',
             imageHint: 'water dispenser',
         }
@@ -573,7 +573,7 @@ const enterpriseTypes = [
         title: 'Flowing Plan',
         description: 'For pure usage-based, pay-as-you-go enterprise clients.',
         image: {
-            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5',
+            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5a',
             description: 'Water flowing from a tap.',
             imageHint: 'water tap',
         }
