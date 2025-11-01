@@ -90,6 +90,7 @@ export default function ProposalsPage() {
                     <TableRow className="cursor-pointer">
                       <TableCell>
                           <div className="font-bold">{client.companyName}</div>
+                          <div className="font-bold text-sm text-muted-foreground">Proposal ID: {proposal.id}</div>
                           <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
                       </TableCell>
                       <TableCell>
