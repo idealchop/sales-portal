@@ -624,7 +624,14 @@ function ContractPageContent() {
     let basePlan = allPlans.find(p => p.id === planId);
     if (!basePlan) return null;
 
-    if (customLiters && customCost) {
+    if (planId === 'custom-plan' && customLiters && customCost) {
+        basePlan = {
+            ...basePlan,
+            name: 'Custom Plan',
+            liters: `${customLiters} L`,
+            monthlyFee: `₱${parseFloat(customCost).toLocaleString()}`,
+        };
+    } else if (customLiters && customCost) {
          basePlan = {
             ...basePlan,
             liters: `${customLiters} L`,
@@ -1005,6 +1012,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
