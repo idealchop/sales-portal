@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useState, useMemo } from 'react';
 import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus } from 'lucide-react';
@@ -261,6 +262,16 @@ export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...
 type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'flow';
 
 
+const deliveryFrequencies = [
+    { value: 1, label: '1 time a week' },
+    { value: 2, label: '2 times a week' },
+    { value: 3, label: '3 times a week' },
+    { value: 4, label: '4 times a week' },
+    { value: 5, label: '5 times a week' },
+    { value: 6, label: '6 times a week' },
+    { value: 7, label: 'Daily' },
+];
+
 function CustomPlanCalculator({pricePerLiter = 5}: {pricePerLiter?: number}) {
     const [bottles, setBottles] = useState(10);
     const [deliveries, setDeliveries] = useState(1);
@@ -277,10 +288,8 @@ function CustomPlanCalculator({pricePerLiter = 5}: {pricePerLiter?: number}) {
     }
 
     const getFrequency = (deliveries: number) => {
-        if (deliveries <= 2) return '1-2/week';
-        if (deliveries <= 4) return '3-4/week';
-        if (deliveries <= 6) return '5-6/week';
-        return 'Daily';
+        const freq = deliveryFrequencies.find(f => f.value === deliveries);
+        return freq ? freq.label.replace(' times a week', '/week').replace(' 1 time a week', '1/week') : `${deliveries}/week`;
     }
 
 
@@ -297,11 +306,16 @@ function CustomPlanCalculator({pricePerLiter = 5}: {pricePerLiter?: number}) {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="deliveries" className="text-sm font-medium text-primary-foreground/80">Deliveries per Week</Label>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setDeliveries(Math.max(1, deliveries - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="deliveries" type="number" value={deliveries} onChange={(e) => setDeliveries(parseInt(e.target.value) || 0)} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
-                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setDeliveries(deliveries + 1)}><Plus className="h-4 w-4" /></Button>
-                    </div>
+                    <Select value={String(deliveries)} onValueChange={(value) => setDeliveries(Number(value))}>
+                        <SelectTrigger id="deliveries" className="bg-transparent border-primary-foreground/50 text-primary-foreground">
+                            <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {deliveryFrequencies.map((freq) => (
+                                <SelectItem key={freq.value} value={String(freq.value)}>{freq.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
@@ -375,11 +389,11 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
                 </div>
                 )}
                 <CardHeader className="flex-1">
-                <CardTitle className={cn(isSelected && "text-primary-foreground")}>{plan.name}</CardTitle>
+                <CardTitle className={cn("text-2xl", isSelected && "text-primary-foreground")}>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
                     {plan.monthlyFee !== 'Custom' && plan.monthlyFee !== 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
                     {plan.monthlyFee === 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
-                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn("font-semibold", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
                 <CardContent className="flex-1 text-left space-y-4">
@@ -555,123 +569,123 @@ export default function PlansPage() {
         }
     };
 
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
-          <p className="text-muted-foreground">
-            Step 4: Select a Subscription Plan & Review Inclusions
-          </p>
-        </div>
-        <div className="flex gap-2">
-            <Button variant="outline" asChild>
-                <Link href="/dashboard/proposals/new/comparison">Previous</Link>
-            </Button>
-            <Button asChild={!!selectedPlan} disabled={!selectedPlan}>
-                <Link href={selectedPlan ? `/dashboard/proposals/new/contract?plan=${selectedPlan}` : '#'}>Next Step</Link>
-            </Button>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>1. Select Business Size</CardTitle>
-                <CardDescription>
-                  Choose the client's business size to see the recommended plans.
-                </CardDescription>
-              </div>
-              {selectedSize && (
-                <Button variant="outline" onClick={() => { setSelectedSize(null); setSelectedPlan(null); }}>
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  Change
+    return (
+        <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+            <div>
+            <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
+            <p className="text-muted-foreground">
+                Step 4: Select a Subscription Plan & Review Inclusions
+            </p>
+            </div>
+            <div className="flex gap-2">
+                <Button variant="outline" asChild>
+                    <Link href="/dashboard/proposals/new/comparison">Previous</Link>
                 </Button>
-              )}
-          </div>
-        </CardHeader>
-        <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-3")}>
-                    <BusinessSizeSelector 
-                        selectedSize={selectedSize} 
-                        onSelectSize={handleSizeSelect}
-                        hiddenSizes={selectedSize ? businessSizes.map(s => s.id).filter(id => id !== selectedSize) : []}
-                    />
+                <Button asChild={!!selectedPlan} disabled={!selectedPlan}>
+                    <Link href={selectedPlan ? `/dashboard/proposals/new/contract?plan=${selectedPlan}` : '#'}>Next Step</Link>
+                </Button>
+            </div>
+        </div>
+
+        <Card>
+            <CardHeader>
+            <div className="flex items-center justify-between">
+                <div>
+                    <CardTitle>1. Select Business Size</CardTitle>
+                    <CardDescription>
+                    Choose the client's business size to see the recommended plans.
+                    </CardDescription>
                 </div>
                 {selectedSize && (
-                     <div className="lg:col-span-2">
-                        <Card>
-                             <CardHeader>
-                                <CardTitle>2. Choose a Plan</CardTitle>
-                                <CardDescription>Select the best plan for your client from the options below.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {renderPlans()}
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <Button variant="outline" onClick={() => { setSelectedSize(null); setSelectedPlan(null); }}>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Change
+                    </Button>
                 )}
             </div>
-        </CardContent>
-      </Card>
-
-
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Included in Every Plan</CardTitle>
-             <CardDescription>
-                Every subscription plan includes full access to our growing network of partner perks.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6 sm:grid-cols-2">
-            {inclusions.map((item) => (
-              <div key={item.title} className="flex items-start gap-3">
-                <div>{item.icon}</div>
-                <div>
-                  <h3 className="font-semibold text-sm">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {item.description}
-                  </p>
+            </CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-3")}>
+                        <BusinessSizeSelector 
+                            selectedSize={selectedSize} 
+                            onSelectSize={handleSizeSelect}
+                            hiddenSizes={selectedSize ? businessSizes.map(s => s.id).filter(id => id !== selectedSize) : []}
+                        />
+                    </div>
+                    {selectedSize && (
+                        <div className="lg:col-span-2">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>2. Choose a Plan</CardTitle>
+                                    <CardDescription>Select the best plan for your client from the options below.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {renderPlans()}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
                 </div>
-              </div>
-            ))}
-          </CardContent>
+            </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Partner Perks</CardTitle>
-            <CardDescription>
-              Every premium plan includes access to our growing network of partner benefits.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-8 sm:grid-cols-2">
-            {perks.map((perk) => (
-                <div key={perk.partner} className="flex items-start gap-4">
-                    {perk.icon}
-                    <div className="space-y-1">
-                        <h3 className="font-semibold">{perk.partner}</h3>
-                        <p className="text-sm text-muted-foreground">{perk.description}</p>
-                        <p className="text-sm font-medium text-primary">{perk.benefit}</p>
+
+        <div className="grid gap-6">
+            <Card>
+            <CardHeader>
+                <CardTitle>Included in Every Plan</CardTitle>
+                <CardDescription>
+                    Every subscription plan includes full access to our growing network of partner perks.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 sm:grid-cols-2">
+                {inclusions.map((item) => (
+                <div key={item.title} className="flex items-start gap-3">
+                    <div>{item.icon}</div>
+                    <div>
+                    <h3 className="font-semibold text-sm">{item.title}</h3>
+                    <p className="text-xs text-muted-foreground">
+                        {item.description}
+                    </p>
                     </div>
                 </div>
-            ))}
-          </CardContent>
-           <CardFooter>
-             <div className="text-sm text-muted-foreground space-y-2">
-               <p className="font-semibold text-foreground">Terms:</p>
-               <ul className="list-disc list-inside space-y-1">
-                    <li>All employees of the subscribed company are eligible for these perks.</li>
-                    <li>To redeem, employees must present their company ID at partner establishments.</li>
-               </ul>
-            </div>
-          </CardFooter>
-        </Card>
-      </div>
+                ))}
+            </CardContent>
+            </Card>
 
-    </div>
-  );
+            <Card>
+            <CardHeader>
+                <CardTitle>Partner Perks</CardTitle>
+                <CardDescription>
+                Every premium plan includes access to our growing network of partner benefits.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-8 sm:grid-cols-2">
+                {perks.map((perk) => (
+                    <div key={perk.partner} className="flex items-start gap-4">
+                        {perk.icon}
+                        <div className="space-y-1">
+                            <h3 className="font-semibold">{perk.partner}</h3>
+                            <p className="text-sm text-muted-foreground">{perk.description}</p>
+                            <p className="text-sm font-medium text-primary">{perk.benefit}</p>
+                        </div>
+                    </div>
+                ))}
+            </CardContent>
+            <CardFooter>
+                <div className="text-sm text-muted-foreground space-y-2">
+                <p className="font-semibold text-foreground">Terms:</p>
+                <ul className="list-disc list-inside space-y-1">
+                        <li>All employees of the subscribed company are eligible for these perks.</li>
+                        <li>To redeem, employees must present their company ID at partner establishments.</li>
+                </ul>
+                </div>
+            </CardFooter>
+            </Card>
+        </div>
+
+        </div>
+    );
 }
