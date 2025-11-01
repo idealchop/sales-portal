@@ -1,5 +1,7 @@
 
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -11,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import { RefreshCw, Globe, LayoutDashboard, ShieldCheck, Scaling } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 function SmartRefillIntro() {
   return (
@@ -95,6 +98,14 @@ function SmartRefillIntro() {
 }
 
 export default function AboutPage() {
+    const searchParams = useSearchParams();
+    const companyName = searchParams.get('companyName');
+    const contactName = searchParams.get('contactName');
+
+    const prevLink = `/dashboard/proposals/new?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`;
+    const nextLink = `/dashboard/proposals/new/comparison?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`;
+
+
     return (
         <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
@@ -106,10 +117,10 @@ export default function AboutPage() {
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" asChild>
-                        <Link href="/dashboard/proposals/new">Previous</Link>
+                        <Link href={prevLink}>Previous</Link>
                     </Button>
                     <Button asChild>
-                        <Link href="/dashboard/proposals/new/comparison">Next Step</Link>
+                        <Link href={nextLink}>Next Step</Link>
                     </Button>
                 </div>
             </div>

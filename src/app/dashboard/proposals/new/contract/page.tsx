@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import React from 'react';
@@ -314,7 +315,9 @@ function PreviewDialog({
     additionalDispensers,
     additionalLiters,
     plan,
-    finalPlan
+    finalPlan,
+    clientName,
+    clientCompany
 }: { 
     totalAmount: string,
     billingCycleLabel: string,
@@ -324,11 +327,11 @@ function PreviewDialog({
     additionalDispensers: number,
     additionalLiters: number,
     plan: any,
-    finalPlan: any
+    finalPlan: any,
+    clientName: string,
+    clientCompany: string,
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
-    const [clientName, setClientName] = useState('');
-    const [clientCompany, setClientCompany] = useState('');
     const { toast } = useToast();
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -349,7 +352,7 @@ function PreviewDialog({
             toast({
                 variant: "destructive",
                 title: "Client Information Required",
-                description: "Please enter the client's name and company.",
+                description: "Client information is missing from the proposal.",
             });
             return;
         }
@@ -557,11 +560,11 @@ function PreviewDialog({
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="name-preview">Name</Label>
-                                        <Input id="name-preview" placeholder="Full Name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+                                        <Input id="name-preview" placeholder="Full Name" value={clientName} readOnly />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="company-preview">Company</Label>
-                                        <Input id="company-preview" placeholder="Company Name" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} />
+                                        <Input id="company-preview" placeholder="Company Name" value={clientCompany} readOnly />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Date</Label>
@@ -614,6 +617,8 @@ function ContractPageContent() {
   const customCost = searchParams.get('cost');
   const customFreq = searchParams.get('freq');
   const customType = searchParams.get('type');
+  const companyName = searchParams.get('companyName') || '';
+  const contactName = searchParams.get('contactName') || '';
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -741,6 +746,8 @@ function ContractPageContent() {
   
   const summaryTitle = finalPlan.name.includes("Plan") ? finalPlan.name : `${finalPlan.name} Plan`;
 
+  const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -752,7 +759,7 @@ function ContractPageContent() {
         </div>
         <div className="flex gap-2">
             <Button variant="outline" asChild>
-                <Link href="/dashboard/proposals/new/plans">Previous</Link>
+                <Link href={prevLink}>Previous</Link>
             </Button>
             <Button onClick={handleSaveProposal}>
                 <Save className="mr-2 h-4 w-4" />
@@ -991,6 +998,8 @@ function ContractPageContent() {
                             additionalLiters={additionalLiters}
                             plan={plan}
                             finalPlan={finalPlan}
+                            clientName={contactName}
+                            clientCompany={companyName}
                         />
                     </Dialog>
                 </CardFooter>
@@ -1026,6 +1035,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 

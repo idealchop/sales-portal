@@ -1,4 +1,7 @@
 
+
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -8,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useSearchParams } from 'next/navigation';
 
 const comparisonData = [
   {
@@ -56,6 +60,13 @@ const comparisonData = [
 
 
 export default function ComparisonPage() {
+  const searchParams = useSearchParams();
+  const companyName = searchParams.get('companyName');
+  const contactName = searchParams.get('contactName');
+
+  const prevLink = `/dashboard/proposals/new/about?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`;
+  const nextLink = `/dashboard/proposals/new/plans?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -67,10 +78,10 @@ export default function ComparisonPage() {
         </div>
         <div className="flex gap-2">
             <Button variant="outline" asChild>
-                <Link href="/dashboard/proposals/new/about">Previous</Link>
+                <Link href={prevLink}>Previous</Link>
             </Button>
             <Button asChild>
-                <Link href="/dashboard/proposals/new/plans">Next Step</Link>
+                <Link href={nextLink}>Next Step</Link>
             </Button>
         </div>
       </div>

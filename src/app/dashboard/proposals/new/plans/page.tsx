@@ -45,6 +45,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useSearchParams } from 'next/navigation';
 
 type Plan = {
   id: string;
@@ -800,6 +801,10 @@ function EnterpriseTypeSelector({
 
 
 export default function PlansPage() {
+    const searchParams = useSearchParams();
+    const companyName = searchParams.get('companyName');
+    const contactName = searchParams.get('contactName');
+
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -910,17 +915,29 @@ export default function PlansPage() {
 
     const getNextLink = () => {
         if (!selectedPlan) return '#';
-        let link = `/dashboard/proposals/new/contract?plan=${selectedPlan}`;
+        
+        const params = new URLSearchParams();
+        params.set('companyName', companyName || '');
+        params.set('contactName', contactName || '');
+        params.set('plan', selectedPlan);
+
         if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
-            link += `&liters=${customCalculatedValues.totalLiters}&cost=${customCalculatedValues.totalCost}&freq=${customCalculatedValues.deliveries}`;
+            params.set('liters', customCalculatedValues.totalLiters.toString());
+            params.set('cost', customCalculatedValues.totalCost.toString());
+            params.set('freq', customCalculatedValues.deliveries.toString());
         }
         if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
-            link += `&liters=${overflowCalculatedValues.totalLiters}&cost=50000&freq=${overflowCalculatedValues.deliveries}`;
+            params.set('liters', overflowCalculatedValues.totalLiters.toString());
+            params.set('cost', '50000');
+            params.set('freq', overflowCalculatedValues.deliveries.toString());
         }
         if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
-            link += `&liters=${smeCommercialCustomValues.totalLiters}&cost=${smeCommercialCustomValues.totalCost}&freq=${smeCommercialCustomValues.deliveries}&type=${selectedSize}`;
+            params.set('liters', smeCommercialCustomValues.totalLiters.toString());
+            params.set('cost', smeCommercialCustomValues.totalCost.toString());
+            params.set('freq', smeCommercialCustomValues.deliveries.toString());
+            params.set('type', selectedSize || '');
         }
-        return link;
+        return `/dashboard/proposals/new/contract?${params.toString()}`;
     };
 
 
@@ -935,7 +952,7 @@ export default function PlansPage() {
             </div>
             <div className="flex gap-2">
                 <Button variant="outline" asChild>
-                    <Link href="/dashboard/proposals/new/comparison">Previous</Link>
+                    <Link href={`/dashboard/proposals/new/comparison?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`}>Previous</Link>
                 </Button>
                 <Button asChild={!isNextDisabled} disabled={isNextDisabled}>
                     <Link href={getNextLink()}>Next Step</Link>

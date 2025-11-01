@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   User,
   Building,
@@ -15,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState } from 'react';
 
 function InputField({
   id,
@@ -41,6 +44,11 @@ function InputField({
 
 
 export default function NewProposalPage() {
+  const [companyName, setCompanyName] = useState('');
+  const [contactName, setContactName] = useState('');
+
+  const nextStepLink = `/dashboard/proposals/new/about?companyName=${encodeURIComponent(companyName)}&contactName=${encodeURIComponent(contactName)}`;
+
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
@@ -51,7 +59,7 @@ export default function NewProposalPage() {
             </p>
         </div>
         <Button asChild size="lg">
-          <Link href="/dashboard/proposals/new/about">Next Step</Link>
+          <Link href={nextStepLink}>Next Step</Link>
         </Button>
       </div>
 
@@ -64,12 +72,16 @@ export default function NewProposalPage() {
                   label="Company Name"
                   icon={<Building className="h-4 w-4 text-muted-foreground" />}
                   placeholder="e.g., Innovate Corp"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
                 />
                 <InputField
                   id="contact-name"
                   label="Contact Person"
                   icon={<User className="h-4 w-4 text-muted-foreground" />}
                   placeholder="e.g., John Doe"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
