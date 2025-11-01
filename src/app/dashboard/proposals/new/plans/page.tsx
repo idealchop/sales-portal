@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -296,7 +296,7 @@ function CustomPlanCalculator({
         return { totalLiters: liters, totalCost: cost };
     }, [bottles, deliveries, pricePerLiter]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         onCalculated({ totalLiters });
     }, [totalLiters, onCalculated]);
 
