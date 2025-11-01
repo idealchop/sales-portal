@@ -251,35 +251,40 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
       {plans.map((plan) => (
         <Label htmlFor={plan.name.toLowerCase().replace(/ /g, '-')} key={plan.name} className="cursor-pointer h-full">
           <Card className={cn(
-            "relative flex flex-col h-full",
-            "border-2",
-            plan.isRecommended ? "border-primary" : ""
+            "relative flex flex-col h-full border-2",
+            plan.isRecommended 
+              ? "bg-primary text-primary-foreground border-primary" 
+              : "bg-card text-card-foreground border-transparent"
           )}>
             {plan.isRecommended && (
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md">
+              <div className={cn(
+                "absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md",
+                "bg-white text-primary"
+                )}>
                 Recommended
               </div>
             )}
             <CardHeader className="flex-1">
               <CardTitle>{plan.name}</CardTitle>
-              <div className="flex items-baseline gap-2">
+               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold">{plan.monthlyFee}</span>
-                 {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className="text-muted-foreground">/ month</span>}
-              </div>
-              <div className="flex justify-around text-center text-sm pt-4">
-                  <div>
-                      <p className="font-bold text-lg">{plan.liters}</p>
-                      <p className="text-muted-foreground">Liters</p>
-                  </div>
-                   <div>
-                      <p className="font-bold text-lg">≈ {plan.bottles}</p>
-                      <p className="text-muted-foreground">Bottles</p>
-                  </div>
+                 {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(plan.isRecommended ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
               </div>
             </CardHeader>
             <CardContent className="flex-1 space-y-4">
-                <Separator />
-                <ul className="space-y-2 text-sm text-muted-foreground">
+                <div className="bg-background/10 rounded-lg p-4">
+                  <div className="flex justify-around text-center text-sm">
+                      <div>
+                          <p className="font-bold text-lg">{plan.liters}</p>
+                          <p className={cn("text-sm", plan.isRecommended ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Liters</p>
+                      </div>
+                      <div>
+                          <p className="font-bold text-lg">≈ {plan.bottles}</p>
+                          <p className={cn("text-sm", plan.isRecommended ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Bottles</p>
+                      </div>
+                  </div>
+                </div>
+                <ul className={cn("space-y-2 text-sm", plan.isRecommended ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
                     {plan.inclusions.map((item, index) => (
                         <li key={index} className="flex items-center gap-2">
                             <Check className="h-4 w-4 text-primary" />
@@ -288,12 +293,22 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                     ))}
                 </ul>
             </CardContent>
-            <CardFooter className="bg-muted/50 p-4 justify-between items-center rounded-b-lg">
-                <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4" />
-                    <span>{plan.employees} Employees</span>
+            <CardFooter className="bg-background/10 p-4 rounded-b-lg">
+                <div className="flex justify-between items-center w-full text-sm">
+                    <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>{plan.employees}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        <span>{plan.stations}</span>
+                    </div>
+                    <RadioGroupItem 
+                      value={plan.name.toLowerCase().replace(/ /g, '-')} 
+                      id={plan.name.toLowerCase().replace(/ /g, '-')} 
+                      className={cn(plan.isRecommended ? "border-primary-foreground text-primary-foreground" : "")}
+                      />
                 </div>
-                <RadioGroupItem value={plan.name.toLowerCase().replace(/ /g, '-')} id={plan.name.toLowerCase().replace(/ /g, '-')} />
             </CardFooter>
           </Card>
         </Label>
@@ -376,7 +391,7 @@ function BusinessSizeSelector({
                                 src={size.image.imageUrl}
                                 alt={size.image.description}
                                 fill
-                                className="object-contain"
+                                className="object-cover"
                                 data-ai-hint={size.image.imageHint}
                             />
                         </div>
@@ -536,5 +551,3 @@ export default function PlansPage() {
     </div>
   );
 }
-
-    
