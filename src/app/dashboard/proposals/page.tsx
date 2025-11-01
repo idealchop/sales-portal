@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { proposals, clients } from '@/lib/data';
+import { proposals, clients, commissions } from '@/lib/data';
 import {
   Tabs,
   TabsContent,
@@ -43,6 +43,12 @@ const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
   inactive: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
   lead: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+};
+
+const commissionStatusStyles: { [key: string]: string } = {
+  paid: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+  unpaid: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
 };
 
 type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
@@ -144,11 +150,58 @@ export default function ProposalsPage() {
     )
   }
 
+  const renderCommissionsTable = () => {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Commission History</CardTitle>
+                <CardDescription>
+                A record of all sales commissions.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Sales Rep</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden md:table-cell">Date</TableHead>
+                    <TableHead className="text-right">Commission</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {commissions.map((commission) => (
+                    <TableRow key={commission.id}>
+                        <TableCell className="font-medium">
+                        {commission.salesRep}
+                        </TableCell>
+                        <TableCell>{commission.clientName}</TableCell>
+                        <TableCell>
+                          <Badge className={`capitalize ${commissionStatusStyles[commission.status]}`} variant="outline">
+                            {commission.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                        {commission.date}
+                        </TableCell>
+                        <TableCell className="text-right">
+                            {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(commission.commissionAmount)}
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    )
+  }
+
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Proposals & Clients</h1>
+          <h1 className="text-2xl font-bold">Proposals &amp; Clients</h1>
       </div>
 
       <Tabs defaultValue="proposals" className="space-y-4">
@@ -224,18 +277,7 @@ export default function ProposalsPage() {
             </Tabs>
           </TabsContent>
           <TabsContent value="commissions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Commission History</CardTitle>
-                <CardDescription>
-                  A record of all sales commissions.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-              {/* This is where the commissions table will be rendered. For now, it's a placeholder. */}
-              <p>Commissions table will be here.</p>
-              </CardContent>
-            </Card>
+            {renderCommissionsTable()}
           </TabsContent>
       </Tabs>
     </div>
