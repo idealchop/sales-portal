@@ -134,20 +134,14 @@ export function DashboardHeader() {
                                 </p>
                             </div>
                             <div className="flex flex-col items-center gap-4 rounded-md border p-8">
-                                <Avatar className="h-24 w-24">
+                                <Avatar className="h-24 w-24 cursor-pointer">
                                     <AvatarImage src="https://picsum.photos/seed/avatar/96/96" alt="User Avatar" />
                                     <AvatarFallback>SA</AvatarFallback>
                                 </Avatar>
-                                <div className="flex gap-2">
-                                    <Button variant="outline" size="sm">
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        Upload
-                                    </Button>
-                                     <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                    </Button>
-                                </div>
+                                <Button variant="outline" size="sm">
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Upload
+                                </Button>
                             </div>
                         </div>
                     </div>
