@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles } from 'lucide-react';
 import type { Client } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
@@ -181,6 +181,31 @@ export function ClientOverviewDialog({
                                         </div>
                                     </div>
                                 </div>
+                                <Separator />
+                                <div>
+                                    <h4 className="font-semibold mb-2">Inclusions</h4>
+                                    <div className="space-y-2">
+                                        {client.subscription.inclusions?.map((item) => (
+                                        <div key={item} className="flex items-center gap-2 text-sm">
+                                            <CheckCircle className="h-4 w-4 text-green-500" />
+                                            <span>{item}</span>
+                                        </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                {client.subscription.addons && client.subscription.addons.length > 0 && (
+                                    <div>
+                                        <h4 className="font-semibold mb-2">Add-ons</h4>
+                                        <div className="space-y-2">
+                                            {client.subscription.addons.map((item) => (
+                                                <div key={item} className="flex items-center gap-2 text-sm">
+                                                    <Sparkles className="h-4 w-4 text-yellow-500" />
+                                                    <span>{item}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                                 <Button className="w-full">Upgrade Plan</Button>
                             </CardContent>
                         ) : (

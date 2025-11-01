@@ -14,6 +14,8 @@ export type Client = {
     refillFrequency: string;
     employees: string;
     gallons: number;
+    inclusions?: string[];
+    addons?: string[];
   };
 };
 
