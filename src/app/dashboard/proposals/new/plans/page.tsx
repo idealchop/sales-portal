@@ -135,7 +135,7 @@ const smePlans: Plan[] = [
     monthlyFee: '₱1,500',
     liters: '500 L',
     refillFrequency: '1–2/week',
-    inclusions: ['Free delivery', 'Refill tracking app'],
+    inclusions: [],
     employees: '5 – 10',
     stations: '1 Station',
   },
@@ -393,12 +393,19 @@ function PlansGrid({
     };
 
     const gridColsClass = businessSize === 'corporate' ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
+    
+    const isSingleCustomPlan = selectedPlan === 'enterprise-customized';
+    const isSingleOverflowPlan = selectedPlan === 'enterprise-overflow';
 
     return (
     <RadioGroup
         value={selectedPlan ?? defaultPlan} 
         onValueChange={onSelectPlan}
-        className={cn("grid grid-cols-1 md:grid-cols-2 gap-6 items-start", gridColsClass, (selectedPlan === 'enterprise-customized' || selectedPlan === 'enterprise-overflow') && 'md:grid-cols-1 lg:grid-cols-1' )}
+        className={cn(
+            "grid grid-cols-1 md:grid-cols-2 gap-6 items-start",
+            gridColsClass,
+            (isSingleCustomPlan || isSingleOverflowPlan) && 'md:grid-cols-1 lg:grid-cols-1'
+        )}
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
@@ -417,8 +424,7 @@ function PlansGrid({
             <Label 
                 htmlFor={plan.id} 
                 className={cn(
-                    "cursor-pointer h-full", 
-                    isCustom && selectedPlan === 'enterprise-customized' && "md:col-span-2",
+                    "cursor-pointer h-full",
                     isDisabled && "cursor-not-allowed opacity-70"
                 )}
             >
@@ -495,7 +501,7 @@ function PlansGrid({
                 <TooltipProvider key={plan.id}>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className={cn(isSelected && 'md:col-span-2 lg:col-span-1')}>{cardContent}</div>
+                            <div className={cn('col-span-full')}>{cardContent}</div>
                         </TooltipTrigger>
                         <TooltipContent>
                             <p>This is a usage-based plan. Please contact sales for a custom quote.</p>
@@ -505,10 +511,7 @@ function PlansGrid({
             )
         }
 
-        return <div key={plan.id} className={cn(
-          (isCustom && selectedPlan === 'enterprise-customized') && 'col-span-full',
-          (isSelected && (plan.id === 'enterprise-customized' || plan.id === 'enterprise-overflow')) && 'col-span-full'
-        )}>{cardContent}</div>;
+        return <div key={plan.id} className={cn(isCustom && isSelected && 'col-span-full')}>{cardContent}</div>;
       })}
     </RadioGroup>
   );
@@ -650,7 +653,7 @@ function EnterpriseTypeSelector({
                          <div className="relative aspect-video">
                             <Image
                                 src={type.image.imageUrl}
-                                alt={type.image.description}
+                                alt={type.description}
                                 fill
                                 className="object-cover"
                                 data-ai-hint={type.image.imageHint}
