@@ -3,6 +3,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -402,7 +403,7 @@ function PreviewDialog({
                             </div>
                         </div>
                         <div className="text-right">
-                             <p className="font-mono text-sm text-muted-foreground">{proposalId}</p>
+                             <p className="font-mono text-sm text-muted-foreground">Proposal ID: {proposalId}</p>
                         </div>
                     </div>
                     
@@ -1077,6 +1078,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
