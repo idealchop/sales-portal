@@ -155,7 +155,10 @@ export default function ProposalsPage() {
                   <TableCell>
                     {client.subscription ? (
                         <div>
-                            <div className="font-medium">{client.subscription.planName}</div>
+                            <div className="font-bold">{client.subscription.planName}</div>
+                            <div className="font-bold text-sm text-muted-foreground">
+                                {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)}
+                            </div>
                             <div className="text-sm text-muted-foreground">{client.subscription.liters.toLocaleString()} Liters</div>
                         </div>
                     ) : (
