@@ -34,7 +34,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle } from 'lucide-react';
+import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type Plan = {
   id: string;
@@ -258,7 +259,7 @@ const flowPlans: Plan[] = [
         monthlyFee: 'Usage-Based',
         liters: 'No cap',
         refillFrequency: 'On-demand',
-        inclusions: ['Pay only for what you use', 'Ideal for unpredictable consumption', 'Rate varies by station'],
+        inclusions: ['Pay only for what you use', 'Ideal for unpredictable consumption', 'Minimum of ₱50,000/month'],
         employees: '—',
         stations: '—',
     }
@@ -283,9 +284,15 @@ const deliveryFrequencies = [
 function CustomPlanCalculator({
     pricePerLiter = 3,
     onCalculated,
+    title = 'Custom Plan Calculator',
+    description = 'Calculate a custom plan based on your client\'s needs.',
+    minimumCost = 0,
 }: {
     pricePerLiter?: number;
-    onCalculated: (values: { totalLiters: number }) => void;
+    onCalculated: (values: { totalLiters: number, totalCost: number }) => void;
+    title?: string;
+    description?: string;
+    minimumCost?: number;
 }) {
     const [bottles, setBottles] = useState(10);
     const [deliveries, setDeliveries] = useState(1);
@@ -298,19 +305,15 @@ function CustomPlanCalculator({
     }, [bottles, deliveries, pricePerLiter]);
 
     useEffect(() => {
-        onCalculated({ totalLiters });
-    }, [totalLiters, onCalculated]);
-
-    const getFrequency = (deliveries: number) => {
-        const freq = deliveryFrequencies.find(f => f.value === deliveries);
-        return freq ? freq.label.replace(' times a week', '/week').replace(' 1 time a week', '1/week') : `${deliveries}/week`;
-    }
-
+        onCalculated({ totalLiters, totalCost });
+    }, [totalLiters, totalCost, onCalculated]);
+    
+    const isMinimumMet = totalCost >= minimumCost;
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     return (
         <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="bottles" className="text-sm font-medium text-primary-foreground/80">5-Gallon Bottles per Delivery</Label>
                     <div className="flex items-center gap-2">
@@ -336,7 +339,7 @@ function CustomPlanCalculator({
 
             <Card className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
                 <CardHeader>
-                    <CardTitle className="text-base text-primary-foreground">Custom Plan Summary</CardTitle>
+                    <CardTitle className="text-base text-primary-foreground">{title}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
                      <div className="flex justify-between items-center">
@@ -352,6 +355,21 @@ function CustomPlanCalculator({
                         <span className="font-bold">Estimated Monthly Cost</span>
                         <span className="font-bold text-lg">{currencyFormatter.format(totalCost)}</span>
                     </div>
+                    {minimumCost > 0 && (
+                        <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
+                            'mt-4', 
+                            isMinimumMet ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-red-500/10 border-red-500/30 text-red-300'
+                        )}>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
+                            <AlertDescription>
+                                {isMinimumMet
+                                    ? `The estimated cost meets the ${currencyFormatter.format(minimumCost)} minimum.`
+                                    : `This plan requires a minimum monthly spend of ${currencyFormatter.format(minimumCost)}.`
+                                }
+                            </AlertDescription>
+                        </Alert>
+                    )}
                 </CardContent>
             </Card>
         </div>
@@ -366,15 +384,19 @@ function PlansGrid({
     onSelectPlan, 
     businessSize,
     customCalculatedValues,
-    onCustomCalculated
+    onCustomCalculated,
+    overflowCalculatedValues,
+    onOverflowCalculated,
 }: { 
     plans: Plan[], 
     defaultPlan: string, 
     selectedPlan: string | null, 
     onSelectPlan: (planId: string) => void, 
     businessSize: BusinessSize | null,
-    customCalculatedValues: { totalLiters: number } | null,
-    onCustomCalculated: (values: { totalLiters: number }) => void;
+    customCalculatedValues: { totalLiters: number, totalCost: number } | null,
+    onCustomCalculated: (values: { totalLiters: number, totalCost: number }) => void;
+    overflowCalculatedValues: { totalLiters: number, totalCost: number } | null;
+    onOverflowCalculated: (values: { totalLiters: number, totalCost: number }) => void;
 }) {
     const getStations = (liters: number) => {
         if (liters <= 2000) return '1 Station';
@@ -393,7 +415,7 @@ function PlansGrid({
     };
 
     let gridColsClass = 'lg:grid-cols-3';
-    if (businessSize === 'sme' || businessSize === 'commercial') {
+    if ((businessSize === 'sme' || businessSize === 'commercial') && plans.length === 3) {
         gridColsClass = 'md:grid-cols-2 lg:grid-cols-2';
     }
      if (businessSize === 'corporate') {
@@ -416,15 +438,28 @@ function PlansGrid({
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
         const isCustom = businessSize === 'enterprise' && (plan.id === 'enterprise-customized');
-        const isDisabled = plan.id === 'enterprise-overflow';
+        const isOverflow = businessSize === 'enterprise' && (plan.id === 'enterprise-overflow');
+        const isDisabled = false;
 
         let employees = plan.employees;
         let stations = plan.stations;
+        let monthlyFee = plan.monthlyFee;
+        let liters = plan.liters;
 
         if (isCustom && customCalculatedValues) {
             employees = getEmployees(customCalculatedValues.totalLiters);
             stations = getStations(customCalculatedValues.totalLiters);
+            monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(customCalculatedValues.totalCost);
+            liters = `${customCalculatedValues.totalLiters.toLocaleString()} L`;
         }
+        
+        if (isOverflow && overflowCalculatedValues) {
+            employees = getEmployees(overflowCalculatedValues.totalLiters);
+            stations = getStations(overflowCalculatedValues.totalLiters);
+            monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(overflowCalculatedValues.totalCost);
+            liters = `${overflowCalculatedValues.totalLiters.toLocaleString()} L`;
+        }
+
 
         const cardContent = (
             <Label 
@@ -454,7 +489,7 @@ function PlansGrid({
                     <CardHeader className="flex-1">
                     <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
                     <div className="flex items-baseline gap-2">
-                        {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{plan.monthlyFee}</span>}
+                        {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{monthlyFee}</span>}
                         {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                          {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
                     </div>
@@ -463,7 +498,7 @@ function PlansGrid({
                         <div className="space-y-2">
                             <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
                             <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
-                                <span>{isCustom && customCalculatedValues ? `${customCalculatedValues.totalLiters.toLocaleString()} L` : plan.liters}</span>
+                                <span>{liters}</span>
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -478,7 +513,23 @@ function PlansGrid({
                         </ul>
                     </CardContent>
                     
-                    {plan.id === 'enterprise-customized' && isSelected && <CustomPlanCalculator onCalculated={onCustomCalculated} pricePerLiter={3} />}
+                    {plan.id === 'enterprise-customized' && isSelected && (
+                        <CustomPlanCalculator 
+                            onCalculated={onCustomCalculated} 
+                            pricePerLiter={3} 
+                            title="Customized Plan Calculator"
+                        />
+                    )}
+                    
+                    {plan.id === 'enterprise-overflow' && isSelected && (
+                        <CustomPlanCalculator 
+                            onCalculated={onOverflowCalculated} 
+                            pricePerLiter={2.5} 
+                            title="Overflow Plan Calculator"
+                            minimumCost={50000}
+                        />
+                    )}
+
 
                     <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
                         <div className="flex justify-between items-center w-full text-sm">
@@ -517,7 +568,7 @@ function PlansGrid({
             )
         }
 
-        return <div key={plan.id} className={cn(isCustom && isSelected && 'col-span-full')}>{cardContent}</div>;
+        return <div key={plan.id} className={cn((isCustom || isOverflow) && isSelected && 'col-span-full')}>{cardContent}</div>;
       })}
     </RadioGroup>
   );
@@ -683,17 +734,19 @@ export default function PlansPage() {
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-    const [customCalculatedValues, setCustomCalculatedValues] = useState<{ totalLiters: number } | null>(null);
+    const [customCalculatedValues, setCustomCalculatedValues] = useState<{ totalLiters: number, totalCost: number } | null>(null);
+    const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ totalLiters: number, totalCost: number } | null>(null);
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
-        setSelectedEnterpriseType(null); // Reset enterprise type
+        setSelectedEnterpriseType(null); 
         if (size === 'enterprise') {
             setSelectedPlan(null);
         } else {
-            setSelectedPlan(null); // Reset plan selection when size changes
+            setSelectedPlan(null); 
         }
         setCustomCalculatedValues(null);
+        setOverflowCalculatedValues(null);
     };
 
     const handleEnterpriseTypeSelect = (type: EnterpriseType) => {
@@ -710,8 +763,12 @@ export default function PlansPage() {
         setSelectedPlan(planId);
     }
 
-    const handleCustomCalculated = useCallback((values: { totalLiters: number }) => {
+    const handleCustomCalculated = useCallback((values: { totalLiters: number, totalCost: number }) => {
         setCustomCalculatedValues(values);
+    }, []);
+
+    const handleOverflowCalculated = useCallback((values: { totalLiters: number, totalCost: number }) => {
+        setOverflowCalculatedValues(values);
     }, []);
 
     const resetSelection = () => {
@@ -761,10 +818,13 @@ export default function PlansPage() {
                     businessSize={selectedSize}
                     customCalculatedValues={customCalculatedValues}
                     onCustomCalculated={handleCustomCalculated}
+                    overflowCalculatedValues={overflowCalculatedValues}
+                    onOverflowCalculated={handleOverflowCalculated}
                 />;
     };
     
-    const isNextDisabled = !selectedPlan || selectedPlan === 'enterprise-overflow';
+    const isOverflowMinimumMet = overflowCalculatedValues ? overflowCalculatedValues.totalCost >= 50000 : false;
+    const isNextDisabled = !selectedPlan || (selectedPlan === 'enterprise-overflow' && !isOverflowMinimumMet);
 
 
     return (
@@ -897,6 +957,3 @@ export default function PlansPage() {
         </div>
     );
 }
-
-
-    
