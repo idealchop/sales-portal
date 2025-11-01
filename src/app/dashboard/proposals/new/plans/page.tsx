@@ -93,21 +93,25 @@ const perks = [
     {
         icon: <HeartPulse className="h-8 w-8 text-muted-foreground" />,
         partner: 'HealthFirst Clinic',
+        description: 'Multi-specialty medical clinics.',
         benefit: '15% discount on annual physical exams for all employees.',
     },
     {
         icon: <Coffee className="h-8 w-8 text-muted-foreground" />,
         partner: 'The Daily Grind Cafe',
+        description: 'Specialty coffee and pastries.',
         benefit: '10% off on all bulk coffee bean orders for the office pantry.',
     },
     {
         icon: <Building className="h-8 w-8 text-muted-foreground" />,
         partner: 'FlexiSpace Co-Working',
+        description: 'Modern and flexible office solutions.',
         benefit: 'One free day pass per month at any FlexiSpace location nationwide.',
     },
     {
         icon: <Car className="h-8 w-8 text-muted-foreground" />,
         partner: 'EcoDrive Car Service',
+        description: 'Eco-friendly car wash and detailing.',
         benefit: '20% discount on all corporate car wash and detailing services.',
     }
 ];
@@ -408,9 +412,10 @@ export default function PlansPage() {
             {perks.map((perk) => (
                 <div key={perk.partner} className="flex items-start gap-4">
                     {perk.icon}
-                    <div>
+                    <div className="space-y-1">
                         <h3 className="font-semibold">{perk.partner}</h3>
-                        <p className="text-sm text-muted-foreground">{perk.benefit}</p>
+                        <p className="text-sm text-muted-foreground">{perk.description}</p>
+                        <p className="text-sm font-medium text-primary">{perk.benefit}</p>
                     </div>
                 </div>
             ))}
