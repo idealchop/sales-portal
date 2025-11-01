@@ -246,80 +246,91 @@ type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'flow';
 
 
 function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string }) {
+    const [selectedPlan, setSelectedPlan] = useState(defaultPlan);
+
   return (
-    <RadioGroup defaultValue={defaultPlan} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-      {plans.map((plan) => (
-        <Label htmlFor={plan.name.toLowerCase().replace(/ /g, '-')} key={plan.name} className="cursor-pointer h-full">
-          <Card className={cn(
-            "relative flex flex-col h-full border-2",
-            plan.isRecommended 
-              ? "bg-primary text-primary-foreground border-primary" 
-              : "bg-card text-card-foreground border-transparent"
-          )}>
-            {plan.isRecommended && (
-              <div className={cn(
-                "absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md",
-                "bg-white text-primary"
-                )}>
-                Recommended
-              </div>
-            )}
-            <CardHeader className="flex-1">
-              <CardTitle>{plan.name}</CardTitle>
-               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold">{plan.monthlyFee}</span>
-                 {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(plan.isRecommended ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-4">
-                <div className="bg-background/10 rounded-lg p-4">
-                  <div className="flex justify-around text-center text-sm">
-                      <div>
-                          <p className="font-bold text-lg">{plan.liters}</p>
-                          <p className={cn("text-sm", plan.isRecommended ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Liters</p>
-                      </div>
-                      <div>
-                          <p className="font-bold text-lg">≈ {plan.bottles}</p>
-                          <p className={cn("text-sm", plan.isRecommended ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Bottles</p>
-                      </div>
-                  </div>
+    <RadioGroup 
+        value={selectedPlan} 
+        onValueChange={setSelectedPlan}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start"
+    >
+      {plans.map((plan) => {
+        const isSelected = selectedPlan === plan.name.toLowerCase().replace(/ /g, '-');
+        return (
+            <Label htmlFor={plan.name.toLowerCase().replace(/ /g, '-')} key={plan.name} className="cursor-pointer h-full">
+            <Card className={cn(
+                "relative flex flex-col h-full border-2 transition-all duration-300",
+                isSelected 
+                ? "bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground border-primary shadow-2xl" 
+                : "bg-card text-card-foreground border-transparent hover:border-primary/50"
+            )}>
+                {plan.isRecommended && !isSelected && (
+                <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
+                    Recommended
                 </div>
-                <ul className={cn("space-y-2 text-sm", plan.isRecommended ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
-                    {plan.inclusions.map((item, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-primary" />
-                            <span>{item}</span>
-                        </li>
-                    ))}
-                </ul>
-            </CardContent>
-            <CardFooter className="bg-background/10 p-4 rounded-b-lg">
-                <div className="flex justify-between items-center w-full text-sm">
-                    <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>{plan.employees}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        <span>{plan.stations}</span>
-                    </div>
-                    <RadioGroupItem 
-                      value={plan.name.toLowerCase().replace(/ /g, '-')} 
-                      id={plan.name.toLowerCase().replace(/ /g, '-')} 
-                      className={cn(plan.isRecommended ? "border-primary-foreground text-primary-foreground" : "")}
-                      />
+                )}
+                 {isSelected && (
+                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/30">
+                    <Check className="h-4 w-4 text-white" />
                 </div>
-            </CardFooter>
-          </Card>
-        </Label>
-      ))}
+                )}
+                <CardHeader className="flex-1">
+                <CardTitle className={cn(isSelected ? "text-white" : "")}>{plan.name}</CardTitle>
+                <div className="flex items-baseline gap-2">
+                    <span className={cn("text-3xl font-bold", isSelected ? "text-white" : "")}>{plan.monthlyFee}</span>
+                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                </div>
+                </CardHeader>
+                <CardContent className="flex-1 space-y-4">
+                    <div className={cn("rounded-lg p-4", isSelected ? "bg-black/20" : "bg-muted")}>
+                    <div className="flex justify-around text-center text-sm">
+                        <div>
+                            <p className={cn("font-bold text-lg", isSelected ? "text-white" : "")}>{plan.liters}</p>
+                            <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Liters</p>
+                        </div>
+                        <div>
+                            <p className={cn("font-bold text-lg", isSelected ? "text-white" : "")}>≈ {plan.bottles}</p>
+                            <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Bottles</p>
+                        </div>
+                    </div>
+                    </div>
+                    <ul className={cn("space-y-2 text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
+                        {plan.inclusions.map((item, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                                <Check className={cn("h-4 w-4", isSelected ? "text-white/80" : "text-primary")} />
+                                <span>{item}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </CardContent>
+                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
+                    <div className="flex justify-between items-center w-full text-sm">
+                        <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            <span>{plan.employees}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            <span>{plan.stations}</span>
+                        </div>
+                        <RadioGroupItem 
+                        value={plan.name.toLowerCase().replace(/ /g, '-')} 
+                        id={plan.name.toLowerCase().replace(/ /g, '-')} 
+                        className="sr-only"
+                        />
+                    </div>
+                </CardFooter>
+            </Card>
+            </Label>
+        )
+      })}
     </RadioGroup>
   );
 }
 
-const businessSizes: { id: BusinessSize, title: string, description: string, image: any }[] = [
+const businessSizes = [
     { 
-        id: 'sme', 
+        id: 'sme' as BusinessSize, 
         title: 'SME', 
         description: 'For small teams, kiosks, and home offices.', 
         image: {
@@ -329,7 +340,7 @@ const businessSizes: { id: BusinessSize, title: string, description: string, ima
         },
     },
     { 
-        id: 'commercial', 
+        id: 'commercial' as BusinessSize, 
         title: 'Commercial', 
         description: 'For growing offices and warehouses.', 
         image: {
@@ -339,7 +350,7 @@ const businessSizes: { id: BusinessSize, title: string, description: string, ima
         },
     },
     { 
-        id: 'corporate', 
+        id: 'corporate' as BusinessSize, 
         title: 'Corporate', 
         description: 'For multi-site companies and BPOs.', 
         image: {
@@ -349,7 +360,7 @@ const businessSizes: { id: BusinessSize, title: string, description: string, ima
         },
     },
     { 
-        id: 'flow', 
+        id: 'flow' as BusinessSize, 
         title: 'Flowing Plans', 
         description: 'Pay based on your actual water consumption.', 
         image: {
