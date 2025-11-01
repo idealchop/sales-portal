@@ -39,7 +39,7 @@ type Plan = {
   name: string;
   monthlyFee: string;
   liters: string;
-  bottles: string;
+  refillFrequency: string;
   inclusions: string[];
   employees: string;
   stations: string;
@@ -122,7 +122,7 @@ const smePlans: Plan[] = [
     name: 'Micro',
     monthlyFee: '₱1,500',
     liters: '500 L',
-    bottles: '26',
+    refillFrequency: '1–2/week',
     inclusions: ['Free delivery', 'Refill tracking app'],
     employees: '5 – 10',
     stations: '1 Station',
@@ -131,7 +131,7 @@ const smePlans: Plan[] = [
     name: 'Starter',
     monthlyFee: '₱3,000',
     liters: '1,000 L',
-    bottles: '53',
+    refillFrequency: '2–3/week',
     inclusions: ['+1 Free Dispenser', 'Compliance monitoring'],
     employees: '10 – 20',
     stations: '1 Station',
@@ -140,7 +140,7 @@ const smePlans: Plan[] = [
     name: 'Professional',
     monthlyFee: '₱6,000',
     liters: '2,000 L',
-    bottles: '105',
+    refillFrequency: '3–4/week',
     inclusions: ['+1 Free Dispenser', 'Scheduled delivery', 'Priority service'],
     employees: '20 – 40',
     stations: '1 Station',
@@ -153,7 +153,7 @@ const commercialPlans: Plan[] = [
     name: 'Growth',
     monthlyFee: '₱9,000',
     liters: '3,000 L',
-    bottles: '158',
+    refillFrequency: '4–5/week',
     inclusions: ['+2 Free Dispensers', 'Analytics dashboard'],
     employees: '40 – 70',
     stations: '2 Stations',
@@ -162,7 +162,7 @@ const commercialPlans: Plan[] = [
     name: 'Pro',
     monthlyFee: '₱12,000',
     liters: '4,000 L',
-    bottles: '211',
+    refillFrequency: '5–6/week',
     inclusions: ['+2 Free Dispensers', 'Priority delivery'],
     employees: '70 – 100',
     stations: '2 – 3 Stations',
@@ -172,7 +172,7 @@ const commercialPlans: Plan[] = [
     name: 'Business',
     monthlyFee: '₱18,000',
     liters: '6,000 L',
-    bottles: '316',
+    refillFrequency: 'Daily',
     inclusions: ['+3 Free Dispensers', 'Compliance tools', 'Dashboard access'],
     employees: '100 – 150',
     stations: '2 – 3 Stations',
@@ -184,7 +184,7 @@ const corporatePlans: Plan[] = [
         name: 'Enterprise Basic',
         monthlyFee: '₱30,000',
         liters: '10,000 L',
-        bottles: '526',
+        refillFrequency: '1–2/day',
         inclusions: ['+3 Free Dispensers', 'Scheduled delivery', 'Basic analytics'],
         employees: '150 – 250',
         stations: '2 – 3 Stations',
@@ -193,7 +193,7 @@ const corporatePlans: Plan[] = [
         name: 'Enterprise Plus',
         monthlyFee: '₱50,000',
         liters: '16,600 L',
-        bottles: '874',
+        refillFrequency: '2–3/day',
         inclusions: ['+5 Free Dispensers', 'Advanced compliance & water tracking'],
         employees: '250 – 350',
         stations: '2 – 3 Stations',
@@ -203,7 +203,7 @@ const corporatePlans: Plan[] = [
         name: 'Enterprise Elite',
         monthlyFee: '₱75,000',
         liters: '25,000 L',
-        bottles: '1,316',
+        refillFrequency: '3+/day',
         inclusions: ['+6 Free Dispensers', 'Dedicated account manager', 'Centralized reporting'],
         employees: '350 – 500',
         stations: '3 – 4 Stations',
@@ -212,7 +212,7 @@ const corporatePlans: Plan[] = [
         name: 'Enterprise Pro',
         monthlyFee: '₱100,000+',
         liters: '33,000+ L',
-        bottles: '1,737+',
+        refillFrequency: 'Continuous',
         inclusions: ['Tailored solution', 'Custom liters, billing, reporting & support'],
         employees: '500+',
         stations: '5+ Stations',
@@ -224,7 +224,7 @@ const flowPlans: Plan[] = [
         name: 'Enterprise Customized',
         monthlyFee: 'Fixed (Prepaid)',
         liters: 'Custom',
-        bottles: '—',
+        refillFrequency: 'Scheduled',
         inclusions: ['Starts at ₱100,000 / month', 'Tailored setup, custom liters, flexible billing', 'Dedicated account manager'],
         employees: '—',
         stations: '5+ Verified Stations',
@@ -234,7 +234,7 @@ const flowPlans: Plan[] = [
         name: 'Enterprise Overflow',
         monthlyFee: 'Usage-Based',
         liters: 'No cap',
-        bottles: '—',
+        refillFrequency: 'On-demand',
         inclusions: ['₱0 Base Fee + ₱3.00–₱3.50 / liter', 'Pay per actual consumption', 'Smart consumption tracking'],
         employees: '—',
         stations: 'Multiple partner stations',
@@ -260,7 +260,7 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
             <Card className={cn(
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
-                ? "border-primary shadow-lg bg-primary/90 backdrop-blur-sm" 
+                ? "border-primary shadow-lg bg-primary/20" 
                 : "bg-card text-card-foreground border shadow-md hover:border-primary/50"
             )}>
                 {plan.isRecommended && !isSelected && (
@@ -269,41 +269,43 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                 </div>
                 )}
                  {isSelected && (
-                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
-                    <Check className="h-4 w-4 text-primary" />
+                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                    <Check className="h-4 w-4 text-primary-foreground" />
                 </div>
                 )}
                 <CardHeader className="flex-1">
-                <CardTitle className={cn(isSelected ? "text-primary-foreground" : "")}>{plan.name}</CardTitle>
+                <CardTitle className={cn(isSelected ? "text-primary" : "")}>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
-                    <span className={cn("text-3xl font-bold", isSelected ? "text-primary-foreground" : "")}>{plan.monthlyFee}</span>
-                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                    <span className={cn("text-3xl font-bold", isSelected ? "text-primary" : "")}>{plan.monthlyFee}</span>
+                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-4">
-                    <div className={cn("rounded-lg p-4", isSelected ? "bg-black/10" : "bg-muted")}>
+                    <div className={cn("rounded-lg p-4", isSelected ? "bg-primary/10" : "bg-muted")}>
                     <div className="flex justify-around text-center text-sm">
-                        <div>
-                            <p className={cn("font-bold text-lg", isSelected ? "text-primary-foreground" : "")}>{plan.liters}</p>
-                            <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Liters</p>
+                        <div className="flex flex-col items-center gap-1">
+                            <GlassWater className={cn("h-5 w-5", isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                            <p className={cn("font-bold text-lg", isSelected ? "text-primary" : "")}>{plan.liters}</p>
+                            <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Liters</p>
                         </div>
-                        <div>
-                            <p className={cn("font-bold text-lg", isSelected ? "text-primary-foreground" : "")}>≈ {plan.bottles}</p>
-                            <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Bottles</p>
+                        <div className="flex flex-col items-center gap-1">
+                            <RefreshCcw className={cn("h-5 w-5", isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                            <p className={cn("font-bold text-lg", isSelected ? "text-primary" : "")}>{plan.refillFrequency}</p>
+                            <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Refills</p>
                         </div>
                     </div>
                     </div>
-                    <ul className={cn("space-y-2 text-sm", isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground')}>
+                    <ul className={cn("space-y-2 text-sm", isSelected ? 'text-primary/90' : 'text-muted-foreground')}>
                         {plan.inclusions.map((item, index) => (
                             <li key={index} className="flex items-center gap-2">
-                                <Check className={cn("h-4 w-4", isSelected ? "text-primary-foreground" : "text-primary")} />
+                                <Check className={cn("h-4 w-4", isSelected ? "text-primary" : "text-primary")} />
                                 <span>{item}</span>
                             </li>
                         ))}
                     </ul>
                 </CardContent>
-                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/10" : "bg-muted")}>
-                    <div className={cn("flex justify-between items-center w-full text-sm", isSelected ? "text-primary-foreground" : "")}>
+                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-primary/10" : "bg-muted")}>
+                    <div className={cn("flex justify-between items-center w-full text-sm", isSelected ? "text-primary" : "")}>
                         <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
                             <span>{plan.employees}</span>
