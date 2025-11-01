@@ -553,24 +553,24 @@ function PreviewDialog({
                         </CardHeader>
                         <CardContent className="space-y-4 pt-4">
                             <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="name-preview">Name</Label>
-                                    <Input id="name-preview" placeholder="Full Name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name-preview">Name</Label>
+                                        <Input id="name-preview" placeholder="Full Name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="company-preview">Company</Label>
+                                        <Input id="company-preview" placeholder="Company Name" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Date</Label>
+                                        <Input placeholder="Date" value={today} readOnly />
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="company-preview">Company</Label>
-                                    <Input id="company-preview" placeholder="Company Name" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                <div className="space-y-2 md:col-span-2">
                                     <Label>Signature</Label>
                                     <SignaturePad ref={signaturePadRef} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Date</Label>
-                                    <Input placeholder="Date" value={today} readOnly />
                                 </div>
                             </div>
                         </CardContent>
@@ -739,7 +739,7 @@ function ContractPageContent() {
 
   const planLiters = parseInt(finalPlan?.liters.replace(/[^0-9]/g, '') || '0');
   
-  const summaryTitle = finalPlan.name;
+  const summaryTitle = finalPlan.name.includes("Plan") ? finalPlan.name : `${finalPlan.name} Plan`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -922,7 +922,7 @@ function ContractPageContent() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <div className="flex justify-between font-semibold">
-                            <span>{summaryTitle.includes("Plan") ? summaryTitle : `${summaryTitle} Plan`} ({billingCycleLabel})</span>
+                            <span>{summaryTitle} ({billingCycleLabel})</span>
                             <span>{currencyFormatter.format(basePrice - (basePrice * discount))}</span>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
@@ -1026,6 +1026,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
