@@ -41,7 +41,6 @@ type Plan = {
   monthlyFee: string;
   liters: string;
   bottles: string;
-  rate: string;
   inclusions: string[];
   employees: string;
   stations: string;
@@ -119,140 +118,138 @@ const perks = [
 ];
 
 
-const smallPlans: Plan[] = [
+const smePlans: Plan[] = [
   {
     name: 'Micro',
-    monthlyFee: '₱1,000',
+    monthlyFee: '₱1,500',
     liters: '500 L',
     bottles: '26',
-    rate: '₱2.50',
-    inclusions: ['Free delivery', 'Refill tracking via app'],
+    inclusions: ['Free delivery', 'Refill tracking app'],
     employees: '5 – 10',
     stations: '1 Station',
   },
   {
     name: 'Starter',
-    monthlyFee: '₱2,000',
+    monthlyFee: '₱3,000',
     liters: '1,000 L',
     bottles: '53',
-    rate: '₱2.40',
-    inclusions: ['+ 1 Free Dispenser', 'Compliance monitoring'],
+    inclusions: ['+1 Free Dispenser', 'Compliance monitoring'],
     employees: '10 – 20',
     stations: '1 Station',
   },
   {
-    name: 'Pro',
-    monthlyFee: '₱7,500',
-    liters: '5,000 L',
-    bottles: '263',
-    rate: '₱2.20',
-    inclusions: ['+ 2 Free Dispensers', 'Priority delivery'],
-    employees: '50 – 75',
-    stations: '2 Stations',
+    name: 'Professional',
+    monthlyFee: '₱6,000',
+    liters: '2,000 L',
+    bottles: '105',
+    inclusions: ['+1 Free Dispenser', 'Scheduled delivery', 'Priority service'],
+    employees: '20 – 40',
+    stations: '1 Station',
     isRecommended: true,
   },
 ];
 
-const mediumPlans: Plan[] = [
+const commercialPlans: Plan[] = [
   {
     name: 'Growth',
-    monthlyFee: '₱10,000',
-    liters: '4,255 L',
-    bottles: '224',
-    rate: '₱2.35',
-    inclusions: ['+ 2 Free Dispensers', 'Analytics dashboard', 'Scheduled delivery'],
-    employees: '150 – 250',
+    monthlyFee: '₱9,000',
+    liters: '3,000 L',
+    bottles: '158',
+    inclusions: ['+2 Free Dispensers', 'Analytics dashboard'],
+    employees: '40 – 70',
+    stations: '2 Stations',
+  },
+  {
+    name: 'Pro',
+    monthlyFee: '₱12,000',
+    liters: '4,000 L',
+    bottles: '211',
+    inclusions: ['+2 Free Dispensers', 'Priority delivery'],
+    employees: '70 – 100',
     stations: '2 – 3 Stations',
+    isRecommended: true,
   },
   {
     name: 'Business',
-    monthlyFee: '₱15,000',
-    liters: '6,383 L',
-    bottles: '336',
-    rate: '₱2.35',
-    inclusions: ['+ 3 Free Dispensers', 'Compliance tools', 'Analytics access'],
-    employees: '300 – 450',
-    stations: '3 – 4 Stations',
-    isRecommended: true,
-  },
-  {
-    name: 'Enterprise+',
-    monthlyFee: '₱35,000',
-    liters: '30,000 L',
-    bottles: '1,579',
-    rate: '₱1.90',
-    inclusions: ['+ 6 Free Dispensers', 'Centralized reporting'],
-    employees: '500+',
-    stations: '5+ Stations',
+    monthlyFee: '₱18,000',
+    liters: '6,000 L',
+    bottles: '316',
+    inclusions: ['+3 Free Dispensers', 'Compliance tools', 'Dashboard access'],
+    employees: '100 – 150',
+    stations: '2 – 3 Stations',
   },
 ];
 
-const largePlans: Plan[] = [
+const corporatePlans: Plan[] = [
     {
-        name: 'Unlimited+',
-        monthlyFee: '₱50,000',
-        liters: 'Unlimited *',
-        bottles: '—',
-        rate: '—',
-        inclusions: ['Unlimited dispenser support', 'Dedicated account manager'],
-        employees: 'Flexible',
-        stations: 'Dynamic Allocation (Multiple Stations)',
+        name: 'Enterprise Basic',
+        monthlyFee: '₱30,000',
+        liters: '10,000 L',
+        bottles: '526',
+        inclusions: ['+3 Free Dispensers', 'Scheduled delivery', 'Basic analytics'],
+        employees: '150 – 250',
+        stations: '2 – 3 Stations',
     },
     {
-        name: 'Enterprise 75',
-        monthlyFee: '₱75,000',
-        liters: '40,000 L',
-        bottles: '2,105',
-        rate: '₱1.88',
-        inclusions: ['Dedicated support', 'Advanced analytics'],
-        employees: '750+',
-        stations: '8+ Stations',
+        name: 'Enterprise Plus',
+        monthlyFee: '₱50,000',
+        liters: '16,600 L',
+        bottles: '874',
+        inclusions: ['+5 Free Dispensers', 'Advanced compliance & water tracking'],
+        employees: '250 – 350',
+        stations: '2 – 3 Stations',
         isRecommended: true,
     },
     {
-        name: 'Enterprise 100',
-        monthlyFee: '₱100,000',
-        liters: '60,000 L',
-        bottles: '3,158',
-        rate: '₱1.67',
-        inclusions: ['Full-time account manager', 'Custom API integration'],
-        employees: '1000+',
-        stations: '12+ Stations',
+        name: 'Enterprise Elite',
+        monthlyFee: '₱75,000',
+        liters: '25,000 L',
+        bottles: '1,316',
+        inclusions: ['+6 Free Dispensers', 'Dedicated account manager', 'Centralized reporting'],
+        employees: '350 – 500',
+        stations: '3 – 4 Stations',
+    },
+    {
+        name: 'Enterprise Pro',
+        monthlyFee: '₱100,000+',
+        liters: '33,000+ L',
+        bottles: '1,737+',
+        inclusions: ['Tailored solution', 'Custom liters, billing, reporting & support'],
+        employees: '500+',
+        stations: '5+ Stations',
     },
 ];
 
 const flowPlans: Plan[] = [
     {
-        name: 'Flow Plan',
-        monthlyFee: 'Consumption-based',
-        liters: 'Unlimited',
+        name: 'Enterprise Customized',
+        monthlyFee: 'Fixed (Prepaid)',
+        liters: 'Custom',
         bottles: '—',
-        rate: '₱3.00',
-        inclusions: ['Billed only based on consumption', 'Real-time tracking.'],
-        employees: 'Flexible',
-        stations: 'Dynamic Allocation',
+        inclusions: ['Starts at ₱100,000 / month', 'Tailored setup, custom liters, flexible billing', 'Dedicated account manager'],
+        employees: '—',
+        stations: '5+ Verified Stations',
         isRecommended: true,
     },
     {
-        name: 'Customized',
-        monthlyFee: 'Flexible',
-        liters: 'Flexible',
-        bottles: 'Flexible',
-        rate: 'Based on volume',
-        inclusions: ['Custom liters', 'Billing cycles', 'Multi-location integration'],
+        name: 'Enterprise Overflow',
+        monthlyFee: 'Usage-Based',
+        liters: 'No cap',
+        bottles: '—',
+        inclusions: ['₱0 Base Fee + ₱3.00–₱3.50 / liter', 'Pay per actual consumption', 'Smart consumption tracking'],
         employees: '—',
-        stations: 'Assigned Based on Coverage Area',
+        stations: 'Multiple partner stations',
     },
 ]
 
-type BusinessSize = 'small' | 'medium' | 'large' | 'flow';
+type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'flow';
 
 
 function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string }) {
   return (
     <RadioGroup defaultValue={defaultPlan} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
       {plans.map((plan) => (
-        <Label htmlFor={plan.name.toLowerCase()} key={plan.name} className="cursor-pointer h-full">
+        <Label htmlFor={plan.name.toLowerCase().replace(/ /g, '-')} key={plan.name} className="cursor-pointer h-full">
           <Card className={cn(
             "relative flex flex-col h-full",
             "border-2",
@@ -267,7 +264,7 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
               <CardTitle>{plan.name}</CardTitle>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold">{plan.monthlyFee}</span>
-                {plan.name !== 'Flow Plan' && plan.name !== 'Customized' && plan.name !== 'Unlimited+' && <span className="text-muted-foreground">/ month</span>}
+                 {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className="text-muted-foreground">/ month</span>}
               </div>
               <div className="flex justify-around text-center text-sm pt-4">
                   <div>
@@ -296,7 +293,7 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                     <Users className="h-4 w-4" />
                     <span>{plan.employees} Employees</span>
                 </div>
-                <RadioGroupItem value={plan.name.toLowerCase()} id={plan.name.toLowerCase()} />
+                <RadioGroupItem value={plan.name.toLowerCase().replace(/ /g, '-')} id={plan.name.toLowerCase().replace(/ /g, '-')} />
             </CardFooter>
           </Card>
         </Label>
@@ -305,9 +302,9 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
   );
 }
 
-const businessSizes: { id: BusinessSize, title: string, description: string, image: any, idealFor: string[] }[] = [
+const businessSizes: { id: BusinessSize, title: string, description: string, image: any }[] = [
     { 
-        id: 'small', 
+        id: 'sme', 
         title: 'SME', 
         description: 'For small teams, kiosks, and home offices.', 
         image: {
@@ -315,28 +312,24 @@ const businessSizes: { id: BusinessSize, title: string, description: string, ima
             description: "An office with a few people",
             imageHint: "small office"
         },
-        idealFor: ['Small offices & clinics', 'Retail stores & cafes', 'Home-based businesses']
     },
     { 
-        id: 'medium', 
-        title: 'Medium Business', 
+        id: 'commercial', 
+        title: 'Commercial', 
         description: 'For growing offices and warehouses.', 
         image: PlaceHolderImages.find(p => p.title === 'medium-business'),
-        idealFor: ['Growing companies', 'Mid-sized offices', 'Warehouse facilities']
     },
     { 
-        id: 'large', 
-        title: 'Large Enterprise', 
+        id: 'corporate', 
+        title: 'Corporate', 
         description: 'For multi-site companies and BPOs.', 
         image: PlaceHolderImages.find(p => p.title === 'large-business'),
-        idealFor: ['BPOs & call centers', 'Multi-site corporations', 'Hotel & restaurant chains']
     },
     { 
         id: 'flow', 
-        title: 'Smart Flow Plan', 
+        title: 'Flowing Plans', 
         description: 'Pay based on your actual water consumption.', 
         image: PlaceHolderImages.find(p => p.title === 'flow-plan'),
-        idealFor: ['Businesses with fluctuating demand', 'Event-based water needs', 'Seasonal operations']
     },
 ];
 
@@ -398,14 +391,14 @@ export default function PlansPage() {
     
     const renderPlans = () => {
         switch (selectedSize) {
-            case 'small':
-                return <PlansGrid plans={smallPlans} defaultPlan="pro" />;
-            case 'medium':
-                return <PlansGrid plans={mediumPlans} defaultPlan="business" />;
-            case 'large':
-                return <PlansGrid plans={largePlans} defaultPlan="enterprise 75" />;
+            case 'sme':
+                return <PlansGrid plans={smePlans} defaultPlan="professional" />;
+            case 'commercial':
+                return <PlansGrid plans={commercialPlans} defaultPlan="pro" />;
+            case 'corporate':
+                return <PlansGrid plans={corporatePlans} defaultPlan="enterprise-plus" />;
             case 'flow':
-                return <PlansGrid plans={flowPlans} defaultPlan="flow plan" />;
+                return <PlansGrid plans={flowPlans} defaultPlan="enterprise-customized" />;
             default:
                 return null;
         }
