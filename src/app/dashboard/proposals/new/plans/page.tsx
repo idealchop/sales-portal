@@ -393,7 +393,10 @@ function PlansGrid({
     };
 
     let gridColsClass = 'lg:grid-cols-3';
-    if (businessSize === 'sme' || businessSize === 'corporate') {
+    if (businessSize === 'sme') {
+        gridColsClass = 'lg:grid-cols-2';
+    }
+     if (businessSize === 'corporate') {
         gridColsClass = 'lg:grid-cols-2';
     }
     
