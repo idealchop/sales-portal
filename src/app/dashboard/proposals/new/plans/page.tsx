@@ -375,14 +375,13 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
                 <CardContent className="flex-1 space-y-4 text-left">
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                            <Waves className={cn("h-5 w-5", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}/>
-                            <p className="text-lg font-bold">{plan.liters}</p>
+                            <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.liters}</p>
                         </div>
-                        <p className={cn("text-sm ml-7 -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
+                        <p className={cn("text-sm -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
                     </div>
                      <div className="space-y-2">
-                        <p className={cn("text-lg font-bold ml-7", isSelected && "text-primary-foreground")}>{plan.refillFrequency}</p>
-                        <p className={cn("text-sm ml-7 -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
+                        <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.refillFrequency}</p>
+                        <p className={cn("text-sm -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
                     </div>
                 </CardContent>
                 
