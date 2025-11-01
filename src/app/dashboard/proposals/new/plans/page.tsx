@@ -260,7 +260,7 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
             <Card className={cn(
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
-                ? "border-primary shadow-lg bg-primary/20" 
+                ? "border-primary shadow-lg bg-primary text-primary-foreground" 
                 : "bg-card text-card-foreground border shadow-md hover:border-primary/50"
             )}>
                 {plan.isRecommended && !isSelected && (
@@ -269,29 +269,29 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                 </div>
                 )}
                  {isSelected && (
-                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
-                    <Check className="h-4 w-4 text-primary-foreground" />
+                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
+                    <Check className="h-4 w-4 text-primary" />
                 </div>
                 )}
                 <CardHeader className="flex-1">
-                <CardTitle className={cn(isSelected ? "text-primary" : "")}>{plan.name}</CardTitle>
+                <CardTitle className={cn(isSelected ? "text-primary-foreground" : "")}>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
-                    <span className={cn("text-3xl font-bold", isSelected ? "text-primary" : "")}>{plan.monthlyFee}</span>
-                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary/80' : 'text-muted-foreground')}>/ month</span>}
+                    <span className={cn("text-3xl font-bold", isSelected ? "text-primary-foreground" : "")}>{plan.monthlyFee}</span>
+                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-4 text-left">
-                    <div>
-                        <p className={cn("text-lg font-bold", isSelected ? "text-primary" : "")}>{plan.liters}</p>
-                        <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Liters Included</p>
+                    <div className="space-y-1">
+                        <p className={cn("text-lg font-bold", isSelected ? "text-primary-foreground" : "")}>{plan.liters}</p>
+                        <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Liters Included</p>
                     </div>
-                    <div>
-                        <p className={cn("text-lg font-bold", isSelected ? "text-primary" : "")}>{plan.refillFrequency}</p>
-                        <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Avg. Refill Frequency</p>
+                    <div className="space-y-1">
+                        <p className={cn("text-lg font-bold", isSelected ? "text-primary-foreground" : "")}>{plan.refillFrequency}</p>
+                        <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Avg. Refill Frequency</p>
                     </div>
                 </CardContent>
-                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-primary/10" : "bg-muted")}>
-                    <div className={cn("flex justify-between items-center w-full text-sm", isSelected ? "text-primary" : "")}>
+                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/10" : "bg-muted")}>
+                    <div className={cn("flex justify-between items-center w-full text-sm", isSelected ? "text-primary-foreground" : "")}>
                         <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
                             <span>{plan.employees}</span>
