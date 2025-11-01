@@ -96,19 +96,19 @@ export default function ComparisonPage() {
           <Accordion type="single" collapsible defaultValue={comparisonData[0].aspect}>
             {comparisonData.map((item) => (
               <AccordionItem value={item.aspect} key={item.aspect}>
-                <AccordionTrigger className="px-6 text-base font-semibold data-[state=open]:bg-primary data-[state=open]:text-primary-foreground">
+                <AccordionTrigger className="px-6 text-base font-semibold">
                   {item.aspect}
                 </AccordionTrigger>
-                <AccordionContent className="bg-primary/90 px-6 pb-6 text-primary-foreground">
+                <AccordionContent className="bg-muted/30 px-6 pb-6">
                   <div className="grid md:grid-cols-2 gap-6 pt-4">
-                    <div className="space-y-2 rounded-lg bg-background text-card-foreground p-4">
+                    <div className="space-y-2 rounded-lg bg-background p-4 border">
                         <div className="flex items-center gap-2">
                             <XCircle className="h-5 w-5 text-destructive" />
                             <h4 className="font-semibold text-muted-foreground">Traditional Model</h4>
                         </div>
                         <p className="text-sm pl-7">{item.traditional}</p>
                     </div>
-                    <div className="space-y-2 rounded-lg bg-background text-card-foreground p-4">
+                    <div className="space-y-2 rounded-lg bg-primary/10 p-4 border border-primary/20">
                         <div className="flex items-center gap-2">
                             <CheckCircle className="h-5 w-5 text-primary" />
                             <h4 className="font-semibold text-primary">Smart Refill Model</h4>
