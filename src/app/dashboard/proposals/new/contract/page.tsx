@@ -914,17 +914,6 @@ export default function ContractPage() {
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Additional Terms</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                    <p>Clients may change their billing cycle upon renewal by notifying Smart Refill™ at least 15 days before the next billing period.</p>
-                    <p>All payments are prepaid and non-refundable once activated.</p>
-                    <p>Unused liters roll over according to the selected plan’s policy.</p>
-                    <p>Any unpaid add-on liters or rentals will be billed separately in the next cycle.</p>
-                </CardContent>
-            </Card>
         </div>
         <Card>
             <CardHeader>
