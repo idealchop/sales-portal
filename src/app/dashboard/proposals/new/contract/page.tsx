@@ -39,7 +39,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
-import { allPlans } from '../plans/page';
+import { allPlans, deliveryFrequencies } from '../plans/page';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0 },
@@ -610,6 +610,7 @@ function ContractPageContent() {
   const planId = searchParams.get('plan');
   const customLiters = searchParams.get('liters');
   const customCost = searchParams.get('cost');
+  const customFreq = searchParams.get('freq');
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -620,18 +621,26 @@ function ContractPageContent() {
   const [additionalLiters, setAdditionalLiters] = useState(0);
 
   const plan = useMemo(() => {
-    const basePlan = allPlans.find(p => p.id === planId);
+    let basePlan = allPlans.find(p => p.id === planId);
     if (!basePlan) return null;
 
-    if ((planId === 'enterprise-customized' || planId === 'enterprise-overflow' || planId === 'custom-plan') && customLiters && customCost) {
-        return {
+    if (customLiters && customCost) {
+         basePlan = {
             ...basePlan,
             liters: `${customLiters} L`,
             monthlyFee: `₱${parseFloat(customCost).toLocaleString()}`,
         };
     }
+    
+    if (planId === 'enterprise-overflow' && customFreq) {
+        const freqLabel = deliveryFrequencies.find(f => f.value === parseInt(customFreq))?.label;
+        if (freqLabel) {
+            basePlan.refillFrequency = freqLabel;
+        }
+    }
+
     return basePlan;
-  }, [planId, customLiters, customCost]);
+  }, [planId, customLiters, customCost, customFreq]);
 
   const handleAddonToggle = (addonId: string) => {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
@@ -991,6 +1000,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
