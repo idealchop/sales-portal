@@ -394,7 +394,7 @@ export default function PlansPage() {
           </CardContent>
           <CardFooter>
             <p className="text-sm text-muted-foreground">
-              All perks are included in any plans.
+              All perks are included with any plan.
             </p>
           </CardFooter>
         </Card>
