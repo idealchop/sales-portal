@@ -108,16 +108,16 @@ export default function ComparisonPage() {
                         </div>
                         <p className="text-sm pl-7">{item.traditional}</p>
                     </div>
-                    <div className="space-y-2 rounded-lg border-2 border-primary/20 bg-card p-4">
+                    <div className="space-y-2 rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
                         <div className="flex items-center gap-2">
                             <CheckCircle className="h-5 w-5 text-primary" />
                             <h4 className="font-semibold text-primary">Smart Refill Model</h4>
                         </div>
                         <p className="text-sm pl-7">{item.smartRefill}</p>
+                         <div className="mt-2 pl-7">
+                            <p className="text-sm font-semibold text-primary">{item.advantage}</p>
+                        </div>
                     </div>
-                </div>
-                <div className="mt-4 pl-7">
-                    <p className="text-sm font-semibold text-primary">{item.advantage}</p>
                 </div>
                 </AccordionContent>
               </AccordionItem>
