@@ -256,15 +256,6 @@ export default function ProposalsPage() {
                                     <TabsTrigger key={status} value={status} className="capitalize">{status}</TabsTrigger>
                                     ))}
                                 </TabsList>
-                                 <Button size="sm" variant="outline">
-                                    Import
-                                </Button>
-                                <Button size="sm" className="h-8 gap-1">
-                                <PlusCircle className="h-3.5 w-3.5" />
-                                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                                    Add Client
-                                </span>
-                                </Button>
                             </div>
                         </div>
                     </CardHeader>
