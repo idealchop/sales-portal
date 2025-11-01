@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
-import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car } from 'lucide-react';
+import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -42,9 +42,10 @@ type Plan = {
   liters: string;
   bottles: string;
   rate: string;
-  inclusions: string;
+  inclusions: string[];
   employees: string;
   stations: string;
+  isRecommended?: boolean;
 };
 
 const inclusions = [
@@ -123,9 +124,9 @@ const smallPlans: Plan[] = [
     name: 'Micro',
     monthlyFee: '₱1,000',
     liters: '500 L',
-    bottles: '≈ 26 bottles',
+    bottles: '26',
     rate: '₱2.50',
-    inclusions: 'Free delivery; refill tracking via app',
+    inclusions: ['Free delivery', 'Refill tracking via app'],
     employees: '5 – 10',
     stations: '1 Station',
   },
@@ -133,9 +134,9 @@ const smallPlans: Plan[] = [
     name: 'Starter',
     monthlyFee: '₱2,000',
     liters: '1,000 L',
-    bottles: '≈ 53 bottles',
+    bottles: '53',
     rate: '₱2.40',
-    inclusions: '+ 1 Free Dispenser; compliance monitoring',
+    inclusions: ['+ 1 Free Dispenser', 'Compliance monitoring'],
     employees: '10 – 20',
     stations: '1 Station',
   },
@@ -143,11 +144,12 @@ const smallPlans: Plan[] = [
     name: 'Pro',
     monthlyFee: '₱7,500',
     liters: '5,000 L',
-    bottles: '≈ 263 bottles',
+    bottles: '263',
     rate: '₱2.20',
-    inclusions: '+ 2 Free Dispensers; priority delivery',
+    inclusions: ['+ 2 Free Dispensers', 'Priority delivery'],
     employees: '50 – 75',
     stations: '2 Stations',
+    isRecommended: true,
   },
 ];
 
@@ -156,9 +158,9 @@ const mediumPlans: Plan[] = [
     name: 'Growth',
     monthlyFee: '₱10,000',
     liters: '4,255 L',
-    bottles: '≈ 224 bottles',
+    bottles: '224',
     rate: '₱2.35',
-    inclusions: '+ 2 Free Dispensers; analytics dashboard; scheduled delivery',
+    inclusions: ['+ 2 Free Dispensers', 'Analytics dashboard', 'Scheduled delivery'],
     employees: '150 – 250',
     stations: '2 – 3 Stations',
   },
@@ -166,19 +168,20 @@ const mediumPlans: Plan[] = [
     name: 'Business',
     monthlyFee: '₱15,000',
     liters: '6,383 L',
-    bottles: '≈ 336 bottles',
+    bottles: '336',
     rate: '₱2.35',
-    inclusions: '+ 3 Free Dispensers; compliance tools; analytics access',
+    inclusions: ['+ 3 Free Dispensers', 'Compliance tools', 'Analytics access'],
     employees: '300 – 450',
     stations: '3 – 4 Stations',
+    isRecommended: true,
   },
   {
     name: 'Enterprise+',
     monthlyFee: '₱35,000',
     liters: '30,000 L',
-    bottles: '≈ 1,579 bottles',
+    bottles: '1,579',
     rate: '₱1.90',
-    inclusions: '+ 6 Free Dispensers; centralized reporting',
+    inclusions: ['+ 6 Free Dispensers', 'Centralized reporting'],
     employees: '500+',
     stations: '5+ Stations',
   },
@@ -191,7 +194,7 @@ const largePlans: Plan[] = [
         liters: 'Unlimited *',
         bottles: '—',
         rate: '—',
-        inclusions: 'Unlimited dispenser support; dedicated account manager',
+        inclusions: ['Unlimited dispenser support', 'Dedicated account manager'],
         employees: 'Flexible',
         stations: 'Dynamic Allocation (Multiple Stations)',
     },
@@ -199,19 +202,20 @@ const largePlans: Plan[] = [
         name: 'Enterprise 75',
         monthlyFee: '₱75,000',
         liters: '40,000 L',
-        bottles: '≈ 2,105 bottles',
+        bottles: '2,105',
         rate: '₱1.88',
-        inclusions: 'Dedicated support; advanced analytics',
+        inclusions: ['Dedicated support', 'Advanced analytics'],
         employees: '750+',
         stations: '8+ Stations',
+        isRecommended: true,
     },
     {
         name: 'Enterprise 100',
         monthlyFee: '₱100,000',
         liters: '60,000 L',
-        bottles: '≈ 3,158 bottles',
+        bottles: '3,158',
         rate: '₱1.67',
-        inclusions: 'Full-time account manager; custom API integration',
+        inclusions: ['Full-time account manager', 'Custom API integration'],
         employees: '1000+',
         stations: '12+ Stations',
     },
@@ -224,9 +228,10 @@ const flowPlans: Plan[] = [
         liters: 'Unlimited',
         bottles: '—',
         rate: '₱3.00',
-        inclusions: 'Billed only based on consumption, real-time tracking.',
+        inclusions: ['Billed only based on consumption', 'Real-time tracking.'],
         employees: 'Flexible',
         stations: 'Dynamic Allocation',
+        isRecommended: true,
     },
     {
         name: 'Customized',
@@ -234,7 +239,7 @@ const flowPlans: Plan[] = [
         liters: 'Flexible',
         bottles: 'Flexible',
         rate: 'Based on volume',
-        inclusions: 'Custom liters, billing cycles, and multi-location integration',
+        inclusions: ['Custom liters', 'Billing cycles', 'Multi-location integration'],
         employees: '—',
         stations: 'Assigned Based on Coverage Area',
     },
@@ -243,43 +248,61 @@ const flowPlans: Plan[] = [
 type BusinessSize = 'small' | 'medium' | 'large' | 'flow';
 
 
-function PlansTable({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string }) {
-    return (
-        <RadioGroup defaultValue={defaultPlan}>
-            <Table>
-                <TableHeader>
-                <TableRow>
-                    <TableHead className="w-[50px]"></TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Monthly Fee</TableHead>
-                    <TableHead>Included Liters</TableHead>
-                    <TableHead>Est. Bottles</TableHead>
-                    <TableHead>Inclusions</TableHead>
-                    <TableHead>Employees Covered</TableHead>
-                    <TableHead>Water Stations Provider</TableHead>
-                </TableRow>
-                </TableHeader>
-                <TableBody>
-                {plans.map((plan) => (
-                    <TableRow key={plan.name}>
-                    <TableCell>
-                        <RadioGroupItem value={plan.name.toLowerCase()} id={plan.name.toLowerCase()} />
-                    </TableCell>
-                    <TableCell>
-                        <Label htmlFor={plan.name.toLowerCase()} className="font-semibold">{plan.name}</Label>
-                    </TableCell>
-                    <TableCell>{plan.monthlyFee}</TableCell>
-                    <TableCell>{plan.liters}</TableCell>
-                    <TableCell>{plan.bottles}</TableCell>
-                    <TableCell>{plan.inclusions}</TableCell>
-                    <TableCell>{plan.employees}</TableCell>
-                    <TableCell>{plan.stations}</TableCell>
-                    </TableRow>
-                ))}
-                </TableBody>
-            </Table>
-        </RadioGroup>
-    );
+function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string }) {
+  return (
+    <RadioGroup defaultValue={defaultPlan} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+      {plans.map((plan) => (
+        <Label htmlFor={plan.name.toLowerCase()} key={plan.name} className="cursor-pointer h-full">
+          <Card className={cn(
+            "relative flex flex-col h-full",
+            "border-2",
+            plan.isRecommended ? "border-primary" : ""
+          )}>
+            {plan.isRecommended && (
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md">
+                Recommended
+              </div>
+            )}
+            <CardHeader className="flex-1">
+              <CardTitle>{plan.name}</CardTitle>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold">{plan.monthlyFee}</span>
+                {plan.name !== 'Flow Plan' && plan.name !== 'Customized' && plan.name !== 'Unlimited+' && <span className="text-muted-foreground">/ month</span>}
+              </div>
+              <div className="flex justify-around text-center text-sm pt-4">
+                  <div>
+                      <p className="font-bold text-lg">{plan.liters}</p>
+                      <p className="text-muted-foreground">Liters</p>
+                  </div>
+                   <div>
+                      <p className="font-bold text-lg">≈ {plan.bottles}</p>
+                      <p className="text-muted-foreground">Bottles</p>
+                  </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 space-y-4">
+                <Separator />
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                    {plan.inclusions.map((item, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                            <Check className="h-4 w-4 text-primary" />
+                            <span>{item}</span>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+            <CardFooter className="bg-muted/50 p-4 justify-between items-center rounded-b-lg">
+                <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-4 w-4" />
+                    <span>{plan.employees} Employees</span>
+                </div>
+                <RadioGroupItem value={plan.name.toLowerCase()} id={plan.name.toLowerCase()} />
+            </CardFooter>
+          </Card>
+        </Label>
+      ))}
+    </RadioGroup>
+  );
 }
 
 function BusinessSizeSelector({
@@ -294,11 +317,11 @@ function BusinessSizeSelector({
     const largeBusinessImage = PlaceHolderImages.find(p => p.title === 'large-business');
     const flowPlanImage = PlaceHolderImages.find(p => p.title === 'flow-plan');
 
-    const sizes: { id: BusinessSize, icon: React.ReactNode, title: string, description: string, image: any }[] = [
-        { id: 'small', icon: <Store className="h-8 w-8 text-primary" />, title: 'Small Business', description: 'For small teams, kiosks, and home offices.', image: smallBusinessImage },
-        { id: 'medium', icon: <Building className="h-8 w-8 text-primary" />, title: 'Medium Business', description: 'For growing offices and warehouses.', image: mediumBusinessImage },
-        { id: 'large', icon: <Building2 className="h-8 w-8 text-primary" />, title: 'Large Enterprise', description: 'For multi-site companies and BPOs.', image: largeBusinessImage },
-        { id: 'flow', icon: <Bot className="h-8 w-8 text-primary" />, title: 'Smart Flow Plan', description: 'Pay based on your actual water consumption.', image: flowPlanImage },
+    const sizes: { id: BusinessSize, title: string, description: string, image: any }[] = [
+        { id: 'small', title: 'Small Business', description: 'For small teams, kiosks, and home offices.', image: smallBusinessImage },
+        { id: 'medium', title: 'Medium Business', description: 'For growing offices and warehouses.', image: mediumBusinessImage },
+        { id: 'large', title: 'Large Enterprise', description: 'For multi-site companies and BPOs.', image: largeBusinessImage },
+        { id: 'flow', title: 'Smart Flow Plan', description: 'Pay based on your actual water consumption.', image: flowPlanImage },
     ];
 
     return (
@@ -309,7 +332,7 @@ function BusinessSizeSelector({
                     onClick={() => onSelectSize(size.id)}
                     className={cn(
                         'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 overflow-hidden',
-                        selectedSize === size.id ? 'border-primary shadow-lg' : ''
+                        selectedSize === size.id ? 'border-primary shadow-lg border-2' : ''
                     )}
                 >
                     {size.image && (
@@ -346,13 +369,13 @@ export default function PlansPage() {
     const renderPlans = () => {
         switch (selectedSize) {
             case 'small':
-                return <PlansTable plans={smallPlans} defaultPlan="pro" />;
+                return <PlansGrid plans={smallPlans} defaultPlan="pro" />;
             case 'medium':
-                return <PlansTable plans={mediumPlans} defaultPlan="business" />;
+                return <PlansGrid plans={mediumPlans} defaultPlan="business" />;
             case 'large':
-                return <PlansTable plans={largePlans} defaultPlan="enterprise+" />;
+                return <PlansGrid plans={largePlans} defaultPlan="enterprise 75" />;
             case 'flow':
-                return <PlansTable plans={flowPlans} defaultPlan="flow plan" />;
+                return <PlansGrid plans={flowPlans} defaultPlan="flow plan" />;
             default:
                 return null;
         }
@@ -454,7 +477,3 @@ export default function PlansPage() {
     </div>
   );
 }
-
-    
-
-    
