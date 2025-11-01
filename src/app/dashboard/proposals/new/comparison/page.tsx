@@ -35,12 +35,6 @@ const comparisonData = [
     advantage: '🔄 No wastage — unused liters are saved.',
   },
   {
-    aspect: 'Dispenser & Bottle Fees',
-    traditional: 'Usually charged or rented separately.',
-    smartRefill: 'Free dispensers and bottles in select plans.',
-    advantage: '🧴 Cost savings + convenience.',
-  },
-  {
     aspect: 'Scalability',
     traditional: 'Hard to manage for multiple branches.',
     smartRefill: 'Centralized control for all locations via one dashboard.',
@@ -82,7 +76,7 @@ export default function ComparisonPage() {
       </div>
 
       <div className="container mx-auto px-0">
-        <div className="grid md:grid-cols-2 gap-6 items-start rounded-lg border bg-card text-card-foreground shadow-lg p-6">
+        <div className="grid md:grid-cols-2 gap-6 items-start rounded-lg border bg-card text-card-foreground shadow-sm p-6">
             <div className="relative aspect-video rounded-lg overflow-hidden">
                 <Image 
                     src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_06.png?alt=media&token=7fa3a2b5-5173-4508-bf0c-8324c5d704e2"
