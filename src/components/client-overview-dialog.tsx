@@ -154,6 +154,23 @@ export function ClientOverviewDialog({
                     </Card>
                  </div>
                 
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Client Location</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="aspect-video w-full overflow-hidden rounded-lg">
+                        <iframe
+                            width="100%"
+                            height="100%"
+                            style={{ border: 0 }}
+                            loading="lazy"
+                            allowFullScreen
+                            src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed`}
+                        ></iframe>
+                        </div>
+                    </CardContent>
+                </Card>
                  <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:bg-accent transition-colors">
