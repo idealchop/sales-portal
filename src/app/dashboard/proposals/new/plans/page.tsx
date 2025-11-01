@@ -366,7 +366,7 @@ function BusinessSizeSelector({
                     )}
                 >
                     {size.image && (
-                         <div className="aspect-video relative">
+                         <div className="relative h-48">
                             <Image
                                 src={size.image.imageUrl}
                                 alt={size.image.description}
@@ -382,14 +382,6 @@ function BusinessSizeSelector({
                             <CardDescription>{size.description}</CardDescription>
                         </div>
                     </CardHeader>
-                     <CardFooter className="bg-muted/50 p-4">
-                        <div className="text-sm space-y-2">
-                           <p className="font-semibold">Ideal for:</p>
-                            <ul className="list-disc list-inside text-muted-foreground text-xs">
-                                {size.idealFor.map(item => <li key={item}>{item}</li>)}
-                            </ul>
-                        </div>
-                    </CardFooter>
                 </Card>
             ))}
         </div>
