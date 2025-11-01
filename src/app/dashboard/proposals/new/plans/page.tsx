@@ -400,8 +400,8 @@ function PlansGrid({
         gridColsClass = 'lg:grid-cols-2';
     }
     
-    const isSingleCustomPlan = selectedPlan === 'enterprise-customized';
-    const isSingleOverflowPlan = selectedPlan === 'enterprise-overflow';
+    const isSingleCustomPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-customized';
+    const isSingleOverflowPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-overflow';
 
     return (
     <RadioGroup
