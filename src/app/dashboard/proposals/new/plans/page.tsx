@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -297,14 +298,14 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan }: { plans: 
                 <CardContent className="flex-1 space-y-4 text-left">
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                            <GlassWater className="h-5 w-5"/>
+                            <GlassWater className={cn("h-5 w-5", isSelected && "text-primary-foreground/80")}/>
                             <p className="text-lg font-bold">{plan.liters}</p>
                         </div>
-                        <p className="text-sm ml-7 -mt-2 text-muted-foreground">Liters Included</p>
+                        <p className={cn("text-sm ml-7 -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
                     </div>
                     <div className="space-y-2">
                         <p className="text-lg font-bold ml-7">{plan.refillFrequency}</p>
-                        <p className="text-sm ml-7 -mt-2 text-muted-foreground">Avg. Refill Frequency</p>
+                        <p className={cn("text-sm ml-7 -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
                     </div>
                 </CardContent>
                 <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
