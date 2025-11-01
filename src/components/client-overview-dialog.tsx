@@ -2,6 +2,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
@@ -206,13 +207,17 @@ export function ClientOverviewDialog({
                                         </div>
                                     </div>
                                 )}
-                                <Button className="w-full">Upgrade Plan</Button>
+                                <Button className="w-full" asChild>
+                                  <Link href="/dashboard/proposals/new">Create New Proposal</Link>
+                                </Button>
                             </CardContent>
                         ) : (
                             <CardContent>
                                 <div className="text-center py-8">
                                     <p className="text-muted-foreground">No active subscription.</p>
-                                    <Button className="mt-4">Create a Proposal</Button>
+                                    <Button className="mt-4" asChild>
+                                        <Link href="/dashboard/proposals/new">Create a Proposal</Link>
+                                    </Button>
                                 </div>
                             </CardContent>
                         )}
@@ -281,3 +286,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
