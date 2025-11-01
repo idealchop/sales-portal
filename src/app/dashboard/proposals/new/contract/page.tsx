@@ -632,7 +632,7 @@ function ContractPageContent() {
         };
     }
     
-    if (planId === 'enterprise-overflow' && customFreq) {
+    if (customFreq) {
         const freqLabel = deliveryFrequencies.find(f => f.value === parseInt(customFreq))?.label;
         if (freqLabel) {
             basePlan.refillFrequency = freqLabel;
@@ -677,9 +677,14 @@ function ContractPageContent() {
   const finalPlan = useMemo(() => {
     if (!plan) return null;
     const planLitersNum = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
+    const planInclusions = plan.id === 'enterprise-overflow' 
+        ? ['Pay only for what you use'] 
+        : (plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : []);
+
     return {
         ...plan,
-        liters: `${planLitersNum + additionalLiters} L`
+        liters: `${planLitersNum + additionalLiters} L`,
+        inclusions: planInclusions,
     }
   }, [plan, additionalLiters]);
 
@@ -1000,6 +1005,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 

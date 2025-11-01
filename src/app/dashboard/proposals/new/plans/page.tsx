@@ -887,6 +887,7 @@ export default function PlansPage() {
                     customCalculatedValues={customCalculatedValues}
                     onCustomCalculated={handleCustomCalculated}
                     overflowCalculatedValues={overflowCalculatedValues}
+    
                     onOverflowCalculated={handleOverflowCalculated}
                     smeCommercialCustomValues={smeCommercialCustomValues}
                     onSmeCommercialCustomCalculated={handleSmeCommercialCustomCalculated}
@@ -908,13 +909,13 @@ export default function PlansPage() {
         if (!selectedPlan) return '#';
         let link = `/dashboard/proposals/new/contract?plan=${selectedPlan}`;
         if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
-            link += `&liters=${customCalculatedValues.totalLiters}&cost=${customCalculatedValues.totalCost}`;
+            link += `&liters=${customCalculatedValues.totalLiters}&cost=${customCalculatedValues.totalCost}&freq=${customCalculatedValues.deliveries}`;
         }
         if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
             link += `&liters=${overflowCalculatedValues.totalLiters}&cost=50000&freq=${overflowCalculatedValues.deliveries}`;
         }
         if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
-            link += `&liters=${smeCommercialCustomValues.totalLiters}&cost=${smeCommercialCustomValues.totalCost}`;
+            link += `&liters=${smeCommercialCustomValues.totalLiters}&cost=${smeCommercialCustomValues.totalCost}&freq=${smeCommercialCustomValues.deliveries}`;
         }
         return link;
     };
