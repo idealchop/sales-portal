@@ -33,10 +33,40 @@ import React from 'react';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { Logo } from './logo';
+import Image from 'next/image';
+
+
+function QrCodeIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+        {...props}
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        >
+        <rect width="5" height="5" x="3" y="3" rx="1" />
+        <rect width="5" height="5" x="16" y="3" rx="1" />
+        <rect width="5" height="5" x="3" y="16" rx="1" />
+        <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+        <path d="M21 21v.01" />
+        <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+        <path d="M9 17a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-2Z" />
+        <path d="M7 12h.01" />
+        </svg>
+    );
+}
 
 
 export function DashboardHeader() {
   const [date, setDate] = React.useState<Date>();
+  const referralLink = "https://smartrefill.app/referral?code=SR12345";
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(referralLink)}&size=200x200&bgcolor=F1F8E9`;
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-8">
@@ -85,10 +115,36 @@ export function DashboardHeader() {
                 <Separator />
 
                 <div className="p-4 text-sm">
-                    <Button variant="outline" className="w-full">
-                        <Users className="mr-2 h-4 w-4" />
-                        Refer a friend to join the team
-                    </Button>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="w-full">
+                                <QrCodeIcon className="mr-2 h-4 w-4" />
+                                Refer a friend to join the team
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>Refer a Friend</DialogTitle>
+                                <DialogDescription>
+                                    Share this QR code with a friend to have them join the team. They can scan it with their phone's camera.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex items-center justify-center p-4 bg-background rounded-lg">
+                                <Image src={qrCodeUrl} alt="Referral QR Code" width={200} height={200} />
+                            </div>
+                            <DialogFooter className="sm:justify-start">
+                                <div className="flex-1 space-y-2">
+                                    <Label htmlFor="link" className="sr-only">
+                                        Link
+                                    </Label>
+                                    <Input id="link" defaultValue={referralLink} readOnly />
+                                    <Button type="submit" size="sm" className="w-full" onClick={() => navigator.clipboard.writeText(referralLink)}>
+                                        Copy Link
+                                    </Button>
+                                </div>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 <Separator />
