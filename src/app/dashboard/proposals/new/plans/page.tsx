@@ -145,7 +145,7 @@ const smePlans: Plan[] = [
     monthlyFee: '₱3,000',
     liters: '1,000 L',
     refillFrequency: '2–3/week',
-    inclusions: ['+1 Free Dispenser', 'Compliance monitoring'],
+    inclusions: [],
     employees: '10 – 20',
     stations: '1 Station',
   },
@@ -155,7 +155,7 @@ const smePlans: Plan[] = [
     monthlyFee: '₱6,000',
     liters: '2,000 L',
     refillFrequency: '3–4/week',
-    inclusions: ['+1 Free Dispenser', 'Scheduled delivery', 'Priority service'],
+    inclusions: [],
     employees: '20 – 40',
     stations: '1 Station',
     isRecommended: true,
@@ -169,7 +169,7 @@ const commercialPlans: Plan[] = [
     monthlyFee: '₱9,000',
     liters: '3,000 L',
     refillFrequency: '4–5/week',
-    inclusions: ['+2 Free Dispensers', 'Analytics dashboard'],
+    inclusions: [],
     employees: '40 – 70',
     stations: '2 Stations',
   },
@@ -179,7 +179,7 @@ const commercialPlans: Plan[] = [
     monthlyFee: '₱12,000',
     liters: '4,000 L',
     refillFrequency: '5–6/week',
-    inclusions: ['+2 Free Dispensers', 'Priority delivery'],
+    inclusions: [],
     employees: '70 – 100',
     stations: '2 – 3 Stations',
     isRecommended: true,
@@ -190,7 +190,7 @@ const commercialPlans: Plan[] = [
     monthlyFee: '₱18,000',
     liters: '6,000 L',
     refillFrequency: 'Daily',
-    inclusions: ['+3 Free Dispensers', 'Compliance tools', 'Dashboard access'],
+    inclusions: [],
     employees: '100 – 150',
     stations: '2 – 3 Stations',
   },
@@ -203,7 +203,7 @@ const corporatePlans: Plan[] = [
         monthlyFee: '₱30,000',
         liters: '10,000 L',
         refillFrequency: '1–2/day',
-        inclusions: ['+3 Free Dispensers', 'Scheduled delivery', 'Basic analytics'],
+        inclusions: [],
         employees: '150 – 250',
         stations: '2 – 3 Stations',
     },
@@ -213,7 +213,7 @@ const corporatePlans: Plan[] = [
         monthlyFee: '₱50,000',
         liters: '16,600 L',
         refillFrequency: '2–3/day',
-        inclusions: ['+5 Free Dispensers', 'Advanced compliance & water tracking'],
+        inclusions: [],
         employees: '250 – 350',
         stations: '2 – 3 Stations',
         isRecommended: true,
@@ -224,7 +224,7 @@ const corporatePlans: Plan[] = [
         monthlyFee: '₱75,000',
         liters: '25,000 L',
         refillFrequency: '3+/day',
-        inclusions: ['+6 Free Dispensers', 'Dedicated account manager', 'Centralized reporting'],
+        inclusions: [],
         employees: '350 – 500',
         stations: '3 – 4 Stations',
     },
@@ -234,7 +234,7 @@ const corporatePlans: Plan[] = [
         monthlyFee: '₱100,000+',
         liters: '33,000+ L',
         refillFrequency: 'Continuous',
-        inclusions: ['Tailored solution', 'Custom liters, billing, reporting & support'],
+        inclusions: [],
         employees: '500+',
         stations: '5+ Stations',
     },
@@ -653,7 +653,7 @@ function EnterpriseTypeSelector({
                          <div className="relative aspect-video">
                             <Image
                                 src={type.image.imageUrl}
-                                alt={type.description}
+                                alt={type.image.description}
                                 fill
                                 className="object-cover"
                                 data-ai-hint={type.image.imageHint}
