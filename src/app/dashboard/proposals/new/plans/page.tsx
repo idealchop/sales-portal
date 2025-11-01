@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -32,11 +33,17 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { useState, useMemo } from 'react';
-import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Input } from '@/components/ui/input';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type Plan = {
   id: string;
@@ -272,20 +279,26 @@ const deliveryFrequencies = [
     { value: 7, label: 'Daily' },
 ];
 
-function CustomPlanCalculator({pricePerLiter = 3}: {pricePerLiter?: number}) {
+function CustomPlanCalculator({
+    pricePerLiter = 3,
+    onCalculated,
+}: {
+    pricePerLiter?: number;
+    onCalculated: (values: { totalLiters: number }) => void;
+}) {
     const [bottles, setBottles] = useState(10);
     const [deliveries, setDeliveries] = useState(1);
     const litersPerBottle = 19;
 
-    const totalLiters = bottles * deliveries * 4 * litersPerBottle;
-    const totalCost = totalLiters * pricePerLiter;
-    
-    const getStations = (liters: number) => {
-        if (liters <= 2000) return '1 Station';
-        if (liters <= 6000) return '2-3 Stations';
-        if (liters <= 25000) return '3-4 Stations';
-        return '5+ Stations';
-    }
+    const { totalLiters, totalCost } = useMemo(() => {
+        const liters = bottles * deliveries * 4 * litersPerBottle;
+        const cost = liters * pricePerLiter;
+        return { totalLiters: liters, totalCost: cost };
+    }, [bottles, deliveries, pricePerLiter]);
+
+    React.useEffect(() => {
+        onCalculated({ totalLiters });
+    }, [totalLiters, onCalculated]);
 
     const getFrequency = (deliveries: number) => {
         const freq = deliveryFrequencies.find(f => f.value === deliveries);
@@ -293,7 +306,6 @@ function CustomPlanCalculator({pricePerLiter = 3}: {pricePerLiter?: number}) {
     }
 
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-
 
     return (
         <div className="p-6 space-y-6">
@@ -330,14 +342,6 @@ function CustomPlanCalculator({pricePerLiter = 3}: {pricePerLiter?: number}) {
                         <span className="text-primary-foreground/80">Total Liters per Month</span>
                         <span className="font-bold">{totalLiters.toLocaleString()} L</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-primary-foreground/80">Recommended Stations</span>
-                        <span className="font-semibold">{getStations(totalLiters)}</span>
-                    </div>
-                     <div className="flex justify-between items-center">
-                        <span className="text-primary-foreground/80">Avg. Refill Frequency</span>
-                        <span className="font-semibold">{getFrequency(deliveries)}</span>
-                    </div>
                     <Separator className="bg-primary-foreground/20" />
                     <div className="flex justify-between items-center">
                         <span className="text-primary-foreground/80">Price per Liter</span>
@@ -354,9 +358,40 @@ function CustomPlanCalculator({pricePerLiter = 3}: {pricePerLiter?: number}) {
 }
 
 
-function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSize }: { plans: Plan[], defaultPlan: string, selectedPlan: string | null, onSelectPlan: (planId: string) => void, businessSize: BusinessSize | null }) {
+function PlansGrid({ 
+    plans, 
+    defaultPlan, 
+    selectedPlan, 
+    onSelectPlan, 
+    businessSize,
+    customCalculatedValues,
+    onCustomCalculated
+}: { 
+    plans: Plan[], 
+    defaultPlan: string, 
+    selectedPlan: string | null, 
+    onSelectPlan: (planId: string) => void, 
+    businessSize: BusinessSize | null,
+    customCalculatedValues: { totalLiters: number } | null,
+    onCustomCalculated: (values: { totalLiters: number }) => void;
+}) {
+    const getStations = (liters: number) => {
+        if (liters <= 2000) return '1 Station';
+        if (liters <= 6000) return '2-3 Stations';
+        if (liters <= 25000) return '3-4 Stations';
+        return '5+ Stations';
+    }
 
-  return (
+    const getEmployees = (liters: number) => {
+        // Assuming average 2 liters per employee per day, 22 work days a month
+        const estimatedEmployees = Math.round(liters / (2 * 22));
+        if (estimatedEmployees < 5) return '< 5';
+        if (estimatedEmployees > 500) return '500+';
+        // round to nearest 10
+        return `~${Math.round(estimatedEmployees / 10) * 10}`;
+    };
+
+    return (
     <RadioGroup
         value={selectedPlan ?? defaultPlan} 
         onValueChange={onSelectPlan}
@@ -364,84 +399,110 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
-        const isCustom = businessSize === 'flow' && plan.id === 'enterprise-customized';
-        const isOverflow = businessSize === 'flow' && plan.id === 'enterprise-overflow';
+        const isCustom = businessSize === 'flow' && (plan.id === 'enterprise-customized' || plan.id === 'enterprise-overflow');
+        const isOverflow = plan.id === 'enterprise-overflow';
         const isDisabled = isOverflow;
 
-        return (
+        let employees = plan.employees;
+        let stations = plan.stations;
+
+        if (isCustom && customCalculatedValues) {
+            employees = getEmployees(customCalculatedValues.totalLiters);
+            stations = getStations(customCalculatedValues.totalLiters);
+        }
+
+        const cardContent = (
             <Label 
                 htmlFor={plan.id} 
-                key={plan.name} 
+                key={plan.id} 
                 className={cn(
                     "cursor-pointer h-full", 
-                    (isCustom || isOverflow) && "md:col-span-2 lg:col-span-3",
+                    isCustom && "md:col-span-2 lg:col-span-3",
                     isDisabled && "cursor-not-allowed opacity-70"
                 )}
             >
-            <Card className={cn(
-                "relative flex flex-col h-full border-2 transition-all duration-300",
-                isSelected 
-                ? "border-primary shadow-lg bg-primary text-primary-foreground" 
-                : "bg-card text-card-foreground border shadow-md hover:border-primary/50"
-            )}>
-                {plan.isRecommended && !isSelected && (
-                <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
-                    Recommended
-                </div>
-                )}
-                 {isSelected && !isDisabled && (
-                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
-                    <Check className="h-4 w-4 text-primary" />
-                </div>
-                )}
-                <CardHeader className="flex-1">
-                <CardTitle className={cn("text-2xl", isSelected && "text-primary-foreground")}>{plan.name}</CardTitle>
-                <div className="flex items-baseline gap-2">
-                    {plan.monthlyFee !== 'Custom' && plan.monthlyFee !== 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
-                    {plan.monthlyFee === 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
-                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn("font-semibold", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
-                </div>
-                </CardHeader>
-                <CardContent className="flex-1 text-left space-y-4">
-                    <div className="space-y-2">
-                        <p className={cn("text-sm font-semibold", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
-                        <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && "text-primary-foreground")}>
-                            <span>{plan.liters}</span>
-                        </div>
+                <Card className={cn(
+                    "relative flex flex-col h-full border-2 transition-all duration-300",
+                    isSelected 
+                    ? "border-primary shadow-lg bg-primary text-primary-foreground" 
+                    : "bg-card text-card-foreground border shadow-md hover:border-primary/50",
+                    isDisabled && "bg-muted text-muted-foreground"
+                )}>
+                    {plan.isRecommended && !isSelected && (
+                    <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
+                        Recommended
                     </div>
-                    <div className="space-y-2">
-                        <p className={cn("text-sm font-semibold", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
-                        <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && "text-primary-foreground")}>
-                             <RefreshCcw className="h-5 w-5" />
-                            <span>{plan.refillFrequency}</span>
-                        </div>
+                    )}
+                    {isSelected && !isDisabled && (
+                    <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
+                        <Check className="h-4 w-4 text-primary" />
                     </div>
-                </CardContent>
-                
-                {isCustom && isSelected && <CustomPlanCalculator />}
-                {isOverflow && isSelected && <CustomPlanCalculator pricePerLiter={3.00} />}
+                    )}
+                    <CardHeader className="flex-1">
+                    <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
+                    <div className="flex items-baseline gap-2">
+                        {plan.monthlyFee !== 'Custom' && plan.monthlyFee !== 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{plan.monthlyFee}</span>}
+                        {plan.monthlyFee === 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{plan.monthlyFee}</span>}
+                        {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                    </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 text-left space-y-4">
+                        <div className="space-y-2">
+                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
+                            <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
+                                <span>{isCustom && customCalculatedValues ? `${customCalculatedValues.totalLiters.toLocaleString()} L` : plan.liters}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
+                            <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
+                                <RefreshCcw className="h-5 w-5" />
+                                <span>{plan.refillFrequency}</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                    
+                    {plan.id === 'enterprise-customized' && isSelected && <CustomPlanCalculator onCalculated={onCustomCalculated} pricePerLiter={3} />}
+                    {plan.id === 'enterprise-overflow' && isSelected && <CustomPlanCalculator onCalculated={onCustomCalculated} pricePerLiter={3.00} />}
 
-                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
-                    <div className="flex justify-between items-center w-full text-sm">
-                        <div className={cn("flex items-center gap-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                            <Users className="h-5 w-5" />
-                            <span className="font-semibold">{plan.employees}</span>
+                    <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
+                        <div className="flex justify-between items-center w-full text-sm">
+                            <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                <Users className="h-5 w-5" />
+                                <span className="font-semibold">{employees}</span>
+                            </div>
+                            <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                <Building2 className="h-5 w-5" />
+                                <span className="font-semibold">{stations}</span>
+                            </div>
+                            <RadioGroupItem 
+                                value={plan.id} 
+                                id={plan.id}
+                                className="sr-only"
+                                disabled={isDisabled}
+                            />
                         </div>
-                        <div className={cn("flex items-center gap-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                            <Building2 className="h-5 w-5" />
-                            <span className="font-semibold">{plan.stations}</span>
-                        </div>
-                        <RadioGroupItem 
-                            value={plan.id} 
-                            id={plan.id}
-                            className="sr-only"
-                            disabled={isDisabled}
-                        />
-                    </div>
-                </CardFooter>
-            </Card>
+                    </CardFooter>
+                </Card>
             </Label>
-        )
+        );
+
+        if (isDisabled) {
+            return (
+                <TooltipProvider key={plan.id}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>{cardContent}</div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>This is a usage-based plan. Please use the calculator for estimation purposes. Contact support for contract generation.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )
+        }
+
+        return cardContent;
       })}
     </RadioGroup>
   );
@@ -542,6 +603,7 @@ function BusinessSizeSelector({
 export default function PlansPage() {
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+    const [customCalculatedValues, setCustomCalculatedValues] = useState<{ totalLiters: number } | null>(null);
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
@@ -550,30 +612,60 @@ export default function PlansPage() {
         } else {
             setSelectedPlan(null); // Reset plan selection when size changes
         }
+        setCustomCalculatedValues(null);
     };
 
     const handlePlanSelect = (planId: string) => {
         const plan = allPlans.find(p => p.id === planId);
         if(plan?.id === 'enterprise-overflow') {
+            setSelectedPlan(planId);
             return;
         }
         setSelectedPlan(planId);
     }
+
+    const handleCustomCalculated = useCallback((values: { totalLiters: number }) => {
+        setCustomCalculatedValues(values);
+    }, []);
     
     const renderPlans = () => {
+        let plansToRender: Plan[] = [];
+        let defaultPlanId = '';
+
         switch (selectedSize) {
             case 'sme':
-                return <PlansGrid plans={smePlans} defaultPlan="professional" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} businessSize={selectedSize} />;
+                plansToRender = smePlans;
+                defaultPlanId = 'professional';
+                break;
             case 'commercial':
-                return <PlansGrid plans={commercialPlans} defaultPlan="pro" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} businessSize={selectedSize} />;
+                plansToRender = commercialPlans;
+                defaultPlanId = 'pro';
+                break;
             case 'corporate':
-                return <PlansGrid plans={corporatePlans} defaultPlan="enterprise-plus" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} businessSize={selectedSize} />;
+                plansToRender = corporatePlans;
+                defaultPlanId = 'enterprise-plus';
+                break;
             case 'flow':
-                return <PlansGrid plans={flowPlans} defaultPlan="enterprise-customized" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} businessSize={selectedSize} />;
+                plansToRender = flowPlans;
+                defaultPlanId = 'enterprise-customized';
+                break;
             default:
                 return null;
         }
+
+        return <PlansGrid 
+                    plans={plansToRender} 
+                    defaultPlan={defaultPlanId} 
+                    selectedPlan={selectedPlan} 
+                    onSelectPlan={handlePlanSelect} 
+                    businessSize={selectedSize}
+                    customCalculatedValues={customCalculatedValues}
+                    onCustomCalculated={handleCustomCalculated}
+                />;
     };
+    
+    const isNextDisabled = !selectedPlan || allPlans.find(p => p.id === selectedPlan)?.id === 'enterprise-overflow';
+
 
     return (
         <div className="flex flex-col gap-6">
@@ -588,7 +680,7 @@ export default function PlansPage() {
                 <Button variant="outline" asChild>
                     <Link href="/dashboard/proposals/new/comparison">Previous</Link>
                 </Button>
-                <Button asChild={!!selectedPlan} disabled={!selectedPlan}>
+                <Button asChild={!isNextDisabled} disabled={isNextDisabled}>
                     <Link href={selectedPlan ? `/dashboard/proposals/new/contract?plan=${selectedPlan}` : '#'}>Next Step</Link>
                 </Button>
             </div>
