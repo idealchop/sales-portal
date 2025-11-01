@@ -611,6 +611,7 @@ function ContractPageContent() {
   const customLiters = searchParams.get('liters');
   const customCost = searchParams.get('cost');
   const customFreq = searchParams.get('freq');
+  const customType = searchParams.get('type');
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -625,9 +626,10 @@ function ContractPageContent() {
     if (!basePlan) return null;
 
     if (planId === 'custom-plan') {
+        const typeName = customType ? customType.charAt(0).toUpperCase() + customType.slice(1) : '';
         basePlan = {
             ...basePlan,
-            name: 'Custom Plan',
+            name: `Custom ${typeName} Plan`,
         };
     }
 
@@ -647,7 +649,7 @@ function ContractPageContent() {
     }
 
     return basePlan;
-  }, [planId, customLiters, customCost, customFreq]);
+  }, [planId, customLiters, customCost, customFreq, customType]);
 
   const handleAddonToggle = (addonId: string) => {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
@@ -727,7 +729,7 @@ function ContractPageContent() {
 
   const planLiters = parseInt(finalPlan?.liters.replace(/[^0-9]/g, '') || '0');
   
-  const summaryTitle = finalPlan.name.includes('Plan') ? finalPlan.name : `${finalPlan.name} Plan`;
+  const summaryTitle = finalPlan.name;
 
   return (
     <div className="flex flex-col gap-6">
@@ -1014,6 +1016,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 

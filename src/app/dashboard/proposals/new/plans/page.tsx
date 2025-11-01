@@ -447,7 +447,10 @@ function PlansGrid({
     };
 
     let gridColsClass = 'lg:grid-cols-3';
-    if (businessSize === 'commercial' || businessSize === 'sme') {
+    if (businessSize === 'commercial') {
+        gridColsClass = 'md:grid-cols-2';
+    }
+     if (businessSize === 'sme') {
         gridColsClass = 'md:grid-cols-2';
     }
      if (businessSize === 'corporate') {
@@ -915,7 +918,7 @@ export default function PlansPage() {
             link += `&liters=${overflowCalculatedValues.totalLiters}&cost=50000&freq=${overflowCalculatedValues.deliveries}`;
         }
         if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
-            link += `&liters=${smeCommercialCustomValues.totalLiters}&cost=${smeCommercialCustomValues.totalCost}&freq=${smeCommercialCustomValues.deliveries}`;
+            link += `&liters=${smeCommercialCustomValues.totalLiters}&cost=${smeCommercialCustomValues.totalCost}&freq=${smeCommercialCustomValues.deliveries}&type=${selectedSize}`;
         }
         return link;
     };
