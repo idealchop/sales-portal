@@ -305,6 +305,7 @@ function CustomPlanCalculator({
     minimumCost = 0,
     isFixedPrice = false,
     fixedPrice = 0,
+    showEstimatedCost = false,
 }: {
     pricePerLiter?: number;
     onCalculated: (values: { totalLiters: number, totalCost: number }) => void;
@@ -313,6 +314,7 @@ function CustomPlanCalculator({
     minimumCost?: number;
     isFixedPrice?: boolean;
     fixedPrice?: number;
+    showEstimatedCost?: boolean;
 }) {
     const [bottles, setBottles] = useState(10);
     const [deliveries, setDeliveries] = useState(1);
@@ -330,6 +332,8 @@ function CustomPlanCalculator({
     
     const isMinimumMet = totalCost >= minimumCost;
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
+    const estimatedCost = totalLiters * pricePerLiter;
 
     return (
         <div className="p-6 space-y-6">
@@ -374,8 +378,8 @@ function CustomPlanCalculator({
                         </div>
                     )}
                      <div className="flex justify-between items-center">
-                        <span className="font-bold">{isFixedPrice ? 'Top-Up Amount' : 'Estimated Monthly Cost'}</span>
-                        <span className="font-bold text-lg">{currencyFormatter.format(totalCost)}</span>
+                        <span className="font-bold">{isFixedPrice ? (showEstimatedCost ? 'Estimated Monthly Cost' : 'Top-Up Amount') : 'Estimated Monthly Cost'}</span>
+                        <span className="font-bold text-lg">{currencyFormatter.format(showEstimatedCost ? estimatedCost : totalCost)}</span>
                     </div>
                     {minimumCost > 0 && !isFixedPrice && (
                         <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
@@ -578,6 +582,7 @@ function PlansGrid({
                             title="Estimate Monthly Usage"
                             isFixedPrice={true}
                             fixedPrice={50000}
+                            showEstimatedCost={true}
                         />
                     )}
                     
