@@ -956,34 +956,6 @@ function ContractPageContent() {
         </div>
 
         <div className="grid gap-6">
-            <Card className='col-span-full'>
-                <CardHeader>
-                <CardTitle>Flexible Payment Schedules</CardTitle>
-                <CardDescription>
-                    Smart Refill™ offers flexible payment schedules designed to accommodate businesses of all sizes, helping clients manage their operational budgets efficiently.
-                </CardDescription>
-                </CardHeader>
-                <CardContent>
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Billing Cycle</TableHead>
-                        <TableHead>Payment Frequency</TableHead>
-                        <TableHead>Benefits</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {billingOptions.map((option) => (
-                        <TableRow key={option.cycle}>
-                        <TableCell className="font-medium">{option.cycle}</TableCell>
-                        <TableCell>{option.frequency}</TableCell>
-                        <TableCell>{option.benefits}</TableCell>
-                        </TableRow>
-                    ))}
-                    </TableBody>
-                </Table>
-                </CardContent>
-            </Card>
             <Card>
                 <CardHeader>
                     <CardTitle>Accepted Payment Methods</CardTitle>
