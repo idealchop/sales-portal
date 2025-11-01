@@ -366,12 +366,12 @@ function BusinessSizeSelector({
                     )}
                 >
                     {size.image && (
-                         <div className="relative h-48">
+                         <div className="relative aspect-square">
                             <Image
                                 src={size.image.imageUrl}
                                 alt={size.image.description}
                                 fill
-                                className="object-cover"
+                                className="object-contain"
                                 data-ai-hint={size.image.imageHint}
                             />
                         </div>
@@ -501,7 +501,7 @@ export default function PlansPage() {
           <CardHeader>
             <CardTitle>Partner Perks</CardTitle>
             <CardDescription>
-                Enhance your subscription with exclusive benefits from our partners, included with every plan.
+              Every premium plan includes access to our growing network of partner benefits.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-8 sm:grid-cols-2">
