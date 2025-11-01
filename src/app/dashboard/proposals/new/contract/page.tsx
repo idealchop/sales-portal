@@ -442,7 +442,7 @@ function PreviewDialog({
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">{finalPlan.name} Plan ({billingCycleLabel})</span>
+                                <span className="text-muted-foreground">{finalPlan.name} ({billingCycleLabel})</span>
                                 <span className="font-semibold">{currencyFormatter.format(planBaseCost)}</span>
                             </div>
                             {addons.map((addon) => (
@@ -625,8 +625,16 @@ function ContractPageContent() {
     let basePlan = allPlans.find(p => p.id === planId);
     if (!basePlan) return null;
 
-    if (planId === 'custom-plan') {
-        const typeName = customType ? customType.charAt(0).toUpperCase() + customType.slice(1) : '';
+    if (planId === 'custom-plan' && customType) {
+        let typeName = '';
+        if (customType === 'sme') {
+            typeName = 'SME';
+        } else if (customType === 'commercial') {
+            typeName = 'Commercial';
+        } else {
+            typeName = customType.charAt(0).toUpperCase() + customType.slice(1);
+        }
+        
         basePlan = {
             ...basePlan,
             name: `Custom ${typeName} Plan`,
@@ -1016,6 +1024,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
