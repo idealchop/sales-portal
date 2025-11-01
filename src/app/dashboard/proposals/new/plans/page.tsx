@@ -323,8 +323,7 @@ function BusinessSizeSelector({
                             />
                         </div>
                     )}
-                    <CardHeader className="flex flex-row items-center gap-4">
-                        {size.icon}
+                    <CardHeader>
                         <div>
                             <CardTitle>{size.title}</CardTitle>
                             <CardDescription>{size.description}</CardDescription>
