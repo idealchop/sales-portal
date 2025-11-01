@@ -18,7 +18,6 @@ import {
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/clients', icon: UsersRound, label: 'Clients' },
   { href: '/dashboard/proposals', icon: FileText, label: 'Proposals' },
   { href: '/dashboard/materials', icon: BookCopy, label: 'Materials' },
   { href: '/dashboard/commissions', icon: CircleDollarSign, label: 'Commissions' },
