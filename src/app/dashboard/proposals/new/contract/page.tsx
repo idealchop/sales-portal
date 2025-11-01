@@ -33,6 +33,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -915,19 +916,17 @@ function ContractPageContent() {
                      )}
                     <Separator />
                     <div className='space-y-2'>
-                        <Label htmlFor="billing-cycle">Payment Schedule</Label>
-                         <Select value={billingCycle} onValueChange={setBillingCycle}>
-                            <SelectTrigger id="billing-cycle">
-                                <SelectValue placeholder="Select a cycle" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {billingCycles.map((cycle) => (
-                                    <SelectItem key={cycle.value} value={cycle.value}>
+                        <Label>Payment Schedule</Label>
+                        <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1">
+                            {billingCycles.map((cycle) => (
+                                <div key={cycle.value} className="flex items-center space-x-2">
+                                    <RadioGroupItem value={cycle.value} id={cycle.value} />
+                                    <Label htmlFor={cycle.value} className="font-normal">
                                         {cycle.label} ({cycle.discount * 100}% discount)
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                                    </Label>
+                                </div>
+                            ))}
+                        </RadioGroup>
                     </div>
                      <div className="flex justify-between items-center text-lg font-bold">
                         <span>Total Due</span>
@@ -984,3 +983,4 @@ export default function ContractPage() {
     
 
     
+
