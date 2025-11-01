@@ -250,7 +250,7 @@ type BusinessSize = 'small' | 'medium' | 'large' | 'flow';
 
 function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string }) {
   return (
-    <RadioGroup defaultValue={defaultPlan} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+    <RadioGroup defaultValue={defaultPlan} className="grid grid-cols-1 gap-6 items-start">
       {plans.map((plan) => (
         <Label htmlFor={plan.name.toLowerCase()} key={plan.name} className="cursor-pointer h-full">
           <Card className={cn(
@@ -329,7 +329,7 @@ function BusinessSizeSelector({
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-4">
             {sizes.map((size) => (
                 <Card
                     key={size.id}
@@ -392,7 +392,7 @@ export default function PlansPage() {
             case 'flow':
                 return <PlansGrid plans={flowPlans} defaultPlan="flow plan" />;
             default:
-                return null;
+                return <p className="text-muted-foreground text-center">Select a business size to see plan details.</p>;
         }
     };
 
@@ -415,25 +415,35 @@ export default function PlansPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Plan Overview</CardTitle>
-          <CardDescription>
-          Select the client's business size to see the recommended plans.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BusinessSizeSelector selectedSize={selectedSize} onSelectSize={handleSizeSelect} />
-        </CardContent>
-      </Card>
-      
-      {selectedSize && (
-        <Card>
-            <CardContent className="pt-6">
-                 {renderPlans()}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Plan Overview</CardTitle>
+              <CardDescription>
+              Select the client's business size to see the recommended plans.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BusinessSizeSelector selectedSize={selectedSize} onSelectSize={handleSizeSelect} />
             </CardContent>
-        </Card>
-      )}
+          </Card>
+        </div>
+        
+        <div className="lg:col-span-2">
+           <Card>
+              <CardHeader>
+                <CardTitle>Plan Details</CardTitle>
+                <CardDescription>
+                  Choose the best plan for your client.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  {renderPlans()}
+              </CardContent>
+          </Card>
+        </div>
+      </div>
 
       <div className="grid gap-6">
         <Card>
@@ -492,3 +502,4 @@ export default function PlansPage() {
     </div>
   );
 }
+
