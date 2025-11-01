@@ -1,9 +1,14 @@
 
 'use client';
 import Link from "next/link";
+import { useState } from 'react';
 import {
   PlusCircle,
+  FileText,
+  Users,
+  CircleDollarSign
 } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,8 +59,38 @@ const commissionStatusStyles: { [key: string]: string } = {
 
 type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
 type ClientStatus = 'active' | 'inactive' | 'lead';
+type ActiveView = 'proposals' | 'clients' | 'commissions';
+
+function NavLink({
+  icon,
+  label,
+  isActive,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'flex items-center gap-2 px-3 py-2 text-muted-foreground transition-colors hover:text-foreground',
+        isActive && 'text-primary'
+      )}
+    >
+      {icon}
+      <span className="font-medium">{label}</span>
+      {isActive && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary mt-2"></div>
+      )}
+    </button>
+  );
+}
 
 export default function ProposalsPage() {
+  const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'accepted', 'sent', 'draft', 'rejected'];
   const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'lead', 'inactive'];
 
@@ -212,32 +247,51 @@ export default function ProposalsPage() {
     )
   }
 
-
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Proposals &amp; Clients</h1>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Proposals &amp; Clients</h1>
+        <Button asChild size="sm" className="h-8 gap-1">
+          <Link href="/dashboard/proposals/new">
+            <PlusCircle className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+              New Proposal
+            </span>
+          </Link>
+        </Button>
       </div>
 
-      <Tabs defaultValue="proposals" className="space-y-4">
-          <div className="flex items-center">
-            <TabsList>
-                <TabsTrigger value="proposals">Proposals</TabsTrigger>
-                <TabsTrigger value="clients">Clients</TabsTrigger>
-                <TabsTrigger value="commissions">Commissions</TabsTrigger>
-            </TabsList>
-            <div className="ml-auto">
-                <Button asChild size="sm" className="h-8 gap-1">
-                  <Link href="/dashboard/proposals/new">
-                      <PlusCircle className="h-3.5 w-3.5" />
-                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                      New Proposal
-                      </span>
-                  </Link>
-              </Button>
-          </div>
-          </div>
-          <TabsContent value="proposals">
+      <div className="border-b">
+        <nav className="-mb-px flex gap-4" aria-label="Tabs">
+            <div className="relative">
+                <NavLink
+                    icon={<FileText />}
+                    label="Proposals"
+                    isActive={activeView === 'proposals'}
+                    onClick={() => setActiveView('proposals')}
+                />
+            </div>
+            <div className="relative">
+                <NavLink
+                    icon={<Users />}
+                    label="Clients"
+                    isActive={activeView === 'clients'}
+                    onClick={() => setActiveView('clients')}
+                />
+            </div>
+            <div className="relative">
+                <NavLink
+                    icon={<CircleDollarSign />}
+                    label="Commissions"
+                    isActive={activeView === 'commissions'}
+                    onClick={() => setActiveView('commissions')}
+                />
+            </div>
+        </nav>
+      </div>
+
+      <div className="space-y-4">
+          {activeView === 'proposals' && (
              <Tabs defaultValue="all">
                 <Card>
                     <CardHeader>
@@ -262,8 +316,8 @@ export default function ProposalsPage() {
                     ))}
                 </Card>
             </Tabs>
-          </TabsContent>
-          <TabsContent value="clients">
+          )}
+          {activeView === 'clients' && (
             <Tabs defaultValue="all">
                 <Card>
                     <CardHeader>
@@ -290,11 +344,12 @@ export default function ProposalsPage() {
                     ))}
                 </Card>
             </Tabs>
-          </TabsContent>
-          <TabsContent value="commissions">
-            {renderCommissionsTable()}
-          </TabsContent>
-      </Tabs>
+          )}
+          {activeView === 'commissions' && (
+            renderCommissionsTable()
+          )}
+      </div>
     </div>
   );
 }
+
