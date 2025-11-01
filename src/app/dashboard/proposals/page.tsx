@@ -90,7 +90,8 @@ export default function ProposalsPage() {
                     <TableRow className="cursor-pointer">
                       <TableCell>
                           <div className="font-bold">{client.companyName}</div>
-                          <div className="font-bold text-sm text-muted-foreground">Proposal ID: {proposal.id}</div>
+                          <div className="font-mono text-xs text-muted-foreground">Proposal ID: {proposal.id}</div>
+                          <div className="font-mono text-xs text-muted-foreground">Client ID: {client.id}</div>
                           <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
                       </TableCell>
                       <TableCell>
@@ -132,7 +133,7 @@ export default function ProposalsPage() {
                   <TableRow className="cursor-pointer">
                     <TableCell>
                         <div className="font-bold">{client.companyName}</div>
-                        <div className="font-bold text-sm text-muted-foreground">Client ID: {client.id}</div>
+                        <div className="font-mono text-xs text-muted-foreground">Client ID: {client.id}</div>
                         <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
                         <div className="text-sm text-muted-foreground hidden md:block">{client.address}</div>
                     </TableCell>

@@ -10,18 +10,18 @@ export const clients: Client[] = [
 ];
 
 export const proposals: Proposal[] = [
-  { id: 'P001', client: { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'accepted', amount: 6000, createdAt: '2023-10-26' },
-  { id: 'P002', client: { id: 'SC24495882', companyName: 'Solutions Inc.', contactName: 'Jane Smith' }, status: 'sent', amount: 9000, createdAt: '2023-11-05' },
-  { id: 'P003', client: { id: 'SC24958823', companyName: 'QuantumLeap Co.', contactName: 'Mary Johnson' }, status: 'draft', amount: 3200, createdAt: '2023-11-12' },
-  { id: 'P004', client: { id: 'SC24899145', companyName: 'Apex Industries', contactName: 'David Wilson' }, status: 'rejected', amount: 12000, createdAt: '2023-09-15' },
-  { id: 'P005', client: { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'sent', amount: 8800, createdAt: '2023-11-18' },
+  { id: 'SR2023746382', client: { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'accepted', amount: 6000, createdAt: '2023-10-26' },
+  { id: 'SR2023826491', client: { id: 'SC24495882', companyName: 'Solutions Inc.', contactName: 'Jane Smith' }, status: 'sent', amount: 9000, createdAt: '2023-11-05' },
+  { id: 'SR2023912374', client: { id: 'SC24958823', companyName: 'QuantumLeap Co.', contactName: 'Mary Johnson' }, status: 'draft', amount: 3200, createdAt: '2023-11-12' },
+  { id: 'SR2023193847', client: { id: 'SC24899145', companyName: 'Apex Industries', contactName: 'David Wilson' }, status: 'rejected', amount: 12000, createdAt: '2023-09-15' },
+  { id: 'SR2023182736', client: { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'sent', amount: 8800, createdAt: '2023-11-18' },
 ];
 
 export const commissions: Commission[] = [
-    { id: 'C001', salesRep: 'Alice Johnson', clientName: 'Innovate Corp', proposalId: 'P001', amount: 5000, commissionAmount: 500, status: 'paid', date: '2023-11-01' },
-    { id: 'C002', salesRep: 'Bob Williams', clientName: 'MegaCorp', proposalId: 'P00X', amount: 15000, commissionAmount: 1500, status: 'pending', date: '2023-11-20' },
-    { id: 'C003', salesRep: 'Alice Johnson', clientName: 'Global Solutions', proposalId: 'P00Y', amount: 9500, commissionAmount: 950, status: 'unpaid', date: '2023-10-15' },
-    { id: 'C004', salesRep: 'Charlie Brown', clientName: 'TechPioneers', proposalId: 'P00Z', amount: 25000, commissionAmount: 2500, status: 'paid', date: '2023-09-30' },
+    { id: 'C001', salesRep: 'Alice Johnson', clientName: 'Innovate Corp', proposalId: 'SR2023746382', amount: 5000, commissionAmount: 500, status: 'paid', date: '2023-11-01' },
+    { id: 'C002', salesRep: 'Bob Williams', clientName: 'MegaCorp', proposalId: 'SR2023123456', amount: 15000, commissionAmount: 1500, status: 'pending', date: '2023-11-20' },
+    { id: 'C003', salesRep: 'Alice Johnson', clientName: 'Global Solutions', proposalId: 'SR2023654321', amount: 9500, commissionAmount: 950, status: 'unpaid', date: '2023-10-15' },
+    { id: 'C004', salesRep: 'Charlie Brown', clientName: 'TechPioneers', proposalId: 'SR2023987654', amount: 25000, commissionAmount: 2500, status: 'paid', date: '2023-09-30' },
 ];
 
 export const revenueData: Revenue[] = [
