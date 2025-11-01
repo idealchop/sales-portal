@@ -1,6 +1,7 @@
+
 'use client';
 import Link from 'next/link';
-import { Bell, User, Calendar as CalendarIcon, Upload } from 'lucide-react';
+import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight } from 'lucide-react';
 import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
@@ -30,6 +31,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import React from 'react';
 import { Input } from './ui/input';
+import { Separator } from './ui/separator';
+import { Logo } from './logo';
 
 
 export function DashboardHeader() {
@@ -45,44 +48,85 @@ export function DashboardHeader() {
           <span className="sr-only">Toggle notifications</span>
         </Button>
         <Dialog>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="overflow-hidden rounded-full">
                 <Avatar className="h-9 w-9">
                     <AvatarImage src="https://picsum.photos/seed/avatar/32/32" alt="User Avatar" />
                     <AvatarFallback>SA</AvatarFallback>
                 </Avatar>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">Sandra Adams</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                            sandra.adams@example.com
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground pt-1">
-                            Employee ID: 0000000001
-                        </p>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-0">
+                <div className="p-4">
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-12 w-12">
+                            <AvatarImage src="https://picsum.photos/seed/avatar/48/48" alt="User Avatar" />
+                            <AvatarFallback>SA</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="text-base font-semibold leading-none">Sandra Adams</p>
+                            <p className="text-sm text-muted-foreground">Sales Representative</p>
+                        </div>
                     </div>
-                </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DialogTrigger asChild>
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Edit Profile</span>
-                </DropdownMenuItem>
-              </DialogTrigger>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">Settings</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/login">Logout</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </div>
+
+                <Separator />
+                
+                <div className="p-2">
+                    <DialogTrigger asChild>
+                         <Button variant="ghost" className="w-full justify-start text-sm">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>View or Edit Profile</span>
+                        </Button>
+                    </DialogTrigger>
+                </div>
+                
+                <Separator />
+
+                <div className="p-4 text-sm">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Star className="h-4 w-4" />
+                            <span>Current Tier</span>
+                        </div>
+                        <span className="font-semibold">Gold Tier</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Percent className="h-4 w-4" />
+                            <span>Commission Rate</span>
+                        </div>
+                        <span className="font-semibold">5%</span>
+                    </div>
+                </div>
+
+                <Separator />
+
+                <div className="p-2">
+                    <Link href="/dashboard/settings" className="flex items-center gap-2 rounded-md p-2 text-sm hover:bg-accent">
+                        <Settings className="h-4 w-4 text-muted-foreground" />
+                        <span>Account & Preferences</span>
+                        <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                    </Link>
+                    <Link href="#" className="flex items-center gap-2 rounded-md p-2 text-sm hover:bg-accent">
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                        <span>Help & Features</span>
+                         <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                    </Link>
+                </div>
+
+                <Separator />
+                
+                <div className="p-2">
+                    <Link href="/login" className="flex items-center gap-2 rounded-md p-2 text-sm text-destructive hover:bg-destructive/10">
+                        <LogOut className="h-4 w-4" />
+                        <span>Logout</span>
+                    </Link>
+                </div>
+
+            </PopoverContent>
+          </Popover>
           <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
               <DialogTitle>Edit profile</DialogTitle>
@@ -144,3 +188,5 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
