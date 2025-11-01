@@ -5,6 +5,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -177,7 +178,7 @@ const perks = [
     }
 ]
 
-function ContractSection({
+export function ContractSection({
   title,
   children,
 }: {
@@ -192,7 +193,7 @@ function ContractSection({
   );
 }
 
-function ContractText() {
+export function ContractText() {
     return (
         <>
             <ContractSection title="1. Purpose">
@@ -1079,6 +1080,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 

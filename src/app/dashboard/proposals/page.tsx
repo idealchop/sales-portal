@@ -1,7 +1,7 @@
 
+'use client';
 import Link from "next/link";
 import {
-  MoreHorizontal,
   PlusCircle,
 } from 'lucide-react';
 
@@ -14,13 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -36,6 +29,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { ClientOverviewDialog } from "@/components/client-overview-dialog";
 
 
 const proposalStatusStyles: { [key: string]: string } = {
@@ -114,32 +108,34 @@ export default function ProposalsPage() {
             </TableHeader>
             <TableBody>
               {filteredClients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell>
-                      <div className="font-bold">{client.companyName}</div>
-                      <div className="font-bold text-sm text-muted-foreground">Client ID: {client.id}</div>
-                      <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
-                      <div className="text-sm text-muted-foreground hidden md:block">{client.address}</div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`capitalize ${clientStatusStyles[client.status]}`} variant="outline">
-                      {client.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {client.subscription ? (
-                        <div>
-                            <div className="font-bold">{client.subscription.planName}</div>
-                            <div className="font-bold text-sm text-muted-foreground">
-                                {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)}
-                            </div>
-                            <div className="text-sm text-muted-foreground">{client.subscription.liters.toLocaleString()} Liters</div>
-                        </div>
-                    ) : (
-                        <span className="text-muted-foreground">N/A</span>
-                    )}
-                  </TableCell>
-                </TableRow>
+                <ClientOverviewDialog key={client.id} client={client}>
+                  <TableRow className="cursor-pointer">
+                    <TableCell>
+                        <div className="font-bold">{client.companyName}</div>
+                        <div className="font-bold text-sm text-muted-foreground">Client ID: {client.id}</div>
+                        <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
+                        <div className="text-sm text-muted-foreground hidden md:block">{client.address}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`capitalize ${clientStatusStyles[client.status]}`} variant="outline">
+                        {client.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {client.subscription ? (
+                          <div>
+                              <div className="font-bold">{client.subscription.planName}</div>
+                              <div className="font-bold text-sm text-muted-foreground">
+                                  {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)}
+                              </div>
+                              <div className="text-sm text-muted-foreground">{client.subscription.liters.toLocaleString()} Liters</div>
+                          </div>
+                      ) : (
+                          <span className="text-muted-foreground">N/A</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                </ClientOverviewDialog>
               ))}
             </TableBody>
           </Table>
@@ -160,6 +156,7 @@ export default function ProposalsPage() {
             <TabsList>
                 <TabsTrigger value="proposals">Proposals</TabsTrigger>
                 <TabsTrigger value="clients">Clients</TabsTrigger>
+                <TabsTrigger value="commissions">Commissions</TabsTrigger>
             </TabsList>
             <div className="ml-auto">
                 <Button asChild size="sm" className="h-8 gap-1">
@@ -225,6 +222,20 @@ export default function ProposalsPage() {
                     ))}
                 </Card>
             </Tabs>
+          </TabsContent>
+          <TabsContent value="commissions">
+            <Card>
+              <CardHeader>
+                <CardTitle>Commission History</CardTitle>
+                <CardDescription>
+                  A record of all sales commissions.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+              {/* This is where the commissions table will be rendered. For now, it's a placeholder. */}
+              <p>Commissions table will be here.</p>
+              </CardContent>
+            </Card>
           </TabsContent>
       </Tabs>
     </div>

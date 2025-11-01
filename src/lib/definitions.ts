@@ -3,9 +3,11 @@ export type Client = {
   companyName: string;
   contactName: string;
   contactEmail: string;
+  contactPhone: string;
   status: 'active' | 'inactive' | 'lead';
   address: string;
   subscription?: {
+    planId: string;
     planName: string;
     liters: number;
     amount: number;
