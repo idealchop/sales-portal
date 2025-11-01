@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package } from 'lucide-react';
 import type { Client } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
@@ -171,6 +171,13 @@ export function ClientOverviewDialog({
                                         <div>
                                             <p className="text-muted-foreground">Refill Frequency</p>
                                             <p className="font-semibold">{client.subscription.refillFrequency}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Package className="h-4 w-4 text-primary" />
+                                        <div>
+                                            <p className="text-muted-foreground">Est. Bottles</p>
+                                            <p className="font-semibold">~{Math.round(client.subscription.liters / 19)}</p>
                                         </div>
                                     </div>
                                 </div>
