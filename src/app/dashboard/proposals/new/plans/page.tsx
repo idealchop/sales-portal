@@ -260,7 +260,7 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
             <Card className={cn(
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
-                ? "bg-gradient-to-r from-primary to-[#43c4bf] text-primary-foreground border-primary shadow-2xl" 
+                ? "bg-primary/10 border-primary shadow-lg" 
                 : "bg-card text-card-foreground border-transparent hover:border-primary/50"
             )}>
                 {plan.isRecommended && !isSelected && (
@@ -269,40 +269,40 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                 </div>
                 )}
                  {isSelected && (
-                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/30">
-                    <Check className="h-4 w-4 text-white" />
+                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                    <Check className="h-4 w-4 text-primary-foreground" />
                 </div>
                 )}
                 <CardHeader className="flex-1">
-                <CardTitle className={cn(isSelected ? "text-white" : "")}>{plan.name}</CardTitle>
+                <CardTitle className={cn(isSelected ? "text-primary" : "")}>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
-                    <span className={cn("text-3xl font-bold", isSelected ? "text-white" : "")}>{plan.monthlyFee}</span>
-                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                    <span className={cn("text-3xl font-bold", isSelected ? "text-primary" : "")}>{plan.monthlyFee}</span>
+                    {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-4">
-                    <div className={cn("rounded-lg p-4", isSelected ? "bg-black/20" : "bg-muted")}>
+                    <div className={cn("rounded-lg p-4", isSelected ? "bg-primary/10" : "bg-muted")}>
                     <div className="flex justify-around text-center text-sm">
                         <div>
-                            <p className={cn("font-bold text-lg", isSelected ? "text-white" : "")}>{plan.liters}</p>
-                            <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Liters</p>
+                            <p className={cn("font-bold text-lg", isSelected ? "text-primary" : "")}>{plan.liters}</p>
+                            <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Liters</p>
                         </div>
                         <div>
-                            <p className={cn("font-bold text-lg", isSelected ? "text-white" : "")}>≈ {plan.bottles}</p>
-                            <p className={cn("text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Bottles</p>
+                            <p className={cn("font-bold text-lg", isSelected ? "text-primary" : "")}>≈ {plan.bottles}</p>
+                            <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>Bottles</p>
                         </div>
                     </div>
                     </div>
-                    <ul className={cn("space-y-2 text-sm", isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
+                    <ul className={cn("space-y-2 text-sm", isSelected ? 'text-primary/90' : 'text-muted-foreground')}>
                         {plan.inclusions.map((item, index) => (
                             <li key={index} className="flex items-center gap-2">
-                                <Check className={cn("h-4 w-4", isSelected ? "text-white/80" : "text-primary")} />
+                                <Check className={cn("h-4 w-4", isSelected ? "text-primary/80" : "text-primary")} />
                                 <span>{item}</span>
                             </li>
                         ))}
                     </ul>
                 </CardContent>
-                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
+                <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-primary/10" : "bg-muted")}>
                     <div className="flex justify-between items-center w-full text-sm">
                         <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
