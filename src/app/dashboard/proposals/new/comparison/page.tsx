@@ -99,16 +99,16 @@ export default function ComparisonPage() {
                 <AccordionTrigger className="px-6 text-base font-semibold data-[state=open]:bg-primary data-[state=open]:text-primary-foreground">
                   {item.aspect}
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
+                <AccordionContent className="bg-primary/90 px-6 pb-6 text-primary-foreground">
                   <div className="grid md:grid-cols-2 gap-6 pt-4">
-                    <div className="space-y-2 rounded-lg border border-dashed p-4">
+                    <div className="space-y-2 rounded-lg bg-background text-card-foreground p-4">
                         <div className="flex items-center gap-2">
                             <XCircle className="h-5 w-5 text-destructive" />
                             <h4 className="font-semibold text-muted-foreground">Traditional Model</h4>
                         </div>
                         <p className="text-sm pl-7">{item.traditional}</p>
                     </div>
-                    <div className="space-y-2 rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+                    <div className="space-y-2 rounded-lg bg-background text-card-foreground p-4">
                         <div className="flex items-center gap-2">
                             <CheckCircle className="h-5 w-5 text-primary" />
                             <h4 className="font-semibold text-primary">Smart Refill Model</h4>
