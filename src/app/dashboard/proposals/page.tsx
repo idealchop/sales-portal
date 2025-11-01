@@ -6,6 +6,7 @@ import {
   PlusCircle,
   FileText,
   Users,
+  Search,
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ import {
 } from '@/components/ui/tabs';
 import { ClientOverviewDialog } from "@/components/client-overview-dialog";
 import type { Client } from "@/lib/definitions";
+import { Input } from "@/components/ui/input";
 
 
 const proposalStatusStyles: { [key: string]: string } = {
@@ -69,14 +71,14 @@ function NavLink({
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 px-3 py-2 text-muted-foreground transition-colors hover:text-foreground',
+        'relative flex items-center gap-2 px-3 py-2 text-muted-foreground transition-colors hover:text-foreground',
         isActive && 'text-primary'
       )}
     >
       {icon}
       <span className="font-medium">{label}</span>
       {isActive && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary mt-2"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
       )}
     </button>
   );
@@ -84,6 +86,7 @@ function NavLink({
 
 export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
+  const [searchQuery, setSearchQuery] = useState('');
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'accepted', 'sent', 'draft', 'rejected'];
   const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'lead', 'inactive'];
 
@@ -92,7 +95,16 @@ export default function ProposalsPage() {
   }
 
   const renderProposalsTable = (status: ProposalStatus | 'all') => {
-    const filteredProposals = status === 'all' ? proposals : proposals.filter(p => p.status === status);
+    const filteredProposals = (status === 'all' ? proposals : proposals.filter(p => p.status === status))
+      .filter(proposal => {
+        const client = getClientById(proposal.client.id);
+        const searchTerm = searchQuery.toLowerCase();
+        return (
+          proposal.id.toLowerCase().includes(searchTerm) ||
+          client?.id.toLowerCase().includes(searchTerm) ||
+          client?.companyName.toLowerCase().includes(searchTerm)
+        );
+      });
     
     return (
       <Card>
@@ -143,7 +155,16 @@ export default function ProposalsPage() {
   }
 
   const renderClientsTable = (status: ClientStatus | 'all') => {
-    const filteredClients = status === 'all' ? clients : clients.filter(c => c.status === status);
+    const filteredClients = (status === 'all' ? clients : clients.filter(c => c.status === status))
+      .filter(client => {
+        const searchTerm = searchQuery.toLowerCase();
+        return (
+          client.companyName.toLowerCase().includes(searchTerm) ||
+          client.contactName.toLowerCase().includes(searchTerm) ||
+          client.contactEmail.toLowerCase().includes(searchTerm)
+        );
+      });
+
     return (
       <Card>
         <CardContent className="pt-6">
@@ -209,22 +230,18 @@ export default function ProposalsPage() {
 
       <div className="border-b">
         <nav className="-mb-px flex gap-4" aria-label="Tabs">
-            <div className="relative">
-                <NavLink
-                    icon={<FileText />}
-                    label="Proposals"
-                    isActive={activeView === 'proposals'}
-                    onClick={() => setActiveView('proposals')}
-                />
-            </div>
-            <div className="relative">
-                <NavLink
-                    icon={<Users />}
-                    label="Clients"
-                    isActive={activeView === 'clients'}
-                    onClick={() => setActiveView('clients')}
-                />
-            </div>
+            <NavLink
+                icon={<FileText />}
+                label="Proposals"
+                isActive={activeView === 'proposals'}
+                onClick={() => { setActiveView('proposals'); setSearchQuery(''); }}
+            />
+            <NavLink
+                icon={<Users />}
+                label="Clients"
+                isActive={activeView === 'clients'}
+                onClick={() => { setActiveView('clients'); setSearchQuery(''); }}
+            />
         </nav>
       </div>
 
@@ -233,12 +250,23 @@ export default function ProposalsPage() {
              <Tabs defaultValue="all">
                 <Card>
                     <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <div>
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1">
                                 <CardTitle>All Proposals</CardTitle>
                                 <CardDescription>
                                     View, manage, and create sales proposals.
                                 </CardDescription>
+                            </div>
+                            <div className="w-full max-w-sm">
+                                <div className="relative">
+                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                  <Input 
+                                    placeholder="Search proposals..." 
+                                    className="pl-10" 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                  />
+                                </div>
                             </div>
                             <TabsList>
                                 {proposalStatuses.map(status => (
@@ -259,12 +287,23 @@ export default function ProposalsPage() {
             <Tabs defaultValue="all">
                 <Card>
                     <CardHeader>
-                         <div className="flex items-center justify-between">
-                            <div>
+                         <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1">
                                 <CardTitle>Clients</CardTitle>
                                 <CardDescription>
                                     Manage your clients and view their sales history.
                                 </CardDescription>
+                            </div>
+                             <div className="w-full max-w-sm">
+                                <div className="relative">
+                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                  <Input 
+                                    placeholder="Search clients..." 
+                                    className="pl-10" 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                  />
+                                </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <TabsList>
@@ -287,3 +326,5 @@ export default function ProposalsPage() {
     </div>
   );
 }
+
+    
