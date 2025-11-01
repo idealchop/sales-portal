@@ -381,11 +381,13 @@ function PlansGrid({
         return `~${Math.round(estimatedEmployees / 10) * 10}`;
     };
 
+    const gridColsClass = businessSize === 'corporate' ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
+
     return (
     <RadioGroup
         value={selectedPlan ?? defaultPlan} 
         onValueChange={onSelectPlan}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 items-start"
+        className={cn("grid grid-cols-1 md:grid-cols-2 gap-6 items-start", gridColsClass)}
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
@@ -528,8 +530,8 @@ const businessSizes = [
     },
     { 
         id: 'flow' as BusinessSize, 
-        title: 'Flowing Plans', 
-        description: 'Pay based on your actual water consumption.', 
+        title: 'Enterprise', 
+        description: 'Customize and pay based on consumption.', 
         image: {
             imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63",
             description: "An abstract representation of a data flow.",
