@@ -252,16 +252,6 @@ const flowPlans: Plan[] = [
         stations: '5+ Verified Stations',
         isRecommended: true,
     },
-    {
-        id: 'enterprise-overflow',
-        name: 'Enterprise Overflow',
-        monthlyFee: 'Usage-Based',
-        liters: 'No cap',
-        refillFrequency: 'On-demand',
-        inclusions: ['₱0 Base Fee + ₱3.00–₱3.50 / liter', 'Pay per actual consumption', 'Smart consumption tracking'],
-        employees: '—',
-        stations: 'Multiple partner stations',
-    },
 ]
 
 export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...flowPlans];
@@ -399,9 +389,8 @@ function PlansGrid({
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
-        const isCustom = businessSize === 'flow' && (plan.id === 'enterprise-customized' || plan.id === 'enterprise-overflow');
-        const isOverflow = plan.id === 'enterprise-overflow';
-        const isDisabled = isOverflow;
+        const isCustom = businessSize === 'flow' && (plan.id === 'enterprise-customized');
+        const isDisabled = false;
 
         let employees = plan.employees;
         let stations = plan.stations;
@@ -441,9 +430,8 @@ function PlansGrid({
                     <CardHeader className="flex-1">
                     <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
                     <div className="flex items-baseline gap-2">
-                        {plan.monthlyFee !== 'Custom' && plan.monthlyFee !== 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{plan.monthlyFee}</span>}
-                        {plan.monthlyFee === 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{plan.monthlyFee}</span>}
-                        {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                        {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{plan.monthlyFee}</span>}
+                        {plan.name !== 'Enterprise Customized' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                     </div>
                     </CardHeader>
                     <CardContent className="flex-1 text-left space-y-4">
@@ -463,7 +451,6 @@ function PlansGrid({
                     </CardContent>
                     
                     {plan.id === 'enterprise-customized' && isSelected && <CustomPlanCalculator onCalculated={onCustomCalculated} pricePerLiter={3} />}
-                    {plan.id === 'enterprise-overflow' && isSelected && <CustomPlanCalculator onCalculated={onCustomCalculated} pricePerLiter={3.00} />}
 
                     <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
                         <div className="flex justify-between items-center w-full text-sm">
@@ -617,10 +604,6 @@ export default function PlansPage() {
 
     const handlePlanSelect = (planId: string) => {
         const plan = allPlans.find(p => p.id === planId);
-        if(plan?.id === 'enterprise-overflow') {
-            setSelectedPlan(planId);
-            return;
-        }
         setSelectedPlan(planId);
     }
 
@@ -664,7 +647,7 @@ export default function PlansPage() {
                 />;
     };
     
-    const isNextDisabled = !selectedPlan || allPlans.find(p => p.id === selectedPlan)?.id === 'enterprise-overflow';
+    const isNextDisabled = !selectedPlan;
 
 
     return (
