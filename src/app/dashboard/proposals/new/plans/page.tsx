@@ -266,7 +266,7 @@ function CustomPlanCalculator({pricePerLiter = 5}: {pricePerLiter?: number}) {
     const [deliveries, setDeliveries] = useState(1);
     const litersPerBottle = 19;
 
-    const totalLiters = bottles * deliveries * 4; // 4 weeks in a month
+    const totalLiters = bottles * deliveries * 4 * litersPerBottle;
     const totalCost = totalLiters * pricePerLiter;
     
     const getStations = (liters: number) => {
@@ -377,18 +377,24 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
                 <CardHeader className="flex-1">
                 <CardTitle className={cn(isSelected && "text-primary-foreground")}>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
-                    {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
+                    {plan.monthlyFee !== 'Custom' && plan.monthlyFee !== 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
+                    {plan.monthlyFee === 'Usage-Based' && <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>}
                     {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
                 <CardContent className="flex-1 text-left space-y-4">
                     <div className="space-y-2">
-                        <p className={cn("text-sm", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
-                        <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.liters}</p>
+                        <p className={cn("text-sm font-semibold", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
+                        <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && "text-primary-foreground")}>
+                            <span>{plan.liters}</span>
+                        </div>
                     </div>
                     <div className="space-y-2">
-                        <p className={cn("text-sm", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
-                        <p className={cn("text-lg font-bold", isSelected && "text-primary-foreground")}>{plan.refillFrequency}</p>
+                        <p className={cn("text-sm font-semibold", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
+                        <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && "text-primary-foreground")}>
+                             <RefreshCcw className="h-5 w-5" />
+                            <span>{plan.refillFrequency}</span>
+                        </div>
                     </div>
                 </CardContent>
                 
@@ -397,13 +403,13 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSiz
 
                 <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
                     <div className="flex justify-between items-center w-full text-sm">
-                        <div className={cn("flex items-center gap-2", isSelected ? "text-primary-foreground" : "text-muted-foreground")}>
-                            <Users className="text-inherit" />
-                            <span className="text-inherit">{plan.employees}</span>
+                        <div className={cn("flex items-center gap-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                            <Users className="h-5 w-5" />
+                            <span className="font-semibold">{plan.employees}</span>
                         </div>
-                        <div className={cn("flex items-center gap-2", isSelected ? "text-primary-foreground" : "text-muted-foreground")}>
-                            <Building2 className="text-inherit" />
-                            <span className="text-inherit">{plan.stations}</span>
+                        <div className={cn("flex items-center gap-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                            <Building2 className="h-5 w-5" />
+                            <span className="font-semibold">{plan.stations}</span>
                         </div>
                         <RadioGroupItem 
                             value={plan.id} 
