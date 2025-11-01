@@ -312,26 +312,30 @@ function BusinessSizeSelector({
     selectedSize: BusinessSize | null;
     onSelectSize: (size: BusinessSize) => void;
 }) {
-    const smallBusinessImage = PlaceHolderImages.find(p => p.title === 'small-business');
+    const smallBusinessImage = {
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartrefill_SME.png?alt=media&token=eda50afe-7dd2-494c-ab48-0508dd3be81a",
+        description: "An office with a few people",
+        imageHint: "small office"
+    };
     const mediumBusinessImage = PlaceHolderImages.find(p => p.title === 'medium-business');
     const largeBusinessImage = PlaceHolderImages.find(p => p.title === 'large-business');
     const flowPlanImage = PlaceHolderImages.find(p => p.title === 'flow-plan');
 
     const sizes: { id: BusinessSize, title: string, description: string, image: any }[] = [
-        { id: 'small', title: 'Small Business', description: 'For small teams, kiosks, and home offices.', image: smallBusinessImage },
+        { id: 'small', title: 'SME', description: 'For small teams, kiosks, and home offices.', image: smallBusinessImage },
         { id: 'medium', title: 'Medium Business', description: 'For growing offices and warehouses.', image: mediumBusinessImage },
         { id: 'large', title: 'Large Enterprise', description: 'For multi-site companies and BPOs.', image: largeBusinessImage },
         { id: 'flow', title: 'Smart Flow Plan', description: 'Pay based on your actual water consumption.', image: flowPlanImage },
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {sizes.map((size) => (
                 <Card
                     key={size.id}
                     onClick={() => onSelectSize(size.id)}
                     className={cn(
-                        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 overflow-hidden',
+                        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 overflow-hidden flex flex-col',
                         selectedSize === size.id ? 'border-primary shadow-lg border-2' : ''
                     )}
                 >
@@ -346,12 +350,23 @@ function BusinessSizeSelector({
                             />
                         </div>
                     )}
-                    <CardHeader>
+                    <CardHeader className="flex-1">
                         <div>
                             <CardTitle>{size.title}</CardTitle>
                             <CardDescription>{size.description}</CardDescription>
                         </div>
                     </CardHeader>
+                     <CardFooter className="bg-muted/50 p-4">
+                        <div className="text-sm space-y-2">
+                           <p className="font-semibold">Ideal for:</p>
+                            <ul className="list-disc list-inside text-muted-foreground text-xs">
+                                {size.id === 'small' && <><li>Small offices & clinics</li><li>Retail stores & cafes</li><li>Home-based businesses</li></>}
+                                {size.id === 'medium' && <><li>Growing companies</li><li>Mid-sized offices</li><li>Warehouse facilities</li></>}
+                                {size.id === 'large' && <><li>BPOs & call centers</li><li>Multi-site corporations</li><li>Hotel & restaurant chains</li></>}
+                                {size.id === 'flow' && <><li>Businesses with fluctuating demand</li><li>Event-based water needs</li><li>Seasonal operations</li></>}
+                            </ul>
+                        </div>
+                    </CardFooter>
                 </Card>
             ))}
         </div>
