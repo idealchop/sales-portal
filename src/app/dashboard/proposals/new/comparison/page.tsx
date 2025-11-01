@@ -83,7 +83,7 @@ export default function ComparisonPage() {
 
       <div className="relative aspect-video rounded-lg overflow-hidden">
         <Image 
-            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_05.jpg?alt=media&token=c8bb02fa-d6d8-406d-b4ae-a0ee53ee8457"
+            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_06.png?alt=media&token=7fa3a2b5-5173-4508-bf0c-8324c5d704e2"
             alt="Smart Refill Advantage"
             fill
             className="object-cover"
