@@ -641,12 +641,12 @@ export default function ContractPage() {
         <div>
           <h1 className="text-2xl font-bold">Finalize Proposal</h1>
           <p className="text-muted-foreground">
-            Step 6: Review inclusions, add-ons, and sign the agreement.
+            Step 5: Review inclusions, add-ons, and sign the agreement.
           </p>
         </div>
         <div className="flex gap-2">
             <Button variant="outline" asChild>
-                <Link href="/dashboard/proposals/new/inclusions">Previous</Link>
+                <Link href="/dashboard/proposals/new/plans">Previous</Link>
             </Button>
             <Button onClick={handleSaveProposal}>
                 <Save className="mr-2 h-4 w-4" />
