@@ -505,7 +505,10 @@ function PlansGrid({
             )
         }
 
-        return <div key={plan.id} className={cn(isCustom && selectedPlan === 'enterprise-customized' && 'md:col-span-2' )}>{cardContent}</div>;
+        return <div key={plan.id} className={cn(
+          (isCustom && selectedPlan === 'enterprise-customized') && 'md:col-span-2',
+          (isSelected && (plan.id === 'enterprise-customized' || plan.id === 'enterprise-overflow')) && 'col-span-full'
+        )}>{cardContent}</div>;
       })}
     </RadioGroup>
   );
@@ -560,9 +563,9 @@ const enterpriseTypes = [
         title: 'Customized Plan',
         description: 'Tailored for predictable, prepaid enterprise solutions.',
         image: {
-            imageUrl: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGFncmVlbWVudHxlbnwwfHx8fDE3NjE5NzYyNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-            description: 'Two people shaking hands over a contract.',
-            imageHint: 'business agreement',
+            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5',
+            description: 'A person using a water dispenser.',
+            imageHint: 'water dispenser',
         }
     },
     {
@@ -570,9 +573,9 @@ const enterpriseTypes = [
         title: 'Flowing Plan',
         description: 'For pure usage-based, pay-as-you-go enterprise clients.',
         image: {
-            imageUrl: 'https://images.unsplash.com/photo-1629904853716-f0bc64219b1f?ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwYXltZW50JTIwZmxvd3xlbnwwfHx8fDE3NjE5NzYyNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-            description: 'A diagram of a payment flow.',
-            imageHint: 'payment flow',
+            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5',
+            description: 'Water flowing from a tap.',
+            imageHint: 'water tap',
         }
     }
 ];
@@ -826,7 +829,7 @@ export default function PlansPage() {
         </Card>
 
 
-        {selectedSize && (
+        {selectedPlan && (
           <div className="grid gap-6">
               <Card>
               <CardHeader>
