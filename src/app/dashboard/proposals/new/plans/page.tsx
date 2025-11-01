@@ -259,7 +259,12 @@ const flowPlans: Plan[] = [
         monthlyFee: '₱50,000',
         liters: 'Usage-Based',
         refillFrequency: 'On-demand',
-        inclusions: ['Initial top-up of ₱50,000.', 'Pay only for what you use.', 'Ideal for unpredictable consumption.'],
+        inclusions: [
+            'Initial top-up of ₱50,000.',
+            'Preferential rate of ₱2.50 per liter.',
+            'Optional auto-top-up for seamless service.',
+            'Real-time balance and usage tracking.'
+        ],
         employees: '—',
         stations: '—',
     }
@@ -980,3 +985,5 @@ export default function PlansPage() {
         </div>
     );
 }
+
+    
