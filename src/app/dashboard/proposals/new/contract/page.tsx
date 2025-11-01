@@ -2,6 +2,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -337,6 +338,12 @@ function PreviewDialog({
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const proposalId = useMemo(() => `SR${new Date().getFullYear()}${Math.floor(100000 + Math.random() * 900000)}`, []);
+    
+    const clientID = useMemo(() => {
+        const year = new Date().getFullYear().toString().slice(-2);
+        const randomNumber = Math.floor(100000 + Math.random() * 900000); 
+        return `SC${year}${randomNumber}`;
+    }, []);
 
     const handleFinalize = () => {
         const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
@@ -357,11 +364,6 @@ function PreviewDialog({
             });
             return;
         }
-
-        const year = new Date().getFullYear().toString().slice(-2);
-        const randomNumber = Math.floor(100000 + Math.random() * 900000); 
-        const clientID = `SC${year}${randomNumber}`;
-
 
         toast({
             title: "Contract Finalized!",
@@ -412,6 +414,10 @@ function PreviewDialog({
                                 <CardTitle>Client Information</CardTitle>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 gap-x-8 gap-y-4 text-sm">
+                                <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                    <span className="text-muted-foreground">Client ID:</span>
+                                    <span className="font-semibold font-mono">{clientID}</span>
+                                </div>
                                 <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                                     <span className="text-muted-foreground">Name:</span>
                                     <span className="font-semibold">{clientName || "N/A"}</span>
@@ -1071,6 +1077,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
