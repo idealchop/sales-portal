@@ -366,7 +366,7 @@ function BusinessSizeSelector({
                     )}
                 >
                     {size.image && (
-                         <div className="relative aspect-square">
+                         <div className="relative aspect-[4/3]">
                             <Image
                                 src={size.image.imageUrl}
                                 alt={size.image.description}
