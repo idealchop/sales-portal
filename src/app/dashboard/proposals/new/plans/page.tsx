@@ -292,6 +292,8 @@ function CustomPlanCalculator({pricePerLiter = 5}: {pricePerLiter?: number}) {
         return freq ? freq.label.replace(' times a week', '/week').replace(' 1 time a week', '1/week') : `${deliveries}/week`;
     }
 
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
 
     return (
         <div className="p-6 space-y-6">
@@ -337,9 +339,13 @@ function CustomPlanCalculator({pricePerLiter = 5}: {pricePerLiter?: number}) {
                         <span className="font-semibold">{getFrequency(deliveries)}</span>
                     </div>
                     <Separator className="bg-primary-foreground/20" />
+                    <div className="flex justify-between items-center">
+                        <span className="text-primary-foreground/80">Price per Liter</span>
+                        <span className="font-semibold">{currencyFormatter.format(pricePerLiter)}</span>
+                    </div>
                      <div className="flex justify-between items-center">
                         <span className="font-bold">Estimated Monthly Cost</span>
-                        <span className="font-bold text-lg">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(totalCost)}</span>
+                        <span className="font-bold text-lg">{currencyFormatter.format(totalCost)}</span>
                     </div>
                 </CardContent>
             </Card>
@@ -590,20 +596,20 @@ export default function PlansPage() {
 
         <Card>
             <CardHeader>
-            <div className="flex items-center justify-between">
-                <div>
-                    <CardTitle>1. Select Business Size</CardTitle>
-                    <CardDescription>
-                    Choose the client's business size to see the recommended plans.
-                    </CardDescription>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>1. Select Business Size</CardTitle>
+                        <CardDescription>
+                        Choose the client's business size to see the recommended plans.
+                        </CardDescription>
+                    </div>
+                    {selectedSize && (
+                        <Button variant="outline" onClick={() => { setSelectedSize(null); setSelectedPlan(null); }}>
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        Change
+                        </Button>
+                    )}
                 </div>
-                {selectedSize && (
-                    <Button variant="outline" onClick={() => { setSelectedSize(null); setSelectedPlan(null); }}>
-                    <RefreshCcw className="mr-2 h-4 w-4" />
-                    Change
-                    </Button>
-                )}
-            </div>
             </CardHeader>
             <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -689,3 +695,5 @@ export default function PlansPage() {
         </div>
     );
 }
+
+    
