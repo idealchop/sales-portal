@@ -143,8 +143,9 @@ export default function ProposalsPage() {
             <TableBody>
               {filteredClients.map((client) => (
                 <TableRow key={client.id}>
-                  <TableCell className="font-medium">
-                      <div className="font-medium">{client.companyName}</div>
+                  <TableCell>
+                      <div className="font-bold">{client.companyName}</div>
+                      <div className="font-bold text-sm text-muted-foreground">Client ID: {client.id}</div>
                       <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
                       <div className="text-sm text-muted-foreground hidden md:block">{client.address}</div>
                   </TableCell>
