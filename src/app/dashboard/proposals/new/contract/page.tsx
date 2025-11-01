@@ -29,7 +29,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, GlassWater, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -610,8 +610,6 @@ export default function ContractPage() {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
   }
 
-  const estimatedBottles = Math.round((5000 + additionalLiters) / 19);
-
   const { totalAmount, discount, billingCycleLabel, basePrice } = useMemo(() => {
     const proPlanCost = 7500;
     const addonsCost = addons.reduce((total, addon) => {
@@ -679,7 +677,7 @@ export default function ContractPage() {
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Liters</CardTitle>
-                            <GlassWater className="h-4 w-4 text-primary-foreground/70" />
+                            <Waves className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{5000 + additionalLiters} L</div>
