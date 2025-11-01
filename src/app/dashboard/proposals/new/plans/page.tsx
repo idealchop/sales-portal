@@ -392,7 +392,10 @@ function PlansGrid({
         return `~${Math.round(estimatedEmployees / 10) * 10}`;
     };
 
-    const gridColsClass = businessSize === 'corporate' ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
+    let gridColsClass = 'lg:grid-cols-3';
+    if (businessSize === 'sme' || businessSize === 'corporate') {
+        gridColsClass = 'lg:grid-cols-2';
+    }
     
     const isSingleCustomPlan = selectedPlan === 'enterprise-customized';
     const isSingleOverflowPlan = selectedPlan === 'enterprise-overflow';
@@ -891,3 +894,4 @@ export default function PlansPage() {
         </div>
     );
 }
+
