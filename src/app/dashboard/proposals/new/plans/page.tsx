@@ -31,10 +31,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Separator } from '@/components/ui/separator';
-import { useState } from 'react';
-import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Input } from '@/components/ui/input';
 
 type Plan = {
   id: string;
@@ -260,7 +261,81 @@ export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...
 type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'flow';
 
 
-function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan }: { plans: Plan[], defaultPlan: string, selectedPlan: string | null, onSelectPlan: (planId: string) => void }) {
+function CustomPlanCalculator() {
+    const [bottles, setBottles] = useState(10);
+    const [deliveries, setDeliveries] = useState(1);
+    const litersPerBottle = 19;
+    const pricePerLiter = 5;
+
+    const totalLiters = bottles * deliveries * 4; // 4 weeks in a month
+    const totalCost = totalLiters * pricePerLiter;
+    
+    const getStations = (liters: number) => {
+        if (liters <= 2000) return '1 Station';
+        if (liters <= 6000) return '2-3 Stations';
+        if (liters <= 25000) return '3-4 Stations';
+        return '5+ Stations';
+    }
+
+    const getFrequency = (deliveries: number) => {
+        if (deliveries <= 2) return '1-2/week';
+        if (deliveries <= 4) return '3-4/week';
+        if (deliveries <= 6) return '5-6/week';
+        return 'Daily';
+    }
+
+
+    return (
+        <div className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="bottles">5-Gallon Bottles per Delivery</Label>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="icon" onClick={() => setBottles(Math.max(1, bottles - 1))}><Minus className="h-4 w-4" /></Button>
+                        <Input id="bottles" type="number" value={bottles} onChange={(e) => setBottles(parseInt(e.target.value) || 0)} className="text-center" />
+                        <Button variant="outline" size="icon" onClick={() => setBottles(bottles + 1)}><Plus className="h-4 w-4" /></Button>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="deliveries">Deliveries per Week</Label>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="icon" onClick={() => setDeliveries(Math.max(1, deliveries - 1))}><Minus className="h-4 w-4" /></Button>
+                        <Input id="deliveries" type="number" value={deliveries} onChange={(e) => setDeliveries(parseInt(e.target.value) || 0)} className="text-center" />
+                        <Button variant="outline" size="icon" onClick={() => setDeliveries(deliveries + 1)}><Plus className="h-4 w-4" /></Button>
+                    </div>
+                </div>
+            </div>
+
+            <Card className="bg-muted/50">
+                <CardHeader>
+                    <CardTitle>Custom Plan Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Total Liters per Month</span>
+                        <span className="font-bold text-lg">{totalLiters.toLocaleString()} L</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Recommended Stations</span>
+                        <span className="font-semibold">{getStations(totalLiters)}</span>
+                    </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Avg. Refill Frequency</span>
+                        <span className="font-semibold">{getFrequency(deliveries)}</span>
+                    </div>
+                    <Separator />
+                     <div className="flex justify-between items-center">
+                        <span className="text-primary font-bold">Estimated Monthly Cost</span>
+                        <span className="font-bold text-lg text-primary">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(totalCost)}</span>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
+
+function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan, businessSize }: { plans: Plan[], defaultPlan: string, selectedPlan: string | null, onSelectPlan: (planId: string) => void, businessSize: BusinessSize | null }) {
 
   return (
     <RadioGroup
@@ -270,8 +345,10 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan }: { plans: 
     >
       {plans.map((plan) => {
         const isSelected = selectedPlan === plan.id;
+        const isCustom = businessSize === 'flow' && plan.id === 'enterprise-customized';
+
         return (
-            <Label htmlFor={plan.id} key={plan.name} className="cursor-pointer h-full">
+            <Label htmlFor={plan.id} key={plan.name} className={cn("cursor-pointer h-full", isCustom && "md:col-span-2 lg:col-span-3")}>
             <Card className={cn(
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
@@ -291,37 +368,41 @@ function PlansGrid({ plans, defaultPlan, selectedPlan, onSelectPlan }: { plans: 
                 <CardHeader className="flex-1">
                 <CardTitle>{plan.name}</CardTitle>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold">{plan.monthlyFee}</span>
+                    <span className={cn("text-3xl font-bold", isSelected && "text-primary-foreground")}>{plan.monthlyFee}</span>
                     {plan.name !== 'Enterprise Customized' && plan.name !== 'Enterprise Overflow' && <span className={cn(isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
                 </div>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-4 text-left">
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                            <GlassWater className={cn("h-5 w-5", isSelected && "text-primary-foreground/80")}/>
+                            <Waves className={cn("h-5 w-5", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}/>
                             <p className="text-lg font-bold">{plan.liters}</p>
                         </div>
                         <p className={cn("text-sm ml-7 -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
                     </div>
-                    <div className="space-y-2">
-                        <p className="text-lg font-bold ml-7">{plan.refillFrequency}</p>
+                     <div className="space-y-2">
+                        <p className={cn("text-lg font-bold ml-7", isSelected && "text-primary-foreground")}>{plan.refillFrequency}</p>
                         <p className={cn("text-sm ml-7 -mt-2", isSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
                     </div>
                 </CardContent>
+                
+                {isCustom && isSelected && <CustomPlanCalculator />}
+
                 <CardFooter className={cn("p-4 rounded-b-lg", isSelected ? "bg-black/20" : "bg-muted")}>
                     <div className="flex justify-between items-center w-full text-sm">
                         <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            <span>{plan.employees}</span>
+                            <Users className={cn(isSelected && "text-primary-foreground/80")} />
+                            <span className={cn(isSelected && "text-primary-foreground")}>{plan.employees}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4" />
-                            <span>{plan.stations}</span>
+                            <Building2 className={cn(isSelected && "text-primary-foreground/80")} />
+                            <span className={cn(isSelected && "text-primary-foreground")}>{plan.stations}</span>
                         </div>
                         <RadioGroupItem 
                         value={plan.id} 
                         id={plan.id}
                         className="sr-only"
+                        disabled={businessSize === 'flow' && plan.id === 'enterprise-overflow'}
                         />
                     </div>
                 </CardFooter>
@@ -431,7 +512,11 @@ export default function PlansPage() {
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
-        setSelectedPlan(null); // Reset plan selection when size changes
+        if (size === 'flow') {
+            setSelectedPlan('enterprise-customized');
+        } else {
+            setSelectedPlan(null); // Reset plan selection when size changes
+        }
     };
 
     const handlePlanSelect = (planId: string) => {
@@ -441,13 +526,13 @@ export default function PlansPage() {
     const renderPlans = () => {
         switch (selectedSize) {
             case 'sme':
-                return <PlansGrid plans={smePlans} defaultPlan="professional" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} />;
+                return <PlansGrid plans={smePlans} defaultPlan="professional" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} businessSize={selectedSize} />;
             case 'commercial':
-                return <PlansGrid plans={commercialPlans} defaultPlan="pro" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} />;
+                return <PlansGrid plans={commercialPlans} defaultPlan="pro" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} businessSize={selectedSize} />;
             case 'corporate':
-                return <PlansGrid plans={corporatePlans} defaultPlan="enterprise-plus" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} />;
+                return <PlansGrid plans={corporatePlans} defaultPlan="enterprise-plus" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} businessSize={selectedSize} />;
             case 'flow':
-                return <PlansGrid plans={flowPlans} defaultPlan="enterprise-customized" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} />;
+                return <PlansGrid plans={flowPlans} defaultPlan="enterprise-customized" selectedPlan={selectedPlan} onSelectPlan={handlePlanSelect} businessSize={selectedSize} />;
             default:
                 return null;
         }
