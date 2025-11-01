@@ -261,7 +261,7 @@ function PlansGrid({ plans, defaultPlan }: { plans: Plan[], defaultPlan: string 
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
                 ? "border-primary shadow-lg bg-primary/90 backdrop-blur-sm" 
-                : "bg-card text-card-foreground border-transparent hover:border-primary/50"
+                : "bg-card text-card-foreground border shadow-md hover:border-primary/50"
             )}>
                 {plan.isRecommended && !isSelected && (
                 <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
