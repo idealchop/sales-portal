@@ -50,12 +50,20 @@ const generateSocialPostFlow = ai.defineFlow(
   },
   async (input) => {
     
-    const captionResponse = await socialPostCaptionPrompt(input);
+    // Generate caption and image in parallel
+    const [captionResponse, imageResponse] = await Promise.all([
+      socialPostCaptionPrompt(input),
+      ai.generate({
+        model: 'googleai/imagen-4.0-fast-generate-001',
+        prompt: `A bright, clean, professional photo of ${input.topic}. The scene should be warm and well-lit, showing a positive outcome related to Smart Refill's services (like a stocked water dispenser, happy staff, or an automated delivery). The style should be photo-realistic with a shallow depth of field. The color palette should feature clean whites, our brand's primary teal (#20c997), and golden yellow (#FDD835) accents.`,
+        config: {
+          negativePrompt: "low-resolution, blurry, dark, dirty water, broken equipment, sad, messy, competitor logos, text, watermark, gore, identifiable faces",
+        },
+      }),
+    ]);
+    
     const caption = captionResponse.output?.caption || '';
-
-    // Using a placeholder image to avoid billing errors with Imagen.
-    const seed = Math.floor(Math.random() * 1000);
-    const imageUrl = `https://picsum.photos/seed/${seed}/1280/720`;
+    const imageUrl = imageResponse.media.url || `https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/1280/720`;
     
     return {
         caption,
