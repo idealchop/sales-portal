@@ -63,8 +63,7 @@ const generateSocialPostFlow = ai.defineFlow(
   },
   async (input) => {
     // Generate caption
-    const captionResponse = await socialPostCaptionPrompt(input);
-    const caption = captionResponse.output?.caption || 'Enjoy the convenience of Smart Refill!';
+    const caption = 'Enjoy the convenience of Smart Refill!';
 
     // Use a static branded placeholder image to avoid billing errors with Imagen
     const staticImageUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_Social_Placeholder.png?alt=media&token=16757b53-41c3-4d6b-a253-61f282c1990c';
