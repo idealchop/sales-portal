@@ -294,12 +294,6 @@ export function ClientOverviewDialog({
                                         data-ai-hint="receipt"
                                     />
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <Badge variant="outline" className="bg-green-100 text-green-800">
-                                        <FileCheck className="mr-2 h-4 w-4" />
-                                        Verified
-                                    </Badge>
-                                </div>
                             </div>
                         </DialogContent>
                     </Dialog>
@@ -326,6 +320,80 @@ export function ClientOverviewDialog({
                         </DialogHeader>
                         <ScrollArea className="h-[70vh] pr-6">
                             <div className="space-y-6 py-4">
+                                {client.subscription ? (
+                                     <Card>
+                                        <CardHeader>
+                                            <CardTitle>Subscription Summary</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <h3 className="font-semibold">{client.subscription.planName}</h3>
+                                                    <p className="text-2xl font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)} / month</p>
+                                                </div>
+                                                 <div className="grid grid-cols-2 gap-4 text-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        <GlassWater className="h-4 w-4 text-primary" />
+                                                        <div>
+                                                            <p className="text-muted-foreground">Total Liters</p>
+                                                            <p className="font-semibold">{client.subscription.liters.toLocaleString()}L</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Package className="h-4 w-4 text-primary" />
+                                                        <div>
+                                                            <p className="text-muted-foreground">Est. Bottles</p>
+                                                            <p className="font-semibold">~{Math.round(client.subscription.liters / 19)}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Users className="h-4 w-4 text-primary" />
+                                                        <div>
+                                                            <p className="text-muted-foreground">Employees</p>
+                                                            <p className="font-semibold">{client.subscription.employees}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <RefreshCcw className="h-4 w-4 text-primary" />
+                                                        <div>
+                                                            <p className="text-muted-foreground">Refill Frequency</p>
+                                                            <p className="font-semibold">{client.subscription.refillFrequency}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Separator />
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div>
+                                                    <h4 className="font-semibold mb-2">Inclusions</h4>
+                                                    <div className="space-y-2">
+                                                        {client.subscription.inclusions?.map((item) => (
+                                                        <div key={item} className="flex items-center gap-2 text-sm">
+                                                            <CheckCircle className="h-4 w-4 text-green-500" />
+                                                            <span>{item}</span>
+                                                        </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                {client.subscription.addons && client.subscription.addons.length > 0 && (
+                                                    <div>
+                                                        <h4 className="font-semibold mb-2">Add-ons</h4>
+                                                        <div className="space-y-2">
+                                                            {client.subscription.addons.map((item) => (
+                                                                <div key={item} className="flex items-center gap-2 text-sm">
+                                                                    <Sparkles className="h-4 w-4 text-yellow-500" />
+                                                                    <span>{item}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ) : (
+                                    <p className="text-muted-foreground">No subscription details available.</p>
+                                )}
                                 <ContractText />
                                 <Card>
                                     <CardHeader>
