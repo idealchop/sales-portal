@@ -9,6 +9,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -926,7 +927,6 @@ function ContractPageContent() {
                         <TableRow>
                         <TableHead className="w-[50px]"></TableHead>
                         <TableHead>Add-On</TableHead>
-                        <TableHead>Description</TableHead>
                         <TableHead className="w-[200px]">Quantity</TableHead>
                         <TableHead className="text-right">Monthly Fee</TableHead>
                         </TableRow>
@@ -941,12 +941,13 @@ function ContractPageContent() {
                                         onCheckedChange={() => handleAddonToggle(addon.id)}
                                         checked={selectedAddons[addon.id]}
                                     />
+
                                 )}
                             </TableCell>
                             <TableCell>
                                 <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                                <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
                             </TableCell>
-                            <TableCell>{addon.description}</TableCell>
                             <TableCell>
                                 {addon.type === 'quantity' && (
                                     <Input 
@@ -1092,6 +1093,8 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+    
+
     
 
     
