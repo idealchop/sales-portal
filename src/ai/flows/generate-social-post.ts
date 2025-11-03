@@ -61,16 +61,53 @@ const generateSocialPostFlow = ai.defineFlow(
     outputSchema: SocialPostOutputSchema,
   },
   async (input) => {
-    // Generate caption
-    const captionResponse = await socialPostCaptionPrompt(input);
-    const caption = captionResponse.output?.caption || '';
+    // Generate caption and initial image in parallel
+    const [captionResponse, initialImageResponse] = await Promise.all([
+      socialPostCaptionPrompt(input),
+      ai.generate({
+        model: 'vertexai/gemini-1.5-flash-001',
+        prompt: `Generate a visually appealing, professional image related to the topic of: ${input.topic}. The image should be suitable for a social media post for a water delivery service called Smart Refill.`,
+      }),
+    ]);
 
-    // Use a static branded placeholder image to avoid billing errors with Imagen
-    const staticBrandedImageUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fbranded-placeholder.png?alt=media&token=bc865181-e283-4299-b887-344445585b19';
+    const caption = captionResponse.output?.caption || 'Enjoy the convenience of Smart Refill!';
+    const initialImageUrl = initialImageResponse.output?.imageUrl;
+
+    if (!initialImageUrl) {
+      throw new Error('Failed to generate initial image.');
+    }
+
+    // Define the logo and tagline images (these should be accessible via URL or as data URIs)
+    const logoUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2FAsset%2022.png?alt=media&token=f7458efe-afd7-4006-862e-40c8d524c080';
+    const taglineUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2FAsset%2042.png?alt=media&token=27a7102a-39b0-4665-a72a-912b79a01f9b';
+
+    // Second step: Composite the images using Gemini 1.5 Flash's image editing capabilities
+    const finalImageResponse = await ai.generate({
+      model: 'vertexai/gemini-1.5-flash-001',
+      prompt: [
+        { media: { url: initialImageUrl } },
+        { media: { url: logoUrl } },
+        { media: { url: taglineUrl } },
+        { text: 'Overlay the Smart Refill logo and tagline onto the base image in a professional and aesthetically pleasing way. The logo should be prominent but not obstructive, and the tagline should be clearly legible. Place them in the bottom corner or a suitable area that doesn't cover the main subject of the image.' },
+      ],
+      config: {
+        responseModalities: ['IMAGE'],
+      },
+    });
+
+    const finalImageUrl = finalImageResponse.output?.imageUrl;
+
+    if (!finalImageUrl) {
+      // Fallback to the initial image if the composition fails
+      return {
+        caption,
+        imageUrl: initialImageUrl,
+      };
+    }
 
     return {
       caption,
-      imageUrl: staticBrandedImageUrl,
+      imageUrl: finalImageUrl,
     };
   }
 );
