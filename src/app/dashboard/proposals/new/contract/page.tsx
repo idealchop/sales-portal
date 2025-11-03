@@ -15,6 +15,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -509,40 +510,6 @@ function PreviewDialog({
                         </Card>
                     </div>
 
-                    {distributionPlan.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Projected Delivery Schedule</CardTitle>
-                                <CardDescription>
-                                    An estimated weekly breakdown of your water deliveries.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Week</TableHead>
-                                            <TableHead className="text-center">Gallons to Deliver</TableHead>
-                                            <TableHead className="text-right">Liters Delivered</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {distributionPlan.map((week, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell className="font-medium">{week.week}</TableCell>
-                                                <TableCell className="text-center">{week.gallons}</TableCell>
-                                                <TableCell className="text-right">{week.liters.toLocaleString()} L</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                    <TableCaption className="text-left mt-4 text-xs">
-                                        * This is a projected delivery schedule. Actual deliveries may be adjusted based on real-time consumption data to ensure you never run out of water.
-                                    </TableCaption>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    )}
-
                     <Card>
                         <CardContent className="pt-6">
                             <p className="text-muted-foreground">
@@ -606,6 +573,40 @@ function PreviewDialog({
                             </div>
                         </CardContent>
                     </Card>
+
+                    {distributionPlan.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Projected Delivery Schedule</CardTitle>
+                                <CardDescription>
+                                    An estimated weekly breakdown of your water deliveries.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Week</TableHead>
+                                            <TableHead className="text-center">Gallons to Deliver</TableHead>
+                                            <TableHead className="text-right">Liters Delivered</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {distributionPlan.map((week, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell className="font-medium">{week.week}</TableCell>
+                                                <TableCell className="text-center">{week.gallons}</TableCell>
+                                                <TableCell className="text-right">{week.liters.toLocaleString()} L</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                    <TableCaption className="text-left mt-4 text-xs">
+                                        * This is a projected delivery schedule. Actual deliveries may be adjusted based on real-time consumption data to ensure you never run out of water.
+                                    </TableCaption>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    )}
 
                      <Card>
                         <CardHeader>
@@ -1167,6 +1168,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
