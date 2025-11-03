@@ -69,6 +69,13 @@
       "description": "An abstract representation of a data flow.",
       "imageUrl": "https://images.unsplash.com/photo-1501526029524-a8ea952b15be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkYXRhJTIwZmxvd3xlbnwwfHx8fDE3NjE5NzYyNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "data flow"
+    },
+    {
+      "id": "household-plan",
+      "title": "household-plan",
+      "description": "A modern kitchen with a water dispenser.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fhousehold.png?alt=media&token=e1f5a507-932f-4c63-9975-359f131a5e55",
+      "imageHint": "kitchen water"
     }
   ]
 }

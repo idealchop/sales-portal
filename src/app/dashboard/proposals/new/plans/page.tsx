@@ -34,7 +34,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle } from 'lucide-react';
+import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Input } from '@/components/ui/input';
@@ -129,6 +129,29 @@ const perks = [
     }
 ];
 
+const householdPlans: Plan[] = [
+    {
+        id: 'household-starter',
+        name: 'Starter',
+        monthlyFee: '₱800',
+        liters: '250 L',
+        refillFrequency: '1/week',
+        inclusions: [],
+        employees: '1-3',
+        stations: '1 Station',
+    },
+    {
+        id: 'household-family',
+        name: 'Family',
+        monthlyFee: '₱1,200',
+        liters: '400 L',
+        refillFrequency: '1-2/week',
+        inclusions: [],
+        employees: '3-5',
+        stations: '1 Station',
+        isRecommended: true,
+    },
+];
 
 const smePlans: Plan[] = [
   {
@@ -282,9 +305,9 @@ const customSmeCommercialPlan: Plan = {
     stations: '—',
 };
 
-export const allPlans = [...smePlans, ...commercialPlans, ...corporatePlans, ...flowPlans, customSmeCommercialPlan];
+export const allPlans = [...householdPlans, ...smePlans, ...commercialPlans, ...corporatePlans, ...flowPlans, customSmeCommercialPlan];
 
-type BusinessSize = 'sme' | 'commercial' | 'corporate' | 'enterprise';
+type BusinessSize = 'household' | 'sme' | 'commercial' | 'corporate' | 'enterprise';
 type EnterpriseType = 'customized' | 'flowing';
 
 
@@ -451,7 +474,7 @@ function PlansGrid({
     if (businessSize === 'commercial') {
         gridColsClass = 'md:grid-cols-2';
     }
-     if (businessSize === 'sme') {
+     if (businessSize === 'sme' || businessSize === 'household') {
         gridColsClass = 'md:grid-cols-2';
     }
      if (businessSize === 'corporate') {
@@ -483,7 +506,7 @@ function PlansGrid({
         const isSelected = selectedPlan === plan.id;
         const isCustom = businessSize === 'enterprise' && (plan.id === 'enterprise-customized');
         const isOverflow = businessSize === 'enterprise' && (plan.id === 'enterprise-overflow');
-        const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'commercial') && (plan.id === 'custom-plan');
+        const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household') && (plan.id === 'custom-plan');
         const isDisabled = false;
 
         let employees = plan.employees;
@@ -648,6 +671,16 @@ function PlansGrid({
 
 const businessSizes = [
     { 
+        id: 'household' as BusinessSize, 
+        title: 'Individual (Household)', 
+        description: 'For families and personal home use.', 
+        image: {
+            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fhousehold.png?alt=media&token=e1f5a507-932f-4c63-9975-359f131a5e55",
+            description: "A modern kitchen with a water dispenser.",
+            imageHint: "kitchen water"
+        },
+    },
+    { 
         id: 'sme' as BusinessSize, 
         title: 'SME', 
         description: 'For small teams, kiosks, and home offices.', 
@@ -722,7 +755,7 @@ function BusinessSizeSelector({
     hiddenSizes?: BusinessSize[];
 }) {
     const isItemSelected = selectedSize !== null;
-    const gridCols = isItemSelected ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2';
+    const gridCols = isItemSelected ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
 
     return (
         <div className={cn("grid gap-4", gridCols)}>
@@ -869,6 +902,10 @@ export default function PlansPage() {
             }
         } else {
             switch (selectedSize) {
+                case 'household':
+                    plansToRender = [...householdPlans, customSmeCommercialPlan];
+                    defaultPlanId = 'household-family';
+                    break;
                 case 'sme':
                     plansToRender = [...smePlans, customSmeCommercialPlan];
                     defaultPlanId = 'professional';
@@ -967,9 +1004,9 @@ export default function PlansPage() {
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle>1. Select Business Size</CardTitle>
+                        <CardTitle>1. Select Client Type</CardTitle>
                         <CardDescription>
-                        Choose the client's business size to see the recommended plans.
+                        Choose the client type to see the recommended plans.
                         </CardDescription>
                     </div>
                     {selectedSize && (
