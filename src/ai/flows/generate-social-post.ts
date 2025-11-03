@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -7,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const SocialPostInputSchema = z.object({
   topic: z.string().describe('The topic for the social media post.'),
@@ -31,21 +32,21 @@ const socialPostCaptionPrompt = ai.definePrompt({
     name: 'socialPostCaptionPrompt',
     input: { schema: SocialPostInputSchema },
     output: { schema: z.object({ caption: z.string() })},
-    prompt: `You are an expert social media manager for a company called Smart Refill.
+    prompt: `You are a friendly and caring social media manager for Smart Refill.
 
-    Your goal is to write a short, positive, and professional caption (under 25 words) for a social media post.
+    Your goal is to write a short, positive caption (under 25 words) that makes customers feel looked after and secure.
 
     Your tone should be:
-    - Optimistic and clear
-    - Reassuring and human
-    - Lightly promotional
+    - Caring and reassuring
+    - Focused on positive results and benefits
+    - Human and empathetic
 
-    Focus on these key themes:
-    - Automation and convenience
-    - Safety and compliance
-    - Reliability and efficiency
+    Key themes to emphasize:
+    - The peace of mind that comes with our automated service.
+    - How we take care of water safety and compliance so they don't have to.
+    - The convenience and reliability we bring to their daily lives.
 
-    Generate a compelling and engaging social media post caption based on the following details. The caption should be concise, impactful, and include relevant hashtags.
+    Generate a compelling caption based on the following details. The caption should be concise and leave the reader with a feeling of trust and positivity.
 
     Topic: {{{topic}}}
     Style: {{{style}}}

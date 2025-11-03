@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -11,7 +12,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const GenerateProposalDraftInputSchema = z.object({
   clientName: z.string().describe('The name of the client.'),
@@ -37,9 +38,9 @@ const proposalDraftPrompt = ai.definePrompt({
   name: 'proposalDraftPrompt',
   input: {schema: GenerateProposalDraftInputSchema},
   output: {schema: GenerateProposalDraftOutputSchema},
-  prompt: `You are an AI assistant specialized in writing compelling sales proposals.
+  prompt: `You are an AI assistant specialized in writing compelling and caring sales proposals. Your tone should be reassuring, positive, and focused on making the client feel taken care of.
 
-  Based on the following information, generate a professional sales proposal draft.
+  Based on the following information, generate a professional and empathetic sales proposal draft.
 
   Client Name: {{{clientName}}}
   Client Needs: {{{clientNeeds}}}
@@ -47,12 +48,10 @@ const proposalDraftPrompt = ai.definePrompt({
   Company Name: {{{companyName}}}
   Company Description: {{{companyDescription}}}
 
-  Write a proposal that addresses the client's needs with the recommended plans, highlighting the benefits and value proposition.
-  The proposal should be persuasive and tailored to the client.
-  The output should be well-structured, professional, and ready for review and modification by a sales representative.
-  Focus on the value proposition and benefits to the client.
-  Be friendly and persuasive, but not overly verbose.
-  End the proposal with a call to action.
+  Write a proposal that addresses the client's needs by framing the recommended plans as a complete solution that will bring them peace of mind and positive results.
+  Focus on the benefits and the feeling of being looked after by Smart Refill.
+  The proposal should be persuasive, well-structured, and tailored to show the client that we understand their challenges and are here to help.
+  End the proposal with a friendly and clear call to action.
   `,
 });
 
