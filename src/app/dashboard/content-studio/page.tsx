@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
   topic: z.string().min(10, 'Please describe the topic in at least 10 characters.'),
@@ -117,7 +118,10 @@ export default function ContentStudioPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">AI Content Studio</h1>
+        <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">AI Content Studio</h1>
+            <Badge variant="outline">Beta</Badge>
+        </div>
         <p className="text-muted-foreground">
           Generate engaging social media posts with the power of AI.
         </p>
