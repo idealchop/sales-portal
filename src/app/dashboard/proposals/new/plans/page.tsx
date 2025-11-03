@@ -514,6 +514,8 @@ function PlansGrid({
             stations = getStations(smeCommercialCustomValues.totalLiters);
             monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(smeCommercialCustomValues.totalCost);
             liters = `${smeCommercialCustomValues.totalLiters.toLocaleString()} L`;
+            const freq = deliveryFrequencies.find(f => f.value === smeCommercialCustomValues.deliveries);
+            refillFrequency = freq ? freq.label : plan.refillFrequency;
         }
 
 
