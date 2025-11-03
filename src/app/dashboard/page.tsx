@@ -96,7 +96,7 @@ export default function DashboardPage() {
   const clientsThisMonth = 2;
   const clientsThisMonthTarget = 3;
   const individualClientsThisMonth = 3;
-  const individualClientsThisMonthTarget = 10;
+  const individualClientsThisMonthTarget = 30;
   const quarterlyVolume = 68000;
   const quarterlyVolumeTarget = 100000;
   const clientsForRetention = [
@@ -289,6 +289,86 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
+              <CardHeader>
+                <CardTitle>Monthly Commission History</CardTitle>
+                <CardDescription>
+                  A summary of your commission earnings over the last 6 months. Click to learn more.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RevenueChart data={commissionData} />
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+                <DialogTitle>Commission Breakdown</DialogTitle>
+                <DialogDescription>
+                    This chart shows your commission history. Earnings from long-term client payments are distributed monthly to ensure a stable income.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-8 py-6 md:grid-cols-2">
+                <div>
+                  <RevenueChart data={commissionData} />
+                </div>
+                <div>
+                    <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Client Payment Term</TableHead>
+                                <TableHead>Payout Schedule</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {payoutTimeline.map((item) => (
+                                <TableRow key={item.term}>
+                                    <TableCell className="font-medium">{item.term}</TableCell>
+                                    <TableCell>{item.schedule}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                     <p className="text-xs text-muted-foreground mt-4">
+                        Example: A client pays for a full year in November. Your commission for that sale will be paid out in 12 monthly installments from November of this year to October of the next.
+                    </p>
+                </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Sales Materials</CardTitle>
+            <CardDescription>Your toolkit for success.</CardDescription>
+          </CardHeader>
+          <div className="relative h-48 w-full">
+            <Image
+                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                alt="Sales Materials Preview"
+                fill
+                className="object-cover"
+              />
+          </div>
+          <CardContent className="pt-4">
+             <p className="text-sm text-muted-foreground">
+              Access presentations, brochures, and case studies. Use these powerful tools to engage clients and close deals faster.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button asChild size="sm" className="gap-1 w-full">
+              <Link href="/dashboard/materials">
+                View All Materials
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+
       {/* Bonus Tracker Section */}
        <Card className="bg-background">
         <CardHeader>
@@ -333,9 +413,9 @@ export default function DashboardPage() {
             <BonusCard 
                 icon={<Home className="h-6 w-6 text-primary" />}
                 title="Individual Closer Bonus"
-                value={`${individualClientsThisMonth} / 30`}
-                progress={(individualClientsThisMonth / 30) * 100}
-                goal={`Goal: ${individualClientsThisMonthTarget} clients for ₱2,500`}
+                value={`${individualClientsThisMonth} / ${individualClientsThisMonthTarget}`}
+                progress={(individualClientsThisMonth / individualClientsThisMonthTarget) * 100}
+                goal={`Goal: 10 clients for ₱2,500`}
                 description="For Individual (Household) clients.">
                  <DialogContent>
                     <DialogHeader>
@@ -557,89 +637,10 @@ export default function DashboardPage() {
             </BonusCard>
         </CardContent>
       </Card>
-
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
-              <CardHeader>
-                <CardTitle>Monthly Commission History</CardTitle>
-                <CardDescription>
-                  A summary of your commission earnings over the last 6 months. Click to learn more.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RevenueChart data={commissionData} />
-              </CardContent>
-            </Card>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-                <DialogTitle>Commission Breakdown</DialogTitle>
-                <DialogDescription>
-                    This chart shows your commission history. Earnings from long-term client payments are distributed monthly to ensure a stable income.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-8 py-6 md:grid-cols-2">
-                <div>
-                  <RevenueChart data={commissionData} />
-                </div>
-                <div>
-                    <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Client Payment Term</TableHead>
-                                <TableHead>Payout Schedule</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {payoutTimeline.map((item) => (
-                                <TableRow key={item.term}>
-                                    <TableCell className="font-medium">{item.term}</TableCell>
-                                    <TableCell>{item.schedule}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                     <p className="text-xs text-muted-foreground mt-4">
-                        Example: A client pays for a full year in November. Your commission for that sale will be paid out in 12 monthly installments from November of this year to October of the next.
-                    </p>
-                </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-        <Card className="overflow-hidden">
-          <CardHeader>
-            <CardTitle>Sales Materials</CardTitle>
-            <CardDescription>Your toolkit for success.</CardDescription>
-          </CardHeader>
-          <div className="relative h-48 w-full">
-            <Image
-                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
-                alt="Sales Materials Preview"
-                fill
-                className="object-cover"
-              />
-          </div>
-          <CardContent className="pt-4">
-             <p className="text-sm text-muted-foreground">
-              Access presentations, brochures, and case studies. Use these powerful tools to engage clients and close deals faster.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Button asChild size="sm" className="gap-1 w-full">
-              <Link href="/dashboard/materials">
-                View All Materials
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
     </div>
   );
+
+    
 
     
 
