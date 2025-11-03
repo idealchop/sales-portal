@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -245,62 +246,64 @@ export function ClientOverviewDialog({
                         )}
                     </Card>
                  </div>
-                 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Payment Confirmation</CardTitle>
-                        <CardDescription>
-                            {view === 'proposals'
-                                ? 'Upload the client’s payment confirmation to finalize the subscription.'
-                                : 'A summary of the payment confirmation provided by the client.'
-                            }
-                        </CardDescription>
-                    </CardHeader>
-                    {view === 'proposals' ? (
-                        <CardFooter>
-                            <Button className="w-full">
+
+                 {view === 'proposals' ? (
+                     <Card>
+                        <CardHeader className="flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Payment Confirmation</CardTitle>
+                                <CardDescription>
+                                    Upload the client’s payment confirmation to finalize the subscription.
+                                </CardDescription>
+                            </div>
+                             <Button>
                                 <Upload className="mr-2 h-4 w-4" />
                                 Upload Confirmation
                             </Button>
-                        </CardFooter>
-                    ) : (
-                       <CardContent>
-                             <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" className="w-full">
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View Payment
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-xl">
-                                    <DialogHeader>
-                                        <DialogTitle>Payment Confirmation: {client.companyName}</DialogTitle>
-                                        <DialogDescription>
-                                            Official receipt for the subscription payment.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="mt-4 space-y-4">
-                                        <div className="aspect-square w-full relative rounded-md overflow-hidden border">
-                                            <Image
-                                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Freceipt-placeholder.png?alt=media&token=e9e8f498-38f3-4e4c-b5f7-91a5823158f1"
-                                                alt="Payment Receipt"
-                                                fill
-                                                className="object-contain p-4"
-                                                data-ai-hint="receipt"
-                                            />
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <Badge variant="outline" className="bg-green-100 text-green-800">
-                                                <FileCheck className="mr-2 h-4 w-4" />
-                                                Verified
-                                            </Badge>
-                                        </div>
+                        </CardHeader>
+                    </Card>
+                 ) : (
+                    <Dialog>
+                        <DialogTrigger asChild>
+                             <Card className="cursor-pointer hover:bg-accent transition-colors">
+                                <CardHeader className="flex-row items-center gap-4 space-y-0">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+                                        <FileCheck className="h-6 w-6 text-green-600" />
                                     </div>
-                                </DialogContent>
-                            </Dialog>
-                       </CardContent>
-                    )}
-                </Card>
+                                    <div>
+                                        <CardTitle className="text-base">Payment Confirmed</CardTitle>
+                                        <CardDescription>Click to view the payment receipt.</CardDescription>
+                                    </div>
+                                </CardHeader>
+                            </Card>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-xl">
+                            <DialogHeader>
+                                <DialogTitle>Payment Confirmation: {client.companyName}</DialogTitle>
+                                <DialogDescription>
+                                    Official receipt for the subscription payment.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="mt-4 space-y-4">
+                                <div className="aspect-square w-full relative rounded-md overflow-hidden border">
+                                    <Image
+                                        src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Freceipt-placeholder.png?alt=media&token=e9e8f498-38f3-4e4c-b5f7-91a5823158f1"
+                                        alt="Payment Receipt"
+                                        fill
+                                        className="object-contain p-4"
+                                        data-ai-hint="receipt"
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <Badge variant="outline" className="bg-green-100 text-green-800">
+                                        <FileCheck className="mr-2 h-4 w-4" />
+                                        Verified
+                                    </Badge>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                 )}
                 
                  <Dialog>
                     <DialogTrigger asChild>
@@ -364,5 +367,7 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
 
     
