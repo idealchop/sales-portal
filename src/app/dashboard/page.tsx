@@ -19,6 +19,7 @@ import {
   Users,
   BookCopy,
   Home,
+  CreditCard,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -127,6 +128,13 @@ export default function DashboardPage() {
   ]
   const recruitedPartners = 1;
   const teamRevenue = 42000;
+  
+  const prepaymentBonusTiers = [
+    { term: 'Quarterly', bonus: '₱1,500' },
+    { term: 'Semi-Annual', bonus: '₱3,000' },
+    { term: 'Annual', bonus: '₱5,000 + "Cash Flow Champion" Badge' },
+  ];
+  const annualContracts = 0;
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
@@ -485,6 +493,42 @@ export default function DashboardPage() {
                     </div>
                  </DialogContent>
             </BonusCard>
+
+            <BonusCard
+                icon={<CreditCard className="h-6 w-6 text-primary" />}
+                title="Prepayment Power-Up"
+                value={`${annualContracts} / 1`}
+                progress={(annualContracts / 1) * 100}
+                goal="Goal: 1 Annual Contract for ₱5,000"
+                description="Reward for closing long-term prepaid contracts."
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Prepayment Power-Up Bonus</DialogTitle>
+                        <DialogDescription>Earn extra for improving cash flow with upfront client payments.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <p>Your current progress: <span className="font-bold">{annualContracts} annual contracts</span> closed.</p>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Prepayment Term</TableHead>
+                                    <TableHead>Bonus</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {prepaymentBonusTiers.map(tier => (
+                                    <TableRow key={tier.term}>
+                                        <TableCell className="font-medium">{tier.term}</TableCell>
+                                        <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        <p className="text-xs text-muted-foreground">Bonuses are paid out after the client's payment is confirmed.</p>
+                    </div>
+                </DialogContent>
+            </BonusCard>
         </CardContent>
       </Card>
 
@@ -571,5 +615,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
