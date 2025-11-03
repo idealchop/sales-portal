@@ -418,40 +418,38 @@ export default function DashboardPage() {
             </div>
           </DialogContent>
         </Dialog>
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Materials</CardTitle>
-            <CardDescription>
-              Your toolkit for success.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-6 items-center">
-              <div className="relative aspect-video rounded-md overflow-hidden">
-                <Image
-                  src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+        <Card className="overflow-hidden">
+          <div className="grid grid-cols-2 h-full">
+            <div className="p-6 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-bold">Sales Materials</h3>
+                <p className="text-muted-foreground text-sm mt-1">Your toolkit for success.</p>
+              </div>
+              <div>
+                 <p className="text-sm text-muted-foreground mb-4">
+                  Access presentations, brochures, and case studies. Use these powerful tools to engage clients and close deals faster.
+                </p>
+                <Button asChild size="sm" className="gap-1">
+                  <Link href="/dashboard/materials">
+                    View All
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+            <div className="relative h-full min-h-[200px]">
+              <Image
+                  src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fsmiling-delivery-guy.png?alt=media&token=485c2c8f-3665-4f32-b7e6-1498b5a0455e"
                   alt="Sales Materials Preview"
                   fill
                   className="object-cover"
                 />
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Access presentations, brochures, and case studies. Use these powerful tools to engage clients and close deals faster.
-                </p>
-              </div>
             </div>
-          </CardContent>
-           <CardFooter>
-            <Button asChild size="sm" className="ml-auto gap-1">
-              <Link href="/dashboard/materials">
-                View All
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardFooter>
+          </div>
         </Card>
       </div>
     </div>
   );
 }
+
+    
