@@ -28,6 +28,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -418,19 +419,11 @@ export default function DashboardPage() {
           </DialogContent>
         </Dialog>
         <Card>
-          <CardHeader className="flex flex-row items-center">
-            <div className="grid gap-2">
-              <CardTitle>Sales Materials</CardTitle>
-              <CardDescription>
-                Your toolkit for success.
-              </CardDescription>
-            </div>
-            <Button asChild size="sm" className="ml-auto gap-1">
-              <Link href="/dashboard/materials">
-                View All
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
+          <CardHeader>
+            <CardTitle>Sales Materials</CardTitle>
+            <CardDescription>
+              Your toolkit for success.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6 items-center">
@@ -443,13 +436,20 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold">Unlock Your Potential</h3>
                 <p className="text-sm text-muted-foreground">
                   Access presentations, brochures, and case studies. Use these powerful tools to engage clients and close deals faster.
                 </p>
               </div>
             </div>
           </CardContent>
+           <CardFooter>
+            <Button asChild size="sm" className="ml-auto gap-1">
+              <Link href="/dashboard/materials">
+                View All
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     </div>
