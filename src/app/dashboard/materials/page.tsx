@@ -1,9 +1,9 @@
+
 import Image from 'next/image';
 import { Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
-import { Separator } from '@/components/ui/separator';
 
 type GroupedMaterials = {
   [key: string]: ImagePlaceholder[];
@@ -29,7 +29,7 @@ export default function MaterialsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Sales Materials</h1>
         <p className="text-muted-foreground">Your toolkit for success. Find presentations, brochures, and other assets.</p>
@@ -43,21 +43,21 @@ export default function MaterialsPage() {
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {groupedMaterials[category].map((material) => (
                   <Card key={material.id}>
-                    <CardHeader>
+                    <CardHeader className="p-0">
                       <Image
                           alt={material.description}
-                          className="aspect-video w-full rounded-md object-cover"
+                          className="aspect-video w-full rounded-t-lg object-cover"
                           height="300"
                           src={material.imageUrl}
                           width="400"
                           data-ai-hint={material.imageHint}
                         />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 space-y-1">
                       <CardTitle className="text-base font-medium leading-tight">{material.title}</CardTitle>
-                      <CardDescription className="mt-1 text-sm">{material.description}</CardDescription>
+                      <CardDescription className="text-sm">{material.description}</CardDescription>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="p-4 pt-0">
                       <Button className="w-full">
                         <Download className="mr-2 h-4 w-4" />
                         Download
