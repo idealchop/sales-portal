@@ -940,6 +940,7 @@ export default function PlansPage() {
         return `/dashboard/proposals/new/contract?${params.toString()}`;
     };
 
+    const prevLink = `/dashboard/proposals/new/comparison?${searchParams.toString()}`;
 
     return (
         <div className="flex flex-col gap-6">
@@ -952,7 +953,7 @@ export default function PlansPage() {
             </div>
             <div className="flex gap-2">
                 <Button variant="outline" asChild>
-                    <Link href={`/dashboard/proposals/new/comparison?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`}>Previous</Link>
+                    <Link href={prevLink}>Previous</Link>
                 </Button>
                 <Button asChild={!isNextDisabled} disabled={isNextDisabled}>
                     <Link href={getNextLink()}>Next Step</Link>
