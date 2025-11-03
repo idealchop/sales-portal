@@ -378,36 +378,39 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl">
             <DialogHeader>
                 <DialogTitle>Commission Breakdown</DialogTitle>
                 <DialogDescription>
                     This chart shows your commission history. Earnings from long-term client payments are distributed monthly to ensure a stable income.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-6">
-                <RevenueChart data={commissionData} />
-            </div>
-            <div>
-                <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Client Payment Term</TableHead>
-                            <TableHead>Payout Schedule</TableHead>
-                            <TableHead>Example</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {payoutTimeline.map((item) => (
-                            <TableRow key={item.term}>
-                                <TableCell className="font-medium">{item.term}</TableCell>
-                                <TableCell>{item.schedule}</TableCell>
-                                <TableCell className="text-xs text-muted-foreground">{item.example}</TableCell>
+            <div className="grid gap-8 py-6 md:grid-cols-2">
+                <div>
+                  <RevenueChart data={commissionData} />
+                </div>
+                <div>
+                    <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Client Payment Term</TableHead>
+                                <TableHead>Payout Schedule</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {payoutTimeline.map((item) => (
+                                <TableRow key={item.term}>
+                                    <TableCell className="font-medium">{item.term}</TableCell>
+                                    <TableCell>{item.schedule}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                     <p className="text-xs text-muted-foreground mt-4">
+                        Example: A client pays for a full year in November. Your commission for that sale will be paid out in 12 monthly installments from November of this year to October of the next.
+                    </p>
+                </div>
             </div>
           </DialogContent>
         </Dialog>
