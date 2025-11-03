@@ -169,7 +169,7 @@ export default function ContentStudioPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" disabled={isGenerating} className="w-full">
+                  <Button type="submit" disabled={isGenerating} className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold transition-all duration-300 hover:shadow-lg hover:scale-105">
                     {isGenerating ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
