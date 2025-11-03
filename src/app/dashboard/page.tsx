@@ -422,7 +422,7 @@ export default function DashboardPage() {
             <div className="grid gap-2">
               <CardTitle>Sales Materials</CardTitle>
               <CardDescription>
-                A quick look at available materials.
+                Your toolkit for success.
               </CardDescription>
             </div>
             <Button asChild size="sm" className="ml-auto gap-1">
@@ -433,23 +433,21 @@ export default function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {PlaceHolderImages.slice(0, 4).map((material) => (
-                    <Link href="/dashboard/materials" key={material.id}>
-                        <div className="aspect-video relative rounded-md overflow-hidden border group">
-                            <Image
-                                src={material.imageUrl}
-                                alt={material.description}
-                                fill
-                                className="object-cover transition-transform group-hover:scale-105"
-                                data-ai-hint={material.imageHint}
-                            />
-                             <div className="absolute inset-0 bg-black/40 flex items-end p-2">
-                                <p className="text-xs font-semibold text-white truncate">{material.title}</p>
-                            </div>
-                        </div>
-                    </Link>
-                ))}
+            <div className="grid md:grid-cols-2 gap-6 items-center">
+              <div className="relative aspect-video rounded-md overflow-hidden">
+                <Image
+                  src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                  alt="Sales Materials Preview"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold">Unlock Your Potential</h3>
+                <p className="text-sm text-muted-foreground">
+                  Access presentations, brochures, and case studies. Use these powerful tools to engage clients and close deals faster.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -457,3 +455,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
