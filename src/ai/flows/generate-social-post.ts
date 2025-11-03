@@ -61,17 +61,36 @@ const generateSocialPostFlow = ai.defineFlow(
   },
   async (input) => {
     
-    // Generate caption and image in parallel
-    const [captionResponse, imageResponse] = await Promise.all([
+    // Generate caption and initial image in parallel
+    const [captionResponse, initialImageResponse] = await Promise.all([
       socialPostCaptionPrompt(input),
       ai.generate({
-        prompt: `Generate a URL for a stock photo from Unsplash that visually represents the following topic for a social media post: "${input.topic}". The URL should be in the format: https://images.unsplash.com/photo-...?ixid=...&... Just return the URL and nothing else.`,
+        model: 'googleai/imagen-4.0-fast-generate-001',
+        prompt: `A visually appealing stock photo representing: "${input.topic}". The image should be clean, modern, and professional.`,
       }),
     ]);
     
     const caption = captionResponse.output?.caption || '';
-    const imageUrl = imageResponse.text || `https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/1280/720`;
+    const initialImageUrl = initialImageResponse.media.url;
     
+    const logoUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2FLogo%20icon%202.png?alt=media&token=e9c98391-d60e-4267-9d78-3c09b8028b7c';
+    const brandingText = "Automated Water Refills for Every Home and Business";
+
+    // Step 2: Add logo and text to the generated image
+    const brandedImageResponse = await ai.generate({
+        model: 'googleai/gemini-2.5-flash-image-preview',
+        prompt: [
+            { media: { url: initialImageUrl } },
+            { media: { url: logoUrl } },
+            { text: `Overlay the provided logo on the bottom-right corner of the main image. Make the logo visible but not too intrusive. Below the logo, add the text "${brandingText}" in a clean, readable, white font. Ensure the final image looks professional and well-branded.` },
+        ],
+        config: {
+            responseModalities: ['IMAGE'],
+        },
+    });
+
+    const imageUrl = brandedImageResponse.media.url || initialImageUrl; // Fallback to initial image
+
     return {
         caption,
         imageUrl,
