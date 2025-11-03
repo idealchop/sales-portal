@@ -54,8 +54,8 @@ type Plan = {
   liters: string;
   refillFrequency: string;
   inclusions: string[];
-  employees: string;
-  stations: string;
+  employees: string; // Represents "People" for household
+  stations: string; // Represents "Gallons" for household
   isRecommended?: boolean;
 };
 
@@ -138,7 +138,7 @@ const householdPlans: Plan[] = [
         refillFrequency: '1/week',
         inclusions: [],
         employees: '1-3 People',
-        stations: '1 Station',
+        stations: '~3 Gallons/week',
     },
     {
         id: 'household-family',
@@ -148,7 +148,7 @@ const householdPlans: Plan[] = [
         refillFrequency: '1-2/week',
         inclusions: [],
         employees: '3-5 People',
-        stations: '1 Station',
+        stations: '~5 Gallons/week',
         isRecommended: true,
     },
 ];
@@ -662,7 +662,7 @@ function PlansGrid({
                                 <span className="font-semibold">{employees}</span>
                             </div>
                             <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                                <Building2 className="h-5 w-5" />
+                                {businessSize === 'household' ? <GlassWater className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
                                 <span className="font-semibold">{stations}</span>
                             </div>
                             <RadioGroupItem 
@@ -934,7 +934,7 @@ export default function PlansPage() {
         } else {
             switch (selectedSize) {
                 case 'household':
-                    plansToRender = [...householdPlans, customSmeCommercialPlan];
+                    plansToRender = [...householdPlans, { ...customSmeCommercialPlan, inclusions: [`Priced at ₱2.50 per liter`, ...customSmeCommercialPlan.inclusions.slice(1)] }];
                     defaultPlanId = 'household-family';
                     break;
                 case 'sme':
