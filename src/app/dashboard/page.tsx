@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -135,9 +134,7 @@ export default function DashboardPage() {
   ];
 
   const prepaymentProgressTiers = [
-    { target: 1, reward: 'First Power-Up Bonus!' },
-    { target: 3, reward: 'Consistency Bonus!' },
-    { target: 5, reward: 'Master Closer Bonus!' },
+    { target: 5, reward: '₱10,000 Milestone Bonus' },
   ];
   
   const prepaidContracts = 2;
@@ -517,7 +514,7 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                         <p>Your current progress: <span className="font-bold">{prepaidContracts} prepaid contracts</span> closed.</p>
                         <Separator />
-                        <h4 className="font-semibold">Bonus Tiers</h4>
+                        <h4 className="font-semibold">Commission Per Contract</h4>
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -535,11 +532,11 @@ export default function DashboardPage() {
                             </TableBody>
                         </Table>
                         <Separator />
-                        <h4 className="font-semibold">Progress Rewards</h4>
+                        <h4 className="font-semibold">Milestone Bonus</h4>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Contracts Closed</TableHead>
+                                    <TableHead>Contracts Closed (this quarter)</TableHead>
                                     <TableHead>Reward</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -552,7 +549,7 @@ export default function DashboardPage() {
                                 ))}
                             </TableBody>
                         </Table>
-                        <p className="text-xs text-muted-foreground">Bonuses are paid out after the client's payment is confirmed.</p>
+                        <p className="text-xs text-muted-foreground">Commissions and bonuses are paid out after the client's payment is confirmed.</p>
                     </div>
                 </DialogContent>
             </BonusCard>
@@ -641,4 +638,3 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-}
