@@ -675,7 +675,7 @@ const businessSizes = [
         title: 'Individual (Household)', 
         description: 'For families and personal home use.', 
         image: {
-            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fhousehold.png?alt=media&token=e1f5a507-932f-4c63-9975-359f131a5e55",
+            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FSmartRefill_Individual.png?alt=media&token=090d07c4-848a-4cd6-aab6-f7a5909ea839",
             description: "A modern kitchen with a water dispenser.",
             imageHint: "kitchen water"
         },
