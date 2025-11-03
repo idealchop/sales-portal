@@ -92,7 +92,9 @@ export default function DashboardPage() {
 
   // Mock data for bonuses
   const clientsThisMonth = 2;
+  const clientsThisMonthTarget = 3;
   const quarterlyVolume = 68000;
+  const quarterlyVolumeTarget = 100000;
   const clientsForRetention = [
     { name: 'Solutions Inc.', anniversary: '3-month', date: 'in 12 days', bonus: 500, avatarSeed: 'Solutions' },
     { name: 'Apex Industries', anniversary: '6-month', date: 'in 25 days', bonus: 1000, avatarSeed: 'Apex' },
@@ -137,52 +139,48 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Estimated Monthly Commission
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Monthly Commission</CardTitle>
             <CircleDollarSign className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₱8,160</div>
-            <p className="text-xs text-primary-foreground/80">
-              +15% from last month
-            </p>
+            <div className="text-3xl font-bold">₱8,160</div>
+            <p className="text-xs text-primary-foreground/80">+15% from last month</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recurring Commission Base</CardTitle>
+            <CardTitle className="text-sm font-medium">Recurring Commission</CardTitle>
             <Repeat className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₱4,000</div>
-            <p className="text-xs text-primary-foreground/80">
-              Your stable monthly income
-            </p>
+            <div className="text-3xl font-bold">₱4,000</div>
+            <p className="text-xs text-primary-foreground/80">Your stable monthly base income</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Clients (This Month)</CardTitle>
-            <UsersRound className="h-4 w-4 text-primary-foreground/80" />
+            <CardTitle className="text-sm font-medium">New Clients Bonus</CardTitle>
+            <Target className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{clientsThisMonth}</div>
-            <p className="text-xs text-primary-foreground/80">
-              1 away from ₱2,000 bonus
-            </p>
+            <div className="text-3xl font-bold">{clientsThisMonth} / {clientsThisMonthTarget}</div>
+            <div className="mt-2 space-y-1">
+              <Progress value={(clientsThisMonth / clientsThisMonthTarget) * 100} className="h-2 bg-primary-foreground/30" />
+              <p className="text-xs text-primary-foreground/80">You're {clientsThisMonthTarget-clientsThisMonth} client away from your ₱2,000 bonus!</p>
+            </div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Recurring Volume (Quarterly)</CardTitle>
+            <CardTitle className="text-sm font-medium">Quarterly Volume</CardTitle>
             <TrendingUp className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₱{quarterlyVolume.toLocaleString()}</div>
-            <p className="text-xs text-primary-foreground/80">
-              Target: ₱100,000 for ₱10k bonus
-            </p>
+            <div className="text-3xl font-bold">₱{quarterlyVolume.toLocaleString()}</div>
+             <div className="mt-2 space-y-1">
+              <Progress value={(quarterlyVolume / quarterlyVolumeTarget) * 100} className="h-2 bg-primary-foreground/30" />
+              <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(quarterlyVolumeTarget)} for a ₱10k bonus</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -449,5 +447,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
