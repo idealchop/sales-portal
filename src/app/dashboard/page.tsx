@@ -165,7 +165,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold">{clientsThisMonth} / {clientsThisMonthTarget}</div>
             <div className="mt-2 space-y-1">
-              <Progress value={(clientsThisMonth / clientsThisMonthTarget) * 100} className="h-2 bg-primary-foreground/30" />
+              <Progress value={(clientsThisMonth / clientsThisMonthTarget) * 100} className="h-3 bg-primary-foreground/30" />
               <p className="text-xs text-primary-foreground/80">You're {clientsThisMonthTarget-clientsThisMonth} client away from your ₱2,000 bonus!</p>
             </div>
           </CardContent>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold">₱{quarterlyVolume.toLocaleString()}</div>
              <div className="mt-2 space-y-1">
-              <Progress value={(quarterlyVolume / quarterlyVolumeTarget) * 100} className="h-2 bg-primary-foreground/30" />
+              <Progress value={(quarterlyVolume / quarterlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" />
               <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(quarterlyVolumeTarget)} for a ₱10k bonus</p>
             </div>
           </CardContent>
