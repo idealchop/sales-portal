@@ -34,6 +34,7 @@ import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { Logo } from './logo';
 import Image from 'next/image';
+import { Badge } from './ui/badge';
 
 
 function QrCodeIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -96,7 +97,13 @@ export function DashboardHeader() {
                         </Avatar>
                         <div>
                             <p className="text-base font-semibold leading-none">Sandra Adams</p>
-                            <p className="text-sm text-muted-foreground">Sales Representative</p>
+                            <p className="text-sm text-muted-foreground">Sales Representative, Team Alpha</p>
+                             <div className="mt-2 flex items-center gap-2">
+                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                                    <Star className="mr-1 h-3 w-3" />
+                                    Top Performer
+                                </Badge>
+                            </div>
                         </div>
                     </div>
                 </div>
