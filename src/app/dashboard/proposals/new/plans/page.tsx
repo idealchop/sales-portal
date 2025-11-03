@@ -483,7 +483,7 @@ function PlansGrid({
     
     const isSingleCustomPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-customized';
     const isSingleOverflowPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-overflow';
-    const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'commercial') && selectedPlan === 'custom-plan';
+    const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household') && selectedPlan === 'custom-plan';
 
     const visiblePlans = useMemo(() => {
         if (isSmeCommercialCustom) {
@@ -618,8 +618,8 @@ function PlansGrid({
                     {plan.id === 'custom-plan' && isSelected && (
                         <CustomPlanCalculator
                             onCalculated={onSmeCommercialCustomCalculated}
-                            pricePerLiter={3}
-                            title="Customize SME/Commercial Plan"
+                            pricePerLiter={businessSize === 'household' ? 2.5 : 3}
+                            title={businessSize === 'household' ? "Customize Household Plan" : "Customize SME/Commercial Plan"}
                         />
                     )}
 
