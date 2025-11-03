@@ -17,6 +17,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -29,12 +30,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { proposals, clients } from '@/lib/data';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
 import { ClientOverviewDialog } from "@/components/client-overview-dialog";
 import type { Client } from "@/lib/definitions";
 import { Input } from "@/components/ui/input";
@@ -94,6 +89,10 @@ export default function ProposalsPage() {
   const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('all');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
 
+  const [proposalsCurrentPage, setProposalsCurrentPage] = useState(1);
+  const [clientsCurrentPage, setClientsCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
   const getClientById = (id: string): Client | undefined => {
     return clients.find(c => c.id === id);
   }
@@ -111,6 +110,12 @@ export default function ProposalsPage() {
         );
       });
     
+    const totalPages = Math.ceil(filteredProposals.length / ITEMS_PER_PAGE);
+    const paginatedProposals = filteredProposals.slice(
+      (proposalsCurrentPage - 1) * ITEMS_PER_PAGE,
+      proposalsCurrentPage * ITEMS_PER_PAGE
+    );
+
     return (
       <Card>
         <CardContent className="pt-6">
@@ -126,7 +131,7 @@ export default function ProposalsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProposals.map((proposal) => {
+              {paginatedProposals.map((proposal) => {
                 const client = getClientById(proposal.client.id);
                 if (!client) return null;
 
@@ -155,6 +160,31 @@ export default function ProposalsPage() {
             </TableBody>
           </Table>
         </CardContent>
+         <CardFooter>
+          <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+            <span>
+              Page {proposalsCurrentPage} of {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setProposalsCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={proposalsCurrentPage === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setProposalsCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={proposalsCurrentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </CardFooter>
       </Card>
     )
   }
@@ -170,6 +200,12 @@ export default function ProposalsPage() {
         );
       });
 
+    const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
+    const paginatedClients = filteredClients.slice(
+      (clientsCurrentPage - 1) * ITEMS_PER_PAGE,
+      clientsCurrentPage * ITEMS_PER_PAGE
+    );
+
     return (
       <Card>
         <CardContent className="pt-6">
@@ -182,7 +218,7 @@ export default function ProposalsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClients.map((client) => (
+              {paginatedClients.map((client) => (
                 <ClientOverviewDialog key={client.id} client={client} view="clients">
                   <TableRow className="cursor-pointer">
                     <TableCell>
@@ -215,6 +251,31 @@ export default function ProposalsPage() {
             </TableBody>
           </Table>
         </CardContent>
+        <CardFooter>
+          <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+            <span>
+                Page {clientsCurrentPage} of {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setClientsCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={clientsCurrentPage === 1}
+                >
+                    Previous
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setClientsCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={clientsCurrentPage === totalPages}
+                >
+                    Next
+                </Button>
+            </div>
+          </div>
+        </CardFooter>
       </Card>
     )
   }
@@ -254,7 +315,7 @@ export default function ProposalsPage() {
           {activeView === 'proposals' && (
              <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                             <CardTitle>All Proposals</CardTitle>
                             <CardDescription>
@@ -293,49 +354,49 @@ export default function ProposalsPage() {
             </Card>
           )}
           {activeView === 'clients' && (
-            <Tabs defaultValue="all">
-                <Card>
-                    <CardHeader>
-                         <div className="flex items-center justify-between gap-4">
-                            <div className="flex-1">
-                                <CardTitle>Clients</CardTitle>
-                                <CardDescription>
-                                    Manage your clients and view their sales history.
-                                </CardDescription>
-                            </div>
-                            <div className="flex items-center gap-2">
-                               <div className="w-full max-w-sm">
-                                  <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <Input 
-                                      placeholder="Search clients..." 
-                                      className="pl-10" 
-                                      value={searchQuery}
-                                      onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                  </div>
-                              </div>
-                               <Select value={clientStatusFilter} onValueChange={(value) => setClientStatusFilter(value as ClientStatus | 'all')}>
-                                <SelectTrigger className="w-[180px]">
-                                  <div className="flex items-center gap-2">
-                                    <Filter className="h-4 w-4" />
-                                    <SelectValue placeholder="Filter by status" />
-                                  </div>
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {clientStatuses.map(status => (
-                                    <SelectItem key={status} value={status} className="capitalize">{status}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+            <Card>
+                <CardHeader>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                            <CardTitle>Clients</CardTitle>
+                            <CardDescription>
+                                Manage your clients and view their sales history.
+                            </CardDescription>
                         </div>
-                    </CardHeader>
-                    {renderClientsTable(clientStatusFilter)}
-                </Card>
-            </Tabs>
+                        <div className="flex items-center gap-2">
+                            <div className="w-full max-w-sm">
+                                <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input 
+                                    placeholder="Search clients..." 
+                                    className="pl-10" 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                                </div>
+                            </div>
+                            <Select value={clientStatusFilter} onValueChange={(value) => setClientStatusFilter(value as ClientStatus | 'all')}>
+                            <SelectTrigger className="w-[180px]">
+                                <div className="flex items-center gap-2">
+                                <Filter className="h-4 w-4" />
+                                <SelectValue placeholder="Filter by status" />
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {clientStatuses.map(status => (
+                                <SelectItem key={status} value={status} className="capitalize">{status}</SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </CardHeader>
+                {renderClientsTable(clientStatusFilter)}
+            </Card>
           )}
       </div>
     </div>
   );
 }
+
+    
