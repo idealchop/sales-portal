@@ -65,7 +65,7 @@ const generateSocialPostFlow = ai.defineFlow(
     const [captionResponse, initialImageResponse] = await Promise.all([
       socialPostCaptionPrompt(input),
       ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
+        model: 'vertexai/imagen-4.0-fast-generate-001',
         prompt: `Generate a visually appealing, professional image related to the topic of: ${input.topic}. The image should be suitable for a social media post for a water delivery service called Smart Refill.`,
       }),
     ]);
@@ -83,7 +83,7 @@ const generateSocialPostFlow = ai.defineFlow(
 
     // Second step: Composite the images using Gemini's image editing capabilities
     const finalImageResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image-preview',
+      model: 'vertexai/gemini-2.5-flash-image-preview',
       prompt: [
         { media: { url: initialImageUrl } },
         { media: { url: logoUrl } },
