@@ -33,8 +33,19 @@ const socialPostCaptionPrompt = ai.definePrompt({
     output: { schema: z.object({ caption: z.string() })},
     prompt: `You are an expert social media manager for a company called Smart Refill.
 
-    Generate a compelling and engaging social media post caption based on the following details.
-    The caption should be concise, impactful, and include relevant hashtags.
+    Your goal is to write a short, positive, and professional caption (under 25 words) for a social media post.
+
+    Your tone should be:
+    - Optimistic and clear
+    - Reassuring and human
+    - Lightly promotional
+
+    Focus on these key themes:
+    - Automation and convenience
+    - Safety and compliance
+    - Reliability and efficiency
+
+    Generate a compelling and engaging social media post caption based on the following details. The caption should be concise, impactful, and include relevant hashtags.
 
     Topic: {{{topic}}}
     Style: {{{style}}}
