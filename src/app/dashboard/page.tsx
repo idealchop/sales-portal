@@ -194,7 +194,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Bonus Tracker Section */}
-       <Card>
+       <Card className="bg-background">
         <CardHeader>
             <CardTitle>My Goals & Bonuses</CardTitle>
             <CardDescription>Track your progress towards your next payout. Click a card to see the rewards!</CardDescription>
@@ -489,5 +489,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
