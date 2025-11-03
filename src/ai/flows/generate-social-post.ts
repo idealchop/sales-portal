@@ -62,11 +62,8 @@ const generateSocialPostFlow = ai.defineFlow(
   },
   async (input) => {
     
-    // Generate caption
-    const captionResponse = await socialPostCaptionPrompt(input);
-    const caption = captionResponse.output?.caption || '';
-
-    // Use a static branded placeholder image to avoid billing errors with Imagen
+    // Temporarily return static content to avoid API errors
+    const caption = "With Smart Refill, you can have peace of mind knowing your water is always safe and your supply is always secure. We've got you covered!";
     const imageUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fbranded-placeholder.png?alt=media&token=bc87d123-5e74-4541-9426-38475f426214';
 
     return {
