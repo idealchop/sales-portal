@@ -18,6 +18,7 @@ import {
   CalendarCheck,
   Users,
   BookCopy,
+  Home,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -93,6 +94,8 @@ export default function DashboardPage() {
   // Mock data for bonuses
   const clientsThisMonth = 2;
   const clientsThisMonthTarget = 3;
+  const individualClientsThisMonth = 3;
+  const individualClientsThisMonthTarget = 5;
   const quarterlyVolume = 68000;
   const quarterlyVolumeTarget = 100000;
   const clientsForRetention = [
@@ -104,6 +107,11 @@ export default function DashboardPage() {
     { target: 3, bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
     { target: 5, bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
     { target: 10, bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+  ]
+   const individualCloserBonusTiers = [
+    { target: 5, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 10, bonus: 6000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 15, bonus: 15000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
   ]
   const growthBonusTiers = [
     { target: 50000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
@@ -191,18 +199,18 @@ export default function DashboardPage() {
             <CardTitle>My Goals & Bonuses</CardTitle>
             <CardDescription>Track your progress towards your next payout. Click a card to see the rewards!</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
              <BonusCard 
                 icon={<Target className="h-6 w-6 text-primary" />}
-                title="Monthly Closer Bonus"
+                title="Corporate Closer Bonus"
                 value={`${clientsThisMonth} / 10`}
                 progress={(clientsThisMonth / 10) * 100}
                 goal="Goal: 3 clients for ₱2,000"
-                description="Close more clients this month to earn a bonus.">
+                description="For SME, Commercial & Business clients.">
                  <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Monthly Closer Bonus</DialogTitle>
-                        <DialogDescription>Reward for consistency and urgency. Claimed after clients complete their first paid month.</DialogDescription>
+                        <DialogTitle>Corporate Closer Bonus</DialogTitle>
+                        <DialogDescription>Reward for closing corporate clients. Claimed after clients complete their first paid month.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <p>Your current progress: <span className="font-bold">{clientsThisMonth} clients</span></p>
@@ -217,6 +225,40 @@ export default function DashboardPage() {
                                 {closerBonusTiers.map(tier => (
                                     <TableRow key={tier.target} className={cn(clientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                         <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new clients</TableCell>
+                                        <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                 </DialogContent>
+            </BonusCard>
+
+            <BonusCard 
+                icon={<Home className="h-6 w-6 text-primary" />}
+                title="Individual Closer Bonus"
+                value={`${individualClientsThisMonth} / 15`}
+                progress={(individualClientsThisMonth / 15) * 100}
+                goal={`Goal: ${individualClientsThisMonthTarget} clients for ₱2,500`}
+                description="For Individual (Household) clients.">
+                 <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Individual Closer Bonus</DialogTitle>
+                        <DialogDescription>Reward for bringing in household clients. Claimed after clients complete their first paid month.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <p>Your current progress: <span className="font-bold">{individualClientsThisMonth} clients</span></p>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Target</TableHead>
+                                    <TableHead>Bonus</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {individualCloserBonusTiers.map(tier => (
+                                    <TableRow key={tier.target} className={cn(individualClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                        <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new household clients</TableCell>
                                         <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
                                     </TableRow>
                                 ))}
@@ -447,3 +489,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
