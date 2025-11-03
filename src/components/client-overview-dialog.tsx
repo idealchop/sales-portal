@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye } from 'lucide-react';
 import type { Client } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
@@ -264,23 +264,41 @@ export function ClientOverviewDialog({
                             </Button>
                         </CardFooter>
                     ) : (
-                        <CardContent className="space-y-4">
-                            <div className="aspect-square w-full relative rounded-md overflow-hidden border">
-                                <Image
-                                    src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Freceipt-placeholder.png?alt=media&token=e9e8f498-38f3-4e4c-b5f7-91a5823158f1"
-                                    alt="Payment Receipt"
-                                    fill
-                                    className="object-contain p-4"
-                                    data-ai-hint="receipt"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <Badge variant="outline" className="bg-green-100 text-green-800">
-                                    <FileCheck className="mr-2 h-4 w-4" />
-                                    Verified
-                                </Badge>
-                            </div>
-                        </CardContent>
+                       <CardContent>
+                             <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" className="w-full">
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View Payment
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-xl">
+                                    <DialogHeader>
+                                        <DialogTitle>Payment Confirmation: {client.companyName}</DialogTitle>
+                                        <DialogDescription>
+                                            Official receipt for the subscription payment.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="mt-4 space-y-4">
+                                        <div className="aspect-square w-full relative rounded-md overflow-hidden border">
+                                            <Image
+                                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Freceipt-placeholder.png?alt=media&token=e9e8f498-38f3-4e4c-b5f7-91a5823158f1"
+                                                alt="Payment Receipt"
+                                                fill
+                                                className="object-contain p-4"
+                                                data-ai-hint="receipt"
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <Badge variant="outline" className="bg-green-100 text-green-800">
+                                                <FileCheck className="mr-2 h-4 w-4" />
+                                                Verified
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                       </CardContent>
                     )}
                 </Card>
                 
@@ -346,3 +364,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
