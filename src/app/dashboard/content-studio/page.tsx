@@ -1,0 +1,223 @@
+'use client';
+
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, Sparkles, Copy, Download } from 'lucide-react';
+import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
+import { generateSocialPost } from '@/ai/flows/generate-social-post';
+
+const formSchema = z.object({
+  topic: z.string().min(10, 'Please describe the topic in at least 10 characters.'),
+  style: z.string().min(1, 'Please select a style for the post.'),
+});
+
+type SocialPostFormValues = z.infer<typeof formSchema>;
+
+type GeneratedContent = {
+  caption: string;
+  imageUrl: string;
+};
+
+export default function ContentStudioPage() {
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+
+  const form = useForm<SocialPostFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      topic: '',
+      style: 'professional',
+    },
+  });
+
+  const handleGenerate = async (values: SocialPostFormValues) => {
+    setIsGenerating(true);
+    setGeneratedContent(null);
+    try {
+      const result = await generateSocialPost(values);
+      setGeneratedContent(result);
+      toast({
+        title: 'Content Generated!',
+        description: 'Your new social media post is ready for review.',
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Generation Failed',
+        description: 'There was an error generating the content. Please try again.',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copied to clipboard!' });
+  };
+
+  const handleDownload = (imageUrl: string) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = 'social-post-image.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Image downloaded!' });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">AI Content Studio</h1>
+        <p className="text-muted-foreground">
+          Generate engaging social media posts with the power of AI.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Create a Post</CardTitle>
+              <CardDescription>
+                Describe your post, and let AI do the rest.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleGenerate)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="topic"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Post Topic</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="e.g., A new case study showing how Smart Refill saved a client 20% on water costs."
+                            className="min-h-[120px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="style"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tone of Voice</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a style" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="professional">Professional</SelectItem>
+                            <SelectItem value="friendly">Friendly</SelectItem>
+                            <SelectItem value="witty">Witty</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                            <SelectItem value="inspirational">Inspirational</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" disabled={isGenerating} className="w-full">
+                    {isGenerating ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-2 h-4 w-4" />
+                    )}
+                    Generate Content
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-2">
+          <Card className="min-h-[500px]">
+            <CardHeader>
+              <CardTitle>Generated Preview</CardTitle>
+              <CardDescription>
+                Review your AI-generated content below.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isGenerating && (
+                <div className="flex flex-col items-center justify-center gap-4 text-center h-96">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <p className="text-muted-foreground">Generating your content... this may take a moment.</p>
+                </div>
+              )}
+              {!isGenerating && !generatedContent && (
+                <div className="flex flex-col items-center justify-center gap-4 text-center h-96 border-2 border-dashed rounded-lg">
+                  <Sparkles className="h-12 w-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">Your generated content will appear here.</p>
+                </div>
+              )}
+              {generatedContent && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Generated Image</CardTitle>
+                    </CardHeader>
+                    <CardContent className="relative aspect-video w-full overflow-hidden rounded-lg">
+                      <Image
+                        src={generatedContent.imageUrl}
+                        alt="Generated social media image"
+                        fill
+                        className="object-cover"
+                      />
+                    </CardContent>
+                    <CardFooter>
+                      <Button variant="outline" onClick={() => handleDownload(generatedContent.imageUrl)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Image
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Generated Caption</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="prose dark:prose-invert text-sm whitespace-pre-wrap rounded-md bg-muted p-4">
+                        {generatedContent.caption}
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button variant="outline" onClick={() => handleCopy(generatedContent.caption)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy Caption
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

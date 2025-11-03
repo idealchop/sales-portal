@@ -14,13 +14,14 @@ import {
   BookCopy,
   CircleDollarSign,
   Settings,
+  Megaphone,
 } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/proposals', icon: FileText, label: 'Proposals' },
   { href: '/dashboard/materials', icon: BookCopy, label: 'Materials' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
+  { href: '/dashboard/content-studio', icon: Megaphone, label: 'Content Studio' },
 ];
 
 export function DashboardNav() {
