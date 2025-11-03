@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -61,6 +62,7 @@ import { ClientPopover } from '@/components/client-popover';
 import type { Client } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { ActivityChart } from '@/components/activity-chart';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -99,7 +101,7 @@ export default function DashboardPage() {
   // Mock data for bonuses
   const clientsThisMonth = 2;
   const clientsThisMonthTarget = 3;
-  const individualClientsThisMonth = 3;
+  const individualClientsThisMonth = 6;
   const individualClientsThisMonthTarget = 30;
   const quarterlyVolume = 68000;
   const quarterlyVolumeTarget = 100000;
@@ -116,7 +118,7 @@ export default function DashboardPage() {
    const individualCloserBonusTiers = [
     { target: 10, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
     { target: 20, bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-    { target: 30, bonus: '₱15,000 + "Elite Closer" Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
+    { target: 30, bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
   ]
   const growthBonusTiers = [
     { target: 50000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
@@ -171,6 +173,12 @@ export default function DashboardPage() {
   const totalAcceptedValue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
   const avgDealSize = acceptedProposals.length > 0 ? totalAcceptedValue / acceptedProposals.length : 0;
   const newClientsThisMonth = 2; // Mock data
+  const recentProposals = proposals.slice(0, 5);
+
+  const activityData = [
+    { name: 'Sent', value: proposalsSent, fill: 'hsl(var(--chart-2))' },
+    { name: 'Accepted', value: acceptedProposals.length, fill: 'hsl(var(--chart-1))' },
+  ]
 
   return (
     <div className="flex flex-col gap-8">
@@ -382,57 +390,70 @@ export default function DashboardPage() {
       </div>
       
        <Card>
-          <CardHeader>
-            <CardTitle>Activity Snapshot</CardTitle>
-            <CardDescription>Your key performance indicators for this month.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Proposals Sent</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{proposalsSent}</div>
-                <p className="text-xs text-muted-foreground">Total proposals this month</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-                <Percent className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{winRate.toFixed(1)}%</div>
-                <p className="text-xs text-muted-foreground">Based on concluded proposals</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Deal Size</CardTitle>
-                <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{currencyFormatter.format(avgDealSize)}</div>
-                <p className="text-xs text-muted-foreground">From accepted proposals</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">New Clients</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">+{newClientsThisMonth}</div>
-                <p className="text-xs text-muted-foreground">Clients acquired this month</p>
-              </CardContent>
-            </Card>
-          </CardContent>
-          <CardFooter className="flex justify-end">
+          <CardHeader className='flex flex-row items-center justify-between'>
+            <div>
+              <CardTitle>Activity Snapshot</CardTitle>
+              <CardDescription>Your key performance indicators for this month.</CardDescription>
+            </div>
             <Button asChild size="sm" variant="outline">
               <Link href="/dashboard/proposals">View All Proposals</Link>
             </Button>
-          </CardFooter>
+          </CardHeader>
+          <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+             <Card>
+              <CardHeader>
+                <CardTitle className='text-base font-medium'>Win Rate</CardTitle>
+              </CardHeader>
+              <CardContent className='flex items-center justify-center'>
+                 <div className="relative h-32 w-32">
+                  <svg className="h-full w-full" viewBox="0 0 36 36">
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="hsl(var(--muted))"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth="3"
+                      strokeDasharray={`${winRate}, 100`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-3xl font-bold">{winRate.toFixed(0)}%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+             <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className='text-base font-medium'>Proposals</CardTitle>
+                <CardDescription>Sent vs. Accepted</CardDescription>
+              </CardHeader>
+              <CardContent className="h-40">
+                <ActivityChart data={activityData} />
+              </CardContent>
+            </Card>
+             <Card>
+              <CardHeader>
+                <CardTitle className='text-base font-medium'>Avg. Deal Size</CardTitle>
+              </CardHeader>
+              <CardContent className='flex flex-col items-center justify-center text-center h-40'>
+                <div className='flex items-center justify-center rounded-full bg-primary/10 h-20 w-20 mb-4'>
+                    <CircleDollarSign className='h-10 w-10 text-primary'/>
+                </div>
+                <div className="text-3xl font-bold">{currencyFormatter.format(avgDealSize)}</div>
+                <p className="text-xs text-muted-foreground">from {acceptedProposals.length} accepted proposals</p>
+              </CardContent>
+            </Card>
+          </CardContent>
         </Card>
 
 
@@ -709,5 +730,7 @@ export default function DashboardPage() {
 }
 
 
+
+    
 
     
