@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -114,6 +115,12 @@ export default function DashboardPage() {
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
+  const payoutTimeline = [
+      { term: 'Monthly', schedule: 'Within 7–15 days after payment', example: 'e.g., Client pays Nov 1 → Commission by Nov 10–15' },
+      { term: 'Quarterly', schedule: '⅓ each month after payment', example: 'e.g., Client pays Nov 1 → Payouts in Nov–Dec–Jan' },
+      { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Apr' },
+      { term: 'Annual', schedule: 'Spread monthly for 12 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Oct next year' },
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -357,17 +364,53 @@ export default function DashboardPage() {
 
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Commission History</CardTitle>
-            <CardDescription>
-              A summary of your commission earnings over the last 6 months.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RevenueChart data={commissionData} />
-          </CardContent>
-        </Card>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
+              <CardHeader>
+                <CardTitle>Monthly Commission History</CardTitle>
+                <CardDescription>
+                  A summary of your commission earnings over the last 6 months. Click to learn more.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RevenueChart data={commissionData} />
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>Commission Breakdown</DialogTitle>
+                <DialogDescription>
+                    This chart shows your commission history. Earnings from long-term client payments are distributed monthly to ensure a stable income.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-6">
+                <RevenueChart data={commissionData} />
+            </div>
+            <div>
+                <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Client Payment Term</TableHead>
+                            <TableHead>Payout Schedule</TableHead>
+                            <TableHead>Example</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {payoutTimeline.map((item) => (
+                            <TableRow key={item.term}>
+                                <TableCell className="font-medium">{item.term}</TableCell>
+                                <TableCell>{item.schedule}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{item.example}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+          </DialogContent>
+        </Dialog>
         <Card>
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
