@@ -330,6 +330,8 @@ function CustomPlanCalculator({
     isFixedPrice = false,
     fixedPrice = 0,
     showEstimatedCost = false,
+    maxBottles,
+    maxDeliveries,
 }: {
     pricePerLiter?: number;
     onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
@@ -339,8 +341,10 @@ function CustomPlanCalculator({
     isFixedPrice?: boolean;
     fixedPrice?: number;
     showEstimatedCost?: boolean;
+    maxBottles?: number;
+    maxDeliveries?: number;
 }) {
-    const [bottles, setBottles] = useState(10);
+    const [bottles, setBottles] = useState(maxBottles ? Math.min(10, maxBottles) : 10);
     const [deliveries, setDeliveries] = useState(1);
     const litersPerBottle = 19;
 
@@ -349,6 +353,26 @@ function CustomPlanCalculator({
         const cost = isFixedPrice ? fixedPrice : liters * pricePerLiter;
         return { totalLiters: liters, totalCost: cost ?? 0 };
     }, [bottles, deliveries, pricePerLiter, isFixedPrice, fixedPrice]);
+    
+    const handleBottlesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = parseInt(e.target.value) || 0;
+        if (maxBottles && value > maxBottles) {
+            value = maxBottles;
+        }
+        setBottles(value);
+    }
+    
+    const handleDeliveriesChange = (value: string) => {
+        let numValue = Number(value);
+        if (maxDeliveries && numValue > maxDeliveries) {
+            numValue = maxDeliveries;
+        }
+        setDeliveries(numValue);
+    }
+    
+    const availableFrequencies = maxDeliveries
+        ? deliveryFrequencies.filter(f => f.value <= maxDeliveries)
+        : deliveryFrequencies;
 
     useEffect(() => {
         onCalculated({ totalLiters, totalCost, deliveries });
@@ -366,18 +390,18 @@ function CustomPlanCalculator({
                     <Label htmlFor="bottles" className="text-sm font-medium text-primary-foreground/80">5-Gallon Bottles per Delivery</Label>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setBottles(Math.max(1, bottles - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="bottles" type="number" value={bottles} onChange={(e) => setBottles(parseInt(e.target.value) || 0)} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
-                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setBottles(bottles + 1)}><Plus className="h-4 w-4" /></Button>
+                        <Input id="bottles" type="number" value={bottles} onChange={handleBottlesChange} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
+                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setBottles(maxBottles ? Math.min(bottles + 1, maxBottles) : bottles + 1)}><Plus className="h-4 w-4" /></Button>
                     </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="deliveries" className="text-sm font-medium text-primary-foreground/80">Deliveries per Week</Label>
-                    <Select value={String(deliveries)} onValueChange={(value) => setDeliveries(Number(value))}>
+                    <Select value={String(deliveries)} onValueChange={handleDeliveriesChange}>
                         <SelectTrigger id="deliveries" className="bg-transparent border-primary-foreground/50 text-primary-foreground">
                             <SelectValue placeholder="Select frequency" />
                         </SelectTrigger>
                         <SelectContent>
-                            {deliveryFrequencies.map((freq) => (
+                            {availableFrequencies.map((freq) => (
                                 <SelectItem key={freq.value} value={String(freq.value)}>{freq.label}</SelectItem>
                             ))}
                         </SelectContent>
@@ -616,10 +640,12 @@ function PlansGrid({
                     )}
                     
                     {plan.id === 'custom-plan' && isSelected && (
-                        <CustomPlanCalculator
+                         <CustomPlanCalculator
                             onCalculated={onSmeCommercialCustomCalculated}
                             pricePerLiter={businessSize === 'household' ? 2.5 : 3}
                             title={businessSize === 'household' ? "Customize Household Plan" : "Customize SME/Commercial Plan"}
+                            maxBottles={businessSize === 'household' ? 10 : undefined}
+                            maxDeliveries={businessSize === 'household' ? 2 : undefined}
                         />
                     )}
 
