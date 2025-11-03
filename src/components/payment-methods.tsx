@@ -61,8 +61,8 @@ export function PaymentMethods() {
             return (
               <Dialog key={method.name}>
                 <DialogTrigger asChild>
-                  <Card className="flex h-full cursor-pointer flex-col items-center justify-center p-6 text-center transition-all hover:shadow-lg">
-                    <div className="relative mb-4 h-16 w-16">
+                  <Card className="flex h-full cursor-pointer flex-col items-center justify-center p-4 text-center transition-all hover:shadow-lg">
+                    <div className="relative mb-2 h-12 w-12">
                       <Image
                         src={method.logo}
                         alt={`${method.name} logo`}
@@ -70,8 +70,8 @@ export function PaymentMethods() {
                         className="object-contain"
                       />
                     </div>
-                    <p className="font-semibold">{method.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-semibold text-sm">{method.name}</p>
+                    <p className="text-xs text-muted-foreground">
                       {method.description}
                     </p>
                   </Card>
@@ -98,8 +98,8 @@ export function PaymentMethods() {
           if (method.type === 'link') {
             return (
               <Link key={method.name} href={method.href!} target="_blank">
-                <Card className="flex h-full cursor-pointer flex-col items-center justify-center p-6 text-center transition-all hover:shadow-lg">
-                  <div className="relative mb-4 h-16 w-16">
+                <Card className="flex h-full cursor-pointer flex-col items-center justify-center p-4 text-center transition-all hover:shadow-lg">
+                  <div className="relative mb-2 h-12 w-12">
                     <Image
                       src={method.logo}
                       alt={`${method.name} logo`}
@@ -107,8 +107,8 @@ export function PaymentMethods() {
                       className="object-contain"
                     />
                   </div>
-                  <p className="font-semibold">{method.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-semibold text-sm">{method.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     {method.description}
                   </p>
                 </Card>
