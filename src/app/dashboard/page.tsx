@@ -110,9 +110,9 @@ export default function DashboardPage() {
     { target: 10, bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
   ]
    const individualCloserBonusTiers = [
-    { target: 5, bonus: 4000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 10, bonus: 10000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-    { target: 15, bonus: '₱25,000 + "Elite Closer" Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
+    { target: 5, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 10, bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 15, bonus: '₱15,000 + "Elite Closer" Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
   ]
   const growthBonusTiers = [
     { target: 50000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
@@ -335,7 +335,7 @@ export default function DashboardPage() {
                 title="Individual Closer Bonus"
                 value={`${individualClientsThisMonth} / 15`}
                 progress={(individualClientsThisMonth / 15) * 100}
-                goal={`Goal: ${individualClientsThisMonthTarget} clients for ₱4,000`}
+                goal={`Goal: ${individualClientsThisMonthTarget} clients for ₱2,500`}
                 description="For Individual (Household) clients.">
                  <DialogContent>
                     <DialogHeader>
@@ -640,5 +640,7 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+
+    
 
     
