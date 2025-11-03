@@ -425,7 +425,7 @@ export default function DashboardPage() {
           </CardHeader>
           <div className="relative h-48 w-full">
             <Image
-                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fsmiling-delivery-guy.png?alt=media&token=485c2c8f-3665-4f32-b7e6-1498b5a0455e"
+                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
                 alt="Sales Materials Preview"
                 fill
                 className="object-cover"
@@ -449,3 +449,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
