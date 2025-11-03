@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,6 +14,7 @@ import {
   Star,
   Trophy,
   CalendarCheck,
+  Users,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -102,6 +104,14 @@ export default function DashboardPage() {
     { target: 200000, bonus: '₱25,000 + Elite Partner Badge', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
   ]
 
+  const teamBuilderTiers = [
+    { milestone: 'Recruit & train 3 active sales partners', reward: '₱3,000 one-time' },
+    { milestone: 'Each sub-affiliate’s first 3 clients', reward: '₱500 per client' },
+    { milestone: 'Reach ₱100,000 combined team revenue', reward: '₱5,000 leadership bonus' },
+  ]
+  const recruitedPartners = 1;
+  const teamRevenue = 42000;
+
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
 
@@ -172,7 +182,7 @@ export default function DashboardPage() {
             <CardTitle>My Goals & Bonuses</CardTitle>
             <CardDescription>Track your progress towards your next payout. Click a card to see the rewards!</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
              <BonusCard 
                 icon={<Target className="h-6 w-6 text-primary" />}
                 title="Monthly Closer Bonus"
@@ -305,6 +315,43 @@ export default function DashboardPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+             <BonusCard 
+                icon={<Users className="h-6 w-6 text-primary" />}
+                title="Team Builder Bonus"
+                value={`${recruitedPartners} / 3`}
+                progress={(recruitedPartners / 3) * 100}
+                goal="Goal: Recruit 3 active partners"
+                description="Build your own team to unlock leadership bonuses.">
+                 <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Team Builder Incentive</DialogTitle>
+                        <DialogDescription>Grow your income by building and leading your own team of sales partners.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <p>Recruited Partners: <span className="font-bold">{recruitedPartners}</span></p>
+                            <p>Combined Team Revenue: <span className="font-bold">{currencyFormatter.format(teamRevenue)}</span></p>
+                        </div>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Milestone</TableHead>
+                                    <TableHead>Reward</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {teamBuilderTiers.map(tier => (
+                                    <TableRow key={tier.milestone}>
+                                        <TableCell className="font-medium">{tier.milestone}</TableCell>
+                                        <TableCell className="font-bold text-primary">{tier.reward}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                 </DialogContent>
+            </BonusCard>
         </CardContent>
       </Card>
 
