@@ -390,7 +390,7 @@ function CustomPlanCalculator({
                     <Label htmlFor="bottles" className="text-sm font-medium text-primary-foreground/80">5-Gallon Bottles per Delivery</Label>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setBottles(Math.max(1, bottles - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="bottles" type="number" value={bottles} onChange={handleBottlesChange} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
+                        <Input id="bottles" type="number" value={bottles} onChange={handleBottlesChange} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" max={maxBottles}/>
                         <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setBottles(maxBottles ? Math.min(bottles + 1, maxBottles) : bottles + 1)}><Plus className="h-4 w-4" /></Button>
                     </div>
                 </div>
@@ -533,11 +533,12 @@ function PlansGrid({
         const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household') && (plan.id === 'custom-plan');
         const isDisabled = false;
 
-        let employees = plan.employees;
+        let employees = businessSize === 'household' ? plan.employees.replace('Employees', 'People') : plan.employees;
         let stations = plan.stations;
         let monthlyFee = plan.monthlyFee;
         let liters = plan.liters;
         let refillFrequency = plan.refillFrequency;
+        let inclusions = [...plan.inclusions];
 
         if (isCustom && customCalculatedValues) {
             employees = getEmployees(customCalculatedValues.totalLiters);
@@ -563,6 +564,9 @@ function PlansGrid({
             liters = `${smeCommercialCustomValues.totalLiters.toLocaleString()} L`;
             const freq = deliveryFrequencies.find(f => f.value === smeCommercialCustomValues.deliveries);
             refillFrequency = freq ? freq.label : plan.refillFrequency;
+
+            const pricePerLiter = businessSize === 'household' ? 2.5 : 3;
+            inclusions[0] = `Priced at ₱${pricePerLiter.toFixed(2)} per liter`;
         }
 
 
@@ -615,7 +619,7 @@ function PlansGrid({
                             </div>
                         </div>
                          <ul className={cn('text-sm space-y-1 pl-4 list-disc', isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground')}>
-                            {plan.inclusions.map((inclusion) => <li key={inclusion}>{inclusion}</li>)}
+                            {inclusions.map((inclusion) => <li key={inclusion}>{inclusion}</li>)}
                         </ul>
                     </CardContent>
                     
