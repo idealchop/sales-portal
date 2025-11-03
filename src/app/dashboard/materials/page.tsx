@@ -16,7 +16,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type GroupedMaterials = {
   [key: string]: ImagePlaceholder[];
@@ -113,34 +119,57 @@ export default function MaterialsPage() {
                         <CardTitle className="text-base font-medium leading-tight">{material.title}</CardTitle>
                         <CardDescription className="text-sm">{material.description}</CardDescription>
                       </CardContent>
-                      <CardFooter className="p-4 pt-0 flex justify-between gap-2">
-                         <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="flex-1">
-                              <Eye className="mr-2 h-4 w-4" /> View
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-3xl">
-                            <DialogHeader>
-                              <DialogTitle>{material.title}</DialogTitle>
-                              <DialogDescription>{material.description}</DialogDescription>
-                            </DialogHeader>
-                            <div className="relative aspect-video w-full mt-4">
-                                <Image
-                                    alt={material.description}
-                                    src={material.imageUrl}
-                                    fill
-                                    className="object-contain"
-                                />
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleShare(material.imageUrl)}>
-                          <Share2 className="mr-2 h-4 w-4" /> Share
-                        </Button>
-                        <Button size="sm" className="flex-1" onClick={() => handleDownload(material.imageUrl, material.title)}>
-                          <Download className="mr-2 h-4 w-4" /> Download
-                        </Button>
+                      <CardFooter className="p-4 pt-0 flex justify-end gap-1">
+                         <TooltipProvider>
+                            <Dialog>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                            <Eye className="h-4 w-4" />
+                                            </Button>
+                                        </DialogTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>View</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                                <DialogContent className="sm:max-w-3xl">
+                                <DialogHeader>
+                                    <DialogTitle>{material.title}</DialogTitle>
+                                    <DialogDescription>{material.description}</DialogDescription>
+                                </DialogHeader>
+                                <div className="relative aspect-video w-full mt-4">
+                                    <Image
+                                        alt={material.description}
+                                        src={material.imageUrl}
+                                        fill
+                                        className="object-contain"
+                                    />
+                                </div>
+                                </DialogContent>
+                            </Dialog>
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                     <Button variant="ghost" size="icon" onClick={() => handleShare(material.imageUrl)}>
+                                        <Share2 className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Share</p>
+                                </TooltipContent>
+                            </Tooltip>
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDownload(material.imageUrl, material.title)}>
+                                        <Download className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Download</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                       </CardFooter>
                     </Card>
                   ))}
