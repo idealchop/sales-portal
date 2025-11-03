@@ -62,12 +62,15 @@ const generateSocialPostFlow = ai.defineFlow(
   async (input) => {
     
     // Generate caption and image in parallel
-    const [captionResponse] = await Promise.all([
+    const [captionResponse, imageResponse] = await Promise.all([
       socialPostCaptionPrompt(input),
+      ai.generate({
+        prompt: `Generate a URL for a stock photo from Unsplash that visually represents the following topic for a social media post: "${input.topic}". The URL should be in the format: https://images.unsplash.com/photo-...?ixid=...&... Just return the URL and nothing else.`,
+      }),
     ]);
     
     const caption = captionResponse.output?.caption || '';
-    const imageUrl = `https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/1280/720`;
+    const imageUrl = imageResponse.text || `https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/1280/720`;
     
     return {
         caption,
