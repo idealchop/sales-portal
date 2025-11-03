@@ -456,9 +456,49 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Recent Proposals</CardTitle>
+            <CardDescription>Your latest proposals at a glance.</CardDescription>
+          </div>
+          <Button asChild size="sm">
+            <Link href="/dashboard/proposals/new">Create Proposal</Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Client</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="hidden md:table-cell text-right">Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentProposals.map((proposal) => (
+                <TableRow key={proposal.id}>
+                  <TableCell>
+                    <ClientPopover client={getClientById(proposal.client.id)!}>
+                      <div className="font-medium text-primary hover:underline cursor-pointer">{proposal.client.companyName}</div>
+                    </ClientPopover>
+                    <div className="text-sm text-muted-foreground">{proposal.client.contactName}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={cn("capitalize", statusStyles[proposal.status])} variant="outline">{proposal.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">{currencyFormatter.format(proposal.amount)}</TableCell>
+                  <TableCell className="hidden md:table-cell text-right">{proposal.createdAt}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Bonus Tracker Section */}
-       <Card className="bg-background">
+       <Card>
         <CardHeader>
             <CardTitle>My Goals & Bonuses</CardTitle>
             <CardDescription>Track your progress towards your next payout. Click a card to see the rewards!</CardDescription>
@@ -730,6 +770,8 @@ export default function DashboardPage() {
 }
 
 
+
+    
 
     
 
