@@ -137,7 +137,7 @@ const householdPlans: Plan[] = [
         liters: '250 L',
         refillFrequency: '1/week',
         inclusions: [],
-        employees: '1-3',
+        employees: '1-3 People',
         stations: '1 Station',
     },
     {
@@ -147,7 +147,7 @@ const householdPlans: Plan[] = [
         liters: '400 L',
         refillFrequency: '1-2/week',
         inclusions: [],
-        employees: '3-5',
+        employees: '3-5 People',
         stations: '1 Station',
         isRecommended: true,
     },
@@ -627,7 +627,7 @@ function PlansGrid({
                     <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
                         <div className="flex justify-between items-center w-full text-sm">
                             <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                                <Users className="h-5 w-5" />
+                                {businessSize === 'household' ? <Home className="h-5 w-5" /> : <Users className="h-5 w-5" />}
                                 <span className="font-semibold">{employees}</span>
                             </div>
                             <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
