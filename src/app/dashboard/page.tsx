@@ -96,7 +96,7 @@ export default function DashboardPage() {
   const clientsThisMonth = 2;
   const clientsThisMonthTarget = 3;
   const individualClientsThisMonth = 3;
-  const individualClientsThisMonthTarget = 5;
+  const individualClientsThisMonthTarget = 10;
   const quarterlyVolume = 68000;
   const quarterlyVolumeTarget = 100000;
   const clientsForRetention = [
@@ -110,9 +110,9 @@ export default function DashboardPage() {
     { target: 10, bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
   ]
    const individualCloserBonusTiers = [
-    { target: 5, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 10, bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-    { target: 15, bonus: '₱15,000 + "Elite Closer" Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
+    { target: 10, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 20, bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 30, bonus: '₱15,000 + "Elite Closer" Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
   ]
   const growthBonusTiers = [
     { target: 50000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
@@ -333,8 +333,8 @@ export default function DashboardPage() {
             <BonusCard 
                 icon={<Home className="h-6 w-6 text-primary" />}
                 title="Individual Closer Bonus"
-                value={`${individualClientsThisMonth} / 15`}
-                progress={(individualClientsThisMonth / 15) * 100}
+                value={`${individualClientsThisMonth} / 30`}
+                progress={(individualClientsThisMonth / 30) * 100}
                 goal={`Goal: ${individualClientsThisMonthTarget} clients for ₱2,500`}
                 description="For Individual (Household) clients.">
                  <DialogContent>
@@ -640,6 +640,8 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+
+    
 
     
 
