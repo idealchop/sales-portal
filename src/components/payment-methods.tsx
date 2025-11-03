@@ -62,7 +62,7 @@ export function PaymentMethods() {
               <Dialog key={method.name}>
                 <DialogTrigger asChild>
                   <Card className="flex h-full cursor-pointer flex-col items-center justify-center p-4 text-center transition-all hover:shadow-lg">
-                    <div className="relative mb-2 h-12 w-12">
+                    <div className="relative mb-2 h-12 w-full">
                       <Image
                         src={method.logo}
                         alt={`${method.name} logo`}
@@ -99,7 +99,7 @@ export function PaymentMethods() {
             return (
               <Link key={method.name} href={method.href!} target="_blank">
                 <Card className="flex h-full cursor-pointer flex-col items-center justify-center p-4 text-center transition-all hover:shadow-lg">
-                  <div className="relative mb-2 h-12 w-12">
+                  <div className="relative mb-2 h-12 w-full">
                     <Image
                       src={method.logo}
                       alt={`${method.name} logo`}
