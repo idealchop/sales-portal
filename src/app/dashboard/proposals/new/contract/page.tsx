@@ -11,6 +11,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -51,6 +52,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
 import { allPlans, deliveryFrequencies } from '../plans/page';
+import { PaymentMethods } from '@/components/payment-methods';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0, multiplier: 1 },
@@ -1085,20 +1087,7 @@ function ContractPageContent() {
             </Card>
         </div>
 
-        <div className="grid gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Accepted Payment Methods</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                    <p>Bank Transfer (BPI, BDO, UnionBank)</p>
-                    <p>GCash or Maya</p>
-                    <p>Debit/Credit Card via the Smart Refill™ Platform</p>
-                    <p>Corporate Billing (available for Enterprise+ clients only)</p>
-                    <p className="pt-4 font-semibold text-foreground">All payments must be made in Philippine Pesos (₱) and confirmed before deliveries continue or new allocations are released.</p>
-                </CardContent>
-            </Card>
-        </div>
+        <PaymentMethods />
       </div>
     </div>
   );
@@ -1118,4 +1107,5 @@ export default function ContractPage() {
     
 
     
+
 
