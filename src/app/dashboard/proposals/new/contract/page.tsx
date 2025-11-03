@@ -10,6 +10,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -687,6 +688,20 @@ function ContractPageContent() {
   const [additionalDispensers, setAdditionalDispensers] = useState(0);
   const [additionalLiters, setAdditionalLiters] = useState(0);
 
+  const getStations = (liters: number) => {
+    if (liters <= 2000) return '1 Station';
+    if (liters <= 6000) return '2-3 Stations';
+    if (liters <= 25000) return '3-4 Stations';
+    return '5+ Stations';
+  }
+
+  const getEmployees = (liters: number) => {
+    const estimatedEmployees = Math.round(liters / (2 * 22));
+    if (estimatedEmployees < 5) return '< 5';
+    if (estimatedEmployees > 500) return '500+';
+    return `~${Math.round(estimatedEmployees / 10) * 10}`;
+  };
+
   const plan = useMemo(() => {
     let basePlan = allPlans.find(p => p.id === planId);
     if (!basePlan) return null;
@@ -708,10 +723,13 @@ function ContractPageContent() {
     }
 
     if (customLiters && customCost) {
-         basePlan = {
+        const litersNum = parseInt(customLiters);
+        basePlan = {
             ...basePlan,
-            liters: `${customLiters} L`,
+            liters: `${litersNum} L`,
             monthlyFee: `₱${parseFloat(customCost).toLocaleString()}`,
+            employees: getEmployees(litersNum),
+            stations: getStations(litersNum),
         };
     }
     
@@ -1100,3 +1118,4 @@ export default function ContractPage() {
     
 
     
+
