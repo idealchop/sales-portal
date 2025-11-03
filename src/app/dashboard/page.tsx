@@ -135,52 +135,52 @@ export default function DashboardPage() {
 
       {/* Commission Stats */}
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Estimated Monthly Commission
             </CardTitle>
-            <CircleDollarSign className="h-4 w-4 text-primary" />
+            <CircleDollarSign className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₱8,160</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-primary-foreground/80">
               +15% from last month
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Recurring Commission Base</CardTitle>
-            <Repeat className="h-4 w-4 text-primary" />
+            <Repeat className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₱4,000</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-primary-foreground/80">
               Your stable monthly income
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">New Clients (This Month)</CardTitle>
-            <UsersRound className="h-4 w-4 text-primary" />
+            <UsersRound className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{clientsThisMonth}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-primary-foreground/80">
               1 away from ₱2,000 bonus
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">New Recurring Volume (Quarterly)</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <TrendingUp className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₱{quarterlyVolume.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-primary-foreground/80">
               Target: ₱100,000 for ₱10k bonus
             </p>
           </CardContent>
