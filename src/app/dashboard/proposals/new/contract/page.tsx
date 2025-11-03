@@ -13,6 +13,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -399,6 +400,29 @@ function PreviewDialog({
     const selectedCycle = billingCycles.find(c => c.label === billingCycleLabel) || billingCycles[0];
     const totalBeforeDiscount = subtotal * selectedCycle.multiplier;
     const discountValue = totalBeforeDiscount * discount;
+    
+    const distributionPlan = useMemo(() => {
+        const totalLiters = parseInt(finalPlan.liters.replace(/[^0-9]/g, ''), 10) || 0;
+        if (totalLiters === 0) return [];
+        
+        const litersPerGallon = 19;
+        const totalGallons = Math.ceil(totalLiters / litersPerGallon);
+        const gallonsPerWeek = Math.floor(totalGallons / 4);
+        let remainingGallons = totalGallons % 4;
+
+        const distribution = Array(4).fill(gallonsPerWeek);
+
+        for (let i = 0; i < remainingGallons; i++) {
+            distribution[i]++;
+        }
+
+        return distribution.map((gallons, index) => ({
+            week: `Week ${index + 1}`,
+            gallons: gallons,
+            liters: gallons * litersPerGallon
+        }));
+    }, [finalPlan.liters]);
+
 
     return (
         <DialogContent className="sm:max-w-5xl">
@@ -423,7 +447,7 @@ function PreviewDialog({
                     
                     <Separator />
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Client Information</CardTitle>
@@ -483,6 +507,44 @@ function PreviewDialog({
                             </CardContent>
                         </Card>
                     </div>
+
+                    {distributionPlan.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Monthly Distribution Plan</CardTitle>
+                                <CardDescription>
+                                    An estimated weekly breakdown of your water deliveries.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Week</TableHead>
+                                            <TableHead className="text-center">Gallons to Deliver</TableHead>
+                                            <TableHead className="text-right">Liters Delivered</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {distributionPlan.map((week, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell className="font-medium">{week.week}</TableCell>
+                                                <TableCell className="text-center">{week.gallons}</TableCell>
+                                                <TableCell className="text-right">{week.liters.toLocaleString()} L</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                    <CardFooter className="p-0">
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-xs text-muted-foreground pt-4">
+                                                * This is an estimated delivery schedule. Actual deliveries may be adjusted based on real-time consumption data to ensure you never run out of water.
+                                            </TableCell>
+                                        </TableRow>
+                                    </CardFooter>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     <Card>
                         <CardContent className="pt-6">
@@ -1108,6 +1170,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
