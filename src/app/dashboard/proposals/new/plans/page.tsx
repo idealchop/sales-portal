@@ -133,7 +133,7 @@ const householdPlans: Plan[] = [
     {
         id: 'household-starter',
         name: 'Starter',
-        monthlyFee: '₱800',
+        monthlyFee: '₱625',
         liters: '250 L',
         refillFrequency: '1/week',
         inclusions: [],
@@ -143,7 +143,7 @@ const householdPlans: Plan[] = [
     {
         id: 'household-family',
         name: 'Family',
-        monthlyFee: '₱1,200',
+        monthlyFee: '₱1,000',
         liters: '400 L',
         refillFrequency: '1-2/week',
         inclusions: [],
