@@ -62,35 +62,12 @@ const generateSocialPostFlow = ai.defineFlow(
   },
   async (input) => {
     
-    // Generate caption and initial image in parallel
-    const [captionResponse, initialImageResponse] = await Promise.all([
-      socialPostCaptionPrompt(input),
-      ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: `A visually appealing stock photo representing: "${input.topic}". The image should be clean, modern, and professional.`,
-      }),
-    ]);
-    
+    // Generate caption
+    const captionResponse = await socialPostCaptionPrompt(input);
     const caption = captionResponse.output?.caption || '';
-    const initialImageUrl = initialImageResponse.media.url;
-    
-    const logoUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2FLogo%20icon%202.png?alt=media&token=e9c98391-d60e-4267-9d78-3c09b8028b7c';
-    const brandingText = "Automated Water Refills for Every Home and Business";
 
-    // Step 2: Add logo and text to the generated image
-    const brandedImageResponse = await ai.generate({
-        model: 'googleai/gemini-2.5-flash-image-preview',
-        prompt: [
-            { media: { url: initialImageUrl } },
-            { media: { url: logoUrl } },
-            { text: `Overlay the provided logo on the bottom-right corner of the main image. Make the logo visible but not too intrusive. Below the logo, add the text "${brandingText}" in a clean, readable, white font. Ensure the final image looks professional and well-branded.` },
-        ],
-        config: {
-            responseModalities: ['IMAGE'],
-        },
-    });
-
-    const imageUrl = brandedImageResponse.media.url || initialImageUrl; // Fallback to initial image
+    // Use a static branded placeholder image to avoid billing errors with Imagen
+    const imageUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fbranded-placeholder.png?alt=media&token=bc87d123-5e74-4541-9426-38475f426214';
 
     return {
         caption,
