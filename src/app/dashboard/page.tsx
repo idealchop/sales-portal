@@ -20,6 +20,9 @@ import {
   Home,
   CreditCard,
   PlusCircle,
+  FileText,
+  Percent,
+  CheckCircle,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -160,6 +163,14 @@ export default function DashboardPage() {
   const recurringCommissionBreakdown = [
     { client: 'Apex Industries', amount: 4000, type: 'Pro Plan' },
   ];
+
+  // Productivity Metrics
+  const proposalsSent = proposals.filter(p => p.status !== 'draft').length;
+  const acceptedProposals = proposals.filter(p => p.status === 'accepted');
+  const winRate = proposalsSent > 0 ? (acceptedProposals.length / proposalsSent) * 100 : 0;
+  const totalAcceptedValue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
+  const avgDealSize = acceptedProposals.length > 0 ? totalAcceptedValue / acceptedProposals.length : 0;
+  const newClientsThisMonth = 2; // Mock data
 
   return (
     <div className="flex flex-col gap-8">
@@ -369,60 +380,60 @@ export default function DashboardPage() {
           </CardFooter>
         </Card>
       </div>
-
+      
        <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Recent Proposals</CardTitle>
-            <CardDescription>Your latest proposals at a glance.</CardDescription>
-          </div>
-          <Button asChild size="sm" className="gap-1">
-            <Link href="/dashboard/proposals/new">
-              <PlusCircle className="h-4 w-4" />
-              Create Proposal
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden sm:table-cell">Amount</TableHead>
-                <TableHead className="text-right">Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {proposals.slice(0, 5).map((proposal) => (
-                <TableRow key={proposal.id}>
-                  <TableCell>
-                    <ClientPopover client={getClientById(proposal.client.id)!}>
-                      <button className="flex flex-col items-start text-left">
-                        <div className="font-medium">{proposal.client.companyName}</div>
-                        <div className="hidden text-sm text-muted-foreground md:inline">
-                          {proposal.client.contactName}
-                        </div>
-                      </button>
-                    </ClientPopover>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={cn("text-xs", statusStyles[proposal.status])} variant="outline">
-                      {proposal.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {currencyFormatter.format(proposal.amount)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {proposal.createdAt}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          <CardHeader>
+            <CardTitle>Activity Snapshot</CardTitle>
+            <CardDescription>Your key performance indicators for this month.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Proposals Sent</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{proposalsSent}</div>
+                <p className="text-xs text-muted-foreground">Total proposals this month</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
+                <Percent className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{winRate.toFixed(1)}%</div>
+                <p className="text-xs text-muted-foreground">Based on concluded proposals</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg. Deal Size</CardTitle>
+                <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{currencyFormatter.format(avgDealSize)}</div>
+                <p className="text-xs text-muted-foreground">From accepted proposals</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">New Clients</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">+{newClientsThisMonth}</div>
+                <p className="text-xs text-muted-foreground">Clients acquired this month</p>
+              </CardContent>
+            </Card>
+          </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button asChild size="sm" variant="outline">
+              <Link href="/dashboard/proposals">View All Proposals</Link>
+            </Button>
+          </CardFooter>
+        </Card>
 
 
       {/* Bonus Tracker Section */}
@@ -697,3 +708,6 @@ export default function DashboardPage() {
   );
 }
 
+
+
+    
