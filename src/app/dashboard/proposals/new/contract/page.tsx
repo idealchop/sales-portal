@@ -14,6 +14,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -50,7 +51,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
 import { allPlans, deliveryFrequencies } from '../plans/page';
@@ -511,7 +512,7 @@ function PreviewDialog({
                     {distributionPlan.length > 0 && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Monthly Distribution Plan</CardTitle>
+                                <CardTitle>Projected Delivery Schedule</CardTitle>
                                 <CardDescription>
                                     An estimated weekly breakdown of your water deliveries.
                                 </CardDescription>
@@ -534,13 +535,9 @@ function PreviewDialog({
                                             </TableRow>
                                         ))}
                                     </TableBody>
-                                    <CardFooter className="p-0">
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="text-xs text-muted-foreground pt-4">
-                                                * This is an estimated delivery schedule. Actual deliveries may be adjusted based on real-time consumption data to ensure you never run out of water.
-                                            </TableCell>
-                                        </TableRow>
-                                    </CardFooter>
+                                    <TableCaption className="text-left mt-4 text-xs">
+                                        * This is a projected delivery schedule. Actual deliveries may be adjusted based on real-time consumption data to ensure you never run out of water.
+                                    </TableCaption>
                                 </Table>
                             </CardContent>
                         </Card>
@@ -1170,6 +1167,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
