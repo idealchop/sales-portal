@@ -19,6 +19,7 @@ import {
   BookCopy,
   Home,
   CreditCard,
+  PlusCircle,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -369,6 +370,61 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+       <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Recent Proposals</CardTitle>
+            <CardDescription>Your latest proposals at a glance.</CardDescription>
+          </div>
+          <Button asChild size="sm" className="gap-1">
+            <Link href="/dashboard/proposals/new">
+              <PlusCircle className="h-4 w-4" />
+              Create Proposal
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Client</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden sm:table-cell">Amount</TableHead>
+                <TableHead className="text-right">Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {proposals.slice(0, 5).map((proposal) => (
+                <TableRow key={proposal.id}>
+                  <TableCell>
+                    <ClientPopover client={getClientById(proposal.client.id)!}>
+                      <button className="flex flex-col items-start text-left">
+                        <div className="font-medium">{proposal.client.companyName}</div>
+                        <div className="hidden text-sm text-muted-foreground md:inline">
+                          {proposal.client.contactName}
+                        </div>
+                      </button>
+                    </ClientPopover>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={cn("text-xs", statusStyles[proposal.status])} variant="outline">
+                      {proposal.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {currencyFormatter.format(proposal.amount)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {proposal.createdAt}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+
       {/* Bonus Tracker Section */}
        <Card className="bg-background">
         <CardHeader>
@@ -639,11 +695,5 @@ export default function DashboardPage() {
       </Card>
     </div>
   );
+}
 
-    
-
-    
-
-    
-
-    
