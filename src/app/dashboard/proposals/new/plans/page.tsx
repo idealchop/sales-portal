@@ -557,16 +557,17 @@ function PlansGrid({
             refillFrequency = freq ? freq.label : plan.refillFrequency;
         }
 
-        if (isCustomSmeCommercial && smeCommercialCustomValues) {
-            employees = getEmployees(smeCommercialCustomValues.totalLiters);
-            stations = getStations(smeCommercialCustomValues.totalLiters);
-            monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(smeCommercialCustomValues.totalCost);
-            liters = `${smeCommercialCustomValues.totalLiters.toLocaleString()} L`;
-            const freq = deliveryFrequencies.find(f => f.value === smeCommercialCustomValues.deliveries);
-            refillFrequency = freq ? freq.label : plan.refillFrequency;
-
+        if (isCustomSmeCommercial) {
             const pricePerLiter = businessSize === 'household' ? 2.5 : 3;
             inclusions[0] = `Priced at ₱${pricePerLiter.toFixed(2)} per liter`;
+            if (smeCommercialCustomValues) {
+                employees = getEmployees(smeCommercialCustomValues.totalLiters);
+                stations = getStations(smeCommercialCustomValues.totalLiters);
+                monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(smeCommercialCustomValues.totalCost);
+                liters = `${smeCommercialCustomValues.totalLiters.toLocaleString()} L`;
+                const freq = deliveryFrequencies.find(f => f.value === smeCommercialCustomValues.deliveries);
+                refillFrequency = freq ? freq.label : plan.refillFrequency;
+            }
         }
 
 
