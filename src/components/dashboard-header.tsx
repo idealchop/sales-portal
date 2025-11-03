@@ -112,21 +112,22 @@ export function DashboardHeader() {
                 
                 <div className="p-2">
                     <DialogTrigger asChild>
-                         <Button variant="ghost" className="w-full justify-start text-sm">
+                        <Button variant="ghost" className="w-full justify-start text-sm font-normal">
                             <User className="mr-2 h-4 w-4" />
-                            <span>View or Edit Profile</span>
+                            View Profile
                         </Button>
                     </DialogTrigger>
-                </div>
-                
-                <Separator />
-
-                <div className="p-4 text-sm">
+                    <Button variant="ghost" className="w-full justify-start text-sm font-normal" asChild>
+                        <Link href="/dashboard/settings">
+                            <Settings className="mr-2 h-4 w-4" />
+                            Account Settings
+                        </Link>
+                    </Button>
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button variant="outline" className="w-full">
+                             <Button variant="ghost" className="w-full justify-start text-sm font-normal">
                                 <QrCodeIcon className="mr-2 h-4 w-4" />
-                                Refer a friend to join the team
+                                Refer a Friend
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md">
@@ -152,21 +153,10 @@ export function DashboardHeader() {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
-                </div>
-
-                <Separator />
-
-                <div className="p-2">
-                    <Link href="/dashboard/settings" className="flex items-center gap-2 rounded-md p-2 text-sm hover:bg-accent">
-                        <Settings className="h-4 w-4 text-muted-foreground" />
-                        <span>Account & Preferences</span>
-                        <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
-                    </Link>
-                    <Link href="#" className="flex items-center gap-2 rounded-md p-2 text-sm hover:bg-accent">
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                        <span>Help & Features</span>
-                         <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
-                    </Link>
+                    <Button variant="ghost" className="w-full justify-start text-sm font-normal">
+                        <HelpCircle className="mr-2 h-4 w-4" />
+                        Help & Support
+                    </Button>
                 </div>
 
                 <Separator />
