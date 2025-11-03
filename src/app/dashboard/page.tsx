@@ -110,9 +110,9 @@ export default function DashboardPage() {
     { target: 10, bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
   ]
    const individualCloserBonusTiers = [
-    { target: 5, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 10, bonus: 6000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 15, bonus: 15000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 5, bonus: 4000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 10, bonus: 10000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 15, bonus: '₱25,000 + "Elite Closer" Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
   ]
   const growthBonusTiers = [
     { target: 50000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
@@ -134,7 +134,9 @@ export default function DashboardPage() {
   ];
 
   const prepaymentProgressTiers = [
-    { target: 5, reward: '₱10,000 Milestone Bonus' },
+    { target: 1, reward: '₱2,000' },
+    { target: 3, reward: '₱7,500' },
+    { target: 5, reward: '₱15,000 Milestone Bonus' },
   ];
   
   const prepaidContracts = 2;
@@ -333,7 +335,7 @@ export default function DashboardPage() {
                 title="Individual Closer Bonus"
                 value={`${individualClientsThisMonth} / 15`}
                 progress={(individualClientsThisMonth / 15) * 100}
-                goal={`Goal: ${individualClientsThisMonthTarget} clients for ₱2,500`}
+                goal={`Goal: ${individualClientsThisMonthTarget} clients for ₱4,000`}
                 description="For Individual (Household) clients.">
                  <DialogContent>
                     <DialogHeader>
@@ -353,7 +355,7 @@ export default function DashboardPage() {
                                 {individualCloserBonusTiers.map(tier => (
                                     <TableRow key={tier.target} className={cn(individualClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                         <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new household clients</TableCell>
-                                        <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
+                                        <TableCell className="font-bold text-primary">{typeof tier.bonus === 'number' ? currencyFormatter.format(tier.bonus) : tier.bonus}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -638,3 +640,5 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+
+    
