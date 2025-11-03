@@ -11,10 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, Copy, Download } from 'lucide-react';
+import { Loader2, Sparkles, Copy, Download, Eye, History, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { generateSocialPost } from '@/ai/flows/generate-social-post';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   topic: z.string().min(10, 'Please describe the topic in at least 10 characters.'),
@@ -26,12 +35,16 @@ type SocialPostFormValues = z.infer<typeof formSchema>;
 type GeneratedContent = {
   caption: string;
   imageUrl: string;
+  topic: string;
+  style: string;
+  timestamp: string;
 };
 
 export default function ContentStudioPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  const [history, setHistory] = useState<GeneratedContent[]>([]);
 
   const form = useForm<SocialPostFormValues>({
     resolver: zodResolver(formSchema),
@@ -46,7 +59,14 @@ export default function ContentStudioPage() {
     setGeneratedContent(null);
     try {
       const result = await generateSocialPost(values);
-      setGeneratedContent(result);
+      const newContent: GeneratedContent = {
+        ...result,
+        topic: values.topic,
+        style: values.style,
+        timestamp: new Date().toLocaleString(),
+      }
+      setGeneratedContent(newContent);
+      setHistory(prev => [newContent, ...prev]);
       toast({
         title: 'Content Generated!',
         description: 'Your new social media post is ready for review.',
@@ -78,6 +98,14 @@ export default function ContentStudioPage() {
     toast({ title: 'Image downloaded!' });
   };
 
+  const handleClearHistory = () => {
+    setHistory([]);
+    toast({
+        title: 'History Cleared',
+        description: 'Your content generation history has been cleared.',
+    });
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -88,7 +116,7 @@ export default function ContentStudioPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>Create a Post</CardTitle>
@@ -152,14 +180,86 @@ export default function ContentStudioPage() {
               </Form>
             </CardContent>
           </Card>
+            {history.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <History className="h-5 w-5" />
+                                <CardTitle>History</CardTitle>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={handleClearHistory}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Clear
+                            </Button>
+                        </div>
+                        <CardDescription>
+                            Review and reuse your previously generated posts.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {history.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between rounded-lg border p-3">
+                                <div className="flex-1 overflow-hidden">
+                                    <p className="truncate text-sm font-medium">{item.topic}</p>
+                                    <p className="text-xs text-muted-foreground">{item.timestamp}</p>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                    </DialogTrigger>
+                                     <DialogContent className="sm:max-w-3xl">
+                                        <DialogHeader>
+                                            <DialogTitle>Generated Content Preview</DialogTitle>
+                                            <DialogDescription>
+                                                Review the full content generated on {item.timestamp}.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 max-h-[60vh] overflow-y-auto pr-4">
+                                            <div>
+                                                <h3 className="font-semibold mb-2">Generated Image</h3>
+                                                <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
+                                                    <Image src={item.imageUrl} alt="Generated social media image" fill className="object-cover"/>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold mb-2">Generated Caption</h3>
+                                                <div className="prose dark:prose-invert text-sm whitespace-pre-wrap rounded-md bg-muted p-4 h-full">
+                                                    {item.caption}
+                                                </div>
+                                            </div>
+                                        </div>
+                                         <CardFooter className="mt-4 flex justify-end gap-2">
+                                            <Button variant="outline" onClick={() => handleDownload(item.imageUrl)}>
+                                                <Download className="mr-2 h-4 w-4" />
+                                                Download Image
+                                            </Button>
+                                            <Button variant="outline" onClick={() => handleCopy(item.caption)}>
+                                                <Copy className="mr-2 h-4 w-4" />
+                                                Copy Caption
+                                            </Button>
+                                        </CardFooter>
+                                    </DialogContent>
+                                </Dialog>
+                                <Button variant="ghost" size="icon" onClick={() => handleCopy(item.caption)}><Copy className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDownload(item.imageUrl)}><Download className="h-4 w-4" /></Button>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="min-h-[500px]">
+          <Card className="min-h-[600px]">
             <CardHeader>
               <CardTitle>Generated Preview</CardTitle>
               <CardDescription>
-                Review your AI-generated content below.
+                Review your latest AI-generated content below.
               </CardDescription>
             </CardHeader>
             <CardContent>
