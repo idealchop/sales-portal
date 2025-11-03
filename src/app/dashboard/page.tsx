@@ -56,6 +56,7 @@ import { RevenueChart } from '@/components/revenue-chart';
 import { ClientPopover } from '@/components/client-popover';
 import type { Client } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -135,6 +136,15 @@ export default function DashboardPage() {
       { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Apr' },
       { term: 'Annual', schedule: 'Spread monthly for 12 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Oct next year' },
   ];
+  
+  const monthlyCommissionBreakdown = [
+    { client: 'Innovate Corp', amount: 3000, type: 'New Client' },
+    { client: 'Solutions Inc.', amount: 1160, type: 'Renewal' },
+    { client: 'Apex Industries', amount: 4000, type: 'Recurring' },
+  ];
+  const recurringCommissionBreakdown = [
+    { client: 'Apex Industries', amount: 4000, type: 'Pro Plan' },
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -153,6 +163,42 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold">₱8,160</div>
             <p className="text-xs text-primary-foreground/80">+15% from last month</p>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="text-xs text-primary-foreground/80 mt-2 underline">See breakdown</button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Monthly Commission Breakdown</DialogTitle>
+                  <DialogDescription>Details of your commission earnings for this month.</DialogDescription>
+                </DialogHeader>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {monthlyCommissionBreakdown.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{item.client}</TableCell>
+                        <TableCell>{item.type}</TableCell>
+                        <TableCell className="text-right">{currencyFormatter.format(item.amount)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <Separator />
+                <div className="flex justify-end font-bold">
+                    <div className="grid grid-cols-2 gap-4 w-60">
+                        <span>Total:</span>
+                        <span className="text-right">{currencyFormatter.format(monthlyCommissionBreakdown.reduce((acc, item) => acc + item.amount, 0))}</span>
+                    </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
@@ -163,6 +209,42 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold">₱4,000</div>
             <p className="text-xs text-primary-foreground/80">Your stable monthly base income</p>
+             <Dialog>
+              <DialogTrigger asChild>
+                <button className="text-xs text-primary-foreground/80 mt-2 underline">See breakdown</button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Recurring Commission Breakdown</DialogTitle>
+                  <DialogDescription>Details of your recurring commission sources.</DialogDescription>
+                </DialogHeader>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recurringCommissionBreakdown.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{item.client}</TableCell>
+                        <TableCell>{item.type}</TableCell>
+                        <TableCell className="text-right">{currencyFormatter.format(item.amount)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                 <Separator />
+                <div className="flex justify-end font-bold">
+                    <div className="grid grid-cols-2 gap-4 w-60">
+                        <span>Total:</span>
+                        <span className="text-right">{currencyFormatter.format(recurringCommissionBreakdown.reduce((acc, item) => acc + item.amount, 0))}</span>
+                    </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
@@ -489,3 +571,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
