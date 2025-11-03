@@ -31,6 +31,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 import { proposals, commissionData, clients } from '@/lib/data';
 import { RevenueChart } from '@/components/revenue-chart';
@@ -259,5 +260,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
