@@ -989,9 +989,9 @@ function ContractPageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <div className="flex justify-between font-semibold">
-                            <span>{summaryTitle} ({billingCycleLabel})</span>
-                            <span>{currencyFormatter.format(basePrice)} / mo</span>
+                        <div>
+                            <p className="font-semibold">{summaryTitle} ({billingCycleLabel})</p>
+                            <p className="text-2xl font-bold">{currencyFormatter.format(basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
                             <li>{finalPlan.liters}</li>
