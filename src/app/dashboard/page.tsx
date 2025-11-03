@@ -3,6 +3,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowUpRight,
   CircleDollarSign,
@@ -16,6 +17,7 @@ import {
   Trophy,
   CalendarCheck,
   Users,
+  BookCopy,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -47,6 +49,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
 import { proposals, commissionData, clients } from '@/lib/data';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { RevenueChart } from '@/components/revenue-chart';
 import { ClientPopover } from '@/components/client-popover';
 import type { Client } from '@/lib/definitions';
@@ -417,57 +420,37 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
-              <CardTitle>Recent Proposals</CardTitle>
+              <CardTitle>Sales Materials</CardTitle>
               <CardDescription>
-                Review your most recent sales proposals.
+                A quick look at available materials.
               </CardDescription>
             </div>
             <Button asChild size="sm" className="ml-auto gap-1">
-              <Link href="/dashboard/proposals">
+              <Link href="/dashboard/materials">
                 View All
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
             </Button>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {proposals.slice(0, 5).map((proposal) => {
-                  const client = getClientById(proposal.client.id);
-                  return (
-                    <TableRow key={proposal.id}>
-                      <TableCell>
-                        {client ? (
-                          <ClientPopover client={client}>
-                            <div className="font-medium cursor-pointer hover:underline">{proposal.client.companyName}</div>
-                          </ClientPopover>
-                        ) : (
-                          <div className="font-medium">{proposal.client.companyName}</div>
-                        )}
-                        <div className="text-sm text-muted-foreground hidden md:inline">
-                          {proposal.client.contactName}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {PlaceHolderImages.slice(0, 4).map((material) => (
+                    <Link href="/dashboard/materials" key={material.id}>
+                        <div className="aspect-video relative rounded-md overflow-hidden border group">
+                            <Image
+                                src={material.imageUrl}
+                                alt={material.description}
+                                fill
+                                className="object-cover transition-transform group-hover:scale-105"
+                                data-ai-hint={material.imageHint}
+                            />
+                             <div className="absolute inset-0 bg-black/40 flex items-end p-2">
+                                <p className="text-xs font-semibold text-white truncate">{material.title}</p>
+                            </div>
                         </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Badge className={`capitalize ${statusStyles[proposal.status]}`} variant="outline">
-                          {proposal.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+                    </Link>
+                ))}
+            </div>
           </CardContent>
         </Card>
       </div>
