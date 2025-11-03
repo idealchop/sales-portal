@@ -61,40 +61,16 @@ const generateSocialPostFlow = ai.defineFlow(
     outputSchema: SocialPostOutputSchema,
   },
   async (input) => {
-    // Generate caption and initial image in parallel
-    const [captionResponse, initialImageResponse] = await Promise.all([
-      socialPostCaptionPrompt(input),
-      ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: `A visually stunning, high-quality, professional photograph for a social media post about: ${input.topic}. Style: ${input.style}.`,
-      }),
-    ]);
-
+    // Generate caption
+    const captionResponse = await socialPostCaptionPrompt(input);
     const caption = captionResponse.output?.caption || '';
-    const initialImageUrl = initialImageResponse.media.url;
 
-    const logoUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_Logo_OnDark.png?alt=media&token=815252d4-3151-4089-a292-02685a18a034';
-    const taglineUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_Tagline_OnDark.png?alt=media&token=1e18d6c8-99b5-4b36-8208-8f5413158c54';
-
-    // Add branding to the generated image
-    const brandedImageResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image-preview',
-      prompt: [
-        { media: { url: initialImageUrl } },
-        { media: { url: logoUrl } },
-        { media: { url: taglineUrl } },
-        { text: 'Overlay the provided logo and tagline onto the image in a professional and aesthetically pleasing way. The logo should be prominent but not obscure the main subject. The tagline should be legible and well-placed.' },
-      ],
-      config: {
-        responseModalities: ['IMAGE'],
-      },
-    });
-
-    const brandedImageUrl = brandedImageResponse.media.url;
+    // Use a static branded placeholder image to avoid billing errors with Imagen
+    const staticBrandedImageUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fbranded-placeholder.png?alt=media&token=bc865181-e283-4299-b887-344445585b19';
 
     return {
       caption,
-      imageUrl: brandedImageUrl,
+      imageUrl: staticBrandedImageUrl,
     };
   }
 );
