@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -11,6 +10,9 @@ import {
   Award,
   Target,
   HeartHandshake,
+  Star,
+  Trophy,
+  CalendarCheck,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,6 +32,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
@@ -37,6 +47,7 @@ import { proposals, commissionData, clients } from '@/lib/data';
 import { RevenueChart } from '@/components/revenue-chart';
 import { ClientPopover } from '@/components/client-popover';
 import type { Client } from '@/lib/definitions';
+import { cn } from '@/lib/utils';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -45,21 +56,26 @@ const statusStyles: { [key: string]: string } = {
   rejected: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
 };
 
-const BonusCard = ({ icon, title, value, progress, goal, description }: { icon: React.ReactNode, title: string, value: string | number, progress: number, goal: string, description: string }) => (
-    <Card>
-        <CardHeader className="pb-2">
-            <div className="flex items-center gap-3">
-                {icon}
-                <CardTitle className="text-base font-semibold">{title}</CardTitle>
-            </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-            <div className="text-3xl font-bold">{value}</div>
-            <Progress value={progress} />
-            <p className="text-xs text-muted-foreground">{goal}</p>
-            <p className="text-xs text-muted-foreground">{description}</p>
-        </CardContent>
-    </Card>
+const BonusCard = ({ icon, title, value, progress, goal, description, children }: { icon: React.ReactNode, title: string, value: string | number, progress: number, goal: string, description: string, children?: React.ReactNode }) => (
+    <Dialog>
+        <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
+                <CardHeader className="pb-2">
+                    <div className="flex items-center gap-3">
+                        {icon}
+                        <CardTitle className="text-base font-semibold">{title}</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="text-3xl font-bold">{value}</div>
+                    <Progress value={progress} />
+                    <p className="text-xs text-muted-foreground">{goal}</p>
+                    <p className="text-xs text-muted-foreground">{description}</p>
+                </CardContent>
+            </Card>
+        </DialogTrigger>
+        {children}
+    </Dialog>
 )
 
 export default function DashboardPage() {
@@ -71,9 +87,23 @@ export default function DashboardPage() {
   const clientsThisMonth = 2;
   const quarterlyVolume = 68000;
   const clientsForRetention = [
-    { name: 'Solutions Inc.', anniversary: '3-month', date: 'in 12 days' },
-    { name: 'Apex Industries', anniversary: '6-month', date: 'in 25 days' },
+    { name: 'Solutions Inc.', anniversary: '3-month', date: 'in 12 days', bonus: 500, avatarSeed: 'Solutions' },
+    { name: 'Apex Industries', anniversary: '6-month', date: 'in 25 days', bonus: 1000, avatarSeed: 'Apex' },
+    { name: 'Innovate Corp', anniversary: '12-month', date: 'in 2 months', bonus: 3000, avatarSeed: 'Innovate' },
   ]
+  const closerBonusTiers = [
+    { target: 3, bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 5, bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 10, bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+  ]
+  const growthBonusTiers = [
+    { target: 50000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 100000, bonus: '₱10,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 200000, bonus: '₱25,000 + Elite Partner Badge', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+  ]
+
+  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -140,7 +170,7 @@ export default function DashboardPage() {
        <Card>
         <CardHeader>
             <CardTitle>My Goals & Bonuses</CardTitle>
-            <CardDescription>Track your progress towards your next payout.</CardDescription>
+            <CardDescription>Track your progress towards your next payout. Click a card to see the rewards!</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
              <BonusCard 
@@ -149,41 +179,132 @@ export default function DashboardPage() {
                 value={`${clientsThisMonth} / 10`}
                 progress={(clientsThisMonth / 10) * 100}
                 goal="Goal: 3 clients for ₱2,000"
-                description="Close 5 for ₱5k, 10 for ₱12k."
-             />
+                description="Close more clients this month to earn a bonus.">
+                 <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Monthly Closer Bonus</DialogTitle>
+                        <DialogDescription>Reward for consistency and urgency. Claimed after clients complete their first paid month.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <p>Your current progress: <span className="font-bold">{clientsThisMonth} clients</span></p>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Target</TableHead>
+                                    <TableHead>Bonus</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {closerBonusTiers.map(tier => (
+                                    <TableRow key={tier.target} className={cn(clientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                        <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new clients</TableCell>
+                                        <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                 </DialogContent>
+            </BonusCard>
+
              <BonusCard 
                 icon={<Award className="h-6 w-6 text-primary" />}
                 title="Quarterly Growth Bonus"
                 value={`₱${(quarterlyVolume / 1000).toFixed(0)}k / ₱200k`}
                 progress={(quarterlyVolume / 200000) * 100}
                 goal="Goal: ₱50k volume for ₱5,000"
-                description="Hit ₱200k for Elite Partner status."
-             />
-             <Card>
-                <CardHeader className="pb-2">
-                    <div className="flex items-center gap-3">
-                         <HeartHandshake className="h-6 w-6 text-primary" />
-                        <CardTitle className="text-base font-semibold">Client Retention</CardTitle>
+                description="Scale up with higher-volume enterprise accounts.">
+                 <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Quarterly Growth Bonus</DialogTitle>
+                        <DialogDescription>Rewards the expansion of your client base and total liters sold.</DialogDescription>
+                    </DialogHeader>
+                     <div className="space-y-4">
+                        <p>Your current progress: <span className="font-bold">{currencyFormatter.format(quarterlyVolume)}</span> in new volume</p>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Metric</TableHead>
+                                    <TableHead>Bonus</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {growthBonusTiers.map(tier => (
+                                    <TableRow key={tier.target} className={cn(quarterlyVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                        <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
+                                        <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">Clients nearing a retention bonus.</p>
-                    <div className="space-y-3">
-                        {clientsForRetention.map(client => (
-                            <div key={client.name} className="flex items-center gap-3">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarImage src={`https://picsum.photos/seed/${client.name}/32/32`} />
-                                    <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="text-sm">
-                                    <p className="font-medium">{client.name}</p>
-                                    <p className="text-xs text-muted-foreground">{client.anniversary} ({client.date})</p>
-                                </div>
+                 </DialogContent>
+             </BonusCard>
+
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center gap-3">
+                                <HeartHandshake className="h-6 w-6 text-primary" />
+                                <CardTitle className="text-base font-semibold">Client Retention</CardTitle>
                             </div>
-                        ))}
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground mb-4">Clients nearing a retention bonus.</p>
+                            <div className="space-y-3">
+                                {clientsForRetention.slice(0, 2).map(client => (
+                                    <div key={client.name} className="flex items-center gap-3">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage src={`https://picsum.photos/seed/${client.avatarSeed}/32/32`} />
+                                            <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="text-sm">
+                                            <p className="font-medium">{client.name}</p>
+                                            <p className="text-xs text-muted-foreground">{client.anniversary} ({client.date})</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Client Retention Bonus</DialogTitle>
+                        <DialogDescription>Strengthen client relationships and earn long-term rewards.</DialogDescription>
+                    </DialogHeader>
+                     <div className="space-y-4">
+                        <p>Upcoming retention opportunities:</p>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Client</TableHead>
+                                    <TableHead>Milestone</TableHead>
+                                    <TableHead>Bonus</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {clientsForRetention.map(client => (
+                                    <TableRow key={client.name}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={`https://picsum.photos/seed/${client.avatarSeed}/32/32`} />
+                                                    <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="font-medium">{client.name}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="flex items-center gap-2"><CalendarCheck className="h-5 w-5 text-blue-500" /> {client.anniversary} ({client.date})</TableCell>
+                                        <TableCell className="font-bold text-primary">{currencyFormatter.format(client.bonus)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </div>
-                </CardContent>
-             </Card>
+                </DialogContent>
+            </Dialog>
         </CardContent>
       </Card>
 
