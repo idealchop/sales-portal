@@ -320,6 +320,34 @@ export function ClientOverviewDialog({
                         </DialogHeader>
                         <ScrollArea className="h-[70vh] pr-6">
                             <div className="space-y-6 py-4">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Client Information</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                            <span className="text-muted-foreground">Client ID:</span>
+                                            <span className="font-semibold font-mono">{client.id}</span>
+                                        </div>
+                                         <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                            <span className="text-muted-foreground">Date Signed:</span>
+                                            <span className="font-semibold">{today}</span>
+                                        </div>
+                                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                            <span className="text-muted-foreground">Company:</span>
+                                            <span className="font-semibold">{client.companyName}</span>
+                                        </div>
+                                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                            <span className="text-muted-foreground">Contact:</span>
+                                            <span className="font-semibold">{client.contactName}</span>
+                                        </div>
+                                        <div className="grid grid-cols-[100px_1fr] items-start gap-2 col-span-2">
+                                            <span className="text-muted-foreground">Address:</span>
+                                            <span className="font-semibold">{client.address}</span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
                                 {client.subscription ? (
                                      <Card>
                                         <CardHeader>
@@ -435,7 +463,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
-
-    
