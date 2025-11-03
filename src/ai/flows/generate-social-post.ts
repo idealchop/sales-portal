@@ -30,6 +30,7 @@ export async function generateSocialPost(input: SocialPostInput): Promise<Social
 const socialPostCaptionPrompt = ai.definePrompt({
     name: 'socialPostCaptionPrompt',
     input: { schema: SocialPostInputSchema },
+    output: { schema: z.object({ caption: z.string() })},
     prompt: `You are an expert social media manager for a company called Smart Refill.
 
     Generate a compelling and engaging social media post caption based on the following details.
@@ -48,21 +49,13 @@ const generateSocialPostFlow = ai.defineFlow(
     outputSchema: SocialPostOutputSchema,
   },
   async (input) => {
-    // Generate caption and image in parallel
-    const [captionResponse, imageResponse] = await Promise.all([
-      socialPostCaptionPrompt(input),
-      ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: `A visually appealing, professional marketing image for a social media post about: ${input.topic}. The style should be ${input.style}.`,
-      }),
-    ]);
+    
+    const captionResponse = await socialPostCaptionPrompt(input);
+    const caption = captionResponse.output?.caption || '';
 
-    const caption = (await captionResponse.output())?.text() || '';
-    const imageUrl = imageResponse.media.url;
-
-    if (!imageUrl) {
-        throw new Error("Image generation failed.");
-    }
+    // Using a placeholder image to avoid billing errors with Imagen.
+    const seed = Math.floor(Math.random() * 1000);
+    const imageUrl = `https://picsum.photos/seed/${seed}/1280/720`;
     
     return {
         caption,
