@@ -8,6 +8,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -50,10 +51,10 @@ import Image from 'next/image';
 import { allPlans, deliveryFrequencies } from '../plans/page';
 
 const billingCycles = [
-  { value: 'monthly', label: 'Monthly', discount: 0 },
-  { value: 'quarterly', label: 'Quarterly', discount: 0.03 },
-  { value: 'semi-annually', label: 'Semi-Annually', discount: 0.05 },
-  { value: 'annually', label: 'Annually', discount: 0.10 },
+  { value: 'monthly', label: 'Monthly', discount: 0, multiplier: 1 },
+  { value: 'quarterly', label: 'Quarterly', discount: 0.03, multiplier: 3 },
+  { value: 'semi-annually', label: 'Semi-Annually', discount: 0.05, multiplier: 6 },
+  { value: 'annually', label: 'Annually', discount: 0.10, multiplier: 12 },
 ];
 
 const billingOptions = [
@@ -390,6 +391,10 @@ function PreviewDialog({
 
     const summaryTitle = finalPlan.name.includes("Plan") ? finalPlan.name : `${finalPlan.name} Plan`;
 
+    const selectedCycle = billingCycles.find(c => c.label === billingCycleLabel) || billingCycles[0];
+    const totalBeforeDiscount = subtotal * selectedCycle.multiplier;
+    const discountValue = totalBeforeDiscount * discount;
+
     return (
         <DialogContent className="sm:max-w-5xl">
             <DialogHeader className="sr-only">
@@ -492,7 +497,7 @@ function PreviewDialog({
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">{finalPlan.name} ({billingCycleLabel})</span>
+                                <span className="text-muted-foreground">{summaryTitle} (Monthly Cost)</span>
                                 <span className="font-semibold">{currencyFormatter.format(planBaseCost)}</span>
                             </div>
                             {addons.map((addon) => (
@@ -517,12 +522,18 @@ function PreviewDialog({
                             )}
                              <Separator className="my-2" />
                              <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Subtotal</span>
+                                <span className="text-muted-foreground">Subtotal (per month)</span>
                                 <span className="font-semibold">{currencyFormatter.format(subtotal)}</span>
                             </div>
+                            {selectedCycle.multiplier > 1 && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Total for {selectedCycle.label} ({currencyFormatter.format(subtotal)} x {selectedCycle.multiplier} mos)</span>
+                                    <span className="font-semibold">{currencyFormatter.format(totalBeforeDiscount)}</span>
+                                </div>
+                            )}
                              <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Billing Cycle Discount ({billingCycleLabel})</span>
-                                <span className="font-semibold text-primary">-{currencyFormatter.format(subtotal * discount)}</span>
+                                <span className="text-muted-foreground">Billing Cycle Discount ({billingCycleLabel}, {discount * 100}%)</span>
+                                <span className="font-semibold text-primary">-{currencyFormatter.format(discountValue)}</span>
                             </div>
                             <Separator className="my-2" />
                             <div className="flex justify-between items-center font-bold text-lg">
@@ -732,16 +743,18 @@ function ContractPageContent() {
     const dispensersCost = additionalDispensers * additionalDispenserCost;
     const litersCost = additionalLiters * additionalLiterCost;
 
-    const currentBasePrice = planBaseCost + addonsCost + dispensersCost + litersCost;
+    const monthlyBasePrice = planBaseCost + addonsCost + dispensersCost + litersCost;
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
-    const discountAmount = currentBasePrice * selectedCycle.discount;
-    const finalAmount = currentBasePrice - discountAmount;
+    
+    const totalBeforeDiscount = monthlyBasePrice * selectedCycle.multiplier;
+    const discountAmount = totalBeforeDiscount * selectedCycle.discount;
+    const finalAmount = totalBeforeDiscount - discountAmount;
     
     return {
         totalAmount: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
         discount: selectedCycle.discount,
         billingCycleLabel: selectedCycle.label,
-        basePrice: currentBasePrice,
+        basePrice: monthlyBasePrice,
     }
   }, [plan, billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
   
@@ -977,7 +990,7 @@ function ContractPageContent() {
                     <div className="space-y-2">
                         <div className="flex justify-between font-semibold">
                             <span>{summaryTitle} ({billingCycleLabel})</span>
-                            <span>{currencyFormatter.format(basePrice - (basePrice * discount))}</span>
+                            <span>{currencyFormatter.format(basePrice)} / mo</span>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
                             <li>{finalPlan.liters}</li>
@@ -1079,6 +1092,8 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+    
+
     
 
     
