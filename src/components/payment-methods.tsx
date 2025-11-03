@@ -70,17 +70,13 @@ export function PaymentMethods() {
                         className="object-contain"
                       />
                     </div>
-                    <p className="font-semibold text-sm">{method.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {method.description}
-                    </p>
                   </Card>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Pay with {method.name}</DialogTitle>
                     <DialogDescription>
-                      Scan the QR code below to complete the payment.
+                      Scan the QR code below to complete the payment via {method.description}.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="flex justify-center p-4">
@@ -107,10 +103,6 @@ export function PaymentMethods() {
                       className="object-contain"
                     />
                   </div>
-                  <p className="font-semibold text-sm">{method.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {method.description}
-                  </p>
                 </Card>
               </Link>
             );
