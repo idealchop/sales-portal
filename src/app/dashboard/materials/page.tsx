@@ -2,12 +2,21 @@
 'use client';
 
 import Image from 'next/image';
-import { Download, Search } from 'lucide-react';
+import { Download, Search, Eye, Share2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 type GroupedMaterials = {
   [key: string]: ImagePlaceholder[];
@@ -15,6 +24,7 @@ type GroupedMaterials = {
 
 export default function MaterialsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
   
   const filteredMaterials = PlaceHolderImages.filter(material =>
     material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -38,6 +48,29 @@ export default function MaterialsPage() {
   ];
   
   const hasResults = filteredMaterials.length > 0;
+
+  const handleShare = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast({
+      title: 'Link Copied!',
+      description: 'The material link has been copied to your clipboard.',
+    });
+  };
+
+  const handleDownload = (imageUrl: string, title: string) => {
+    fetch(imageUrl)
+      .then(response => response.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${title.replace(/ /g, '_')}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({ title: 'Download Started', description: `Downloading ${title}.` });
+      })
+      .catch(() => toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not download the image.' }));
+  };
 
   return (
     <div className="space-y-8">
@@ -80,10 +113,33 @@ export default function MaterialsPage() {
                         <CardTitle className="text-base font-medium leading-tight">{material.title}</CardTitle>
                         <CardDescription className="text-sm">{material.description}</CardDescription>
                       </CardContent>
-                      <CardFooter className="p-4 pt-0">
-                        <Button className="w-full">
-                          <Download className="mr-2 h-4 w-4" />
-                          Download
+                      <CardFooter className="p-4 pt-0 flex justify-between gap-2">
+                         <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="flex-1">
+                              <Eye className="mr-2 h-4 w-4" /> View
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-3xl">
+                            <DialogHeader>
+                              <DialogTitle>{material.title}</DialogTitle>
+                              <DialogDescription>{material.description}</DialogDescription>
+                            </DialogHeader>
+                            <div className="relative aspect-video w-full mt-4">
+                                <Image
+                                    alt={material.description}
+                                    src={material.imageUrl}
+                                    fill
+                                    className="object-contain"
+                                />
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleShare(material.imageUrl)}>
+                          <Share2 className="mr-2 h-4 w-4" /> Share
+                        </Button>
+                        <Button size="sm" className="flex-1" onClick={() => handleDownload(material.imageUrl, material.title)}>
+                          <Download className="mr-2 h-4 w-4" /> Download
                         </Button>
                       </CardFooter>
                     </Card>
