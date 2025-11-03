@@ -252,7 +252,7 @@ export function ClientOverviewDialog({
                         <CardDescription>
                             {view === 'proposals'
                                 ? 'Upload the client’s payment confirmation to finalize the subscription.'
-                                : 'Review the payment confirmation provided by the client.'
+                                : 'A summary of the payment confirmation provided by the client.'
                             }
                         </CardDescription>
                     </CardHeader>
@@ -279,7 +279,6 @@ export function ClientOverviewDialog({
                                     <FileCheck className="mr-2 h-4 w-4" />
                                     Verified
                                 </Badge>
-                                <Button variant="secondary">Review</Button>
                             </div>
                         </CardContent>
                     )}
