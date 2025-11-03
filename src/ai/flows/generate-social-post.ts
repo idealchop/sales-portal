@@ -67,9 +67,6 @@ const generateSocialPostFlow = ai.defineFlow(
       ai.generate({
         model: 'googleai/imagen-4.0-fast-generate-001',
         prompt: `A bright, clean, professional photo of ${input.topic}. The scene should be warm and well-lit, showing a positive outcome related to Smart Refill's services (like a stocked water dispenser, happy staff, or an automated delivery). The style should be photo-realistic with a shallow depth of field. The color palette should feature clean whites, our brand's primary teal (#20c997), and golden yellow (#FDD835) accents.`,
-        config: {
-          negativePrompt: "low-resolution, blurry, dark, dirty water, broken equipment, sad, messy, competitor logos, text, watermark, gore, identifiable faces",
-        },
       }),
     ]);
     
