@@ -1,5 +1,4 @@
 
-
 export type OnboardingStep = {
   title: string;
   description: string;
@@ -72,4 +71,15 @@ export type SalesMaterial = {
 export type Revenue = {
   month: string;
   revenue: number;
+};
+
+export type UserProfile = {
+    id: string;
+    email: string;
+    displayName: string;
+    role: 'sales' | 'admin';
+    team?: string;
+    birthday?: string;
+    photoURL?: string;
+    onboardingCompleted: boolean;
 };

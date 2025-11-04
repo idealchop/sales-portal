@@ -13,9 +13,11 @@ import {
 import { DashboardNav } from '@/components/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { cn } from '@/lib/utils';
-import { FirebaseClientProvider, useUser } from '@/firebase';
+import { FirebaseClientProvider, useUser, useDoc, useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/definitions';
 
 function DashboardSidebar() {
   const { state } = useSidebar();
@@ -44,14 +46,25 @@ function DashboardSidebar() {
 function ProtectedDashboard({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
+  
+  const userDocRef = user ? doc(firestore, 'users', user.uid) : null;
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
+    const isLoading = isUserLoading || isProfileLoading;
+    if (!isLoading) {
+      if (!user) {
+        router.push('/login');
+      } else if (userProfile && !userProfile.onboardingCompleted) {
+        router.push('/onboarding/password');
+      }
     }
-  }, [user, isUserLoading, router]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
-  if (isUserLoading || !user) {
+  const isLoading = isUserLoading || isProfileLoading;
+
+  if (isLoading || !user || (userProfile && !userProfile.onboardingCompleted)) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
