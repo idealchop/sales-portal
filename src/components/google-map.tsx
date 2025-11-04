@@ -153,16 +153,8 @@ const render = (status: Status) => {
     if (status === Status.FAILURE) {
         return (
             <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
-                <p className="font-bold">Google Maps API Key Error</p>
-                <p className="text-xs mt-1">The provided API key is invalid or not enabled for the 'Maps JavaScript API'.</p>
-                <a 
-                    href="https://console.cloud.google.com/google/maps-apis/overview" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="mt-4 text-xs underline hover:text-destructive-foreground"
-                >
-                    Go to Google Cloud Console to fix this.
-                </a>
+                <p className="font-bold">Could not load map.</p>
+                <p className="text-xs mt-1">Please check the API key and network connection.</p>
             </div>
         );
     }
