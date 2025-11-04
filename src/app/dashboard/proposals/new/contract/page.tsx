@@ -562,52 +562,6 @@ function PreviewDialog({
                     
                     <Card>
                         <CardHeader>
-                            <CardTitle>Consumption Metrics</CardTitle>
-                            <CardDescription>
-                                Your projected water consumption based on the selected plan.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="relative h-60 w-full overflow-hidden rounded-lg bg-primary/10">
-                                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-primary/80 opacity-50">
-                                     <svg className="w-full h-auto" viewBox="0 0 1440 50" preserveAspectRatio="none" style={{transform: 'translateY(-1px)'}}>
-                                        <path d="M0,20 C360,40 1080,0 1440,20 L1440,50 L0,50 Z" fill="hsl(var(--primary) / 0.7)"></path>
-                                    </svg>
-                                </div>
-                                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-primary/80 opacity-50 animate-[wave_5s_cubic-bezier(0.36,0.45,0.63,0.53)_infinite]">
-                                     <svg className="w-full h-auto" viewBox="0 0 1440 50" preserveAspectRatio="none" style={{transform: 'translateY(-1px)'}}>
-                                        <path d="M0,20 C360,0 1080,40 1440,20 L1440,50 L0,50 Z" fill="hsl(var(--primary))"></path>
-                                    </svg>
-                                </div>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-primary-foreground p-4">
-                                    <div className="space-y-4">
-                                        <div>
-                                            <p className="text-sm uppercase tracking-wider text-primary-foreground/80">Projected Monthly Consumption</p>
-                                            <p className="text-4xl font-bold">{monthlyLiters.toLocaleString()} L</p>
-                                        </div>
-                                         <div>
-                                            <p className="text-sm uppercase tracking-wider text-primary-foreground/80">Projected Annual Consumption</p>
-                                            <p className="text-2xl font-bold">{(monthlyLiters * 12).toLocaleString()} L</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <style jsx>{`
-                                    @keyframes wave {
-                                        0% { transform: translateX(0) translateY(-1px); }
-                                        50% { transform: translateX(-25%) translateY(-1px); }
-                                        100% { transform: translateX(-50%) translateY(-1px); }
-                                    }
-                                    .animate-\[wave_5s_cubic-bezier\(0\.36\,0\.45\,0\.63\,0\.53\)_infinite\] {
-                                        width: 200%;
-                                        animation: wave 5s cubic-bezier(0.36,0.45,0.63,0.53) infinite;
-                                    }
-                                `}</style>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardHeader>
                             <CardTitle>Gallon Rotation & Handling Guide</CardTitle>
                             <CardDescription>
                                 Recommendations for managing your gallon inventory to ensure seamless service.
@@ -1110,7 +1064,7 @@ function ContractPageContent() {
                             <p className="text-2xl font-bold">{currencyFormatter.format(basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
-                            <li>{finalPlan.liters} total (includes 20% free liters)</li>
+                            <li>{finalPlan.liters} total (includes 20% free liters) / mo</li>
                              {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
                             <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                         </ul>
@@ -1206,6 +1160,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
