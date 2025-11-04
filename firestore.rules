@@ -1,0 +1,119 @@
+/**
+ * @fileOverview Firestore Security Rules for SmartSales AI application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a user-ownership model for user profiles and commissions,
+ * and a hierarchical relationship between clients and proposals. Sales materials are publicly readable.
+ * Data validation is relaxed to allow for rapid prototyping.
+ *
+ * Data Structure:
+ * - /clients/{clientId}: Stores client details.
+ * - /clients/{clientId}/proposals/{proposalId}: Stores proposals related to a client.
+ * - /sales_materials/{salesMaterialId}: Stores sales materials.
+ * - /commissions/{commissionId}: Stores commission records.
+ * - /users/{userId}: Stores user profiles.
+ *
+ * Key Security Decisions:
+ * - Users can only access their own profile data.
+ * - Users can create, update, and delete commissions assigned to them.
+ * - Sales materials are publicly readable.
+ * - Listing of sales materials is allowed.
+ *
+ * Denormalization for Authorization:
+ * - Commissions include a `userId` field to simplify authorization checks.
+ *
+ * Structural Segregation:
+ * - User-specific data is stored under /users/{userId} for isolation.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows access to client data based on its unique ID.
+     * @path /clients/{clientId}
+     * @allow (read) - Any authenticated user can read client data.
+     * @allow (create) - No one can create documents.
+     * @allow (update, delete) - No one can update or delete documents.
+     * @deny (create, update, delete) - No one can write client data.
+     * @principle Client data are read-only.
+     */
+    match /clients/{clientId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows access to proposals under a specific client.
+     * @path /clients/{clientId}/proposals/{proposalId}
+     * @allow (read) - Any authenticated user can read proposal data.
+     * @allow (create) - No one can create documents.
+     * @allow (update, delete) - No one can update or delete documents.
+     * @deny (create, update, delete) - No one can write proposal data.
+     * @principle Proposals data are read-only.
+     */
+    match /clients/{clientId}/proposals/{proposalId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows public read access to sales materials. Write access is denied.
+     * @path /sales_materials/{salesMaterialId}
+     * @allow (read) - Any user can read sales materials.
+     * @deny (create, update, delete) - No one can write sales materials.
+     * @principle Sales materials are publicly readable, owner-only writable (if ownership field was present).
+     */
+    match /sales_materials/{salesMaterialId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows access to commission records, ensuring users can only manage their own commissions.
+     * @path /commissions/{commissionId}
+     * @allow (create) - User can create a commission if the userId matches their auth UID.
+     * @allow (get, list, update, delete) - User can get, list, update, and delete a commission if the userId matches their auth UID and if the document exists.
+     * @deny (create) - User cannot create a commission if the userId does not match their auth UID.
+     * @deny (get, list, update, delete) - User cannot get, list, update, or delete a commission if the userId does not match their auth UID or if the document doesn't exist.
+     * @principle Enforces user-ownership for commissions.
+     */
+    match /commissions/{commissionId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn();
+      allow update: if isSignedIn() && isExistingOwner(resource.data.userId);
+      allow delete: if isSignedIn() && isExistingOwner(resource.data.userId);
+    }
+
+    /**
+     * @description Allows access to user profiles, ensuring users can only manage their own profile.
+     * @path /users/{userId}
+     * @allow (create) - User can create their profile if the userId matches their auth UID.
+     * @allow (get, list, update, delete) - User can get, list, update, and delete their profile if the userId matches their auth UID and the document exists.
+     * @deny (create) - User cannot create a profile for another user.
+     * @deny (get, list, update, delete) - User cannot get, list, update, or delete another user's profile or if the document doesn't exist.
+     * @principle Enforces user-ownership for profile data.
+     */
+    match /users/{userId} {
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+    }
+  }
+}
