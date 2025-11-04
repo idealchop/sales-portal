@@ -230,9 +230,6 @@ export function ClientOverviewDialog({
                                         </div>
                                     </div>
                                 )}
-                                <Button className="w-full" asChild>
-                                  <Link href="/dashboard/proposals/new">Create New Proposal</Link>
-                                </Button>
                             </CardContent>
                         ) : (
                             <CardContent>
