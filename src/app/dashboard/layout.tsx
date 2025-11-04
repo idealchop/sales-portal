@@ -13,7 +13,7 @@ import {
 import { DashboardNav } from '@/components/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { cn } from '@/lib/utils';
-import { FirebaseClientProvider, useUser, useDoc, useFirestore } from '@/firebase';
+import { FirebaseClientProvider, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc } from 'firebase/firestore';
@@ -47,24 +47,30 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const [hasChecked, setHasChecked] = useState(false);
   
-  const userDocRef = user ? doc(firestore, 'users', user.uid) : null;
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   useEffect(() => {
     const isLoading = isUserLoading || isProfileLoading;
-    if (!isLoading) {
+    if (!isLoading && !hasChecked) {
+      setHasChecked(true);
       if (!user) {
         router.push('/login');
       } else if (userProfile && !userProfile.onboardingCompleted) {
         router.push('/onboarding/password');
       }
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router, hasChecked]);
 
   const isLoading = isUserLoading || isProfileLoading;
 
-  if (isLoading || !user || (userProfile && !userProfile.onboardingCompleted)) {
+  if (isLoading || !hasChecked || !user || (userProfile && !userProfile.onboardingCompleted)) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
