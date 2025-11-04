@@ -1115,7 +1115,7 @@ function ContractPageContent() {
 
                     {selectedCycle.multiplier > 1 && (
                         <div className="flex justify-between items-center text-sm text-muted-foreground pt-1">
-                            <span>Total Liters (incl. free liters)</span>
+                            <span>Total Liters (includes free liters)</span>
                             <span>{totalLiters.toLocaleString()} L</span>
                         </div>
                     )}
@@ -1174,3 +1174,6 @@ export default function ContractPage() {
 
 
 
+
+
+    
