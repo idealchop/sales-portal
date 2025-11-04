@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -95,7 +94,11 @@ function CompleteSetupContent() {
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             description = "The current password you entered is incorrect. Please try again.";
-            router.push(`/onboarding/password?${searchParams.toString()}`);
+            // Go back to the password page, preserving other details
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete('currentPassword');
+            params.delete('newPassword');
+            router.push(`/onboarding/password?${params.toString()}`);
         } else {
             description = error.message;
         }

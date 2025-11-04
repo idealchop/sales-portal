@@ -15,10 +15,6 @@ import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
-import type { UserProfile } from '@/lib/definitions';
-
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -29,7 +25,6 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const { user: authUser, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();

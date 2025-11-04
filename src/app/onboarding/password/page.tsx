@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useState } from 'react';
@@ -44,8 +43,7 @@ function ChangePasswordContent() {
 
   const onSubmit = (values: FormValues) => {
     setIsSubmitting(true);
-    // Instead of doing the Firebase work here, we just pass the passwords along
-    // This is NOT secure for a real app, but for this flow it demonstrates the multi-step form
+    // Pass the passwords along to the final confirmation step
     nextStepParams.set('currentPassword', values.currentPassword);
     nextStepParams.set('newPassword', values.newPassword);
     
@@ -116,7 +114,7 @@ function ChangePasswordContent() {
             />
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save and Proceed
+              Proceed to Final Step
             </Button>
           </form>
         </Form>
