@@ -70,12 +70,21 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
 
   const isLoading = isUserLoading || isProfileLoading || !hasChecked;
   
-  if (isLoading || !user || (userProfile && !userProfile.onboardingCompleted && router.pathname !== '/onboarding/password' && router.pathname !== '/onboarding/profile')) {
+  if (isLoading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
         </div>
     );
+  }
+  
+  if (!user || (userProfile && !userProfile.onboardingCompleted)) {
+      // While redirecting, show the loader as well to prevent flicker
+      return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+        </div>
+      );
   }
 
   return (
