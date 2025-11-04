@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { FirebaseClientProvider } from "@/firebase";
+import { FirebaseErrorListener } from "@/components/FirebaseErrorListener";
 
 export default function OnboardingLayout({ children }: { children: ReactNode }) {
   // This layout is intentionally simple. It only provides the Firebase context
@@ -9,6 +10,7 @@ export default function OnboardingLayout({ children }: { children: ReactNode }) 
     <FirebaseClientProvider>
       <main className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
         {children}
+        <FirebaseErrorListener />
       </main>
     </FirebaseClientProvider>
   );

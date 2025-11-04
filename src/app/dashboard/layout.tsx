@@ -13,10 +13,11 @@ import { DashboardNav } from '@/components/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/definitions';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 function DashboardSidebar() {
   const { state } = useSidebar();
@@ -45,11 +46,7 @@ function DashboardSidebar() {
 function ProtectedLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const pathname = usePathname();
   const firestore = useFirestore();
-
-  const isAuthRoute = pathname.startsWith('/login');
-  const isOnboardingRoute = pathname.startsWith('/onboarding');
   
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -61,42 +58,29 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Don't run auth checks on login page
-    if (isAuthRoute) {
-        setIsChecking(false);
-        return;
-    }
-
     if (isUserLoading || (user && isProfileLoading)) {
-      return; // Wait until loading is complete
+      // Still waiting for auth state or profile to load
+      return;
     }
 
-    // If on any protected route and not logged in, redirect to login
-    if (!user && !isAuthRoute) {
+    // If user is NOT logged in, redirect to the login page.
+    if (!user) {
       router.push('/login');
       return;
     }
     
-    // Logic for authenticated users
-    if (user) {
-        // If user is authenticated, but no profile exists OR onboarding is not complete,
-        // and they are NOT already on an onboarding page, redirect them.
-        if ((!userProfile || !userProfile.onboardingCompleted) && !isOnboardingRoute) {
-            router.push('/onboarding/profile');
-            return;
-        }
-
-        // If user is onboarded and tries to access an onboarding page, send them to the dashboard.
-        if (userProfile && userProfile.onboardingCompleted && isOnboardingRoute) {
-            router.push('/dashboard');
-            return;
-        }
+    // If user IS logged in but profile doesn't exist OR onboarding is not complete,
+    // redirect to the start of the onboarding flow.
+    if (user && (!userProfile || !userProfile.onboardingCompleted)) {
+      router.push('/onboarding/profile');
+      return;
     }
     
-    // If none of the above conditions are met, the user is clear to access the current page.
+    // If we've reached here, the user is authenticated and onboarded.
+    // They are cleared to see the dashboard.
     setIsChecking(false);
 
-  }, [user, userProfile, isUserLoading, isProfileLoading, router, pathname, isAuthRoute, isOnboardingRoute]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
   
   if (isChecking) {
     return (
@@ -104,11 +88,6 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
         </div>
     );
-  }
-
-  // Render children based on the route type
-  if (isAuthRoute || isOnboardingRoute) {
-      return <>{children}</>;
   }
 
   // Standard dashboard view for authenticated, onboarded users
@@ -123,6 +102,7 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
             </div>
         </main>
       </div>
+      <FirebaseErrorListener />
     </SidebarProvider>
   );
 }

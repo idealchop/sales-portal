@@ -28,7 +28,6 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const { user: authUser, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
@@ -52,20 +51,10 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoggingIn(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
-
-      // After successful login, check if a user profile exists and if onboarding is complete.
-      const userDocRef = doc(firestore, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (userDocSnap.exists() && (userDocSnap.data() as UserProfile).onboardingCompleted) {
-        // If profile exists and is complete, go to the dashboard.
-        router.push('/dashboard');
-      } else {
-        // Otherwise, start the onboarding flow.
-        router.push('/onboarding/profile');
-      }
+      // We don't need to check for the user profile here anymore.
+      // The dashboard layout's gatekeeper will handle the redirect to onboarding if needed.
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      router.push('/dashboard');
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {
@@ -90,6 +79,8 @@ export default function LoginPage() {
     }
   };
 
+  // While user state is loading, or if a user is found, show a spinner
+  // to prevent a flash of the login form before redirecting.
   if (isUserLoading || authUser) {
       return (
         <div className="flex h-screen w-full items-center justify-center">
@@ -98,6 +89,7 @@ export default function LoginPage() {
       );
   }
 
+  // Only render the login form if there is no user and loading is complete.
   return (
     <div className="min-h-screen w-full grid grid-cols-1 md:grid-cols-2">
         <div className="flex items-center justify-center p-8">
