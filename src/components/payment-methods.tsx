@@ -14,27 +14,41 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { CreditCard, Banknote } from 'lucide-react';
 import Link from 'next/link';
+import { Separator } from './ui/separator';
 
 const paymentOptions = [
   {
     name: 'Bank Transfer',
     description: 'BPI, BDO, UnionBank',
     logo: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FPayments%2Fwaterstations_unionbank.png?alt=media&token=e5428cad-1392-456e-a2fb-24026e848015',
-    qrCode: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FPayments%2Fwaterstations_unionbank.png?alt=media&token=e5428cad-1392-456e-a2fb-24026e848015',
+    qrCode: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fqr-placeholder.png?alt=media&token=d1c8c511-e674-4b08-8f85-3b7722909404',
+    accountDetails: {
+        'Bank': 'BPI (Bank of the Philippine Islands)',
+        'Account Name': 'River Tech Group Inc.',
+        'Account Number': '1234-5678-90',
+    },
     type: 'dialog',
   },
   {
     name: 'GCash',
     description: 'Pay with GCash',
     logo: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FPayments%2Fwaterstations_gcash.png?alt=media&token=3dbf2d18-cd4a-4ab1-a0e2-3b9952c42412',
-    qrCode: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FPayments%2Fwaterstations_gcash.png?alt=media&token=3dbf2d18-cd4a-4ab1-a0e2-3b9952c42412',
+    qrCode: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fqr-placeholder.png?alt=media&token=d1c8c511-e674-4b08-8f85-3b7722909404',
+    accountDetails: {
+        'Account Name': 'River Tech Group Inc.',
+        'GCash Number': '0917-XXX-XXXX',
+    },
     type: 'dialog',
   },
   {
     name: 'Maya',
     description: 'Pay with Maya',
     logo: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FPayments%2Fwaterstations_paymaya.png?alt=media&token=d8572000-937b-40d7-999a-108b5017ab02',
-    qrCode: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FPayments%2Fwaterstations_paymaya.png?alt=media&token=d8572000-937b-40d7-999a-108b5017ab02',
+    qrCode: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fqr-placeholder.png?alt=media&token=d1c8c511-e674-4b08-8f85-3b7722909404',
+    accountDetails: {
+        'Account Name': 'River Tech Group Inc.',
+        'Maya Number': '0917-XXX-XXXX',
+    },
     type: 'dialog',
   },
   {
@@ -61,7 +75,7 @@ export function PaymentMethods() {
             return (
               <Dialog key={method.name}>
                 <DialogTrigger asChild>
-                  <div className="relative h-20 w-full cursor-pointer rounded-lg bg-card p-4 transition-all">
+                  <div className="relative h-20 w-full cursor-pointer rounded-lg bg-card p-4 transition-all hover:bg-muted">
                     <Image
                       src={method.logo}
                       alt={`${method.name} logo`}
@@ -70,11 +84,11 @@ export function PaymentMethods() {
                     />
                   </div>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle>Pay with {method.name}</DialogTitle>
                     <DialogDescription>
-                      Scan the QR code below to complete the payment via {method.description}.
+                      Scan the QR code below or use the details provided to complete the payment.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="flex justify-center p-4">
@@ -83,8 +97,28 @@ export function PaymentMethods() {
                       alt={`${method.name} QR Code`}
                       width={250}
                       height={250}
+                      className="rounded-lg"
                     />
                   </div>
+                  {method.accountDetails && (
+                    <div className="space-y-4 rounded-md border bg-muted/50 p-4">
+                        <h4 className="font-semibold">Account Details</h4>
+                        <Separator />
+                        <div className="space-y-2 text-sm">
+                            {Object.entries(method.accountDetails).map(([key, value]) => (
+                                <div key={key} className="flex justify-between">
+                                    <span className="text-muted-foreground">{key}:</span>
+                                    <span className="font-mono font-semibold">{value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                  )}
+                  <CardFooter>
+                    <p className="text-xs text-muted-foreground">
+                        Please send a screenshot of the transaction confirmation to your sales agent to finalize the order.
+                    </p>
+                  </CardFooter>
                 </DialogContent>
               </Dialog>
             );
@@ -92,7 +126,7 @@ export function PaymentMethods() {
           if (method.type === 'link') {
             return (
               <Link key={method.name} href={method.href!} target="_blank">
-                <div className="relative h-20 w-full cursor-pointer rounded-lg bg-card p-4 transition-all">
+                <div className="relative h-20 w-full cursor-pointer rounded-lg bg-card p-4 transition-all hover:bg-muted">
                   <Image
                     src={method.logo}
                     alt={`${method.name} logo`}
