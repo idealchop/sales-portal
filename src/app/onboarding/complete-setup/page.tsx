@@ -103,7 +103,16 @@ function CompleteSetupContent() {
             description = "The current password you entered is incorrect. Please go back and try again.";
             // Go back to the password page, preserving other details
             const params = new URLSearchParams(searchParams.toString());
+            // It is important to remove the password fields from the URL before redirecting
+            params.delete('currentPassword');
+            params.delete('newPassword');
+            toast({
+                variant: 'destructive',
+                title: 'Incorrect Password',
+                description: "The 'Current Password' you entered was incorrect. Please try again.",
+            });
             router.push(`/onboarding/password?${params.toString()}`);
+            return; // Stop execution here
         } else {
             description = error.message;
         }
