@@ -400,15 +400,18 @@ function PreviewDialog({
         for (let i = 0; i < remainingGallons; i++) {
             distribution[i]++;
         }
+        
+        const stationCountMatch = finalPlan.stations.match(/\d+/);
+        const stationCount = stationCountMatch ? parseInt(stationCountMatch[0], 10) : 1;
 
         return distribution.map((gallons, index) => ({
             week: `Week ${index + 1}`,
             gallons: gallons,
             liters: gallons * litersPerGallon,
             area: 'Primary Location', // Placeholder
-            station: `Station ${index % 2 + 1}` // Placeholder
+            station: `Station ${ stationCount > 1 ? (index % stationCount) + 1 : 1}` // Use station count from plan
         }));
-    }, [finalPlan.liters]);
+    }, [finalPlan.liters, finalPlan.stations]);
 
 
     return (
