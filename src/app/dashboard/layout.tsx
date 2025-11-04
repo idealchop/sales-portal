@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -12,7 +13,7 @@ import {
 import { DashboardNav } from '@/components/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { cn } from '@/lib/utils';
-import { useUser } from '@/firebase';
+import { FirebaseClientProvider, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -40,7 +41,7 @@ function DashboardSidebar() {
   )
 }
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+function ProtectedDashboard({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -70,5 +71,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </main>
       </div>
     </SidebarProvider>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  return (
+    <FirebaseClientProvider>
+      <ProtectedDashboard>{children}</ProtectedDashboard>
+    </FirebaseClientProvider>
   );
 }

@@ -54,7 +54,7 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
-import { commissionData, clients } from '@/lib/data';
+import { commissionData } from '@/lib/data';
 import { RevenueChart } from '@/components/revenue-chart';
 import { ClientPopover } from '@/components/client-popover';
 import type { Client } from '@/lib/definitions';
@@ -62,6 +62,7 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { ActivityChart } from '@/components/activity-chart';
 import { useProposals } from '@/hooks/use-proposals';
+import { useClients } from '@/hooks/use-clients';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -94,6 +95,7 @@ const BonusCard = ({ icon, title, value, progress, goal, description, children }
 
 export default function DashboardPage() {
   const { proposals, isLoading: proposalsLoading } = useProposals();
+  const { clients, isLoading: clientsLoading } = useClients();
 
   const getClientById = (id: string): Client | undefined => {
     return clients.find(c => c.id === id);
@@ -478,29 +480,33 @@ export default function DashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {proposalsLoading && (
+              {(proposalsLoading || clientsLoading) && (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center">
                     Loading proposals...
                   </TableCell>
                 </TableRow>
               )}
-              {!proposalsLoading && recentProposals.map((proposal) => (
-                <TableRow key={proposal.id}>
-                  <TableCell>
-                    <ClientPopover client={getClientById(proposal.client.id)!}>
-                      <div className="font-medium text-primary hover:underline cursor-pointer">{proposal.client.companyName}</div>
-                    </ClientPopover>
-                    <div className="text-sm text-muted-foreground">{proposal.client.contactName}</div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={cn("capitalize", statusStyles[proposal.status])} variant="outline">{proposal.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{currencyFormatter.format(proposal.amount)}</TableCell>
-                  <TableCell className="hidden md:table-cell text-right">{proposal.createdAt}</TableCell>
-                </TableRow>
-              ))}
-               {!proposalsLoading && proposals.length === 0 && (
+              {!(proposalsLoading || clientsLoading) && recentProposals.map((proposal) => {
+                const client = getClientById(proposal.clientId);
+                if (!client) return null;
+                return (
+                  <TableRow key={proposal.id}>
+                    <TableCell>
+                      <ClientPopover client={client}>
+                        <div className="font-medium text-primary hover:underline cursor-pointer">{client.companyName}</div>
+                      </ClientPopover>
+                      <div className="text-sm text-muted-foreground">{client.contactName}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={cn("capitalize", statusStyles[proposal.status])} variant="outline">{proposal.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{currencyFormatter.format(proposal.amount)}</TableCell>
+                    <TableCell className="hidden md:table-cell text-right">{new Date(proposal.createdAt).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                );
+              })}
+               {!(proposalsLoading || clientsLoading) && proposals.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center">
                     No proposals found.
