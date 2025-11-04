@@ -68,9 +68,9 @@ function CompleteSetupContent() {
       // 3. Update Firebase Auth profile displayName
       await updateProfile(user, { displayName });
 
-      // 4. Create the Firestore document in a non-blocking way
+      // 4. Create the Firestore document and WAIT for it to complete.
       const userDocRef = doc(firestore, 'users', user.uid);
-      setDoc(userDocRef, {
+      await setDoc(userDocRef, {
         id: user.uid,
         email: user.email,
         displayName: displayName,
@@ -85,7 +85,7 @@ function CompleteSetupContent() {
         description: 'Welcome to the Smart Refill Sales Portal.',
       });
       
-      // 5. Redirect immediately without waiting for setDoc to finish
+      // 5. Redirect only after all operations are successful.
       router.push('/dashboard');
 
     } catch (error) {
