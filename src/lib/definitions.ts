@@ -5,6 +5,8 @@ export type OnboardingStep = {
   description: string;
   status: 'completed' | 'pending';
   date?: string;
+  providerName?: string;
+  providerLocation?: string;
 };
 
 export type Remark = {

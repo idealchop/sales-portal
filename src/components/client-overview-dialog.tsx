@@ -20,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship } from 'lucide-react';
 import type { Client, Remark, OnboardingStep } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
@@ -69,9 +69,25 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
       </div>
       {!isLast && <div className="w-px h-full bg-border mt-2" />}
     </div>
-    <div className="pt-1.5 pb-8">
+    <div className="pt-1.5 pb-8 flex-1">
       <h3 className="font-semibold text-foreground">{step.title}</h3>
       <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+      {step.providerName && (
+        <Card className="mt-3 bg-muted/50">
+            <CardHeader className="p-3">
+                <CardTitle className="text-sm">Paired Water Provider</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0 text-sm">
+                 <div className="flex items-center gap-3">
+                    <Ship className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                        <p className="font-semibold">{step.providerName}</p>
+                        <p className="text-xs text-muted-foreground">{step.providerLocation}</p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+      )}
       {step.date && (
         <p className="mt-2 text-xs text-muted-foreground">
           Completed on: {step.date}
