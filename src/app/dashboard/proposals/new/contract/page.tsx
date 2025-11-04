@@ -112,7 +112,7 @@ const inclusions = [
     {
         icon: <CalendarClock className="h-5 w-5 text-primary" />,
         title: 'Automated Scheduling & Delivery',
-        description: 'No manual ordering; Smart Refill handles refills automatically.',_A_REWRITTEN_CONTENT_
+        description: 'No manual ordering; Smart Refill handles refills automatically.',
     },
     {
         icon: <RotateCw className="h-5 w-5 text-primary" />,
@@ -1228,6 +1228,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
