@@ -154,7 +154,7 @@ const render = (status: Status, error?: Error) => {
         return (
             <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
                 <p className="font-bold">Map Error: Invalid API Key</p>
-                <p className="text-xs mt-1">The provided Google Maps API key is not enabled for the 'Maps JavaScript API'. Please enable it in the Google Cloud Console.</p>
+                <p className="text-xs mt-1">The Google Maps API key is invalid or not configured for the Maps JavaScript API. Please check the key in the Google Cloud Console.</p>
             </div>
         );
     }
@@ -181,37 +181,36 @@ function MapComponent({
 
   useEffect(() => {
     const geocodeAddress = async () => {
-      try {
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address }, (results, status) => {
-          if (status === "OK" && results && results[0]) {
-            const location = results[0].geometry.location;
-            const newCenter = { lat: location.lat(), lng: location.lng() };
-            if (ref.current && !map) {
-              const newMap = new window.google.maps.Map(ref.current, {
-                center: newCenter,
-                zoom,
-                styles: mapStyles,
-                mapId: "SMART_REFILL_MAP",
-              });
-              setMap(newMap);
-              new google.maps.Marker({
-                position: newCenter,
-                map: newMap,
-              });
-            } else if (map) {
-              map.setCenter(newCenter);
-            }
-          } else {
-            console.error(
-              `Geocode was not successful for the following reason: ${status}`
-            );
+      // The Geocoder is now guaranteed to be available here
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address }, (results, status) => {
+        if (status === "OK" && results && results[0]) {
+          const location = results[0].geometry.location;
+          const newCenter = { lat: location.lat(), lng: location.lng() };
+          if (ref.current && !map) {
+            const newMap = new window.google.maps.Map(ref.current, {
+              center: newCenter,
+              zoom,
+              styles: mapStyles,
+              mapId: "SMART_REFILL_MAP",
+            });
+            setMap(newMap);
+            new google.maps.Marker({
+              position: newCenter,
+              map: newMap,
+            });
+          } else if (map) {
+            map.setCenter(newCenter);
           }
-        });
-      } catch (e) {
-        console.error(e);
-      }
+        } else {
+          console.error(
+            `Geocode was not successful for the following reason: ${status}`
+          );
+        }
+      });
     };
+    
+    // Check if google.maps and Geocoder are available before calling
     if (window.google && window.google.maps && window.google.maps.Geocoder) {
         geocodeAddress();
     }
@@ -219,7 +218,6 @@ function MapComponent({
 
   return <div ref={ref} style={{ width: "100%", height: "100%" }} />;
 }
-
 
 export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: number }) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -234,35 +232,24 @@ export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: numb
         );
     }
     
-    const handleWrapperStatusChange = (status: Status, loader: any) => {
+    const handleWrapperStatusChange = (status: Status) => {
         if (status === Status.FAILURE) {
-            // The `e` object from the 'error' event on the script tag is not directly available here.
-            // We have to listen for it on the window.
             const errorListener = (event: ErrorEvent) => {
-                // Check if the error is from the Google Maps script
                 if (event.filename && event.filename.includes('maps.googleapis.com')) {
                     if (event.message.includes("InvalidKeyMapError")) {
                         setWrapperError(new Error("InvalidKeyMapError"));
                     } else {
                         setWrapperError(new Error(event.message));
                     }
+                    window.removeEventListener('error', errorListener);
                 }
             };
-
             window.addEventListener('error', errorListener);
-
-            // Clean up the listener
-            return () => {
-                window.removeEventListener('error', errorListener);
-            };
         }
     };
 
     return (
-        <Wrapper apiKey={apiKey} render={(status) => render(status, wrapperError)} libraries={['geocoding']} onError={(e) => {
-             // This onError is for network-level errors, but InvalidKeyMapError is a script execution error.
-             // We use the window.addEventListener approach to catch it.
-        }}>
+        <Wrapper apiKey={apiKey} render={(status) => render(status, wrapperError)} libraries={['geocoding']} onReady={() => handleWrapperStatusChange(Status.SUCCESS)} onError={() => handleWrapperStatusChange(Status.FAILURE)}>
             <MapComponent address={address} zoom={zoom} />
         </Wrapper>
     );
