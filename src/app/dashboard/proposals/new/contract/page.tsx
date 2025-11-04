@@ -395,25 +395,32 @@ function PreviewDialog({
         if (totalLitersValue === 0) return [];
         
         const litersPerGallon = 19;
-        const totalGallons = Math.ceil(totalLitersValue / litersPerGallon);
-        
         let deliveriesPerWeek = 1;
         const freq = finalPlan.refillFrequency.toLowerCase();
         
         if (freq.includes('daily')) {
             deliveriesPerWeek = 7;
         } else if (freq.includes('/week')) {
-             const range = freq.split('/')[0].split('–').map(s => parseInt(s.trim()));
-             deliveriesPerWeek = Math.max(...range);
+            const range = freq.split('/')[0].split('–').map(s => parseInt(s.trim()));
+            deliveriesPerWeek = Math.max(...range);
+        } else {
+             // Handle cases like "1-2/day" or "continuous" if needed, for now default to a reasonable number or based on another logic.
+             // For simplicity, let's assume a default for unhandled cases.
+             const deliveriesMatch = freq.match(/(\d+)/);
+             if (deliveriesMatch) {
+                deliveriesPerWeek = parseInt(deliveriesMatch[0], 10);
+             }
         }
         
-        const totalDeliveries = deliveriesPerWeek * 4;
-        if (totalDeliveries === 0) return [];
-
-        const gallonsPerDelivery = Math.floor(totalGallons / totalDeliveries);
-        let remainingGallons = totalGallons % totalDeliveries;
+        const totalDeliveriesPerMonth = deliveriesPerWeek * 4;
+        if (totalDeliveriesPerMonth === 0) return [];
+        
+        const totalGallonsPerMonth = Math.ceil(totalLitersValue / selectedCycle.multiplier / litersPerGallon);
+        const gallonsPerDelivery = Math.floor(totalGallonsPerMonth / totalDeliveriesPerMonth * selectedCycle.multiplier);
+        let remainingGallons = totalGallonsPerMonth % totalDeliveriesPerMonth;
         
         const weeklyDistribution: {week: string, deliveryNumber: string, gallons: number, liters: number}[] = [];
+        
         for (let week = 1; week <= 4; week++) {
             for (let delivery = 1; delivery <= deliveriesPerWeek; delivery++) {
                  let deliveryGallons = gallonsPerDelivery;
@@ -434,7 +441,7 @@ function PreviewDialog({
         }
         return weeklyDistribution;
 
-    }, [totalLitersValue, finalPlan.refillFrequency]);
+    }, [totalLitersValue, finalPlan.refillFrequency, selectedCycle.multiplier]);
 
     const rotationInfo = gallonRotationData[plan?.id] || gallonRotationData['custom-plan'];
 
@@ -576,14 +583,14 @@ function PreviewDialog({
                                 <span className="text-muted-foreground">Included Liters (Monthly)</span>
                                 <span className="font-semibold">{baseLiters.toLocaleString()} L</span>
                             </div>
-                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground font-medium text-primary">+20% Free Liters</span>
-                                <span className="font-semibold text-primary">+{freeLiters.toLocaleString()} L</span>
+                             <div className="flex justify-between items-center font-medium text-primary">
+                                <span>+20% Free Liters</span>
+                                <span>+{freeLiters.toLocaleString()} L</span>
                             </div>
                             <Separator className="my-2" />
-                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground font-semibold">Total Liters Available (Monthly)</span>
-                                <span className="font-semibold">{(baseLiters + freeLiters).toLocaleString()} L</span>
+                             <div className="flex justify-between items-center font-semibold">
+                                <span>Total Liters Available (Monthly)</span>
+                                <span>{(baseLiters + freeLiters).toLocaleString()} L</span>
                             </div>
                             <Separator className="my-2" />
                             {selectedCycle.multiplier > 1 && (
@@ -592,9 +599,9 @@ function PreviewDialog({
                                     <span className="font-semibold">{currencyFormatter.format(totalBeforeDiscount)}</span>
                                 </div>
                             )}
-                             <div className="flex justify-between items-center">
+                             <div className="flex justify-between items-center text-primary">
                                 <span className="text-muted-foreground">Billing Cycle Discount ({billingCycleLabel}, {discount * 100}%)</span>
-                                <span className="font-semibold text-primary">-{currencyFormatter.format(discountValue)}</span>
+                                <span className="font-semibold">-{currencyFormatter.format(discountValue)}</span>
                             </div>
                             <Separator className="my-2" />
                             <div className="flex justify-between items-center font-bold text-lg">
@@ -957,6 +964,8 @@ function ContractPageContent() {
   const summaryTitle = finalPlan.name.includes("Plan") ? finalPlan.name : `${finalPlan.name} Plan`;
 
   const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
+  
+  const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
 
   return (
     <div className="flex flex-col gap-6">
@@ -1195,6 +1204,13 @@ function ContractPageContent() {
                         <span>Total Due</span>
                         <span>{totalAmount}</span>
                     </div>
+
+                    {selectedCycle.multiplier > 1 && (
+                        <div className="flex justify-between items-center text-sm text-muted-foreground pt-1">
+                            <span>Total Liters for Period</span>
+                            <span>{totalLiters.toLocaleString()} L</span>
+                        </div>
+                    )}
                 </CardContent>
                 <CardFooter className="justify-end">
                     <Dialog>
@@ -1235,6 +1251,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
