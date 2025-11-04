@@ -149,19 +149,25 @@ const mapStyles = [
     }
 ];
 
-const render = (status: Status) => {
-    if (status === Status.FAILURE) return <p>Error loading map</p>;
+const render = (status: Status, error?: Error) => {
+    if (status === Status.LOADING) return <Skeleton className="h-full w-full" />;
+    if (status === Status.FAILURE || error) {
+         return (
+            <div className="h-full w-full flex flex-col items-center justify-center bg-muted text-muted-foreground text-sm text-center p-4">
+                <p className="font-semibold text-destructive">Error Loading Map</p>
+                <p>The Google Maps API key is invalid or missing required permissions.</p>
+            </div>
+        );
+    }
     return <Skeleton className="h-full w-full" />;
 };
 
 function MapComponent({
   address,
   zoom,
-  setCenter,
 }: {
   address: string;
   zoom: number;
-  setCenter: (center: google.maps.LatLngLiteral) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map>();
@@ -174,7 +180,6 @@ function MapComponent({
           if (status === "OK" && results && results[0]) {
             const location = results[0].geometry.location;
             const newCenter = { lat: location.lat(), lng: location.lng() };
-            setCenter(newCenter);
             if (ref.current && !map) {
               const newMap = new window.google.maps.Map(ref.current, {
                 center: newCenter,
@@ -200,26 +205,49 @@ function MapComponent({
         console.error(e);
       }
     };
-    if (window.google && window.google.maps) {
+    if (window.google && window.google.maps && window.google.maps.Geocoder) {
         geocodeAddress();
     }
-  }, [address, zoom, map, setCenter]);
+  }, [address, zoom, map]);
 
   return <div ref={ref} style={{ width: "100%", height: "100%" }} />;
 }
 
 
 export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: number }) {
-    const [center, setCenter] = useState<google.maps.LatLngLiteral | null>(null);
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const [authError, setAuthError] = useState<Error | undefined>(undefined);
+
+    useEffect(() => {
+        const originalError = console.error;
+        const newError = (...args: any[]) => {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('Google Maps JavaScript API error: InvalidKeyMapError')) {
+                setAuthError(new Error('InvalidKeyMapError'));
+            }
+            originalError.apply(console, args);
+        };
+        console.error = newError;
+        return () => {
+            console.error = originalError;
+        };
+    }, []);
 
     if (!apiKey) {
-        return <div className="h-full w-full flex items-center justify-center bg-muted text-muted-foreground text-sm">API Key Missing</div>;
+        return (
+            <div className="h-full w-full flex flex-col items-center justify-center bg-muted text-muted-foreground text-sm text-center p-4">
+                <p className="font-semibold">Google Maps API Key is missing.</p>
+                <p>Please add your key to the .env file to enable map functionality.</p>
+            </div>
+        );
+    }
+    
+    if (authError) {
+        return render(Status.FAILURE, authError);
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={render} libraries={['geocoding']}>
-            <MapComponent address={address} zoom={zoom} setCenter={setCenter} />
+        <Wrapper apiKey={apiKey} render={(status) => render(status)} libraries={['geocoding']}>
+            <MapComponent address={address} zoom={zoom} />
         </Wrapper>
     );
 }
