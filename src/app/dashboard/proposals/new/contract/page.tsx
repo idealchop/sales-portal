@@ -112,7 +112,7 @@ const inclusions = [
     {
         icon: <CalendarClock className="h-5 w-5 text-primary" />,
         title: 'Automated Scheduling & Delivery',
-        description: 'No manual ordering; Smart Refill handles refills automatically.',
+        description: 'No manual ordering; Smart Refill handles refills automatically.',_A_REWRITTEN_CONTENT_
     },
     {
         icon: <RotateCw className="h-5 w-5 text-primary" />,
@@ -386,29 +386,29 @@ function PreviewDialog({
     const selectedCycle = billingCycles.find(c => c.label === billingCycleLabel) || billingCycles[0];
     const totalBeforeDiscount = subtotal * selectedCycle.multiplier;
     const discountValue = totalBeforeDiscount * discount;
+
+    const baseLiters = plan ? parseInt(plan.liters.replace(/[^0-9]/g, '')) : 0;
+    const freeLiters = baseLiters * 0.2;
+    const totalLitersValue = (baseLiters + freeLiters + additionalLiters) * selectedCycle.multiplier;
     
     const distributionPlan = useMemo(() => {
-        const totalLitersValue = parseInt(finalPlan.liters.replace(/[^0-9]/g, ''), 10) || 0;
         if (totalLitersValue === 0) return [];
         
         const litersPerGallon = 19;
         const totalGallons = Math.ceil(totalLitersValue / litersPerGallon);
         
-        const stationCountMatch = finalPlan.stations.match(/\d+/);
-        const stationCount = stationCountMatch ? parseInt(stationCountMatch[0], 10) : 1;
-        
-        // --- Smart Frequency Logic ---
         let deliveriesPerWeek = 1;
         const freq = finalPlan.refillFrequency.toLowerCase();
         if (freq.includes('daily')) {
             deliveriesPerWeek = 7;
         } else if (freq.includes('/week')) {
-            const range = freq.split('/')[0].split('–').map(Number);
+             const range = freq.split('/')[0].split('–').map(Number);
             deliveriesPerWeek = Math.ceil((range[0] + (range[1] || range[0])) / 2);
         }
-        // --- End Smart Frequency Logic ---
         
         const totalDeliveries = deliveriesPerWeek * 4;
+        if (totalDeliveries === 0) return [];
+
         const gallonsPerDelivery = Math.floor(totalGallons / totalDeliveries);
         let remainingGallons = totalGallons % totalDeliveries;
         
@@ -421,32 +421,19 @@ function PreviewDialog({
                     remainingGallons--;
                 }
                 
-                if (gallonsPerDelivery > 0 || remainingGallons > 0) {
+                if (deliveryGallons > 0) {
                     weeklyDistribution.push({
                         week: `Week ${week}`,
-                        frequency: finalPlan.refillFrequency,
+                        deliveryNumber: `Delivery ${delivery}`,
                         gallons: deliveryGallons,
                         liters: deliveryGallons * litersPerGallon,
-                        area: 'Primary Location',
-                        station: `Station ${( ( ( (week - 1) * deliveriesPerWeek + delivery - 1) % stationCount) % stationCount) + 1}`,
                     });
                 }
             }
         }
-        // Group deliveries by week for rendering
-        const groupedByWeek = weeklyDistribution.reduce((acc, curr) => {
-            if (!acc[curr.week]) {
-                acc[curr.week] = { ...curr, gallons: 0, liters: 0, count: 0 };
-            }
-            acc[curr.week].gallons += curr.gallons;
-            acc[curr.week].liters += curr.liters;
-            acc[curr.week].count++;
-            return acc;
-        }, {} as Record<string, any>);
+        return weeklyDistribution;
 
-        return Object.values(groupedByWeek);
-
-    }, [finalPlan.liters, finalPlan.stations, finalPlan.refillFrequency]);
+    }, [totalLitersValue, finalPlan.refillFrequency]);
 
     const rotationInfo = gallonRotationData[plan?.id] || gallonRotationData['custom-plan'];
 
@@ -576,11 +563,25 @@ function PreviewDialog({
                                     <span className="font-semibold">{currencyFormatter.format(litersCost)}</span>
                                 </div>
                             )}
-                             <Separator className="my-2" />
-                             <div className="flex justify-between items-center">
+                            <Separator className="my-2" />
+                            <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Subtotal (per month)</span>
                                 <span className="font-semibold">{currencyFormatter.format(subtotal)}</span>
                             </div>
+                             <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Included Liters (Monthly)</span>
+                                <span className="font-semibold">{baseLiters.toLocaleString()} L</span>
+                            </div>
+                             <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground font-medium text-primary">+20% Free Liters</span>
+                                <span className="font-semibold text-primary">+{freeLiters.toLocaleString()} L</span>
+                            </div>
+                            <Separator className="my-2" />
+                             <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground font-semibold">Total Liters Available (Monthly)</span>
+                                <span className="font-semibold">{(baseLiters + freeLiters).toLocaleString()} L</span>
+                            </div>
+                            <Separator className="my-2" />
                             {selectedCycle.multiplier > 1 && (
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">Total for {selectedCycle.label} ({currencyFormatter.format(subtotal)} x {selectedCycle.multiplier} mos)</span>
@@ -603,7 +604,7 @@ function PreviewDialog({
                         <CardHeader>
                             <CardTitle>Projected Delivery Schedule</CardTitle>
                             <CardDescription>
-                                An estimated weekly breakdown of your water deliveries.
+                                An estimated weekly breakdown of your water deliveries based on your total available liters.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -611,23 +612,21 @@ function PreviewDialog({
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Week</TableHead>
-                                            <TableHead>Frequency</TableHead>
-                                            <TableHead>Area</TableHead>
+                                            <TableHead>Projected Week</TableHead>
+                                            <TableHead>Delivery #</TableHead>
                                             <TableHead>Water Station</TableHead>
                                             <TableHead className="text-center">Gallons to Deliver</TableHead>
                                             <TableHead className="text-right">Liters Delivered</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {distributionPlan.map((week, index) => (
+                                        {distributionPlan.map((item, index) => (
                                             <TableRow key={index}>
-                                                <TableCell className="font-medium">{week.week}</TableCell>
-                                                <TableCell>{week.frequency}</TableCell>
-                                                <TableCell>{week.area}</TableCell>
-                                                <TableCell>{week.station}</TableCell>
-                                                <TableCell className="text-center">{week.gallons}</TableCell>
-                                                <TableCell className="text-right">{week.liters.toLocaleString()} L</TableCell>
+                                                <TableCell className="font-medium">{item.week}</TableCell>
+                                                <TableCell>{item.deliveryNumber}</TableCell>
+                                                <TableCell>{finalPlan.stations.startsWith('1') ? 'Station 1' : `Station ${(index % (parseInt(finalPlan.stations[0],10) || 1)) + 1}`}</TableCell>
+                                                <TableCell className="text-center">{item.gallons}</TableCell>
+                                                <TableCell className="text-right">{item.liters.toLocaleString()} L</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -887,7 +886,9 @@ function ContractPageContent() {
     const discountAmount = totalBeforeDiscount * selectedCycle.discount;
     const finalAmount = totalBeforeDiscount - discountAmount;
     
-    const monthlyLiters = (plan ? parseInt(plan.liters.replace(/[^0-9]/g, '')) : 0) + additionalLiters;
+    const baseLiters = plan ? parseInt(plan.liters.replace(/[^0-9]/g, '')) : 0;
+    const freeLiters = baseLiters * 0.2;
+    const monthlyLiters = baseLiters + freeLiters + additionalLiters;
     const totalLitersForCycle = monthlyLiters * selectedCycle.multiplier;
     
     return {
@@ -901,17 +902,21 @@ function ContractPageContent() {
   
   const finalPlan = useMemo(() => {
     if (!plan) return null;
+    const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, ''));
+    const freeLiters = baseLiters * 0.2;
+    const finalLiters = baseLiters + freeLiters + additionalLiters;
     const planInclusions = plan.id === 'enterprise-overflow' 
         ? ['Pay only for what you use'] 
         : (plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : []);
 
     return {
         ...plan,
-        liters: `${totalLiters.toLocaleString()} L`,
+        liters: `${finalLiters.toLocaleString()} L`,
         inclusions: planInclusions,
-        employees: getEmployees(totalLiters), // Recalculate employees based on total liters
+        employees: getEmployees(finalLiters),
+        stations: getStations(finalLiters),
     }
-  }, [plan, totalLiters]);
+  }, [plan, additionalLiters]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -974,7 +979,7 @@ function ContractPageContent() {
             <CardHeader>
                 <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
                 <CardDescription>
-                    A summary of the selected subscription plan details for the upcoming {billingCycleLabel} period.
+                    A summary of the selected subscription plan details for the upcoming {billingCycleLabel} period. (Includes +20% free liters)
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -994,7 +999,7 @@ function ContractPageContent() {
                             <Building className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{finalPlan.stations}</div>
+                             <div className="text-2xl font-bold">{finalPlan.stations}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -1223,6 +1228,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
