@@ -17,7 +17,22 @@ export function useProposals() {
     return query(collectionGroup(firestore, 'proposals'));
   }, [firestore, user]);
 
-  const { data: proposals, isLoading, error } = useCollection<WithId<Proposal>>(proposalsQuery);
+  const { data: proposalsData, isLoading, error } = useCollection<Proposal>(proposalsQuery);
 
-  return { proposals: proposals || [], isLoading, error };
+  const proposals = useMemo(() => {
+    if (!proposalsData) return [];
+    return proposalsData.map(proposal => {
+        // The path of a sub-collection document is 'clients/{clientId}/proposals/{proposalId}'
+        const pathParts = (proposal as any).ref?.path.split('/');
+        const clientId = pathParts && pathParts.length > 1 ? pathParts[1] : 'unknown';
+        return {
+          ...proposal,
+          id: proposal.id,
+          clientId: clientId
+        }
+    }) as WithId<Proposal>[];
+  }, [proposalsData]);
+
+  return { proposals, isLoading, error };
 }
+
