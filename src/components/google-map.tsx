@@ -149,7 +149,15 @@ const mapStyles = [
     }
 ];
 
-const render = (status: Status) => {
+const render = (status: Status, error?: Error) => {
+    if (error && error.message.includes("InvalidKeyMapError")) {
+        return (
+            <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
+                <p className="font-bold">Map Error: Invalid API Key</p>
+                <p className="text-xs mt-1">The provided Google Maps API key is not enabled for the 'Maps JavaScript API'. Please enable it in the Google Cloud Console.</p>
+            </div>
+        );
+    }
     if (status === Status.FAILURE) {
         return (
             <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
@@ -215,6 +223,7 @@ function MapComponent({
 
 export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: number }) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const [wrapperError, setWrapperError] = useState<Error | undefined>(undefined);
     
     if (!apiKey) {
         return (
@@ -224,9 +233,36 @@ export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: numb
             </div>
         );
     }
+    
+    const handleWrapperStatusChange = (status: Status, loader: any) => {
+        if (status === Status.FAILURE) {
+            // The `e` object from the 'error' event on the script tag is not directly available here.
+            // We have to listen for it on the window.
+            const errorListener = (event: ErrorEvent) => {
+                // Check if the error is from the Google Maps script
+                if (event.filename && event.filename.includes('maps.googleapis.com')) {
+                    if (event.message.includes("InvalidKeyMapError")) {
+                        setWrapperError(new Error("InvalidKeyMapError"));
+                    } else {
+                        setWrapperError(new Error(event.message));
+                    }
+                }
+            };
+
+            window.addEventListener('error', errorListener);
+
+            // Clean up the listener
+            return () => {
+                window.removeEventListener('error', errorListener);
+            };
+        }
+    };
 
     return (
-        <Wrapper apiKey={apiKey} render={render} libraries={['geocoding']}>
+        <Wrapper apiKey={apiKey} render={(status) => render(status, wrapperError)} libraries={['geocoding']} onError={(e) => {
+             // This onError is for network-level errors, but InvalidKeyMapError is a script execution error.
+             // We use the window.addEventListener approach to catch it.
+        }}>
             <MapComponent address={address} zoom={zoom} />
         </Wrapper>
     );
