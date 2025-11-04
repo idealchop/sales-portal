@@ -291,7 +291,7 @@ export function ClientOverviewDialog({
                                     </div>
                                 )}
                             </CardContent>
-                            {client.onboardingStatus && (
+                            {view === 'clients' && client.onboardingStatus && (
                             <CardFooter>
                                 <Dialog>
                                     <DialogTrigger asChild>
