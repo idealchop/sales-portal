@@ -1139,7 +1139,7 @@ function ContractPageContent() {
                             <p className="text-2xl font-bold">{currencyFormatter.format(basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
-                            <li>{finalPlan.liters} total</li>
+                            <li>{finalPlan.liters} total (includes 20% free liters)</li>
                              {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
                             <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                         </ul>
@@ -1228,6 +1228,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
