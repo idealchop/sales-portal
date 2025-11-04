@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -390,6 +391,7 @@ function PreviewDialog({
     const freeLiters = baseLiters * 0.2;
     const monthlyLiters = baseLiters + freeLiters + additionalLiters;
     const totalLitersValue = monthlyLiters * selectedCycle.multiplier;
+    const annualConsumption = monthlyLiters * 12;
     
     const rotationInfo = gallonRotationData[plan?.id] || gallonRotationData['custom-plan'];
 
@@ -559,7 +561,7 @@ function PreviewDialog({
                         </CardContent>
                     </Card>
                     
-                    <Card>
+                     <Card>
                         <CardHeader>
                             <CardTitle>Gallon Rotation &amp; Handling Guide</CardTitle>
                             <CardDescription>
@@ -830,7 +832,7 @@ function ContractPageContent() {
 
     return {
         ...plan,
-        liters: `${finalLiters.toLocaleString()} L / mo`,
+        liters: `${finalLiters.toLocaleString()} L`,
         inclusions: planInclusions,
         employees: getEmployees(finalLiters),
         stations: getStations(finalLiters),
@@ -911,7 +913,7 @@ function ContractPageContent() {
                             <Waves className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{finalPlan.liters}</div>
+                            <div className="text-2xl font-bold">{finalPlan.liters} / mo</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -1063,7 +1065,7 @@ function ContractPageContent() {
                             <p className="text-2xl font-bold">{currencyFormatter.format(basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
-                            <li>{finalPlan.liters} total (includes 20% free liters) / mo</li>
+                            <li>Total Liters: {finalPlan.liters} / mo (includes 20% bonus)</li>
                              {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
                             <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                         </ul>
@@ -1115,7 +1117,7 @@ function ContractPageContent() {
 
                     {selectedCycle.multiplier > 1 && (
                         <div className="flex justify-between items-center text-sm text-muted-foreground pt-1">
-                            <span>Total Liters (includes free liters)</span>
+                            <span>Total Liters for Period (includes free liters)</span>
                             <span>{totalLiters.toLocaleString()} L</span>
                         </div>
                     )}
@@ -1174,6 +1176,9 @@ export default function ContractPage() {
 
 
 
+
+
+    
 
 
     
