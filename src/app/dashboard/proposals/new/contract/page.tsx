@@ -1,22 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use client';
 
 import React from 'react';
@@ -577,15 +559,15 @@ function PreviewDialog({
                         </CardContent>
                     </Card>
 
-                    {distributionPlan.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Projected Delivery Schedule</CardTitle>
-                                <CardDescription>
-                                    An estimated weekly breakdown of your water deliveries.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Projected Delivery Schedule</CardTitle>
+                            <CardDescription>
+                                An estimated weekly breakdown of your water deliveries.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {distributionPlan.length > 0 ? (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -611,9 +593,11 @@ function PreviewDialog({
                                         * This is a projected delivery schedule. Actual deliveries may be adjusted based on real-time consumption data to ensure you never run out of water.
                                     </TableCaption>
                                 </Table>
-                            </CardContent>
-                        </Card>
-                    )}
+                            ) : (
+                                <p className='text-sm text-muted-foreground'>Delivery schedule will be generated based on consumption.</p>
+                            )}
+                        </CardContent>
+                    </Card>
 
                      <Card>
                         <CardHeader>
@@ -817,10 +801,10 @@ function ContractPageContent() {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
   }
 
-  const { totalAmount, discount, billingCycleLabel, basePrice } = useMemo(() => {
+  const { totalAmount, discount, billingCycleLabel, basePrice, totalLiters } = useMemo(() => {
     const planBaseCost = plan ? parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) : 0;
     if (isNaN(planBaseCost)) {
-      return { totalAmount: plan?.monthlyFee || 'N/A', discount: 0, billingCycleLabel: 'N/A', basePrice: 0 };
+      return { totalAmount: plan?.monthlyFee || 'N/A', discount: 0, billingCycleLabel: 'N/A', basePrice: 0, totalLiters: 0 };
     }
 
     const addonsCost = addons.reduce((total, addon) => {
@@ -839,27 +823,30 @@ function ContractPageContent() {
     const discountAmount = totalBeforeDiscount * selectedCycle.discount;
     const finalAmount = totalBeforeDiscount - discountAmount;
     
+    const monthlyLiters = (plan ? parseInt(plan.liters.replace(/[^0-9]/g, '')) : 0) + additionalLiters;
+    const totalLitersForCycle = monthlyLiters * selectedCycle.multiplier;
+    
     return {
         totalAmount: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
         discount: selectedCycle.discount,
         billingCycleLabel: selectedCycle.label,
         basePrice: monthlyBasePrice,
+        totalLiters: totalLitersForCycle,
     }
   }, [plan, billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
   
   const finalPlan = useMemo(() => {
     if (!plan) return null;
-    const planLitersNum = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const planInclusions = plan.id === 'enterprise-overflow' 
         ? ['Pay only for what you use'] 
         : (plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : []);
 
     return {
         ...plan,
-        liters: `${planLitersNum + additionalLiters} L`,
+        liters: `${totalLiters.toLocaleString()} L`,
         inclusions: planInclusions,
     }
-  }, [plan, additionalLiters]);
+  }, [plan, totalLiters]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -922,7 +909,7 @@ function ContractPageContent() {
             <CardHeader>
                 <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
                 <CardDescription>
-                    A summary of the selected subscription plan details.
+                    A summary of the selected subscription plan details for the upcoming {billingCycleLabel} period.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1082,7 +1069,7 @@ function ContractPageContent() {
                             <p className="text-2xl font-bold">{currencyFormatter.format(basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
-                            <li>{finalPlan.liters}</li>
+                            <li>{finalPlan.liters} total</li>
                              {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
                             <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                         </ul>
@@ -1171,14 +1158,3 @@ export default function ContractPage() {
     
 
     
-
-    
-
-    
-
-
-
-
-
-
-
