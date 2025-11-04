@@ -77,6 +77,7 @@ export type UserProfile = {
     id: string;
     email: string;
     displayName: string;
+    phone?: string;
     role: 'sales' | 'admin';
     team?: string;
     birthday?: string;

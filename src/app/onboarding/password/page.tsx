@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useState } from 'react';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Lock, Eye, EyeOff } from 'lucide-react';
 
 const formSchema = z.object({
   currentPassword: z.string().min(1, 'Please enter your current password.'),

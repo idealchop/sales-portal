@@ -188,6 +188,10 @@
           "type": "string",
           "description": "The user's display name."
         },
+        "phone": {
+            "type": "string",
+            "description": "The user's mobile phone number."
+        },
         "role": {
           "type": "string",
           "description": "The user's role (e.g., 'sales', 'admin')."
@@ -215,6 +219,7 @@
         "id",
         "email",
         "displayName",
+        "phone",
         "role",
         "onboardingCompleted"
       ]

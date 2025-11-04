@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2, User, Calendar, Briefcase, CheckCircle } from 'lucide-react';
+import { Loader2, User, Calendar, Briefcase, CheckCircle, Phone } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { FirebaseError } from 'firebase/app';
 import { format } from 'date-fns';
@@ -30,6 +30,7 @@ function CompleteSetupContent() {
   const displayName = searchParams.get('displayName');
   const team = searchParams.get('team');
   const birthdayStr = searchParams.get('birthday');
+  const phone = searchParams.get('phone');
   const currentPassword = searchParams.get('currentPassword');
   const newPassword = searchParams.get('newPassword');
 
@@ -37,7 +38,7 @@ function CompleteSetupContent() {
 
   useEffect(() => {
     // A simple check to ensure we came from the previous steps
-    if (!isUserLoading && (!displayName || !currentPassword || !newPassword)) {
+    if (!isUserLoading && (!displayName || !currentPassword || !newPassword || !phone)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
@@ -45,10 +46,10 @@ function CompleteSetupContent() {
       });
       router.push('/onboarding/profile');
     }
-  }, [isUserLoading, displayName, currentPassword, newPassword, router, toast]);
+  }, [isUserLoading, displayName, currentPassword, newPassword, phone, router, toast]);
 
   const handleFinalize = async () => {
-    if (!user || !user.email || !displayName || !team || !birthday || !currentPassword || !newPassword) {
+    if (!user || !user.email || !displayName || !team || !birthday || !phone || !currentPassword || !newPassword) {
       toast({
         variant: 'destructive',
         title: 'Incomplete Information',
@@ -76,6 +77,7 @@ function CompleteSetupContent() {
         id: user.uid,
         email: user.email,
         displayName: displayName,
+        phone: phone,
         team: team,
         birthday: birthday.toISOString(),
         role: 'sales', // Default role
@@ -176,6 +178,11 @@ function CompleteSetupContent() {
                 <Briefcase className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Team:</span>
                 <span className="font-semibold">{team}</span>
+            </div>
+             <div className="flex items-center justify-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Mobile:</span>
+                <span className="font-semibold">{phone}</span>
             </div>
             <div className="flex items-center justify-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +13,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/firebase';
-import { Loader2, Upload, User, CalendarIcon } from 'lucide-react';
+import { Loader2, Upload, User, CalendarIcon, Phone } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 const formSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters.'),
   team: z.string().min(1, 'Please enter your team name.'),
+  phone: z.string().min(10, 'Please enter a valid mobile number.'),
   birthday: z.date({
     required_error: "Your date of birth is required.",
   }),
@@ -40,6 +42,7 @@ export default function ProfileSetupPage() {
     defaultValues: {
       displayName: '',
       team: '',
+      phone: '',
     },
   });
 
@@ -50,6 +53,7 @@ export default function ProfileSetupPage() {
     const params = new URLSearchParams();
     params.append('displayName', values.displayName);
     params.append('team', values.team);
+    params.append('phone', values.phone);
     params.append('birthday', values.birthday.toISOString());
 
     // Redirect to the password page with the profile data
@@ -116,47 +120,65 @@ export default function ProfileSetupPage() {
                 )}
                 />
             </div>
-             <FormField
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
                 control={form.control}
-                name="birthday"
+                name="phone"
                 render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                    <FormLabel>Date of birth</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                        <FormControl>
-                            <Button
-                            variant={"outline"}
-                            className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                            )}
-                            >
-                            {field.value ? (
-                                format(field.value, "PPP")
-                            ) : (
-                                <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                        </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                        />
-                        </PopoverContent>
-                    </Popover>
+                  <FormItem>
+                    <FormLabel>Mobile Number</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="(0917) 123 4567" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
                     <FormMessage />
-                    </FormItem>
-              )}
-            />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                  control={form.control}
+                  name="birthday"
+                  render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                      <FormLabel>Date of birth</FormLabel>
+                      <Popover>
+                          <PopoverTrigger asChild>
+                          <FormControl>
+                              <Button
+                              variant={"outline"}
+                              className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                              )}
+                              >
+                              {field.value ? (
+                                  format(field.value, "PPP")
+                              ) : (
+                                  <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                          </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                          />
+                          </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                      </FormItem>
+                )}
+              />
+            </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save and Proceed
