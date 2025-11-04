@@ -86,7 +86,7 @@ function CompleteSetupContent() {
       
       toast({
         title: 'Setup Complete!',
-        description: 'Welcome to the Smart Refill Sales Portal.',
+        description: 'Your account has been created. Welcome to Smart Refill!',
       });
       
       // 5. Redirect only after all operations are successful.
@@ -96,15 +96,13 @@ function CompleteSetupContent() {
 
 
     } catch (error) {
-      console.error(error);
+      console.error("Finalization Error:", error);
       let description = "An unexpected error occurred. Please try again.";
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            description = "The current password you entered is incorrect. Please try again.";
+            description = "The current password you entered is incorrect. Please go back and try again.";
             // Go back to the password page, preserving other details
             const params = new URLSearchParams(searchParams.toString());
-            params.delete('currentPassword');
-            params.delete('newPassword');
             router.push(`/onboarding/password?${params.toString()}`);
         } else {
             description = error.message;
