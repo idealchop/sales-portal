@@ -15,9 +15,6 @@ import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
-import type { UserProfile } from '@/lib/definitions';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -51,10 +48,10 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoggingIn(true);
     try {
-      // We don't need to check for the user profile here anymore.
-      // The dashboard layout's gatekeeper will handle the redirect to onboarding if needed.
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      router.push('/dashboard');
+      // On successful login, the gatekeeper in DashboardLayout will handle the redirect
+      // to either the dashboard or onboarding. We just need to go to a protected route.
+      router.push('/dashboard'); 
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {
