@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -16,6 +15,10 @@ import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import type { UserProfile } from '@/lib/definitions';
+
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -26,6 +29,7 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user: authUser, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
@@ -42,9 +46,9 @@ export default function LoginPage() {
   // This effect handles users who are already logged in and might land here.
   useEffect(() => {
     if (!isUserLoading && authUser) {
-      // Always start by sending them to the onboarding flow.
+      // Always start by sending them to the dashboard.
       // The dashboard layout will handle redirection if they are already onboarded.
-      router.push('/onboarding/password');
+      router.push('/dashboard');
     }
   }, [authUser, isUserLoading, router]);
 
@@ -54,7 +58,7 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       // On successful login, always redirect to the start of the onboarding process.
       // The dashboard layout's "gatekeeper" will handle the logic for subsequent routing.
-      router.push('/onboarding/password');
+      router.push('/onboarding/profile');
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {

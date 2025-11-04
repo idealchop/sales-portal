@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -6,27 +5,25 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { doc, setDoc } from 'firebase/firestore';
-import { updateProfile } from 'firebase/auth';
 
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useAuth } from '@/firebase';
-import { Loader2, User, Users, Calendar as CalendarIcon, Upload } from 'lucide-react';
+import { useUser } from '@/firebase';
+import { Loader2, Upload } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CalendarIcon } from 'lucide-react';
 
 
 const formSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters.'),
-  team: z.string().min(1, 'Please select a team.'),
+  team: z.string().min(1, 'Please enter your team name.'),
   birthday: z.date({
     required_error: "Your date of birth is required.",
   }),
@@ -36,9 +33,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function ProfileSetupPage() {
   const router = useRouter();
-  const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const { isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
@@ -50,41 +45,16 @@ export default function ProfileSetupPage() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Not Authenticated' });
-      return;
-    }
-
     setIsSubmitting(true);
-    try {
-      // Update Firebase Auth profile
-      await updateProfile(user, { displayName: values.displayName });
+    
+    // Construct the query parameters
+    const params = new URLSearchParams();
+    params.append('displayName', values.displayName);
+    params.append('team', values.team);
+    params.append('birthday', values.birthday.toISOString());
 
-      // Update Firestore document
-      const userDocRef = doc(firestore, 'users', user.uid);
-      await setDoc(userDocRef, {
-        displayName: values.displayName,
-        team: values.team,
-        birthday: values.birthday.toISOString(),
-        onboardingCompleted: true,
-      }, { merge: true });
-
-      toast({
-        title: 'Profile Setup Complete!',
-        description: 'Welcome aboard! Redirecting you to the dashboard.',
-      });
-      router.push('/dashboard');
-
-    } catch (error) {
-      console.error(error);
-      toast({
-        variant: 'destructive',
-        title: 'An Error Occurred',
-        description: 'Could not save your profile. Please try again.',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Redirect to the password page with the profile data
+    router.push(`/onboarding/password?${params.toString()}`);
   };
 
   if (isUserLoading) {
@@ -101,7 +71,7 @@ export default function ProfileSetupPage() {
         <div className="flex justify-center mb-4">
             <Logo />
         </div>
-        <CardTitle>Complete Your Profile</CardTitle>
+        <CardTitle>Step 1: Complete Your Profile</CardTitle>
         <CardDescription>
           Just a few more details to get your account ready.
         </CardDescription>
@@ -190,7 +160,7 @@ export default function ProfileSetupPage() {
             />
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save and Go to Dashboard
+              Save and Proceed
             </Button>
           </form>
         </Form>

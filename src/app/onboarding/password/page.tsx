@@ -1,20 +1,21 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore } from '@/firebase';
 import { Lock, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 
@@ -29,12 +30,30 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function ChangePasswordPage() {
+function ChangePasswordContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Extract profile data from URL
+  const displayName = searchParams.get('displayName');
+  const team = searchParams.get('team');
+  const birthday = searchParams.get('birthday');
+
+  useEffect(() => {
+    if (!isUserLoading && (!displayName || !team || !birthday)) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Profile Information',
+        description: 'Please complete your profile first.',
+      });
+      router.push('/onboarding/profile');
+    }
+  }, [isUserLoading, displayName, team, birthday, router, toast]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -46,29 +65,44 @@ export default function ChangePasswordPage() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    if (!user || !user.email) {
+    if (!user || !user.email || !displayName || !team || !birthday) {
       toast({
         variant: 'destructive',
-        title: 'Not Authenticated',
-        description: 'You must be logged in to change your password.',
+        title: 'Incomplete Information',
+        description: 'User or profile information is missing.',
       });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Re-authenticate the user first
+      // 1. Re-authenticate the user first
       const credential = EmailAuthProvider.credential(user.email, values.currentPassword);
       await reauthenticateWithCredential(user, credential);
 
-      // Now, update the password
+      // 2. Now, update the password
       await updatePassword(user, values.newPassword);
       
-      toast({
-        title: 'Password Updated Successfully',
-        description: 'You will now be redirected to complete your profile.',
+      // 3. Update Firebase Auth profile displayName
+      await updateProfile(user, { displayName });
+
+      // 4. Create the Firestore document
+      const userDocRef = doc(firestore, 'users', user.uid);
+      await setDoc(userDocRef, {
+        id: user.uid,
+        email: user.email,
+        displayName: displayName,
+        team: team,
+        birthday: birthday,
+        role: 'sales', // Default role
+        onboardingCompleted: true, // This is the final step
       });
-      router.push('/onboarding/profile');
+      
+      toast({
+        title: 'Setup Complete!',
+        description: 'Your profile has been created and your password updated.',
+      });
+      router.push('/dashboard');
     } catch (error) {
       console.error(error);
       let description = "An unexpected error occurred. Please try again.";
@@ -81,7 +115,7 @@ export default function ChangePasswordPage() {
       }
       toast({
         variant: 'destructive',
-        title: 'Password Update Failed',
+        title: 'An Error Occurred',
         description: description,
       });
     } finally {
@@ -103,9 +137,9 @@ export default function ChangePasswordPage() {
         <div className="flex justify-center mb-4">
             <Logo />
         </div>
-        <CardTitle>Create a New Password</CardTitle>
+        <CardTitle>Step 2: Create a New Password</CardTitle>
         <CardDescription>
-          Welcome! As a security measure, please update your temporary password.
+          As a final security measure, please update your temporary password.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -161,11 +195,19 @@ export default function ChangePasswordPage() {
             />
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Set Password and Continue
+              Save and Finish Setup
             </Button>
           </form>
         </Form>
       </CardContent>
     </Card>
   );
+}
+
+export default function ChangePasswordPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ChangePasswordContent />
+        </Suspense>
+    )
 }

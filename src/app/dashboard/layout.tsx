@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -70,27 +69,20 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
       return;
     }
 
-    // If the user is authenticated, we check their profile.
-    // This check is crucial for users who have ALREADY completed onboarding.
-    if (userProfile && userProfile.onboardingCompleted) {
-        // If they are onboarded and trying to access an onboarding page, send them to the dashboard.
-        if (pathname.startsWith('/onboarding')) {
-            router.push('/dashboard');
-        } else {
-            // Otherwise, they are clear to access the dashboard.
-            setIsChecking(false);
-        }
+    // If the user is authenticated, but no profile exists OR onboarding is not complete,
+    // and they are NOT already on an onboarding page, redirect them.
+    if ((!userProfile || !userProfile.onboardingCompleted) && !pathname.startsWith('/onboarding')) {
+        router.push('/onboarding/profile'); // Start of the correct flow
         return;
     }
 
-    // If the user is authenticated but has NO profile OR onboarding is not complete,
-    // and they are NOT already on an onboarding page, redirect them.
-    if (!pathname.startsWith('/onboarding')) {
-        router.push('/onboarding/password');
+    // If user is onboarded and tries to access an onboarding page, send them to the dashboard.
+    if (userProfile && userProfile.onboardingCompleted && pathname.startsWith('/onboarding')) {
+        router.push('/dashboard');
         return;
     }
     
-    // If they are already on an onboarding page, let them stay.
+    // If none of the above conditions are met, the user is clear to access the current page.
     setIsChecking(false);
 
   }, [user, userProfile, isUserLoading, isProfileLoading, router, pathname]);
