@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -10,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2, User, Calendar, Briefcase } from 'lucide-react';
+import { Loader2, User, Calendar, Briefcase, CheckCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { FirebaseError } from 'firebase/app';
 import { format } from 'date-fns';
@@ -22,7 +23,8 @@ function CompleteSetupContent() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
-  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'finalizing' | 'success'>('idle');
+
 
   // Extract all data from URL
   const displayName = searchParams.get('displayName');
@@ -56,7 +58,7 @@ function CompleteSetupContent() {
       return;
     }
 
-    setIsFinalizing(true);
+    setStatus('finalizing');
     try {
       // 1. Re-authenticate the user first
       const credential = EmailAuthProvider.credential(user.email, currentPassword);
@@ -80,13 +82,18 @@ function CompleteSetupContent() {
         onboardingCompleted: true,
       });
       
+      setStatus('success');
+      
       toast({
         title: 'Setup Complete!',
         description: 'Welcome to the Smart Refill Sales Portal.',
       });
       
       // 5. Redirect only after all operations are successful.
-      router.push('/dashboard');
+      setTimeout(() => {
+          router.push('/dashboard');
+      }, 2000);
+
 
     } catch (error) {
       console.error(error);
@@ -108,8 +115,7 @@ function CompleteSetupContent() {
         title: 'An Error Occurred',
         description: description,
       });
-    } finally {
-      setIsFinalizing(false);
+      setStatus('idle');
     }
   };
 
@@ -118,6 +124,23 @@ function CompleteSetupContent() {
         <div className="flex h-screen w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
         </div>
+    );
+  }
+  
+  if (status === 'success') {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+                <Logo />
+            </div>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center text-center space-y-4 py-12">
+            <CheckCircle className="h-16 w-16 text-green-500" />
+            <h2 className="text-2xl font-bold">Setup Complete!</h2>
+            <p className="text-muted-foreground">Welcome, {displayName}. You will be redirected to your dashboard shortly.</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -155,9 +178,15 @@ function CompleteSetupContent() {
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleFinalize} className="w-full" disabled={isFinalizing}>
-            {isFinalizing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Complete Setup & Go to Dashboard
+        <Button onClick={handleFinalize} className="w-full" disabled={status === 'finalizing'}>
+            {status === 'finalizing' ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Finalizing Your Account...
+                </>
+            ) : (
+                'Complete Setup & Go to Dashboard'
+            )}
         </Button>
       </CardFooter>
     </Card>
