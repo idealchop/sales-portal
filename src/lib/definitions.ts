@@ -15,6 +15,18 @@ export type Remark = {
   timestamp: string;
 };
 
+export type Plan = {
+  id: string;
+  name: string;
+  monthlyFee: string;
+  liters: string;
+  refillFrequency: string;
+  inclusions: string[];
+  employees: string; // Represents "People" for household
+  stations: string; // Represents "Gallons" for household
+  isRecommended?: boolean;
+};
+
 export type Client = {
   id: string;
   companyName: string;

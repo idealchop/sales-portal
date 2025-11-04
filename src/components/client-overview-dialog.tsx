@@ -31,6 +31,7 @@ import type { ActiveView } from '@/app/dashboard/proposals/page';
 import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
+import { ContractDetails } from '@/components/contract-details';
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -105,76 +106,6 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
   </div>
 );
 
-const inclusions = [
-    {
-        icon: <Computer className="h-5 w-5 text-primary" />,
-        title: 'Smart Client Portal',
-        description: 'Monitor consumption, compliance, water providers, and payments in real time.',
-    },
-    {
-        icon: <CalendarClock className="h-5 w-5 text-primary" />,
-        title: 'Automated Scheduling & Delivery',
-        description: 'No manual ordering; Smart Refill handles refills automatically.',
-    },
-    {
-        icon: <RotateCw className="h-5 w-5 text-primary" />,
-        title: 'Roll-Over Liters',
-        description: 'Unused liters carry over to the next cycle.',
-    },
-    {
-        icon: <Thermometer className="h-5 w-5 text-primary" />,
-        title: 'Free Dispensers, Gallons & Sanitary Items',
-        description: 'Included based on your plan.',
-    },
-    {
-        icon: <Wrench className="h-5 w-5 text-primary" />,
-        title: 'Monthly Sanitation Visit',
-        description: 'Regular cleaning and compliance check for your dispensers.',
-    },
-    {
-        icon: <CircleHelp className="h-5 w-5 text-primary" />,
-        title: 'Guaranteed Water Compliance',
-        description: 'All partner stations meet strict sanitation and quality standards.',
-    },
-    {
-        icon: <Phone className="h-5 w-5 text-primary" />,
-        title: 'Customer Support',
-        description: 'Assistance available for any service or delivery concerns.',
-    },
-    {
-        icon: <Rocket className="h-5 w-5 text-primary" />,
-        title: 'Custom & Scalable Plans',
-        description: 'Adjust liters, branches, and schedules as your business grows.',
-    },
-];
-
-const perks = [
-    {
-        icon: <HeartPulse className="h-8 w-8 text-muted-foreground" />,
-        partner: 'HealthFirst Clinic',
-        description: 'Multi-specialty medical clinics.',
-        benefit: '15% discount on annual physical exams for all employees.',
-    },
-    {
-        icon: <Coffee className="h-8 w-8 text-muted-foreground" />,
-        partner: 'The Daily Grind Cafe',
-        description: 'Specialty coffee and pastries.',
-        benefit: '10% off on all bulk coffee bean orders for the office pantry.',
-    },
-    {
-        icon: <Building className="h-8 w-8 text-muted-foreground" />,
-        partner: 'FlexiSpace Co-Working',
-        description: 'Modern and flexible office solutions.',
-        benefit: 'One free day pass per month at any FlexiSpace location nationwide.',
-    },
-    {
-        icon: <Car className="h-8 w-8 text-muted-foreground" />,
-        partner: 'EcoDrive Car Service',
-        description: 'Eco-friendly car wash and detailing.',
-        benefit: '20% discount on all corporate car wash and detailing services.',
-    }
-];
-
 export function ClientOverviewDialog({
   children,
   client,
@@ -198,11 +129,9 @@ export function ClientOverviewDialog({
       .map((n) => n[0])
       .join('');
   };
-  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  
   const planImage = getPlanImage(client.subscription?.planId);
-  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-
-
+  
   const handleUpload = () => {
     setIsUploaded(true);
     toast({
@@ -583,161 +512,10 @@ export function ClientOverviewDialog({
                             </DialogDescription>
                         </DialogHeader>
                         <ScrollArea className="h-[85vh] pr-6">
-                            <div className="space-y-6 py-4">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Client Information</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                            <span className="text-muted-foreground">Client ID:</span>
-                                            <span className="font-semibold font-mono">{client.id}</span>
-                                        </div>
-                                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                            <span className="text-muted-foreground">Date Signed:</span>
-                                            <span className="font-semibold">{client.subscription?.dateSigned || today}</span>
-                                        </div>
-                                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                            <span className="text-muted-foreground">Company:</span>
-                                            <span className="font-semibold">{client.companyName}</span>
-                                        </div>
-                                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                            <span className="text-muted-foreground">Contact:</span>
-                                            <span className="font-semibold">{client.contactName}</span>
-                                        </div>
-                                        <div className="grid grid-cols-[100px_1fr] items-start gap-2 col-span-2">
-                                            <span className="text-muted-foreground">Address:</span>
-                                            <span className="font-semibold">{client.address}</span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                {client.subscription ? (
-                                    <>
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle>Cost Breakdown</CardTitle>
-                                                <CardDescription>Itemized list of all costs associated with this proposal.</CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="space-y-2">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-muted-foreground">{client.subscription.planName} (Monthly Cost)</span>
-                                                    <span className="font-semibold">{currencyFormatter.format(client.subscription.amount)}</span>
-                                                </div>
-                                                {client.subscription.addons?.map((addon) => (
-                                                    <div key={addon} className="flex justify-between items-center">
-                                                        <span className="text-muted-foreground">{addon}</span>
-                                                        {/* This assumes a fixed cost for addons, which might need to be stored in the subscription object */}
-                                                        <span className="font-semibold">{addon.includes('Weekly Sanitation') ? '₱1,200.00' : '₱250.00'}</span>
-                                                    </div>
-                                                ))}
-                                                <Separator className="my-2" />
-                                                <div className="flex justify-between items-center font-bold text-lg">
-                                                    <span>Total Amount Due (Monthly)</span>
-                                                    <span>{currencyFormatter.format(client.subscription.amount)}</span>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle>Gallon Rotation &amp; Handling Guide</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                                                    <div className="space-y-2">
-                                                        <Label>Recommended Gallons for Rotation</Label>
-                                                        <p className="text-3xl font-bold">{client.subscription.gallons} gallons</p>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle>Included in Every Plan</CardTitle>
-                                                <CardDescription>
-                                                    Every subscription plan includes full access to our growing network of partner perks.
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="grid gap-6 sm:grid-cols-2">
-                                                {inclusions.map((item) => (
-                                                <div key={item.title} className="flex items-start gap-3">
-                                                    <div>{item.icon}</div>
-                                                    <div>
-                                                    <h3 className="font-semibold text-sm">{item.title}</h3>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {item.description}
-                                                    </p>
-                                                    </div>
-                                                </div>
-                                                ))}
-                                            </CardContent>
-                                        </Card>
-
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle>Partner Perks</CardTitle>
-                                                <CardDescription>
-                                                    Enhance your subscription with exclusive benefits from our partners, included with every plan.
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="grid gap-8 sm:grid-cols-2">
-                                               {perks.map((perk) => (
-                                                    <div key={perk.partner} className="flex items-start gap-4">
-                                                        {perk.icon}
-                                                        <div className="space-y-1">
-                                                            <h3 className="font-semibold">{perk.partner}</h3>
-                                                            <p className="text-sm text-muted-foreground">{perk.description}</p>
-                                                            <p className="text-sm font-medium text-primary">{perk.benefit}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </CardContent>
-                                        </Card>
-                                    </>
-                                ) : (
-                                    <p className="text-muted-foreground">No subscription details available.</p>
-                                )}
-
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Smart Refill™ Water Supply Subscription Agreement</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <ContractText />
-                                    </CardContent>
-                                </Card>
-
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Signatures</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4 pt-4">
-                                        <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                                            <div className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="name-preview">Name</Label>
-                                                    <Input id="name-preview" placeholder="Full Name" value={client.contactName} readOnly />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="company-preview">Company</Label>
-                                                    <Input id="company-preview" placeholder="Company Name" value={client.companyName} readOnly />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Date Signed</Label>
-                                                    <Input placeholder="Date" value={client.subscription?.dateSigned || today} readOnly />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Signature</Label>
-                                                <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
-                                                    <p className="text-muted-foreground">Signature Placeholder</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
+                            <ContractDetails 
+                                client={client}
+                                isSigned={true}
+                            />
                         </ScrollArea>
                     </DialogContent>
                 </Dialog>

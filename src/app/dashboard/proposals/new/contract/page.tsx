@@ -41,6 +41,8 @@ import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
 import { allPlans, deliveryFrequencies, gallonRotationData } from '../plans/page';
 import { PaymentMethods } from '@/components/payment-methods';
+import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
+import type { Client } from '@/lib/definitions';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0, multiplier: 1 },
@@ -48,30 +50,6 @@ const billingCycles = [
   { value: 'semi-annually', label: 'Semi-Annually', discount: 0.05, multiplier: 6 },
   { value: 'annually', label: 'Annually', discount: 0.10, multiplier: 12 },
 ];
-
-const billingOptions = [
-  {
-    cycle: 'Monthly',
-    frequency: 'Pay every month',
-    benefits: 'Standard plan benefits and monthly roll-over',
-  },
-  {
-    cycle: 'Quarterly (every 3 months)',
-    frequency: 'Prepaid every quarter',
-    benefits: '3% discount on total plan cost',
-  },
-  {
-    cycle: 'Semi-Annual (every 6 months)',
-    frequency: 'Prepaid every 6 months',
-    benefits: '5% discount + extended roll-over to 3 months',
-  },
-  {
-    cycle: 'Annual (12 months)',
-    frequency: 'Prepaid annually',
-    benefits: '10% discount + free dispenser servicing + priority delivery scheduling',
-  },
-];
-
 
 const addons = [
   {
@@ -102,76 +80,6 @@ const addons = [
 
 const additionalDispenserCost = 250;
 const additionalLiterCost = 3;
-
-const inclusions = [
-    {
-        icon: <Computer className="h-5 w-5 text-primary" />,
-        title: 'Smart Client Portal',
-        description: 'Monitor consumption, compliance, water providers, and payments in real time.',
-    },
-    {
-        icon: <CalendarClock className="h-5 w-5 text-primary" />,
-        title: 'Automated Scheduling & Delivery',
-        description: 'No manual ordering; Smart Refill handles refills automatically.',
-    },
-    {
-        icon: <RotateCw className="h-5 w-5 text-primary" />,
-        title: 'Roll-Over Liters',
-        description: 'Unused liters carry over to the next cycle.',
-    },
-    {
-        icon: <Thermometer className="h-5 w-5 text-primary" />,
-        title: 'Free Dispensers, Gallons & Sanitary Items',
-        description: 'Included based on your plan.',
-    },
-    {
-        icon: <Wrench className="h-5 w-5 text-primary" />,
-        title: 'Monthly Sanitation Visit',
-        description: 'Regular cleaning and compliance check for your dispensers.',
-    },
-    {
-        icon: <CircleHelp className="h-5 w-5 text-primary" />,
-        title: 'Guaranteed Water Compliance',
-        description: 'All partner stations meet strict sanitation and quality standards.',
-    },
-    {
-        icon: <Phone className="h-5 w-5 text-primary" />,
-        title: 'Customer Support',
-        description: 'Assistance available for any service or delivery concerns.',
-    },
-    {
-        icon: <Rocket className="h-5 w-5 text-primary" />,
-        title: 'Custom & Scalable Plans',
-        description: 'Adjust liters, branches, and schedules as your business grows.',
-    },
-];
-
-const perks = [
-    {
-        icon: <HeartPulse className="h-8 w-8 text-muted-foreground" />,
-        partner: 'HealthFirst Clinic',
-        description: 'Multi-specialty medical clinics.',
-        benefit: '15% discount on annual physical exams for all employees.',
-    },
-    {
-        icon: <Coffee className="h-8 w-8 text-muted-foreground" />,
-        partner: 'The Daily Grind Cafe',
-        description: 'Specialty coffee and pastries.',
-        benefit: '10% off on all bulk coffee bean orders for the office pantry.',
-    },
-    {
-        icon: <Building className="h-8 w-8 text-muted-foreground" />,
-        partner: 'FlexiSpace Co-Working',
-        description: 'Modern and flexible office solutions.',
-        benefit: 'One free day pass per month at any FlexiSpace location nationwide.',
-    },
-    {
-        icon: <Car className="h-8 w-8 text-muted-foreground" />,
-        partner: 'EcoDrive Car Service',
-        description: 'Eco-friendly car wash and detailing.',
-        benefit: '20% discount on all corporate car wash and detailing services.',
-    }
-]
 
 export function ContractSection({
   title,
@@ -299,42 +207,15 @@ export function ContractText() {
 }
 
 function PreviewDialog({ 
-    totalAmount,
-    billingCycleLabel,
-    discount,
-    basePrice,
-    selectedAddons,
-    additionalDispensers,
-    additionalLiters,
-    plan,
-    finalPlan,
-    clientName,
-    clientCompany
+    finalPlanDetails,
+    client,
 }: { 
-    totalAmount: string,
-    billingCycleLabel: string,
-    discount: number,
-    basePrice: number,
-    selectedAddons: { [key: string]: boolean },
-    additionalDispensers: number,
-    additionalLiters: number,
-    plan: any,
-    finalPlan: any,
-    clientName: string,
-    clientCompany: string,
+    finalPlanDetails: FinalPlanDetails,
+    client: Partial<Client>,
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
     const { toast } = useToast();
-    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-    const proposalId = useMemo(() => `SR${new Date().getFullYear()}${Math.floor(100000 + Math.random() * 900000)}`, []);
     
-    const clientID = useMemo(() => {
-        const year = new Date().getFullYear().toString().slice(-2);
-        const randomNumber = Math.floor(100000 + Math.random() * 900000); 
-        return `SC${year}${randomNumber}`;
-    }, []);
-
     const handleFinalize = () => {
         const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
         if (signaturePadRef.current?.isEmpty()) {
@@ -346,7 +227,7 @@ function PreviewDialog({
             return;
         }
 
-        if (!clientName || !clientCompany) {
+        if (!client.contactName || !client.companyName) {
             toast({
                 variant: "destructive",
                 title: "Client Information Required",
@@ -357,36 +238,9 @@ function PreviewDialog({
 
         toast({
             title: "Contract Finalized!",
-            description: `Client ID ${clientID} has been generated. The signed contract has been saved.`,
+            description: `Client ID ${finalPlanDetails.clientId} has been generated. The signed contract has been saved.`,
         });
     };
-
-    const planBaseCost = parseFloat(finalPlan.monthlyFee.replace(/[^0-9.-]+/g, ''));
-    const addonsCost = addons.reduce((total, addon) => {
-        if (addon.type === 'checkbox') {
-             return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
-        }
-        return total;
-    }, 0);
-    
-    const dispensersCost = additionalDispensers * additionalDispenserCost;
-    const litersCost = additionalLiters * additionalLiterCost;
-    const subtotal = planBaseCost + addonsCost + dispensersCost + litersCost;
-
-    const summaryTitle = finalPlan.name.includes("Plan") ? finalPlan.name : `${finalPlan.name} Plan`;
-
-    const selectedCycle = billingCycles.find(c => c.label === billingCycleLabel) || billingCycles[0];
-    const totalBeforeDiscount = subtotal * selectedCycle.multiplier;
-    const discountValue = totalBeforeDiscount * discount;
-
-    const baseLiters = plan ? parseInt(plan.liters.replace(/[^0-9]/g, '')) : 0;
-    const freeLiters = baseLiters * 0.2;
-    const monthlyLiters = baseLiters + freeLiters + additionalLiters;
-    const totalLitersValue = monthlyLiters * selectedCycle.multiplier;
-    const annualConsumption = monthlyLiters * 12;
-    
-    const rotationInfo = gallonRotationData[plan?.id] || gallonRotationData['custom-plan'];
-
 
     return (
         <DialogContent className="sm:max-w-5xl">
@@ -395,278 +249,12 @@ function PreviewDialog({
                 <DialogDescription>A preview of the sales proposal for the client to review and sign.</DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-[85vh] pr-6">
-                <div className="space-y-6 p-2">
-                    <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-4">
-                            <Logo className="h-12 w-12" />
-                            <div>
-                                <h2 className="text-2xl font-bold text-primary">Smart Refill</h2>
-                                <p className="text-muted-foreground">Sales Illustration</p>
-                            </div>
-                        </div>
-                        <div className="text-right">
-                             <p className="font-mono text-sm text-muted-foreground">Proposal ID: {proposalId}</p>
-                        </div>
-                    </div>
-                    
-                    <Separator />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Client Information</CardTitle>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-1 gap-x-8 gap-y-4 text-sm">
-                                <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                    <span className="text-muted-foreground">Client ID:</span>
-                                    <span className="font-semibold font-mono">{clientID}</span>
-                                </div>
-                                <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                    <span className="text-muted-foreground">Name:</span>
-                                    <span className="font-semibold">{clientName || "N/A"}</span>
-                                </div>
-                                 <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                    <span className="text-muted-foreground">Company:</span>
-                                    <span className="font-semibold">{clientCompany || "N/A"}</span>
-                                </div>
-                                <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                                    <span className="text-muted-foreground">Date:</span>
-                                    <span className="font-semibold">{today}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Plan Details: {summaryTitle}</CardTitle>
-                            </CardHeader>
-                             <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                                <div className="flex items-center gap-2">
-                                    <Waves className="h-4 w-4 text-primary" />
-                                    <div>
-                                        <p className="text-muted-foreground">Total Liters</p>
-                                        <p className="font-semibold">{finalPlan.liters}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4 text-primary" />
-                                    <div>
-                                        <p className="text-muted-foreground">Employees</p>
-                                        <p className="font-semibold">{finalPlan.employees}</p>
-                                    </div>
-                                </div>
-                                 <div className="flex items-center gap-2">
-                                    <Package className="h-4 w-4 text-primary" />
-                                    <div>
-                                        <p className="text-muted-foreground">Refillable Gallons</p>
-                                        <p className="font-semibold">
-                                            {rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <RefreshCcw className="h-4 w-4 text-primary" />
-                                    <div>
-                                        <p className="text-muted-foreground">Refill Frequency</p>
-                                        <p className="font-semibold">{finalPlan.refillFrequency}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <p className="text-muted-foreground">
-                                Thank you for considering Smart Refill for your business's water supply needs. We are excited to present this proposal for our automated and reliable water refill service. This document outlines the plan details, benefits, and the terms of our partnership.
-                            </p>
-                            <p className="text-muted-foreground mt-4">
-                                At Smart Refill, we are committed to providing a seamless, compliant, and cost-effective solution, so you can focus on what matters most—running your business.
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Cost Breakdown</CardTitle>
-                            <CardDescription>Itemized list of all costs associated with this proposal.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">{summaryTitle} (Monthly Cost)</span>
-                                <span className="font-semibold">{currencyFormatter.format(planBaseCost)}</span>
-                            </div>
-                            {addons.map((addon) => (
-                                addon.type === 'checkbox' && selectedAddons[addon.id] && (
-                                    <div key={addon.id} className="flex justify-between items-center">
-                                        <span className="text-muted-foreground">{addon.name}</span>
-                                        <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
-                                    </div>
-                                )
-                            ))}
-                            {additionalDispensers > 0 && (
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
-                                    <span className="font-semibold">{currencyFormatter.format(dispensersCost)}</span>
-                                </div>
-                            )}
-                            {additionalLiters > 0 && (
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">Additional Liters ({additionalLiters} L)</span>
-                                    <span className="font-semibold">{currencyFormatter.format(litersCost)}</span>
-                                </div>
-                            )}
-                            <Separator className="my-2" />
-                            <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Subtotal (per month)</span>
-                                <span className="font-semibold">{currencyFormatter.format(subtotal)}</span>
-                            </div>
-                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Included Liters (Monthly)</span>
-                                <span className="font-semibold">{baseLiters.toLocaleString()} L</span>
-                            </div>
-                             <div className="flex justify-between items-center font-medium text-primary">
-                                <span>+20% Free Liters</span>
-                                <span>+{freeLiters.toLocaleString()} L</span>
-                            </div>
-                            <Separator className="my-2" />
-                             <div className="flex justify-between items-center font-semibold">
-                                <span>Total Liters Available (Monthly)</span>
-                                <span>{(baseLiters + freeLiters).toLocaleString()} L</span>
-                            </div>
-                            <Separator className="my-2" />
-                            {selectedCycle.multiplier > 1 && (
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">Total for {selectedCycle.label} ({currencyFormatter.format(subtotal)} x {selectedCycle.multiplier} mos)</span>
-                                    <span className="font-semibold">{currencyFormatter.format(totalBeforeDiscount)}</span>
-                                </div>
-                            )}
-                             <div className="flex justify-between items-center text-primary">
-                                <span className="text-muted-foreground">Billing Cycle Discount ({billingCycleLabel}, {discount * 100}%)</span>
-                                <span className="font-semibold">-{currencyFormatter.format(discountValue)}</span>
-                            </div>
-                            <Separator className="my-2" />
-                            <div className="flex justify-between items-center font-bold text-lg">
-                                <span>Total Amount Due</span>
-                                <span>{totalAmount}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Gallon Rotation &amp; Handling Guide</CardTitle>
-                            <CardDescription>
-                                Recommendations for managing your gallon inventory to ensure seamless service.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                                <div className="space-y-2">
-                                    <Label>Recommended Gallons for Rotation</Label>
-                                    <p className="text-3xl font-bold">{rotationInfo.gallons > 0 ? `${rotationInfo.gallons} gallons` : 'Dynamic'}</p>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Handling Notes</Label>
-                                    <p className="text-sm text-muted-foreground">{rotationInfo.notes}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Included in Every Plan</CardTitle>
-                             <CardDescription>
-                                Every subscription plan includes full access to our growing network of partner perks.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid gap-6 sm:grid-cols-2">
-                            {inclusions.map((item) => (
-                            <div key={item.title} className="flex items-start gap-3">
-                                <div>{item.icon}</div>
-                                <div>
-                                <h3 className="font-semibold text-sm">{item.title}</h3>
-                                <p className="text-xs text-muted-foreground">
-                                    {item.description}
-                                </p>
-                                </div>
-                            </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Partner Perks</CardTitle>
-                            <CardDescription>
-                                Enhance your subscription with exclusive benefits from our partners, included with every plan.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid gap-8 sm:grid-cols-2">
-                           {perks.map((perk) => (
-                                <div key={perk.partner} className="flex items-start gap-4">
-                                    {perk.icon}
-                                    <div className="space-y-1">
-                                        <h3 className="font-semibold">{perk.partner}</h3>
-                                        <p className="text-sm text-muted-foreground">{perk.description}</p>
-                                        <p className="text-sm font-medium text-primary">{perk.benefit}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </CardContent>
-                        <CardFooter>
-                             <div className="text-sm text-muted-foreground space-y-2">
-                               <p className="font-semibold text-foreground">Terms:</p>
-                               <ul className="list-disc list-inside space-y-1">
-                                    <li>All employees of the subscribed company are eligible for these perks.</li>
-                                    <li>To redeem, employees must present their company ID at partner establishments.</li>
-                               </ul>
-                            </div>
-                        </CardFooter>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Smart Refill™ Water Supply Subscription Agreement</CardTitle>
-                             <CardDescription>
-                                Between: River Tech Group, Inc. (“Provider”) and the Subscriber (“Client”).
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <ContractText />
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Signatures</CardTitle>
-                            <CardDescription>Please sign below to finalize the agreement.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4 pt-4">
-                            <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name-preview">Name</Label>
-                                        <Input id="name-preview" placeholder="Full Name" value={clientName} readOnly />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="company-preview">Company</Label>
-                                        <Input id="company-preview" placeholder="Company Name" value={clientCompany} readOnly />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Date</Label>
-                                        <Input placeholder="Date" value={today} readOnly />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Signature</Label>
-                                    <SignaturePad ref={signaturePadRef} />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                <ContractDetails
+                    finalPlanDetails={finalPlanDetails}
+                    client={client}
+                    isSigned={false}
+                    signaturePadRef={signaturePadRef}
+                />
             </ScrollArea>
             <DialogFooter className="gap-2 sm:justify-end border-t pt-4">
                 <DialogClose asChild>
@@ -775,12 +363,14 @@ function ContractPageContent() {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
   }
 
-  const { totalAmount, discount, billingCycleLabel, basePrice, totalLiters } = useMemo(() => {
-    const planBaseCost = plan ? parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) : 0;
-    if (isNaN(planBaseCost)) {
-      return { totalAmount: plan?.monthlyFee || 'N/A', discount: 0, billingCycleLabel: 'N/A', basePrice: 0, totalLiters: 0 };
-    }
+  const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
+    if (!plan) return null;
 
+    const planBaseCost = parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,""));
+    if (isNaN(planBaseCost)) {
+      return null;
+    }
+    
     const addonsCost = addons.reduce((total, addon) => {
         if (addon.type === 'checkbox') {
             return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
@@ -790,27 +380,58 @@ function ContractPageContent() {
     const dispensersCost = additionalDispensers * additionalDispenserCost;
     const litersCost = additionalLiters * additionalLiterCost;
 
-    const monthlyBasePrice = planBaseCost + addonsCost + dispensersCost + litersCost;
+    const subtotal = planBaseCost + addonsCost + dispensersCost + litersCost;
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
     
-    const totalBeforeDiscount = monthlyBasePrice * selectedCycle.multiplier;
-    const discountAmount = totalBeforeDiscount * selectedCycle.discount;
-    const finalAmount = totalBeforeDiscount - discountAmount;
+    const totalBeforeDiscount = subtotal * selectedCycle.multiplier;
+    const discountValue = totalBeforeDiscount * selectedCycle.discount;
+    const finalAmount = totalBeforeDiscount - discountValue;
     
-    const baseLiters = plan ? parseInt(plan.liters.replace(/[^0-9]/g, '')) : 0;
+    const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
-    const monthlyLiters = baseLiters + freeLiters + additionalLiters;
-    const totalLitersForCycle = monthlyLiters * selectedCycle.multiplier;
+    const totalMonthlyLiters = baseLiters + freeLiters + additionalLiters;
+    const totalLitersForCycle = totalMonthlyLiters * selectedCycle.multiplier;
     
+    const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
+
+    const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
+
     return {
-        totalAmount: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
-        discount: selectedCycle.discount,
+        proposalId: `SR${new Date().getFullYear()}${Math.floor(100000 + Math.random() * 900000)}`,
+        clientId: `SC${new Date().getFullYear().toString().slice(-2)}${Math.floor(100000 + Math.random() * 900000)}`,
+        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        summaryTitle: summaryTitle,
+        totalLiters: `${totalLitersForCycle.toLocaleString()} L`,
+        employees: getEmployees(totalMonthlyLiters),
+        refillableGallons: rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic',
+        refillFrequency: finalPlan.refillFrequency,
+        totalAmountDue: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
         billingCycleLabel: selectedCycle.label,
-        basePrice: monthlyBasePrice,
-        totalLiters: totalLitersForCycle,
-    }
+        discount: selectedCycle.discount,
+        basePrice: subtotal,
+        selectedAddons,
+        additionalDispensers,
+        additionalLiters,
+        plan,
+        finalPlan: {
+          ...plan,
+          liters: `${totalMonthlyLiters.toLocaleString()} L`,
+          inclusions: plan.id === 'enterprise-overflow' 
+              ? ['Pay only for what you use'] 
+              : (plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : []),
+          employees: getEmployees(totalMonthlyLiters),
+          stations: getStations(totalMonthlyLiters),
+          refillFrequency: plan.refillFrequency
+        },
+        planBaseCost,
+        addons,
+        additionalDispenserCost,
+        additionalLiterCost,
+        totalMonthlyLiters,
+        totalLitersForCycle
+    };
   }, [plan, billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
-  
+
   const finalPlan = useMemo(() => {
     if (!plan) return null;
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, ''));
@@ -839,7 +460,7 @@ function ContractPageContent() {
     });
   }
   
-  if (!plan || !finalPlan) {
+  if (!plan || !finalPlan || !finalPlanDetails) {
     return (
         <div className="flex flex-col gap-6 items-center justify-center h-full">
             <Card className="w-full max-w-md">
@@ -892,7 +513,7 @@ function ContractPageContent() {
             <CardHeader>
                 <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
                 <CardDescription>
-                    A summary of the selected subscription plan details for the upcoming {billingCycleLabel} period. (Includes +20% free liters every month)
+                    A summary of the selected subscription plan details for the upcoming {finalPlanDetails.billingCycleLabel} period. (Includes +20% free liters every month)
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1050,8 +671,8 @@ function ContractPageContent() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <div>
-                            <p className="font-semibold">{summaryTitle} ({billingCycleLabel})</p>
-                            <p className="text-2xl font-bold">{currencyFormatter.format(basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
+                            <p className="font-semibold">{summaryTitle} ({finalPlanDetails.billingCycleLabel})</p>
+                            <p className="text-2xl font-bold">{currencyFormatter.format(finalPlanDetails.basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
                             <li>Total Liters: {finalPlan.liters} / mo (includes 20% bonus)</li>
@@ -1101,13 +722,13 @@ function ContractPageContent() {
 
                     <div className="flex justify-between items-center text-lg font-bold">
                         <span>Total Due</span>
-                        <span>{totalAmount}</span>
+                        <span>{finalPlanDetails.totalAmountDue}</span>
                     </div>
 
                     {selectedCycle.multiplier > 1 && (
                         <div className="flex justify-between items-center text-sm text-muted-foreground pt-1">
                             <span>Total Liters for Period</span>
-                            <span>{totalLiters.toLocaleString()} L</span>
+                            <span>{finalPlanDetails.totalLitersForCycle.toLocaleString()} L</span>
                         </div>
                     )}
                 </CardContent>
@@ -1117,17 +738,8 @@ function ContractPageContent() {
                             <Button>Review &amp; Sign</Button>
                         </DialogTrigger>
                         <PreviewDialog 
-                            totalAmount={totalAmount}
-                            billingCycleLabel={billingCycleLabel}
-                            discount={discount}
-                            basePrice={basePrice}
-                            selectedAddons={selectedAddons}
-                            additionalDispensers={additionalDispensers}
-                            additionalLiters={additionalLiters}
-                            plan={plan}
-                            finalPlan={finalPlan}
-                            clientName={contactName}
-                            clientCompany={companyName}
+                            finalPlanDetails={finalPlanDetails}
+                            client={{contactName, companyName}}
                         />
                     </Dialog>
                 </CardFooter>
@@ -1147,29 +759,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-    
-
-
