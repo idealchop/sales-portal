@@ -20,8 +20,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock } from 'lucide-react';
-import type { Client } from '@/lib/definitions';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle } from 'lucide-react';
+import type { Client, Remark } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
@@ -66,7 +66,8 @@ export function ClientOverviewDialog({
   const { toast } = useToast();
   const [isUploaded, setIsUploaded] = useState(false);
   const [open, setOpen] = useState(false);
-  const [remarks, setRemarks] = useState(client.remarks || '');
+  const [remarks, setRemarks] = useState(client.remarks || []);
+  const [newRemark, setNewRemark] = useState('');
 
   const getInitials = (name: string) => {
     return name
@@ -96,11 +97,27 @@ export function ClientOverviewDialog({
     })
   }
 
-  const handleSaveRemarks = () => {
-      toast({
-          title: "Remarks Saved",
-          description: `Remarks for ${client.companyName} have been updated.`,
-      })
+  const handleAddRemark = () => {
+    if (newRemark.trim() === '') return;
+
+    const remark: Remark = {
+        content: newRemark,
+        author: 'Sandra Adams', // This should be dynamic in a real app
+        timestamp: new Date().toLocaleString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric', 
+            hour: 'numeric', 
+            minute: '2-digit' 
+        }),
+    };
+
+    setRemarks(prev => [remark, ...prev]);
+    setNewRemark('');
+    toast({
+        title: "Remark Added",
+        description: "Your new remark has been added to the log.",
+    });
   }
 
   return (
@@ -206,17 +223,35 @@ export function ClientOverviewDialog({
                                 <CardTitle>Sales Remarks</CardTitle>
                                 <CardDescription>Internal notes for the sales team.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <Textarea
-                                    placeholder="Add remarks for this client..."
-                                    value={remarks}
-                                    onChange={(e) => setRemarks(e.target.value)}
-                                    className="min-h-[120px]"
-                                />
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Textarea
+                                        placeholder="Add a new remark..."
+                                        value={newRemark}
+                                        onChange={(e) => setNewRemark(e.target.value)}
+                                        className="min-h-[80px]"
+                                    />
+                                    <Button onClick={handleAddRemark} size="sm" className="w-full">
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Add Remark
+                                    </Button>
+                                </div>
+                                <Separator />
+                                <div className="space-y-4 max-h-48 overflow-y-auto">
+                                    {remarks.length > 0 ? (
+                                        remarks.map((remark, index) => (
+                                            <div key={index} className="text-sm p-3 bg-muted/50 rounded-lg">
+                                                <p className="text-foreground">{remark.content}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    - {remark.author} on {remark.timestamp}
+                                                </p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground text-center py-4">No remarks yet.</p>
+                                    )}
+                                </div>
                             </CardContent>
-                            <CardFooter>
-                                <Button onClick={handleSaveRemarks}><Save className="mr-2 h-4 w-4" /> Save Remarks</Button>
-                            </CardFooter>
                         </Card>
                     </div>
 
@@ -337,11 +372,6 @@ export function ClientOverviewDialog({
                             <CardContent>
                                 <div className="text-center py-8">
                                     <p className="text-muted-foreground">No active subscription.</p>
-                                    {view === 'proposals' && (
-                                        <Button asChild className="mt-4">
-                                            <Link href="/dashboard/proposals/new">Create New Proposal</Link>
-                                        </Button>
-                                    )}
                                 </div>
                             </CardContent>
                         )}
