@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -41,6 +42,12 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       }
     ],
+  },
+  webpack: (config) => {
+    config.externals.push({
+      'node-fetch': 'commonjs node-fetch',
+    });
+    return config;
   },
 };
 

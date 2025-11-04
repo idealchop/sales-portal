@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
 import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot } from 'lucide-react';
 import type { Client, Remark, OnboardingStep } from '@/lib/definitions';
-import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
+import { ContractDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { useState } from 'react';
@@ -31,7 +31,8 @@ import type { ActiveView } from '@/app/dashboard/proposals/page';
 import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
-import { ContractDetails } from '@/components/contract-details';
+import { GoogleMap } from './google-map';
+
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -240,15 +241,8 @@ export function ClientOverviewDialog({
                                         <p className="font-semibold">{client.address}</p>
                                         <Dialog>
                                             <DialogTrigger asChild>
-                                                <div className="aspect-video w-full overflow-hidden rounded-lg mt-2 cursor-pointer">
-                                                    <iframe
-                                                        width="100%"
-                                                        height="100%"
-                                                        style={{ border: 0, pointerEvents: 'none' }}
-                                                        loading="lazy"
-                                                        allowFullScreen
-                                                        src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed&z=15`}
-                                                    ></iframe>
+                                                <div className="aspect-video w-full overflow-hidden rounded-lg mt-2 cursor-pointer border">
+                                                    <GoogleMap address={client.address} />
                                                 </div>
                                             </DialogTrigger>
                                             <DialogContent className="sm:max-w-3xl h-[80vh]">
@@ -257,14 +251,7 @@ export function ClientOverviewDialog({
                                                     <DialogDescription>{client.address}</DialogDescription>
                                                 </DialogHeader>
                                                 <div className="w-full h-full rounded-lg overflow-hidden">
-                                                    <iframe
-                                                        width="100%"
-                                                        height="100%"
-                                                        style={{ border: 0 }}
-                                                        loading="lazy"
-                                                        allowFullScreen
-                                                        src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed&z=17`}
-                                                    ></iframe>
+                                                   <GoogleMap address={client.address} zoom={17} />
                                                 </div>
                                             </DialogContent>
                                         </Dialog>
