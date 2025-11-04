@@ -35,7 +35,7 @@ import { Separator } from './ui/separator';
 import { Logo } from './logo';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
@@ -69,6 +69,7 @@ function QrCodeIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export function DashboardHeader() {
   const [date, setDate] = React.useState<Date>();
+  const { user } = useUser();
   const referralLink = "https://smartrefill.app/referral?code=SR12345";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(referralLink)}&size=200x200&bgcolor=F1F8E9`;
   const auth = useAuth();
@@ -77,6 +78,14 @@ export function DashboardHeader() {
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/login');
+  };
+
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return 'SR';
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('');
   };
 
   return (
@@ -93,8 +102,8 @@ export function DashboardHeader() {
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="overflow-hidden rounded-full">
                 <Avatar className="h-9 w-9">
-                    <AvatarImage src="https://picsum.photos/seed/avatar/32/32" alt="User Avatar" />
-                    <AvatarFallback>SA</AvatarFallback>
+                    <AvatarImage src={user?.photoURL ?? `https://picsum.photos/seed/${user?.uid}/32/32`} alt="User Avatar" />
+                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                 </Avatar>
               </Button>
             </PopoverTrigger>
@@ -102,12 +111,12 @@ export function DashboardHeader() {
                 <div className="p-4">
                     <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12">
-                            <AvatarImage src="https://picsum.photos/seed/avatar/48/48" alt="User Avatar" />
-                            <AvatarFallback>SA</AvatarFallback>
+                            <AvatarImage src={user?.photoURL ?? `https://picsum.photos/seed/${user?.uid}/48/48`} alt="User Avatar" />
+                            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="text-base font-semibold leading-none">Sandra Adams</p>
-                            <p className="text-sm text-muted-foreground">Sales Representative, Team Alpha</p>
+                            <p className="text-base font-semibold leading-none">{user?.displayName ?? 'Sales Rep'}</p>
+                            <p className="text-sm text-muted-foreground">{user?.email ?? 'No email'}</p>
                              <div className="mt-2 flex items-center gap-2">
                                 <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
                                     <Star className="mr-1 h-3 w-3" />
@@ -202,8 +211,8 @@ export function DashboardHeader() {
                             </div>
                             <div className="flex flex-col items-center gap-4 rounded-md border p-8">
                                 <Avatar className="h-24 w-24 cursor-pointer">
-                                    <AvatarImage src="https://picsum.photos/seed/avatar/96/96" alt="User Avatar" />
-                                    <AvatarFallback>SA</AvatarFallback>
+                                    <AvatarImage src={user?.photoURL ?? `https://picsum.photos/seed/${user?.uid}/96/96`} alt="User Avatar" />
+                                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                                 </Avatar>
                                 <Button variant="outline" size="sm">
                                     <Upload className="mr-2 h-4 w-4" />
@@ -219,11 +228,11 @@ export function DashboardHeader() {
                              <div className="space-y-4 mt-4">
                                 <div className="grid gap-2">
                                     <Label htmlFor="name">Full Name</Label>
-                                    <Input id="name" defaultValue="Sandra Adams" />
+                                    <Input id="name" defaultValue={user?.displayName ?? ''} />
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="email">Email</Label>
-                                    <Input id="email" type="email" defaultValue="sandra.adams@example.com" />
+                                    <Input id="email" type="email" defaultValue={user?.email ?? ''} />
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="dob">Birthday</Label>
@@ -263,3 +272,5 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
