@@ -42,10 +42,12 @@ const planImages: { [key: string]: string } = {
   commercial: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_Business.png?alt=media&token=b8536b3c-5199-460a-8612-003c99139d7c",
   corporate: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_Enterprise.png?alt=media&token=29e0d6a7-41f7-4511-a8b6-0369989421bd",
   enterprise: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63",
+  household: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FSmartRefill_Individual.png?alt=media&token=090d07c4-848a-4cd6-aab6-f7a5909ea839",
 };
 
 const getPlanImage = (planId?: string) => {
     if (!planId) return planImages.sme;
+    if (planId.includes('household')) return planImages.household;
     if (planId.includes('micro') || planId.includes('starter') || planId.includes('professional')) return planImages.sme;
     if (planId.includes('growth') || planId.includes('pro') || planId.includes('business')) return planImages.commercial;
     if (planId.includes('enterprise')) return planImages.corporate;
@@ -380,20 +382,25 @@ export function ClientOverviewDialog({
                                             View Onboarding Progress
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-lg">
+                                    <DialogContent className="sm:max-w-3xl">
                                         <DialogHeader>
                                             <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
                                             <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
                                         </DialogHeader>
-                                        <div className="py-4">
-                                            <div className="flex flex-col">
-                                                {client.onboardingStatus.map((step, index) => (
-                                                    <OnboardingStepItem 
-                                                        key={index} 
-                                                        step={step} 
-                                                        isLast={index === client.onboardingStatus!.length - 1} 
-                                                    />
-                                                ))}
+                                        <div className="grid md:grid-cols-2 gap-6 py-4">
+                                            <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                                                <Image src={planImage} alt={client.subscription.planName} fill className="object-cover" />
+                                            </div>
+                                            <div>
+                                                <div className="flex flex-col">
+                                                    {client.onboardingStatus.map((step, index) => (
+                                                        <OnboardingStepItem 
+                                                            key={index} 
+                                                            step={step} 
+                                                            isLast={index === client.onboardingStatus!.length - 1} 
+                                                        />
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </DialogContent>
