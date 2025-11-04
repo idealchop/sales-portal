@@ -10,12 +10,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/definitions';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -26,6 +28,7 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +45,7 @@ export default function LoginPage() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(user => {
       if (user) {
+        // We still keep this to handle cases where a user with a valid session lands here
         router.push('/dashboard');
       }
     });
@@ -51,14 +55,30 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      // The onAuthStateChanged listener will handle the redirect,
-      // but we can show a success toast and navigate optimistically.
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Check if user document exists, and create it if it doesn't
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        const newUserProfile: UserProfile = {
+            id: user.uid,
+            email: user.email || '',
+            displayName: user.displayName || 'New User',
+            role: 'sales', // Default role
+            onboardingCompleted: false,
+        };
+        await setDoc(userDocRef, newUserProfile);
+      }
+
       toast({
         title: 'Login Successful',
         description: "Welcome back! You're being redirected to your dashboard.",
       });
       router.push('/dashboard');
+
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {
