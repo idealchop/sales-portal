@@ -89,18 +89,13 @@ service cloud.firestore {
     /**
      * @description Allows access to user profiles, ensuring users can only manage their own profile.
      * @path /users/{userId}
-     * @allow (create) - User can create their profile if the userId matches their auth UID.
-     * @allow (get, list, update, delete) - User can get, list, update, and delete their profile if the userId matches their auth UID and the document exists.
-     * @deny (create) - User cannot create a profile for another user.
-     * @deny (get, list, update, delete) - User cannot get, list, update, or delete another user's profile or if the document doesn't exist.
+     * @allow (create, update) - User can create or update their own profile.
+     * @allow (get, list, delete) - User can read or delete their own profile.
      * @principle Enforces user-ownership for profile data.
      */
     match /users/{userId} {
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow get, list, delete: if isOwner(userId);
     }
 
     // Helper functions
