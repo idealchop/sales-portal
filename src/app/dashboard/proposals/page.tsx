@@ -46,11 +46,11 @@ const proposalStatusStyles: { [key: string]: string } = {
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
   inactive: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-  lead: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 
 export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
-export type ClientStatus = 'active' | 'inactive' | 'lead';
+export type ClientStatus = 'active' | 'inactive' | 'pending';
 export type ActiveView = 'proposals' | 'clients';
 
 function NavLink({
@@ -85,7 +85,7 @@ export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const [searchQuery, setSearchQuery] = useState('');
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'accepted', 'sent', 'draft', 'rejected'];
-  const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'lead', 'inactive'];
+  const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'pending', 'inactive'];
   const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('all');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
 

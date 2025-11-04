@@ -4,7 +4,7 @@ export type Client = {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
-  status: 'active' | 'inactive' | 'lead';
+  status: 'active' | 'inactive' | 'pending';
   address: string;
   subscription?: {
     planId: string;

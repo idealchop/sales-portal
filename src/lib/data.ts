@@ -7,7 +7,7 @@ export const clients: Client[] = [
   { id: 'SC24389914', companyName: 'Synergy Group', contactName: 'Peter Jones', contactEmail: 'peter.jones@synergy.com', contactPhone: '(0917) 345-6789', status: 'inactive', address: '789 Enterprise Way, Chicago, IL' },
   { id: 'SC24958823', companyName: 'QuantumLeap Co.', contactName: 'Mary Johnson', contactEmail: 'mary.j@quantum.co', contactPhone: '(0917) 456-7890', status: 'active', address: '101 Future Drive, Austin, TX', subscription: { planId: 'starter', planName: 'Starter', liters: 1000, amount: 3200, refillFrequency: '2–3/week', employees: '10 – 20', gallons: 264, inclusions: ['1 Free Dispenser', 'Monthly Sanitation'] } },
   { id: 'SC24899145', companyName: 'Apex Industries', contactName: 'David Wilson', contactEmail: 'david.w@apex.com', contactPhone: '(0917) 567-8901', status: 'active', address: '212 Summit Peak, Denver, CO', subscription: { planId: 'pro', planName: 'Pro', liters: 4000, amount: 12000, refillFrequency: '5–6/week', employees: '70 – 100', gallons: 1056, inclusions: ['3 Free Dispensers', 'Monthly Sanitation'], addons: ['Additional Dispenser (x1)'] } },
-  { id: 'SC24588236', companyName: 'StriveEndeavors', contactName: 'Sarah Miller', contactEmail: 's.miller@strive.com', contactPhone: '(0917) 678-9012', status: 'lead', address: '333 Growth Ave, Miami, FL' },
+  { id: 'SC24588236', companyName: 'StriveEndeavors', contactName: 'Sarah Miller', contactEmail: 's.miller@strive.com', contactPhone: '(0917) 678-9012', status: 'pending', address: '333 Growth Ave, Miami, FL' },
 ];
 
 export const proposals: Proposal[] = [
