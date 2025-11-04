@@ -42,12 +42,15 @@ function DashboardSidebar() {
   )
 }
 
-function ProtectedDashboard({ children }: { children: ReactNode }) {
+function ProtectedLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const firestore = useFirestore();
 
+  const isAuthRoute = pathname.startsWith('/login');
+  const isOnboardingRoute = pathname.startsWith('/onboarding');
+  
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
@@ -58,35 +61,43 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Wait until both authentication and profile data are finished loading
-    if (isUserLoading || isProfileLoading) {
-      return;
+    // Don't run auth checks on login page
+    if (isAuthRoute) {
+        setIsChecking(false);
+        return;
     }
 
-    // If there is no authenticated user at all, send them to the login page.
-    if (!user) {
+    if (isUserLoading || (user && isProfileLoading)) {
+      return; // Wait until loading is complete
+    }
+
+    // If on any protected route and not logged in, redirect to login
+    if (!user && !isAuthRoute) {
       router.push('/login');
       return;
     }
+    
+    // Logic for authenticated users
+    if (user) {
+        // If user is authenticated, but no profile exists OR onboarding is not complete,
+        // and they are NOT already on an onboarding page, redirect them.
+        if ((!userProfile || !userProfile.onboardingCompleted) && !isOnboardingRoute) {
+            router.push('/onboarding/profile');
+            return;
+        }
 
-    // If the user is authenticated, but no profile exists OR onboarding is not complete,
-    // and they are NOT already on an onboarding page, redirect them.
-    if ((!userProfile || !userProfile.onboardingCompleted) && !pathname.startsWith('/onboarding')) {
-        router.push('/onboarding/profile'); // Start of the correct flow
-        return;
-    }
-
-    // If user is onboarded and tries to access an onboarding page, send them to the dashboard.
-    if (userProfile && userProfile.onboardingCompleted && pathname.startsWith('/onboarding')) {
-        router.push('/dashboard');
-        return;
+        // If user is onboarded and tries to access an onboarding page, send them to the dashboard.
+        if (userProfile && userProfile.onboardingCompleted && isOnboardingRoute) {
+            router.push('/dashboard');
+            return;
+        }
     }
     
     // If none of the above conditions are met, the user is clear to access the current page.
     setIsChecking(false);
 
-  }, [user, userProfile, isUserLoading, isProfileLoading, router, pathname]);
-
+  }, [user, userProfile, isUserLoading, isProfileLoading, router, pathname, isAuthRoute, isOnboardingRoute]);
+  
   if (isChecking) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
@@ -94,13 +105,13 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
         </div>
     );
   }
-  
-  // Do not render the main dashboard layout if we are on an onboarding page
-  if (pathname.startsWith('/onboarding')) {
-    return <>{children}</>;
+
+  // Render children based on the route type
+  if (isAuthRoute || isOnboardingRoute) {
+      return <>{children}</>;
   }
 
-
+  // Standard dashboard view for authenticated, onboarded users
   return (
     <SidebarProvider>
       <DashboardSidebar />
@@ -116,28 +127,11 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
   );
 }
 
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-
-  // If we are on an onboarding route, we don't want the full dashboard UI.
-  // The ProtectedDashboard component will handle auth checks, but we render
-  // the children in a simpler structure.
-  if (pathname.startsWith('/onboarding')) {
-    return (
-      <FirebaseClientProvider>
-        <ProtectedDashboard>
-           <main className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
-             {children}
-           </main>
-        </ProtectedDashboard>
-      </FirebaseClientProvider>
-    );
-  }
-
-  // This is the standard layout for all authenticated dashboard pages
   return (
     <FirebaseClientProvider>
-      <ProtectedDashboard>{children}</ProtectedDashboard>
+      <ProtectedLayout>{children}</ProtectedLayout>
     </FirebaseClientProvider>
   );
 }
