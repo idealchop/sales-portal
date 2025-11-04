@@ -35,6 +35,7 @@ export type Client = {
     gallons: number;
     inclusions?: string[];
     addons?: string[];
+    dateSigned?: string;
   };
 };
 

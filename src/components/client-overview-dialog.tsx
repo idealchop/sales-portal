@@ -20,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot } from 'lucide-react';
 import type { Client, Remark, OnboardingStep } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { ActiveView } from '@/app/dashboard/proposals/page';
 import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -104,6 +105,75 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
   </div>
 );
 
+const inclusions = [
+    {
+        icon: <Computer className="h-5 w-5 text-primary" />,
+        title: 'Smart Client Portal',
+        description: 'Monitor consumption, compliance, water providers, and payments in real time.',
+    },
+    {
+        icon: <CalendarClock className="h-5 w-5 text-primary" />,
+        title: 'Automated Scheduling & Delivery',
+        description: 'No manual ordering; Smart Refill handles refills automatically.',
+    },
+    {
+        icon: <RotateCw className="h-5 w-5 text-primary" />,
+        title: 'Roll-Over Liters',
+        description: 'Unused liters carry over to the next cycle.',
+    },
+    {
+        icon: <Thermometer className="h-5 w-5 text-primary" />,
+        title: 'Free Dispensers, Gallons & Sanitary Items',
+        description: 'Included based on your plan.',
+    },
+    {
+        icon: <Wrench className="h-5 w-5 text-primary" />,
+        title: 'Monthly Sanitation Visit',
+        description: 'Regular cleaning and compliance check for your dispensers.',
+    },
+    {
+        icon: <CircleHelp className="h-5 w-5 text-primary" />,
+        title: 'Guaranteed Water Compliance',
+        description: 'All partner stations meet strict sanitation and quality standards.',
+    },
+    {
+        icon: <Phone className="h-5 w-5 text-primary" />,
+        title: 'Customer Support',
+        description: 'Assistance available for any service or delivery concerns.',
+    },
+    {
+        icon: <Rocket className="h-5 w-5 text-primary" />,
+        title: 'Custom & Scalable Plans',
+        description: 'Adjust liters, branches, and schedules as your business grows.',
+    },
+];
+
+const perks = [
+    {
+        icon: <HeartPulse className="h-8 w-8 text-muted-foreground" />,
+        partner: 'HealthFirst Clinic',
+        description: 'Multi-specialty medical clinics.',
+        benefit: '15% discount on annual physical exams for all employees.',
+    },
+    {
+        icon: <Coffee className="h-8 w-8 text-muted-foreground" />,
+        partner: 'The Daily Grind Cafe',
+        description: 'Specialty coffee and pastries.',
+        benefit: '10% off on all bulk coffee bean orders for the office pantry.',
+    },
+    {
+        icon: <Building className="h-8 w-8 text-muted-foreground" />,
+        partner: 'FlexiSpace Co-Working',
+        description: 'Modern and flexible office solutions.',
+        benefit: 'One free day pass per month at any FlexiSpace location nationwide.',
+    },
+    {
+        icon: <Car className="h-8 w-8 text-muted-foreground" />,
+        partner: 'EcoDrive Car Service',
+        description: 'Eco-friendly car wash and detailing.',
+        benefit: '20% discount on all corporate car wash and detailing services.',
+    }
+];
 
 export function ClientOverviewDialog({
   children,
@@ -130,6 +200,8 @@ export function ClientOverviewDialog({
   };
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const planImage = getPlanImage(client.subscription?.planId);
+  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
 
   const handleUpload = () => {
     setIsUploaded(true);
@@ -387,7 +459,7 @@ export function ClientOverviewDialog({
                                             View Onboarding Progress
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-3xl">
+                                    <DialogContent className="sm:max-w-2xl">
                                         <DialogHeader>
                                             <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
                                             <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
@@ -503,27 +575,27 @@ export function ClientOverviewDialog({
                             </CardHeader>
                         </Card>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-3xl">
-                        <DialogHeader>
+                    <DialogContent className="sm:max-w-5xl">
+                        <DialogHeader className="sr-only">
                             <DialogTitle>Smart Refill™ Water Supply Subscription Agreement</DialogTitle>
                             <DialogDescription>
                                 Between: River Tech Group, Inc. (“Provider”) and {client.companyName} (“Client”).
                             </DialogDescription>
                         </DialogHeader>
-                        <ScrollArea className="h-[70vh] pr-6">
+                        <ScrollArea className="h-[85vh] pr-6">
                             <div className="space-y-6 py-4">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Client Information</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                                         <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                                             <span className="text-muted-foreground">Client ID:</span>
                                             <span className="font-semibold font-mono">{client.id}</span>
                                         </div>
-                                         <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                                             <span className="text-muted-foreground">Date Signed:</span>
-                                            <span className="font-semibold">{today}</span>
+                                            <span className="font-semibold">{client.subscription?.dateSigned || today}</span>
                                         </div>
                                         <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                                             <span className="text-muted-foreground">Company:</span>
@@ -541,72 +613,100 @@ export function ClientOverviewDialog({
                                 </Card>
 
                                 {client.subscription ? (
-                                     <Card>
-                                        <CardHeader>
-                                            <CardTitle>Subscription Summary: {client.subscription.planName}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            <div className="flex justify-between items-center text-lg">
-                                                <span className="font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)} / month</span>
-                                                <span className="font-bold">{client.subscription.liters.toLocaleString()} L / month</span>
-                                            </div>
-                                             <Separator />
-                                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                                <div className="flex items-center gap-2">
-                                                    <Package className="h-4 w-4 text-primary" />
-                                                    <div>
-                                                        <p className="text-muted-foreground">Refillable Gallons</p>
-                                                        <p className="font-semibold">{client.subscription.gallons}</p>
-                                                    </div>
+                                    <>
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Cost Breakdown</CardTitle>
+                                                <CardDescription>Itemized list of all costs associated with this proposal.</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-muted-foreground">{client.subscription.planName} (Monthly Cost)</span>
+                                                    <span className="font-semibold">{currencyFormatter.format(client.subscription.amount)}</span>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Users className="h-4 w-4 text-primary" />
-                                                    <div>
-                                                        <p className="text-muted-foreground">Employees</p>
-                                                        <p className="font-semibold">{client.subscription.employees}</p>
+                                                {client.subscription.addons?.map((addon) => (
+                                                    <div key={addon} className="flex justify-between items-center">
+                                                        <span className="text-muted-foreground">{addon}</span>
+                                                        {/* This assumes a fixed cost for addons, which might need to be stored in the subscription object */}
+                                                        <span className="font-semibold">{addon.includes('Weekly Sanitation') ? '₱1,200.00' : '₱250.00'}</span>
                                                     </div>
+                                                ))}
+                                                <Separator className="my-2" />
+                                                <div className="flex justify-between items-center font-bold text-lg">
+                                                    <span>Total Amount Due (Monthly)</span>
+                                                    <span>{currencyFormatter.format(client.subscription.amount)}</span>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <RefreshCcw className="h-4 w-4 text-primary" />
-                                                    <div>
-                                                        <p className="text-muted-foreground">Refill Frequency</p>
-                                                        <p className="font-semibold">{client.subscription.refillFrequency}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <Separator />
-                                            <div className="grid grid-cols-2 gap-6">
-                                                <div>
-                                                    <h4 className="font-semibold mb-2">Inclusions</h4>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Gallon Rotation &amp; Handling Guide</CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                                                     <div className="space-y-2">
-                                                        {client.subscription.inclusions?.map((item) => (
-                                                        <div key={item} className="flex items-center gap-2 text-sm">
-                                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                                            <span>{item}</span>
-                                                        </div>
-                                                        ))}
+                                                        <Label>Recommended Gallons for Rotation</Label>
+                                                        <p className="text-3xl font-bold">{client.subscription.gallons} gallons</p>
                                                     </div>
                                                 </div>
-                                                {client.subscription.addons && client.subscription.addons.length > 0 && (
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Included in Every Plan</CardTitle>
+                                                <CardDescription>
+                                                    Every subscription plan includes full access to our growing network of partner perks.
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="grid gap-6 sm:grid-cols-2">
+                                                {inclusions.map((item) => (
+                                                <div key={item.title} className="flex items-start gap-3">
+                                                    <div>{item.icon}</div>
                                                     <div>
-                                                        <h4 className="font-semibold mb-2">Add-ons</h4>
-                                                        <div className="space-y-2">
-                                                            {client.subscription.addons.map((item) => (
-                                                                <div key={item} className="flex items-center gap-2 text-sm">
-                                                                    <Sparkles className="h-4 w-4 text-yellow-500" />
-                                                                    <span>{item}</span>
-                                                                </div>
-                                                            ))}
+                                                    <h3 className="font-semibold text-sm">{item.title}</h3>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {item.description}
+                                                    </p>
+                                                    </div>
+                                                </div>
+                                                ))}
+                                            </CardContent>
+                                        </Card>
+
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Partner Perks</CardTitle>
+                                                <CardDescription>
+                                                    Enhance your subscription with exclusive benefits from our partners, included with every plan.
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="grid gap-8 sm:grid-cols-2">
+                                               {perks.map((perk) => (
+                                                    <div key={perk.partner} className="flex items-start gap-4">
+                                                        {perk.icon}
+                                                        <div className="space-y-1">
+                                                            <h3 className="font-semibold">{perk.partner}</h3>
+                                                            <p className="text-sm text-muted-foreground">{perk.description}</p>
+                                                            <p className="text-sm font-medium text-primary">{perk.benefit}</p>
                                                         </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                                ))}
+                                            </CardContent>
+                                        </Card>
+                                    </>
                                 ) : (
                                     <p className="text-muted-foreground">No subscription details available.</p>
                                 )}
-                                <ContractText />
+
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Smart Refill™ Water Supply Subscription Agreement</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <ContractText />
+                                    </CardContent>
+                                </Card>
+
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Signatures</CardTitle>
@@ -625,7 +725,7 @@ export function ClientOverviewDialog({
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label>Date Signed</Label>
-                                                    <Input placeholder="Date" value={today} readOnly />
+                                                    <Input placeholder="Date" value={client.subscription?.dateSigned || today} readOnly />
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
