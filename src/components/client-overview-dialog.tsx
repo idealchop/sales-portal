@@ -246,8 +246,8 @@ export function ClientOverviewDialog({
                                     <div className="flex items-center gap-2">
                                         <Package className="h-4 w-4 text-primary" />
                                         <div>
-                                            <p className="text-muted-foreground">Est. Bottles</p>
-                                            <p className="font-semibold">~{Math.round(client.subscription.liters / 19)}</p>
+                                            <p className="text-muted-foreground">Refillable Gallons</p>
+                                            <p className="font-semibold">{client.subscription.gallons}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -337,6 +337,11 @@ export function ClientOverviewDialog({
                             <CardContent>
                                 <div className="text-center py-8">
                                     <p className="text-muted-foreground">No active subscription.</p>
+                                    {view === 'proposals' && (
+                                        <Button asChild className="mt-4">
+                                            <Link href="/dashboard/proposals/new">Create New Proposal</Link>
+                                        </Button>
+                                    )}
                                 </div>
                             </CardContent>
                         )}
@@ -463,42 +468,34 @@ export function ClientOverviewDialog({
                                 {client.subscription ? (
                                      <Card>
                                         <CardHeader>
-                                            <CardTitle>Subscription Summary</CardTitle>
+                                            <CardTitle>Subscription Summary: {client.subscription.planName}</CardTitle>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <h3 className="font-semibold">{client.subscription.planName}</h3>
-                                                    <p className="text-2xl font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)} / month</p>
+                                            <div className="flex justify-between items-center text-lg">
+                                                <span className="font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)} / month</span>
+                                                <span className="font-bold">{client.subscription.liters.toLocaleString()} L / month</span>
+                                            </div>
+                                             <Separator />
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                <div className="flex items-center gap-2">
+                                                    <Package className="h-4 w-4 text-primary" />
+                                                    <div>
+                                                        <p className="text-muted-foreground">Refillable Gallons</p>
+                                                        <p className="font-semibold">{client.subscription.gallons}</p>
+                                                    </div>
                                                 </div>
-                                                 <div className="grid grid-cols-2 gap-4 text-sm">
-                                                    <div className="flex items-center gap-2">
-                                                        <GlassWater className="h-4 w-4 text-primary" />
-                                                        <div>
-                                                            <p className="text-muted-foreground">Total Liters</p>
-                                                            <p className="font-semibold">{client.subscription.liters.toLocaleString()}L</p>
-                                                        </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Users className="h-4 w-4 text-primary" />
+                                                    <div>
+                                                        <p className="text-muted-foreground">Employees</p>
+                                                        <p className="font-semibold">{client.subscription.employees}</p>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Package className="h-4 w-4 text-primary" />
-                                                        <div>
-                                                            <p className="text-muted-foreground">Est. Bottles</p>
-                                                            <p className="font-semibold">~{Math.round(client.subscription.liters / 19)}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Users className="h-4 w-4 text-primary" />
-                                                        <div>
-                                                            <p className="text-muted-foreground">Employees</p>
-                                                            <p className="font-semibold">{client.subscription.employees}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <RefreshCcw className="h-4 w-4 text-primary" />
-                                                        <div>
-                                                            <p className="text-muted-foreground">Refill Frequency</p>
-                                                            <p className="font-semibold">{client.subscription.refillFrequency}</p>
-                                                        </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <RefreshCcw className="h-4 w-4 text-primary" />
+                                                    <div>
+                                                        <p className="text-muted-foreground">Refill Frequency</p>
+                                                        <p className="font-semibold">{client.subscription.refillFrequency}</p>
                                                     </div>
                                                 </div>
                                             </div>
