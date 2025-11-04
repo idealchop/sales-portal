@@ -389,60 +389,9 @@ function PreviewDialog({
 
     const baseLiters = plan ? parseInt(plan.liters.replace(/[^0-9]/g, '')) : 0;
     const freeLiters = baseLiters * 0.2;
-    const totalLitersValue = (baseLiters + freeLiters + additionalLiters) * selectedCycle.multiplier;
+    const monthlyLiters = baseLiters + freeLiters + additionalLiters;
+    const totalLitersValue = monthlyLiters * selectedCycle.multiplier;
     
-    const distributionPlan = useMemo(() => {
-        if (totalLitersValue === 0) return [];
-        
-        const litersPerGallon = 19;
-        let deliveriesPerWeek = 1;
-        const freq = finalPlan.refillFrequency.toLowerCase();
-        
-        if (freq.includes('daily')) {
-            deliveriesPerWeek = 7;
-        } else if (freq.includes('/week')) {
-            const range = freq.split('/')[0].split('–').map(s => parseInt(s.trim()));
-            deliveriesPerWeek = Math.max(...range);
-        } else {
-             // Handle cases like "1-2/day" or "continuous" if needed, for now default to a reasonable number or based on another logic.
-             // For simplicity, let's assume a default for unhandled cases.
-             const deliveriesMatch = freq.match(/(\d+)/);
-             if (deliveriesMatch) {
-                deliveriesPerWeek = parseInt(deliveriesMatch[0], 10);
-             }
-        }
-        
-        const totalDeliveriesPerMonth = deliveriesPerWeek * 4;
-        if (totalDeliveriesPerMonth === 0) return [];
-        
-        const totalGallonsPerMonth = Math.ceil(totalLitersValue / selectedCycle.multiplier / litersPerGallon);
-        const gallonsPerDelivery = Math.floor(totalGallonsPerMonth / totalDeliveriesPerMonth * selectedCycle.multiplier);
-        let remainingGallons = totalGallonsPerMonth % totalDeliveriesPerMonth;
-        
-        const weeklyDistribution: {week: string, deliveryNumber: string, gallons: number, liters: number}[] = [];
-        
-        for (let week = 1; week <= 4; week++) {
-            for (let delivery = 1; delivery <= deliveriesPerWeek; delivery++) {
-                 let deliveryGallons = gallonsPerDelivery;
-                if (remainingGallons > 0) {
-                    deliveryGallons++;
-                    remainingGallons--;
-                }
-                
-                if (deliveryGallons > 0) {
-                    weeklyDistribution.push({
-                        week: `Week ${week}`,
-                        deliveryNumber: `Delivery ${delivery}`,
-                        gallons: deliveryGallons,
-                        liters: deliveryGallons * litersPerGallon,
-                    });
-                }
-            }
-        }
-        return weeklyDistribution;
-
-    }, [totalLitersValue, finalPlan.refillFrequency, selectedCycle.multiplier]);
-
     const rotationInfo = gallonRotationData[plan?.id] || gallonRotationData['custom-plan'];
 
 
@@ -613,41 +562,47 @@ function PreviewDialog({
                     
                     <Card>
                         <CardHeader>
-                            <CardTitle>Projected Delivery Schedule</CardTitle>
+                            <CardTitle>Consumption Metrics</CardTitle>
                             <CardDescription>
-                                An estimated weekly breakdown of your water deliveries based on your total available liters.
+                                Your projected water consumption based on the selected plan.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {distributionPlan.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Projected Week</TableHead>
-                                            <TableHead>Delivery #</TableHead>
-                                            <TableHead>Water Station</TableHead>
-                                            <TableHead className="text-center">Gallons to Deliver</TableHead>
-                                            <TableHead className="text-right">Liters Delivered</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {distributionPlan.map((item, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell className="font-medium">{item.week}</TableCell>
-                                                <TableCell>{item.deliveryNumber}</TableCell>
-                                                <TableCell>{finalPlan.stations.startsWith('1') ? 'Station 1' : `Station ${(index % (parseInt(finalPlan.stations[0],10) || 1)) + 1}`}</TableCell>
-                                                <TableCell className="text-center">{item.gallons}</TableCell>
-                                                <TableCell className="text-right">{item.liters.toLocaleString()} L</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                    <TableCaption className="text-left mt-4 text-xs">
-                                        * This is a projected delivery schedule. Actual deliveries may be adjusted based on real-time consumption data to ensure you never run out of water.
-                                    </TableCaption>
-                                </Table>
-                            ) : (
-                                <p className='text-sm text-muted-foreground'>Delivery schedule will be generated based on consumption.</p>
-                            )}
+                            <div className="relative h-60 w-full overflow-hidden rounded-lg bg-primary/10">
+                                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-primary/80 opacity-50">
+                                     <svg className="w-full h-auto" viewBox="0 0 1440 50" preserveAspectRatio="none" style={{transform: 'translateY(-1px)'}}>
+                                        <path d="M0,20 C360,40 1080,0 1440,20 L1440,50 L0,50 Z" fill="hsl(var(--primary) / 0.7)"></path>
+                                    </svg>
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-primary/80 opacity-50 animate-[wave_5s_cubic-bezier(0.36,0.45,0.63,0.53)_infinite]">
+                                     <svg className="w-full h-auto" viewBox="0 0 1440 50" preserveAspectRatio="none" style={{transform: 'translateY(-1px)'}}>
+                                        <path d="M0,20 C360,0 1080,40 1440,20 L1440,50 L0,50 Z" fill="hsl(var(--primary))"></path>
+                                    </svg>
+                                </div>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-primary-foreground p-4">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-sm uppercase tracking-wider text-primary-foreground/80">Projected Monthly Consumption</p>
+                                            <p className="text-4xl font-bold">{monthlyLiters.toLocaleString()} L</p>
+                                        </div>
+                                         <div>
+                                            <p className="text-sm uppercase tracking-wider text-primary-foreground/80">Projected Annual Consumption</p>
+                                            <p className="text-2xl font-bold">{(monthlyLiters * 12).toLocaleString()} L</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <style jsx>{`
+                                    @keyframes wave {
+                                        0% { transform: translateX(0) translateY(-1px); }
+                                        50% { transform: translateX(-25%) translateY(-1px); }
+                                        100% { transform: translateX(-50%) translateY(-1px); }
+                                    }
+                                    .animate-\[wave_5s_cubic-bezier\(0\.36\,0\.45\,0\.63\,0\.53\)_infinite\] {
+                                        width: 200%;
+                                        animation: wave 5s cubic-bezier(0.36,0.45,0.63,0.53) infinite;
+                                    }
+                                `}</style>
+                            </div>
                         </CardContent>
                     </Card>
                     
@@ -922,7 +877,7 @@ function ContractPageContent() {
 
     return {
         ...plan,
-        liters: `${finalLiters.toLocaleString()} L`,
+        liters: `${finalLiters.toLocaleString()} L / mo`,
         inclusions: planInclusions,
         employees: getEmployees(finalLiters),
         stations: getStations(finalLiters),
@@ -1155,7 +1110,7 @@ function ContractPageContent() {
                             <p className="text-2xl font-bold">{currencyFormatter.format(basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
-                            <li>{finalPlan.liters} total (includes 20% free liters) / mo</li>
+                            <li>{finalPlan.liters} total (includes 20% free liters)</li>
                              {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
                             <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                         </ul>
@@ -1251,6 +1206,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
