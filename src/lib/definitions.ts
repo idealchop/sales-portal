@@ -53,7 +53,8 @@ export type Client = {
 
 export type Proposal = {
   id: string;
-  client: Pick<Client, 'id' | 'companyName' | 'contactName'>;
+  clientId: string;
+  client?: Pick<Client, 'id' | 'companyName' | 'contactName'>;
   status: 'draft' | 'sent' | 'accepted' | 'rejected';
   amount: number;
   createdAt: string;

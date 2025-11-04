@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -55,14 +54,14 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
-import { proposals, commissionData, clients } from '@/lib/data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { commissionData, clients } from '@/lib/data';
 import { RevenueChart } from '@/components/revenue-chart';
 import { ClientPopover } from '@/components/client-popover';
 import type { Client } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { ActivityChart } from '@/components/activity-chart';
+import { useProposals } from '@/hooks/use-proposals';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -94,6 +93,8 @@ const BonusCard = ({ icon, title, value, progress, goal, description, children }
 )
 
 export default function DashboardPage() {
+  const { proposals, isLoading: proposalsLoading } = useProposals();
+
   const getClientById = (id: string): Client | undefined => {
     return clients.find(c => c.id === id);
   }
@@ -170,7 +171,7 @@ export default function DashboardPage() {
   const proposalsSent = proposals.filter(p => p.status !== 'draft').length;
   const acceptedProposals = proposals.filter(p => p.status === 'accepted');
   const winRate = proposalsSent > 0 ? (acceptedProposals.length / proposalsSent) * 100 : 0;
-  const totalAcceptedValue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
+  const totalAcceptedValue = acceptedProposals.reduce((sum, p) => sum + (p.amount || 0), 0);
   const avgDealSize = acceptedProposals.length > 0 ? totalAcceptedValue / acceptedProposals.length : 0;
   const newClientsThisMonth = 2; // Mock data
   const recentProposals = proposals.slice(0, 5);
@@ -477,7 +478,14 @@ export default function DashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentProposals.map((proposal) => (
+              {proposalsLoading && (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    Loading proposals...
+                  </TableCell>
+                </TableRow>
+              )}
+              {!proposalsLoading && recentProposals.map((proposal) => (
                 <TableRow key={proposal.id}>
                   <TableCell>
                     <ClientPopover client={getClientById(proposal.client.id)!}>
@@ -492,6 +500,13 @@ export default function DashboardPage() {
                   <TableCell className="hidden md:table-cell text-right">{proposal.createdAt}</TableCell>
                 </TableRow>
               ))}
+               {!proposalsLoading && proposals.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    No proposals found.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -768,13 +783,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-
-
-    
-
-    
-
-    
-
-    

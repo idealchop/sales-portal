@@ -1,5 +1,4 @@
 
-
 import type { Client, Proposal, Revenue, OnboardingStep } from '@/lib/definitions';
 
 const sampleOnboarding: OnboardingStep[] = [
@@ -28,13 +27,7 @@ export const clients: Client[] = [
   { id: 'SC24588236', companyName: 'StriveEndeavors', contactName: 'Sarah Miller', contactEmail: 's.miller@strive.com', contactPhone: '(0917) 678-9012', status: 'pending', address: '333 Growth Ave, Miami, FL', remarks: [{ content: 'Awaiting payment confirmation. Follow up on Nov 22.', author: 'Sandra Adams', timestamp: '2023-11-20 09:00 AM' }], onboardingStatus: pendingOnboarding },
 ];
 
-export const proposals: Proposal[] = [
-  { id: 'SR2023746382', client: { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'accepted', amount: 6000, createdAt: '2023-10-26' },
-  { id: 'SR2023826491', client: { id: 'SC24495882', companyName: 'Solutions Inc.', contactName: 'Jane Smith' }, status: 'sent', amount: 9000, createdAt: '2023-11-05' },
-  { id: 'SR2023912374', client: { id: 'SC24958823', companyName: 'QuantumLeap Co.', contactName: 'Mary Johnson' }, status: 'accepted', amount: 3200, createdAt: '2023-11-12' },
-  { id: 'SR2023193847', client: { id: 'SC24899145', companyName: 'Apex Industries', contactName: 'David Wilson' }, status: 'rejected', amount: 12000, createdAt: '2023-09-15' },
-  { id: 'SR2023182736', client: { id: 'SC24638991', companyName: 'Innovate Corp', contactName: 'John Doe' }, status: 'sent', amount: 8800, createdAt: '2023-11-18' },
-];
+export const proposals: Proposal[] = [];
 
 export const revenueData: Revenue[] = [
   { month: 'Jan', revenue: 350000 },
@@ -53,5 +46,3 @@ export const commissionData: Revenue[] = [
     { month: 'May', revenue: 8800 },
     { month: 'Jun', revenue: 8160 },
 ]
-
-    
