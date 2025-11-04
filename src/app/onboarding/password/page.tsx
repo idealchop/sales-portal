@@ -87,9 +87,9 @@ function ChangePasswordContent() {
       // 3. Update Firebase Auth profile displayName
       await updateProfile(user, { displayName });
 
-      // 4. Create the Firestore document
+      // 4. Create the Firestore document in a non-blocking way
       const userDocRef = doc(firestore, 'users', user.uid);
-      await setDoc(userDocRef, {
+      setDoc(userDocRef, {
         id: user.uid,
         email: user.email,
         displayName: displayName,
@@ -103,7 +103,10 @@ function ChangePasswordContent() {
         title: 'Setup Complete!',
         description: 'Your profile has been created and your password updated.',
       });
+      
+      // 5. Redirect immediately without waiting for setDoc to finish
       router.push('/dashboard');
+
     } catch (error) {
       console.error(error);
       let description = "An unexpected error occurred. Please try again.";
