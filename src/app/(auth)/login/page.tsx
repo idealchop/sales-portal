@@ -11,10 +11,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useAuth } from '@/firebase';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 
 const formSchema = z.object({
@@ -38,12 +38,26 @@ export default function LoginPage() {
     },
   });
 
+  // Redirect if user is already logged in
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        router.push('/dashboard');
+      }
+    });
+    return () => unsubscribe();
+  }, [auth, router]);
+
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
-      await initiateEmailSignIn(auth, values.email, values.password);
-      // The onAuthStateChanged listener in the provider will handle the redirect
-      // but we can optimistically navigate.
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      // The onAuthStateChanged listener will handle the redirect,
+      // but we can show a success toast and navigate optimistically.
+      toast({
+        title: 'Login Successful',
+        description: "Welcome back! You're being redirected to your dashboard.",
+      });
       router.push('/dashboard');
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
@@ -55,7 +69,8 @@ export default function LoginPage() {
             description = 'Invalid email or password. Please try again.';
             break;
           default:
-            description = error.message;
+            description = "An error occurred during login. Please check the console for details.";
+            console.error("Firebase Auth Error:", error.message);
         }
       }
       toast({
@@ -67,49 +82,6 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-  
-  // A slight modification to the non-blocking login. We will use onAuthStateChanged
-  // to handle sign-in errors, as it's the most reliable way.
-   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if (user) {
-        router.push('/dashboard');
-      }
-    });
-
-    const errorUnsubscribe = auth.onIdTokenChanged(undefined, (error) => {
-      if (error) {
-        setIsLoading(false);
-        let description = 'An unexpected error occurred. Please try again.';
-        if (error instanceof FirebaseError) {
-            switch (error.code) {
-                case 'auth/user-not-found':
-                case 'auth/wrong-password':
-                case 'auth/invalid-credential':
-                    description = 'Invalid email or password. Please try again.';
-                    break;
-                default:
-                    description = error.message;
-            }
-        }
-         toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description,
-        });
-      }
-    });
-
-    return () => {
-        unsubscribe();
-        errorUnsubscribe();
-    };
-  }, [auth, router, toast]);
-
-  const handleLogin = (values: LoginFormValues) => {
-      setIsLoading(true);
-      initiateEmailSignIn(auth, values.email, values.password);
-  }
 
   return (
     <div className="min-h-screen w-full grid grid-cols-1 md:grid-cols-2">
@@ -124,7 +96,7 @@ export default function LoginPage() {
                 </div>
                 
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleLogin)} className="grid gap-4">
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
                     <FormField
                       control={form.control}
                       name="email"
