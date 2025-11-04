@@ -1,3 +1,10 @@
+
+export type OnboardingStep = {
+  title: string;
+  status: 'completed' | 'pending';
+  date?: string;
+};
+
 export type Client = {
   id: string;
   companyName: string;
@@ -6,6 +13,8 @@ export type Client = {
   contactPhone: string;
   status: 'active' | 'inactive' | 'pending';
   address: string;
+  remarks?: string;
+  onboardingStatus?: OnboardingStep[];
   subscription?: {
     planId: string;
     planName: string;

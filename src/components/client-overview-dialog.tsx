@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock } from 'lucide-react';
 import type { Client } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
@@ -27,6 +28,8 @@ import { Input } from './ui/input';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { ActiveView } from '@/app/dashboard/proposals/page';
+import { Textarea } from './ui/textarea';
+import { cn } from '@/lib/utils';
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -63,6 +66,7 @@ export function ClientOverviewDialog({
   const { toast } = useToast();
   const [isUploaded, setIsUploaded] = useState(false);
   const [open, setOpen] = useState(false);
+  const [remarks, setRemarks] = useState(client.remarks || '');
 
   const getInitials = (name: string) => {
     return name
@@ -90,6 +94,13 @@ export function ClientOverviewDialog({
         title: "Payment Confirmed!",
         description: `${client.companyName} is now an active client.`,
     })
+  }
+
+  const handleSaveRemarks = () => {
+      toast({
+          title: "Remarks Saved",
+          description: `Remarks for ${client.companyName} have been updated.`,
+      })
   }
 
   return (
@@ -128,67 +139,86 @@ export function ClientOverviewDialog({
                  </Card>
 
                  <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Contact Information</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3 text-sm">
-                            <div className="flex items-center gap-3">
-                                <Building className="h-5 w-5 text-muted-foreground" />
-                                <div>
-                                    <p className="font-semibold">{client.companyName}</p>
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Contact Information</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3 text-sm">
+                                <div className="flex items-center gap-3">
+                                    <Building className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="font-semibold">{client.companyName}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Mail className="h-5 w-5 text-muted-foreground" />
-                                <div>
-                                    <p className="font-semibold">{client.contactEmail}</p>
+                                <div className="flex items-center gap-3">
+                                    <Mail className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="font-semibold">{client.contactEmail}</p>
+                                    </div>
                                 </div>
-                            </div>
-                             <div className="flex items-center gap-3">
-                                <Phone className="h-5 w-5 text-muted-foreground" />
-                                <div>
-                                    <p className="font-semibold">{client.contactPhone}</p>
+                                 <div className="flex items-center gap-3">
+                                    <Phone className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="font-semibold">{client.contactPhone}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
-                                <div className='flex-1'>
-                                    <p className="font-semibold">{client.address}</p>
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <div className="aspect-video w-full overflow-hidden rounded-lg mt-2 cursor-pointer">
-                                                <iframe
-                                                    width="100%"
-                                                    height="100%"
-                                                    style={{ border: 0, pointerEvents: 'none' }}
-                                                    loading="lazy"
-                                                    allowFullScreen
-                                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed&z=15`}
-                                                ></iframe>
-                                            </div>
-                                        </DialogTrigger>
-                                        <DialogContent className="sm:max-w-3xl h-[80vh]">
-                                            <DialogHeader>
-                                                <DialogTitle>Location: {client.companyName}</DialogTitle>
-                                                <DialogDescription>{client.address}</DialogDescription>
-                                            </DialogHeader>
-                                            <div className="w-full h-full rounded-lg overflow-hidden">
-                                                <iframe
-                                                    width="100%"
-                                                    height="100%"
-                                                    style={{ border: 0 }}
-                                                    loading="lazy"
-                                                    allowFullScreen
-                                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed&z=17`}
-                                                ></iframe>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
+                                <div className="flex items-start gap-3">
+                                    <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
+                                    <div className='flex-1'>
+                                        <p className="font-semibold">{client.address}</p>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <div className="aspect-video w-full overflow-hidden rounded-lg mt-2 cursor-pointer">
+                                                    <iframe
+                                                        width="100%"
+                                                        height="100%"
+                                                        style={{ border: 0, pointerEvents: 'none' }}
+                                                        loading="lazy"
+                                                        allowFullScreen
+                                                        src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed&z=15`}
+                                                    ></iframe>
+                                                </div>
+                                            </DialogTrigger>
+                                            <DialogContent className="sm:max-w-3xl h-[80vh]">
+                                                <DialogHeader>
+                                                    <DialogTitle>Location: {client.companyName}</DialogTitle>
+                                                    <DialogDescription>{client.address}</DialogDescription>
+                                                </DialogHeader>
+                                                <div className="w-full h-full rounded-lg overflow-hidden">
+                                                    <iframe
+                                                        width="100%"
+                                                        height="100%"
+                                                        style={{ border: 0 }}
+                                                        loading="lazy"
+                                                        allowFullScreen
+                                                        src={`https://maps.google.com/maps?q=${encodeURIComponent(client.address)}&output=embed&z=17`}
+                                                    ></iframe>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Sales Remarks</CardTitle>
+                                <CardDescription>Internal notes for the sales team.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Textarea
+                                    placeholder="Add remarks for this client..."
+                                    value={remarks}
+                                    onChange={(e) => setRemarks(e.target.value)}
+                                    className="min-h-[120px]"
+                                />
+                            </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleSaveRemarks}><Save className="mr-2 h-4 w-4" /> Save Remarks</Button>
+                            </CardFooter>
+                        </Card>
+                    </div>
 
                     <Card>
                         <CardHeader>
@@ -338,6 +368,49 @@ export function ClientOverviewDialog({
                     </Dialog>
                  )}
                 
+                 {client.onboardingStatus && (
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Card className="cursor-pointer hover:bg-accent transition-colors">
+                                <CardHeader>
+                                    <CardTitle>Onboarding Progress</CardTitle>
+                                    <CardDescription>Click to view the client's onboarding status.</CardDescription>
+                                </CardHeader>
+                            </Card>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
+                                <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                                <ol className="relative border-s border-gray-200 dark:border-gray-700">
+                                    {client.onboardingStatus.map((step, index) => (
+                                        <li key={index} className="mb-6 ms-8">
+                                            <span className={cn(
+                                                "absolute flex items-center justify-center w-8 h-8 rounded-full -start-4 ring-4 ring-background",
+                                                step.status === 'completed' ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
+                                            )}>
+                                                {step.status === 'completed' ? (
+                                                    <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400" />
+                                                ) : (
+                                                    <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                                                )}
+                                            </span>
+                                            <h3 className="font-semibold text-foreground">{step.title}</h3>
+                                            {step.date && (
+                                                <p className="block text-sm font-normal leading-none text-muted-foreground">
+                                                    Completed on {step.date}
+                                                </p>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ol>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
+
                  <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:bg-accent transition-colors">
