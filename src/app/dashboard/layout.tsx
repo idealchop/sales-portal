@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/definitions';
 
 function DashboardSidebar() {
@@ -47,7 +47,6 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
-  const [isLoading, setIsLoading] = useState(true);
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -56,25 +55,34 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    const isDataLoading = isUserLoading || isProfileLoading;
-    if (isDataLoading) {
-      return; // Wait until Firebase auth and Firestore doc are checked
+    // Don't do anything until both user and profile loading are complete
+    if (isUserLoading || isProfileLoading) {
+      return;
     }
 
+    // If no user is authenticated, redirect to login
     if (!user) {
       router.push('/login');
       return;
     }
-    
-    // If the profile exists, check the onboarding flag
-    if (userProfile && !userProfile.onboardingCompleted) {
-      router.push('/onboarding/password');
-    } else {
-      // If we have a user and their profile is loaded (even if it was just created),
-      // and onboarding is complete, stop loading.
-      setIsLoading(false);
+
+    // If a user is authenticated and has a profile
+    if (userProfile) {
+      if (!userProfile.onboardingCompleted) {
+        // If onboarding is not complete, redirect to the start of the flow
+        router.push('/onboarding/password');
+      } else {
+        // If onboarding is complete, the user can see the dashboard
+        setIsLoading(false);
+      }
     }
+    
+    // Note: The case where a user is authenticated but has no profile
+    // is handled by the login page, which creates the document.
+    // This effect will then re-run, find the new profile, and redirect to onboarding.
 
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
