@@ -10,12 +10,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import type { UserProfile } from '@/lib/definitions';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -26,9 +29,11 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
+  const { user: authUser, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -40,22 +45,17 @@ export default function LoginPage() {
 
   // This effect will handle users who are already logged in
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        // If user is logged in, the dashboard layout will handle redirection logic.
-        router.push('/dashboard');
-      }
-    });
-    return () => unsubscribe();
-  }, [auth, router]);
+    if (!isUserLoading && authUser) {
+      router.push('/dashboard');
+    }
+  }, [authUser, isUserLoading, router]);
 
   const onSubmit = async (values: LoginFormValues) => {
-    setIsLoading(true);
+    setIsLoggingIn(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       // On successful login, simply redirect to the dashboard.
-      // The ProtectedDashboard component in the layout will handle
-      // checking the user's profile and redirecting to onboarding if necessary.
+      // The ProtectedDashboard component in the layout will handle all further redirection logic.
       router.push('/dashboard');
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
@@ -77,9 +77,17 @@ export default function LoginPage() {
         description,
       });
     } finally {
-      setIsLoading(false);
+      setIsLoggingIn(false);
     }
   };
+
+  if (isUserLoading || authUser) {
+      return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+        </div>
+      );
+  }
 
   return (
     <div className="min-h-screen w-full grid grid-cols-1 md:grid-cols-2">
@@ -125,8 +133,8 @@ export default function LoginPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold" disabled={isLoading}>
-                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold" disabled={isLoggingIn}>
+                      {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Login Now
                     </Button>
                   </form>

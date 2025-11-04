@@ -69,14 +69,15 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
       return;
     }
 
-    // This assumes a Cloud Function creates the user profile document on user creation.
-    // If there IS a user, but their profile doesn't exist or has onboarding incomplete
+    // If there IS a user, but their profile doesn't exist OR onboarding is incomplete,
+    // redirect them to onboarding.
+    // This now correctly assumes a Cloud Function creates the user document on sign-up.
     if (!userProfile || !userProfile.onboardingCompleted) {
         router.push('/onboarding/password');
         return;
     }
 
-    // If user is authenticated and onboarded, allow access
+    // If user is authenticated and onboarded, allow access to the dashboard
     setIsChecking(false);
 
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
