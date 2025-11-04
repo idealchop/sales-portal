@@ -16,7 +16,15 @@ export function useClients() {
     return query(collection(firestore, 'clients'));
   }, [firestore, user]);
 
-  const { data: clients, isLoading, error } = useCollection<WithId<Client>>(clientsQuery);
+  const { data: clientsData, isLoading, error } = useCollection<Client>(clientsQuery);
 
-  return { clients: clients || [], isLoading, error };
+  const clients = useMemo(() => {
+    if (!clientsData) return [];
+    return clientsData.map(client => ({
+      ...client,
+      id: client.id,
+    })) as WithId<Client>[];
+  }, [clientsData]);
+
+  return { clients, isLoading, error };
 }

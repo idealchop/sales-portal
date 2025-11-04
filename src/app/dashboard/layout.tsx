@@ -47,8 +47,8 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
-  const [hasChecked, setHasChecked] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
@@ -57,34 +57,27 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   useEffect(() => {
-    const isLoading = isUserLoading || isProfileLoading;
-    if (!isLoading && !hasChecked) {
-      setHasChecked(true);
-      if (!user) {
-        router.push('/login');
-      } else if (userProfile && !userProfile.onboardingCompleted) {
-        router.push('/onboarding/password');
-      }
+    const isDataLoading = isUserLoading || isProfileLoading;
+    if (isDataLoading) {
+      return; // Wait until we have all the data
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router, hasChecked]);
+    
+    if (!user) {
+      router.push('/login');
+    } else if (userProfile && !userProfile.onboardingCompleted) {
+      router.push('/onboarding/password');
+    } else {
+      // If we have a user and onboarding is complete, stop loading
+      setIsLoading(false);
+    }
+  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
-  const isLoading = isUserLoading || isProfileLoading || !hasChecked;
-  
   if (isLoading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
         </div>
     );
-  }
-  
-  if (!user || (userProfile && !userProfile.onboardingCompleted)) {
-      // While redirecting, show the loader as well to prevent flicker
-      return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-        </div>
-      );
   }
 
   return (

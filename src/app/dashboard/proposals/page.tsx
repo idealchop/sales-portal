@@ -29,12 +29,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { proposals, clients } from '@/lib/data';
 import { ClientOverviewDialog } from "@/components/client-overview-dialog";
 import type { Client } from "@/lib/definitions";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { useProposals } from '@/hooks/use-proposals';
+import { useClients } from '@/hooks/use-clients';
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -93,6 +93,9 @@ export default function ProposalsPage() {
   const [clientsCurrentPage, setClientsCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
+  const { proposals, isLoading: proposalsLoading } = useProposals();
+  const { clients, isLoading: clientsLoading } = useClients();
+
   const getClientById = (id: string): Client | undefined => {
     return clients.find(c => c.id === id);
   }
@@ -100,7 +103,7 @@ export default function ProposalsPage() {
   const renderProposalsTable = (status: ProposalStatus | 'all') => {
     const filteredProposals = (status === 'all' ? proposals : proposals.filter(p => p.status === status))
       .filter(proposal => {
-        const client = getClientById(proposal.client.id);
+        const client = getClientById(proposal.clientId);
         const searchTerm = searchQuery.toLowerCase();
         return (
           proposal.id.toLowerCase().includes(searchTerm) ||
@@ -115,6 +118,10 @@ export default function ProposalsPage() {
       (proposalsCurrentPage - 1) * ITEMS_PER_PAGE,
       proposalsCurrentPage * ITEMS_PER_PAGE
     );
+
+    if (proposalsLoading) {
+        return <div className="text-center p-8">Loading proposals...</div>
+    }
 
     return (
       <Card>
@@ -132,7 +139,7 @@ export default function ProposalsPage() {
             </TableHeader>
             <TableBody>
               {paginatedProposals.map((proposal) => {
-                const client = getClientById(proposal.client.id);
+                const client = getClientById(proposal.clientId);
                 if (!client) return null;
 
                 return (
@@ -145,12 +152,12 @@ export default function ProposalsPage() {
                           <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`capitalize ${proposalStatusStyles[proposal.status]}`} variant="outline">
+                        <Badge className={cn("capitalize", proposalStatusStyles[proposal.status])} variant="outline">
                           {proposal.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {proposal.createdAt}
+                        {new Date(proposal.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}</TableCell>
                     </TableRow>
@@ -205,6 +212,10 @@ export default function ProposalsPage() {
       (clientsCurrentPage - 1) * ITEMS_PER_PAGE,
       clientsCurrentPage * ITEMS_PER_PAGE
     );
+      
+    if (clientsLoading) {
+        return <div className="text-center p-8">Loading clients...</div>
+    }
 
     return (
       <Card>
@@ -228,7 +239,7 @@ export default function ProposalsPage() {
                         <div className="text-sm text-muted-foreground hidden md:block">{client.address}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={`capitalize ${clientStatusStyles[client.status]}`} variant="outline">
+                      <Badge className={cn("capitalize", clientStatusStyles[client.status])} variant="outline">
                         {client.status}
                       </Badge>
                     </TableCell>
