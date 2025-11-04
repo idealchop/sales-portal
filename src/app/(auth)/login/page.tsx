@@ -16,9 +16,6 @@ import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
-import type { UserProfile } from '@/lib/definitions';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -30,7 +27,6 @@ type LoginFormValues = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const auth = useAuth();
   const { user: authUser, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -43,10 +39,12 @@ export default function LoginPage() {
     },
   });
 
-  // This effect will handle users who are already logged in
+  // This effect handles users who are already logged in and might land here.
   useEffect(() => {
     if (!isUserLoading && authUser) {
-      router.push('/dashboard');
+      // Always start by sending them to the onboarding flow.
+      // The dashboard layout will handle redirection if they are already onboarded.
+      router.push('/onboarding/password');
     }
   }, [authUser, isUserLoading, router]);
 
@@ -54,9 +52,9 @@ export default function LoginPage() {
     setIsLoggingIn(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      // On successful login, simply redirect to the dashboard.
-      // The ProtectedDashboard component in the layout will handle all further redirection logic.
-      router.push('/dashboard');
+      // On successful login, always redirect to the start of the onboarding process.
+      // The dashboard layout's "gatekeeper" will handle the logic for subsequent routing.
+      router.push('/onboarding/password');
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {

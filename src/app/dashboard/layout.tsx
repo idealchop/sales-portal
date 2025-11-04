@@ -14,7 +14,7 @@ import { DashboardNav } from '@/components/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/definitions';
@@ -46,6 +46,7 @@ function DashboardSidebar() {
 function ProtectedDashboard({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const firestore = useFirestore();
 
   const userDocRef = useMemoFirebase(() => {
@@ -63,24 +64,36 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
       return;
     }
 
-    // If there is no authenticated user, redirect to login
+    // If there is no authenticated user at all, send them to the login page.
     if (!user) {
       router.push('/login');
       return;
     }
 
-    // If there IS a user, but their profile doesn't exist OR onboarding is incomplete,
-    // redirect them to onboarding.
-    // This now correctly assumes a Cloud Function creates the user document on sign-up.
-    if (!userProfile || !userProfile.onboardingCompleted) {
-        router.push('/onboarding/password');
+    // If the user is authenticated, we check their profile.
+    // This check is crucial for users who have ALREADY completed onboarding.
+    if (userProfile && userProfile.onboardingCompleted) {
+        // If they are onboarded and trying to access an onboarding page, send them to the dashboard.
+        if (pathname.startsWith('/onboarding')) {
+            router.push('/dashboard');
+        } else {
+            // Otherwise, they are clear to access the dashboard.
+            setIsChecking(false);
+        }
         return;
     }
 
-    // If user is authenticated and onboarded, allow access to the dashboard
+    // If the user is authenticated but has NO profile OR onboarding is not complete,
+    // and they are NOT already on an onboarding page, redirect them.
+    if (!pathname.startsWith('/onboarding')) {
+        router.push('/onboarding/password');
+        return;
+    }
+    
+    // If they are already on an onboarding page, let them stay.
     setIsChecking(false);
 
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router, pathname]);
 
   if (isChecking) {
     return (
@@ -89,6 +102,12 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
         </div>
     );
   }
+  
+  // Do not render the main dashboard layout if we are on an onboarding page
+  if (pathname.startsWith('/onboarding')) {
+    return <>{children}</>;
+  }
+
 
   return (
     <SidebarProvider>
