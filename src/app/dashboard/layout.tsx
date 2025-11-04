@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/definitions';
 
 function DashboardSidebar() {
@@ -55,38 +55,32 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Don't do anything until both user and profile loading are complete
+    // Wait until both authentication and profile data are finished loading
     if (isUserLoading || isProfileLoading) {
       return;
     }
 
-    // If no user is authenticated, redirect to login
+    // If there is no authenticated user, redirect to login
     if (!user) {
       router.push('/login');
       return;
     }
 
-    // If a user is authenticated and has a profile
-    if (userProfile) {
-      if (!userProfile.onboardingCompleted) {
-        // If onboarding is not complete, redirect to the start of the flow
+    // If there IS a user, but their profile doesn't exist or has onboarding incomplete
+    if (!userProfile || !userProfile.onboardingCompleted) {
         router.push('/onboarding/password');
-      } else {
-        // If onboarding is complete, the user can see the dashboard
-        setIsLoading(false);
-      }
+        return;
     }
-    
-    // Note: The case where a user is authenticated but has no profile
-    // is handled by the login page, which creates the document.
-    // This effect will then re-run, find the new profile, and redirect to onboarding.
+
+    // If user is authenticated and onboarded, allow access
+    setIsChecking(false);
 
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
-  if (isLoading) {
+  if (isChecking) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>

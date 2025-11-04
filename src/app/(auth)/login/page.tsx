@@ -41,16 +41,19 @@ export default function LoginPage() {
     },
   });
 
-  // Redirect if user is already logged in
+  // Redirect if user is already logged in and fully onboarded
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // We still keep this to handle cases where a user with a valid session lands here
-        router.push('/dashboard');
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists() && userDocSnap.data().onboardingCompleted) {
+          router.push('/dashboard');
+        }
       }
     });
     return () => unsubscribe();
-  }, [auth, router]);
+  }, [auth, firestore, router]);
 
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
@@ -58,11 +61,23 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // Check if user document exists, and create it if it doesn't
       const userDocRef = doc(firestore, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
-      if (!userDocSnap.exists()) {
+      if (userDocSnap.exists()) {
+        const userProfile = userDocSnap.data() as UserProfile;
+        if (userProfile.onboardingCompleted) {
+          toast({
+            title: 'Login Successful',
+            description: "Welcome back! You're being redirected to your dashboard.",
+          });
+          router.push('/dashboard');
+        } else {
+          // Profile exists but onboarding is not complete, send to onboarding
+          router.push('/onboarding/password');
+        }
+      } else {
+        // This is the first login, create the user document
         const newUserProfile: UserProfile = {
             id: user.uid,
             email: user.email || '',
@@ -71,13 +86,10 @@ export default function LoginPage() {
             onboardingCompleted: false,
         };
         await setDoc(userDocRef, newUserProfile);
+        
+        // Redirect to start onboarding
+        router.push('/onboarding/password');
       }
-
-      toast({
-        title: 'Login Successful',
-        description: "Welcome back! You're being redirected to your dashboard.",
-      });
-      router.push('/dashboard');
 
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
