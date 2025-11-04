@@ -35,6 +35,9 @@ import { Separator } from './ui/separator';
 import { Logo } from './logo';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 
 function QrCodeIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -68,6 +71,13 @@ export function DashboardHeader() {
   const [date, setDate] = React.useState<Date>();
   const referralLink = "https://smartrefill.app/referral?code=SR12345";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(referralLink)}&size=200x200&bgcolor=F1F8E9`;
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-8">
@@ -162,10 +172,14 @@ export function DashboardHeader() {
                 <Separator />
                 
                 <div className="p-2">
-                    <Link href="/login" className="flex items-center gap-2 rounded-md p-2 text-sm text-destructive hover:bg-destructive/10">
-                        <LogOut className="h-4 w-4" />
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm font-normal text-destructive hover:bg-destructive/10"
+                        onClick={handleLogout}
+                    >
+                        <LogOut className="mr-2 h-4 w-4" />
                         <span>Logout</span>
-                    </Link>
+                    </Button>
                 </div>
 
             </PopoverContent>
