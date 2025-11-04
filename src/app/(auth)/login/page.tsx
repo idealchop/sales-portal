@@ -10,14 +10,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import type { UserProfile } from '@/lib/definitions';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -28,7 +26,6 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -44,50 +41,22 @@ export default function LoginPage() {
   // This effect will handle users who are already logged in
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user && firestore) {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists() && userDocSnap.data().onboardingCompleted) {
-          router.push('/dashboard');
-        }
+      if (user) {
+        // If user is logged in, the dashboard layout will handle redirection logic.
+        router.push('/dashboard');
       }
     });
     return () => unsubscribe();
-  }, [auth, firestore, router]);
+  }, [auth, router]);
 
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
-
-      const userDocRef = doc(firestore, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (userDocSnap.exists()) {
-        const userProfile = userDocSnap.data() as UserProfile;
-        if (userProfile.onboardingCompleted) {
-          toast({
-            title: 'Login Successful',
-            description: "Welcome back! You're being redirected to your dashboard.",
-          });
-          router.push('/dashboard');
-        } else {
-          // Profile exists, but onboarding is not complete
-          router.push('/onboarding/password');
-        }
-      } else {
-        // This case assumes the Cloud Function might have a slight delay.
-        // Or it can be a fallback if the function fails.
-        // We will log an error and ask the user to try again.
-        console.error("Login Error: User profile document not found. This should be created by a Cloud Function.");
-        toast({
-            variant: 'destructive',
-            title: 'Login Error',
-            description: 'Your user profile is not ready yet. Please wait a moment and try logging in again.',
-        });
-      }
-
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      // On successful login, simply redirect to the dashboard.
+      // The ProtectedDashboard component in the layout will handle
+      // checking the user's profile and redirecting to onboarding if necessary.
+      router.push('/dashboard');
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {
