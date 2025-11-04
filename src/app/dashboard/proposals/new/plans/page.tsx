@@ -59,22 +59,22 @@ type Plan = {
   isRecommended?: boolean;
 };
 
-export const bottleRotationData: { [key: string]: { bottles: number; notes: string } } = {
-    'household-starter': { bottles: 4, notes: '2 in use, 1 in storage, 1 for delivery rotation' },
-    'household-family': { bottles: 6, notes: '3 in use, 2 standby, 1 for refill rotation' },
-    'micro': { bottles: 8, notes: '4 active use, 3 standby, 1 for rotation' },
-    'starter': { bottles: 10, notes: '6 in use, 3 standby, 1 rotation' },
-    'professional': { bottles: 15, notes: '8 in use, 5 standby, 2 for refill rotation' },
-    'growth': { bottles: 20, notes: '10 in use, 7 standby, 3 for delivery rotation' },
-    'pro': { bottles: 25, notes: '15 active, 7 standby, 3 for rotation/refill' },
-    'business': { bottles: 35, notes: '20 active, 10 standby, 5 for rotation' },
-    'enterprise-basic': { bottles: 50, notes: '30 active, 15 standby, 5 for rotation' },
-    'enterprise-plus': { bottles: 75, notes: '45 active, 25 standby, 5 for rotation' },
-    'enterprise-elite': { bottles: 100, notes: '60 active, 30 standby, 10 for rotation' },
-    'enterprise-pro': { bottles: 120, notes: '70 active, 40 standby, 10 for rotation' },
-    'custom-plan': { bottles: 0, notes: 'Dynamic allocation based on consumption. Rotation managed per branch or delivery station.' },
-    'enterprise-customized': { bottles: 0, notes: 'Dynamic allocation. Rotation will be managed per branch or delivery station.' },
-    'enterprise-overflow': { bottles: 0, notes: 'Dynamic allocation based on on-demand usage.' }
+export const gallonRotationData: { [key: string]: { gallons: number; notes: string } } = {
+    'household-starter': { gallons: 4, notes: '2 in use, 1 in storage, 1 for delivery rotation' },
+    'household-family': { gallons: 6, notes: '3 in use, 2 standby, 1 for refill rotation' },
+    'micro': { gallons: 8, notes: '4 active use, 3 standby, 1 for rotation' },
+    'starter': { gallons: 10, notes: '6 in use, 3 standby, 1 rotation' },
+    'professional': { gallons: 15, notes: '8 in use, 5 standby, 2 for refill rotation' },
+    'growth': { gallons: 20, notes: '10 in use, 7 standby, 3 for delivery rotation' },
+    'pro': { gallons: 25, notes: '15 active, 7 standby, 3 for rotation/refill' },
+    'business': { gallons: 35, notes: '20 active, 10 standby, 5 for rotation' },
+    'enterprise-basic': { gallons: 50, notes: '30 active, 15 standby, 5 for rotation' },
+    'enterprise-plus': { gallons: 75, notes: '45 active, 25 standby, 5 for rotation' },
+    'enterprise-elite': { gallons: 100, notes: '60 active, 30 standby, 10 for rotation' },
+    'enterprise-pro': { gallons: 120, notes: '70 active, 40 standby, 10 for rotation' },
+    'custom-plan': { gallons: 0, notes: 'Dynamic allocation based on consumption. Rotation managed per branch or delivery station.' },
+    'enterprise-customized': { gallons: 0, notes: 'Dynamic allocation. Rotation will be managed per branch or delivery station.' },
+    'enterprise-overflow': { gallons: 0, notes: 'Dynamic allocation based on on-demand usage.' }
 };
 
 const inclusions = [
@@ -95,7 +95,7 @@ const inclusions = [
     },
     {
         icon: <Thermometer className="h-5 w-5 text-primary" />,
-        title: 'Free Dispensers, Bottles & Sanitary Items',
+        title: 'Free Dispensers, Gallons & Sanitary Items',
         description: 'Included based on your plan.',
     },
     {
@@ -348,7 +348,7 @@ function CustomPlanCalculator({
     isFixedPrice = false,
     fixedPrice = 0,
     showEstimatedCost = false,
-    maxBottles,
+    maxGallons,
     maxDeliveries,
 }: {
     pricePerLiter?: number;
@@ -359,25 +359,25 @@ function CustomPlanCalculator({
     isFixedPrice?: boolean;
     fixedPrice?: number;
     showEstimatedCost?: boolean;
-    maxBottles?: number;
+    maxGallons?: number;
     maxDeliveries?: number;
 }) {
-    const [bottles, setBottles] = useState(maxBottles ? Math.min(10, maxBottles) : 10);
+    const [gallons, setGallons] = useState(maxGallons ? Math.min(10, maxGallons) : 10);
     const [deliveries, setDeliveries] = useState(1);
-    const litersPerBottle = 19;
+    const litersPerGallon = 19;
 
     const { totalLiters, totalCost } = useMemo(() => {
-        const liters = bottles * deliveries * 4 * litersPerBottle;
+        const liters = gallons * deliveries * 4 * litersPerGallon;
         const cost = isFixedPrice ? fixedPrice : liters * pricePerLiter;
         return { totalLiters: liters, totalCost: cost ?? 0 };
-    }, [bottles, deliveries, pricePerLiter, isFixedPrice, fixedPrice]);
+    }, [gallons, deliveries, pricePerLiter, isFixedPrice, fixedPrice]);
     
-    const handleBottlesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleGallonsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value = parseInt(e.target.value) || 0;
-        if (maxBottles && value > maxBottles) {
-            value = maxBottles;
+        if (maxGallons && value > maxGallons) {
+            value = maxGallons;
         }
-        setBottles(value);
+        setGallons(value);
     }
     
     const handleDeliveriesChange = (value: string) => {
@@ -405,11 +405,11 @@ function CustomPlanCalculator({
         <div className="p-6 space-y-6">
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="bottles" className="text-sm font-medium text-primary-foreground/80">5-Gallon Bottles per Delivery</Label>
+                    <Label htmlFor="gallons" className="text-sm font-medium text-primary-foreground/80">5-Gallon Containers per Delivery</Label>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setBottles(Math.max(1, bottles - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="bottles" type="number" value={bottles} onChange={handleBottlesChange} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" max={maxBottles}/>
-                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setBottles(maxBottles ? Math.min(bottles + 1, maxBottles) : bottles + 1)}><Plus className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(Math.max(1, gallons - 1))}><Minus className="h-4 w-4" /></Button>
+                        <Input id="gallons" type="number" value={gallons} onChange={handleGallonsChange} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" max={maxGallons}/>
+                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(maxGallons ? Math.min(gallons + 1, maxGallons) : gallons + 1)}><Plus className="h-4 w-4" /></Button>
                     </div>
                 </div>
                 <div className="space-y-2">
@@ -667,7 +667,7 @@ function PlansGrid({
                             onCalculated={onSmeCommercialCustomCalculated}
                             pricePerLiter={businessSize === 'household' ? 2.5 : 3}
                             title={businessSize === 'household' ? "Customize Household Plan" : "Customize SME/Commercial Plan"}
-                            maxBottles={businessSize === 'household' ? 10 : undefined}
+                            maxGallons={businessSize === 'household' ? 10 : undefined}
                             maxDeliveries={businessSize === 'household' ? 2 : undefined}
                         />
                     )}

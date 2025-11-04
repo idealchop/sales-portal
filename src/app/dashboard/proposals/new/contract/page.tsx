@@ -39,7 +39,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
-import { allPlans, deliveryFrequencies, bottleRotationData } from '../plans/page';
+import { allPlans, deliveryFrequencies, gallonRotationData } from '../plans/page';
 import { PaymentMethods } from '@/components/payment-methods';
 
 const billingCycles = [
@@ -121,7 +121,7 @@ const inclusions = [
     },
     {
         icon: <Thermometer className="h-5 w-5 text-primary" />,
-        title: 'Free Dispensers, Bottles & Sanitary Items',
+        title: 'Free Dispensers, Gallons & Sanitary Items',
         description: 'Included based on your plan.',
     },
     {
@@ -224,7 +224,7 @@ export function ContractText() {
             
             <ContractSection title="5. Equipment Use">
                 <ul className="list-disc pl-5 space-y-1">
-                    <li>Each plan includes free use of dispensers and bottles (quantity based on plan tier).</li>
+                    <li>Each plan includes free use of dispensers and gallons (quantity based on plan tier).</li>
                     <li>Equipment remains the property of River Tech Group, Inc.</li>
                     <li>If the Client exceeds included equipment limits, additional units may be provided as rentals.</li>
                     <li>The Client must maintain equipment in good condition and return or replace damaged items.</li>
@@ -428,7 +428,7 @@ function PreviewDialog({
                         gallons: deliveryGallons,
                         liters: deliveryGallons * litersPerGallon,
                         area: 'Primary Location',
-                        station: `Station ${( ( (week - 1) * deliveriesPerWeek + delivery - 1) % stationCount) + 1}`,
+                        station: `Station ${( ( ( (week - 1) * deliveriesPerWeek + delivery - 1) % stationCount) % stationCount) + 1}`,
                     });
                 }
             }
@@ -448,7 +448,7 @@ function PreviewDialog({
 
     }, [finalPlan.liters, finalPlan.stations, finalPlan.refillFrequency]);
 
-    const rotationInfo = bottleRotationData[plan?.id] || bottleRotationData['custom-plan'];
+    const rotationInfo = gallonRotationData[plan?.id] || gallonRotationData['custom-plan'];
 
 
     return (
@@ -520,7 +520,7 @@ function PreviewDialog({
                                 <div className="flex items-center gap-2">
                                     <Building className="h-4 w-4 text-primary" />
                                     <div>
-                                        <p className="text-muted-foreground">Stations</p>
+                                        <p className="text-muted-foreground">Water Stations</p>
                                         <p className="font-semibold">{finalPlan.stations}</p>
                                     </div>
                                 </div>
@@ -643,16 +643,16 @@ function PreviewDialog({
                     
                     <Card>
                         <CardHeader>
-                            <CardTitle>Bottle Rotation & Handling Guide</CardTitle>
+                            <CardTitle>Gallon Rotation & Handling Guide</CardTitle>
                             <CardDescription>
-                                Recommendations for managing your bottle inventory to ensure seamless service.
+                                Recommendations for managing your gallon inventory to ensure seamless service.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                                 <div className="space-y-2">
-                                    <Label>Recommended Bottles for Rotation</Label>
-                                    <p className="text-3xl font-bold">{rotationInfo.bottles > 0 ? `${rotationInfo.bottles} bottles` : 'Dynamic'}</p>
+                                    <Label>Recommended Gallons for Rotation</Label>
+                                    <p className="text-3xl font-bold">{rotationInfo.gallons > 0 ? `${rotationInfo.gallons} gallons` : 'Dynamic'}</p>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Handling Notes</Label>
@@ -914,7 +914,7 @@ function ContractPageContent() {
   }, [plan, totalLiters]);
 
 
-  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+  const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
 
   const handleSaveProposal = () => {
     toast({
@@ -943,7 +943,7 @@ function ContractPageContent() {
     )
   }
 
-  const rotationInfo = bottleRotationData[plan.id] || bottleRotationData['custom-plan'];
+  const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
   
   const summaryTitle = finalPlan.name.includes("Plan") ? finalPlan.name : `${finalPlan.name} Plan`;
 
@@ -999,11 +999,11 @@ function ContractPageContent() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Refillable Bottles</CardTitle>
+                            <CardTitle className="text-sm font-medium">Refillable Gallons</CardTitle>
                             <Package className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{rotationInfo.bottles > 0 ? rotationInfo.bottles : 'Dynamic'}</div>
+                            <div className="text-2xl font-bold">{rotationInfo.gallons > 0 ? rotationInfo.gallons : 'Dynamic'}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -1223,5 +1223,6 @@ export default function ContractPage() {
     
 
     
+
 
 
