@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,11 +19,14 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard } from 'lucide-react';
 import type { Client } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import type { ActiveView } from '@/app/dashboard/proposals/page';
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -49,11 +53,17 @@ export function ClientOverviewDialog({
   children,
   client,
   view,
+  setActiveView,
 }: {
   children: React.ReactNode;
   client: Client;
   view: 'proposals' | 'clients';
+  setActiveView?: (view: ActiveView) => void;
 }) {
+  const { toast } = useToast();
+  const [isUploaded, setIsUploaded] = useState(false);
+  const [open, setOpen] = useState(false);
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -63,8 +73,27 @@ export function ClientOverviewDialog({
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const planImage = getPlanImage(client.subscription?.planId);
 
+  const handleUpload = () => {
+    setIsUploaded(true);
+    toast({
+        title: "File 'Uploaded'",
+        description: "Proof of payment is ready for confirmation.",
+    })
+  }
+
+  const handleConfirmPayment = () => {
+    if (setActiveView) {
+        setActiveView('clients');
+    }
+    setOpen(false); // Close the dialog
+    toast({
+        title: "Payment Confirmed!",
+        description: `${client.companyName} is now an active client.`,
+    })
+  }
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
@@ -235,9 +264,6 @@ export function ClientOverviewDialog({
                             <CardContent>
                                 <div className="text-center py-8">
                                     <p className="text-muted-foreground">No active subscription.</p>
-                                    <Button className="mt-4" asChild>
-                                        <Link href="/dashboard/proposals/new">Create a Proposal</Link>
-                                    </Button>
                                 </div>
                             </CardContent>
                         )}
@@ -246,18 +272,34 @@ export function ClientOverviewDialog({
 
                  {view === 'proposals' ? (
                      <Card>
-                        <CardHeader className="flex-row items-center justify-between">
-                            <div>
-                                <CardTitle>Payment Confirmation</CardTitle>
-                                <CardDescription>
-                                    Upload the client’s payment confirmation to finalize the subscription.
-                                </CardDescription>
-                            </div>
-                             <Button>
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload Confirmation
-                            </Button>
+                        <CardHeader>
+                            <CardTitle>Payment Confirmation</CardTitle>
+                            <CardDescription>
+                                Upload the client’s payment confirmation to finalize the subscription.
+                            </CardDescription>
                         </CardHeader>
+                        <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            {isUploaded ? (
+                                <div className='flex items-center gap-2 text-sm text-green-600'>
+                                   <FileCheck className="h-5 w-5" />
+                                   <span className="font-medium">payment_receipt.pdf</span>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    Awaiting proof of payment from client.
+                                </p>
+                            )}
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={handleUpload} disabled={isUploaded}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Upload
+                                </Button>
+                                <Button onClick={handleConfirmPayment} disabled={!isUploaded}>
+                                    <CreditCard className="mr-2 h-4 w-4" />
+                                    Confirm Payment
+                                </Button>
+                            </div>
+                        </CardContent>
                     </Card>
                  ) : (
                     <Dialog>

@@ -49,9 +49,9 @@ const clientStatusStyles: { [key: string]: string } = {
   lead: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 
-type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
-type ClientStatus = 'active' | 'inactive' | 'lead';
-type ActiveView = 'proposals' | 'clients';
+export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
+export type ClientStatus = 'active' | 'inactive' | 'lead';
+export type ActiveView = 'proposals' | 'clients';
 
 function NavLink({
   icon,
@@ -136,7 +136,7 @@ export default function ProposalsPage() {
                 if (!client) return null;
 
                 return (
-                  <ClientOverviewDialog key={proposal.id} client={client} view="proposals">
+                  <ClientOverviewDialog key={proposal.id} client={client} view="proposals" setActiveView={setActiveView}>
                     <TableRow className="cursor-pointer">
                       <TableCell>
                           <div className="font-bold">{client.companyName}</div>
@@ -398,5 +398,3 @@ export default function ProposalsPage() {
     </div>
   );
 }
-
-    
