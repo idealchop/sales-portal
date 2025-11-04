@@ -225,6 +225,7 @@ export function ClientOverviewDialog({
                             <CardTitle>Current Subscription</CardTitle>
                         </CardHeader>
                         {client.subscription ? (
+                            <>
                             <CardContent className="space-y-4">
                                 <div className="relative aspect-video w-full overflow-hidden rounded-lg">
                                     <Image src={planImage} alt={client.subscription.planName} fill className="object-cover" />
@@ -290,6 +291,48 @@ export function ClientOverviewDialog({
                                     </div>
                                 )}
                             </CardContent>
+                            {client.onboardingStatus && (
+                            <CardFooter>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" className="w-full">
+                                            View Onboarding Progress
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
+                                            <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="py-4">
+                                            <ol className="relative border-s border-gray-200 dark:border-gray-700">
+                                                {client.onboardingStatus.map((step, index) => (
+                                                    <li key={index} className="mb-6 ms-8">
+                                                        <span className={cn(
+                                                            "absolute flex items-center justify-center w-8 h-8 rounded-full -start-4 ring-4 ring-background",
+                                                            step.status === 'completed' ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
+                                                        )}>
+                                                            {step.status === 'completed' ? (
+                                                                <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400" />
+                                                            ) : (
+                                                                <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                                                            )}
+                                                        </span>
+                                                        <h3 className="font-semibold text-foreground">{step.title}</h3>
+                                                        {step.date && (
+                                                            <p className="block text-sm font-normal leading-none text-muted-foreground">
+                                                                Completed on {step.date}
+                                                            </p>
+                                                        )}
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            </CardFooter>
+                            )}
+                            </>
                         ) : (
                             <CardContent>
                                 <div className="text-center py-8">
@@ -368,49 +411,6 @@ export function ClientOverviewDialog({
                     </Dialog>
                  )}
                 
-                 {client.onboardingStatus && (
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Card className="cursor-pointer hover:bg-accent transition-colors">
-                                <CardHeader>
-                                    <CardTitle>Onboarding Progress</CardTitle>
-                                    <CardDescription>Click to view the client's onboarding status.</CardDescription>
-                                </CardHeader>
-                            </Card>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
-                                <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
-                            </DialogHeader>
-                            <div className="py-4">
-                                <ol className="relative border-s border-gray-200 dark:border-gray-700">
-                                    {client.onboardingStatus.map((step, index) => (
-                                        <li key={index} className="mb-6 ms-8">
-                                            <span className={cn(
-                                                "absolute flex items-center justify-center w-8 h-8 rounded-full -start-4 ring-4 ring-background",
-                                                step.status === 'completed' ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
-                                            )}>
-                                                {step.status === 'completed' ? (
-                                                    <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400" />
-                                                ) : (
-                                                    <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                                                )}
-                                            </span>
-                                            <h3 className="font-semibold text-foreground">{step.title}</h3>
-                                            {step.date && (
-                                                <p className="block text-sm font-normal leading-none text-muted-foreground">
-                                                    Completed on {step.date}
-                                                </p>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ol>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                )}
-
                  <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:bg-accent transition-colors">
