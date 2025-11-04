@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -38,7 +39,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
-import { allPlans, deliveryFrequencies } from '../plans/page';
+import { allPlans, deliveryFrequencies, bottleRotationData } from '../plans/page';
 import { PaymentMethods } from '@/components/payment-methods';
 
 const billingCycles = [
@@ -409,9 +410,11 @@ function PreviewDialog({
             gallons: gallons,
             liters: gallons * litersPerGallon,
             area: 'Primary Location', // Placeholder
-            station: `Station ${ stationCount > 1 ? (index % stationCount) + 1 : 1}` // Use station count from plan
+            station: `Station ${ stationCount > 1 ? (index % stationCount) + 1 : 1}`
         }));
     }, [finalPlan.liters, finalPlan.stations]);
+
+    const rotationInfo = bottleRotationData[plan?.id] || bottleRotationData['custom-plan'];
 
 
     return (
@@ -601,6 +604,28 @@ function PreviewDialog({
                             )}
                         </CardContent>
                     </Card>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Bottle Rotation & Handling Guide</CardTitle>
+                            <CardDescription>
+                                Recommendations for managing your bottle inventory to ensure seamless service.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div className="space-y-2">
+                                    <Label>Recommended Bottles for Rotation</Label>
+                                    <p className="text-3xl font-bold">{rotationInfo.bottles > 0 ? `${rotationInfo.bottles} bottles` : 'Dynamic'}</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Handling Notes</Label>
+                                    <p className="text-sm text-muted-foreground">{rotationInfo.notes}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
 
                      <Card>
                         <CardHeader>

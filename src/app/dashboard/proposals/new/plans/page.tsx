@@ -59,6 +59,24 @@ type Plan = {
   isRecommended?: boolean;
 };
 
+export const bottleRotationData: { [key: string]: { bottles: number; notes: string } } = {
+    'household-starter': { bottles: 4, notes: '2 in use, 1 in storage, 1 for delivery rotation' },
+    'household-family': { bottles: 6, notes: '3 in use, 2 standby, 1 for refill rotation' },
+    'micro': { bottles: 8, notes: '4 active use, 3 standby, 1 for rotation' },
+    'starter': { bottles: 10, notes: '6 in use, 3 standby, 1 rotation' },
+    'professional': { bottles: 15, notes: '8 in use, 5 standby, 2 for refill rotation' },
+    'growth': { bottles: 20, notes: '10 in use, 7 standby, 3 for delivery rotation' },
+    'pro': { bottles: 25, notes: '15 active, 7 standby, 3 for rotation/refill' },
+    'business': { bottles: 35, notes: '20 active, 10 standby, 5 for rotation' },
+    'enterprise-basic': { bottles: 50, notes: '30 active, 15 standby, 5 for rotation' },
+    'enterprise-plus': { bottles: 75, notes: '45 active, 25 standby, 5 for rotation' },
+    'enterprise-elite': { bottles: 100, notes: '60 active, 30 standby, 10 for rotation' },
+    'enterprise-pro': { bottles: 120, notes: '70 active, 40 standby, 10 for rotation' },
+    'custom-plan': { bottles: 0, notes: 'Dynamic allocation based on consumption. Rotation managed per branch or delivery station.' },
+    'enterprise-customized': { bottles: 0, notes: 'Dynamic allocation. Rotation will be managed per branch or delivery station.' },
+    'enterprise-overflow': { bottles: 0, notes: 'Dynamic allocation based on on-demand usage.' }
+};
+
 const inclusions = [
     {
         icon: <Computer className="h-5 w-5 text-primary" />,
