@@ -16,6 +16,7 @@
 
 
 
+
 'use client';
 
 import React from 'react';
@@ -421,7 +422,9 @@ function PreviewDialog({
         return distribution.map((gallons, index) => ({
             week: `Week ${index + 1}`,
             gallons: gallons,
-            liters: gallons * litersPerGallon
+            liters: gallons * litersPerGallon,
+            area: 'Primary Location', // Placeholder
+            station: `Station ${index % 2 + 1}` // Placeholder
         }));
     }, [finalPlan.liters]);
 
@@ -587,6 +590,8 @@ function PreviewDialog({
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Week</TableHead>
+                                            <TableHead>Area</TableHead>
+                                            <TableHead>Water Station</TableHead>
                                             <TableHead className="text-center">Gallons to Deliver</TableHead>
                                             <TableHead className="text-right">Liters Delivered</TableHead>
                                         </TableRow>
@@ -595,6 +600,8 @@ function PreviewDialog({
                                         {distributionPlan.map((week, index) => (
                                             <TableRow key={index}>
                                                 <TableCell className="font-medium">{week.week}</TableCell>
+                                                <TableCell>{week.area}</TableCell>
+                                                <TableCell>{week.station}</TableCell>
                                                 <TableCell className="text-center">{week.gallons}</TableCell>
                                                 <TableCell className="text-right">{week.liters.toLocaleString()} L</TableCell>
                                             </TableRow>
@@ -1168,6 +1175,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
