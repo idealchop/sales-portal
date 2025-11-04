@@ -68,9 +68,9 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router, hasChecked]);
 
-  const isLoading = isUserLoading || isProfileLoading;
-
-  if (isLoading || !hasChecked || !user || (userProfile && !userProfile.onboardingCompleted)) {
+  const isLoading = isUserLoading || isProfileLoading || !hasChecked;
+  
+  if (isLoading || !user || (userProfile && !userProfile.onboardingCompleted && router.pathname !== '/onboarding/password' && router.pathname !== '/onboarding/profile')) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
