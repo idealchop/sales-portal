@@ -16,7 +16,7 @@ import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/definitions';
 
 const formSchema = z.object({
@@ -41,10 +41,10 @@ export default function LoginPage() {
     },
   });
 
-  // Redirect if user is already logged in and fully onboarded
+  // This effect will handle users who are already logged in
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
+      if (user && firestore) {
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists() && userDocSnap.data().onboardingCompleted) {
@@ -73,22 +73,19 @@ export default function LoginPage() {
           });
           router.push('/dashboard');
         } else {
-          // Profile exists but onboarding is not complete, send to onboarding
+          // Profile exists, but onboarding is not complete
           router.push('/onboarding/password');
         }
       } else {
-        // This is the first login, create the user document
-        const newUserProfile: UserProfile = {
-            id: user.uid,
-            email: user.email || '',
-            displayName: user.displayName || 'New User',
-            role: 'sales', // Default role
-            onboardingCompleted: false,
-        };
-        await setDoc(userDocRef, newUserProfile);
-        
-        // Redirect to start onboarding
-        router.push('/onboarding/password');
+        // This case assumes the Cloud Function might have a slight delay.
+        // Or it can be a fallback if the function fails.
+        // We will log an error and ask the user to try again.
+        console.error("Login Error: User profile document not found. This should be created by a Cloud Function.");
+        toast({
+            variant: 'destructive',
+            title: 'Login Error',
+            description: 'Your user profile is not ready yet. Please wait a moment and try logging in again.',
+        });
       }
 
     } catch (error) {
