@@ -3,19 +3,19 @@
 import type { Client, Proposal, Revenue, OnboardingStep } from '@/lib/definitions';
 
 const sampleOnboarding: OnboardingStep[] = [
-    { title: 'Payment Confirmed', status: 'completed', date: '2023-11-15' },
-    { title: 'Account Activated', status: 'completed', date: '2023-11-16' },
-    { title: 'Onboarding Call', status: 'completed', date: '2023-11-17' },
-    { title: 'First Delivery Scheduled', status: 'pending' },
-    { title: 'Automated Refills Enabled', status: 'pending' },
+    { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'completed', date: '2023-11-15' },
+    { title: 'Account Activated', description: 'Client portal access has been granted.', status: 'completed', date: '2023-11-16' },
+    { title: 'Onboarding Call', description: 'Initial setup and walkthrough call completed.', status: 'completed', date: '2023-11-17' },
+    { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery.', status: 'pending' },
+    { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
 ];
 
 const pendingOnboarding: OnboardingStep[] = [
-    { title: 'Payment Confirmed', status: 'completed', date: '2023-11-20' },
-    { title: 'Account Activated', status: 'pending' },
-    { title: 'Onboarding Call', status: 'pending' },
-    { title: 'First Delivery Scheduled', status: 'pending' },
-    { title: 'Automated Refills Enabled', status: 'pending' },
+    { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'completed', date: '2023-11-20' },
+    { title: 'Account Activated', description: 'Client portal access has been granted.', status: 'pending' },
+    { title: 'Onboarding Call', description: 'Initial setup and walkthrough call completed.', status: 'pending' },
+    { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery.', status: 'pending' },
+    { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
 ];
 
 

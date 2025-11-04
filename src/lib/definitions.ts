@@ -2,6 +2,7 @@
 
 export type OnboardingStep = {
   title: string;
+  description: string;
   status: 'completed' | 'pending';
   date?: string;
 };

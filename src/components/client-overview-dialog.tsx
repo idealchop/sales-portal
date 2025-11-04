@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
 import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle } from 'lucide-react';
-import type { Client, Remark } from '@/lib/definitions';
+import type { Client, Remark, OnboardingStep } from '@/lib/definitions';
 import { ContractText, ContractSection } from '@/app/dashboard/proposals/new/contract/page';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
@@ -51,6 +51,36 @@ const getPlanImage = (planId?: string) => {
     if (planId.includes('enterprise')) return planImages.corporate;
     return planImages.sme;
 }
+
+const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: boolean }) => (
+  <div className="relative flex items-start">
+    <div className="flex flex-col items-center mr-4">
+      <div
+        className={cn(
+          "flex items-center justify-center w-10 h-10 rounded-full ring-4 ring-background",
+          step.status === 'completed' ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
+        )}
+      >
+        {step.status === 'completed' ? (
+          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+        ) : (
+          <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        )}
+      </div>
+      {!isLast && <div className="w-px h-full bg-border mt-2" />}
+    </div>
+    <div className="pt-1.5 pb-8">
+      <h3 className="font-semibold text-foreground">{step.title}</h3>
+      <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+      {step.date && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Completed on: {step.date}
+        </p>
+      )}
+    </div>
+  </div>
+);
+
 
 export function ClientOverviewDialog({
   children,
@@ -334,34 +364,21 @@ export function ClientOverviewDialog({
                                             View Onboarding Progress
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent>
+                                    <DialogContent className="sm:max-w-lg">
                                         <DialogHeader>
                                             <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
                                             <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
                                         </DialogHeader>
                                         <div className="py-4">
-                                            <ol className="relative border-s border-gray-200 dark:border-gray-700">
+                                            <div className="flex flex-col">
                                                 {client.onboardingStatus.map((step, index) => (
-                                                    <li key={index} className="mb-6 ms-8">
-                                                        <span className={cn(
-                                                            "absolute flex items-center justify-center w-8 h-8 rounded-full -start-4 ring-4 ring-background",
-                                                            step.status === 'completed' ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
-                                                        )}>
-                                                            {step.status === 'completed' ? (
-                                                                <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400" />
-                                                            ) : (
-                                                                <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                                                            )}
-                                                        </span>
-                                                        <h3 className="font-semibold text-foreground">{step.title}</h3>
-                                                        {step.date && (
-                                                            <p className="block text-sm font-normal leading-none text-muted-foreground">
-                                                                Completed on {step.date}
-                                                            </p>
-                                                        )}
-                                                    </li>
+                                                    <OnboardingStepItem 
+                                                        key={index} 
+                                                        step={step} 
+                                                        isLast={index === client.onboardingStatus!.length - 1} 
+                                                    />
                                                 ))}
-                                            </ol>
+                                            </div>
                                         </div>
                                     </DialogContent>
                                 </Dialog>
