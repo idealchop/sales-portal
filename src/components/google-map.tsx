@@ -155,7 +155,7 @@ const render = (status: Status, error?: Error) => {
          return (
             <div className="h-full w-full flex flex-col items-center justify-center bg-muted text-muted-foreground text-sm text-center p-4">
                 <p className="font-semibold text-destructive">Error Loading Map</p>
-                <p>The Google Maps API key is invalid or missing required permissions.</p>
+                <p>There was an issue loading Google Maps. Please check the API key and console for more details.</p>
             </div>
         );
     }
@@ -216,22 +216,7 @@ function MapComponent({
 
 export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: number }) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    const [authError, setAuthError] = useState<Error | undefined>(undefined);
-
-    useEffect(() => {
-        const originalError = console.error;
-        const newError = (...args: any[]) => {
-            if (args[0] && typeof args[0] === 'string' && args[0].includes('Google Maps JavaScript API error: InvalidKeyMapError')) {
-                setAuthError(new Error('InvalidKeyMapError'));
-            }
-            originalError.apply(console, args);
-        };
-        console.error = newError;
-        return () => {
-            console.error = originalError;
-        };
-    }, []);
-
+    
     if (!apiKey) {
         return (
             <div className="h-full w-full flex flex-col items-center justify-center bg-muted text-muted-foreground text-sm text-center p-4">
@@ -240,13 +225,9 @@ export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: numb
             </div>
         );
     }
-    
-    if (authError) {
-        return render(Status.FAILURE, authError);
-    }
 
     return (
-        <Wrapper apiKey={apiKey} render={(status) => render(status)} libraries={['geocoding']}>
+        <Wrapper apiKey={apiKey} render={render} libraries={['geocoding']}>
             <MapComponent address={address} zoom={zoom} />
         </Wrapper>
     );
