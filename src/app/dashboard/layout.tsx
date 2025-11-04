@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/definitions';
 
 function DashboardSidebar() {
@@ -59,18 +59,39 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
   useEffect(() => {
     const isDataLoading = isUserLoading || isProfileLoading;
     if (isDataLoading) {
-      return; // Wait until we have all the data
+      return; // Wait until Firebase auth and Firestore doc are checked
     }
-    
+
     if (!user) {
       router.push('/login');
-    } else if (userProfile && !userProfile.onboardingCompleted) {
+      return;
+    }
+
+    // If the user is authenticated but has no profile document, it's their first login.
+    // Create their profile and then redirect to onboarding.
+    if (!userProfile) {
+      const newUserProfile: UserProfile = {
+        id: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || 'New User',
+        role: 'sales', // Default role
+        onboardingCompleted: false,
+      };
+      // Create the document. The useDoc hook will then pick up this new data.
+      // We don't await this; the effect will re-run when userProfile data changes.
+      setDoc(doc(firestore, 'users', user.uid), newUserProfile);
+      return; // Let the effect re-run with the new profile data
+    }
+    
+    // If the profile exists, check the onboarding flag
+    if (userProfile && !userProfile.onboardingCompleted) {
       router.push('/onboarding/password');
     } else {
       // If we have a user and onboarding is complete, stop loading
       setIsLoading(false);
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+
+  }, [user, userProfile, isUserLoading, isProfileLoading, router, firestore]);
 
   if (isLoading) {
     return (
