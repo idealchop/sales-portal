@@ -399,11 +399,12 @@ function PreviewDialog({
         
         let deliveriesPerWeek = 1;
         const freq = finalPlan.refillFrequency.toLowerCase();
+        
         if (freq.includes('daily')) {
             deliveriesPerWeek = 7;
         } else if (freq.includes('/week')) {
-             const range = freq.split('/')[0].split('–').map(Number);
-            deliveriesPerWeek = Math.ceil((range[0] + (range[1] || range[0])) / 2);
+             const range = freq.split('/')[0].split('–').map(s => parseInt(s.trim()));
+             deliveriesPerWeek = Math.max(...range);
         }
         
         const totalDeliveries = deliveriesPerWeek * 4;
@@ -412,7 +413,7 @@ function PreviewDialog({
         const gallonsPerDelivery = Math.floor(totalGallons / totalDeliveries);
         let remainingGallons = totalGallons % totalDeliveries;
         
-        const weeklyDistribution = [];
+        const weeklyDistribution: {week: string, deliveryNumber: string, gallons: number, liters: number}[] = [];
         for (let week = 1; week <= 4; week++) {
             for (let delivery = 1; delivery <= deliveriesPerWeek; delivery++) {
                  let deliveryGallons = gallonsPerDelivery;
@@ -504,11 +505,14 @@ function PreviewDialog({
                                         <p className="font-semibold">{finalPlan.employees}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Building className="h-4 w-4 text-primary" />
+                                 <div className="flex items-center gap-2">
+                                    <Package className="h-4 w-4 text-primary" />
                                     <div>
-                                        <p className="text-muted-foreground">Water Stations</p>
-                                        <p className="font-semibold">{finalPlan.stations}</p>
+                                        <p className="text-muted-foreground">Refillable Gallons</p>
+                                        <p className="font-semibold">
+                                            {rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic'}
+                                            <span className="text-xs font-normal ml-1">(free)</span>
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -979,7 +983,7 @@ function ContractPageContent() {
             <CardHeader>
                 <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
                 <CardDescription>
-                    A summary of the selected subscription plan details for the upcoming {billingCycleLabel} period. (Includes +20% free liters)
+                    A summary of the selected subscription plan details for the upcoming {billingCycleLabel} period. (Includes +20% free liters every month)
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1142,7 +1146,7 @@ function ContractPageContent() {
                             <p className="text-2xl font-bold">{currencyFormatter.format(basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                         </div>
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
-                            <li>{finalPlan.liters} total (includes 20% free liters)</li>
+                            <li>{finalPlan.liters} total (includes 20% free liters) / mo</li>
                              {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
                             <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                         </ul>
@@ -1231,6 +1235,7 @@ export default function ContractPage() {
     
 
     
+
 
 
 
