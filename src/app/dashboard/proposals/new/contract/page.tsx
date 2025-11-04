@@ -388,31 +388,39 @@ function PreviewDialog({
     const discountValue = totalBeforeDiscount * discount;
     
     const distributionPlan = useMemo(() => {
-        const totalLiters = parseInt(finalPlan.liters.replace(/[^0-9]/g, ''), 10) || 0;
-        if (totalLiters === 0) return [];
+        const totalLitersValue = parseInt(finalPlan.liters.replace(/[^0-9]/g, ''), 10) || 0;
+        if (totalLitersValue === 0) return [];
         
         const litersPerGallon = 19;
-        const totalGallons = Math.ceil(totalLiters / litersPerGallon);
-        const gallonsPerWeek = Math.floor(totalGallons / 4);
-        let remainingGallons = totalGallons % 4;
-
-        const distribution = Array(4).fill(gallonsPerWeek);
-
-        for (let i = 0; i < remainingGallons; i++) {
-            distribution[i]++;
-        }
+        const totalGallons = Math.ceil(totalLitersValue / litersPerGallon);
         
         const stationCountMatch = finalPlan.stations.match(/\d+/);
         const stationCount = stationCountMatch ? parseInt(stationCountMatch[0], 10) : 1;
+        
+        // This is a simplified projection. A real implementation would use the delivery frequency.
+        const deliveriesPerWeek = 1; 
+        const totalDeliveries = deliveriesPerWeek * 4;
+        const gallonsPerDelivery = Math.floor(totalGallons / totalDeliveries);
+        let remainingGallons = totalGallons % totalDeliveries;
+        
+        const weeklyDistribution = [];
+        for (let i = 0; i < totalDeliveries; i++) {
+            let deliveryGallons = gallonsPerDelivery;
+            if (remainingGallons > 0) {
+                deliveryGallons++;
+                remainingGallons--;
+            }
+            weeklyDistribution.push({
+                frequency: `Once a Week (Week ${Math.floor(i / deliveriesPerWeek) + 1})`,
+                gallons: deliveryGallons,
+                liters: deliveryGallons * litersPerGallon,
+                area: 'Primary Location',
+                station: `Station ${(i % stationCount) + 1}`,
+            });
+        }
 
-        return distribution.map((gallons, index) => ({
-            week: `Week ${index + 1}`,
-            gallons: gallons,
-            liters: gallons * litersPerGallon,
-            area: 'Primary Location', // Placeholder
-            station: `Station ${ stationCount > 1 ? (index % stationCount) + 1 : 1}`
-        }));
-    }, [finalPlan.liters, finalPlan.stations]);
+        return weeklyDistribution;
+    }, [finalPlan.liters, finalPlan.stations, finalPlan.refillFrequency]);
 
     const rotationInfo = bottleRotationData[plan?.id] || bottleRotationData['custom-plan'];
 
@@ -577,7 +585,7 @@ function PreviewDialog({
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Week</TableHead>
+                                            <TableHead>Frequency</TableHead>
                                             <TableHead>Area</TableHead>
                                             <TableHead>Water Station</TableHead>
                                             <TableHead className="text-center">Gallons to Deliver</TableHead>
@@ -587,7 +595,7 @@ function PreviewDialog({
                                     <TableBody>
                                         {distributionPlan.map((week, index) => (
                                             <TableRow key={index}>
-                                                <TableCell className="font-medium">{week.week}</TableCell>
+                                                <TableCell className="font-medium">{week.frequency}</TableCell>
                                                 <TableCell>{week.area}</TableCell>
                                                 <TableCell>{week.station}</TableCell>
                                                 <TableCell className="text-center">{week.gallons}</TableCell>
@@ -1186,3 +1194,4 @@ export default function ContractPage() {
     
 
     
+
