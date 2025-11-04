@@ -133,20 +133,6 @@ export default function LoginPage() {
                     </Button>
                   </form>
                 </Form>
-
-                <div className="mt-8 text-center text-sm">
-                  <p className="text-muted-foreground">
-                    By continuing, you agree to our{' '}
-                    <Link href="#" className="underline underline-offset-4 hover:text-primary">
-                      Terms of Service
-                    </Link>{' '}
-                    and{' '}
-                    <Link href="#" className="underline underline-offset-4 hover:text-primary">
-                      Privacy Policy
-                    </Link>
-                    .
-                  </p>
-                </div>
             </div>
         </div>
         <div className="relative hidden md:block">
