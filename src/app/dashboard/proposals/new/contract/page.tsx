@@ -198,12 +198,9 @@ export function ContractText() {
             </ContractSection>
 
             <ContractSection title="2. Service Overview">
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Scheduled and automated water deliveries through verified local partner refill stations.</li>
-                  <li>Water compliant with DOH, DENR, and FDA standards.</li>
-                  <li>Usage tracking, scheduling, and roll-over management via the Smart Refill platform.</li>
-                  <li>Monthly consumption and compliance reports for operational monitoring and transparency.</li>
-                </ul>
+                <p>
+                    Smart Refill provides a comprehensive water supply solution that includes scheduled and automated water deliveries through verified local partner refill stations. We guarantee that all water supplied is compliant with DOH, DENR, and FDA standards. Our platform enables real-time usage tracking, automated scheduling, and roll-over management for unused liters. Clients receive monthly consumption and compliance reports for operational transparency.
+                </p>
             </ContractSection>
 
             <ContractSection title="3. Subscription Plans">
@@ -215,20 +212,15 @@ export function ContractText() {
             </ContractSection>
 
             <ContractSection title="4. Delivery & Refills">
-                <ul className="list-disc pl-5 space-y-1">
-                    <li>Water is delivered automatically based on usage data or refill schedules set in the Smart Refill™ system.</li>
-                    <li>Deliveries are performed by accredited local partner refill stations under the Smart Refill™ network.</li>
-                    <li>Delivery schedules may be adjusted by Smart Refill™ for operational efficiency and service reliability.</li>
-                </ul>
+                 <p>
+                    Water is delivered automatically based on usage data or a pre-set refill schedule configured in the Smart Refill™ system. All deliveries are performed by accredited local partner refill stations within the Smart Refill™ network. For operational efficiency and to ensure service reliability, delivery schedules may be adjusted by Smart Refill™, with prior notification to the client.
+                </p>
             </ContractSection>
             
             <ContractSection title="5. Equipment Use">
-                <ul className="list-disc pl-5 space-y-1">
-                    <li>Each plan includes free use of dispensers and gallons (quantity based on plan tier).</li>
-                    <li>Equipment remains the property of River Tech Group, Inc.</li>
-                    <li>If the Client exceeds included equipment limits, additional units may be provided as rentals.</li>
-                    <li>The Client must maintain equipment in good condition and return or replace damaged items.</li>
-                </ul>
+                 <p>
+                    Each subscription plan includes the free use of a specified number of water dispensers and refillable gallons, with the quantity determined by the plan tier. All equipment remains the property of River Tech Group, Inc. Should the Client require more equipment than the plan provides, additional units may be rented. The Client is responsible for maintaining all equipment in good condition and must return or cover the replacement cost for any damaged or lost items upon termination of the service.
+                </p>
             </ContractSection>
 
             <ContractSection title="6. Payment Terms">
@@ -252,19 +244,19 @@ export function ContractText() {
              <ContractSection title="8. Liability & Health Safety">
                 <div className="space-y-4">
                     <div>
-                        <h4 className="font-semibold text-foreground">1. Water Quality Assurance</h4>
+                        <h4 className="font-semibold text-foreground">8.1 Water Quality Assurance</h4>
                         <p>River Tech Group, Inc., through its Smart Refill™ network, ensures that all partner refill stations operate with valid permits and comply with the latest DOH, DENR, and FDA standards for potable water.</p>
                     </div>
                     <div>
-                        <h4 className="font-semibold text-foreground">2. Health-Related Incidents</h4>
+                        <h4 className="font-semibold text-foreground">8.2 Health-Related Incidents</h4>
                         <p>In the unlikely event of a verified contamination or water-borne health issue directly attributable to the supplied water, Smart Refill™ shall conduct an immediate quality investigation, replace the affected water volume at no additional cost, and cooperate with local health authorities.</p>
                     </div>
                     <div>
-                        <h4 className="font-semibold text-foreground">3. Limitation of Liability</h4>
+                        <h4 className="font-semibold text-foreground">8.3 Limitation of Liability</h4>
                         <p>Smart Refill™ and River Tech Group, Inc. shall not be liable for issues resulting from improper storage, handling, or dispensing by the Client. The Provider’s total liability shall not exceed the total subscription amount paid by the Client within the past three (3) months.</p>
                     </div>
                      <div>
-                        <h4 className="font-semibold text-foreground">4. Client Responsibilities</h4>
+                        <h4 className="font-semibold text-foreground">8.4 Client Responsibilities</h4>
                         <p>The Client agrees to maintain clean and safe dispenser locations and promptly report any suspected quality issue.</p>
                     </div>
                 </div>
@@ -468,7 +460,7 @@ function PreviewDialog({
                                         <p className="text-muted-foreground">Refillable Gallons</p>
                                         <p className="font-semibold">
                                             {rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic'}
-                                            <span className="text-xs font-normal ml-1">(free)</span>
+                                            <span className="text-xs font-normal ml-1">(Free)</span>
                                         </p>
                                     </div>
                                 </div>
@@ -561,7 +553,7 @@ function PreviewDialog({
                         </CardContent>
                     </Card>
                     
-                     <Card>
+                    <Card>
                         <CardHeader>
                             <CardTitle>Gallon Rotation &amp; Handling Guide</CardTitle>
                             <CardDescription>
@@ -581,7 +573,6 @@ function PreviewDialog({
                             </div>
                         </CardContent>
                     </Card>
-
 
                      <Card>
                         <CardHeader>
@@ -927,13 +918,13 @@ function ContractPageContent() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Refillable Gallons</CardTitle>
+                            <CardTitle className="text-sm font-medium">Free Refillable Gallons</CardTitle>
                             <Package className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
                                 {rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic'}
-                                <span className="text-sm font-normal ml-1">(free)</span>
+                                <span className="text-sm font-normal ml-1">(Free)</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -1182,3 +1173,4 @@ export default function ContractPage() {
 
 
     
+
