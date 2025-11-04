@@ -117,6 +117,24 @@ function ProtectedDashboard({ children }: { children: ReactNode }) {
 }
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+
+  // If we are on an onboarding route, we don't want the full dashboard UI.
+  // The ProtectedDashboard component will handle auth checks, but we render
+  // the children in a simpler structure.
+  if (pathname.startsWith('/onboarding')) {
+    return (
+      <FirebaseClientProvider>
+        <ProtectedDashboard>
+           <main className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
+             {children}
+           </main>
+        </ProtectedDashboard>
+      </FirebaseClientProvider>
+    );
+  }
+
+  // This is the standard layout for all authenticated dashboard pages
   return (
     <FirebaseClientProvider>
       <ProtectedDashboard>{children}</ProtectedDashboard>
