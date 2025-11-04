@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/definitions';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
@@ -55,34 +55,61 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
-  const [isChecking, setIsChecking] = useState(true);
+  const [isGatekeeperActive, setIsGatekeeperActive] = useState(true);
 
   useEffect(() => {
-    if (isUserLoading || (user && isProfileLoading)) {
-      // Still waiting for auth state or profile to load
+    if (isUserLoading) {
+      // Still waiting for Firebase Auth to initialize
       return;
     }
 
-    // If user is NOT logged in, redirect to the login page.
     if (!user) {
+      // If user is not logged in, redirect to login and we're done.
       router.push('/login');
       return;
     }
-    
-    // If user IS logged in but profile doesn't exist OR onboarding is not complete,
-    // redirect to the start of the onboarding flow.
-    if (user && (!userProfile || !userProfile.onboardingCompleted)) {
-      router.push('/onboarding/profile');
+
+    // From this point, we know we have an authenticated user.
+    // Now we need to check their Firestore profile.
+    if (isProfileLoading) {
+      // Still waiting for their Firestore document to load
       return;
     }
-    
-    // If we've reached here, the user is authenticated and onboarded.
-    // They are cleared to see the dashboard.
-    setIsChecking(false);
 
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+    const checkAndCreateProfile = async () => {
+      // We have an authenticated user, but no profile document yet.
+      if (user && !userProfile) {
+        try {
+          // Create the initial user document immediately.
+          await setDoc(doc(firestore, 'users', user.uid), {
+            id: user.uid,
+            email: user.email,
+            onboardingCompleted: false, // Explicitly set to false
+          });
+          // The useDoc hook will automatically update with the new data,
+          // triggering the next step in the effect. We don't need to set isGatekeeperActive to false here.
+          // The redirect to onboarding will happen in the next pass of this effect.
+        } catch (error) {
+          console.error("Failed to create initial user profile:", error);
+          // Handle error case, maybe show a toast
+        }
+      } else if (userProfile) {
+        // We have a profile, now we can make a decision.
+        if (!userProfile.onboardingCompleted) {
+          // If onboarding is not complete, redirect to the onboarding flow.
+          router.push('/onboarding/profile');
+        } else {
+          // Onboarding is complete, allow access to the dashboard.
+          setIsGatekeeperActive(false);
+        }
+      }
+    };
+
+    checkAndCreateProfile();
+
+  }, [user, userProfile, isUserLoading, isProfileLoading, firestore, router]);
   
-  if (isChecking) {
+  if (isGatekeeperActive) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>

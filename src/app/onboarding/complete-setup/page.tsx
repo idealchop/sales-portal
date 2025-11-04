@@ -71,18 +71,17 @@ function CompleteSetupContent() {
       // 3. Update Firebase Auth profile displayName
       await updateProfile(user, { displayName });
 
-      // 4. Create the Firestore document and WAIT for it to complete.
+      // 4. Update the existing Firestore document with the new information.
+      // Using { merge: true } ensures we update fields without overwriting the whole document.
       const userDocRef = doc(firestore, 'users', user.uid);
       await setDoc(userDocRef, {
-        id: user.uid,
-        email: user.email,
         displayName: displayName,
         phone: phone,
         team: team,
         birthday: birthday.toISOString(),
         role: 'sales', // Default role
-        onboardingCompleted: true,
-      });
+        onboardingCompleted: true, // This is the crucial flag to grant access
+      }, { merge: true }); // Use merge to update the existing document
       
       setStatus('success');
       
