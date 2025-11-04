@@ -460,7 +460,6 @@ function PreviewDialog({
                                         <p className="text-muted-foreground">Refillable Gallons</p>
                                         <p className="font-semibold">
                                             {rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic'}
-                                            <span className="text-xs font-normal ml-1">(Free)</span>
                                         </p>
                                     </div>
                                 </div>
@@ -924,7 +923,6 @@ function ContractPageContent() {
                         <CardContent>
                             <div className="text-2xl font-bold">
                                 {rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic'}
-                                <span className="text-sm font-normal ml-1">(Free)</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -1173,4 +1171,5 @@ export default function ContractPage() {
 
 
     
+
 
