@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { updatePassword } from 'firebase/auth';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { Lock, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
+  currentPassword: z.string().min(1, 'Please enter your current password.'),
   newPassword: z.string().min(8, 'Password must be at least 8 characters long.'),
   confirmPassword: z.string(),
 }).refine(data => data.newPassword === data.confirmPassword, {
@@ -38,13 +39,14 @@ export default function ChangePasswordPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      currentPassword: '',
       newPassword: '',
       confirmPassword: '',
     },
   });
 
   const onSubmit = async (values: FormValues) => {
-    if (!user) {
+    if (!user || !user.email) {
       toast({
         variant: 'destructive',
         title: 'Not Authenticated',
@@ -55,7 +57,13 @@ export default function ChangePasswordPage() {
 
     setIsSubmitting(true);
     try {
+      // Re-authenticate the user first
+      const credential = EmailAuthProvider.credential(user.email, values.currentPassword);
+      await reauthenticateWithCredential(user, credential);
+
+      // Now, update the password
       await updatePassword(user, values.newPassword);
+      
       toast({
         title: 'Password Updated Successfully',
         description: 'You will now be redirected to complete your profile.',
@@ -65,7 +73,11 @@ export default function ChangePasswordPage() {
       console.error(error);
       let description = "An unexpected error occurred. Please try again.";
       if (error instanceof FirebaseError) {
-          description = error.message;
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            description = "The current password you entered is incorrect. Please try again.";
+        } else {
+            description = error.message;
+        }
       }
       toast({
         variant: 'destructive',
@@ -99,6 +111,22 @@ export default function ChangePasswordPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="currentPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Current Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input type="password" placeholder="Enter your temporary password" {...field} className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="newPassword"
