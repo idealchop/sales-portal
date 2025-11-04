@@ -152,6 +152,23 @@ const mapStyles = [
 const render = (status: Status, error?: Error) => {
     if (status === Status.LOADING) return <Skeleton className="h-full w-full" />;
     if (status === Status.FAILURE || error) {
+        // This specific check handles the InvalidKeyMapError
+        if (error?.name === 'InvalidKeyMapError') {
+            return (
+                <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
+                    <p className="font-bold">Google Maps API Key Error</p>
+                    <p className="text-xs mt-1">The provided API key is invalid or not enabled for the 'Maps JavaScript API'.</p>
+                    <a 
+                        href="https://console.cloud.google.com/google/maps-apis/overview" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="mt-4 text-xs underline hover:text-destructive-foreground"
+                    >
+                        Go to Google Cloud Console to fix this.
+                    </a>
+                </div>
+            );
+        }
          return (
             <div className="h-full w-full flex flex-col items-center justify-center bg-muted text-muted-foreground text-sm text-center p-4">
                 <p className="font-semibold text-destructive">Error Loading Map</p>
@@ -216,6 +233,21 @@ function MapComponent({
 
 export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: number }) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const [error, setError] = useState<Error | undefined>(undefined);
+
+    useEffect(() => {
+        const handleAuthError = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            if (detail?.error?.name === 'InvalidKeyMapError') {
+                setError(detail.error);
+            }
+        };
+
+        window.addEventListener('gm-auth-error', handleAuthError);
+        return () => {
+            window.removeEventListener('gm-auth-error', handleAuthError);
+        };
+    }, []);
     
     if (!apiKey) {
         return (
@@ -225,9 +257,13 @@ export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: numb
             </div>
         );
     }
+    
+    if (error) {
+        return render(Status.FAILURE, error);
+    }
 
     return (
-        <Wrapper apiKey={apiKey} render={render} libraries={['geocoding']}>
+        <Wrapper apiKey={apiKey} render={(status) => render(status, error)} libraries={['geocoding']}>
             <MapComponent address={address} zoom={zoom} />
         </Wrapper>
     );
