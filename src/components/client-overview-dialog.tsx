@@ -55,23 +55,28 @@ const getPlanImage = (planId?: string) => {
 }
 
 const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: boolean }) => (
-  <div className="relative flex items-start">
-    <div className="flex flex-col items-center mr-4">
-      <div
-        className={cn(
-          "flex items-center justify-center w-10 h-10 rounded-full ring-4 ring-background",
-          step.status === 'completed' ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
-        )}
-      >
-        {step.status === 'completed' ? (
-          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-        ) : (
-          <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-        )}
-      </div>
-      {!isLast && <div className="w-px h-full bg-border mt-2" />}
+  <div className="flex gap-x-4">
+    <div className={cn(
+        "relative last:after:hidden after:absolute after:top-11 after:bottom-0 after:w-px after:bg-border after:left-1/2 after:-translate-x-1/2",
+        !isLast && "min-h-[7rem]"
+    )}>
+        <div className="relative z-10 flex h-10 w-10 items-center justify-center">
+            <div
+                className={cn(
+                "flex items-center justify-center w-10 h-10 rounded-full ring-4 ring-background",
+                step.status === 'completed' ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
+                )}
+            >
+                {step.status === 'completed' ? (
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                ) : (
+                <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                )}
+            </div>
+        </div>
     </div>
-    <div className="pt-1.5 pb-8 flex-1">
+
+    <div className="grow pt-1.5 pb-8">
       <h3 className="font-semibold text-foreground">{step.title}</h3>
       <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
       {step.providerName && (
