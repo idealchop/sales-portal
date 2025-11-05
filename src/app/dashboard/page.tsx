@@ -635,7 +635,7 @@ export default function DashboardPage() {
             <CardTitle>My Goals & Bonuses</CardTitle>
             <CardDescription>Track your progress towards your next payout. Click a card to see the rewards!</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <CardContent className="grid gap-6 md:grid-cols-2">
              <BonusCard 
                 icon={<Target className="h-6 w-6 text-primary" />}
                 title="Corporate Closer Bonus"
