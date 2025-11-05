@@ -17,7 +17,8 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useClients } from '@/hooks/use-clients';
 
 function InputField({
   id,
@@ -44,10 +45,22 @@ function InputField({
 
 
 export default function NewProposalPage() {
+  const { clients, isLoading: clientsLoading } = useClients();
+  const [selectedClientId, setSelectedClientId] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [contactName, setContactName] = useState('');
+  
+  const isNewClient = selectedClientId === 'new';
 
-  const nextStepLink = `/dashboard/proposals/new/about?companyName=${encodeURIComponent(companyName)}&contactName=${encodeURIComponent(contactName)}`;
+  const selectedClient = useMemo(() => {
+    if (!selectedClientId || selectedClientId === 'new') return null;
+    return clients.find(c => c.id === selectedClientId);
+  }, [clients, selectedClientId]);
+
+  const finalCompanyName = isNewClient ? companyName : selectedClient?.companyName || '';
+  const finalContactName = isNewClient ? contactName : selectedClient?.contactName || '';
+
+  const nextStepLink = `/dashboard/proposals/new/about?companyName=${encodeURIComponent(finalCompanyName)}&contactName=${encodeURIComponent(finalContactName)}&clientId=${encodeURIComponent(selectedClientId === 'new' ? '' : selectedClientId)}`;
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
@@ -58,7 +71,7 @@ export default function NewProposalPage() {
                 Step 1: Enter Client Information
             </p>
         </div>
-        <Button asChild size="lg">
+        <Button asChild size="lg" disabled={!selectedClientId || (isNewClient && (!companyName || !contactName))}>
           <Link href={nextStepLink}>Next Step</Link>
         </Button>
       </div>
@@ -66,86 +79,141 @@ export default function NewProposalPage() {
       <div className="relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm">
           <div className="p-6 md:p-8 space-y-4">
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  id="company-name"
-                  label="Company Name"
-                  icon={<Building className="h-4 w-4 text-muted-foreground" />}
-                  placeholder="e.g., Innovate Corp"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                />
-                <InputField
-                  id="contact-name"
-                  label="Contact Person"
-                  icon={<User className="h-4 w-4 text-muted-foreground" />}
-                  placeholder="e.g., John Doe"
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  id="email"
-                  label="Email Address"
-                  type="email"
-                  icon={<Mail className="h-4 w-4 text-muted-foreground" />}
-                  placeholder="e.g., john.doe@example.com"
-                />
-                <InputField
-                  id="phone"
-                  label="Phone Number"
-                  type="tel"
-                  icon={<Phone className="h-4 w-4 text-muted-foreground" />}
-                  placeholder="e.g., (0917) 123 4567"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="industry">Type of Industry</Label>
-                    <div className="relative">
-                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <Select>
-                            <SelectTrigger id="industry" className="pl-10">
-                                <SelectValue placeholder="Select an industry" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="tech">Technology</SelectItem>
-                                <SelectItem value="finance">Finance</SelectItem>
-                                <SelectItem value="health">Healthcare</SelectItem>
-                                <SelectItem value="retail">Retail</SelectItem>
-                                <SelectItem value="hospitality">Hospitality</SelectItem>
-                                <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <Label htmlFor="client-select">Client</Label>
+                    <Select onValueChange={setSelectedClientId} value={selectedClientId}>
+                        <SelectTrigger id="client-select">
+                            <SelectValue placeholder="Select an existing client or create a new one" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="new">Create a new client</SelectItem>
+                            {clients.map(client => (
+                                <SelectItem key={client.id} value={client.id}>{client.companyName}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
-                <InputField
-                  id="address"
-                  label="Company Address"
-                  icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
-                  placeholder="e.g., 123 Tech Lane, BGC, Taguig"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  id="employees"
-                  label="Number of Employees"
-                  type="number"
-                  icon={<Users className="h-4 w-4 text-muted-foreground" />}
-                  placeholder="e.g., 50"
-                />
-                <InputField
-                  id="gallons"
-                  label="Estimated gallons per month"
-                  type="number"
-                  icon={<GlassWater className="h-4 w-4 text-muted-foreground" />}
-                  placeholder="e.g., 100"
-                />
-              </div>
+              
+              {isNewClient && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InputField
+                      id="company-name"
+                      label="Company Name"
+                      icon={<Building className="h-4 w-4 text-muted-foreground" />}
+                      placeholder="e.g., Innovate Corp"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                    />
+                    <InputField
+                      id="contact-name"
+                      label="Contact Person"
+                      icon={<User className="h-4 w-4 text-muted-foreground" />}
+                      placeholder="e.g., John Doe"
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InputField
+                      id="email"
+                      label="Email Address"
+                      type="email"
+                      icon={<Mail className="h-4 w-4 text-muted-foreground" />}
+                      placeholder="e.g., john.doe@example.com"
+                    />
+                    <InputField
+                      id="phone"
+                      label="Phone Number"
+                      type="tel"
+                      icon={<Phone className="h-4 w-4 text-muted-foreground" />}
+                      placeholder="e.g., (0917) 123 4567"
+                    />
+                  </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="industry">Type of Industry</Label>
+                            <div className="relative">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <Select>
+                                    <SelectTrigger id="industry" className="pl-10">
+                                        <SelectValue placeholder="Select an industry" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="tech">Technology</SelectItem>
+                                        <SelectItem value="finance">Finance</SelectItem>
+                                        <SelectItem value="health">Healthcare</SelectItem>
+                                        <SelectItem value="retail">Retail</SelectItem>
+                                        <SelectItem value="hospitality">Hospitality</SelectItem>
+                                        <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                                        <SelectItem value="other">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <InputField
+                          id="address"
+                          label="Company Address"
+                          icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
+                          placeholder="e.g., 123 Tech Lane, BGC, Taguig"
+                        />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <InputField
+                          id="employees"
+                          label="Number of Employees"
+                          type="number"
+                          icon={<Users className="h-4 w-4 text-muted-foreground" />}
+                          placeholder="e.g., 50"
+                        />
+                        <InputField
+                          id="gallons"
+                          label="Estimated gallons per month"
+                          type="number"
+                          icon={<GlassWater className="h-4 w-4 text-muted-foreground" />}
+                          placeholder="e.g., 100"
+                        />
+                    </div>
+                </>
+              )}
+
+              {selectedClient && (
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="font-semibold">Client Details</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center gap-3">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-muted-foreground">Contact Person</p>
+                          <p className="font-medium">{selectedClient.contactName}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-muted-foreground">Email</p>
+                          <p className="font-medium">{selectedClient.contactEmail}</p>
+                        </div>
+                      </div>
+                       <div className="flex items-center gap-3">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-muted-foreground">Phone</p>
+                          <p className="font-medium">{selectedClient.contactPhone}</p>
+                        </div>
+                      </div>
+                       <div className="flex items-center gap-3">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-muted-foreground">Address</p>
+                          <p className="font-medium">{selectedClient.address}</p>
+                        </div>
+                      </div>
+                   </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="relative h-48 mt-8">
