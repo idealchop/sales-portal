@@ -23,6 +23,10 @@ service cloud.firestore {
         allow read, create, update: if isSignedIn();
         allow delete: if false;
       }
+      
+      match /remarks/{remarkId} {
+        allow read, create: if isSignedIn();
+      }
     }
 
     match /sales_materials/{materialId} {
