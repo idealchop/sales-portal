@@ -484,7 +484,7 @@ function ContractPageContent() {
                     newIdNumber = counterSnap.data().currentId + 1;
                 }
                 
-                const year = new Date().getFullYear().toString().slice(-2);
+                const year = "25";
                 const newClientId = `SC${year}${String(newIdNumber).padStart(8, '0')}`;
 
                 transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
@@ -851,5 +851,7 @@ export default function ContractPage() {
 }
 
 
+
+    
 
     
