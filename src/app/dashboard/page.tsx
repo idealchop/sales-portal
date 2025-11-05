@@ -297,8 +297,8 @@ export default function DashboardPage() {
 
       {/* Commission Stats */}
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Dialog>
-            <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
+        <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
+            <Dialog>
                 <DialogTrigger asChild>
                     <div className="cursor-pointer p-6">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
@@ -315,41 +315,41 @@ export default function DashboardPage() {
                         </CardContent>
                     </div>
                 </DialogTrigger>
-            </Card>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Monthly Commission Breakdown</DialogTitle>
-                    <DialogDescription>
-                        Showing accepted proposals for {format(new Date(), 'MMMM yyyy')}.
-                    </DialogDescription>
-                </DialogHeader>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Client</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {dashboardData.acceptedThisMonth.length > 0 ? dashboardData.acceptedThisMonth.map(p => {
-                            const client = getClientById(p.clientId);
-                            return (
-                                <TableRow key={p.id}>
-                                    <TableCell>{client?.companyName || 'Unknown Client'}</TableCell>
-                                    <TableCell className="text-right">{currencyFormatter.format(p.amount)}</TableCell>
-                                </TableRow>
-                            )
-                        }) : (
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Monthly Commission Breakdown</DialogTitle>
+                        <DialogDescription>
+                            Showing accepted proposals for {format(new Date(), 'MMMM yyyy')}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={2} className="text-center">No commissions this month.</TableCell>
+                                <TableHead>Client</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </DialogContent>
-        </Dialog>
-        <Dialog>
-            <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
+                        </TableHeader>
+                        <TableBody>
+                            {dashboardData.acceptedThisMonth.length > 0 ? dashboardData.acceptedThisMonth.map(p => {
+                                const client = getClientById(p.clientId);
+                                return (
+                                    <TableRow key={p.id}>
+                                        <TableCell>{client?.companyName || 'Unknown Client'}</TableCell>
+                                        <TableCell className="text-right">{currencyFormatter.format(p.amount)}</TableCell>
+                                    </TableRow>
+                                )
+                            }) : (
+                                <TableRow>
+                                    <TableCell colSpan={2} className="text-center">No commissions this month.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </DialogContent>
+            </Dialog>
+        </Card>
+        <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
+             <Dialog>
                 <DialogTrigger asChild>
                     <div className="cursor-pointer p-6">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
@@ -363,38 +363,38 @@ export default function DashboardPage() {
                         </CardContent>
                     </div>
                 </DialogTrigger>
-            </Card>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Recurring Commission Breakdown</DialogTitle>
-                    <DialogDescription>
-                        Monthly fees from all your active clients.
-                    </DialogDescription>
-                </DialogHeader>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Client</TableHead>
-                            <TableHead>Plan</TableHead>
-                            <TableHead className="text-right">Monthly Fee</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                         {dashboardData.activeClientsWithSubscription.length > 0 ? dashboardData.activeClientsWithSubscription.map(c => (
-                            <TableRow key={c.id}>
-                                <TableCell>{c.companyName}</TableCell>
-                                <TableCell>{c.subscription?.planName || 'N/A'}</TableCell>
-                                <TableCell className="text-right">{currencyFormatter.format(c.subscription?.amount || 0)}</TableCell>
-                            </TableRow>
-                        )) : (
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Recurring Commission Breakdown</DialogTitle>
+                        <DialogDescription>
+                            Monthly fees from all your active clients.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={3} className="text-center">No active recurring subscriptions.</TableCell>
+                                <TableHead>Client</TableHead>
+                                <TableHead>Plan</TableHead>
+                                <TableHead className="text-right">Monthly Fee</TableHead>
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </DialogContent>
-        </Dialog>
+                        </TableHeader>
+                        <TableBody>
+                             {dashboardData.activeClientsWithSubscription.length > 0 ? dashboardData.activeClientsWithSubscription.map(c => (
+                                <TableRow key={c.id}>
+                                    <TableCell>{c.companyName}</TableCell>
+                                    <TableCell>{c.subscription?.planName || 'N/A'}</TableCell>
+                                    <TableCell className="text-right">{currencyFormatter.format(c.subscription?.amount || 0)}</TableCell>
+                                </TableRow>
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center">No active recurring subscriptions.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </DialogContent>
+            </Dialog>
+        </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">New Corp. Clients Bonus</CardTitle>
@@ -635,268 +635,278 @@ export default function DashboardPage() {
             <CardTitle>My Goals & Bonuses</CardTitle>
             <CardDescription>Track your progress towards your next payout. Click a card to see the rewards!</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2">
-             <BonusCard 
-                icon={<Target className="h-6 w-6 text-primary" />}
-                title="Corporate Closer Bonus"
-                value={`${dashboardData.corporateClientsThisMonth} / 10`}
-                progress={(dashboardData.corporateClientsThisMonth / 10) * 100}
-                goal="Goal: 3 clients for ₱2,000"
-                description="For SME, Commercial & Business clients.">
-                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Corporate Closer Bonus</DialogTitle>
-                        <DialogDescription>Reward for closing corporate clients. Claimed after clients complete their first paid month.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <p>Your current progress: <span className="font-bold">{dashboardData.corporateClientsThisMonth} clients</span></p>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Target</TableHead>
-                                    <TableHead>Bonus</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {closerBonusTiers.map(tier => (
-                                    <TableRow key={tier.target} className={cn(dashboardData.corporateClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
-                                        <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new clients</TableCell>
-                                        <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
+        <CardContent className="grid gap-8 lg:grid-cols-2 items-center">
+            <div className="relative h-full w-full min-h-[30rem] hidden lg:block rounded-lg overflow-hidden">
+                <Image
+                    src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FHappy_Team.png?alt=media&token=534f5e7a-82c8-4067-95e9-d1be27609f60"
+                    alt="Happy Team"
+                    fill
+                    className="object-cover"
+                />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+                 <BonusCard 
+                    icon={<Target className="h-6 w-6 text-primary" />}
+                    title="Corporate Closer Bonus"
+                    value={`${dashboardData.corporateClientsThisMonth} / 10`}
+                    progress={(dashboardData.corporateClientsThisMonth / 10) * 100}
+                    goal="Goal: 3 clients for ₱2,000"
+                    description="For SME, Commercial & Business clients.">
+                     <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Corporate Closer Bonus</DialogTitle>
+                            <DialogDescription>Reward for closing corporate clients. Claimed after clients complete their first paid month.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <p>Your current progress: <span className="font-bold">{dashboardData.corporateClientsThisMonth} clients</span></p>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Target</TableHead>
+                                        <TableHead>Bonus</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                 </DialogContent>
-            </BonusCard>
-
-            <BonusCard 
-                icon={<Home className="h-6 w-6 text-primary" />}
-                title="Individual Closer Bonus"
-                value={`${dashboardData.individualClientsThisMonth} / ${dashboardData.individualClientsTarget}`}
-                progress={(dashboardData.individualClientsThisMonth / dashboardData.individualClientsTarget) * 100}
-                goal={`Goal: 10 clients for ₱2,500`}
-                description="For Individual (Household) clients.">
-                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Individual Closer Bonus</DialogTitle>
-                        <DialogDescription>Reward for bringing in household clients. Claimed after clients complete their first paid month.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <p>Your current progress: <span className="font-bold">{dashboardData.individualClientsThisMonth} clients</span></p>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Target</TableHead>
-                                    <TableHead>Bonus</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {individualCloserBonusTiers.map(tier => (
-                                    <TableRow key={tier.target} className={cn(dashboardData.individualClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
-                                        <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new household clients</TableCell>
-                                        <TableCell className="font-bold text-primary">{typeof tier.bonus === 'number' ? currencyFormatter.format(tier.bonus) : tier.bonus}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                 </DialogContent>
-            </BonusCard>
-
-             <BonusCard 
-                icon={<Award className="h-6 w-6 text-primary" />}
-                title="Quarterly Growth Bonus"
-                value={`${currencyFormatter.format(dashboardData.quarterlyVolume)} / ${currencyFormatter.format(dashboardData.quarterlyVolumeTarget)}`}
-                progress={(dashboardData.quarterlyVolume / dashboardData.quarterlyVolumeTarget) * 100}
-                goal={`Goal: ${currencyFormatter.format(50000)} volume for ₱5,000`}
-                description="Scale up with higher-volume enterprise accounts.">
-                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Quarterly Growth Bonus</DialogTitle>
-                        <DialogDescription>Rewards the expansion of your client base and total liters sold.</DialogDescription>
-                    </DialogHeader>
-                     <div className="space-y-4">
-                        <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</span> in new volume</p>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Metric</TableHead>
-                                    <TableHead>Bonus</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {growthBonusTiers.map(tier => (
-                                    <TableRow key={tier.target} className={cn(dashboardData.quarterlyVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
-                                        <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
-                                        <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                 </DialogContent>
-             </BonusCard>
-
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center gap-3">
-                                <HeartHandshake className="h-6 w-6 text-primary" />
-                                <CardTitle className="text-base font-semibold">Client Retention</CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground mb-4">Clients nearing a retention bonus.</p>
-                            <div className="space-y-3">
-                                {dashboardData.clientsForRetention.length > 0 ? dashboardData.clientsForRetention.slice(0,2).map(client => (
-                                    <div key={client!.id} className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarImage src={`https://picsum.photos/seed/${client!.id}/32/32`} />
-                                            <AvatarFallback>{client!.companyName.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="text-sm">
-                                            <p className="font-medium">{client!.companyName}</p>
-                                            <p className="text-xs text-muted-foreground">{client!.milestone.anniversary} ({format(client!.milestone.date, 'MMM do')})</p>
-                                        </div>
-                                    </div>
-                                )) : <p className="text-sm text-muted-foreground">No upcoming client anniversaries.</p>}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Client Retention Bonus</DialogTitle>
-                        <DialogDescription>Strengthen client relationships and earn long-term rewards.</DialogDescription>
-                    </DialogHeader>
-                     <div className="space-y-4">
-                        <p>Upcoming retention opportunities:</p>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Client</TableHead>
-                                    <TableHead>Milestone</TableHead>
-                                    <TableHead>Bonus</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {dashboardData.clientsForRetention.length > 0 ? dashboardData.clientsForRetention.map(client => (
-                                    <TableRow key={client!.id}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={`https://picsum.photos/seed/${client!.id}/32/32`} />
-                                                    <AvatarFallback>{client!.companyName.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                <span className="font-medium">{client!.companyName}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="flex items-center gap-2"><CalendarCheck className="h-5 w-5 text-blue-500" /> {client!.milestone.anniversary} ({format(client!.milestone.date, 'MMM do')})</TableCell>
-                                        <TableCell className="font-bold text-primary">{currencyFormatter.format(client!.milestone.bonus)}</TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow><TableCell colSpan={3} className="text-center">No upcoming anniversaries within the next 2 months.</TableCell></TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-             <BonusCard 
-                icon={<Users className="h-6 w-6 text-primary" />}
-                title="Team Builder Bonus"
-                value={`${dashboardData.recruitedPartners} / 3`}
-                progress={(dashboardData.recruitedPartners / 3) * 100}
-                goal="Goal: Recruit 3 active partners"
-                description="Build your own team to unlock leadership bonuses.">
-                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Team Builder Incentive</DialogTitle>
-                        <DialogDescription>Grow your income by building and leading your own team of sales partners.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <p>Recruited Partners: <span className="font-bold">{dashboardData.recruitedPartners}</span></p>
-                            <p>Combined Team Revenue: <span className="font-bold">{currencyFormatter.format(dashboardData.teamRevenue)}</span></p>
+                                </TableHeader>
+                                <TableBody>
+                                    {closerBonusTiers.map(tier => (
+                                        <TableRow key={tier.target} className={cn(dashboardData.corporateClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                            <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new clients</TableCell>
+                                            <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Milestone</TableHead>
-                                    <TableHead>Reward</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {teamBuilderTiers.map(tier => (
-                                    <TableRow key={tier.milestone}>
-                                        <TableCell className="font-medium">{tier.milestone}</TableCell>
-                                        <TableCell className="font-bold text-primary">{tier.reward}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                 </DialogContent>
-            </BonusCard>
+                     </DialogContent>
+                </BonusCard>
 
-            <BonusCard
-                icon={<CreditCard className="h-6 w-6 text-primary" />}
-                title="Prepayment Power-Up"
-                value={`${dashboardData.prepaidContracts} / ${dashboardData.prepaidContractsTarget}`}
-                progress={(dashboardData.prepaidContracts / dashboardData.prepaidContractsTarget) * 100}
-                goal={`Goal: ${dashboardData.prepaidContractsTarget} prepaid contracts`}
-                description="Reward for closing long-term prepaid contracts."
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Prepayment Power-Up Bonus</DialogTitle>
-                        <DialogDescription>Earn extra for improving cash flow with upfront client payments.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <p>Your current progress: <span className="font-bold">{dashboardData.prepaidContracts} prepaid contracts</span> closed.</p>
-                        <Separator />
-                        <h4 className="font-semibold">Commission Per Contract</h4>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Prepayment Term</TableHead>
-                                    <TableHead>Bonus per Contract</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {prepaymentBonusTiers.map(tier => (
-                                    <TableRow key={tier.term}>
-                                        <TableCell className="font-medium">{tier.term}</TableCell>
-                                        <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
+                <BonusCard 
+                    icon={<Home className="h-6 w-6 text-primary" />}
+                    title="Individual Closer Bonus"
+                    value={`${dashboardData.individualClientsThisMonth} / ${dashboardData.individualClientsTarget}`}
+                    progress={(dashboardData.individualClientsThisMonth / dashboardData.individualClientsTarget) * 100}
+                    goal={`Goal: 10 clients for ₱2,500`}
+                    description="For Individual (Household) clients.">
+                     <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Individual Closer Bonus</DialogTitle>
+                            <DialogDescription>Reward for bringing in household clients. Claimed after clients complete their first paid month.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <p>Your current progress: <span className="font-bold">{dashboardData.individualClientsThisMonth} clients</span></p>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Target</TableHead>
+                                        <TableHead>Bonus</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        <Separator />
-                        <h4 className="font-semibold">Milestone Bonus</h4>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Contracts Closed (this quarter)</TableHead>
-                                    <TableHead>Reward</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {prepaymentProgressTiers.map(tier => (
-                                    <TableRow key={tier.target} className={cn(dashboardData.prepaidContracts >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
-                                        <TableCell className="font-medium">Close {tier.target} prepaid contracts</TableCell>
-                                        <TableCell className="font-bold text-primary">{tier.reward}</TableCell>
+                                </TableHeader>
+                                <TableBody>
+                                    {individualCloserBonusTiers.map(tier => (
+                                        <TableRow key={tier.target} className={cn(dashboardData.individualClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                            <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new household clients</TableCell>
+                                            <TableCell className="font-bold text-primary">{typeof tier.bonus === 'number' ? currencyFormatter.format(tier.bonus) : tier.bonus}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                     </DialogContent>
+                </BonusCard>
+
+                 <BonusCard 
+                    icon={<Award className="h-6 w-6 text-primary" />}
+                    title="Quarterly Growth Bonus"
+                    value={`${currencyFormatter.format(dashboardData.quarterlyVolume)} / ${currencyFormatter.format(dashboardData.quarterlyVolumeTarget)}`}
+                    progress={(dashboardData.quarterlyVolume / dashboardData.quarterlyVolumeTarget) * 100}
+                    goal={`Goal: ${currencyFormatter.format(50000)} volume for ₱5,000`}
+                    description="Scale up with higher-volume enterprise accounts.">
+                     <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Quarterly Growth Bonus</DialogTitle>
+                            <DialogDescription>Rewards the expansion of your client base and total liters sold.</DialogDescription>
+                        </DialogHeader>
+                         <div className="space-y-4">
+                            <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</span> in new volume</p>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Metric</TableHead>
+                                        <TableHead>Bonus</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        <p className="text-xs text-muted-foreground">Commissions and bonuses are paid out after the client's payment is confirmed.</p>
-                    </div>
-                </DialogContent>
-            </BonusCard>
+                                </TableHeader>
+                                <TableBody>
+                                    {growthBonusTiers.map(tier => (
+                                        <TableRow key={tier.target} className={cn(dashboardData.quarterlyVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                            <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
+                                            <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                     </DialogContent>
+                 </BonusCard>
+
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
+                            <CardHeader className="pb-2">
+                                <div className="flex items-center gap-3">
+                                    <HeartHandshake className="h-6 w-6 text-primary" />
+                                    <CardTitle className="text-base font-semibold">Client Retention</CardTitle>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground mb-4">Clients nearing a retention bonus.</p>
+                                <div className="space-y-3">
+                                    {dashboardData.clientsForRetention.length > 0 ? dashboardData.clientsForRetention.slice(0,2).map(client => (
+                                        <div key={client!.id} className="flex items-center gap-3">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={`https://picsum.photos/seed/${client!.id}/32/32`} />
+                                                <AvatarFallback>{client!.companyName.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="text-sm">
+                                                <p className="font-medium">{client!.companyName}</p>
+                                                <p className="text-xs text-muted-foreground">{client!.milestone.anniversary} ({format(client!.milestone.date, 'MMM do')})</p>
+                                            </div>
+                                        </div>
+                                    )) : <p className="text-sm text-muted-foreground">No upcoming client anniversaries.</p>}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Client Retention Bonus</DialogTitle>
+                            <DialogDescription>Strengthen client relationships and earn long-term rewards.</DialogDescription>
+                        </DialogHeader>
+                         <div className="space-y-4">
+                            <p>Upcoming retention opportunities:</p>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Client</TableHead>
+                                        <TableHead>Milestone</TableHead>
+                                        <TableHead>Bonus</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {dashboardData.clientsForRetention.length > 0 ? dashboardData.clientsForRetention.map(client => (
+                                        <TableRow key={client!.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-8 w-8">
+                                                        <AvatarImage src={`https://picsum.photos/seed/${client!.id}/32/32`} />
+                                                        <AvatarFallback>{client!.companyName.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="font-medium">{client!.companyName}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="flex items-center gap-2"><CalendarCheck className="h-5 w-5 text-blue-500" /> {client!.milestone.anniversary} ({format(client!.milestone.date, 'MMM do')})</TableCell>
+                                            <TableCell className="font-bold text-primary">{currencyFormatter.format(client!.milestone.bonus)}</TableCell>
+                                        </TableRow>
+                                    )) : (
+                                        <TableRow><TableCell colSpan={3} className="text-center">No upcoming anniversaries within the next 2 months.</TableCell></TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                 <BonusCard 
+                    icon={<Users className="h-6 w-6 text-primary" />}
+                    title="Team Builder Bonus"
+                    value={`${dashboardData.recruitedPartners} / 3`}
+                    progress={(dashboardData.recruitedPartners / 3) * 100}
+                    goal="Goal: Recruit 3 active partners"
+                    description="Build your own team to unlock leadership bonuses.">
+                     <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Team Builder Incentive</DialogTitle>
+                            <DialogDescription>Grow your income by building and leading your own team of sales partners.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <p>Recruited Partners: <span className="font-bold">{dashboardData.recruitedPartners}</span></p>
+                                <p>Combined Team Revenue: <span className="font-bold">{currencyFormatter.format(dashboardData.teamRevenue)}</span></p>
+                            </div>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Milestone</TableHead>
+                                        <TableHead>Reward</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {teamBuilderTiers.map(tier => (
+                                        <TableRow key={tier.milestone}>
+                                            <TableCell className="font-medium">{tier.milestone}</TableCell>
+                                            <TableCell className="font-bold text-primary">{tier.reward}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                     </DialogContent>
+                </BonusCard>
+
+                <BonusCard
+                    icon={<CreditCard className="h-6 w-6 text-primary" />}
+                    title="Prepayment Power-Up"
+                    value={`${dashboardData.prepaidContracts} / ${dashboardData.prepaidContractsTarget}`}
+                    progress={(dashboardData.prepaidContracts / dashboardData.prepaidContractsTarget) * 100}
+                    goal={`Goal: ${dashboardData.prepaidContractsTarget} prepaid contracts`}
+                    description="Reward for closing long-term prepaid contracts."
+                >
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Prepayment Power-Up Bonus</DialogTitle>
+                            <DialogDescription>Earn extra for improving cash flow with upfront client payments.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <p>Your current progress: <span className="font-bold">{dashboardData.prepaidContracts} prepaid contracts</span> closed.</p>
+                            <Separator />
+                            <h4 className="font-semibold">Commission Per Contract</h4>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Prepayment Term</TableHead>
+                                        <TableHead>Bonus per Contract</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {prepaymentBonusTiers.map(tier => (
+                                        <TableRow key={tier.term}>
+                                            <TableCell className="font-medium">{tier.term}</TableCell>
+                                            <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            <Separator />
+                            <h4 className="font-semibold">Milestone Bonus</h4>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Contracts Closed (this quarter)</TableHead>
+                                        <TableHead>Reward</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {prepaymentProgressTiers.map(tier => (
+                                        <TableRow key={tier.target} className={cn(dashboardData.prepaidContracts >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                            <TableCell className="font-medium">Close {tier.target} prepaid contracts</TableCell>
+                                            <TableCell className="font-bold text-primary">{tier.reward}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            <p className="text-xs text-muted-foreground">Commissions and bonuses are paid out after the client's payment is confirmed.</p>
+                        </div>
+                    </DialogContent>
+                </BonusCard>
+            </div>
         </CardContent>
       </Card>
     </div>
