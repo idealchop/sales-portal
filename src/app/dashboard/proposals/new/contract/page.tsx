@@ -459,78 +459,78 @@ function ContractPageContent() {
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
   const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
-    if (!finalPlanDetails) {
-        toast({
-            variant: "destructive",
-            title: "Missing Information",
-            description: "Cannot save proposal without complete plan details.",
-        });
-        return;
-    }
+      if (!finalPlanDetails) {
+          toast({
+              variant: "destructive",
+              title: "Missing Information",
+              description: "Cannot save proposal without complete plan details.",
+          });
+          return;
+      }
 
-    setIsSaving(true);
+      setIsSaving(true);
 
-    try {
-        let finalClientId = existingClientId;
+      try {
+          let finalClientId = existingClientId;
 
-        // Step 1: Create a new client document if one doesn't exist.
-        if (!finalClientId) {
-            const clientsCollectionRef = collection(firestore, 'clients');
-            const newClientData: Omit<Client, 'id' | 'proposals'> = {
-                companyName,
-                contactName,
-                contactEmail,
-                contactPhone,
-                address,
-                clientType: clientType || 'sme',
-                status: 'pending',
-            };
-            const newClientDocRef = await addDoc(clientsCollectionRef, newClientData);
-            finalClientId = newClientDocRef.id;
-        }
+          // Step 1: Create a new client document if one doesn't exist.
+          if (!finalClientId) {
+              const clientsCollectionRef = collection(firestore, 'clients');
+              const newClientData: Partial<Client> = {
+                  companyName: companyName,
+                  contactName: contactName,
+                  contactEmail: contactEmail,
+                  contactPhone: contactPhone,
+                  address: address,
+                  clientType: clientType || 'sme',
+                  status: 'pending', // New clients start as pending
+              };
+              const newClientDocRef = await addDoc(clientsCollectionRef, newClientData);
+              finalClientId = newClientDocRef.id;
+          }
 
-        if (!finalClientId) {
-            throw new Error("Could not create or find a client ID.");
-        }
+          if (!finalClientId) {
+              throw new Error("Could not create or find a client ID.");
+          }
+          
+          // Step 2: Prepare the final proposal data, including the correct client ID.
+          const proposalContentToSave: FinalPlanDetails = {
+              ...finalPlanDetails,
+              clientId: finalClientId, // Ensure the correct client ID is embedded
+              signature,
+          };
 
-        // Step 2: Prepare the final proposal data, including the correct client ID.
-        const proposalContentToSave: FinalPlanDetails = {
-            ...finalPlanDetails,
-            clientId: finalClientId,
-            signature,
-        };
+          const proposalsColRef = collection(firestore, 'clients', finalClientId, 'proposals');
+          
+          const newProposalData = {
+              clientId: finalClientId,
+              title: proposalContentToSave.summaryTitle,
+              content: JSON.stringify(proposalContentToSave), // Save the complete details.
+              status: status,
+              amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+          };
+          
+          await addDoc(proposalsColRef, newProposalData);
+          
+          toast({
+              title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
+              description: `Your proposal for ${companyName} has been successfully saved.`,
+          });
+          
+          router.push('/dashboard/proposals');
 
-        // Step 3: Save the proposal to the client's subcollection.
-        const proposalsColRef = collection(firestore, 'clients', finalClientId, 'proposals');
-        
-        const newProposalData = {
-            title: proposalContentToSave.summaryTitle,
-            content: JSON.stringify(proposalContentToSave), // Save the complete details.
-            status: status,
-            amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        };
-
-        await addDoc(proposalsColRef, newProposalData);
-        
-        toast({
-            title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
-            description: `Your proposal for ${companyName} has been successfully saved.`,
-        });
-        
-        router.push('/dashboard/proposals');
-
-    } catch (error) {
-        console.error("Error saving proposal:", error);
-        toast({
-            variant: "destructive",
-            title: "Save Failed",
-            description: "An error occurred while saving the proposal. Please check the console and try again.",
-        });
-    } finally {
-        setIsSaving(false);
-    }
+      } catch (error) {
+          console.error("Error saving proposal:", error);
+          toast({
+              variant: "destructive",
+              title: "Save Failed",
+              description: "An error occurred while saving the proposal. Please check the console and try again.",
+          });
+      } finally {
+          setIsSaving(false);
+      }
   };
 
 
