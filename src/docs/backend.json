@@ -225,6 +225,21 @@
         "id",
         "email"
       ]
+    },
+    "Counter": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Counter",
+      "type": "object",
+      "description": "Represents a counter for generating sequential IDs.",
+      "properties": {
+        "currentId": {
+          "type": "number",
+          "description": "The last used ID number."
+        }
+      },
+      "required": [
+        "currentId"
+      ]
     }
   },
   "auth": {
@@ -252,8 +267,11 @@
     "/sales/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Stores sales user profiles. Accessible only to the authenticated user."
+    },
+    "/counters/{counterId}": {
+      "schema": { "$ref": "#/entities/Counter" },
+      "description": "Stores counters for sequential ID generation."
     }
   }
 }
 
-    

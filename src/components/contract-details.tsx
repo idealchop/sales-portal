@@ -128,15 +128,13 @@ export type FinalPlanDetails = {
 
 
 interface ContractDetailsProps {
-    finalPlanDetails?: FinalPlanDetails;
-    client: Partial<Client> & { proposals?: Proposal[] };
+    finalPlanDetails: FinalPlanDetails;
     isSigned: boolean;
     signaturePadRef?: React.RefObject<SignaturePadRef>;
 }
 
 export function ContractDetails({
     finalPlanDetails,
-    client,
     isSigned,
     signaturePadRef,
 }: ContractDetailsProps) {
@@ -144,27 +142,17 @@ export function ContractDetails({
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
     // Determine which data source to use
-    let source: FinalPlanDetails | null = null;
-
-    if (isSigned && client.proposals && client.proposals.length > 0) {
-        try {
-            source = JSON.parse(client.proposals[0].content || '{}');
-            // If the proposal object itself has an ID, use it. Otherwise, it's embedded in the content.
-            source!.proposalId = client.proposals[0].id || source!.proposalId;
-            source!.clientId = client.id || source!.clientId;
-        } catch (e) {
-            console.error("Failed to parse proposal content", e);
-            return <p>Error loading contract details.</p>;
-        }
-    } else {
-        source = finalPlanDetails || null;
-    }
+    let source: FinalPlanDetails | null = finalPlanDetails;
 
     if (!source) return <p>Contract details not available.</p>;
     
     const date = source.date;
-    const clientId = client.id || source.clientId;
+    const clientId = source.clientId;
     const proposalId = source.proposalId;
+    const client = {
+        companyName: source.companyName,
+        contactName: source.contactName,
+    };
 
     const summaryTitle = source.summaryTitle;
     const planBaseCost = source.planBaseCost;
@@ -485,3 +473,4 @@ export function ContractDetails({
         </div>
     );
 }
+

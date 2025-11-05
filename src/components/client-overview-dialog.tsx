@@ -25,7 +25,7 @@ import type { Client, Remark, OnboardingStep, Proposal } from '@/lib/definitions
 import { ContractDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { ActiveView } from '@/app/dashboard/proposals/page';
 import { Textarea } from './ui/textarea';
@@ -112,13 +112,13 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
 export function ClientOverviewDialog({
   children,
   client,
-  proposal, // Accept a single proposal object
+  proposal,
   view,
   setActiveView,
 }: {
   children: React.ReactNode;
   client: Client;
-  proposal?: Proposal; // Make it optional for the client view
+  proposal?: Proposal;
   view: 'proposals' | 'clients';
   setActiveView?: (view: ActiveView) => void;
 }) {
@@ -132,13 +132,15 @@ export function ClientOverviewDialog({
   const [newRemark, setNewRemark] = useState('');
   const [clientProposals, setClientProposals] = useState<Proposal[]>([]);
   
-  // Use the passed proposal if available, otherwise fall back to the most recent one for the client.
-  const selectedProposal = proposal || (clientProposals.length > 0 ? clientProposals[0] : null);
+  const selectedProposal = useMemo(() => {
+    if (proposal) return proposal;
+    if (clientProposals.length > 0) return clientProposals[0];
+    return null;
+  }, [proposal, clientProposals]);
 
 
   useEffect(() => {
-    // Fetch all proposals for the client only if a specific one isn't passed
-    if (!proposal && firestore && client.id) {
+    if (open && firestore && client.id) {
       const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
       const q = query(proposalsRef);
 
@@ -147,18 +149,13 @@ export function ClientOverviewDialog({
         snapshot.forEach((doc) => {
           fetchedProposals.push({ id: doc.id, ...doc.data() } as Proposal);
         });
-        // Sort by creation date to show the most recent first
         fetchedProposals.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setClientProposals(fetchedProposals);
       });
 
       return () => unsubscribe();
-    } else if (proposal) {
-        // If a specific proposal is passed, we don't need to fetch others
-        setClientProposals([proposal]);
     }
-  }, [firestore, client.id, proposal]);
-
+  }, [firestore, client.id, open]);
 
   const getInitials = (name: string) => {
     return name
@@ -213,6 +210,16 @@ export function ClientOverviewDialog({
         });
     }
   }
+  
+  const parsedProposalContent = useMemo(() => {
+    if (!selectedProposal?.content) return null;
+    try {
+        return JSON.parse(selectedProposal.content);
+    } catch (e) {
+        console.error("Failed to parse proposal content:", e);
+        return null;
+    }
+  }, [selectedProposal]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -518,7 +525,7 @@ export function ClientOverviewDialog({
                     </Dialog>
                  )}
                 
-                 {selectedProposal && (
+                 {parsedProposalContent && (
                     <Dialog>
                         <DialogTrigger asChild>
                              <Card className="cursor-pointer hover:bg-accent transition-colors">
@@ -526,7 +533,7 @@ export function ClientOverviewDialog({
                                     <FileText className="h-6 w-6 text-primary" />
                                     <div>
                                         <CardTitle className="text-base">View Signed Contract</CardTitle>
-                                        <CardDescription>Click to view the full agreement for proposal: {selectedProposal.id}</CardDescription>
+                                        <CardDescription>Click to view the full agreement for proposal: {selectedProposal?.id}</CardDescription>
                                     </div>
                                 </CardHeader>
                             </Card>
@@ -540,8 +547,8 @@ export function ClientOverviewDialog({
                             </DialogHeader>
                             <ScrollArea className="h-[85vh] pr-6">
                                 <ContractDetails 
-                                    client={{...client, proposals: [selectedProposal]}}
-                                    isSigned={selectedProposal.status === 'finalized'}
+                                    finalPlanDetails={parsedProposalContent}
+                                    isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
                                 />
                             </ScrollArea>
                         </DialogContent>
@@ -553,3 +560,4 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+

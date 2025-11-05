@@ -44,7 +44,7 @@ import { PaymentMethods } from '@/components/payment-methods';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import type { Client } from '@/lib/definitions';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, serverTimestamp, addDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc } from 'firebase/firestore';
 
 
 const billingCycles = [
@@ -213,13 +213,11 @@ export function ContractText() {
 
 function PreviewDialog({ 
     finalPlanDetails,
-    client,
     onSaveDraft,
     onFinalize,
     isSaving,
 }: { 
     finalPlanDetails: FinalPlanDetails,
-    client: Partial<Client>,
     onSaveDraft: () => Promise<void>;
     onFinalize: (signatureDataUrl: string) => Promise<void>;
     isSaving: boolean;
@@ -249,7 +247,6 @@ function PreviewDialog({
             <ScrollArea className="h-[85vh] pr-6">
                 <ContractDetails
                     finalPlanDetails={finalPlanDetails}
-                    client={client}
                     isSigned={false}
                     signaturePadRef={signaturePadRef}
                 />
@@ -462,82 +459,97 @@ function ContractPageContent() {
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
   const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
-      if (!finalPlanDetails || !firestore || !user) {
-          toast({
-              variant: "destructive",
-              title: "Missing Information",
-              description: "Cannot save proposal without complete plan details, user session, or Firestore instance.",
-          });
-          return;
-      }
+    if (!finalPlanDetails || !firestore || !user) {
+        toast({
+            variant: "destructive",
+            title: "Missing Information",
+            description: "Cannot save proposal without complete plan details, user session, or Firestore instance.",
+        });
+        return;
+    }
 
-      setIsSaving(true);
-      
-      try {
-          let finalClientId = existingClientId;
+    setIsSaving(true);
+    
+    try {
+        let finalClientId = existingClientId;
 
-          if (!finalClientId) {
-              const newClientData: Partial<Client> = {
-                  companyName: companyName,
-                  contactName: contactName,
-                  contactEmail: contactEmail,
-                  contactPhone: contactPhone,
-                  address: address,
-                  clientType: clientType || 'sme',
-                  status: 'pending',
-              };
-              const newClientRef = await addDoc(collection(firestore, 'clients'), newClientData);
-              finalClientId = newClientRef.id;
-              // Now we need to update the client doc with its own ID
-              await setDoc(doc(firestore, 'clients', finalClientId), { id: finalClientId }, { merge: true });
-          }
+        if (!finalClientId) {
+            // This is a new client, generate a custom sequential ID
+            finalClientId = await runTransaction(firestore, async (transaction) => {
+                const counterRef = doc(firestore, 'counters', 'clientCounter');
+                const counterSnap = await transaction.get(counterRef);
+                
+                let newIdNumber = 1;
+                if (counterSnap.exists()) {
+                    newIdNumber = counterSnap.data().currentId + 1;
+                }
+                
+                const newClientId = `SC25${String(newIdNumber).padStart(8, '0')}`;
 
-          if (!finalClientId) {
-              throw new Error("Could not create or find a client ID.");
-          }
-          
-          const newProposalRef = doc(collection(firestore, `clients/${finalClientId}/proposals`));
-          const proposalId = newProposalRef.id;
-          
-          const proposalContentToSave: FinalPlanDetails = {
-              ...finalPlanDetails,
-              clientId: finalClientId,
-              proposalId: proposalId,
-              signature,
-          };
-          
-          const newProposalData = {
-              id: proposalId,
-              clientId: finalClientId,
-              title: proposalContentToSave.summaryTitle,
-              content: JSON.stringify(proposalContentToSave),
-              status: status,
-              amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-          };
-          
-          await setDoc(newProposalRef, newProposalData);
-          
-          toast({
-              title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
-              description: `Your proposal for ${companyName} has been successfully saved.`,
-          });
-          
-          router.push('/dashboard/proposals');
+                transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
 
-      } catch (error: any) {
-          console.error("Error saving proposal:", error);
-          toast({
-              variant: "destructive",
-              title: "Save Failed",
-              description: error.message || "An error occurred while saving the proposal.",
-          });
-      } finally {
-          setIsSaving(false);
-      }
+                const newClientRef = doc(firestore, 'clients', newClientId);
+                const newClientData: Partial<Client> = {
+                    id: newClientId,
+                    companyName: companyName,
+                    contactName: contactName,
+                    contactEmail: contactEmail,
+                    contactPhone: contactPhone,
+                    address: address,
+                    clientType: clientType || 'sme',
+                    status: 'pending',
+                };
+                transaction.set(newClientRef, newClientData);
+
+                return newClientId;
+            });
+        }
+
+        if (!finalClientId) {
+            throw new Error("Could not create or find a client ID.");
+        }
+        
+        const newProposalRef = doc(collection(firestore, `clients/${finalClientId}/proposals`));
+        const proposalId = newProposalRef.id;
+        
+        const proposalContentToSave: FinalPlanDetails = {
+            ...finalPlanDetails,
+            clientId: finalClientId,
+            proposalId: proposalId,
+            signature,
+        };
+        
+        const newProposalData = {
+            id: proposalId,
+            clientId: finalClientId,
+            title: proposalContentToSave.summaryTitle,
+            content: JSON.stringify(proposalContentToSave),
+            status: status,
+            amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+        
+        await setDoc(newProposalRef, newProposalData);
+        
+        toast({
+            title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
+            description: `Your proposal for ${companyName} has been successfully saved.`,
+        });
+        
+        router.push('/dashboard/proposals');
+
+    } catch (error: any) {
+        console.error("Error saving proposal:", error);
+        toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: error.message || "An error occurred while saving the proposal.",
+        });
+    } finally {
+        setIsSaving(false);
+    }
   };
-
 
   const handleSaveDraft = async () => {
       await saveProposal('draft');
@@ -595,7 +607,6 @@ function ContractPageContent() {
                 </DialogTrigger>
                 <PreviewDialog 
                     finalPlanDetails={finalPlanDetails}
-                    client={{contactName, companyName}}
                     onSaveDraft={handleSaveDraft}
                     onFinalize={handleFinalize}
                     isSaving={isSaving}
@@ -837,3 +848,4 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
