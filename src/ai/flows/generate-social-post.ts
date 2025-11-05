@@ -9,6 +9,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { getStorage, ref, uploadString } from 'firebase/storage';
+import { initializeFirebase } from '@/firebase';
 
 const SocialPostInputSchema = z.object({
   topic: z.string().describe('The topic for the social media post.'),
@@ -62,15 +64,32 @@ const generateSocialPostFlow = ai.defineFlow(
     outputSchema: SocialPostOutputSchema,
   },
   async (input) => {
-    // Generate caption
-    const caption = 'Enjoy the convenience of Smart Refill!';
+    const { firebaseApp } = initializeFirebase();
+    const storage = getStorage(firebaseApp);
 
-    // Use a static branded placeholder image to avoid billing errors with Imagen
-    const staticImageUrl = 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_Social_Placeholder.png?alt=media&token=16757b53-41c3-4d6b-a253-61f282c1990c';
+    // Generate caption and image in parallel
+    const [captionResult, imageResult] = await Promise.all([
+      socialPostCaptionPrompt(input),
+      ai.generate({
+        model: 'googleai/imagen-4.0-fast-generate-001',
+        prompt: `A modern, clean, and professional social media image for a company called 'Smart Refill' about the topic: ${input.topic}. Style: ${input.style}`,
+      }),
+    ]);
+
+    const caption = captionResult.output?.caption || 'Enjoy the convenience of Smart Refill!';
+    const imageUrl = imageResult.media.url;
+
+    if (!imageUrl) {
+        throw new Error("Image generation failed.");
+    }
+    
+    const imagePath = `Sales Portal/Marketing Mats/social-post-${Date.now()}.png`;
+    const storageRef = ref(storage, imagePath);
+    await uploadString(storageRef, imageUrl, 'data_url');
 
     return {
       caption,
-      imageUrl: staticImageUrl,
+      imageUrl,
     };
   }
 );

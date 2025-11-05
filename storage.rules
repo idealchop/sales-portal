@@ -15,5 +15,14 @@ service firebase.storage {
       // This ensures users can only modify their own avatars.
       allow write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Rule for sales and marketing materials
+    match /Sales Portal/Marketing Mats/{allPaths=**} {
+      // Allow read access to anyone (public materials)
+      allow read;
+      
+      // Allow write access only to authenticated users (e.g., sales team)
+      allow write: if request.auth != null;
+    }
   }
 }
