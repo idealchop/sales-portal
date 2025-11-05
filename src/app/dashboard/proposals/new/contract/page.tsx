@@ -448,7 +448,6 @@ function ContractPageContent() {
         additionalLiterCost,
         totalMonthlyLiters,
         totalLitersForCycle,
-        // Client info for saving
         clientId,
         companyName,
         contactName,
@@ -476,11 +475,11 @@ function ContractPageContent() {
     
     try {
         let finalClientId = clientId;
+        let finalPlanData = { ...finalPlanDetails };
 
-        // If it's a new client, create them first.
         if (!finalClientId) {
             const clientsCollectionRef = collection(firestore, 'clients');
-            const newClientRef = doc(clientsCollectionRef); // Let Firestore generate the ID
+            const newClientRef = doc(clientsCollectionRef);
             
             const newClientData: Omit<Client, 'id' | 'remarks' | 'onboardingStatus' | 'subscription' | 'proposals'> = {
                 companyName,
@@ -492,7 +491,10 @@ function ContractPageContent() {
                 status: 'pending',
             };
             await setDoc(newClientRef, newClientData);
-            finalClientId = newClientRef.id; // Use the real ID
+            finalClientId = newClientRef.id;
+            
+            // Add the real client ID to the data being saved in the proposal
+            finalPlanData.clientId = finalClientId;
         }
 
         if (!finalClientId) {
@@ -502,10 +504,10 @@ function ContractPageContent() {
         const proposalsColRef = collection(firestore, `clients/${finalClientId}/proposals`);
         
         const newProposalData = {
-            title: finalPlanDetails.summaryTitle,
-            content: JSON.stringify(finalPlanDetails), 
+            title: finalPlanData.summaryTitle,
+            content: JSON.stringify(finalPlanData), 
             status: 'draft',
-            amount: parseFloat(finalPlanDetails.totalAmountDue.replace(/[^0-9.-]+/g,"")),
+            amount: parseFloat(finalPlanData.totalAmountDue.replace(/[^0-9.-]+/g,"")),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
