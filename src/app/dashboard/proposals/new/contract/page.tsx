@@ -577,16 +577,8 @@ function ContractPageContent() {
         }
 
         if (!finalProposalId) {
-            finalProposalId = await runTransaction(firestore, async (transaction) => {
-                const counterRef = doc(firestore, 'counters', 'proposalCounter');
-                const counterSnap = await transaction.get(counterRef);
-                let newIdNumber = 1;
-                if (counterSnap.exists()) {
-                    newIdNumber = counterSnap.data().currentId + 1;
-                }
-                transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
-                return String(newIdNumber);
-            });
+            const randomNumber = Math.floor(1000000000 + Math.random() * 9000000000);
+            finalProposalId = String(randomNumber);
             setGeneratedProposalId(finalProposalId);
         }
 
