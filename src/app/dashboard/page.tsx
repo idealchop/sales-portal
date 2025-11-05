@@ -576,8 +576,8 @@ export default function DashboardPage() {
             <CardTitle>Recent Proposals</CardTitle>
             <CardDescription>Your latest proposals at a glance.</CardDescription>
           </div>
-          <Button asChild size="sm">
-            <Link href="/dashboard/proposals/new">Create Proposal</Link>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/dashboard/proposals">View All Proposals</Link>
           </Button>
         </CardHeader>
         <CardContent>
@@ -902,5 +902,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
