@@ -18,6 +18,7 @@ export interface FirebaseContextState {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
+  isFirebaseLoading: boolean;
 }
 
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
@@ -28,13 +29,24 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
+  const [isFirebaseLoading, setIsFirebaseLoading] = useState(true);
+
+  useEffect(() => {
+    // A simple check to see if the main services are available.
+    // In a more complex app, you might check for a specific service's readiness.
+    if (firebaseApp && firestore && auth) {
+      setIsFirebaseLoading(false);
+    }
+  }, [firebaseApp, firestore, auth]);
+  
   const contextValue = useMemo(() => {
     return {
       firebaseApp,
       firestore,
       auth,
+      isFirebaseLoading,
     };
-  }, [firebaseApp, firestore, auth]);
+  }, [firebaseApp, firestore, auth, isFirebaseLoading]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>

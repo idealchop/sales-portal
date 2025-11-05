@@ -9,7 +9,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { useAuth, useUser, useFirestore } from '@/firebase';
+import { useAuth, useUser, useFirestore, useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
@@ -27,6 +27,7 @@ type LoginFormValues = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
+  const { isFirebaseLoading } = useFirebase();
   const { user: authUser, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
@@ -96,6 +97,8 @@ export default function LoginPage() {
     }
   };
 
+  const isFormDisabled = isFirebaseLoading || isLoggingIn;
+
   // While user state is loading, or if a user is found, show a spinner
   // to prevent a flash of the login form before redirecting.
   if (isUserLoading || authUser) {
@@ -121,41 +124,43 @@ export default function LoginPage() {
                 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <FormControl>
-                              <Input type="email" placeholder="Email Address" className="pl-10" {...field} />
-                            </FormControl>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                             <FormControl>
-                              <Input type={showPassword ? 'text' : 'password'} placeholder="Password" className="pl-10 pr-10" {...field} />
-                            </FormControl>
-                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
-                                {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
-                            </button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold" disabled={isLoggingIn}>
-                      {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <fieldset disabled={isFormDisabled} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="relative">
+                              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                              <FormControl>
+                                <Input type="email" placeholder="Email Address" className="pl-10" {...field} />
+                              </FormControl>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="relative">
+                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                              <FormControl>
+                                <Input type={showPassword ? 'text' : 'password'} placeholder="Password" className="pl-10 pr-10" {...field} />
+                              </FormControl>
+                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
+                                  {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                              </button>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </fieldset>
+                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold" disabled={isFormDisabled}>
+                      {isFormDisabled && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Login Now
                     </Button>
                   </form>
