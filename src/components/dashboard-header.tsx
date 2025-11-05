@@ -1,7 +1,7 @@
 
 'use client';
 import Link from 'next/link';
-import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2 } from 'lucide-react';
+import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2 } from 'lucide-react';
 import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
@@ -29,15 +29,23 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { Logo } from './logo';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { doc, setDoc, updateDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from '@/hooks/use-toast';
 
 
 function QrCodeIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -66,9 +74,233 @@ function QrCodeIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
+const profileSchema = z.object({
+  displayName: z.string().min(2, "Display name must be at least 2 characters."),
+  email: z.string().email("Please enter a valid email address."),
+  phone: z.string().min(10, 'Please enter a valid mobile number.'),
+  birthday: z.date().optional(),
+});
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
+function ProfileDialogContent() {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const form = useForm<ProfileFormValues>({
+        resolver: zodResolver(profileSchema),
+        defaultValues: {
+            displayName: "",
+            email: "",
+            phone: "",
+            birthday: undefined,
+        },
+    });
+
+    const populateForm = (userData: any) => {
+        form.reset({
+            displayName: userData.displayName || "",
+            email: userData.email || "",
+            phone: userData.phone || '',
+            birthday: userData.birthday ? new Date(userData.birthday) : undefined,
+        });
+        if (userData.photoURL) {
+            setPhotoPreview(userData.photoURL);
+        } else {
+            setPhotoPreview(null);
+        }
+    };
+
+    const fetchProfile = async () => {
+        if (user) {
+            const userDocRef = doc(firestore, 'sales', user.uid);
+            const userDocSnap = await (await import('firebase/firestore')).getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                const data = userDocSnap.data();
+                populateForm({ ...user, ...data });
+            } else {
+                populateForm(user);
+            }
+        }
+    };
+    
+    useEffect(() => {
+        fetchProfile();
+    }, [user]);
+
+    const getInitials = (name: string | null) => {
+        if (!name) return user?.email?.[0].toUpperCase() || 'U';
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2);
+    }
+    
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setPhotoFile(file);
+            setPhotoPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleRemovePhoto = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setPhotoFile(null);
+        setPhotoPreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        fetchProfile(); // Revert changes by fetching original data
+    };
+
+    const onSubmit = async (data: ProfileFormValues) => {
+        if (!user) return;
+        setIsSaving(true);
+        try {
+            let photoURL = user.photoURL;
+
+            if (photoFile) {
+                const storage = getStorage();
+                const filePath = `user-avatars/${user.uid}/${photoFile.name}`;
+                const storageRef = ref(storage, filePath);
+                const snapshot = await uploadBytes(storageRef, photoFile);
+                photoURL = await getDownloadURL(snapshot.ref);
+            } else if (!photoPreview && user.photoURL) {
+                const storage = getStorage();
+                const photoRef = ref(storage, user.photoURL);
+                await deleteObject(photoRef).catch(e => console.warn("Old photo deletion failed:", e));
+                photoURL = null;
+            }
+
+            await updateProfile(user, { displayName: data.displayName, photoURL: photoURL });
+
+            const userDocRef = doc(firestore, 'sales', user.uid);
+            await updateDoc(userDocRef, {
+                displayName: data.displayName,
+                phone: data.phone,
+                birthday: data.birthday?.toISOString(),
+                photoURL: photoURL,
+            });
+
+            toast({ title: "Profile Updated", description: "Your profile has been successfully saved." });
+            setIsEditing(false);
+        } catch (error: any) {
+            console.error("Profile update error:", error);
+            toast({ variant: "destructive", title: "Update Failed", description: error.message || "Could not save your profile." });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>{isEditing ? 'Edit Profile' : 'My Profile'}</DialogTitle>
+                <DialogDescription>
+                    {isEditing ? 'Make changes to your profile here.' : 'View your personal information below.'}
+                </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <div className="grid grid-cols-1 gap-8 md:grid-cols-3 py-6">
+                        <div className="md:col-span-1">
+                            <div className="flex flex-col items-center gap-4 pt-4">
+                                <div className="relative group">
+                                    <Avatar className="h-32 w-32" onClick={() => isEditing && fileInputRef.current?.click()}>
+                                        <AvatarImage src={photoPreview || undefined} alt="User Avatar" />
+                                        <AvatarFallback className="text-4xl">{getInitials(form.watch('displayName'))}</AvatarFallback>
+                                    </Avatar>
+                                    {isEditing && (
+                                        <>
+                                            <div className={cn("absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity", isEditing ? 'cursor-pointer' : 'cursor-default')}>
+                                                <Upload className="h-8 w-8 text-white" />
+                                            </div>
+                                            {photoPreview && (
+                                                <button type="button" onClick={handleRemovePhoto} className="absolute -top-2 -right-2 h-8 w-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90 transition-all" aria-label="Remove photo">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/png, image/jpeg, image/gif" disabled={!isEditing} />
+                            </div>
+                        </div>
+                        <div className="md:col-span-2 space-y-4">
+                            <FormField control={form.control} name="displayName" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Display Name</FormLabel>
+                                    <FormControl><Input {...field} disabled={!isEditing} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="email" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl><Input type="email" {...field} readOnly disabled /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="phone" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Mobile Number</FormLabel>
+                                        <FormControl><Input {...field} disabled={!isEditing} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="birthday" render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Birthday</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild disabled={!isEditing}>
+                                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground", !isEditing && "bg-muted/50 cursor-not-allowed")}>
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0">
+                                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} captionLayout="dropdown-buttons" fromYear={new Date().getFullYear() - 80} toYear={new Date().getFullYear() - 18} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        {isEditing ? (
+                            <div className="flex gap-2">
+                                <Button type="button" variant="outline" onClick={handleCancel}>
+                                    <X className="mr-2 h-4 w-4" /> Cancel
+                                </Button>
+                                <Button type="submit" disabled={isSaving}>
+                                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save Changes
+                                </Button>
+                            </div>
+                        ) : (
+                            <Button type="button" onClick={() => setIsEditing(true)}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    );
+}
 
 export function DashboardHeader() {
-  const [date, setDate] = React.useState<Date>();
   const { user } = useUser();
   const referralLink = "https://smartrefill.app/referral?code=SR12345";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(referralLink)}&size=200x200&bgcolor=F1F8E9`;
@@ -193,84 +425,9 @@ export function DashboardHeader() {
 
             </PopoverContent>
           </Popover>
-           <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Edit Profile</DialogTitle>
-                    <DialogDescription>
-                        Make changes to your profile here. Click save when you are done.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                    <div className="md:col-span-1">
-                        <div className="space-y-4">
-                             <div>
-                                <h3 className="text-lg font-medium">Avatar</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    Update your profile picture.
-                                </p>
-                            </div>
-                            <div className="flex flex-col items-center gap-4 rounded-md border p-8">
-                                <Avatar className="h-24 w-24 cursor-pointer">
-                                    <AvatarImage src={user?.photoURL ?? `https://picsum.photos/seed/${user?.uid}/96/96`} alt="User Avatar" />
-                                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-                                </Avatar>
-                                <Button variant="outline" size="sm">
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Upload
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="md:col-span-2 space-y-8">
-                        <div>
-                             <h3 className="text-lg font-medium">Personal Information</h3>
-                             <Separator className="mt-2" />
-                             <div className="space-y-4 mt-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="name">Full Name</Label>
-                                    <Input id="name" defaultValue={user?.displayName ?? ''} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input id="email" type="email" defaultValue={user?.email ?? ''} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="dob">Birthday</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                            "w-full justify-start text-left font-normal",
-                                            !date && "text-muted-foreground"
-                                            )}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {date ? format(date, "PPP") : <span>Pick a date</span>}
-                                        </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={date}
-                                            onSelect={setDate}
-                                            initialFocus
-                                        />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button type="submit">Save changes</Button>
-                </DialogFooter>
-            </DialogContent>
+           <ProfileDialogContent />
         </Dialog>
       </div>
     </header>
   );
 }
-
-    
