@@ -24,7 +24,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Suspense } from 'react';
 
 const formSchema = z.object({
-  displayName: z.string().min(2, 'Display name must be at least 2 characters.'),
+  firstName: z.string().min(2, 'First name must be at least 2 characters.'),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters.'),
   team: z.string().min(1, 'Please enter your team name.'),
   phone: z.string().min(10, 'Please enter a valid mobile number.'),
   birthday: z.date({
@@ -48,12 +49,25 @@ function ProfileSetupContent() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      displayName: searchParams.get('displayName') || '',
+      firstName: '',
+      lastName: '',
       team: searchParams.get('team') || '',
       phone: searchParams.get('phone') || '',
       birthday: searchParams.get('birthday') ? new Date(searchParams.get('birthday')!) : undefined,
     },
   });
+  
+  useEffect(() => {
+    // Populate form with existing data from searchParams or user profile
+    const displayName = searchParams.get('displayName') || user?.displayName;
+    if (displayName) {
+        const nameParts = displayName.split(' ');
+        const firstName = nameParts.slice(0, -1).join(' ');
+        const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+        form.setValue('firstName', firstName);
+        form.setValue('lastName', lastName);
+    }
+  }, [user, searchParams, form.setValue]);
 
   useEffect(() => {
     if (user?.photoURL) {
@@ -85,8 +99,9 @@ function ProfileSetupContent() {
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
 
+    const displayName = `${values.firstName} ${values.lastName}`.trim();
     const params = new URLSearchParams(searchParams.toString());
-    params.set('displayName', values.displayName);
+    params.set('displayName', displayName);
     params.set('team', values.team);
     params.set('phone', values.phone);
     params.set('birthday', values.birthday.toISOString());
@@ -138,13 +153,11 @@ function ProfileSetupContent() {
     );
   }
 
-  const getInitials = (name: string | null | undefined) => {
-    if (!name) return user?.email?.[0].toUpperCase() || 'U';
-    const nameParts = name.split(' ');
-    if (nameParts.length > 1) {
-        return nameParts[0][0] + nameParts[nameParts.length - 1][0];
-    }
-    return name[0];
+  const getInitials = (firstName: string, lastName: string) => {
+    if (firstName && lastName) return `${firstName[0]}${lastName[0]}`;
+    if (firstName) return firstName[0];
+    if (lastName) return lastName[0];
+    return user?.email?.[0].toUpperCase() || 'U';
   }
 
   return (
@@ -165,7 +178,7 @@ function ProfileSetupContent() {
               <div className="relative group">
                 <Avatar className="h-32 w-32" >
                   <AvatarImage src={photoPreview || undefined} alt="User Avatar" className="object-cover" />
-                  <AvatarFallback className="text-4xl">{getInitials(form.getValues('displayName'))}</AvatarFallback>
+                  <AvatarFallback className="text-4xl">{getInitials(form.watch('firstName'), form.watch('lastName'))}</AvatarFallback>
                 </Avatar>
                 <div 
                     className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
@@ -194,22 +207,38 @@ function ProfileSetupContent() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="displayName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="e.g., John Doe" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                        <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="e.g., John" {...field} className="pl-10" />
+                        </div>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                        <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="e.g., Doe" {...field} className="pl-10" />
+                        </div>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
               <FormField
                 control={form.control}
                 name="team"
