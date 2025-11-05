@@ -4,7 +4,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -43,6 +43,10 @@ import { allPlans, deliveryFrequencies, gallonRotationData } from '../plans/page
 import { PaymentMethods } from '@/components/payment-methods';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import type { Client } from '@/lib/definitions';
+import { useFirestore } from '@/firebase';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, serverTimestamp } from 'firebase/firestore';
+
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0, multiplier: 1 },
@@ -288,6 +292,9 @@ function TimelineItem({ icon, title, description, isLast = false }: { icon: Reac
 
 function ContractPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const firestore = useFirestore();
+  
   const planId = searchParams.get('plan');
   const customLiters = searchParams.get('liters');
   const customCost = searchParams.get('cost');
@@ -295,6 +302,7 @@ function ContractPageContent() {
   const customType = searchParams.get('type');
   const companyName = searchParams.get('companyName') || '';
   const contactName = searchParams.get('contactName') || '';
+  const clientId = searchParams.get('clientId'); // Assuming clientId is passed for existing clients
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -382,8 +390,8 @@ function ContractPageContent() {
   }, [plan, additionalLiters]);
 
   const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
-    if (!plan || !finalPlan) return null;
-
+    if (!plan) return null;
+    
     const planBaseCost = parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,""));
     if (isNaN(planBaseCost)) {
       return null;
@@ -416,7 +424,7 @@ function ContractPageContent() {
 
     return {
         proposalId: `SR${new Date().getFullYear()}${Math.floor(100000 + Math.random() * 900000)}`,
-        clientId: `SC${new Date().getFullYear().toString().slice(-2)}${Math.floor(100000 + Math.random() * 900000)}`,
+        clientId: clientId || `SC${new Date().getFullYear().toString().slice(-2)}${Math.floor(100000 + Math.random() * 900000)}`,
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         summaryTitle: summaryTitle,
         totalLiters: `${totalLitersForCycle.toLocaleString()} L`,
@@ -439,19 +447,50 @@ function ContractPageContent() {
         totalMonthlyLiters,
         totalLitersForCycle
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, clientId]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
 
-  const handleSaveProposal = () => {
-    toast({
-        title: "Proposal Saved!",
-        description: "Your proposal has been saved as a draft.",
-    });
-  }
+  const handleSaveProposal = async () => {
+    if (!finalPlanDetails || !clientId) {
+        toast({
+            variant: "destructive",
+            title: "Missing Information",
+            description: "Cannot save proposal without client and plan details.",
+        });
+        return;
+    }
+    
+    const proposalsColRef = collection(firestore, `clients/${clientId}/proposals`);
+
+    const newProposalData = {
+        title: finalPlanDetails.summaryTitle,
+        content: JSON.stringify(finalPlanDetails),
+        status: 'draft',
+        amount: parseFloat(finalPlanDetails.totalAmountDue.replace(/[^0-9.-]+/g,"")),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    };
+    
+    try {
+        await addDocumentNonBlocking(proposalsColRef, newProposalData);
+        toast({
+            title: "Proposal Saved!",
+            description: "Your proposal has been saved as a draft.",
+        });
+        router.push('/dashboard/proposals');
+    } catch (error) {
+        console.error("Error saving proposal:", error);
+        toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: "There was an error saving the proposal. Please try again.",
+        });
+    }
+  };
   
-  if (!plan || !finalPlan || !finalPlanDetails) {
+  if (!plan || !finalPlanDetails) {
     return (
         <div className="flex flex-col gap-6 items-center justify-center h-full">
             <Card className="w-full max-w-md">
@@ -473,7 +512,7 @@ function ContractPageContent() {
 
   const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
   
-  const summaryTitle = finalPlan.name.includes("Plan") ? finalPlan.name : `${finalPlan.name} Plan`;
+  const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
 
   const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
   
@@ -750,5 +789,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
