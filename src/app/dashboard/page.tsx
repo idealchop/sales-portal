@@ -311,6 +311,7 @@ export default function DashboardPage() {
                                 {dashboardData.commissionChange >= 0 ? '+' : ''}
                                 {dashboardData.commissionChange.toFixed(0)}% from last month
                             </p>
+                            <p className="text-xs text-primary-foreground/80 mt-2 underline">Click to see breakdown</p>
                         </CardContent>
                     </div>
                 </DialogTrigger>
@@ -358,6 +359,7 @@ export default function DashboardPage() {
                         <CardContent className="p-0 pt-2">
                             <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.recurringCommission)}</div>
                             <p className="text-xs text-primary-foreground/80">Your stable monthly base income</p>
+                             <p className="text-xs text-primary-foreground/80 mt-2 underline">Click to see breakdown</p>
                         </CardContent>
                     </div>
                 </DialogTrigger>
