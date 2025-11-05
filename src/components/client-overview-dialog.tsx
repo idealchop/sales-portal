@@ -25,7 +25,7 @@ import type { Client, Remark, OnboardingStep, Proposal } from '@/lib/definitions
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { ActiveView } from '@/app/dashboard/proposals/page';
 import { Textarea } from './ui/textarea';
@@ -127,11 +127,14 @@ export function ClientOverviewDialog({
   const { user } = useUser();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   
-  const [isUploaded, setIsUploaded] = useState(false);
   const [open, setOpen] = useState(false);
   const [remarks, setRemarks] = useState<Remark[]>([]);
   const [newRemark, setNewRemark] = useState('');
   const [clientProposals, setClientProposals] = useState<Proposal[]>([]);
+
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
+  const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Use the passed-in proposal if available, otherwise default to the first fetched proposal
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(proposal);
@@ -269,13 +272,17 @@ export function ClientOverviewDialog({
   
   const planImage = getPlanImage(subscriptionInfo?.planId);
   
-  const handleUpload = () => {
-    setIsUploaded(true);
-    toast({
-        title: "File 'Uploaded'",
-        description: "Proof of payment is ready for confirmation.",
-    })
-  }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setPaymentProofFile(file);
+      setPaymentProofPreview(URL.createObjectURL(file));
+      toast({
+        title: "File Selected",
+        description: `${file.name} is ready to be confirmed.`,
+      });
+    }
+  };
 
   const handleConfirmPayment = () => {
     if (setActiveView) {
@@ -509,38 +516,38 @@ export function ClientOverviewDialog({
                                     </div>
                                 </div>
                             </CardContent>
-                            {view === 'clients' && client.onboardingStatus && (
-                            <CardFooter>
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <Button variant="outline" className="w-full">
-                                            View Onboarding Progress
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-2xl">
-                                        <DialogHeader>
-                                            <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
-                                            <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
-                                        </DialogHeader>
-                                        <div className="grid md:grid-cols-2 gap-6 py-4">
-                                            <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                                {subscriptionInfo && <Image src={planImage} alt={subscriptionInfo.planName} fill className="object-cover" />}
-                                            </div>
-                                            <div>
-                                                <div className="flex flex-col">
-                                                    {client.onboardingStatus.map((step, index) => (
-                                                        <OnboardingStepItem 
-                                                            key={index} 
-                                                            step={step} 
-                                                            isLast={index === client.onboardingStatus!.length - 1} 
-                                                        />
-                                                    ))}
+                             {view === 'clients' && client.onboardingStatus && (
+                                <CardFooter>
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" className="w-full">
+                                                View Onboarding Progress
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-2xl">
+                                            <DialogHeader>
+                                                <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
+                                                <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
+                                            </DialogHeader>
+                                            <div className="grid md:grid-cols-2 gap-6 py-4">
+                                                <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                                                    {subscriptionInfo && <Image src={planImage} alt={subscriptionInfo.planName} fill className="object-cover" />}
+                                                </div>
+                                                <div>
+                                                    <div className="flex flex-col">
+                                                        {client.onboardingStatus.map((step, index) => (
+                                                            <OnboardingStepItem 
+                                                                key={index} 
+                                                                step={step} 
+                                                                isLast={index === client.onboardingStatus!.length - 1} 
+                                                            />
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-                            </CardFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                </CardFooter>
                             )}
                             </>
                         ) : (
@@ -566,23 +573,33 @@ export function ClientOverviewDialog({
                                 Upload the client’s payment confirmation to finalize the subscription.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                            {isUploaded ? (
-                                <div className='flex items-center gap-2 text-sm text-green-600'>
-                                   <FileCheck className="h-5 w-5" />
-                                   <span className="font-medium">payment_receipt.pdf</span>
+                        <CardContent className="space-y-4">
+                             {paymentProofPreview ? (
+                                <div className="space-y-2">
+                                    <Label>Payment Proof Preview</Label>
+                                    <div className="relative aspect-video w-full max-w-sm mx-auto overflow-hidden rounded-lg border">
+                                        <Image src={paymentProofPreview} alt="Payment proof preview" fill className="object-contain"/>
+                                    </div>
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground">
+                                <div className="text-sm text-muted-foreground text-center py-4 border-dashed border-2 rounded-lg">
                                     Awaiting proof of payment from client.
-                                </p>
+                                </div>
                             )}
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={handleUpload} disabled={isUploaded}>
+
+                             <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
                                     <Upload className="mr-2 h-4 w-4" />
-                                    Upload
+                                    {paymentProofFile ? 'Change File' : 'Upload File'}
                                 </Button>
-                                <Button onClick={handleConfirmPayment} disabled={!isUploaded}>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    accept="image/png, image/jpeg, image/gif, application/pdf"
+                                />
+                                <Button onClick={handleConfirmPayment} disabled={!paymentProofFile}>
                                     <CreditCard className="mr-2 h-4 w-4" />
                                     Confirm Payment
                                 </Button>
