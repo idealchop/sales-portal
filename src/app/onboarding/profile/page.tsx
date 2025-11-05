@@ -97,23 +97,13 @@ function ProfileSetupContent() {
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
 
-    if (isUserLoading) {
+    if (isUserLoading || !user || !user.uid) { // CRITICAL: Check for user and user.uid
         toast({
             variant: 'destructive',
-            title: 'Please Wait',
-            description: 'Authentication is still in progress. Please try again in a moment.',
+            title: 'Authentication Incomplete',
+            description: 'Your user session is not fully ready. Please wait a moment and try again.',
         });
         setIsSubmitting(false);
-        return;
-    }
-
-    if (!user) {
-        toast({
-            variant: 'destructive',
-            title: 'Authentication Error',
-            description: 'You must be logged in to update your profile. Redirecting to login.',
-        });
-        router.push('/login');
         return;
     }
 
@@ -127,6 +117,7 @@ function ProfileSetupContent() {
     try {
       if (photoFile) {
         const storage = getStorage();
+        // Use the now-guaranteed user.uid for the path
         const filePath = `user-avatars/${user.uid}/${photoFile.name}`;
         const storageRef = ref(storage, filePath);
         const snapshot = await uploadBytes(storageRef, photoFile);
@@ -340,3 +331,5 @@ export default function ProfileSetupPage() {
         </Suspense>
     )
 }
+
+    
