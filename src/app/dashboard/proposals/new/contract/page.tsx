@@ -474,7 +474,7 @@ function ContractPageContent() {
         // If it's a new client, create them first.
         if (!finalClientId) {
             const newClientRef = doc(collection(firestore, 'clients'));
-            const newClientData: Partial<Client> = {
+            const newClientData: Omit<Client, 'id' | 'remarks' | 'onboardingStatus' | 'subscription'> & { id: string } = {
                 id: newClientRef.id,
                 companyName,
                 contactName,
