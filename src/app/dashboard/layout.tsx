@@ -13,11 +13,10 @@ import {
 import { DashboardNav } from '@/components/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { cn } from '@/lib/utils';
-import { FirebaseClientProvider, useUser, useFirestore } from '@/firebase';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { useUser, useFirestore } from '@/firebase';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 function DashboardSidebar() {
   const { state } = useSidebar();
@@ -99,21 +98,18 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <FirebaseClientProvider>
-      <SidebarProvider>
-        <ProtectedLayout>
-          <DashboardSidebar />
-          <div className="flex flex-col flex-1">
-            <DashboardHeader />
-            <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-                <div className="mx-auto w-full max-w-7xl">
-                    {children}
-                </div>
-            </main>
-          </div>
-          <FirebaseErrorListener />
-        </ProtectedLayout>
-      </SidebarProvider>
-    </FirebaseClientProvider>
+    <SidebarProvider>
+      <ProtectedLayout>
+        <DashboardSidebar />
+        <div className="flex flex-col flex-1">
+          <DashboardHeader />
+          <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+              <div className="mx-auto w-full max-w-7xl">
+                  {children}
+              </div>
+          </main>
+        </div>
+      </ProtectedLayout>
+    </SidebarProvider>
   );
 }
