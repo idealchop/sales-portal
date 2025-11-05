@@ -313,7 +313,7 @@ function ContractPageContent() {
 
   const getEmployees = (liters: number) => {
     const estimatedEmployees = Math.round(liters / (2 * 22));
-    if (estimatedEmployees < 5) return '< 5';
+    if (estimatedEmployees < 5) return '&lt; 5';
     if (estimatedEmployees > 500) return '500+';
     return `~${Math.round(estimatedEmployees / 10) * 10}`;
   };
@@ -363,8 +363,26 @@ function ContractPageContent() {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
   }
 
-  const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
+  const finalPlan = useMemo(() => {
     if (!plan) return null;
+    const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
+    const freeLiters = baseLiters * 0.2;
+    const finalLiters = baseLiters + freeLiters + additionalLiters;
+    const planInclusions = plan.id === 'enterprise-overflow' 
+        ? ['Pay only for what you use'] 
+        : (plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : []);
+
+    return {
+        ...plan,
+        liters: `${finalLiters.toLocaleString()} L`,
+        inclusions: planInclusions,
+        employees: getEmployees(finalLiters),
+        stations: getStations(finalLiters),
+    }
+  }, [plan, additionalLiters]);
+
+  const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
+    if (!plan || !finalPlan) return null;
 
     const planBaseCost = parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,""));
     if (isNaN(planBaseCost)) {
@@ -404,7 +422,7 @@ function ContractPageContent() {
         totalLiters: `${totalLitersForCycle.toLocaleString()} L`,
         employees: getEmployees(totalMonthlyLiters),
         refillableGallons: rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic',
-        refillFrequency: finalPlan.refillFrequency,
+        refillFrequency: plan.refillFrequency,
         totalAmountDue: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
         billingCycleLabel: selectedCycle.label,
         discount: selectedCycle.discount,
@@ -413,16 +431,7 @@ function ContractPageContent() {
         additionalDispensers,
         additionalLiters,
         plan,
-        finalPlan: {
-          ...plan,
-          liters: `${totalMonthlyLiters.toLocaleString()} L`,
-          inclusions: plan.id === 'enterprise-overflow' 
-              ? ['Pay only for what you use'] 
-              : (plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : []),
-          employees: getEmployees(totalMonthlyLiters),
-          stations: getStations(totalMonthlyLiters),
-          refillFrequency: plan.refillFrequency
-        },
+        finalPlan,
         planBaseCost,
         addons,
         additionalDispenserCost,
@@ -430,25 +439,7 @@ function ContractPageContent() {
         totalMonthlyLiters,
         totalLitersForCycle
     };
-  }, [plan, billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
-
-  const finalPlan = useMemo(() => {
-    if (!plan) return null;
-    const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, ''));
-    const freeLiters = baseLiters * 0.2;
-    const finalLiters = baseLiters + freeLiters + additionalLiters;
-    const planInclusions = plan.id === 'enterprise-overflow' 
-        ? ['Pay only for what you use'] 
-        : (plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : []);
-
-    return {
-        ...plan,
-        liters: `${finalLiters.toLocaleString()} L`,
-        inclusions: planInclusions,
-        employees: getEmployees(finalLiters),
-        stations: getStations(finalLiters),
-    }
-  }, [plan, additionalLiters]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -759,3 +750,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
