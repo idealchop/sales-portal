@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useUser, useAuth } from '@/firebase';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Loader2, Upload, User, Calendar as CalendarIcon, Phone, Edit2 } from 'lucide-react';
+import { Loader2, Upload, User, Calendar as CalendarIcon, Phone, Edit2, Briefcase } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -94,6 +94,8 @@ export default function ProfileSetupPage() {
             setIsSubmitting(false);
             return;
         }
+    } else if (user?.photoURL) {
+        params.append('photoURL', user.photoURL);
     }
 
     router.push(`/onboarding/password?${params.toString()}`);
@@ -123,12 +125,12 @@ export default function ProfileSetupPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="flex flex-col items-center gap-4">
                 <div className="relative group">
-                    <Avatar className="h-24 w-24 cursor-pointer" onClick={handleAvatarClick}>
-                        <AvatarImage src={photoPreview || undefined} alt="User Avatar" />
-                        <AvatarFallback><User className="h-10 w-10" /></AvatarFallback>
+                    <Avatar className="h-32 w-32 cursor-pointer" onClick={handleAvatarClick}>
+                        <AvatarImage src={photoPreview || user?.photoURL || undefined} alt="User Avatar" />
+                        <AvatarFallback className="text-4xl"><User className="h-12 w-12" /></AvatarFallback>
                     </Avatar>
                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={handleAvatarClick}>
-                        <Edit2 className="h-6 w-6 text-white" />
+                        <Edit2 className="h-8 w-8 text-white" />
                     </div>
                 </div>
                 <input
@@ -151,7 +153,10 @@ export default function ProfileSetupPage() {
                     <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                        <Input placeholder="e.g., John Doe" {...field} />
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="e.g., John Doe" {...field} className="pl-10" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -164,7 +169,10 @@ export default function ProfileSetupPage() {
                     <FormItem>
                     <FormLabel>Team</FormLabel>
                     <FormControl>
-                        <Input placeholder="e.g., Team Alpha" {...field} />
+                      <div className="relative">
+                        <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="e.g., Team Alpha" {...field} className="pl-10" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -230,7 +238,7 @@ export default function ProfileSetupPage() {
                 )}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold transition-all" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isSubmitting ? 'Saving...' : 'Save and Proceed'}
             </Button>
@@ -240,3 +248,5 @@ export default function ProfileSetupPage() {
     </Card>
   );
 }
+
+    
