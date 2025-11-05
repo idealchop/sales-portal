@@ -83,7 +83,7 @@ const generateSocialPostFlow = ai.defineFlow(
         throw new Error("Image generation failed.");
     }
     
-    const imagePath = `Sales Portal/Marketing Mats/social-post-${Date.now()}.png`;
+    const imagePath = `sales_portal/marketing_mats/social-post-${Date.now()}.png`;
     const storageRef = ref(storage, imagePath);
     await uploadString(storageRef, imageUrl, 'data_url');
 
