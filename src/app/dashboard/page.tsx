@@ -279,6 +279,12 @@ export default function DashboardPage() {
       { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Apr' },
       { term: 'Annual', schedule: 'Spread monthly for 12 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Oct next year' },
   ];
+  const commissionTiers = [
+    { clientType: 'Individual (Household)', commission: '20%' },
+    { clientType: 'SME', commission: '15%' },
+    { clientType: 'Commercial', commission: '15%' },
+    { clientType: 'Corporate & Enterprise', commission: '10%' },
+  ];
   
   if (proposalsLoading || clientsLoading) {
       return (
@@ -440,14 +446,30 @@ export default function DashboardPage() {
           </DialogTrigger>
           <DialogContent className="max-w-4xl">
             <DialogHeader>
-                <DialogTitle>Commission Breakdown</DialogTitle>
+                <DialogTitle>Recurring Commission & Payouts</DialogTitle>
                 <DialogDescription>
                     This chart shows your commission history. Earnings from long-term client payments are distributed monthly to ensure a stable income.
                 </DialogDescription>
             </DialogHeader>
             <div className="grid gap-8 py-6 md:grid-cols-2">
                 <div>
-                  <RevenueChart data={dashboardData.commissionHistory} />
+                    <h3 className="text-lg font-semibold mb-2">Commission Rate by Client Type</h3>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Client Type</TableHead>
+                                <TableHead className="text-right">Commission</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {commissionTiers.map((tier) => (
+                                <TableRow key={tier.clientType}>
+                                    <TableCell className="font-medium">{tier.clientType}</TableCell>
+                                    <TableCell className="text-right font-bold text-primary">{tier.commission}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
                 <div>
                     <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
@@ -470,6 +492,10 @@ export default function DashboardPage() {
                      <p className="text-xs text-muted-foreground mt-4">
                         Example: A client pays for a full year in November. Your commission for that sale will be paid out in 12 monthly installments from November of this year to October of the next.
                     </p>
+                </div>
+                 <div className="md:col-span-2">
+                    <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
+                    <RevenueChart data={dashboardData.commissionHistory} />
                 </div>
             </div>
           </DialogContent>
@@ -918,3 +944,4 @@ export default function DashboardPage() {
     
 
     
+
