@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -14,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/firebase';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Loader2, User, Calendar as CalendarIcon, Phone, Briefcase, Upload, Trash2 } from 'lucide-react';
+import { Loader2, User, Calendar as CalendarIcon, Phone, Upload, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -65,7 +64,7 @@ function ProfileSetupContent() {
         form.setValue('firstName', firstName || (nameParts.length === 1 ? nameParts[0] : ''));
         form.setValue('lastName', lastName || '');
     }
-  }, [user, searchParams, form.setValue]);
+  }, [user, searchParams, form]);
 
   useEffect(() => {
     if (user?.photoURL) {
@@ -173,13 +172,12 @@ function ProfileSetupContent() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
-                <Avatar className="h-32 w-32" >
+                <Avatar className="h-32 w-32 cursor-pointer" onClick={handleAvatarClick}>
                   <AvatarImage src={photoPreview || undefined} alt="User Avatar" className="object-cover" />
                   <AvatarFallback className="text-4xl">{getInitials(form.watch('firstName'), form.watch('lastName'))}</AvatarFallback>
                 </Avatar>
                 <div 
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    onClick={handleAvatarClick}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
                 >
                   <Upload className="h-8 w-8 text-white" />
                 </div>
@@ -282,6 +280,9 @@ function ProfileSetupContent() {
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
+                                captionLayout="dropdown-buttons"
+                                fromYear={new Date().getFullYear() - 80}
+                                toYear={new Date().getFullYear() - 18}
                                 mode="single"
                                 selected={field.value}
                                 onSelect={field.onChange}
