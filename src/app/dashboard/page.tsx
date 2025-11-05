@@ -509,8 +509,8 @@ export default function DashboardPage() {
               <CardTitle>Proposal Snapshot</CardTitle>
               <CardDescription>Your key performance indicators for this month.</CardDescription>
             </div>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/dashboard/proposals">View All Proposals</Link>
+            <Button asChild size="sm">
+                <Link href="/dashboard/proposals/new">Create Proposal</Link>
             </Button>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -902,6 +902,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
 
