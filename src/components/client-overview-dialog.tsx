@@ -112,11 +112,13 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
 export function ClientOverviewDialog({
   children,
   client,
+  proposal, // Accept a single proposal object
   view,
   setActiveView,
 }: {
   children: React.ReactNode;
   client: Client;
+  proposal?: Proposal; // Make it optional for the client view
   view: 'proposals' | 'clients';
   setActiveView?: (view: ActiveView) => void;
 }) {
@@ -128,29 +130,34 @@ export function ClientOverviewDialog({
   const [open, setOpen] = useState(false);
   const [remarks, setRemarks] = useState(client.remarks || []);
   const [newRemark, setNewRemark] = useState('');
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+  const [clientProposals, setClientProposals] = useState<Proposal[]>([]);
+  
+  // Use the passed proposal if available, otherwise fall back to the most recent one for the client.
+  const selectedProposal = proposal || (clientProposals.length > 0 ? clientProposals[0] : null);
+
 
   useEffect(() => {
-    if (!firestore || !client.id) return;
+    // Fetch all proposals for the client only if a specific one isn't passed
+    if (!proposal && firestore && client.id) {
+      const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
+      const q = query(proposalsRef);
 
-    const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
-    const q = query(proposalsRef);
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedProposals: Proposal[] = [];
-      snapshot.forEach((doc) => {
-        fetchedProposals.push({ id: doc.id, ...doc.data() } as Proposal);
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedProposals: Proposal[] = [];
+        snapshot.forEach((doc) => {
+          fetchedProposals.push({ id: doc.id, ...doc.data() } as Proposal);
+        });
+        // Sort by creation date to show the most recent first
+        fetchedProposals.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setClientProposals(fetchedProposals);
       });
-      setProposals(fetchedProposals);
-      // Automatically select the first/most recent proposal
-      if (fetchedProposals.length > 0) {
-        setSelectedProposal(fetchedProposals[0]);
-      }
-    });
 
-    return () => unsubscribe();
-  }, [firestore, client.id]);
+      return () => unsubscribe();
+    } else if (proposal) {
+        // If a specific proposal is passed, we don't need to fetch others
+        setClientProposals([proposal]);
+    }
+  }, [firestore, client.id, proposal]);
 
 
   const getInitials = (name: string) => {
@@ -519,7 +526,7 @@ export function ClientOverviewDialog({
                                     <FileText className="h-6 w-6 text-primary" />
                                     <div>
                                         <CardTitle className="text-base">View Signed Contract</CardTitle>
-                                        <CardDescription>Click to view the full agreement.</CardDescription>
+                                        <CardDescription>Click to view the full agreement for proposal: {selectedProposal.id}</CardDescription>
                                     </div>
                                 </CardHeader>
                             </Card>
@@ -534,7 +541,7 @@ export function ClientOverviewDialog({
                             <ScrollArea className="h-[85vh] pr-6">
                                 <ContractDetails 
                                     client={{...client, proposals: [selectedProposal]}}
-                                    isSigned={true}
+                                    isSigned={selectedProposal.status === 'finalized'}
                                 />
                             </ScrollArea>
                         </DialogContent>

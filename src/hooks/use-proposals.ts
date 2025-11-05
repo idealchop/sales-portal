@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
-import { collection, getDocs, query, Query, DocumentData, CollectionReference } from 'firebase/firestore';
+import { collection, collectionGroup, getDocs, query, Query, DocumentData, CollectionReference } from 'firebase/firestore';
 import { useFirebase, useUser, useMemoFirebase } from '@/firebase';
 import type { Client, Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -17,7 +17,6 @@ interface UseProposalsResult {
 export function useProposals(): UseProposalsResult {
   const { firestore, isFirebaseLoading } = useFirebase();
   const { user, isUserLoading } = useUser();
-  const { clients, isLoading: clientsLoading, error: clientsError } = useClients();
 
   const [proposals, setProposals] = useState<WithId<Proposal>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +24,7 @@ export function useProposals(): UseProposalsResult {
 
   useEffect(() => {
     const fetchAllProposals = async () => {
-      if (isFirebaseLoading || isUserLoading || clientsLoading || !firestore) {
+      if (isFirebaseLoading || isUserLoading || !firestore) {
         return;
       }
 
@@ -33,26 +32,32 @@ export function useProposals(): UseProposalsResult {
       setError(null);
 
       try {
-        const allProposals: WithId<Proposal>[] = [];
+        const proposalsQuery = query(collectionGroup(firestore, 'proposals'));
+        const querySnapshot = await getDocs(proposalsQuery);
         
-        for (const client of clients) {
-          const proposalsRef = collection(firestore, 'clients', client.id, 'proposals');
-          const proposalsQuery = query(proposalsRef);
-          const proposalSnapshot = await getDocs(proposalsQuery);
-          
-          proposalSnapshot.forEach(doc => {
+        const allProposals: WithId<Proposal>[] = [];
+        querySnapshot.forEach(doc => {
             const proposalData = doc.data() as Proposal;
-            allProposals.push({
-              ...proposalData,
-              id: doc.id,
-              clientId: client.id, // Explicitly associate client ID
-            });
-          });
-        }
-        setProposals(allProposals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            // The parent of a document in a subcollection is the client document
+            const clientDoc = doc.ref.parent.parent;
+            if (clientDoc) {
+                allProposals.push({
+                    ...proposalData,
+                    id: doc.id,
+                    clientId: clientDoc.id, // Extract client ID from parent reference
+                });
+            }
+        });
 
+        setProposals(allProposals.sort((a, b) => {
+            // Handle potential string or Firestore Timestamp values for createdAt
+            const dateA = a.createdAt ? (typeof a.createdAt === 'string' ? new Date(a.createdAt) : (a.createdAt as any).toDate()) : new Date(0);
+            const dateB = b.createdAt ? (typeof b.createdAt === 'string' ? new Date(b.createdAt) : (b.createdAt as any).toDate()) : new Date(0);
+            return dateB.getTime() - dateA.getTime();
+        }));
+        
       } catch (e: any) {
-        console.error("Failed to fetch proposals:", e);
+        console.error("Failed to fetch proposals using collectionGroup:", e);
         setError(e);
       } finally {
         setIsLoading(false);
@@ -60,11 +65,11 @@ export function useProposals(): UseProposalsResult {
     };
 
     fetchAllProposals();
-  }, [firestore, user, isFirebaseLoading, isUserLoading, clients, clientsLoading]);
+  }, [firestore, user, isFirebaseLoading, isUserLoading]);
 
   return { 
     proposals, 
-    isLoading: isLoading || isFirebaseLoading || isUserLoading || clientsLoading, 
-    error: error || clientsError 
+    isLoading: isLoading || isFirebaseLoading || isUserLoading, 
+    error: error
   };
 }

@@ -13,6 +13,7 @@ import { ContractText } from '@/app/dashboard/proposals/new/contract/page';
 import { Logo } from '@/components/logo';
 import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
+import Image from 'next/image';
 
 const perks = [
     {
@@ -121,6 +122,7 @@ export type FinalPlanDetails = {
     contactPhone: string;
     address: string;
     clientType?: 'household' | 'sme' | 'commercial' | 'corporate' | 'enterprise';
+    signature?: string;
 };
 
 
@@ -428,12 +430,16 @@ export function ContractDetails({
                         </div>
                         <div className="space-y-2">
                             <Label>Signature</Label>
-                             {isSigned ? (
+                             {isSigned && source.signature ? (
                                 <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
-                                    <p className="text-muted-foreground">Signature on File</p>
+                                    <Image src={source.signature} alt="Client Signature" width={300} height={150} className="object-contain" />
                                 </div>
-                            ) : (
+                            ) : !isSigned ? (
                                 <SignaturePad ref={signaturePadRef} />
+                            ) : (
+                                <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
+                                     <p className="text-muted-foreground">No signature on file.</p>
+                                </div>
                             )}
                         </div>
                     </div>

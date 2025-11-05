@@ -1,7 +1,8 @@
 
+
 'use client';
 import Link from "next/link";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   PlusCircle,
   FileText,
@@ -30,7 +31,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ClientOverviewDialog } from "@/components/client-overview-dialog";
-import type { Client } from "@/lib/definitions";
+import type { Client, Proposal } from "@/lib/definitions";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProposals } from '@/hooks/use-proposals';
@@ -41,6 +42,7 @@ const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
   sent: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
   draft: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  finalized: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300',
   rejected: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
 };
 
@@ -50,14 +52,14 @@ const clientStatusStyles: { [key: string]: string } = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 
-export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
+export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'finalized';
 export type ClientStatus = 'active' | 'inactive' | 'pending';
 export type ActiveView = 'proposals' | 'clients';
 
 export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const [searchQuery, setSearchQuery] = useState('');
-  const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'accepted', 'sent', 'draft', 'rejected'];
+  const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'draft', 'finalized', 'accepted', 'sent', 'rejected'];
   const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'pending', 'inactive'];
   const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('active');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
@@ -79,16 +81,24 @@ export default function ProposalsPage() {
   }
 
   const renderProposalsTable = () => {
-    const filteredProposals = (proposalStatusFilter === 'all' ? proposals : proposals.filter(p => p.status === proposalStatusFilter))
-      .filter(proposal => {
-        const client = getClientById(proposal.clientId);
-        const searchTerm = searchQuery.toLowerCase();
-        return (
-          proposal.title.toLowerCase().includes(searchTerm) ||
-          client?.companyName.toLowerCase().includes(searchTerm) ||
-          client?.contactName.toLowerCase().includes(searchTerm)
-        );
-      });
+    const filteredProposals = useMemo(() => {
+        const proposalsWithClients = proposals.map(p => ({ ...p, client: getClientById(p.clientId) }));
+
+        return proposalsWithClients.filter(proposal => {
+            if (!proposal.client) return false;
+
+            const searchTerm = searchQuery.toLowerCase();
+            const matchesSearch = (
+              proposal.title.toLowerCase().includes(searchTerm) ||
+              proposal.client.companyName.toLowerCase().includes(searchTerm) ||
+              proposal.client.contactName.toLowerCase().includes(searchTerm)
+            );
+            
+            const matchesStatus = proposalStatusFilter === 'all' || proposal.status === proposalStatusFilter;
+
+            return matchesSearch && matchesStatus;
+        });
+    }, [proposals, clients, searchQuery, proposalStatusFilter]);
     
     const totalPages = Math.ceil(filteredProposals.length / ITEMS_PER_PAGE);
     const paginatedProposals = filteredProposals.slice(
@@ -96,7 +106,7 @@ export default function ProposalsPage() {
       proposalsCurrentPage * ITEMS_PER_PAGE
     );
 
-    if (proposalsLoading) {
+    if (proposalsLoading || clientsLoading) {
         return <div className="text-center p-8">Loading proposals...</div>
     }
 
@@ -107,26 +117,24 @@ export default function ProposalsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
+                <TableHead>Contact</TableHead>
                 <TableHead>Proposal</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">
-                  Created At
-                </TableHead>
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedProposals.map((proposal) => {
-                const client = getClientById(proposal.clientId);
-                if (!client) return null;
-
+              {paginatedProposals.length > 0 ? paginatedProposals.map((proposal) => {
+                if (!proposal.client) return null;
                 return (
-                  <ClientOverviewDialog key={proposal.id} client={client} view="proposals" setActiveView={setActiveView}>
+                  <ClientOverviewDialog key={proposal.id} client={proposal.client} proposal={proposal} view="proposals" setActiveView={setActiveView}>
                     <TableRow className="cursor-pointer">
                       <TableCell>
-                          <div className="font-bold">{client.companyName}</div>
-                          <div className="text-sm text-muted-foreground">{client.contactName}</div>
-                          <div className="text-xs text-muted-foreground">{client.contactEmail}</div>
+                          <div className="font-bold">{proposal.client.companyName}</div>
+                      </TableCell>
+                       <TableCell>
+                          <div className="font-medium">{proposal.client.contactName}</div>
+                          <div className="text-sm text-muted-foreground">{proposal.client.contactEmail}</div>
                       </TableCell>
                        <TableCell>
                           <div className="font-medium">{proposal.title}</div>
@@ -137,21 +145,24 @@ export default function ProposalsPage() {
                           {proposal.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {new Date(proposal.createdAt).toLocaleDateString()}
-                      </TableCell>
                       <TableCell className="text-right">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}</TableCell>
                     </TableRow>
                   </ClientOverviewDialog>
                 )
-              })}
+              }) : (
+                <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                        No proposals found.
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
          <CardFooter>
           <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
             <span>
-              Page {proposalsCurrentPage} of {totalPages}
+              Showing {Math.min(paginatedProposals.length, ITEMS_PER_PAGE)} of {filteredProposals.length} proposals.
             </span>
             <div className="flex items-center gap-2">
               <Button

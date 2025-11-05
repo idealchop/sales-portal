@@ -212,14 +212,20 @@ export function ContractText() {
 function PreviewDialog({ 
     finalPlanDetails,
     client,
+    onSaveDraft,
+    onFinalize,
+    isSaving,
 }: { 
     finalPlanDetails: FinalPlanDetails,
     client: Partial<Client>,
+    onSaveDraft: () => Promise<void>;
+    onFinalize: (signatureDataUrl: string) => Promise<void>;
+    isSaving: boolean;
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
     const { toast } = useToast();
     
-    const handleFinalize = () => {
+    const handleFinalizeClick = () => {
         const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
         if (signaturePadRef.current?.isEmpty()) {
             toast({
@@ -229,20 +235,7 @@ function PreviewDialog({
             });
             return;
         }
-
-        if (!client.contactName || !client.companyName) {
-            toast({
-                variant: "destructive",
-                title: "Client Information Required",
-                description: "Client information is missing from the proposal.",
-            });
-            return;
-        }
-
-        toast({
-            title: "Contract Finalized!",
-            description: `The signed contract has been saved.`,
-        });
+        onFinalize(signatureDataUrl!);
     };
 
     return (
@@ -260,11 +253,15 @@ function PreviewDialog({
                 />
             </ScrollArea>
             <DialogFooter className="gap-2 sm:justify-end border-t pt-4">
-                <DialogClose asChild>
-                    <Button type="button" variant="outline">Close</Button>
-                </DialogClose>
-                <Button type="button"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
-                <Button type="button" onClick={handleFinalize}><Send className="mr-2 h-4 w-4" /> Finalize &amp; Send</Button>
+                <Button type="button" variant="outline" onClick={onSaveDraft} disabled={isSaving}>
+                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save as Draft
+                </Button>
+                <Button type="button" disabled={isSaving}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                <Button type="button" onClick={handleFinalizeClick} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Finalize &amp; Send
+                </Button>
             </DialogFooter>
         </DialogContent>
     )
@@ -460,9 +457,9 @@ function ContractPageContent() {
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
-
-  const handleSaveProposal = async () => {
-    if (!finalPlanDetails) {
+  
+  const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
+      if (!finalPlanDetails) {
         toast({
             variant: "destructive",
             title: "Missing Information",
@@ -475,39 +472,44 @@ function ContractPageContent() {
     
     try {
         let finalClientId = clientId;
-        let finalPlanData = { ...finalPlanDetails };
 
+        // Step 1: Create a new client if one doesn't exist
         if (!finalClientId) {
             const clientsCollectionRef = collection(firestore, 'clients');
-            const newClientRef = doc(clientsCollectionRef);
+            const newClientRef = doc(clientsCollectionRef); // Auto-generate ID
             
-            const newClientData: Omit<Client, 'id' | 'remarks' | 'onboardingStatus' | 'subscription' | 'proposals'> = {
+            const newClientData: Partial<Client> = {
                 companyName,
                 contactName,
                 contactEmail,
                 contactPhone,
                 address,
                 clientType: clientType || 'sme',
-                status: 'pending',
+                status: 'pending', // New clients start as pending
             };
             await setDoc(newClientRef, newClientData);
             finalClientId = newClientRef.id;
-            
-            // Add the real client ID to the data being saved in the proposal
-            finalPlanData.clientId = finalClientId;
         }
 
         if (!finalClientId) {
-            throw new Error("Could not determine client ID.");
+            throw new Error("Could not determine a valid client ID.");
         }
 
+        // Step 2: Prepare the final proposal data, now with the correct client ID
+        const finalProposalContent = {
+            ...finalPlanDetails,
+            clientId: finalClientId, // Ensure the correct ID is saved
+            signature, // Add signature if finalizing
+        };
+
+        // Step 3: Save the proposal to the client's subcollection
         const proposalsColRef = collection(firestore, `clients/${finalClientId}/proposals`);
         
         const newProposalData = {
-            title: finalPlanData.summaryTitle,
-            content: JSON.stringify(finalPlanData), 
-            status: 'draft',
-            amount: parseFloat(finalPlanData.totalAmountDue.replace(/[^0-9.-]+/g,"")),
+            title: finalProposalContent.summaryTitle,
+            content: JSON.stringify(finalProposalContent), // Save EVERYTHING
+            status: status,
+            amount: parseFloat(finalProposalContent.totalAmountDue.replace(/[^0-9.-]+/g,"")),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
@@ -515,9 +517,10 @@ function ContractPageContent() {
         await addDoc(proposalsColRef, newProposalData);
         
         toast({
-            title: "Proposal Saved!",
-            description: "Your proposal has been saved as a draft.",
+            title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
+            description: `Your proposal has been successfully ${status}.`,
         });
+        
         router.push('/dashboard/proposals');
 
     } catch (error) {
@@ -525,12 +528,22 @@ function ContractPageContent() {
         toast({
             variant: "destructive",
             title: "Save Failed",
-            description: "There was an error saving the proposal. Please try again.",
+            description: "An error occurred saving the proposal. Please try again.",
         });
     } finally {
         setIsSaving(false);
     }
-  };
+  }
+
+
+  const handleSaveDraft = async () => {
+      await saveProposal('draft');
+  }
+
+  const handleFinalize = async (signatureDataUrl: string) => {
+      await saveProposal('finalized', signatureDataUrl);
+  }
+
   
   if (!plan || !finalPlanDetails) {
     return (
@@ -569,14 +582,22 @@ function ContractPageContent() {
             Step 5: Review inclusions, add-ons, and sign the agreement.
           </p>
         </div>
-        <div className="flex gap-2">
+         <div className="flex gap-2">
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-            <Button onClick={handleSaveProposal} disabled={isSaving}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {isSaving ? 'Saving...' : 'Save Proposal'}
-            </Button>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button>Review &amp; Sign</Button>
+                </DialogTrigger>
+                <PreviewDialog 
+                    finalPlanDetails={finalPlanDetails}
+                    client={{contactName, companyName}}
+                    onSaveDraft={handleSaveDraft}
+                    onFinalize={handleFinalize}
+                    isSaving={isSaving}
+                />
+            </Dialog>
         </div>
       </div>
 
@@ -804,17 +825,6 @@ function ContractPageContent() {
                         </div>
                     )}
                 </CardContent>
-                <CardFooter className="justify-end">
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button>Review &amp; Sign</Button>
-                        </DialogTrigger>
-                        <PreviewDialog 
-                            finalPlanDetails={finalPlanDetails}
-                            client={{contactName, companyName}}
-                        />
-                    </Dialog>
-                </CardFooter>
             </Card>
         </div>
 
