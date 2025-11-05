@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -11,6 +10,8 @@ import {
   GlassWater,
   Briefcase,
   MapPin,
+  PlusCircle,
+  ChevronLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useState, useMemo, useEffect } from 'react';
 import { useClients } from '@/hooks/use-clients';
 import type { Client } from '@/lib/definitions';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 function InputField({
   id,
@@ -49,6 +52,7 @@ function InputField({
 export default function NewProposalPage() {
   const { clients, isLoading: clientsLoading } = useClients();
   const [selectedClientId, setSelectedClientId] = useState('');
+  const [clientSelectionType, setClientSelectionType] = useState<'new' | 'existing' | null>(null);
   
   // States for new client form
   const [companyName, setCompanyName] = useState('');
@@ -58,7 +62,7 @@ export default function NewProposalPage() {
   const [address, setAddress] = useState('');
   const [clientType, setClientType] = useState<Client['clientType'] | ''>('');
   
-  const isNewClient = selectedClientId === 'new';
+  const isNewClient = clientSelectionType === 'new';
 
   const selectedClient = useMemo(() => {
     if (!selectedClientId || selectedClientId === 'new') return null;
@@ -75,15 +79,16 @@ export default function NewProposalPage() {
   }, [clients, selectedClientId]);
 
   useEffect(() => {
-    if (selectedClientId !== 'new' && selectedClient) {
+    if (clientSelectionType === 'existing' && selectedClient) {
         setCompanyName(selectedClient.companyName);
         setContactName(selectedClient.contactName);
         setContactEmail(selectedClient.contactEmail);
         setContactPhone(selectedClient.contactPhone);
         setAddress(selectedClient.address);
         setClientType(selectedClient.clientType || '');
-    } else if (isNewClient) {
+    } else if (clientSelectionType === 'new') {
         // Reset fields when switching to "new client"
+        setSelectedClientId('');
         setCompanyName('');
         setContactName('');
         setContactEmail('');
@@ -91,12 +96,12 @@ export default function NewProposalPage() {
         setAddress('');
         setClientType('');
     }
-  }, [selectedClientId, selectedClient, isNewClient]);
+  }, [clientSelectionType, selectedClient]);
 
   const getNextStepLink = () => {
     const params = new URLSearchParams();
     
-    if (selectedClientId && selectedClientId !== 'new') {
+    if (clientSelectionType === 'existing' && selectedClientId) {
         params.set('clientId', selectedClientId);
     }
     
@@ -112,42 +117,126 @@ export default function NewProposalPage() {
     return `/dashboard/proposals/new/about?${params.toString()}`;
   }
   
-  const isNextDisabled = !selectedClientId || (isNewClient && (!companyName || !contactName || !clientType || !contactEmail || !contactPhone || !address));
+  const isNextDisabled = clientSelectionType === 'existing' 
+    ? !selectedClientId
+    : (isNewClient && (!companyName || !contactName || !clientType || !contactEmail || !contactPhone || !address));
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-            <h1 className="text-3xl font-bold">Create a New Proposal</h1>
-            <p className="text-muted-foreground">
-                Step 1: Enter Client Information
-            </p>
+        <div className="flex items-center justify-between">
+            <div>
+                <div className="flex items-center gap-2">
+                    {clientSelectionType && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setClientSelectionType(null)}>
+                            <ChevronLeft className="h-5 w-5" />
+                        </Button>
+                    )}
+                    <h1 className="text-3xl font-bold">Create a New Proposal</h1>
+                </div>
+                <p className="text-muted-foreground ml-10">
+                    Step 1: Client Information
+                </p>
+            </div>
+            {clientSelectionType && (
+                 <Button asChild size="lg" disabled={isNextDisabled}>
+                    <Link href={getNextStepLink()}>Next Step</Link>
+                </Button>
+            )}
         </div>
-        <Button asChild size="lg" disabled={isNextDisabled}>
-          <Link href={getNextStepLink()}>Next Step</Link>
-        </Button>
-      </div>
 
       <div className="relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm">
-          <div className="p-6 md:p-8 space-y-4">
-            <div className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="client-select">Client</Label>
-                    <Select onValueChange={setSelectedClientId} value={selectedClientId}>
-                        <SelectTrigger id="client-select">
-                            <SelectValue placeholder="Select an existing client or create a new one" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="new">Create a new client</SelectItem>
-                            {clients.map(client => (
-                                <SelectItem key={client.id} value={client.id}>{client.companyName}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+          <div className="p-6 md:p-8 space-y-6">
+            {!clientSelectionType && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card 
+                        className="flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => setClientSelectionType('new')}
+                    >
+                        <PlusCircle className="h-12 w-12 text-primary mb-4" />
+                        <CardTitle>Create New Client</CardTitle>
+                        <CardDescription>Start a proposal for a brand new client.</CardDescription>
+                    </Card>
+                    <Card 
+                        className="flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => setClientSelectionType('existing')}
+                    >
+                        <Users className="h-12 w-12 text-primary mb-4" />
+                        <CardTitle>Use Existing Client</CardTitle>
+                        <CardDescription>Select from your current list of clients.</CardDescription>
+                    </Card>
                 </div>
+            )}
+            
+            {clientSelectionType === 'existing' && (
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="client-select">Client</Label>
+                        <Select onValueChange={setSelectedClientId} value={selectedClientId}>
+                            <SelectTrigger id="client-select">
+                                <SelectValue placeholder="Select an existing client" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {clients.map(client => (
+                                    <SelectItem key={client.id} value={client.id}>{client.companyName}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {selectedClient && (
+                      <div className="space-y-4 pt-4 border-t">
+                        <h3 className="font-semibold">Client Details</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div className="flex items-center gap-3">
+                                <Building className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                <p className="text-muted-foreground">Company</p>
+                                <p className="font-medium">{selectedClient.companyName}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-muted-foreground">Contact Person</p>
+                                <p className="font-medium">{selectedClient.contactName}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Mail className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-muted-foreground">Email</p>
+                                <p className="font-medium">{selectedClient.contactEmail}</p>
+                              </div>
+                            </div>
+                             <div className="flex items-center gap-3">
+                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-muted-foreground">Phone</p>
+                                <p className="font-medium">{selectedClient.contactPhone}</p>
+                              </div>
+                            </div>
+                             <div className="flex items-center gap-3 col-span-full">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-muted-foreground">Address</p>
+                                <p className="font-medium">{selectedClient.address}</p>
+                              </div>
+                            </div>
+                             <div className="flex items-center gap-3">
+                              <Briefcase className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-muted-foreground">Client Type</p>
+                                <p className="font-medium capitalize">{selectedClient.clientType || 'N/A'}</p>
+                              </div>
+                            </div>
+                         </div>
+                      </div>
+                    )}
+                </div>
+            )}
               
-              {isNewClient && (
-                <>
+              {clientSelectionType === 'new' && (
+                <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputField
                       id="company-name"
@@ -211,52 +300,8 @@ export default function NewProposalPage() {
                           </SelectContent>
                       </Select>
                     </div>
-                </>
-              )}
-
-              {selectedClient && !isNewClient && (
-                <div className="space-y-4 pt-4 border-t">
-                  <h3 className="font-semibold">Client Details</h3>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-3">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-muted-foreground">Contact Person</p>
-                          <p className="font-medium">{selectedClient.contactName}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-muted-foreground">Email</p>
-                          <p className="font-medium">{selectedClient.contactEmail}</p>
-                        </div>
-                      </div>
-                       <div className="flex items-center gap-3">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-muted-foreground">Phone</p>
-                          <p className="font-medium">{selectedClient.contactPhone}</p>
-                        </div>
-                      </div>
-                       <div className="flex items-center gap-3">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-muted-foreground">Address</p>
-                          <p className="font-medium">{selectedClient.address}</p>
-                        </div>
-                      </div>
-                       <div className="flex items-center gap-3">
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-muted-foreground">Client Type</p>
-                          <p className="font-medium capitalize">{selectedClient.clientType || 'N/A'}</p>
-                        </div>
-                      </div>
-                   </div>
                 </div>
               )}
-            </div>
           </div>
           <div className="relative h-48 mt-8">
             <Image
@@ -272,5 +317,3 @@ export default function NewProposalPage() {
     </div>
   );
 }
-
-    
