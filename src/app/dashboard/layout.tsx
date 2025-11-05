@@ -9,6 +9,7 @@ import {
   SidebarHeader,
   SidebarContent,
   useSidebar,
+  SidebarFooter,
 } from '@/components/ui/sidebar';
 import { DashboardNav } from '@/components/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard-header';
@@ -20,6 +21,9 @@ import { doc, getDoc } from 'firebase/firestore';
 
 function DashboardSidebar() {
   const { state } = useSidebar();
+  const packageJson = require('../../../package.json');
+  const version = packageJson.version;
+
   return (
       <Sidebar side="left" variant="floating" collapsible="icon">
         <SidebarHeader className="border-b border-sidebar-border">
@@ -38,6 +42,15 @@ function DashboardSidebar() {
         <SidebarContent>
           <DashboardNav />
         </SidebarContent>
+        <SidebarFooter className="p-4 border-t border-sidebar-border">
+             <div className={cn(
+                "flex items-center justify-between text-xs text-muted-foreground",
+                state === 'collapsed' && 'justify-center'
+             )}>
+                <span className={cn(state === 'collapsed' && 'hidden')}>Version</span>
+                <span>{version}</span>
+            </div>
+        </SidebarFooter>
       </Sidebar>
   )
 }
