@@ -103,7 +103,6 @@ function ProfileSetupContent() {
     params.set('phone', values.phone);
     params.set('birthday', values.birthday.toISOString());
     params.delete('photoURL');
-    params.delete('team'); // ensure team is removed
 
     try {
       if (photoFile && user) {
@@ -315,3 +314,5 @@ export default function ProfileSetupPage() {
         </Suspense>
     )
 }
+
+    
