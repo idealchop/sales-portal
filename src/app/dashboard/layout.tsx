@@ -17,7 +17,7 @@ import { FirebaseClientProvider, useUser, useFirestore } from '@/firebase';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 function DashboardSidebar() {
   const { state } = useSidebar();
@@ -50,37 +50,40 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isUserLoading) {
-      return; // Wait until user state is loaded
+      return; // Wait until user state is loaded.
     }
 
     if (user) {
-      const docRef = doc(firestore, 'users', user.uid);
+      // User is authenticated, now check their onboarding status from Firestore.
       const checkUserOnboarding = async () => {
+        const docRef = doc(firestore, 'users', user.uid);
         const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
-          // **FIX**: Create the user document FIRST, then redirect.
-          await setDoc(docRef, {
-            id: user.uid,
-            email: user.email,
-            onboardingCompleted: false,
-          });
-          router.push('/onboarding/profile');
-        } else {
+        
+        // This component's only job is to check the flag and redirect.
+        // It assumes the document has already been created by the login page.
+        if (docSnap.exists()) {
           const userData = docSnap.data();
           if (!userData.onboardingCompleted) {
             router.push('/onboarding/profile');
           }
           // If onboarding is completed, do nothing and allow access to the dashboard.
+        } else {
+          // This case should ideally not happen if the login page works correctly.
+          // As a fallback, redirect to login to restart the process.
+          console.error("User document not found, redirecting to login.");
+          router.push('/login');
         }
       };
       checkUserOnboarding();
     } else {
-      // No user, redirect to login
+      // No authenticated user, redirect to the login page.
       router.push('/login');
     }
   }, [user, isUserLoading, firestore, router]);
 
 
+  // While loading user state or if there's no user, show a loading spinner.
+  // This prevents a brief flash of content before the redirect can happen.
   if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -89,6 +92,7 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // If the user is authenticated and onboarding is complete, render the children.
   return <>{children}</>;
 }
 

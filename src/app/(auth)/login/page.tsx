@@ -54,24 +54,23 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // **THIS IS THE NEW LOGIC**
-      // Check for user document in Firestore immediately after login.
+      // Immediately check for the user document and create it if it doesn't exist.
+      // This is the definitive point of creation.
       if (user) {
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
 
-        // If the document does not exist, create it.
         if (!userDocSnap.exists()) {
           await setDoc(userDocRef, {
             id: user.uid,
             email: user.email,
-            onboardingCompleted: false,
-          });
+            onboardingCompleted: false, // Set the flag to false for new users.
+          }, { merge: true });
         }
       }
       
-      // On successful login, the gatekeeper in DashboardLayout will handle the redirect
-      // to either the dashboard or onboarding. We just need to go to a protected route.
+      // On successful login, always go to the dashboard.
+      // The "gatekeeper" in DashboardLayout will then handle any necessary redirects.
       router.push('/dashboard'); 
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
