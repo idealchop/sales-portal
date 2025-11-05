@@ -149,7 +149,7 @@ export default function NewProposalPage() {
             {!clientSelectionType && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card 
-                        className="flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                        className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-primary/50"
                         onClick={() => setClientSelectionType('new')}
                     >
                         <PlusCircle className="h-12 w-12 text-primary mb-4" />
@@ -157,7 +157,7 @@ export default function NewProposalPage() {
                         <CardDescription>Start a proposal for a brand new client.</CardDescription>
                     </Card>
                     <Card 
-                        className="flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                        className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-primary/50"
                         onClick={() => setClientSelectionType('existing')}
                     >
                         <Users className="h-12 w-12 text-primary mb-4" />
