@@ -3,15 +3,12 @@
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
-import { Auth, User, onAuthStateChanged } from 'firebase/auth';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
+import { Auth } from 'firebase/auth';
+import { initializeFirebase } from '@/firebase';
 import { UserProvider } from './auth/use-user';
 
 interface FirebaseProviderProps {
   children: ReactNode;
-  firebaseApp: FirebaseApp;
-  firestore: Firestore;
-  auth: Auth;
 }
 
 export interface FirebaseContextState {
@@ -25,28 +22,25 @@ export const FirebaseContext = createContext<FirebaseContextState | undefined>(u
 
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
-  firebaseApp,
-  firestore,
-  auth,
 }) => {
   const [isFirebaseLoading, setIsFirebaseLoading] = useState(true);
 
+  const firebaseServices = useMemo(() => {
+    return initializeFirebase();
+  }, []);
+
   useEffect(() => {
-    // A simple check to see if the main services are available.
-    // In a more complex app, you might check for a specific service's readiness.
-    if (firebaseApp && firestore && auth) {
+    if (firebaseServices.firebaseApp && firebaseServices.firestore && firebaseServices.auth) {
       setIsFirebaseLoading(false);
     }
-  }, [firebaseApp, firestore, auth]);
+  }, [firebaseServices]);
   
   const contextValue = useMemo(() => {
     return {
-      firebaseApp,
-      firestore,
-      auth,
+      ...firebaseServices,
       isFirebaseLoading,
     };
-  }, [firebaseApp, firestore, auth, isFirebaseLoading]);
+  }, [firebaseServices, isFirebaseLoading]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
