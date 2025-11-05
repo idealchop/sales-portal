@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -216,11 +215,15 @@ function PreviewDialog({
     onSaveDraft,
     onFinalize,
     isSaving,
+    isDialogOpen,
+    setDialogOpen
 }: { 
     finalPlanDetails: FinalPlanDetails,
     onSaveDraft: () => Promise<void>;
     onFinalize: (signatureDataUrl: string) => Promise<void>;
     isSaving: boolean;
+    isDialogOpen: boolean;
+    setDialogOpen: (open: boolean) => void;
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
     const { toast } = useToast();
@@ -239,30 +242,32 @@ function PreviewDialog({
     };
 
     return (
-        <DialogContent className="sm:max-w-5xl">
-            <DialogHeader className="sr-only">
-                <DialogTitle>Proposal Preview</DialogTitle>
-                <DialogDescription>A preview of the sales proposal for the client to review and sign.</DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="h-[85vh] pr-6">
-                <ContractDetails
-                    finalPlanDetails={finalPlanDetails}
-                    isSigned={false}
-                    signaturePadRef={signaturePadRef}
-                />
-            </ScrollArea>
-            <DialogFooter className="gap-2 sm:justify-end border-t pt-4">
-                <Button type="button" variant="outline" onClick={onSaveDraft} disabled={isSaving}>
-                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save as Draft
-                </Button>
-                <Button type="button" disabled={isSaving}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
-                <Button type="button" onClick={handleFinalizeClick} disabled={isSaving}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Finalize &amp; Send
-                </Button>
-            </DialogFooter>
-        </DialogContent>
+        <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+             <DialogContent className="sm:max-w-5xl">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Proposal Preview</DialogTitle>
+                    <DialogDescription>A preview of the sales proposal for the client to review and sign.</DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-[85vh] pr-6">
+                    <ContractDetails
+                        finalPlanDetails={finalPlanDetails}
+                        isSigned={false}
+                        signaturePadRef={signaturePadRef}
+                    />
+                </ScrollArea>
+                <DialogFooter className="gap-2 sm:justify-end border-t pt-4">
+                    <Button type="button" variant="outline" onClick={onSaveDraft} disabled={isSaving}>
+                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        Save as Draft
+                    </Button>
+                    <Button type="button" disabled={isSaving}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <Button type="button" onClick={handleFinalizeClick} disabled={isSaving}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        Finalize &amp; Send
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     )
 }
 
@@ -312,6 +317,8 @@ function ContractPageContent() {
   });
   const [additionalDispensers, setAdditionalDispensers] = useState(0);
   const [additionalLiters, setAdditionalLiters] = useState(0);
+  const [isDialogOpen, setDialogOpen] = useState(false);
+  const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -445,7 +452,7 @@ function ContractPageContent() {
         additionalLiterCost,
         totalMonthlyLiters,
         totalLitersForCycle,
-        clientId: existingClientId,
+        clientId: generatedClientId,
         companyName,
         contactName,
         contactEmail,
@@ -453,7 +460,7 @@ function ContractPageContent() {
         address,
         clientType,
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, existingClientId, companyName, contactName, contactEmail, contactPhone, address, clientType]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, companyName, contactName, contactEmail, contactPhone, address, clientType]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -471,27 +478,19 @@ function ContractPageContent() {
     setIsSaving(true);
     
     try {
-        let finalClientId = existingClientId;
+        const finalClientId = generatedClientId; // Use the pre-generated ID
 
         if (!finalClientId) {
-            // This is a new client, generate a custom sequential ID
-            finalClientId = await runTransaction(firestore, async (transaction) => {
-                const counterRef = doc(firestore, 'counters', 'clientCounter');
-                const counterSnap = await transaction.get(counterRef);
-                
-                let newIdNumber = 1;
-                if (counterSnap.exists()) {
-                    newIdNumber = counterSnap.data().currentId + 1;
-                }
-                
-                const year = "25";
-                const newClientId = `SC${year}${String(newIdNumber).padStart(8, '0')}`;
+            throw new Error("Client ID was not generated. Cannot save proposal.");
+        }
 
-                transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
-
-                const newClientRef = doc(firestore, 'clients', newClientId);
-                const newClientData: Partial<Client> = {
-                    id: newClientId,
+        // If it was a new client, create the document now.
+        if (!existingClientId) {
+            const newClientRef = doc(firestore, 'clients', finalClientId);
+            const clientSnap = await getDoc(newClientRef);
+            if (!clientSnap.exists()) {
+                 const newClientData: Partial<Client> = {
+                    id: finalClientId,
                     companyName: companyName,
                     contactName: contactName,
                     contactEmail: contactEmail,
@@ -500,14 +499,8 @@ function ContractPageContent() {
                     clientType: clientType || 'sme',
                     status: 'pending',
                 };
-                transaction.set(newClientRef, newClientData);
-
-                return newClientId;
-            });
-        }
-
-        if (!finalClientId) {
-            throw new Error("Could not create or find a client ID.");
+                await setDoc(newClientRef, newClientData);
+            }
         }
         
         const newProposalRef = doc(collection(firestore, `clients/${finalClientId}/proposals`));
@@ -560,6 +553,35 @@ function ContractPageContent() {
       await saveProposal('finalized', signatureDataUrl);
   }
 
+  const handleReviewAndSignClick = async () => {
+    if (!existingClientId) {
+        // It's a new client, so we need to generate an ID before opening the dialog.
+        try {
+            const newId = await runTransaction(firestore, async (transaction) => {
+                const counterRef = doc(firestore, 'counters', 'clientCounter');
+                const counterSnap = await transaction.get(counterRef);
+                let newIdNumber = 1;
+                if (counterSnap.exists()) {
+                    newIdNumber = counterSnap.data().currentId + 1;
+                }
+                const year = new Date().getFullYear().toString().slice(-2);
+                const newClientId = `SC${year}${String(newIdNumber).padStart(8, '0')}`;
+                transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
+                return newClientId;
+            });
+            setGeneratedClientId(newId);
+        } catch (error) {
+            console.error("Error generating client ID:", error);
+            toast({
+                variant: "destructive",
+                title: "ID Generation Failed",
+                description: "Could not generate a new client ID. Please try again.",
+            });
+            return; // Abort opening the dialog if ID generation fails
+        }
+    }
+    setDialogOpen(true);
+  };
   
   if (!plan || !finalPlanDetails) {
     return (
@@ -602,19 +624,20 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button>Review &amp; Sign</Button>
-                </DialogTrigger>
-                <PreviewDialog 
-                    finalPlanDetails={finalPlanDetails}
-                    onSaveDraft={handleSaveDraft}
-                    onFinalize={handleFinalize}
-                    isSaving={isSaving}
-                />
-            </Dialog>
+            <Button onClick={handleReviewAndSignClick}>Review &amp; Sign</Button>
         </div>
       </div>
+
+       {finalPlanDetails && (
+            <PreviewDialog 
+                finalPlanDetails={finalPlanDetails}
+                onSaveDraft={handleSaveDraft}
+                onFinalize={handleFinalize}
+                isSaving={isSaving}
+                isDialogOpen={isDialogOpen}
+                setDialogOpen={setDialogOpen}
+            />
+       )}
 
       <div className="flex flex-col gap-6">
         <Card>
@@ -849,9 +872,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-
-
-    
-
-    
