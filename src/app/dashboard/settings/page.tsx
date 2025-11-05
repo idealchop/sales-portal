@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar as CalendarIcon, Upload, Trash2, User, Lock, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Upload, Trash2, User, Lock, Loader2, Edit, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -55,6 +55,7 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -75,26 +76,30 @@ export default function SettingsPage() {
     },
   });
 
+  const populateForm = (userData: any) => {
+    profileForm.reset({
+      displayName: userData.displayName || "",
+      email: userData.email || "",
+      phone: userData.phone || '',
+      birthday: userData.birthday ? new Date(userData.birthday) : undefined,
+    });
+    if (userData.photoURL) {
+      setPhotoPreview(userData.photoURL);
+    } else {
+      setPhotoPreview(null);
+    }
+  };
+
   useEffect(() => {
     if (user) {
-      profileForm.reset({
-        displayName: user.displayName || "",
-        email: user.email || "",
-        // These fields would come from the Firestore doc
-      });
-      if (user.photoURL) {
-        setPhotoPreview(user.photoURL);
-      }
-      
       const fetchProfile = async () => {
           const userDocRef = doc(firestore, 'sales', user.uid);
           const userDocSnap = await (await import('firebase/firestore')).getDoc(userDocRef);
           if (userDocSnap.exists()) {
               const data = userDocSnap.data();
-              profileForm.setValue('phone', data.phone || '');
-              if (data.birthday) {
-                  profileForm.setValue('birthday', new Date(data.birthday));
-              }
+              populateForm({ ...user, ...data });
+          } else {
+              populateForm(user);
           }
       };
       fetchProfile();
@@ -149,14 +154,13 @@ export default function SettingsPage() {
         phone: data.phone,
         birthday: data.birthday?.toISOString(),
         photoURL: photoURL,
-        // Note: email is updated via auth, not here
       });
 
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully saved.",
       });
-
+      setIsEditing(false);
     } catch (error: any) {
       console.error("Profile update error:", error);
       toast({
@@ -200,6 +204,24 @@ export default function SettingsPage() {
       });
     } finally {
       setIsSavingPassword(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Repopulate form with original data
+     if (user) {
+      const fetchProfile = async () => {
+          const userDocRef = doc(firestore, 'sales', user.uid);
+          const userDocSnap = await (await import('firebase/firestore')).getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+              const data = userDocSnap.data();
+              populateForm({ ...user, ...data });
+          } else {
+              populateForm(user);
+          }
+      };
+      fetchProfile();
     }
   };
   
@@ -251,24 +273,28 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="md:col-span-1 flex flex-col items-center gap-4 pt-4">
                       <div className="relative group">
-                          <Avatar className="h-32 w-32 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                          <Avatar className="h-32 w-32 cursor-pointer" onClick={() => isEditing && fileInputRef.current?.click()}>
                             <AvatarImage src={photoPreview || undefined} alt="User Avatar" />
                             <AvatarFallback className="text-4xl">{getInitials(profileForm.watch('displayName'))}</AvatarFallback>
                           </Avatar>
-                          <div 
-                              className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                          >
-                            <Upload className="h-8 w-8 text-white" />
-                          </div>
-                          {photoPreview && (
-                            <button
-                                type="button"
-                                onClick={handleRemovePhoto}
-                                className="absolute -top-2 -right-2 h-8 w-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90 transition-all"
-                                aria-label="Remove photo"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </button>
+                          {isEditing && (
+                            <>
+                              <div 
+                                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                              >
+                                <Upload className="h-8 w-8 text-white" />
+                              </div>
+                              {photoPreview && (
+                                <button
+                                    type="button"
+                                    onClick={handleRemovePhoto}
+                                    className="absolute -top-2 -right-2 h-8 w-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90 transition-all"
+                                    aria-label="Remove photo"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </>
                            )}
                       </div>
                       <input
@@ -277,6 +303,7 @@ export default function SettingsPage() {
                         onChange={handleFileChange}
                         className="hidden"
                         accept="image/png, image/jpeg, image/gif"
+                        disabled={!isEditing}
                       />
                     </div>
                     <div className="md:col-span-2 space-y-4">
@@ -287,7 +314,7 @@ export default function SettingsPage() {
                             <FormItem>
                               <FormLabel>Display Name</FormLabel>
                               <FormControl>
-                                <Input {...field} />
+                                <Input {...field} disabled={!isEditing} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -314,7 +341,7 @@ export default function SettingsPage() {
                             <FormItem>
                               <FormLabel>Mobile Number</FormLabel>
                               <FormControl>
-                                <Input {...field} />
+                                <Input {...field} disabled={!isEditing} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -327,12 +354,13 @@ export default function SettingsPage() {
                             <FormItem className="flex flex-col">
                               <FormLabel>Birthday</FormLabel>
                               <Popover>
-                                <PopoverTrigger asChild>
+                                <PopoverTrigger asChild disabled={!isEditing}>
                                   <Button
                                     variant={"outline"}
                                     className={cn(
                                       "w-full justify-start text-left font-normal",
-                                      !field.value && "text-muted-foreground"
+                                      !field.value && "text-muted-foreground",
+                                      !isEditing && "bg-muted/50 cursor-not-allowed"
                                     )}
                                   >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -359,11 +387,24 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="border-t px-6 py-4">
-                    <Button type="submit" disabled={isSavingProfile}>
-                      {isSavingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Save Changes
-                    </Button>
+                <CardFooter className="border-t px-6 py-4 flex justify-end">
+                    {isEditing ? (
+                        <div className="flex gap-2">
+                           <Button variant="outline" onClick={handleCancelEdit}>
+                                <X className="mr-2 h-4 w-4" />
+                                Cancel
+                           </Button>
+                           <Button type="submit" disabled={isSavingProfile}>
+                              {isSavingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              Save Changes
+                           </Button>
+                        </div>
+                    ) : (
+                        <Button type="button" onClick={() => setIsEditing(true)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Profile
+                        </Button>
+                    )}
                 </CardFooter>
               </Card>
             </form>
