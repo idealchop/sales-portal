@@ -43,7 +43,7 @@ import { allPlans, deliveryFrequencies, gallonRotationData } from '../plans/page
 import { PaymentMethods } from '@/components/payment-methods';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import type { Client } from '@/lib/definitions';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, serverTimestamp, addDoc, doc, setDoc } from 'firebase/firestore';
 
 
@@ -195,7 +195,9 @@ export function ContractText() {
             </ContractSection>
             
             <ContractSection title="10. Data and Monitoring">
-                <p>Client information and operational data are saved and used for service improvement, compliance reporting, and to ensure the successful delivery and refilling of water. All data is handled in accordance with the Data Privacy Act of 2012.</p>
+                 <p>
+                    Client information and operational data are saved and used for service improvement, compliance reporting, and to ensure the successful delivery and refilling of water. All data is handled in accordance with the Data Privacy Act of 2012.
+                </p>
             </ContractSection>
 
              <ContractSection title="11. Trademarks & Ownership">
@@ -290,6 +292,7 @@ function ContractPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const firestore = useFirestore();
+  const { user } = useUser();
   
   const planId = searchParams.get('plan');
   const customLiters = searchParams.get('liters');
@@ -459,37 +462,34 @@ function ContractPageContent() {
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
   const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
-      if (!finalPlanDetails) {
+      if (!finalPlanDetails || !firestore || !user) {
           toast({
               variant: "destructive",
               title: "Missing Information",
-              description: "Cannot save proposal without complete plan details.",
+              description: "Cannot save proposal without complete plan details, user session, or Firestore instance.",
           });
           return;
       }
 
       setIsSaving(true);
-
+      
       try {
           let finalClientId = existingClientId;
-          let proposalId: string;
 
-          // Step 1: Create a new client document if one doesn't exist.
           if (!finalClientId) {
-              const newClientRef = doc(collection(firestore, 'clients'));
-              finalClientId = newClientRef.id;
-
               const newClientData: Partial<Client> = {
-                  id: finalClientId,
                   companyName: companyName,
                   contactName: contactName,
                   contactEmail: contactEmail,
                   contactPhone: contactPhone,
                   address: address,
                   clientType: clientType || 'sme',
-                  status: 'pending', // New clients start as pending
+                  status: 'pending',
               };
-              await setDoc(newClientRef, newClientData);
+              const newClientRef = await addDoc(collection(firestore, 'clients'), newClientData);
+              finalClientId = newClientRef.id;
+              // Now we need to update the client doc with its own ID
+              await setDoc(doc(firestore, 'clients', finalClientId), { id: finalClientId }, { merge: true });
           }
 
           if (!finalClientId) {
@@ -497,20 +497,20 @@ function ContractPageContent() {
           }
           
           const newProposalRef = doc(collection(firestore, `clients/${finalClientId}/proposals`));
-          proposalId = newProposalRef.id;
-
-          // Step 2: Prepare the final proposal data, including the correct IDs.
+          const proposalId = newProposalRef.id;
+          
           const proposalContentToSave: FinalPlanDetails = {
               ...finalPlanDetails,
-              clientId: finalClientId, // Ensure the correct client ID is embedded
+              clientId: finalClientId,
               proposalId: proposalId,
               signature,
           };
-
+          
           const newProposalData = {
+              id: proposalId,
               clientId: finalClientId,
               title: proposalContentToSave.summaryTitle,
-              content: JSON.stringify(proposalContentToSave), // Save the complete details.
+              content: JSON.stringify(proposalContentToSave),
               status: status,
               amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
               createdAt: serverTimestamp(),
@@ -526,12 +526,12 @@ function ContractPageContent() {
           
           router.push('/dashboard/proposals');
 
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error saving proposal:", error);
           toast({
               variant: "destructive",
               title: "Save Failed",
-              description: "An error occurred while saving the proposal. Please check the console and try again.",
+              description: error.message || "An error occurred while saving the proposal.",
           });
       } finally {
           setIsSaving(false);
@@ -820,13 +820,6 @@ function ContractPageContent() {
                         <span>Total Due</span>
                         <span>{finalPlanDetails.totalAmountDue}</span>
                     </div>
-
-                    {selectedCycle.multiplier > 1 && (
-                        <div className="flex justify-between items-center text-sm text-muted-foreground pt-1">
-                            <span>Total Liters for Period</span>
-                            <span>{finalPlanDetails.totalLitersForCycle.toLocaleString()} L</span>
-                        </div>
-                    )}
                 </CardContent>
             </Card>
         </div>

@@ -11,7 +11,7 @@ import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
 import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
 import { ContractText } from '@/app/dashboard/proposals/new/contract/page';
 import { Logo } from '@/components/logo';
-import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car } from 'lucide-react';
+import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
 import Image from 'next/image';
 
@@ -190,6 +190,10 @@ export function ContractDetails({
     const additionalLiterCost = source.additionalLiterCost || 3;
     const dispensersCost = Number(additionalDispensers) * additionalDispenserCost;
     const litersCost = additionalLiters * additionalLiterCost;
+    
+    const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
+    const freeLiters = baseLiters * 0.2;
+
 
     if (!finalPlan) return null;
 
@@ -295,6 +299,26 @@ export function ContractDetails({
                             <span className="text-muted-foreground">Monthly Cost</span>
                             <span className="font-semibold">{currencyFormatter.format(planBaseCost || source.basePrice || 0)}</span>
                         </div>
+                        <Separator className="my-2"/>
+                        <h5 className="font-semibold text-foreground text-sm pt-2">Free Inclusions:</h5>
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-500" /> +20% Bonus Liters
+                            </span>
+                            <span className="font-semibold">{freeLiters.toLocaleString()} L / mo</span>
+                        </div>
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-500" /> Automated Delivery & Logistics
+                            </span>
+                            <span className="font-semibold">Included</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-500" /> Monthly Sanitation & Clean-up
+                            </span>
+                            <span className="font-semibold">Included</span>
+                        </div>
                     </div>
                      {(Object.values(selectedAddons).some(v => v) || additionalDispensers > 0 || additionalLiters > 0) && (
                         <div className="space-y-2 p-4 border rounded-lg">
@@ -328,6 +352,7 @@ export function ContractDetails({
                         <span>Total Due for {billingCycleLabel} Period</span>
                         <span>{totalAmountDue}</span>
                     </div>
+                     <p className="text-xs text-muted-foreground text-right">All applicable taxes are included.</p>
                 </CardContent>
             </Card>
             
