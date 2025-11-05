@@ -140,10 +140,6 @@ export default function ProfileSetupPage() {
                     className="hidden"
                     accept="image/png, image/jpeg, image/gif"
                 />
-                <Button type="button" variant="outline" onClick={handleAvatarClick}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Photo
-                </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -248,5 +244,3 @@ export default function ProfileSetupPage() {
     </Card>
   );
 }
-
-    
