@@ -472,11 +472,15 @@ function ContractPageContent() {
 
       try {
           let finalClientId = existingClientId;
+          let proposalId: string;
 
           // Step 1: Create a new client document if one doesn't exist.
           if (!finalClientId) {
-              const clientsCollectionRef = collection(firestore, 'clients');
+              const newClientRef = doc(collection(firestore, 'clients'));
+              finalClientId = newClientRef.id;
+
               const newClientData: Partial<Client> = {
+                  id: finalClientId,
                   companyName: companyName,
                   contactName: contactName,
                   contactEmail: contactEmail,
@@ -485,23 +489,24 @@ function ContractPageContent() {
                   clientType: clientType || 'sme',
                   status: 'pending', // New clients start as pending
               };
-              const newClientDocRef = await addDoc(clientsCollectionRef, newClientData);
-              finalClientId = newClientDocRef.id;
+              await setDoc(newClientRef, newClientData);
           }
 
           if (!finalClientId) {
               throw new Error("Could not create or find a client ID.");
           }
           
-          // Step 2: Prepare the final proposal data, including the correct client ID.
+          const newProposalRef = doc(collection(firestore, `clients/${finalClientId}/proposals`));
+          proposalId = newProposalRef.id;
+
+          // Step 2: Prepare the final proposal data, including the correct IDs.
           const proposalContentToSave: FinalPlanDetails = {
               ...finalPlanDetails,
               clientId: finalClientId, // Ensure the correct client ID is embedded
+              proposalId: proposalId,
               signature,
           };
 
-          const proposalsColRef = collection(firestore, 'clients', finalClientId, 'proposals');
-          
           const newProposalData = {
               clientId: finalClientId,
               title: proposalContentToSave.summaryTitle,
@@ -512,7 +517,7 @@ function ContractPageContent() {
               updatedAt: serverTimestamp(),
           };
           
-          await addDoc(proposalsColRef, newProposalData);
+          await setDoc(newProposalRef, newProposalData);
           
           toast({
               title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",

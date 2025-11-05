@@ -116,6 +116,7 @@ export type FinalPlanDetails = {
     totalMonthlyLiters: number;
     totalLitersForCycle: number;
     clientId?: string;
+    proposalId?: string;
     companyName: string;
     contactName: string;
     contactEmail: string;
@@ -144,12 +145,13 @@ export function ContractDetails({
     
     // Determine which data source to use
     let source: FinalPlanDetails | null = null;
-    let proposalId: string | null = null;
 
     if (isSigned && client.proposals && client.proposals.length > 0) {
         try {
             source = JSON.parse(client.proposals[0].content || '{}');
-            proposalId = client.proposals[0].id;
+            // If the proposal object itself has an ID, use it. Otherwise, it's embedded in the content.
+            source!.proposalId = client.proposals[0].id || source!.proposalId;
+            source!.clientId = client.id || source!.clientId;
         } catch (e) {
             console.error("Failed to parse proposal content", e);
             return <p>Error loading contract details.</p>;
@@ -162,6 +164,7 @@ export function ContractDetails({
     
     const date = source.date;
     const clientId = client.id || source.clientId;
+    const proposalId = source.proposalId;
 
     const summaryTitle = source.summaryTitle;
     const planBaseCost = source.planBaseCost;
@@ -200,11 +203,10 @@ export function ContractDetails({
                         <p className="text-muted-foreground">Sales Illustration</p>
                     </div>
                 </div>
-                {proposalId && (
-                    <div className="text-right">
-                        <p className="font-mono text-sm text-muted-foreground">Proposal ID: {proposalId}</p>
-                    </div>
-                )}
+                <div className="text-right">
+                    {clientId && <p className="font-mono text-sm text-muted-foreground">Client ID: {clientId}</p>}
+                    {proposalId && <p className="font-mono text-sm text-muted-foreground">Proposal ID: {proposalId}</p>}
+                </div>
             </div>
             
             <Separator />
@@ -217,7 +219,7 @@ export function ContractDetails({
                     <CardContent className="grid grid-cols-1 gap-x-8 gap-y-4 text-sm">
                         <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                             <span className="text-muted-foreground">Client ID:</span>
-                            <span className="font-semibold font-mono">{clientId}</span>
+                            <span className="font-semibold font-mono">{clientId || 'Pending'}</span>
                         </div>
                         <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                             <span className="text-muted-foreground">Name:</span>
