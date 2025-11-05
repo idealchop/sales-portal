@@ -26,7 +26,6 @@ import { Suspense } from 'react';
 const formSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters.'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters.'),
-  team: z.string().min(1, 'Please enter your team name.'),
   phone: z.string().min(10, 'Please enter a valid mobile number.'),
   birthday: z.date({
     required_error: "Your date of birth is required.",
@@ -51,7 +50,6 @@ function ProfileSetupContent() {
     defaultValues: {
       firstName: '',
       lastName: '',
-      team: searchParams.get('team') || '',
       phone: searchParams.get('phone') || '',
       birthday: searchParams.get('birthday') ? new Date(searchParams.get('birthday')!) : undefined,
     },
@@ -64,8 +62,8 @@ function ProfileSetupContent() {
         const nameParts = displayName.split(' ');
         const firstName = nameParts.slice(0, -1).join(' ');
         const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
-        form.setValue('firstName', firstName);
-        form.setValue('lastName', lastName);
+        form.setValue('firstName', firstName || '');
+        form.setValue('lastName', lastName || '');
     }
   }, [user, searchParams, form.setValue]);
 
@@ -102,10 +100,10 @@ function ProfileSetupContent() {
     const displayName = `${values.firstName} ${values.lastName}`.trim();
     const params = new URLSearchParams(searchParams.toString());
     params.set('displayName', displayName);
-    params.set('team', values.team);
     params.set('phone', values.phone);
     params.set('birthday', values.birthday.toISOString());
     params.delete('photoURL');
+    params.delete('team'); // ensure team is removed
 
     try {
       if (photoFile && user) {
@@ -241,22 +239,6 @@ function ProfileSetupContent() {
                 />
               <FormField
                 control={form.control}
-                name="team"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Team</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="e.g., Team Alpha" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
@@ -333,5 +315,3 @@ export default function ProfileSetupPage() {
         </Suspense>
     )
 }
-
-    

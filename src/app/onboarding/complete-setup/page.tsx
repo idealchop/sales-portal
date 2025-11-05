@@ -49,7 +49,7 @@ function CompleteSetupContent() {
   }, [isUserLoading, displayName, currentPassword, newPassword, phone, router, toast]);
 
   const handleFinalize = async () => {
-    if (!user || !user.email || !displayName || !team || !birthday || !phone || !currentPassword || !newPassword) {
+    if (!user || !user.email || !displayName || !birthday || !phone || !currentPassword || !newPassword) {
       toast({
         variant: 'destructive',
         title: 'Incomplete Information',
@@ -66,13 +66,13 @@ function CompleteSetupContent() {
 
       await updatePassword(user, newPassword);
       
-      await updateProfile(user, { displayName, photoURL });
+      await updateProfile(user, { displayName, photoURL: photoURL || null });
 
       const userDocRef = doc(firestore, 'sales', user.uid);
       await setDoc(userDocRef, {
         displayName: displayName,
         phone: phone,
-        team: team,
+        team: team || 'Default Team', // Add a default team if not provided
         birthday: birthday.toISOString(),
         photoURL: photoURL || null,
         role: 'sales',
@@ -175,11 +175,6 @@ function CompleteSetupContent() {
             <h2 className="text-2xl font-bold">{displayName}</h2>
         </div>
          <div className="space-y-4 text-sm text-center">
-            <div className="flex items-center justify-center gap-2">
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Team:</span>
-                <span className="font-semibold">{team}</span>
-            </div>
              <div className="flex items-center justify-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Mobile:</span>
