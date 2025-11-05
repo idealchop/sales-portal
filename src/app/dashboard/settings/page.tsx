@@ -248,18 +248,12 @@ export default function SettingsPage() {
       </div>
       
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-sm">
-          <TabsTrigger value="profile">
-            <User className="mr-2 h-4 w-4" />
-            Profile
-          </TabsTrigger>
-          <TabsTrigger value="security">
-            <Lock className="mr-2 h-4 w-4" />
-            Security
-          </TabsTrigger>
+        <TabsList>
+          <TabsTrigger value="profile"><User />Profile</TabsTrigger>
+          <TabsTrigger value="security"><Lock />Security</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="mt-4">
           <Form {...profileForm}>
             <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
               <Card>
@@ -411,7 +405,7 @@ export default function SettingsPage() {
           </Form>
         </TabsContent>
         
-        <TabsContent value="security">
+        <TabsContent value="security" className="mt-4">
            <Form {...passwordForm}>
             <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
               <Card>

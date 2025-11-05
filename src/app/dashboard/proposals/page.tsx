@@ -35,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -53,34 +54,6 @@ export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
 export type ClientStatus = 'active' | 'inactive' | 'pending';
 export type ActiveView = 'proposals' | 'clients';
 
-function NavLink({
-  icon,
-  label,
-  isActive,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'relative flex items-center gap-2 px-3 py-2 text-muted-foreground transition-colors hover:text-foreground',
-        isActive && 'text-primary'
-      )}
-    >
-      {icon}
-      <span className="font-medium">{label}</span>
-      {isActive && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
-      )}
-    </button>
-  );
-}
-
 export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,6 +71,11 @@ export default function ProposalsPage() {
 
   const getClientById = (id: string): Client | undefined => {
     return clients.find(c => c.id === id);
+  }
+
+  const handleTabChange = (value: string) => {
+    setActiveView(value as ActiveView);
+    setSearchQuery('');
   }
 
   const renderProposalsTable = (status: ProposalStatus | 'all') => {
@@ -305,67 +283,54 @@ export default function ProposalsPage() {
         </Button>
       </div>
 
-      <div className="border-b">
-        <nav className="-mb-px flex gap-4" aria-label="Tabs">
-            <NavLink
-                icon={<FileText />}
-                label="Proposals"
-                isActive={activeView === 'proposals'}
-                onClick={() => { setActiveView('proposals'); setSearchQuery(''); }}
-            />
-            <NavLink
-                icon={<Users />}
-                label="Clients"
-                isActive={activeView === 'clients'}
-                onClick={() => { setActiveView('clients'); setSearchQuery(''); }}
-            />
-        </nav>
-      </div>
-
-      <div className="space-y-4">
-          {activeView === 'proposals' && (
-             <Card>
-                <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                            <CardTitle>All Proposals</CardTitle>
-                            <CardDescription>
-                                View, manage, and create sales proposals.
-                            </CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2">
-                           <div className="w-full max-w-sm">
-                              <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input 
-                                  placeholder="Search proposals..." 
-                                  className="pl-10" 
-                                  value={searchQuery}
-                                  onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                              </div>
-                          </div>
-                          <Select value={proposalStatusFilter} onValueChange={(value) => setProposalStatusFilter(value as ProposalStatus | 'all')}>
-                            <SelectTrigger className="w-[180px]">
-                              <div className="flex items-center gap-2">
-                                <Filter className="h-4 w-4" />
-                                <SelectValue placeholder="Filter by status" />
-                              </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {proposalStatuses.map(status => (
-                                <SelectItem key={status} value={status} className="capitalize">{status}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                    </div>
-                </CardHeader>
-                {renderProposalsTable(proposalStatusFilter)}
-            </Card>
-          )}
-          {activeView === 'clients' && (
+      <Tabs value={activeView} onValueChange={handleTabChange}>
+        <TabsList>
+            <TabsTrigger value="proposals"><FileText />Proposals</TabsTrigger>
+            <TabsTrigger value="clients"><Users />Clients</TabsTrigger>
+        </TabsList>
+        <TabsContent value="proposals" className="mt-4">
             <Card>
+              <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                          <CardTitle>All Proposals</CardTitle>
+                          <CardDescription>
+                              View, manage, and create sales proposals.
+                          </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                          <div className="w-full max-w-sm">
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                              <Input 
+                                placeholder="Search proposals..." 
+                                className="pl-10" 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                              />
+                            </div>
+                        </div>
+                        <Select value={proposalStatusFilter} onValueChange={(value) => setProposalStatusFilter(value as ProposalStatus | 'all')}>
+                          <SelectTrigger className="w-[180px]">
+                            <div className="flex items-center gap-2">
+                              <Filter className="h-4 w-4" />
+                              <SelectValue placeholder="Filter by status" />
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {proposalStatuses.map(status => (
+                              <SelectItem key={status} value={status} className="capitalize">{status}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                  </div>
+              </CardHeader>
+              {renderProposalsTable(proposalStatusFilter)}
+            </Card>
+        </TabsContent>
+        <TabsContent value="clients" className="mt-4">
+             <Card>
                 <CardHeader>
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
@@ -404,8 +369,8 @@ export default function ProposalsPage() {
                 </CardHeader>
                 {renderClientsTable(clientStatusFilter)}
             </Card>
-          )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
