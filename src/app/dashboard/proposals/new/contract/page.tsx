@@ -426,14 +426,7 @@ function ContractPageContent() {
 
     const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
 
-    // Generate a placeholder ID here, but the real ID will be set upon saving.
-    const proposalId = 'preview-id';
-    let finalClientId = clientId || 'preview-client-id';
-    
-
     return {
-        proposalId: proposalId,
-        clientId: finalClientId,
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         summaryTitle: summaryTitle,
         totalLiters: `${totalLitersForCycle.toLocaleString()} L`,
@@ -454,9 +447,17 @@ function ContractPageContent() {
         additionalDispenserCost,
         additionalLiterCost,
         totalMonthlyLiters,
-        totalLitersForCycle
+        totalLitersForCycle,
+        // Client info for saving
+        clientId,
+        companyName,
+        contactName,
+        contactEmail,
+        contactPhone,
+        address,
+        clientType,
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, clientId]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, clientId, companyName, contactName, contactEmail, contactPhone, address, clientType]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -498,12 +499,11 @@ function ContractPageContent() {
             throw new Error("Could not determine client ID.");
         }
 
-        // Now create the proposal under the correct client
         const proposalsColRef = collection(firestore, `clients/${finalClientId}/proposals`);
         
         const newProposalData = {
             title: finalPlanDetails.summaryTitle,
-            content: JSON.stringify(finalPlanDetails), // Save the entire detailed object
+            content: JSON.stringify(finalPlanDetails), 
             status: 'draft',
             amount: parseFloat(finalPlanDetails.totalAmountDue.replace(/[^0-9.-]+/g,"")),
             createdAt: serverTimestamp(),
@@ -829,5 +829,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    

@@ -12,7 +12,7 @@ import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plan
 import { ContractText } from '@/app/dashboard/proposals/new/contract/page';
 import { Logo } from '@/components/logo';
 import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car } from 'lucide-react';
-import type { Client, Plan } from '@/lib/definitions';
+import type { Client, Plan, Proposal } from '@/lib/definitions';
 
 const perks = [
     {
@@ -93,8 +93,6 @@ const billingCycles = [
 
 
 export type FinalPlanDetails = {
-    proposalId: string;
-    clientId: string;
     date: string;
     summaryTitle: string;
     totalLiters: string;
@@ -116,12 +114,19 @@ export type FinalPlanDetails = {
     additionalLiterCost: number;
     totalMonthlyLiters: number;
     totalLitersForCycle: number;
+    clientId?: string;
+    companyName: string;
+    contactName: string;
+    contactEmail: string;
+    contactPhone: string;
+    address: string;
+    clientType?: 'household' | 'sme' | 'commercial' | 'corporate' | 'enterprise';
 };
 
 
 interface ContractDetailsProps {
     finalPlanDetails?: FinalPlanDetails;
-    client: Partial<Client>;
+    client: Partial<Client> & { proposals?: Proposal[] };
     isSigned: boolean;
     signaturePadRef?: React.RefObject<SignaturePadRef>;
 }
@@ -136,23 +141,25 @@ export function ContractDetails({
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
     // Determine which data source to use
-    let source;
+    let source: FinalPlanDetails | null = null;
+    let proposalId: string | null = null;
+
     if (isSigned && client.proposals && client.proposals.length > 0) {
         try {
             source = JSON.parse(client.proposals[0].content || '{}');
+            proposalId = client.proposals[0].id;
         } catch (e) {
             console.error("Failed to parse proposal content", e);
             return <p>Error loading contract details.</p>;
         }
     } else {
-        source = finalPlanDetails;
+        source = finalPlanDetails || null;
     }
 
     if (!source) return <p>Contract details not available.</p>;
     
     const date = source.date;
-    const clientId = isSigned ? client.id : source.clientId;
-    const proposalId = isSigned ? client.proposals![0].id : source.proposalId;
+    const clientId = client.id || source.clientId;
 
     const summaryTitle = source.summaryTitle;
     const planBaseCost = source.planBaseCost;
@@ -191,9 +198,11 @@ export function ContractDetails({
                         <p className="text-muted-foreground">Sales Illustration</p>
                     </div>
                 </div>
-                <div className="text-right">
-                     <p className="font-mono text-sm text-muted-foreground">Proposal ID: {proposalId}</p>
-                </div>
+                {proposalId && (
+                    <div className="text-right">
+                        <p className="font-mono text-sm text-muted-foreground">Proposal ID: {proposalId}</p>
+                    </div>
+                )}
             </div>
             
             <Separator />
