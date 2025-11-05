@@ -24,6 +24,7 @@ import { useClients } from '@/hooks/use-clients';
 import type { Client } from '@/lib/definitions';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 function InputField({
   id,
@@ -113,8 +114,12 @@ export default function NewProposalPage() {
     if (clientType) {
         params.set('clientType', clientType);
     }
+    
+    const baseUrl = clientSelectionType === 'existing'
+      ? '/dashboard/proposals/new/plans'
+      : '/dashboard/proposals/new/about';
 
-    return `/dashboard/proposals/new/about?${params.toString()}`;
+    return `${baseUrl}?${params.toString()}`;
   }
   
   const isNextDisabled = clientSelectionType === 'existing' 
@@ -148,22 +153,26 @@ export default function NewProposalPage() {
           <div className="p-6 md:p-8 space-y-6">
             {!clientSelectionType && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card 
-                        className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-primary/50"
-                        onClick={() => setClientSelectionType('new')}
-                    >
-                        <PlusCircle className="h-12 w-12 text-primary mb-4" />
-                        <CardTitle>Create New Client</CardTitle>
-                        <CardDescription>Start a proposal for a brand new client.</CardDescription>
-                    </Card>
-                    <Card 
-                        className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-primary/50"
-                        onClick={() => setClientSelectionType('existing')}
-                    >
-                        <Users className="h-12 w-12 text-primary mb-4" />
-                        <CardTitle>Use Existing Client</CardTitle>
-                        <CardDescription>Select from your current list of clients.</CardDescription>
-                    </Card>
+                    <motion.div whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}>
+                        <Card 
+                            className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-shadow duration-300 h-full bg-card/50 border-border/50"
+                            onClick={() => setClientSelectionType('new')}
+                        >
+                            <PlusCircle className="h-12 w-12 text-primary mb-4" />
+                            <CardTitle>Create New Client</CardTitle>
+                            <CardDescription>Start a proposal for a brand new client.</CardDescription>
+                        </Card>
+                    </motion.div>
+                     <motion.div whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}>
+                        <Card 
+                            className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-shadow duration-300 h-full bg-card/50 border-border/50"
+                            onClick={() => setClientSelectionType('existing')}
+                        >
+                            <Users className="h-12 w-12 text-primary mb-4" />
+                            <CardTitle>Use Existing Client</CardTitle>
+                            <CardDescription>Select from your current list of clients.</CardDescription>
+                        </Card>
+                    </motion.div>
                 </div>
             )}
             

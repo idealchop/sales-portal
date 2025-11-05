@@ -128,14 +128,19 @@ export function ClientOverviewDialog({
   
   const [isUploaded, setIsUploaded] = useState(false);
   const [open, setOpen] = useState(false);
-  const [remarks, setRemarks] = useState(client.remarks || []);
+  const [remarks, setRemarks] = useState<Remark[]>([]);
   const [newRemark, setNewRemark] = useState('');
   const [clientProposals, setClientProposals] = useState<Proposal[]>([]);
   
-  const selectedProposal = useMemo(() => {
-    if (proposal) return proposal;
-    if (clientProposals.length > 0) return clientProposals[0];
-    return null;
+  // Use the passed-in proposal if available, otherwise default to the first fetched proposal
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(proposal);
+
+  useEffect(() => {
+    if (proposal) {
+      setSelectedProposal(proposal);
+    } else if (clientProposals.length > 0) {
+      setSelectedProposal(clientProposals[0]);
+    }
   }, [proposal, clientProposals]);
   
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
@@ -312,27 +317,31 @@ export function ClientOverviewDialog({
                                 <CardTitle>Contact Information</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3 text-sm">
-                                <div className="flex items-center gap-3">
-                                    <Building className="h-5 w-5 text-muted-foreground" />
+                                <div className="flex items-start gap-3">
+                                    <Building className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div>
+                                        <p className="text-xs text-muted-foreground">Company</p>
                                         <p className="font-semibold">{contactInfo.company}</p>
                                     </div>
                                 </div>
-                                 <div className="flex items-center gap-3">
-                                    <Mail className="h-5 w-5 text-muted-foreground" />
+                                <div className="flex items-start gap-3">
+                                    <Mail className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div>
+                                        <p className="text-xs text-muted-foreground">Email</p>
                                         <p className="font-semibold">{contactInfo.email}</p>
                                     </div>
                                 </div>
-                                 <div className="flex items-center gap-3">
-                                    <Phone className="h-5 w-5 text-muted-foreground" />
+                                 <div className="flex items-start gap-3">
+                                    <Phone className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div>
+                                        <p className="text-xs text-muted-foreground">Phone</p>
                                         <p className="font-semibold">{contactInfo.phone}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div className='flex-1'>
+                                        <p className="text-xs text-muted-foreground">Address</p>
                                         <p className="font-semibold">{contactInfo.address}</p>
                                         <Dialog>
                                             <DialogTrigger asChild>
