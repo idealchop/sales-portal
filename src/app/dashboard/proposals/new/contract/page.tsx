@@ -302,7 +302,7 @@ function ContractPageContent() {
   const contactPhone = searchParams.get('contactPhone') || '';
   const address = searchParams.get('address') || '';
   const clientType = searchParams.get('clientType') as Client['clientType'];
-  const clientId = searchParams.get('clientId'); 
+  const existingClientId = searchParams.get('clientId'); 
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -445,7 +445,7 @@ function ContractPageContent() {
         additionalLiterCost,
         totalMonthlyLiters,
         totalLitersForCycle,
-        clientId,
+        clientId: existingClientId,
         companyName,
         contactName,
         contactEmail,
@@ -453,63 +453,61 @@ function ContractPageContent() {
         address,
         clientType,
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, clientId, companyName, contactName, contactEmail, contactPhone, address, clientType]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, existingClientId, companyName, contactName, contactEmail, contactPhone, address, clientType]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
   const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
-      if (!finalPlanDetails) {
+    if (!finalPlanDetails) {
         toast({
             variant: "destructive",
             title: "Missing Information",
-            description: "Cannot save proposal without plan details.",
+            description: "Cannot save proposal without complete plan details.",
         });
         return;
     }
-    
-    setIsSaving(true);
-    
-    try {
-        let finalClientId = clientId;
 
-        // Step 1: Create a new client if one doesn't exist
+    setIsSaving(true);
+
+    try {
+        let finalClientId = existingClientId;
+
+        // Step 1: Create a new client document if one doesn't exist.
         if (!finalClientId) {
             const clientsCollectionRef = collection(firestore, 'clients');
-            const newClientRef = doc(clientsCollectionRef); // Auto-generate ID
-            
-            const newClientData: Partial<Client> = {
+            const newClientData: Omit<Client, 'id' | 'proposals'> = {
                 companyName,
                 contactName,
                 contactEmail,
                 contactPhone,
                 address,
                 clientType: clientType || 'sme',
-                status: 'pending', // New clients start as pending
+                status: 'pending',
             };
-            await setDoc(newClientRef, newClientData);
-            finalClientId = newClientRef.id;
+            const newClientDocRef = await addDoc(clientsCollectionRef, newClientData);
+            finalClientId = newClientDocRef.id;
         }
 
         if (!finalClientId) {
-            throw new Error("Could not determine a valid client ID.");
+            throw new Error("Could not create or find a client ID.");
         }
 
-        // Step 2: Prepare the final proposal data, now with the correct client ID
-        const finalProposalContent = {
+        // Step 2: Prepare the final proposal data, including the correct client ID.
+        const proposalContentToSave: FinalPlanDetails = {
             ...finalPlanDetails,
-            clientId: finalClientId, // Ensure the correct ID is saved
-            signature, // Add signature if finalizing
+            clientId: finalClientId,
+            signature,
         };
 
-        // Step 3: Save the proposal to the client's subcollection
-        const proposalsColRef = collection(firestore, `clients/${finalClientId}/proposals`);
+        // Step 3: Save the proposal to the client's subcollection.
+        const proposalsColRef = collection(firestore, 'clients', finalClientId, 'proposals');
         
         const newProposalData = {
-            title: finalProposalContent.summaryTitle,
-            content: JSON.stringify(finalProposalContent), // Save EVERYTHING
+            title: proposalContentToSave.summaryTitle,
+            content: JSON.stringify(proposalContentToSave), // Save the complete details.
             status: status,
-            amount: parseFloat(finalProposalContent.totalAmountDue.replace(/[^0-9.-]+/g,"")),
+            amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
@@ -518,7 +516,7 @@ function ContractPageContent() {
         
         toast({
             title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
-            description: `Your proposal has been successfully ${status}.`,
+            description: `Your proposal for ${companyName} has been successfully saved.`,
         });
         
         router.push('/dashboard/proposals');
@@ -528,12 +526,12 @@ function ContractPageContent() {
         toast({
             variant: "destructive",
             title: "Save Failed",
-            description: "An error occurred saving the proposal. Please try again.",
+            description: "An error occurred while saving the proposal. Please check the console and try again.",
         });
     } finally {
         setIsSaving(false);
     }
-  }
+  };
 
 
   const handleSaveDraft = async () => {
