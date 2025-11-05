@@ -164,7 +164,7 @@ function ProfileSetupContent() {
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
                 <Avatar className="h-32 w-32" >
-                  <AvatarImage src={photoPreview || undefined} alt="User Avatar" />
+                  <AvatarImage src={photoPreview || undefined} alt="User Avatar" className="object-cover" />
                   <AvatarFallback className="text-4xl">{getInitials(form.getValues('displayName'))}</AvatarFallback>
                 </Avatar>
                 <div 
