@@ -12,9 +12,10 @@ import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Loader2, User, Calendar, Briefcase, CheckCircle, Phone } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FirebaseError } from 'firebase/app';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 function CompleteSetupContent() {
   const router = useRouter();
@@ -30,6 +31,7 @@ function CompleteSetupContent() {
   const team = searchParams.get('team');
   const birthdayStr = searchParams.get('birthday');
   const phone = searchParams.get('phone');
+  const photoURL = searchParams.get('photoURL');
   const currentPassword = searchParams.get('currentPassword');
   const newPassword = searchParams.get('newPassword');
 
@@ -64,7 +66,7 @@ function CompleteSetupContent() {
 
       await updatePassword(user, newPassword);
       
-      await updateProfile(user, { displayName });
+      await updateProfile(user, { displayName, photoURL });
 
       const userDocRef = doc(firestore, 'sales', user.uid);
       await setDoc(userDocRef, {
@@ -72,6 +74,7 @@ function CompleteSetupContent() {
         phone: phone,
         team: team,
         birthday: birthday.toISOString(),
+        photoURL: photoURL || null,
         role: 'sales',
         onboardingCompleted: true,
       }, { merge: true });
@@ -116,6 +119,14 @@ function CompleteSetupContent() {
       setStatus('idle');
     }
   };
+  
+  const getInitials = (name: string | null) => {
+    if (!name) return '';
+    return name.split(' ').map(n => n[0]).join('');
+  }
+  
+  const prevLink = `/onboarding/password?${searchParams.toString()}`;
+
 
   if (isUserLoading || !displayName) {
       return (
@@ -156,8 +167,9 @@ function CompleteSetupContent() {
       <CardContent className="space-y-6">
         <div className="flex flex-col items-center space-y-4">
             <Avatar className="h-24 w-24">
+                <AvatarImage src={photoURL || undefined} />
                 <AvatarFallback className="text-3xl">
-                    {displayName?.split(' ').map(n => n[0]).join('')}
+                    {getInitials(displayName)}
                 </AvatarFallback>
             </Avatar>
             <h2 className="text-2xl font-bold">{displayName}</h2>
@@ -180,7 +192,7 @@ function CompleteSetupContent() {
             </div>
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col gap-2">
         <Button onClick={handleFinalize} className="w-full" disabled={status === 'finalizing'}>
             {status === 'finalizing' ? (
                 <>
@@ -191,6 +203,9 @@ function CompleteSetupContent() {
                 'Complete Setup & Go to Dashboard'
             )}
         </Button>
+         <Button variant="link" asChild className="w-full">
+            <Link href={prevLink}>Go Back</Link>
+          </Button>
       </CardFooter>
     </Card>
   );

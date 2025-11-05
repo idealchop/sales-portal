@@ -9,10 +9,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2, Lock, Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 
 const formSchema = z.object({
   currentPassword: z.string().min(1, 'Please enter your current password.'),
@@ -33,7 +34,6 @@ function ChangePasswordContent() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-
   const nextStepParams = new URLSearchParams(searchParams.toString());
   
   const form = useForm<FormValues>({
@@ -52,6 +52,8 @@ function ChangePasswordContent() {
     
     router.push(`/onboarding/complete-setup?${nextStepParams.toString()}`);
   };
+  
+  const prevLink = `/onboarding/profile?${nextStepParams.toString()}`;
 
   return (
     <Card className="w-full max-w-md">
@@ -95,7 +97,7 @@ function ChangePasswordContent() {
                   <FormControl>
                     <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input type={showNewPassword ? 'text' : 'password'} placeholder="Enter new password" {...field} className="pl-10 pr-10" />
+                        <Input type={showNewPassword ? 'text' : 'password'} placeholder="Enter new password (min. 8 characters)" {...field} className="pl-10 pr-10" />
                          <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
                           {showNewPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
                         </button>
@@ -113,7 +115,7 @@ function ChangePasswordContent() {
                   <FormLabel>Confirm New Password</FormLabel>
                    <FormControl>
                     <div className="relative">
-                        <Lock className="absolute left-3 top-1/h-5 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirm your new password" {...field} className="pl-10 pr-10" />
                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
                           {showConfirmPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
@@ -131,6 +133,11 @@ function ChangePasswordContent() {
           </form>
         </Form>
       </CardContent>
+      <CardFooter>
+          <Button variant="link" asChild className="w-full">
+            <Link href={prevLink}>Go Back</Link>
+          </Button>
+      </CardFooter>
     </Card>
   );
 }

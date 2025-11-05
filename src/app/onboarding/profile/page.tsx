@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,14 +12,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useUser } from '@/firebase';
-import { Loader2, Upload, User, CalendarIcon, Phone } from 'lucide-react';
+import { useUser, useAuth } from '@/firebase';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Loader2, Upload, User, CalendarIcon, Phone, Edit2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters.'),
@@ -34,8 +35,15 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function ProfileSetupPage() {
   const router = useRouter();
-  const { isUserLoading } = useUser();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -45,6 +53,18 @@ export default function ProfileSetupPage() {
       phone: '',
     },
   });
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        setPhotoFile(file);
+        setPhotoPreview(URL.createObjectURL(file));
+    }
+  }
+  
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  }
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
@@ -54,6 +74,27 @@ export default function ProfileSetupPage() {
     params.append('team', values.team);
     params.append('phone', values.phone);
     params.append('birthday', values.birthday.toISOString());
+
+    if (photoFile && user) {
+        const storage = getStorage();
+        const filePath = `user-avatars/${user.uid}/${photoFile.name}`;
+        const storageRef = ref(storage, filePath);
+        
+        try {
+            const snapshot = await uploadBytes(storageRef, photoFile);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            params.append('photoURL', downloadURL);
+        } catch (error) {
+            console.error("Error uploading photo:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Photo Upload Failed',
+                description: 'Could not upload your profile picture. Please try again.'
+            });
+            setIsSubmitting(false);
+            return;
+        }
+    }
 
     router.push(`/onboarding/password?${params.toString()}`);
   };
@@ -81,11 +122,23 @@ export default function ProfileSetupPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="flex flex-col items-center gap-4">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src="" alt="User Avatar" />
-                  <AvatarFallback><User className="h-10 w-10" /></AvatarFallback>
-                </Avatar>
-                <Button type="button" variant="outline">
+                <div className="relative group">
+                    <Avatar className="h-24 w-24 cursor-pointer" onClick={handleAvatarClick}>
+                        <AvatarImage src={photoPreview || undefined} alt="User Avatar" />
+                        <AvatarFallback><User className="h-10 w-10" /></AvatarFallback>
+                    </Avatar>
+                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={handleAvatarClick}>
+                        <Edit2 className="h-6 w-6 text-white" />
+                    </div>
+                </div>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/gif"
+                />
+                <Button type="button" variant="outline" onClick={handleAvatarClick}>
                     <Upload className="mr-2 h-4 w-4" />
                     Upload Photo
                 </Button>
@@ -178,8 +231,8 @@ export default function ProfileSetupPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save and Proceed
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isSubmitting ? 'Saving...' : 'Save and Proceed'}
             </Button>
           </form>
         </Form>
