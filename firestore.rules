@@ -12,7 +12,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /{path=**}/proposals/{proposalId} {
+    match /clients/{clientId}/proposals/{proposalId} {
       allow read, create, update: if isSignedIn();
       allow delete: if false;
     }
@@ -36,3 +36,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

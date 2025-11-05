@@ -315,6 +315,7 @@ function ContractPageContent() {
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingIds, setIsGeneratingIds] = useState(false);
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
     'weekly-sanitation': false,
   });
@@ -508,8 +509,11 @@ function ContractPageContent() {
             }
         }
         
-        const proposalRef = generatedProposalId ? doc(firestore, `clients/${finalClientId}/proposals`, generatedProposalId) : doc(collection(firestore, `clients/${finalClientId}/proposals`));
-        const proposalId = proposalRef.id;
+        const proposalId = generatedProposalId;
+        if (!proposalId) {
+             throw new Error("Proposal ID was not generated. Cannot save proposal.");
+        }
+        const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
 
         const proposalContentToSave: FinalPlanDetails = {
             ...finalPlanDetails,
@@ -551,9 +555,13 @@ function ContractPageContent() {
   };
 
   const handleReviewAndSignClick = async () => {
-    if (!existingClientId && !generatedClientId) {
-        try {
-            const newId = await runTransaction(firestore, async (transaction) => {
+    setIsGeneratingIds(true);
+    let finalClientId = generatedClientId;
+    let finalProposalId = generatedProposalId;
+
+    try {
+        if (!existingClientId && !finalClientId) {
+            finalClientId = await runTransaction(firestore, async (transaction) => {
                 const counterRef = doc(firestore, 'counters', 'clientCounter');
                 const counterSnap = await transaction.get(counterRef);
                 let newIdNumber = 1;
@@ -565,25 +573,35 @@ function ContractPageContent() {
                 transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
                 return newClientId;
             });
-            setGeneratedClientId(newId);
-        } catch (error) {
-            console.error("Error generating client ID:", error);
-            toast({
-                variant: "destructive",
-                title: "ID Generation Failed",
-                description: "Could not generate a new client ID. Please try again.",
-            });
-            return;
+            setGeneratedClientId(finalClientId);
         }
-    }
-    
-    // Generate a new proposal ID if one doesn't exist
-    if (!generatedProposalId) {
-        const tempProposalRef = doc(collection(firestore, 'clients', 'temp', 'proposals'));
-        setGeneratedProposalId(tempProposalRef.id);
-    }
 
-    setDialogOpen(true);
+        if (!finalProposalId) {
+            finalProposalId = await runTransaction(firestore, async (transaction) => {
+                const counterRef = doc(firestore, 'counters', 'proposalCounter');
+                const counterSnap = await transaction.get(counterRef);
+                let newIdNumber = 1;
+                if (counterSnap.exists()) {
+                    newIdNumber = counterSnap.data().currentId + 1;
+                }
+                transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
+                return String(newIdNumber);
+            });
+            setGeneratedProposalId(finalProposalId);
+        }
+
+        setDialogOpen(true);
+
+    } catch (error: any) {
+        console.error("Error generating IDs:", error);
+        toast({
+            variant: "destructive",
+            title: "ID Generation Failed",
+            description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
+        });
+    } finally {
+        setIsGeneratingIds(false);
+    }
   };
   
   if (!plan || !finalPlanDetails) {
@@ -627,8 +645,8 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-            <Button onClick={handleReviewAndSignClick} disabled={isSaving}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleReviewAndSignClick} disabled={isSaving || isGeneratingIds}>
+                {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
             </Button>
         </div>
@@ -856,7 +874,7 @@ function ContractPageContent() {
 
                     <Separator />
 
-                    <div className="flex justify-between items-center text-lg font-bold">
+                    <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
                         <span>Total Due</span>
                         <span>{finalPlanDetails.totalAmountDue}</span>
                     </div>
@@ -877,5 +895,7 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
 
     
