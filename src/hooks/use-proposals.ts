@@ -8,13 +8,13 @@ import type { Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 
 export function useProposals() {
-  const { firestore } = useFirebase();
-  const { user } = useUser();
+  const { firestore, isFirebaseLoading } = useFirebase();
+  const { user, isUserLoading } = useUser();
 
   const proposalsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (isFirebaseLoading || isUserLoading || !firestore || !user) return null;
     return query(collectionGroup(firestore, 'proposals'));
-  }, [firestore, user]);
+  }, [firestore, user, isFirebaseLoading, isUserLoading]);
 
   const { data: proposalsData, isLoading, error } = useCollection<Proposal>(proposalsQuery);
 
@@ -31,5 +31,5 @@ export function useProposals() {
     }) as WithId<Proposal>[];
   }, [proposalsData]);
 
-  return { proposals, isLoading, error };
+  return { proposals, isLoading: isLoading || isFirebaseLoading || isUserLoading, error };
 }
