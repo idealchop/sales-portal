@@ -136,51 +136,46 @@ export function ContractDetails({
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
     // Determine which data source to use
-    const source = isSigned ? client.subscription : finalPlanDetails;
+    let source;
+    if (isSigned && client.proposals && client.proposals.length > 0) {
+        try {
+            source = JSON.parse(client.proposals[0].content || '{}');
+        } catch (e) {
+            console.error("Failed to parse proposal content", e);
+            return <p>Error loading contract details.</p>;
+        }
+    } else {
+        source = finalPlanDetails;
+    }
+
     if (!source) return <p>Contract details not available.</p>;
-
-    const date = isSigned ? client.subscription?.dateSigned : finalPlanDetails?.date;
-    const clientId = isSigned ? client.id : finalPlanDetails?.clientId;
-    const proposalId = isSigned ? `SR-SIGNED-${client.id}` : finalPlanDetails?.proposalId;
-
-    const summaryTitle = isSigned ? client.subscription?.planName : finalPlanDetails?.summaryTitle;
-    const planBaseCost = isSigned ? client.subscription?.amount : finalPlanDetails?.planBaseCost;
     
-    const selectedAddons = isSigned 
-        ? client.subscription?.addons?.reduce((acc, addonName) => {
-            if (addonName === 'Weekly Sanitation') acc['weekly-sanitation'] = true;
-            return acc;
-          }, {} as {[key: string]: boolean}) || {}
-        : finalPlanDetails?.selectedAddons || {};
+    const date = source.date;
+    const clientId = isSigned ? client.id : source.clientId;
+    const proposalId = isSigned ? client.proposals![0].id : source.proposalId;
+
+    const summaryTitle = source.summaryTitle;
+    const planBaseCost = source.planBaseCost;
     
-    const additionalDispensers = isSigned 
-        ? client.subscription?.addons?.find(a => a.includes('Additional Dispenser'))?.match(/\d+/)?.[0] || 0
-        : finalPlanDetails?.additionalDispensers || 0;
+    const selectedAddons = source.selectedAddons || {};
+    
+    const additionalDispensers = source.additionalDispensers || 0;
         
-    const additionalLiters = 0; // Not stored in client data yet
+    const additionalLiters = source.additionalLiters || 0;
 
-    const billingCycleLabel = isSigned ? 'Monthly' : finalPlanDetails?.billingCycleLabel;
-    const totalAmountDue = isSigned ? currencyFormatter.format(client.subscription?.amount || 0) : finalPlanDetails?.totalAmountDue;
+    const billingCycleLabel = source.billingCycleLabel;
+    const totalAmountDue = source.totalAmountDue;
 
-    const rotationInfo = client.subscription?.planId ? (gallonRotationData[client.subscription.planId] || gallonRotationData['custom-plan']) : null;
-    const refillableGallons = isSigned ? client.subscription?.gallons : finalPlanDetails?.refillableGallons;
+    const rotationInfo = source.plan?.id ? (gallonRotationData[source.plan.id] || gallonRotationData['custom-plan']) : null;
+    const refillableGallons = source.refillableGallons;
     
-    const plan = isSigned 
-        ? allPlans.find(p => p.id === client.subscription?.planId) 
-        : finalPlanDetails?.plan;
+    const plan = source.plan;
 
-    const finalPlan = isSigned
-        ? {
-            name: client.subscription?.planName,
-            liters: `${client.subscription?.liters.toLocaleString()} L`,
-            employees: client.subscription?.employees,
-            refillFrequency: client.subscription?.refillFrequency,
-          }
-        : finalPlanDetails?.finalPlan;
+    const finalPlan = source.finalPlan;
     
-    const addons = finalPlanDetails?.addons || [];
-    const additionalDispenserCost = finalPlanDetails?.additionalDispenserCost || 250;
-    const additionalLiterCost = finalPlanDetails?.additionalLiterCost || 3;
+    const addons = source.addons || [];
+    const additionalDispenserCost = source.additionalDispenserCost || 250;
+    const additionalLiterCost = source.additionalLiterCost || 3;
     const dispensersCost = Number(additionalDispensers) * additionalDispenserCost;
     const litersCost = additionalLiters * additionalLiterCost;
 
@@ -283,7 +278,7 @@ export function ContractDetails({
                 <CardContent className="space-y-2">
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">{summaryTitle} (Monthly Cost)</span>
-                        <span className="font-semibold">{currencyFormatter.format(planBaseCost || 0)}</span>
+                        <span className="font-semibold">{currencyFormatter.format(planBaseCost || source.basePrice || 0)}</span>
                     </div>
                      {addons.map((addon) => (
                         addon.type === 'checkbox' && selectedAddons[addon.id] && (
@@ -438,4 +433,3 @@ export function ContractDetails({
         </div>
     );
 }
-

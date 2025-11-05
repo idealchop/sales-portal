@@ -21,17 +21,19 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
 import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot } from 'lucide-react';
-import type { Client, Remark, OnboardingStep } from '@/lib/definitions';
+import type { Client, Remark, OnboardingStep, Proposal } from '@/lib/definitions';
 import { ContractDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { ActiveView } from '@/app/dashboard/proposals/page';
 import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
 import { GoogleMap } from './google-map';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, query, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -119,10 +121,37 @@ export function ClientOverviewDialog({
   setActiveView?: (view: ActiveView) => void;
 }) {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
+  
   const [isUploaded, setIsUploaded] = useState(false);
   const [open, setOpen] = useState(false);
   const [remarks, setRemarks] = useState(client.remarks || []);
   const [newRemark, setNewRemark] = useState('');
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+
+  useEffect(() => {
+    if (!firestore || !client.id) return;
+
+    const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
+    const q = query(proposalsRef);
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedProposals: Proposal[] = [];
+      snapshot.forEach((doc) => {
+        fetchedProposals.push({ id: doc.id, ...doc.data() } as Proposal);
+      });
+      setProposals(fetchedProposals);
+      // Automatically select the first/most recent proposal
+      if (fetchedProposals.length > 0) {
+        setSelectedProposal(fetchedProposals[0]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [firestore, client.id]);
+
 
   const getInitials = (name: string) => {
     return name
@@ -152,27 +181,30 @@ export function ClientOverviewDialog({
     })
   }
 
-  const handleAddRemark = () => {
-    if (newRemark.trim() === '') return;
+  const handleAddRemark = async () => {
+    if (newRemark.trim() === '' || !firestore || !user) return;
 
-    const remark: Remark = {
-        content: newRemark,
-        author: 'Sandra Adams', // This should be dynamic in a real app
-        timestamp: new Date().toLocaleString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric', 
-            hour: 'numeric', 
-            minute: '2-digit' 
-        }),
-    };
-
-    setRemarks(prev => [remark, ...prev]);
-    setNewRemark('');
-    toast({
-        title: "Remark Added",
-        description: "Your new remark has been added to the log.",
-    });
+    const remarksRef = collection(firestore, 'clients', client.id, 'remarks');
+    
+    try {
+        await addDoc(remarksRef, {
+            content: newRemark,
+            author: user.displayName || 'Sales Agent',
+            timestamp: serverTimestamp(),
+        });
+        setNewRemark('');
+        toast({
+            title: "Remark Added",
+            description: "Your new remark has been added to the log.",
+        });
+    } catch (error) {
+        console.error("Error adding remark:", error);
+        toast({
+            variant: 'destructive',
+            title: "Error",
+            description: "Could not add remark.",
+        });
+    }
   }
 
   return (
@@ -479,33 +511,35 @@ export function ClientOverviewDialog({
                     </Dialog>
                  )}
                 
-                 <Dialog>
-                    <DialogTrigger asChild>
-                         <Card className="cursor-pointer hover:bg-accent transition-colors">
-                            <CardHeader className="flex-row items-center gap-4 space-y-0">
-                                <FileText className="h-6 w-6 text-primary" />
-                                <div>
-                                    <CardTitle className="text-base">View Signed Contract</CardTitle>
-                                    <CardDescription>Click to view the full agreement.</CardDescription>
-                                </div>
-                            </CardHeader>
-                        </Card>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-5xl">
-                        <DialogHeader className="sr-only">
-                            <DialogTitle>Smart Refill™ Water Supply Subscription Agreement</DialogTitle>
-                            <DialogDescription>
-                                Between: River Tech Group, Inc. (“Provider”) and {client.companyName} (“Client”).
-                            </DialogDescription>
-                        </DialogHeader>
-                        <ScrollArea className="h-[85vh] pr-6">
-                            <ContractDetails 
-                                client={client}
-                                isSigned={true}
-                            />
-                        </ScrollArea>
-                    </DialogContent>
-                </Dialog>
+                 {selectedProposal && (
+                    <Dialog>
+                        <DialogTrigger asChild>
+                             <Card className="cursor-pointer hover:bg-accent transition-colors">
+                                <CardHeader className="flex-row items-center gap-4 space-y-0">
+                                    <FileText className="h-6 w-6 text-primary" />
+                                    <div>
+                                        <CardTitle className="text-base">View Signed Contract</CardTitle>
+                                        <CardDescription>Click to view the full agreement.</CardDescription>
+                                    </div>
+                                </CardHeader>
+                            </Card>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-5xl">
+                            <DialogHeader className="sr-only">
+                                <DialogTitle>Smart Refill™ Water Supply Subscription Agreement</DialogTitle>
+                                <DialogDescription>
+                                    Between: River Tech Group, Inc. (“Provider”) and {client.companyName} (“Client”).
+                                </DialogDescription>
+                            </DialogHeader>
+                            <ScrollArea className="h-[85vh] pr-6">
+                                <ContractDetails 
+                                    client={{...client, proposals: [selectedProposal]}}
+                                    isSigned={true}
+                                />
+                            </ScrollArea>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </div>
         </ScrollArea>
       </DialogContent>

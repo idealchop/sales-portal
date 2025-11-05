@@ -241,7 +241,7 @@ function PreviewDialog({
 
         toast({
             title: "Contract Finalized!",
-            description: `Client ID ${finalPlanDetails.clientId} has been generated. The signed contract has been saved.`,
+            description: `The signed contract has been saved.`,
         });
     };
 
@@ -426,9 +426,18 @@ function ContractPageContent() {
 
     const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
 
+    // This is where IDs will come from firestore
+    const newProposalRef = doc(collection(firestore, 'clients', 'proposals-placeholder')); // Placeholder
+    
+    let finalClientId = clientId;
+    if (!finalClientId) {
+      const newClientRef = doc(collection(firestore, 'clients'));
+      finalClientId = newClientRef.id;
+    }
+
     return {
-        proposalId: `SR${new Date().getFullYear()}${Math.floor(100000 + Math.random() * 900000)}`,
-        clientId: clientId || `SC${new Date().getFullYear().toString().slice(-2)}${Math.floor(100000 + Math.random() * 900000)}`,
+        proposalId: newProposalRef.id,
+        clientId: finalClientId,
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         summaryTitle: summaryTitle,
         totalLiters: `${totalLitersForCycle.toLocaleString()} L`,
@@ -451,7 +460,7 @@ function ContractPageContent() {
         totalMonthlyLiters,
         totalLitersForCycle
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, clientId]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, clientId, firestore]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -474,8 +483,7 @@ function ContractPageContent() {
         // If it's a new client, create them first.
         if (!finalClientId) {
             const newClientRef = doc(collection(firestore, 'clients'));
-            const newClientData: Omit<Client, 'id' | 'remarks' | 'onboardingStatus' | 'subscription'> & { id: string } = {
-                id: newClientRef.id,
+            const newClientData: Omit<Client, 'id' | 'remarks' | 'onboardingStatus' | 'subscription'> = {
                 companyName,
                 contactName,
                 contactEmail,

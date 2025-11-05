@@ -37,6 +37,7 @@ export type Client = {
   clientType?: 'household' | 'sme' | 'commercial' | 'corporate' | 'enterprise';
   remarks?: Remark[];
   onboardingStatus?: OnboardingStep[];
+  proposals?: Proposal[];
   subscription?: {
     planId: string;
     planName: string;
@@ -55,6 +56,8 @@ export type Proposal = {
   id: string;
   clientId: string;
   client?: Pick<Client, 'id' | 'companyName' | 'contactName'>;
+  title: string;
+  content: string;
   status: 'draft' | 'sent' | 'accepted' | 'rejected';
   amount: number;
   createdAt: string;

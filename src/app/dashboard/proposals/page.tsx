@@ -124,9 +124,11 @@ export default function ProposalsPage() {
                     <TableRow className="cursor-pointer">
                       <TableCell>
                           <div className="font-bold">{client.companyName}</div>
-                          <div className="font-mono text-xs text-muted-foreground">Proposal ID: {proposal.id}</div>
-                          <div className="font-mono text-xs text-muted-foreground">Client ID: {client.id}</div>
-                          <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
+                          <div className="space-y-1 mt-1 text-xs text-muted-foreground font-mono">
+                            <div>Client ID: {client.id}</div>
+                            <div>Proposal ID: {proposal.id}</div>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">{client.contactName} - {client.contactEmail}</div>
                       </TableCell>
                       <TableCell>
                         <Badge className={cn("capitalize", proposalStatusStyles[proposal.status])} variant="outline">
