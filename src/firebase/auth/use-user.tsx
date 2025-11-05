@@ -32,14 +32,19 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const [isUserLoading, setIsUserLoading] = useState(true);
 
   useEffect(() => {
-    // Subscribe to auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setIsUserLoading(false);
-    });
+    // Only subscribe if the auth instance is available.
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        setUser(firebaseUser);
+        setIsUserLoading(false);
+      });
 
-    // Unsubscribe on cleanup
-    return () => unsubscribe();
+      // Unsubscribe on cleanup
+      return () => unsubscribe();
+    } else {
+      // If auth is not ready, we are still loading.
+      setIsUserLoading(true);
+    }
   }, [auth]); // Re-run effect if auth instance changes
 
   return (
