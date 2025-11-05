@@ -1,3 +1,4 @@
+
 'use client';
 import {
   useState,
@@ -6,46 +7,36 @@ import {
   useContext,
   ReactNode,
 } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth'; // Correctly import User type
-import { useAuth } from '@/firebase/provider'; // Ensure useAuth provides the auth instance
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { useAuth } from '@/firebase/provider'; // Use the hook that guarantees a ready instance
 
-// Define the shape of the user context
 interface UserContextType {
   user: User | null;
   isUserLoading: boolean;
 }
 
-// Create the context with a default undefined value
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Define the props for the provider component
 interface UserProviderProps {
   children: ReactNode;
 }
 
-/**
- * Provides user authentication state to its children.
- */
 export const UserProvider = ({ children }: UserProviderProps) => {
-  const auth = useAuth(); // Get the auth instance from the parent FirebaseProvider
+  const auth = useAuth(); // This hook now reliably provides an initialized auth instance.
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
 
   useEffect(() => {
-    // Only subscribe if the auth instance is available.
+    // Because the parent FirebaseProvider waits, 'auth' is guaranteed to be available here.
+    // The check is still good practice for robustness.
     if (auth) {
       const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         setUser(firebaseUser);
         setIsUserLoading(false);
       });
-
-      // Unsubscribe on cleanup
       return () => unsubscribe();
-    } else {
-      // If auth is not ready, we are still loading.
-      setIsUserLoading(true);
     }
-  }, [auth]); // Re-run effect if auth instance changes
+  }, [auth]); // The effect depends on the auth instance.
 
   return (
     <UserContext.Provider value={{ user, isUserLoading }}>
@@ -54,10 +45,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   );
 };
 
-/**
- * Custom hook to access user authentication state.
- * Throws an error if used outside of a UserProvider.
- */
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
   if (context === undefined) {

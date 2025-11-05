@@ -1,12 +1,14 @@
+
 'use client';
 
-import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
-import { FirebaseApp, getApps, initializeApp, getApp } from 'firebase/app';
-import { Firestore, getFirestore } from 'firebase/firestore';
-import { Auth, getAuth } from 'firebase/auth';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, DependencyList } from 'react';
+import { FirebaseApp } from 'firebase/app';
+import { Firestore } from 'firebase/firestore';
+import { Auth } from 'firebase/auth';
 import { UserProvider } from './auth/use-user';
-import { firebaseConfig } from './config';
+import { initializeFirebase } from './index'; // Import the new initializer
 
+// This interface defines the shape of our Firebase services context
 interface FirebaseContextState {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
@@ -14,74 +16,60 @@ interface FirebaseContextState {
   isFirebaseLoading: boolean;
 }
 
+// This is the actual context object
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
-// This function initializes Firebase and returns the SDK instances
-function initializeFirebase() {
-  if (getApps().length === 0) {
-    let firebaseApp;
-    try {
-      firebaseApp = initializeApp();
-    } catch (e) {
-       if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
-    return {
-      firebaseApp,
-      auth: getAuth(firebaseApp),
-      firestore: getFirestore(firebaseApp)
-    };
-  }
-  
-  const app = getApp();
-  return {
-    firebaseApp: app,
-    auth: getAuth(app),
-    firestore: getFirestore(app)
-  };
-}
+/**
+ * This is the main provider component. It is responsible for initializing Firebase
+ * and providing the services to the rest of the application.
+ * It will show a loading indicator until Firebase is ready.
+ */
+export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // State to hold the initialized Firebase services
+  const [firebaseServices, setFirebaseServices] = useState<{
+    firebaseApp: FirebaseApp;
+    auth: Auth;
+    firestore: Firestore;
+  } | null>(null);
 
-export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
-  const [firebase, setFirebase] = useState<Omit<FirebaseContextState, 'isFirebaseLoading'> | null>(null);
-
+  // This effect runs only once on the client to initialize Firebase
   useEffect(() => {
-    // This effect runs only once on the client
     const services = initializeFirebase();
-    setFirebase(services);
+    setFirebaseServices(services);
   }, []);
 
+  // useMemo ensures the context value is stable between re-renders
   const contextValue = useMemo(() => {
-    const isLoading = !firebase;
+    const isLoading = !firebaseServices;
     return {
       isFirebaseLoading: isLoading,
-      firebaseApp: firebase?.firebaseApp,
-      firestore: firebase?.firestore,
-      auth: firebase?.auth,
+      firebaseApp: firebaseServices?.firebaseApp,
+      auth: firebaseServices?.auth,
+      firestore: firebaseServices?.firestore,
     };
-  }, [firebase]) as FirebaseContextState;
+  }, [firebaseServices]) as FirebaseContextState;
 
-  // Do not render children until Firebase is initialized
+  // CRITICAL: Do not render children until Firebase is fully initialized.
+  // This prevents any component from accessing null Firebase services.
   if (contextValue.isFirebaseLoading) {
     return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-        </div>
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+      </div>
     );
   }
 
+  // Once loaded, provide the context to the rest of the app.
+  // The UserProvider now safely sits inside, guaranteed to receive a valid auth instance.
   return (
     <FirebaseContext.Provider value={contextValue}>
-      <UserProvider>
-        {children}
-      </UserProvider>
+      <UserProvider>{children}</UserProvider>
     </FirebaseContext.Provider>
   );
 };
 
+
+// --- HOOKS to access Firebase services ---
 
 export const useFirebase = (): FirebaseContextState => {
   const context = useContext(FirebaseContext);
@@ -91,32 +79,23 @@ export const useFirebase = (): FirebaseContextState => {
   return context;
 };
 
-/** Hook to access Firebase Auth instance. */
 export const useAuth = (): Auth => {
-  const { auth, isFirebaseLoading } = useFirebase();
-  if (isFirebaseLoading) {
-    throw new Error("useAuth() hook called while Firebase is loading. This is not allowed. Ensure components using this hook are rendered only after Firebase is initialized.");
-  }
+  const { auth } = useFirebase();
   return auth;
 };
 
-/** Hook to access Firestore instance. */
 export const useFirestore = (): Firestore => {
-  const { firestore, isFirebaseLoading } = useFirebase();
-  if (isFirebaseLoading) {
-    throw new Error("useFirestore() hook called while Firebase is loading. This is not allowed. Ensure components using this hook are rendered only after Firebase is initialized.");
-  }
+  const { firestore } = useFirebase();
   return firestore;
 };
 
-/** Hook to access Firebase App instance. */
 export const useFirebaseApp = (): FirebaseApp => {
-  const { firebaseApp, isFirebaseLoading } = useFirebase();
-   if (isFirebaseLoading) {
-    throw new Error("useFirebaseApp() hook called while Firebase is loading. This is not allowed. Ensure components using this hook are rendered only after Firebase is initialized.");
-  }
+  const { firebaseApp } = useFirebase();
   return firebaseApp;
 };
+
+
+// --- UTILITY HOOK for memoization ---
 
 type MemoFirebase <T> = T & {__memo?: boolean};
 
