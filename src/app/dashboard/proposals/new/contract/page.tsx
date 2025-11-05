@@ -195,7 +195,7 @@ export function ContractText() {
             </ContractSection>
             
             <ContractSection title="10. Data and Monitoring">
-                <p>Operational data is used for service improvement and compliance reporting, in accordance with the Data Privacy Act of 2012.</p>
+                <p>Client information and operational data are saved and used for service improvement, compliance reporting, and to ensure the successful delivery and refilling of water. All data is handled in accordance with the Data Privacy Act of 2012.</p>
             </ContractSection>
 
              <ContractSection title="11. Trademarks & Ownership">
