@@ -1,0 +1,259 @@
+
+{
+  "entities": {
+    "Client": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Client",
+      "type": "object",
+      "description": "Represents a client with their associated details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Client entity."
+        },
+        "companyName": {
+          "type": "string",
+          "description": "The name of the client's company."
+        },
+        "contactName": {
+          "type": "string",
+          "description": "The name of the primary contact person at the client's company."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "The email address of the primary contact person.",
+          "format": "email"
+        },
+        "contactPhone": {
+          "type": "string",
+          "description": "The phone number of the primary contact person."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the client's company."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "The latitude coordinate of the client's address."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "The longitude coordinate of the client's address."
+        },
+        "consumptionData": {
+          "type": "string",
+          "description": "Data related to the client's consumption patterns or history (e.g., JSON string)."
+        },
+        "clientType": {
+            "type": "string",
+            "description": "The type of client, used for bonus calculations.",
+            "enum": ["household", "sme", "commercial", "corporate", "enterprise"]
+        }
+      },
+      "required": [
+        "id",
+        "companyName",
+        "contactName",
+        "contactEmail",
+        "address"
+      ]
+    },
+    "Proposal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Proposal",
+      "type": "object",
+      "description": "Represents a sales proposal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Proposal entity."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to Client. (Relationship: Client 1:N Proposal)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the sales proposal."
+        },
+        "content": {
+          "type": "string",
+          "description": "The main content or description of the proposal (e.g., JSON string)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp indicating when the proposal was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The timestamp indicating when the proposal was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "clientId",
+        "title",
+        "content",
+        "createdAt"
+      ]
+    },
+    "SalesMaterial": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SalesMaterial",
+      "type": "object",
+      "description": "Represents a sales material document or link.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SalesMaterial entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the sales material."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of sales material (e.g., 'PDF', 'image', 'link')."
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL or path to the sales material.",
+          "format": "uri"
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the sales material."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "type",
+        "url"
+      ]
+    },
+    "Commission": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Commission",
+      "type": "object",
+      "description": "Represents a sales commission record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Commission entity."
+        },
+        "proposalId": {
+          "type": "string",
+          "description": "Reference to Proposal. (Relationship: Proposal 1:N Commission)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Commission). This represents who is receiving the commission."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the commission."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the commission (e.g., 'pending', 'paid')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp indicating when the commission was recorded.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "proposalId",
+        "userId",
+        "amount",
+        "status",
+        "createdAt"
+      ]
+    },
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "phone": {
+            "type": "string",
+            "description": "The user's mobile phone number."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role (e.g., 'sales', 'admin')."
+        },
+        "team": {
+            "type": "string",
+            "description": "The sales team the user belongs to."
+        },
+        "birthday": {
+            "type": "string",
+            "description": "The user's birthday.",
+            "format": "date"
+        },
+        "photoURL": {
+            "type": "string",
+            "description": "URL of the user's profile picture.",
+            "format": "uri"
+        },
+        "onboardingCompleted": {
+            "type": "boolean",
+            "description": "Flag to indicate if the user has completed the onboarding process."
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password"
+    ]
+  },
+  "firestore": {
+    "/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/Client" },
+      "description": "Stores client details. Includes client's core information."
+    },
+    "/clients/{clientId}/proposals/{proposalId}": {
+      "schema": { "$ref": "#/entities/Proposal" },
+      "description": "Stores sales proposals related to a specific client."
+    },
+    "/sales_materials/{salesMaterialId}": {
+      "schema": { "$ref": "#/entities/SalesMaterial" },
+      "description": "Stores sales material documents and links."
+    },
+    "/commissions/{commissionId}": {
+      "schema": { "$ref": "#/entities/Commission" },
+      "description": "Stores sales commission records."
+    },
+    "/sales/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores sales user profiles. Accessible only to the authenticated user."
+    }
+  }
+}
+
+    

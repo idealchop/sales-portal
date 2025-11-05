@@ -63,7 +63,8 @@ import { ActivityChart } from '@/components/activity-chart';
 import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
 import { useMemo } from 'react';
-import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths } from 'date-fns';
+import { useUser } from '@/firebase';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -97,6 +98,7 @@ const BonusCard = ({ icon, title, value, progress, goal, description, children }
 export default function DashboardPage() {
   const { proposals, isLoading: proposalsLoading } = useProposals();
   const { clients, isLoading: clientsLoading } = useClients();
+  const { user } = useUser();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
   const getClientById = (id: string): Client | undefined => {
@@ -131,15 +133,24 @@ export default function DashboardPage() {
     const commissionChange = lastMonthCommission > 0 
         ? ((monthlyCommission - lastMonthCommission) / lastMonthCommission) * 100 
         : (monthlyCommission > 0 ? 100 : 0);
+    
+    const getClientsFromProposals = (proposals: typeof acceptedThisMonth) => {
+        const clientIds = new Set(proposals.map(p => p.clientId));
+        return clients.filter(c => clientIds.has(c.id));
+    };
 
-    const newClientsThisMonth = acceptedThisMonth.length;
-    const clientsThisMonthTarget = 3; // Static target for bonus
+    const newClientsObjectsThisMonth = getClientsFromProposals(acceptedThisMonth);
+    const corporateClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'corporate' || c.clientType === 'sme' || c.clientType === 'commercial').length;
+    const individualClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'household').length;
+
+    const corporateClientsTarget = 10;
+    const individualClientsTarget = 30;
 
     const quarterlyVolume = acceptedProposals.filter(p => {
       const createdAt = new Date(p.createdAt);
       return createdAt >= currentQuarterStart && createdAt <= currentQuarterEnd;
     }).reduce((sum, p) => sum + p.amount, 0);
-    const quarterlyVolumeTarget = 100000;
+    const quarterlyVolumeTarget = 200000;
 
     const commissionHistory = Array.from({ length: 6 }).map((_, i) => {
         const monthDate = subMonths(now, i);
@@ -168,17 +179,54 @@ export default function DashboardPage() {
       { name: 'Accepted', value: acceptedProposals.length, fill: 'hsl(var(--chart-1))' },
     ];
     
-    // Mock data that is not derivable from current DB structure
-    const recurringCommission = 4000; 
-    const individualClientsThisMonth = 6;
-    const individualClientsThisMonthTarget = 30;
+    // --- Live Data Calculations for Bonuses ---
+
+    // Recurring Commission: sum of monthly fees for all active clients
+    const recurringCommission = clients
+      .filter(c => c.status === 'active' && c.subscription)
+      .reduce((sum, c) => sum + (c.subscription?.amount || 0), 0);
+
+    // Retention Bonus: clients with anniversaries coming up
+    const clientsForRetention = clients
+        .filter(c => c.status === 'active' && c.subscription?.dateSigned)
+        .map(c => {
+            const dateSigned = new Date(c.subscription!.dateSigned!);
+            const threeMonth = addMonths(dateSigned, 3);
+            const sixMonth = addMonths(dateSigned, 6);
+            const twelveMonth = addMonths(dateSigned, 12);
+            let upcomingMilestone: { anniversary: string; date: Date; bonus: number } | null = null;
+            
+            if (isWithinInterval(threeMonth, { start: now, end: addMonths(now, 2) })) {
+                upcomingMilestone = { anniversary: '3-month', date: threeMonth, bonus: 500 };
+            } else if (isWithinInterval(sixMonth, { start: now, end: addMonths(now, 2) })) {
+                upcomingMilestone = { anniversary: '6-month', date: sixMonth, bonus: 1000 };
+            } else if (isWithinInterval(twelveMonth, { start: now, end: addMonths(now, 2) })) {
+                upcomingMilestone = { anniversary: '12-month', date: twelveMonth, bonus: 3000 };
+            }
+            
+            return upcomingMilestone ? { ...c, milestone: upcomingMilestone } : null;
+        })
+        .filter(Boolean)
+        .slice(0, 3);
+
+    // Team Builder
+    const recruitedPartners = 1; // Assuming self is the first partner for now
+    const teamRevenue = totalAcceptedValue; 
+
+    // Prepayment Power-Up
+    // This requires a `billingCycle` property on the subscription which is not there yet.
+    // I will mock it for now but it can be implemented with schema changes.
+    const prepaidContracts = clients.filter(c => c.status === 'active' && c.subscription?.planId).length; // Mock logic
+    const prepaidContractsTarget = 5;
 
     return {
         monthlyCommission,
         commissionChange,
         recurringCommission,
-        newClientsThisMonth,
-        clientsThisMonthTarget,
+        corporateClientsThisMonth,
+        corporateClientsTarget,
+        individualClientsThisMonth,
+        individualClientsTarget,
         quarterlyVolume,
         quarterlyVolumeTarget,
         commissionHistory,
@@ -188,17 +236,15 @@ export default function DashboardPage() {
         recentProposals,
         activityData,
         acceptedProposals,
-        individualClientsThisMonth,
-        individualClientsThisMonthTarget,
+        clientsForRetention,
+        recruitedPartners,
+        teamRevenue,
+        prepaidContracts,
+        prepaidContractsTarget
     };
-  }, [proposals]);
+  }, [proposals, clients]);
 
-  // Static mock data for bonuses and breakdowns which are not in the DB
-  const clientsForRetention = [
-    { name: 'Solutions Inc.', anniversary: '3-month', date: 'in 12 days', bonus: 500, avatarSeed: 'Solutions' },
-    { name: 'Apex Industries', anniversary: '6-month', date: 'in 25 days', bonus: 1000, avatarSeed: 'Apex' },
-    { name: 'Innovate Corp', anniversary: '12-month', date: 'in 2 months', bonus: 3000, avatarSeed: 'Innovate' },
-  ]
+  // Static mock data for bonus tiers which are configuration, not dynamic data
   const closerBonusTiers = [
     { target: 3, bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
     { target: 5, bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
@@ -214,43 +260,25 @@ export default function DashboardPage() {
     { target: 100000, bonus: '₱10,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
     { target: 200000, bonus: '₱25,000 + Elite Partner Badge', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
   ]
-
   const teamBuilderTiers = [
     { milestone: 'Recruit & train 3 active sales partners', reward: '₱3,000 one-time' },
     { milestone: 'Each sub-affiliate’s first 3 clients', reward: '₱500 per client' },
     { milestone: 'Reach ₱100,000 combined team revenue', reward: '₱5,000 leadership bonus' },
   ]
-  const recruitedPartners = 1;
-  const teamRevenue = 42000;
-  
   const prepaymentBonusTiers = [
     { term: 'Semi-Annual', bonus: '₱3,000' },
     { term: 'Annual', bonus: '₱5,000 + "Cash Flow Champion" Badge' },
   ];
-
   const prepaymentProgressTiers = [
     { target: 1, reward: '₱2,000' },
     { target: 3, reward: '₱7,500' },
     { target: 5, reward: '₱15,000 Milestone Bonus' },
   ];
-  
-  const prepaidContracts = 2;
-  const prepaidContractsTarget = 5;
-
   const payoutTimeline = [
       { term: 'Monthly', schedule: 'Within 7–15 days after payment', example: 'e.g., Client pays Nov 1 → Commission by Nov 10–15' },
       { term: 'Quarterly', schedule: '⅓ each month after payment', example: 'e.g., Client pays Nov 1 → Payouts in Nov–Dec–Jan' },
       { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Apr' },
       { term: 'Annual', schedule: 'Spread monthly for 12 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Oct next year' },
-  ];
-  
-  const monthlyCommissionBreakdown = [
-    { client: 'Innovate Corp', amount: 3000, type: 'New Client' },
-    { client: 'Solutions Inc.', amount: 1160, type: 'Renewal' },
-    { client: 'Apex Industries', amount: 4000, type: 'Recurring' },
-  ];
-  const recurringCommissionBreakdown = [
-    { client: 'Apex Industries', amount: 4000, type: 'Pro Plan' },
   ];
   
   if (proposalsLoading || clientsLoading) {
@@ -265,7 +293,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8">
       <div className="flex-1">
         <h1 className="text-2xl font-bold">My Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, Sandra! Here's your earnings and goals snapshot.</p>
+        <p className="text-muted-foreground">Welcome back, {user?.displayName || 'Sandra'}! Here's your earnings and goals snapshot.</p>
       </div>
 
       {/* Commission Stats */}
@@ -295,14 +323,14 @@ export default function DashboardPage() {
         </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Clients Bonus</CardTitle>
+            <CardTitle className="text-sm font-medium">New Corp. Clients Bonus</CardTitle>
             <Target className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{dashboardData.newClientsThisMonth} / {dashboardData.clientsThisMonthTarget}</div>
+            <div className="text-3xl font-bold">{dashboardData.corporateClientsThisMonth} / 3</div>
             <div className="mt-2 space-y-1">
-              <Progress value={(dashboardData.newClientsThisMonth / dashboardData.clientsThisMonthTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-              <p className="text-xs text-primary-foreground/80">You're {Math.max(0, dashboardData.clientsThisMonthTarget-dashboardData.newClientsThisMonth)} client(s) away from your ₱2,000 bonus!</p>
+              <Progress value={(dashboardData.corporateClientsThisMonth / 3) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
+              <p className="text-xs text-primary-foreground/80">You're {Math.max(0, 3 - dashboardData.corporateClientsThisMonth)} client(s) away from your ₱2,000 bonus!</p>
             </div>
           </CardContent>
         </Card>
@@ -315,7 +343,7 @@ export default function DashboardPage() {
             <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</div>
              <div className="mt-2 space-y-1">
               <Progress value={(dashboardData.quarterlyVolume / dashboardData.quarterlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-              <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(dashboardData.quarterlyVolumeTarget)} for a ₱10k bonus</p>
+              <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(dashboardData.quarterlyVolumeTarget)} for a ₱25k bonus</p>
             </div>
           </CardContent>
         </Card>
@@ -537,8 +565,8 @@ export default function DashboardPage() {
              <BonusCard 
                 icon={<Target className="h-6 w-6 text-primary" />}
                 title="Corporate Closer Bonus"
-                value={`${dashboardData.newClientsThisMonth} / 10`}
-                progress={(dashboardData.newClientsThisMonth / 10) * 100}
+                value={`${dashboardData.corporateClientsThisMonth} / 10`}
+                progress={(dashboardData.corporateClientsThisMonth / 10) * 100}
                 goal="Goal: 3 clients for ₱2,000"
                 description="For SME, Commercial & Business clients.">
                  <DialogContent>
@@ -547,7 +575,7 @@ export default function DashboardPage() {
                         <DialogDescription>Reward for closing corporate clients. Claimed after clients complete their first paid month.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <p>Your current progress: <span className="font-bold">{dashboardData.newClientsThisMonth} clients</span></p>
+                        <p>Your current progress: <span className="font-bold">{dashboardData.corporateClientsThisMonth} clients</span></p>
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -557,7 +585,7 @@ export default function DashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {closerBonusTiers.map(tier => (
-                                    <TableRow key={tier.target} className={cn(dashboardData.newClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                    <TableRow key={tier.target} className={cn(dashboardData.corporateClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                         <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new clients</TableCell>
                                         <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
                                     </TableRow>
@@ -571,8 +599,8 @@ export default function DashboardPage() {
             <BonusCard 
                 icon={<Home className="h-6 w-6 text-primary" />}
                 title="Individual Closer Bonus"
-                value={`${dashboardData.individualClientsThisMonth} / ${dashboardData.individualClientsThisMonthTarget}`}
-                progress={(dashboardData.individualClientsThisMonth / dashboardData.individualClientsThisMonthTarget) * 100}
+                value={`${dashboardData.individualClientsThisMonth} / ${dashboardData.individualClientsTarget}`}
+                progress={(dashboardData.individualClientsThisMonth / dashboardData.individualClientsTarget) * 100}
                 goal={`Goal: 10 clients for ₱2,500`}
                 description="For Individual (Household) clients.">
                  <DialogContent>
@@ -605,8 +633,8 @@ export default function DashboardPage() {
              <BonusCard 
                 icon={<Award className="h-6 w-6 text-primary" />}
                 title="Quarterly Growth Bonus"
-                value={`${currencyFormatter.format(dashboardData.quarterlyVolume)} / ${currencyFormatter.format(200000)}`}
-                progress={(dashboardData.quarterlyVolume / 200000) * 100}
+                value={`${currencyFormatter.format(dashboardData.quarterlyVolume)} / ${currencyFormatter.format(dashboardData.quarterlyVolumeTarget)}`}
+                progress={(dashboardData.quarterlyVolume / dashboardData.quarterlyVolumeTarget) * 100}
                 goal={`Goal: ${currencyFormatter.format(50000)} volume for ₱5,000`}
                 description="Scale up with higher-volume enterprise accounts.">
                  <DialogContent>
@@ -648,18 +676,18 @@ export default function DashboardPage() {
                         <CardContent>
                             <p className="text-sm text-muted-foreground mb-4">Clients nearing a retention bonus.</p>
                             <div className="space-y-3">
-                                {clientsForRetention.slice(0, 2).map(client => (
-                                    <div key={client.name} className="flex items-center gap-3">
+                                {dashboardData.clientsForRetention.length > 0 ? dashboardData.clientsForRetention.slice(0,2).map(client => (
+                                    <div key={client!.id} className="flex items-center gap-3">
                                         <Avatar className="h-8 w-8">
-                                            <AvatarImage src={`https://picsum.photos/seed/${client.avatarSeed}/32/32`} />
-                                            <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+                                            <AvatarImage src={`https://picsum.photos/seed/${client!.id}/32/32`} />
+                                            <AvatarFallback>{client!.companyName.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <div className="text-sm">
-                                            <p className="font-medium">{client.name}</p>
-                                            <p className="text-xs text-muted-foreground">{client.anniversary} ({client.date})</p>
+                                            <p className="font-medium">{client!.companyName}</p>
+                                            <p className="text-xs text-muted-foreground">{client!.milestone.anniversary} ({format(client!.milestone.date, 'MMM do')})</p>
                                         </div>
                                     </div>
-                                ))}
+                                )) : <p className="text-sm text-muted-foreground">No upcoming client anniversaries.</p>}
                             </div>
                         </CardContent>
                     </Card>
@@ -680,21 +708,23 @@ export default function DashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {clientsForRetention.map(client => (
-                                    <TableRow key={client.name}>
+                                {dashboardData.clientsForRetention.length > 0 ? dashboardData.clientsForRetention.map(client => (
+                                    <TableRow key={client!.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={`https://picsum.photos/seed/${client.avatarSeed}/32/32`} />
-                                                    <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+                                                    <AvatarImage src={`https://picsum.photos/seed/${client!.id}/32/32`} />
+                                                    <AvatarFallback>{client!.companyName.charAt(0)}</AvatarFallback>
                                                 </Avatar>
-                                                <span className="font-medium">{client.name}</span>
+                                                <span className="font-medium">{client!.companyName}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="flex items-center gap-2"><CalendarCheck className="h-5 w-5 text-blue-500" /> {client.anniversary} ({client.date})</TableCell>
-                                        <TableCell className="font-bold text-primary">{currencyFormatter.format(client.bonus)}</TableCell>
+                                        <TableCell className="flex items-center gap-2"><CalendarCheck className="h-5 w-5 text-blue-500" /> {client!.milestone.anniversary} ({format(client!.milestone.date, 'MMM do')})</TableCell>
+                                        <TableCell className="font-bold text-primary">{currencyFormatter.format(client!.milestone.bonus)}</TableCell>
                                     </TableRow>
-                                ))}
+                                )) : (
+                                    <TableRow><TableCell colSpan={3} className="text-center">No upcoming anniversaries within the next 2 months.</TableCell></TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </div>
@@ -704,8 +734,8 @@ export default function DashboardPage() {
              <BonusCard 
                 icon={<Users className="h-6 w-6 text-primary" />}
                 title="Team Builder Bonus"
-                value={`${recruitedPartners} / 3`}
-                progress={(recruitedPartners / 3) * 100}
+                value={`${dashboardData.recruitedPartners} / 3`}
+                progress={(dashboardData.recruitedPartners / 3) * 100}
                 goal="Goal: Recruit 3 active partners"
                 description="Build your own team to unlock leadership bonuses.">
                  <DialogContent>
@@ -715,8 +745,8 @@ export default function DashboardPage() {
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <p>Recruited Partners: <span className="font-bold">{recruitedPartners}</span></p>
-                            <p>Combined Team Revenue: <span className="font-bold">{currencyFormatter.format(teamRevenue)}</span></p>
+                            <p>Recruited Partners: <span className="font-bold">{dashboardData.recruitedPartners}</span></p>
+                            <p>Combined Team Revenue: <span className="font-bold">{currencyFormatter.format(dashboardData.teamRevenue)}</span></p>
                         </div>
                         <Table>
                             <TableHeader>
@@ -741,9 +771,9 @@ export default function DashboardPage() {
             <BonusCard
                 icon={<CreditCard className="h-6 w-6 text-primary" />}
                 title="Prepayment Power-Up"
-                value={`${prepaidContracts} / ${prepaidContractsTarget}`}
-                progress={(prepaidContracts / prepaidContractsTarget) * 100}
-                goal={`Goal: ${prepaidContractsTarget} prepaid contracts`}
+                value={`${dashboardData.prepaidContracts} / ${dashboardData.prepaidContractsTarget}`}
+                progress={(dashboardData.prepaidContracts / dashboardData.prepaidContractsTarget) * 100}
+                goal={`Goal: ${dashboardData.prepaidContractsTarget} prepaid contracts`}
                 description="Reward for closing long-term prepaid contracts."
             >
                 <DialogContent>
@@ -752,7 +782,7 @@ export default function DashboardPage() {
                         <DialogDescription>Earn extra for improving cash flow with upfront client payments.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <p>Your current progress: <span className="font-bold">{prepaidContracts} prepaid contracts</span> closed.</p>
+                        <p>Your current progress: <span className="font-bold">{dashboardData.prepaidContracts} prepaid contracts</span> closed.</p>
                         <Separator />
                         <h4 className="font-semibold">Commission Per Contract</h4>
                         <Table>
@@ -782,7 +812,7 @@ export default function DashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {prepaymentProgressTiers.map(tier => (
-                                    <TableRow key={tier.target} className={cn(prepaidContracts >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                    <TableRow key={tier.target} className={cn(dashboardData.prepaidContracts >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                         <TableCell className="font-medium">Close {tier.target} prepaid contracts</TableCell>
                                         <TableCell className="font-bold text-primary">{tier.reward}</TableCell>
                                     </TableRow>
@@ -798,6 +828,5 @@ export default function DashboardPage() {
     </div>
   );
 }
-
 
     

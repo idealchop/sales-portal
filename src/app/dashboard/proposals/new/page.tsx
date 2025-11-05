@@ -49,12 +49,15 @@ export default function NewProposalPage() {
   const [selectedClientId, setSelectedClientId] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [contactName, setContactName] = useState('');
+  const [clientType, setClientType] = useState('');
   
   const isNewClient = selectedClientId === 'new';
 
   const selectedClient = useMemo(() => {
     if (!selectedClientId || selectedClientId === 'new') return null;
-    return clients.find(c => c.id === selectedClientId);
+    const client = clients.find(c => c.id === selectedClientId);
+    if(client) setClientType(client.clientType || '');
+    return client;
   }, [clients, selectedClientId]);
 
   const finalCompanyName = isNewClient ? companyName : selectedClient?.companyName || '';
@@ -64,13 +67,16 @@ export default function NewProposalPage() {
     const params = new URLSearchParams();
     params.set('companyName', finalCompanyName);
     params.set('contactName', finalContactName);
+    if (clientType) {
+      params.set('clientType', clientType);
+    }
     if (selectedClientId && selectedClientId !== 'new') {
       params.set('clientId', selectedClientId);
     }
     return `/dashboard/proposals/new/about?${params.toString()}`;
   }
   
-  const isNextDisabled = !selectedClientId || (isNewClient && (!companyName || !contactName));
+  const isNextDisabled = !selectedClientId || (isNewClient && (!companyName || !contactName || !clientType));
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
@@ -124,6 +130,21 @@ export default function NewProposalPage() {
                       onChange={(e) => setContactName(e.target.value)}
                     />
                   </div>
+                   <div className="space-y-2">
+                      <Label htmlFor="client-type">Client Type</Label>
+                      <Select onValueChange={setClientType} value={clientType}>
+                          <SelectTrigger id="client-type">
+                              <SelectValue placeholder="Select client type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="household">Individual (Household)</SelectItem>
+                              <SelectItem value="sme">SME</SelectItem>
+                              <SelectItem value="commercial">Commercial</SelectItem>
+                              <SelectItem value="corporate">Corporate</SelectItem>
+                              <SelectItem value="enterprise">Enterprise</SelectItem>
+                          </SelectContent>
+                      </Select>
+                    </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputField
                       id="email"
@@ -221,6 +242,13 @@ export default function NewProposalPage() {
                           <p className="font-medium">{selectedClient.address}</p>
                         </div>
                       </div>
+                       <div className="flex items-center gap-3">
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-muted-foreground">Client Type</p>
+                          <p className="font-medium capitalize">{selectedClient.clientType || 'N/A'}</p>
+                        </div>
+                      </div>
                    </div>
                 </div>
               )}
@@ -240,3 +268,5 @@ export default function NewProposalPage() {
     </div>
   );
 }
+
+    

@@ -23,8 +23,11 @@ export function useClients() {
     return clientsData.map(client => ({
       ...client,
       id: client.id,
+      clientType: client.clientType,
     })) as WithId<Client>[];
   }, [clientsData]);
 
   return { clients, isLoading: isLoading || isFirebaseLoading || isUserLoading, error };
 }
+
+    

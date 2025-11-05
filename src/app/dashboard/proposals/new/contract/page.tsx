@@ -301,6 +301,7 @@ function ContractPageContent() {
   const customType = searchParams.get('type');
   const companyName = searchParams.get('companyName') || '';
   const contactName = searchParams.get('contactName') || '';
+  const clientType = searchParams.get('clientType') as Client['clientType'];
   const clientId = searchParams.get('clientId'); 
 
   const { toast } = useToast();
@@ -470,15 +471,16 @@ function ContractPageContent() {
         // If clientId is not present, we need to create a new client first.
         if (!finalClientId) {
             const newClientRef = doc(collection(firestore, 'clients'));
-            const newClientData = {
+            const newClientData: Partial<Client> = {
                 id: newClientRef.id,
                 companyName: companyName,
                 contactName: contactName,
+                clientType: clientType,
                 contactEmail: '', // These can be added later
                 contactPhone: '',
                 address: '',
                 status: 'pending',
-                createdAt: serverTimestamp(),
+                // createdAt: serverTimestamp(), // This should be part of the schema
             };
             await setDoc(newClientRef, newClientData);
             finalClientId = newClientRef.id;
@@ -817,3 +819,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    

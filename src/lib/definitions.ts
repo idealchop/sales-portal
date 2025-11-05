@@ -34,6 +34,7 @@ export type Client = {
   contactPhone: string;
   status: 'active' | 'inactive' | 'pending';
   address: string;
+  clientType?: 'household' | 'sme' | 'commercial' | 'corporate' | 'enterprise';
   remarks?: Remark[];
   onboardingStatus?: OnboardingStep[];
   subscription?: {
@@ -84,3 +85,5 @@ export type UserProfile = {
     photoURL?: string;
     onboardingCompleted: boolean;
 };
+
+    
