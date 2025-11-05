@@ -60,7 +60,17 @@ export default function NewProposalPage() {
   const finalCompanyName = isNewClient ? companyName : selectedClient?.companyName || '';
   const finalContactName = isNewClient ? contactName : selectedClient?.contactName || '';
 
-  const nextStepLink = `/dashboard/proposals/new/about?companyName=${encodeURIComponent(finalCompanyName)}&contactName=${encodeURIComponent(finalContactName)}&clientId=${encodeURIComponent(selectedClientId === 'new' ? '' : selectedClientId)}`;
+  const getNextStepLink = () => {
+    const params = new URLSearchParams();
+    params.set('companyName', finalCompanyName);
+    params.set('contactName', finalContactName);
+    if (selectedClientId && selectedClientId !== 'new') {
+      params.set('clientId', selectedClientId);
+    }
+    return `/dashboard/proposals/new/about?${params.toString()}`;
+  }
+  
+  const isNextDisabled = !selectedClientId || (isNewClient && (!companyName || !contactName));
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
@@ -71,8 +81,8 @@ export default function NewProposalPage() {
                 Step 1: Enter Client Information
             </p>
         </div>
-        <Button asChild size="lg" disabled={!selectedClientId || (isNewClient && (!companyName || !contactName))}>
-          <Link href={nextStepLink}>Next Step</Link>
+        <Button asChild size="lg" disabled={isNextDisabled}>
+          <Link href={getNextStepLink()}>Next Step</Link>
         </Button>
       </div>
 

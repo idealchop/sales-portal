@@ -44,7 +44,7 @@ import { PaymentMethods } from '@/components/payment-methods';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import type { Client } from '@/lib/definitions';
 import { useFirestore } from '@/firebase';
-import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc, doc, setDoc } from 'firebase/firestore';
 
 
 const billingCycles = [
@@ -301,7 +301,7 @@ function ContractPageContent() {
   const customType = searchParams.get('type');
   const companyName = searchParams.get('companyName') || '';
   const contactName = searchParams.get('contactName') || '';
-  const clientId = searchParams.get('clientId'); // Assuming clientId is passed for existing clients
+  const clientId = searchParams.get('clientId'); 
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -366,11 +366,7 @@ function ContractPageContent() {
 
     return basePlan;
   }, [planId, customLiters, customCost, customFreq, customType]);
-
-  const handleAddonToggle = (addonId: string) => {
-    setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
-  }
-
+  
   const finalPlan = useMemo(() => {
     if (!plan) return null;
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
@@ -388,6 +384,10 @@ function ContractPageContent() {
         stations: getStations(finalLiters),
     }
   }, [plan, additionalLiters]);
+
+  const handleAddonToggle = (addonId: string) => {
+    setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
+  }
 
   const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
     if (!plan || !finalPlan) return null;
@@ -428,9 +428,9 @@ function ContractPageContent() {
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         summaryTitle: summaryTitle,
         totalLiters: `${totalLitersForCycle.toLocaleString()} L`,
-        employees: getEmployees(totalMonthlyLiters),
+        employees: finalPlan.employees,
         refillableGallons: rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic',
-        refillFrequency: plan.refillFrequency,
+        refillFrequency: finalPlan.refillFrequency,
         totalAmountDue: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
         billingCycleLabel: selectedCycle.label,
         discount: selectedCycle.discount,
@@ -453,34 +453,59 @@ function ContractPageContent() {
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
 
   const handleSaveProposal = async () => {
-    if (!finalPlanDetails || !clientId) {
+    if (!finalPlanDetails) {
         toast({
             variant: "destructive",
             title: "Missing Information",
-            description: "Cannot save proposal without client and plan details.",
+            description: "Cannot save proposal without plan details.",
         });
         return;
     }
     
     setIsSaving(true);
-    const proposalsColRef = collection(firestore, `clients/${clientId}/proposals`);
-
-    const newProposalData = {
-        title: finalPlanDetails.summaryTitle,
-        content: JSON.stringify(finalPlanDetails),
-        status: 'draft',
-        amount: parseFloat(finalPlanDetails.totalAmountDue.replace(/[^0-9.-]+/g,"")),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-    };
     
     try {
+        let finalClientId = clientId;
+
+        // If clientId is not present, we need to create a new client first.
+        if (!finalClientId) {
+            const newClientRef = doc(collection(firestore, 'clients'));
+            const newClientData = {
+                id: newClientRef.id,
+                companyName: companyName,
+                contactName: contactName,
+                contactEmail: '', // These can be added later
+                contactPhone: '',
+                address: '',
+                status: 'pending',
+                createdAt: serverTimestamp(),
+            };
+            await setDoc(newClientRef, newClientData);
+            finalClientId = newClientRef.id;
+        }
+
+        if (!finalClientId) {
+            throw new Error("Could not determine client ID.");
+        }
+
+        const proposalsColRef = collection(firestore, `clients/${finalClientId}/proposals`);
+        const newProposalData = {
+            title: finalPlanDetails.summaryTitle,
+            content: JSON.stringify(finalPlanDetails),
+            status: 'draft',
+            amount: parseFloat(finalPlanDetails.totalAmountDue.replace(/[^0-9.-]+/g,"")),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
         await addDoc(proposalsColRef, newProposalData);
+        
         toast({
             title: "Proposal Saved!",
             description: "Your proposal has been saved as a draft.",
         });
         router.push('/dashboard/proposals');
+
     } catch (error) {
         console.error("Error saving proposal:", error);
         toast({
