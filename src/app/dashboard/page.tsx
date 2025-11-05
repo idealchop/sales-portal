@@ -56,7 +56,7 @@ import { Badge } from '@/components/ui/badge';
 
 import { RevenueChart } from '@/components/revenue-chart';
 import { ClientPopover } from '@/components/client-popover';
-import type { Client } from '@/lib/definitions';
+import type { Client, Proposal } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { ActivityChart } from '@/components/activity-chart';
@@ -182,9 +182,8 @@ export default function DashboardPage() {
     // --- Live Data Calculations for Bonuses ---
 
     // Recurring Commission: sum of monthly fees for all active clients
-    const recurringCommission = clients
-      .filter(c => c.status === 'active' && c.subscription)
-      .reduce((sum, c) => sum + (c.subscription?.amount || 0), 0);
+    const activeClientsWithSubscription = clients.filter(c => c.status === 'active' && c.subscription);
+    const recurringCommission = activeClientsWithSubscription.reduce((sum, c) => sum + (c.subscription?.amount || 0), 0);
 
     // Retention Bonus: clients with anniversaries coming up
     const clientsForRetention = clients
@@ -214,9 +213,7 @@ export default function DashboardPage() {
     const teamRevenue = totalAcceptedValue; 
 
     // Prepayment Power-Up
-    // This requires a `billingCycle` property on the subscription which is not there yet.
-    // I will mock it for now but it can be implemented with schema changes.
-    const prepaidContracts = clients.filter(c => c.status === 'active' && c.subscription?.planId).length; // Mock logic
+    const prepaidContracts = clients.filter(c => c.status === 'active' && c.subscription?.planId).length;
     const prepaidContractsTarget = 5;
 
     return {
@@ -236,6 +233,8 @@ export default function DashboardPage() {
         recentProposals,
         activityData,
         acceptedProposals,
+        acceptedThisMonth,
+        activeClientsWithSubscription,
         clientsForRetention,
         recruitedPartners,
         teamRevenue,
@@ -298,29 +297,98 @@ export default function DashboardPage() {
 
       {/* Commission Stats */}
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Commission</CardTitle>
-            <CircleDollarSign className="h-4 w-4 text-primary-foreground/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.monthlyCommission)}</div>
-            <p className="text-xs text-primary-foreground/80">
-                {dashboardData.commissionChange >= 0 ? '+' : ''}
-                {dashboardData.commissionChange.toFixed(0)}% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recurring Commission</CardTitle>
-            <Repeat className="h-4 w-4 text-primary-foreground/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.recurringCommission)}</div>
-            <p className="text-xs text-primary-foreground/80">Your stable monthly base income</p>
-          </CardContent>
-        </Card>
+        <Dialog>
+            <DialogTrigger asChild>
+                <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground cursor-pointer hover:shadow-lg transition-shadow">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Monthly Commission</CardTitle>
+                        <CircleDollarSign className="h-4 w-4 text-primary-foreground/80" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.monthlyCommission)}</div>
+                        <p className="text-xs text-primary-foreground/80">
+                            {dashboardData.commissionChange >= 0 ? '+' : ''}
+                            {dashboardData.commissionChange.toFixed(0)}% from last month
+                        </p>
+                    </CardContent>
+                </Card>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Monthly Commission Breakdown</DialogTitle>
+                    <DialogDescription>
+                        Showing accepted proposals for {format(new Date(), 'MMMM yyyy')}.
+                    </DialogDescription>
+                </DialogHeader>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Client</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {dashboardData.acceptedThisMonth.length > 0 ? dashboardData.acceptedThisMonth.map(p => {
+                            const client = getClientById(p.clientId);
+                            return (
+                                <TableRow key={p.id}>
+                                    <TableCell>{client?.companyName || 'Unknown Client'}</TableCell>
+                                    <TableCell className="text-right">{currencyFormatter.format(p.amount)}</TableCell>
+                                </TableRow>
+                            )
+                        }) : (
+                            <TableRow>
+                                <TableCell colSpan={2} className="text-center">No commissions this month.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </DialogContent>
+        </Dialog>
+         <Dialog>
+            <DialogTrigger asChild>
+                <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground cursor-pointer hover:shadow-lg transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Recurring Commission</CardTitle>
+                    <Repeat className="h-4 w-4 text-primary-foreground/80" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.recurringCommission)}</div>
+                    <p className="text-xs text-primary-foreground/80">Your stable monthly base income</p>
+                  </CardContent>
+                </Card>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Recurring Commission Breakdown</DialogTitle>
+                    <DialogDescription>
+                        Monthly fees from all your active clients.
+                    </DialogDescription>
+                </DialogHeader>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Client</TableHead>
+                            <TableHead>Plan</TableHead>
+                            <TableHead className="text-right">Monthly Fee</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                         {dashboardData.activeClientsWithSubscription.length > 0 ? dashboardData.activeClientsWithSubscription.map(c => (
+                            <TableRow key={c.id}>
+                                <TableCell>{c.companyName}</TableCell>
+                                <TableCell>{c.subscription?.planName || 'N/A'}</TableCell>
+                                <TableCell className="text-right">{currencyFormatter.format(c.subscription?.amount || 0)}</TableCell>
+                            </TableRow>
+                        )) : (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center">No active recurring subscriptions.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </DialogContent>
+        </Dialog>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">New Corp. Clients Bonus</CardTitle>
@@ -828,5 +896,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
