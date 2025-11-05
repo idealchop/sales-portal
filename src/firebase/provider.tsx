@@ -1,11 +1,11 @@
 'use client';
 
-import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import React, { DependencyList, createContext, useContext, ReactNode, useMemo } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
-import { initializeFirebase } from '@/firebase';
 import { UserProvider } from './auth/use-user';
+import { useFirebaseClient } from './client-provider';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -23,24 +23,19 @@ export const FirebaseContext = createContext<FirebaseContextState | undefined>(u
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
 }) => {
-  const [isFirebaseLoading, setIsFirebaseLoading] = useState(true);
+  const { firebaseApp, firestore, auth, isFirebaseLoading } = useFirebaseClient();
 
-  const firebaseServices = useMemo(() => {
-    return initializeFirebase();
-  }, []);
-
-  useEffect(() => {
-    if (firebaseServices.firebaseApp && firebaseServices.firestore && firebaseServices.auth) {
-      setIsFirebaseLoading(false);
-    }
-  }, [firebaseServices]);
-  
   const contextValue = useMemo(() => {
+    if (isFirebaseLoading || !firebaseApp || !firestore || !auth) {
+        return { isFirebaseLoading: true, firebaseApp: null, firestore: null, auth: null } as unknown as FirebaseContextState;
+    }
     return {
-      ...firebaseServices,
+      firebaseApp,
+      firestore,
+      auth,
       isFirebaseLoading,
     };
-  }, [firebaseServices, isFirebaseLoading]);
+  }, [firebaseApp, firestore, auth, isFirebaseLoading]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
