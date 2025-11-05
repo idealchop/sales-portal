@@ -664,7 +664,7 @@ export default function DashboardPage() {
         <CardContent className="grid gap-8 lg:grid-cols-2 items-center">
             <div className="relative h-full w-full min-h-[30rem] hidden lg:block rounded-lg overflow-hidden">
                 <Image
-                    src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FHappy_Team.png?alt=media&token=534f5e7a-82c8-4067-95e9-d1be27609f60"
+                    src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FHappy_Team_v2.png?alt=media&token=cfd3d9c7-acfc-4da8-93f4-6ad8d96cc325"
                     alt="Happy Team"
                     fill
                     className="object-cover"
