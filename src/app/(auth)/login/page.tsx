@@ -3,17 +3,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, Lock, Loader2 } from 'lucide-react';
+import { User, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
 const formSchema = z.object({
@@ -25,10 +26,12 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user: authUser, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -48,7 +51,25 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoggingIn(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // **THIS IS THE NEW LOGIC**
+      // Check for user document in Firestore immediately after login.
+      if (user) {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        // If the document does not exist, create it.
+        if (!userDocSnap.exists()) {
+          await setDoc(userDocRef, {
+            id: user.uid,
+            email: user.email,
+            onboardingCompleted: false,
+          });
+        }
+      }
+      
       // On successful login, the gatekeeper in DashboardLayout will handle the redirect
       // to either the dashboard or onboarding. We just need to go to a protected route.
       router.push('/dashboard'); 
@@ -124,8 +145,11 @@ export default function LoginPage() {
                           <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                              <FormControl>
-                              <Input type="password" placeholder="Password" className="pl-10" {...field} />
+                              <Input type={showPassword ? 'text' : 'password'} placeholder="Password" className="pl-10 pr-10" {...field} />
                             </FormControl>
+                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
+                                {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                            </button>
                           </div>
                           <FormMessage />
                         </FormItem>
