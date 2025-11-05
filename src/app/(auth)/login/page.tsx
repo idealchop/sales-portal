@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -97,11 +98,11 @@ export default function LoginPage() {
     }
   };
 
-  const isFormDisabled = isFirebaseLoading || isLoggingIn;
+  const isFormDisabled = isFirebaseLoading || isUserLoading || isLoggingIn;
 
   // While user state is loading, or if a user is found, show a spinner
   // to prevent a flash of the login form before redirecting.
-  if (isUserLoading || authUser) {
+  if (isFirebaseLoading || isUserLoading || authUser) {
       return (
         <div className="flex h-screen w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
