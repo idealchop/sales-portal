@@ -31,7 +31,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -44,8 +44,7 @@ import { PaymentMethods } from '@/components/payment-methods';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import type { Client } from '@/lib/definitions';
 import { useFirestore } from '@/firebase';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
 
 
 const billingCycles = [
@@ -306,6 +305,7 @@ function ContractPageContent() {
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
     'weekly-sanitation': false,
   });
@@ -390,7 +390,7 @@ function ContractPageContent() {
   }, [plan, additionalLiters]);
 
   const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
-    if (!plan) return null;
+    if (!plan || !finalPlan) return null;
     
     const planBaseCost = parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,""));
     if (isNaN(planBaseCost)) {
@@ -462,6 +462,7 @@ function ContractPageContent() {
         return;
     }
     
+    setIsSaving(true);
     const proposalsColRef = collection(firestore, `clients/${clientId}/proposals`);
 
     const newProposalData = {
@@ -474,7 +475,7 @@ function ContractPageContent() {
     };
     
     try {
-        await addDocumentNonBlocking(proposalsColRef, newProposalData);
+        await addDoc(proposalsColRef, newProposalData);
         toast({
             title: "Proposal Saved!",
             description: "Your proposal has been saved as a draft.",
@@ -487,6 +488,8 @@ function ContractPageContent() {
             title: "Save Failed",
             description: "There was an error saving the proposal. Please try again.",
         });
+    } finally {
+        setIsSaving(false);
     }
   };
   
@@ -531,9 +534,9 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-            <Button onClick={handleSaveProposal}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Proposal
+            <Button onClick={handleSaveProposal} disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {isSaving ? 'Saving...' : 'Save Proposal'}
             </Button>
         </div>
       </div>
