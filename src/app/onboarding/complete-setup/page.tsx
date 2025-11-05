@@ -26,7 +26,6 @@ function CompleteSetupContent() {
   const [status, setStatus] = useState<'idle' | 'finalizing' | 'success'>('idle');
 
 
-  // Extract all data from URL
   const displayName = searchParams.get('displayName');
   const team = searchParams.get('team');
   const birthdayStr = searchParams.get('birthday');
@@ -37,7 +36,6 @@ function CompleteSetupContent() {
   const birthday = birthdayStr ? new Date(birthdayStr) : null;
 
   useEffect(() => {
-    // A simple check to ensure we came from the previous steps
     if (!isUserLoading && (!displayName || !currentPassword || !newPassword || !phone)) {
       toast({
         variant: 'destructive',
@@ -61,27 +59,22 @@ function CompleteSetupContent() {
 
     setStatus('finalizing');
     try {
-      // 1. Re-authenticate the user first
       const credential = EmailAuthProvider.credential(user.email, currentPassword);
       await reauthenticateWithCredential(user, credential);
 
-      // 2. Now, update the password
       await updatePassword(user, newPassword);
       
-      // 3. Update Firebase Auth profile displayName
       await updateProfile(user, { displayName });
 
-      // 4. Update the existing Firestore document with the new information.
-      // Using { merge: true } ensures we update fields without overwriting the whole document.
-      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDocRef = doc(firestore, 'sales', user.uid);
       await setDoc(userDocRef, {
         displayName: displayName,
         phone: phone,
         team: team,
         birthday: birthday.toISOString(),
-        role: 'sales', // Default role
-        onboardingCompleted: true, // This is the crucial flag to grant access
-      }, { merge: true }); // Use merge to update the existing document
+        role: 'sales',
+        onboardingCompleted: true,
+      }, { merge: true });
       
       setStatus('success');
       
@@ -90,7 +83,6 @@ function CompleteSetupContent() {
         description: 'Your account has been created. Welcome to Smart Refill!',
       });
       
-      // 5. Redirect only after all operations are successful.
       setTimeout(() => {
           router.push('/dashboard');
       }, 2000);
@@ -102,9 +94,7 @@ function CompleteSetupContent() {
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             description = "The current password you entered is incorrect. Please go back and try again.";
-            // Go back to the password page, preserving other details
             const params = new URLSearchParams(searchParams.toString());
-            // It is important to remove the password fields from the URL before redirecting
             params.delete('currentPassword');
             params.delete('newPassword');
             toast({
@@ -113,7 +103,7 @@ function CompleteSetupContent() {
                 description: "The 'Current Password' you entered was incorrect. Please try again.",
             });
             router.push(`/onboarding/password?${params.toString()}`);
-            return; // Stop execution here
+            return;
         } else {
             description = error.message;
         }

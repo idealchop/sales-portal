@@ -49,14 +49,12 @@ export default function ProfileSetupPage() {
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     
-    // Construct the query parameters
     const params = new URLSearchParams();
     params.append('displayName', values.displayName);
     params.append('team', values.team);
     params.append('phone', values.phone);
     params.append('birthday', values.birthday.toISOString());
 
-    // Redirect to the password page with the profile data
     router.push(`/onboarding/password?${params.toString()}`);
   };
 

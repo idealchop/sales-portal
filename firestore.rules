@@ -1,78 +1,34 @@
-/**
- * @fileOverview Firestore Security Rules for SmartSales AI application.
- *
- * Core Philosophy:
- * This ruleset enforces a user-ownership model for sales profiles and commissions,
- * and allows authenticated users to read shared data like clients and proposals.
- *
- * Data Structure:
- * - /clients/{clientId}: Stores client details. Read-only for authenticated users.
- * - /clients/{clientId}/proposals/{proposalId}: Stores proposals. Read-only for authenticated users.
- * - /sales_materials/{salesMaterialId}: Publicly readable sales materials.
- * - /commissions/{commissionId}: User-owned commission records.
- * - /sales/{salesId}: User-owned sales profiles.
- */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Client data is readable by any authenticated user.
-     * @path /clients/{clientId}
-     */
     match /clients/{clientId} {
-      allow read: if isSignedIn();
-      allow write: if false; // Disallow direct writes
+      allow read, create, update: if isSignedIn();
+      allow delete: if false;
     }
 
-    /**
-     * @description Allows authenticated users to read proposals.
-     * This uses a recursive wildcard to match proposals in subcollections.
-     * @path /{path=**}/proposals/{proposalId}
-     */
     match /{path=**}/proposals/{proposalId} {
-      allow read: if isSignedIn();
-      allow write: if false; // Disallow direct writes
+      allow read, create, update: if isSignedIn();
+      allow delete: if false;
     }
 
-    /**
-     * @description Sales materials are publicly readable.
-     * @path /sales_materials/{salesMaterialId}
-     */
-    match /sales_materials/{salesMaterialId} {
-      allow get, list: if true;
-      allow write: if false;
+    match /sales_materials/{materialId} {
+      allow get: if true;
+      allow list, write: if false;
     }
-
-    /**
-     * @description Commissions are owned by the user who created them.
-     * @path /commissions/{commissionId}
-     */
+    
     match /commissions/{commissionId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+        allow read, write: if request.auth.uid == resource.data.userId;
     }
 
-    /**
-     * @description Sales profiles are owned by the user.
-     * A user can create their own profile.
-     * They can read, update, and delete their own profile.
-     * @path /sales/{salesId}
-     */
-    match /sales/{salesId} {
-      allow read, update, delete: if isOwner(salesId);
-      allow create: if request.auth.uid == salesId;
+    match /sales/{userId} {
+      allow read, update: if request.auth.uid == userId;
+      allow create: if request.auth.uid == userId;
     }
   }
 }
-
-    

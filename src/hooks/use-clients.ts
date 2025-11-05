@@ -8,13 +8,13 @@ import type { Client } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 
 export function useClients() {
-  const { firestore } = useFirebase();
-  const { user } = useUser();
+  const { firestore, isFirebaseLoading } = useFirebase();
+  const { user, isUserLoading } = useUser();
 
   const clientsQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (isFirebaseLoading || isUserLoading || !firestore || !user) return null;
     return query(collection(firestore, 'clients'));
-  }, [firestore, user]);
+  }, [firestore, user, isFirebaseLoading, isUserLoading]);
 
   const { data: clientsData, isLoading, error } = useCollection<Client>(clientsQuery);
 
@@ -26,5 +26,5 @@ export function useClients() {
     })) as WithId<Client>[];
   }, [clientsData]);
 
-  return { clients, isLoading, error };
+  return { clients, isLoading: isLoading || isFirebaseLoading || isUserLoading, error };
 }

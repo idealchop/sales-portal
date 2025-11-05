@@ -34,7 +34,6 @@ function ChangePasswordContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 
-  // Re-build the query string to pass all data to the next step
   const nextStepParams = new URLSearchParams(searchParams.toString());
   
   const form = useForm<FormValues>({
@@ -48,7 +47,6 @@ function ChangePasswordContent() {
 
   const onSubmit = (values: FormValues) => {
     setIsSubmitting(true);
-    // Pass the passwords along to the final confirmation step
     nextStepParams.set('currentPassword', values.currentPassword);
     nextStepParams.set('newPassword', values.newPassword);
     

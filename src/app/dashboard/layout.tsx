@@ -49,11 +49,10 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isUserLoading) {
-      return; // Wait until user state is loaded.
+      return; 
     }
 
     if (user) {
-      // User is authenticated, now check their onboarding status from Firestore.
       const checkUserOnboarding = async () => {
         const docRef = doc(firestore, 'sales', user.uid);
         const docSnap = await getDoc(docRef);
@@ -63,24 +62,18 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
           if (!userData.onboardingCompleted) {
             router.push('/onboarding/profile');
           }
-          // If onboarding is completed, do nothing and allow access to the dashboard.
         } else {
-          // This case should ideally not happen if the login page works correctly.
-          // As a fallback, redirect to login to restart the process.
           console.error("User document not found in /sales, redirecting to login.");
           router.push('/login');
         }
       };
       checkUserOnboarding();
     } else {
-      // No authenticated user, redirect to the login page.
       router.push('/login');
     }
   }, [user, isUserLoading, firestore, router]);
 
 
-  // While loading user state or if there's no user, show a loading spinner.
-  // This prevents a brief flash of content before the redirect can happen.
   if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -89,7 +82,6 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // If the user is authenticated and onboarding is complete, render the children.
   return <>{children}</>;
 }
 
@@ -111,5 +103,3 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    

@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -60,21 +61,17 @@ export default function LoginPage() {
         const userDocSnap = await getDoc(userDocRef);
 
         if (!userDocSnap.exists()) {
-          // Document doesn't exist, this is a first-time login for this user.
-          // Create the document.
           await setDoc(userDocRef, {
             id: user.uid,
             email: user.email,
-            displayName: user.email, // Default display name to email
-            onboardingCompleted: false, // Set the flag to false for new users.
-            role: 'sales', // Default role
+            displayName: user.email,
+            onboardingCompleted: false,
+            role: 'sales',
             createdAt: serverTimestamp()
           });
         }
       }
       
-      // On successful login, always go to the onboarding flow.
-      // The "gatekeeper" in DashboardLayout will handle redirects for returning users.
       router.push('/onboarding/profile'); 
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
@@ -179,5 +176,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
