@@ -506,7 +506,7 @@ export default function DashboardPage() {
        <Card>
           <CardHeader className='flex flex-row items-center justify-between'>
             <div>
-              <CardTitle>Activity Snapshot</CardTitle>
+              <CardTitle>Activity Proposal Snapshot</CardTitle>
               <CardDescription>Your key performance indicators for this month.</CardDescription>
             </div>
             <Button asChild size="sm" variant="outline">
