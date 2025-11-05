@@ -37,12 +37,3 @@ export const revenueData: Revenue[] = [
   { month: 'May', revenue: 450000 },
   { month: 'Jun', revenue: 480000 },
 ];
-
-export const commissionData: Revenue[] = [
-    { month: 'Jan', revenue: 5200 },
-    { month: 'Feb', revenue: 6800 },
-    { month: 'Mar', revenue: 7500 },
-    { month: 'Apr', revenue: 7100 },
-    { month: 'May', revenue: 8800 },
-    { month: 'Jun', revenue: 8160 },
-]

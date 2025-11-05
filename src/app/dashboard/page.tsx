@@ -54,7 +54,6 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
-import { commissionData } from '@/lib/data';
 import { RevenueChart } from '@/components/revenue-chart';
 import { ClientPopover } from '@/components/client-popover';
 import type { Client } from '@/lib/definitions';
@@ -63,6 +62,8 @@ import { Separator } from '@/components/ui/separator';
 import { ActivityChart } from '@/components/activity-chart';
 import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
+import { useMemo } from 'react';
+import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter } from 'date-fns';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -96,18 +97,103 @@ const BonusCard = ({ icon, title, value, progress, goal, description, children }
 export default function DashboardPage() {
   const { proposals, isLoading: proposalsLoading } = useProposals();
   const { clients, isLoading: clientsLoading } = useClients();
+  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
   const getClientById = (id: string): Client | undefined => {
     return clients.find(c => c.id === id);
   }
 
-  // Mock data for bonuses
-  const clientsThisMonth = 2;
-  const clientsThisMonthTarget = 3;
-  const individualClientsThisMonth = 6;
-  const individualClientsThisMonthTarget = 30;
-  const quarterlyVolume = 68000;
-  const quarterlyVolumeTarget = 100000;
+  // Memoized calculations for dashboard data
+  const dashboardData = useMemo(() => {
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const lastMonthStart = startOfMonth(subMonths(now, 1));
+    const currentMonthEnd = endOfMonth(now);
+    const lastMonthEnd = endOfMonth(lastMonthStart);
+    const currentQuarterStart = startOfQuarter(now);
+    const currentQuarterEnd = endOfQuarter(now);
+
+    const acceptedProposals = proposals.filter(p => p.status === 'accepted');
+
+    const acceptedThisMonth = acceptedProposals.filter(p => {
+        const createdAt = new Date(p.createdAt);
+        return createdAt >= currentMonthStart && createdAt <= currentMonthEnd;
+    });
+
+    const acceptedLastMonth = acceptedProposals.filter(p => {
+        const createdAt = new Date(p.createdAt);
+        return createdAt >= lastMonthStart && createdAt <= lastMonthEnd;
+    });
+
+    const monthlyCommission = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
+    const lastMonthCommission = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
+
+    const commissionChange = lastMonthCommission > 0 
+        ? ((monthlyCommission - lastMonthCommission) / lastMonthCommission) * 100 
+        : (monthlyCommission > 0 ? 100 : 0);
+
+    const newClientsThisMonth = acceptedThisMonth.length;
+    const clientsThisMonthTarget = 3; // Static target for bonus
+
+    const quarterlyVolume = acceptedProposals.filter(p => {
+      const createdAt = new Date(p.createdAt);
+      return createdAt >= currentQuarterStart && createdAt <= currentQuarterEnd;
+    }).reduce((sum, p) => sum + p.amount, 0);
+    const quarterlyVolumeTarget = 100000;
+
+    const commissionHistory = Array.from({ length: 6 }).map((_, i) => {
+        const monthDate = subMonths(now, i);
+        const monthStart = startOfMonth(monthDate);
+        const monthEnd = endOfMonth(monthDate);
+        const monthName = format(monthDate, 'MMM');
+
+        const revenue = acceptedProposals
+            .filter(p => {
+                const createdAt = new Date(p.createdAt);
+                return createdAt >= monthStart && createdAt <= monthEnd;
+            })
+            .reduce((sum, p) => sum + p.amount, 0);
+        
+        return { month: monthName, revenue };
+    }).reverse();
+
+    const proposalsSent = proposals.filter(p => p.status !== 'draft').length;
+    const winRate = proposalsSent > 0 ? (acceptedProposals.length / proposalsSent) * 100 : 0;
+    const totalAcceptedValue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
+    const avgDealSize = acceptedProposals.length > 0 ? totalAcceptedValue / acceptedProposals.length : 0;
+    const recentProposals = proposals.slice(0, 5);
+
+    const activityData = [
+      { name: 'Sent', value: proposalsSent, fill: 'hsl(var(--chart-2))' },
+      { name: 'Accepted', value: acceptedProposals.length, fill: 'hsl(var(--chart-1))' },
+    ];
+    
+    // Mock data that is not derivable from current DB structure
+    const recurringCommission = 4000; 
+    const individualClientsThisMonth = 6;
+    const individualClientsThisMonthTarget = 30;
+
+    return {
+        monthlyCommission,
+        commissionChange,
+        recurringCommission,
+        newClientsThisMonth,
+        clientsThisMonthTarget,
+        quarterlyVolume,
+        quarterlyVolumeTarget,
+        commissionHistory,
+        proposalsSent,
+        winRate,
+        avgDealSize,
+        recentProposals,
+        activityData,
+        acceptedProposals,
+        individualClientsThisMonth,
+        individualClientsThisMonthTarget,
+    };
+  }, [proposals]);
+
+  // Static mock data for bonuses and breakdowns which are not in the DB
   const clientsForRetention = [
     { name: 'Solutions Inc.', anniversary: '3-month', date: 'in 12 days', bonus: 500, avatarSeed: 'Solutions' },
     { name: 'Apex Industries', anniversary: '6-month', date: 'in 25 days', bonus: 1000, avatarSeed: 'Apex' },
@@ -151,8 +237,6 @@ export default function DashboardPage() {
   const prepaidContracts = 2;
   const prepaidContractsTarget = 5;
 
-  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-
   const payoutTimeline = [
       { term: 'Monthly', schedule: 'Within 7–15 days after payment', example: 'e.g., Client pays Nov 1 → Commission by Nov 10–15' },
       { term: 'Quarterly', schedule: '⅓ each month after payment', example: 'e.g., Client pays Nov 1 → Payouts in Nov–Dec–Jan' },
@@ -168,20 +252,14 @@ export default function DashboardPage() {
   const recurringCommissionBreakdown = [
     { client: 'Apex Industries', amount: 4000, type: 'Pro Plan' },
   ];
-
-  // Productivity Metrics
-  const proposalsSent = proposals.filter(p => p.status !== 'draft').length;
-  const acceptedProposals = proposals.filter(p => p.status === 'accepted');
-  const winRate = proposalsSent > 0 ? (acceptedProposals.length / proposalsSent) * 100 : 0;
-  const totalAcceptedValue = acceptedProposals.reduce((sum, p) => sum + (p.amount || 0), 0);
-  const avgDealSize = acceptedProposals.length > 0 ? totalAcceptedValue / acceptedProposals.length : 0;
-  const newClientsThisMonth = 2; // Mock data
-  const recentProposals = proposals.slice(0, 5);
-
-  const activityData = [
-    { name: 'Sent', value: proposalsSent, fill: 'hsl(var(--chart-2))' },
-    { name: 'Accepted', value: acceptedProposals.length, fill: 'hsl(var(--chart-1))' },
-  ]
+  
+  if (proposalsLoading || clientsLoading) {
+      return (
+        <div className="flex h-[80vh] w-full items-center justify-center">
+            <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+        </div>
+      );
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -198,44 +276,11 @@ export default function DashboardPage() {
             <CircleDollarSign className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">₱8,160</div>
-            <p className="text-xs text-primary-foreground/80">+15% from last month</p>
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="text-xs text-primary-foreground/80 mt-2 underline">See breakdown</button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Monthly Commission Breakdown</DialogTitle>
-                  <DialogDescription>Details of your commission earnings for this month.</DialogDescription>
-                </DialogHeader>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {monthlyCommissionBreakdown.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{item.client}</TableCell>
-                        <TableCell>{item.type}</TableCell>
-                        <TableCell className="text-right">{currencyFormatter.format(item.amount)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                <Separator />
-                <div className="flex justify-end font-bold">
-                    <div className="grid grid-cols-2 gap-4 w-60">
-                        <span>Total:</span>
-                        <span className="text-right">{currencyFormatter.format(monthlyCommissionBreakdown.reduce((acc, item) => acc + item.amount, 0))}</span>
-                    </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.monthlyCommission)}</div>
+            <p className="text-xs text-primary-foreground/80">
+                {dashboardData.commissionChange >= 0 ? '+' : ''}
+                {dashboardData.commissionChange.toFixed(0)}% from last month
+            </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
@@ -244,44 +289,8 @@ export default function DashboardPage() {
             <Repeat className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">₱4,000</div>
+            <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.recurringCommission)}</div>
             <p className="text-xs text-primary-foreground/80">Your stable monthly base income</p>
-             <Dialog>
-              <DialogTrigger asChild>
-                <button className="text-xs text-primary-foreground/80 mt-2 underline">See breakdown</button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Recurring Commission Breakdown</DialogTitle>
-                  <DialogDescription>Details of your recurring commission sources.</DialogDescription>
-                </DialogHeader>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Source</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recurringCommissionBreakdown.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{item.client}</TableCell>
-                        <TableCell>{item.type}</TableCell>
-                        <TableCell className="text-right">{currencyFormatter.format(item.amount)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                 <Separator />
-                <div className="flex justify-end font-bold">
-                    <div className="grid grid-cols-2 gap-4 w-60">
-                        <span>Total:</span>
-                        <span className="text-right">{currencyFormatter.format(recurringCommissionBreakdown.reduce((acc, item) => acc + item.amount, 0))}</span>
-                    </div>
-                </div>
-              </DialogContent>
-            </Dialog>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
@@ -290,10 +299,10 @@ export default function DashboardPage() {
             <Target className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{clientsThisMonth} / {clientsThisMonthTarget}</div>
+            <div className="text-3xl font-bold">{dashboardData.newClientsThisMonth} / {dashboardData.clientsThisMonthTarget}</div>
             <div className="mt-2 space-y-1">
-              <Progress value={(clientsThisMonth / clientsThisMonthTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-              <p className="text-xs text-primary-foreground/80">You're {clientsThisMonthTarget-clientsThisMonth} client away from your ₱2,000 bonus!</p>
+              <Progress value={(dashboardData.newClientsThisMonth / dashboardData.clientsThisMonthTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
+              <p className="text-xs text-primary-foreground/80">You're {Math.max(0, dashboardData.clientsThisMonthTarget-dashboardData.newClientsThisMonth)} client(s) away from your ₱2,000 bonus!</p>
             </div>
           </CardContent>
         </Card>
@@ -303,10 +312,10 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">₱{quarterlyVolume.toLocaleString()}</div>
+            <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</div>
              <div className="mt-2 space-y-1">
-              <Progress value={(quarterlyVolume / quarterlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-              <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(quarterlyVolumeTarget)} for a ₱10k bonus</p>
+              <Progress value={(dashboardData.quarterlyVolume / dashboardData.quarterlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
+              <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(dashboardData.quarterlyVolumeTarget)} for a ₱10k bonus</p>
             </div>
           </CardContent>
         </Card>
@@ -323,7 +332,7 @@ export default function DashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RevenueChart data={commissionData} />
+                <RevenueChart data={dashboardData.commissionHistory} />
               </CardContent>
             </Card>
           </DialogTrigger>
@@ -336,7 +345,7 @@ export default function DashboardPage() {
             </DialogHeader>
             <div className="grid gap-8 py-6 md:grid-cols-2">
                 <div>
-                  <RevenueChart data={commissionData} />
+                  <RevenueChart data={dashboardData.commissionHistory} />
                 </div>
                 <div>
                     <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
@@ -425,12 +434,12 @@ export default function DashboardPage() {
                       fill="none"
                       stroke="hsl(var(--primary))"
                       strokeWidth="3"
-                      strokeDasharray={`${winRate}, 100`}
+                      strokeDasharray={`${dashboardData.winRate}, 100`}
                       strokeLinecap="round"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-bold">{winRate.toFixed(0)}%</span>
+                    <span className="text-3xl font-bold">{dashboardData.winRate.toFixed(0)}%</span>
                   </div>
                 </div>
               </CardContent>
@@ -441,7 +450,7 @@ export default function DashboardPage() {
                 <CardDescription>Sent vs. Accepted</CardDescription>
               </CardHeader>
               <CardContent className="h-40">
-                <ActivityChart data={activityData} />
+                <ActivityChart data={dashboardData.activityData} />
               </CardContent>
             </Card>
              <Card>
@@ -452,8 +461,8 @@ export default function DashboardPage() {
                 <div className='flex items-center justify-center rounded-full bg-primary/10 h-20 w-20 mb-4'>
                     <CircleDollarSign className='h-10 w-10 text-primary'/>
                 </div>
-                <div className="text-3xl font-bold">{currencyFormatter.format(avgDealSize)}</div>
-                <p className="text-xs text-muted-foreground">from {acceptedProposals.length} accepted proposals</p>
+                <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.avgDealSize)}</div>
+                <p className="text-xs text-muted-foreground">from {dashboardData.acceptedProposals.length} accepted proposals</p>
               </CardContent>
             </Card>
           </CardContent>
@@ -487,7 +496,7 @@ export default function DashboardPage() {
                   </TableCell>
                 </TableRow>
               )}
-              {!(proposalsLoading || clientsLoading) && recentProposals.map((proposal) => {
+              {!(proposalsLoading || clientsLoading) && dashboardData.recentProposals.map((proposal) => {
                 const client = getClientById(proposal.clientId);
                 if (!client) return null;
                 return (
@@ -528,8 +537,8 @@ export default function DashboardPage() {
              <BonusCard 
                 icon={<Target className="h-6 w-6 text-primary" />}
                 title="Corporate Closer Bonus"
-                value={`${clientsThisMonth} / 10`}
-                progress={(clientsThisMonth / 10) * 100}
+                value={`${dashboardData.newClientsThisMonth} / 10`}
+                progress={(dashboardData.newClientsThisMonth / 10) * 100}
                 goal="Goal: 3 clients for ₱2,000"
                 description="For SME, Commercial & Business clients.">
                  <DialogContent>
@@ -538,7 +547,7 @@ export default function DashboardPage() {
                         <DialogDescription>Reward for closing corporate clients. Claimed after clients complete their first paid month.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <p>Your current progress: <span className="font-bold">{clientsThisMonth} clients</span></p>
+                        <p>Your current progress: <span className="font-bold">{dashboardData.newClientsThisMonth} clients</span></p>
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -548,7 +557,7 @@ export default function DashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {closerBonusTiers.map(tier => (
-                                    <TableRow key={tier.target} className={cn(clientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                    <TableRow key={tier.target} className={cn(dashboardData.newClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                         <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new clients</TableCell>
                                         <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
                                     </TableRow>
@@ -562,8 +571,8 @@ export default function DashboardPage() {
             <BonusCard 
                 icon={<Home className="h-6 w-6 text-primary" />}
                 title="Individual Closer Bonus"
-                value={`${individualClientsThisMonth} / ${individualClientsThisMonthTarget}`}
-                progress={(individualClientsThisMonth / individualClientsThisMonthTarget) * 100}
+                value={`${dashboardData.individualClientsThisMonth} / ${dashboardData.individualClientsThisMonthTarget}`}
+                progress={(dashboardData.individualClientsThisMonth / dashboardData.individualClientsThisMonthTarget) * 100}
                 goal={`Goal: 10 clients for ₱2,500`}
                 description="For Individual (Household) clients.">
                  <DialogContent>
@@ -572,7 +581,7 @@ export default function DashboardPage() {
                         <DialogDescription>Reward for bringing in household clients. Claimed after clients complete their first paid month.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <p>Your current progress: <span className="font-bold">{individualClientsThisMonth} clients</span></p>
+                        <p>Your current progress: <span className="font-bold">{dashboardData.individualClientsThisMonth} clients</span></p>
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -582,7 +591,7 @@ export default function DashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {individualCloserBonusTiers.map(tier => (
-                                    <TableRow key={tier.target} className={cn(individualClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                    <TableRow key={tier.target} className={cn(dashboardData.individualClientsThisMonth >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                         <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new household clients</TableCell>
                                         <TableCell className="font-bold text-primary">{typeof tier.bonus === 'number' ? currencyFormatter.format(tier.bonus) : tier.bonus}</TableCell>
                                     </TableRow>
@@ -596,9 +605,9 @@ export default function DashboardPage() {
              <BonusCard 
                 icon={<Award className="h-6 w-6 text-primary" />}
                 title="Quarterly Growth Bonus"
-                value={`₱${(quarterlyVolume / 1000).toFixed(0)}k / ₱200k`}
-                progress={(quarterlyVolume / 200000) * 100}
-                goal="Goal: ₱50k volume for ₱5,000"
+                value={`${currencyFormatter.format(dashboardData.quarterlyVolume)} / ${currencyFormatter.format(200000)}`}
+                progress={(dashboardData.quarterlyVolume / 200000) * 100}
+                goal={`Goal: ${currencyFormatter.format(50000)} volume for ₱5,000`}
                 description="Scale up with higher-volume enterprise accounts.">
                  <DialogContent>
                     <DialogHeader>
@@ -606,7 +615,7 @@ export default function DashboardPage() {
                         <DialogDescription>Rewards the expansion of your client base and total liters sold.</DialogDescription>
                     </DialogHeader>
                      <div className="space-y-4">
-                        <p>Your current progress: <span className="font-bold">{currencyFormatter.format(quarterlyVolume)}</span> in new volume</p>
+                        <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</span> in new volume</p>
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -616,7 +625,7 @@ export default function DashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {growthBonusTiers.map(tier => (
-                                    <TableRow key={tier.target} className={cn(quarterlyVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                    <TableRow key={tier.target} className={cn(dashboardData.quarterlyVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                         <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
                                         <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
                                     </TableRow>
