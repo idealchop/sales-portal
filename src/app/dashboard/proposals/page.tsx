@@ -107,6 +107,7 @@ export default function ProposalsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
+                <TableHead>Proposal</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">
                   Created At
@@ -124,11 +125,12 @@ export default function ProposalsPage() {
                     <TableRow className="cursor-pointer">
                       <TableCell>
                           <div className="font-bold">{client.companyName}</div>
-                          <div className="space-y-1 mt-1 text-xs text-muted-foreground font-mono">
-                            <div>Client ID: {client.id}</div>
-                            <div>Proposal ID: {proposal.id}</div>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">{client.contactName} - {client.contactEmail}</div>
+                          <div className="text-sm text-muted-foreground">{client.contactName}</div>
+                          <div className="text-xs text-muted-foreground">{client.contactEmail}</div>
+                      </TableCell>
+                       <TableCell>
+                          <div className="font-medium">{proposal.title}</div>
+                          <div className="font-mono text-xs text-muted-foreground">ID: {proposal.id}</div>
                       </TableCell>
                       <TableCell>
                         <Badge className={cn("capitalize", proposalStatusStyles[proposal.status])} variant="outline">
