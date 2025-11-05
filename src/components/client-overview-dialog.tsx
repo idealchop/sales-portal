@@ -204,6 +204,7 @@ export function ClientOverviewDialog({
         inclusions: parsedProposalContent.plan.inclusions,
         addons,
         dateSigned: parsedProposalContent.date,
+        monthlyAmount: parsedProposalContent.basePrice,
       };
     }
     // Fallback for older client data structure
@@ -214,6 +215,7 @@ export function ClientOverviewDialog({
         totalAmountDue: client.subscription.amount,
         billingCycle: 'Monthly',
         addons: client.subscription.addons?.map(name => ({ name, cost: 0 })) || [],
+        monthlyAmount: client.subscription.amount,
       };
     }
     return null;
@@ -449,6 +451,7 @@ export function ClientOverviewDialog({
                                 </div>
                                 <div className="space-y-2">
                                     <h3 className="text-lg font-bold">{subscriptionInfo.planName}</h3>
+                                     <p className="font-semibold text-primary">{currencyFormatter.format(subscriptionInfo.monthlyAmount || 0)} / mo</p>
                                 </div>
                                 <Separator />
                                 <div className="space-y-2">
@@ -521,7 +524,7 @@ export function ClientOverviewDialog({
                                         </DialogHeader>
                                         <div className="grid md:grid-cols-2 gap-6 py-4">
                                             <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                                <Image src={planImage} alt={subscriptionInfo.planName} fill className="object-cover" />
+                                                {subscriptionInfo && <Image src={planImage} alt={subscriptionInfo.planName} fill className="object-cover" />}
                                             </div>
                                             <div>
                                                 <div className="flex flex-col">
@@ -658,4 +661,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
