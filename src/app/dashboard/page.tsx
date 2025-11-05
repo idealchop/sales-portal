@@ -506,7 +506,7 @@ export default function DashboardPage() {
        <Card>
           <CardHeader className='flex flex-row items-center justify-between'>
             <div>
-              <CardTitle>Activity Proposal Snapshot</CardTitle>
+              <CardTitle>Proposal Snapshot</CardTitle>
               <CardDescription>Your key performance indicators for this month.</CardDescription>
             </div>
             <Button asChild size="sm" variant="outline">
@@ -516,7 +516,7 @@ export default function DashboardPage() {
           <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
              <Card>
               <CardHeader>
-                <CardTitle className='text-base font-medium'>Win Rate</CardTitle>
+                <CardTitle className='text-base font-medium'>Success Rate</CardTitle>
               </CardHeader>
               <CardContent className='flex items-center justify-center'>
                  <div className="relative h-32 w-32">
