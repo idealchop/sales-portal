@@ -471,6 +471,7 @@ function ContractPageContent() {
     try {
         let finalClientId = clientId;
 
+        // If it's a new client, create them first.
         if (!finalClientId) {
             const newClientRef = doc(collection(firestore, 'clients'));
             const newClientData: Partial<Client> = {
@@ -480,7 +481,7 @@ function ContractPageContent() {
                 contactEmail,
                 contactPhone,
                 address,
-                clientType,
+                clientType: clientType || 'sme',
                 status: 'pending',
             };
             await setDoc(newClientRef, newClientData);
@@ -491,11 +492,12 @@ function ContractPageContent() {
             throw new Error("Could not determine client ID.");
         }
 
+        // Now create the proposal under the correct client
         const proposalsColRef = collection(firestore, `clients/${finalClientId}/proposals`);
         
         const newProposalData = {
             title: finalPlanDetails.summaryTitle,
-            content: JSON.stringify(finalPlanDetails),
+            content: JSON.stringify(finalPlanDetails), // Save the entire detailed object
             status: 'draft',
             amount: parseFloat(finalPlanDetails.totalAmountDue.replace(/[^0-9.-]+/g,"")),
             createdAt: serverTimestamp(),
