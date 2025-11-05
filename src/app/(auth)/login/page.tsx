@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
 const formSchema = z.object({
@@ -55,26 +55,27 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // Immediately check for the user document and create it if it doesn't exist.
-      // This is the definitive point of creation.
       if (user) {
-        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDocRef = doc(firestore, 'sales', user.uid);
         const userDocSnap = await getDoc(userDocRef);
 
         if (!userDocSnap.exists()) {
+          // Document doesn't exist, this is a first-time login for this user.
+          // Create the document.
           await setDoc(userDocRef, {
             id: user.uid,
             email: user.email,
             displayName: user.email, // Default display name to email
             onboardingCompleted: false, // Set the flag to false for new users.
             role: 'sales', // Default role
-          }, { merge: true });
+            createdAt: serverTimestamp()
+          });
         }
       }
       
-      // On successful login, always go to the dashboard.
-      // The "gatekeeper" in DashboardLayout will then handle any necessary redirects.
-      router.push('/dashboard'); 
+      // On successful login, always go to the onboarding flow.
+      // The "gatekeeper" in DashboardLayout will handle redirects for returning users.
+      router.push('/onboarding/profile'); 
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {
@@ -101,8 +102,6 @@ export default function LoginPage() {
 
   const isFormDisabled = isFirebaseLoading || isUserLoading || isLoggingIn;
 
-  // While user state is loading, or if a user is found, show a spinner
-  // to prevent a flash of the login form before redirecting.
   if (isFirebaseLoading || isUserLoading || authUser) {
       return (
         <div className="flex h-screen w-full items-center justify-center">
@@ -111,7 +110,6 @@ export default function LoginPage() {
       );
   }
 
-  // Only render the login form if there is no user and loading is complete.
   return (
     <div className="min-h-screen w-full grid grid-cols-1 md:grid-cols-2">
         <div className="flex items-center justify-center p-8">
@@ -181,3 +179,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

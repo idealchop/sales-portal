@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore } from '@/firebase';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 function DashboardSidebar() {
   const { state } = useSidebar();
@@ -55,11 +55,9 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
     if (user) {
       // User is authenticated, now check their onboarding status from Firestore.
       const checkUserOnboarding = async () => {
-        const docRef = doc(firestore, 'users', user.uid);
+        const docRef = doc(firestore, 'sales', user.uid);
         const docSnap = await getDoc(docRef);
         
-        // This component's only job is to check the flag and redirect.
-        // It assumes the document has already been created by the login page.
         if (docSnap.exists()) {
           const userData = docSnap.data();
           if (!userData.onboardingCompleted) {
@@ -69,7 +67,7 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
         } else {
           // This case should ideally not happen if the login page works correctly.
           // As a fallback, redirect to login to restart the process.
-          console.error("User document not found, redirecting to login.");
+          console.error("User document not found in /sales, redirecting to login.");
           router.push('/login');
         }
       };
@@ -113,3 +111,5 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    

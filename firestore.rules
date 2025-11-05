@@ -2,101 +2,19 @@
  * @fileOverview Firestore Security Rules for SmartSales AI application.
  *
  * Core Philosophy:
- * This ruleset enforces a user-ownership model for user profiles and commissions,
- * and a hierarchical relationship between clients and proposals. Sales materials are publicly readable.
- * Data validation is relaxed to allow for rapid prototyping.
+ * This ruleset enforces a user-ownership model for sales profiles and commissions,
+ * and allows authenticated users to read shared data like clients and proposals.
  *
  * Data Structure:
- * - /clients/{clientId}: Stores client details.
- * - /clients/{clientId}/proposals/{proposalId}: Stores proposals related to a client.
- * - /sales_materials/{salesMaterialId}: Stores sales materials.
- * - /commissions/{commissionId}: Stores commission records.
- * - /users/{userId}: Stores user profiles.
- *
- * Key Security Decisions:
- * - Users can only access their own profile data.
- * - Users can create, update, and delete commissions assigned to them.
- * - Sales materials are publicly readable.
- * - Listing of sales materials is allowed.
- *
- * Denormalization for Authorization:
- * - Commissions include a `userId` field to simplify authorization checks.
- *
- * Structural Segregation:
- * - User-specific data is stored under /users/{userId} for isolation.
+ * - /clients/{clientId}: Stores client details. Read-only for authenticated users.
+ * - /clients/{clientId}/proposals/{proposalId}: Stores proposals. Read-only for authenticated users.
+ * - /sales_materials/{salesMaterialId}: Publicly readable sales materials.
+ * - /commissions/{commissionId}: User-owned commission records.
+ * - /sales/{salesId}: User-owned sales profiles.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * @description Allows access to client data based on its unique ID.
-     * @path /clients/{clientId}
-     * @allow (read) - Any authenticated user can read client data.
-     * @allow (create) - No one can create documents.
-     * @allow (update, delete) - No one can update or delete documents.
-     * @deny (create, update, delete) - No one can write client data.
-     * @principle Client data are read-only.
-     */
-    match /clients/{clientId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
-    }
-
-    /**
-     * @description Allows access to proposals under a specific client.
-     * @path /clients/{clientId}/proposals/{proposalId}
-     * @allow (read) - Any authenticated user can read proposal data.
-     * @allow (create) - No one can create documents.
-     * @allow (update, delete) - No one can update or delete documents.
-     * @deny (create, update, delete) - No one can write proposal data.
-     * @principle Proposals data are read-only.
-     */
-    match /clients/{clientId}/proposals/{proposalId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
-    }
-
-    /**
-     * @description Allows public read access to sales materials. Write access is denied.
-     * @path /sales_materials/{salesMaterialId}
-     * @allow (read) - Any user can read sales materials.
-     * @deny (create, update, delete) - No one can write sales materials.
-     * @principle Sales materials are publicly readable, owner-only writable (if ownership field was present).
-     */
-    match /sales_materials/{salesMaterialId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
-    }
-
-    /**
-     * @description Allows access to commission records, ensuring users can only manage their own commissions.
-     * @path /commissions/{commissionId}
-     * @allow (create) - User can create a commission if the userId matches their auth UID.
-     * @allow (get, list, update, delete) - User can get, list, update, and delete a commission if the userId matches their auth UID and if the document exists.
-     * @deny (create) - User cannot create a commission if the userId does not match their auth UID.
-     * @deny (get, list, update, delete) - User cannot get, list, update, or delete a commission if the userId does not match their auth UID or if the document doesn't exist.
-     * @principle Enforces user-ownership for commissions.
-     */
-    match /commissions/{commissionId} {
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow list: if isSignedIn();
-      allow update: if isSignedIn() && isExistingOwner(resource.data.userId);
-      allow delete: if isSignedIn() && isExistingOwner(resource.data.userId);
-    }
-
-    /**
-     * @description Allows access to user profiles, ensuring users can only manage their own profile.
-     * @path /users/{userId}
-     * @allow (create, update) - User can create or update their own profile.
-     * @allow (get, list, delete) - User can read or delete their own profile.
-     * @principle Enforces user-ownership for profile data.
-     */
-    match /users/{userId} {
-      allow create, update: if isOwner(userId);
-      allow get, list, delete: if isOwner(userId);
-    }
 
     // Helper functions
     function isSignedIn() {
@@ -107,8 +25,54 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+    /**
+     * @description Client data is readable by any authenticated user.
+     * @path /clients/{clientId}
+     */
+    match /clients/{clientId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Disallow direct writes
+    }
+
+    /**
+     * @description Allows authenticated users to read proposals.
+     * This uses a recursive wildcard to match proposals in subcollections.
+     * @path /{path=**}/proposals/{proposalId}
+     */
+    match /{path=**}/proposals/{proposalId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Disallow direct writes
+    }
+
+    /**
+     * @description Sales materials are publicly readable.
+     * @path /sales_materials/{salesMaterialId}
+     */
+    match /sales_materials/{salesMaterialId} {
+      allow get, list: if true;
+      allow write: if false;
+    }
+
+    /**
+     * @description Commissions are owned by the user who created them.
+     * @path /commissions/{commissionId}
+     */
+    match /commissions/{commissionId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    /**
+     * @description Sales profiles are owned by the user.
+     * A user can create their own profile.
+     * They can read, update, and delete their own profile.
+     * @path /sales/{salesId}
+     */
+    match /sales/{salesId} {
+      allow read, update, delete: if isOwner(salesId);
+      allow create: if request.auth.uid == salesId;
     }
   }
 }
+
+    

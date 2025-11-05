@@ -217,11 +217,7 @@
       },
       "required": [
         "id",
-        "email",
-        "displayName",
-        "phone",
-        "role",
-        "onboardingCompleted"
+        "email"
       ]
     }
   },
@@ -302,23 +298,24 @@
         }
       },
       {
-        "path": "/users/{userId}",
+        "path": "/sales/{salesId}",
         "definition": {
           "entityName": "UserProfile",
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user profiles. Accessible only to the authenticated user (path-based ownership).",
+          "description": "Stores sales user profiles. Accessible only to the authenticated user (path-based ownership).",
           "params": [
             {
-              "name": "userId",
-              "description": "The unique identifier for the user."
+              "name": "salesId",
+              "description": "The unique identifier for the sales user, matching their Auth UID."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the SmartSales AI application's requirements, focusing on security, scalability, and ease of maintenance. The structure adheres to the principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It leverages denormalization to avoid hierarchical authorization dependencies and structural segregation for homogeneous security postures. The structure uses path-based ownership for private data, membership maps for collaborative data (if needed in future iterations), and explicit state modeling.\n\n**Authorization Independence:**\n\n*   The design avoids `get()` calls in security rules by denormalizing authorization data where necessary. For instance, if access to `Proposals` needed to be restricted based on client attributes, those attributes could be copied into the `Proposal` documents. However, given the current information, it is assumed the sales team is able to manage all the proposals, so it is not needed to denormalize data.\n*   Commissions are assigned to individual users. Thus, the commissions documents include the `userId` that is validated against `request.auth.uid`.\n\n**Structural Segregation:**\n\n*   The structure maintains a clear separation between user-owned data and shared data. User profiles are stored under `/users/{userId}`, ensuring that each user's data is isolated. Other collections are segregated to enforce uniform security requirements.\n\n**Access Modeling:**\n\n*   Private Data: `/users/{userId}` stores user-specific information, accessible only to the authenticated user.\n*   Hierarchical Paths: `/clients/{clientId}/proposals/{proposalId}` establishes clear ownership and relationship between clients and their proposals.\n\n**QAPs (Rules are not Filters):**\n\n*   The structure allows for secure `list` operations by avoiding the need to filter based on data within documents. Security rules can efficiently validate access based on path and user roles without requiring complex filtering logic.\n\nIn summary, this structure prioritizes a simple, secure, and scalable approach by enforcing authorization independence, leveraging structural segregation, and adhering to consistent access modeling patterns."
+    "reasoning": "The Firestore data structure is designed to support the SmartSales AI application's requirements, focusing on security, scalability, and ease of maintenance. The structure adheres to the principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It leverages denormalization to avoid hierarchical authorization dependencies and structural segregation for homogeneous security postures. The structure uses path-based ownership for private data, membership maps for collaborative data (if needed in future iterations), and explicit state modeling.\n\n**Authorization Independence:**\n\n*   The design avoids `get()` calls in security rules by denormalizing authorization data where necessary. For instance, if access to `Proposals` needed to be restricted based on client attributes, those attributes could be copied into the `Proposal` documents. However, given the current information, it is assumed the sales team is able to manage all the proposals, so it is not needed to denormalize data.\n*   Commissions are assigned to individual users. Thus, the commissions documents include the `userId` that is validated against `request.auth.uid`.\n\n**Structural Segregation:**\n\n*   The structure maintains a clear separation between user-owned data and shared data. User profiles are stored under `/sales/{salesId}`, ensuring that each user's data is isolated. Other collections are segregated to enforce uniform security requirements.\n\n**Access Modeling:**\n\n*   Private Data: `/sales/{salesId}` stores user-specific information, accessible only to the authenticated user.\n*   Hierarchical Paths: `/clients/{clientId}/proposals/{proposalId}` establishes clear ownership and relationship between clients and their proposals.\n\n**QAPs (Rules are not Filters):**\n\n*   The structure allows for secure `list` operations by avoiding the need to filter based on data within documents. Security rules can efficiently validate access based on path and user roles without requiring complex filtering logic.\n\nIn summary, this structure prioritizes a simple, secure, and scalable approach by enforcing authorization independence, leveraging structural segregation, and adhering to consistent access modeling patterns."
   }
 }
+
     
