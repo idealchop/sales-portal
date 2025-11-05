@@ -94,14 +94,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <ProtectedLayout>
-        <DashboardSidebar />
-        <div className="flex flex-col flex-1">
-          <DashboardHeader />
-          <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-              <div className="mx-auto w-full max-w-7xl">
-                  {children}
-              </div>
-          </main>
+        <div className="relative flex h-screen w-full">
+            <DashboardSidebar />
+            <div className="flex flex-col flex-1">
+            <DashboardHeader />
+            <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+                <div className="mx-auto w-full max-w-7xl">
+                    {children}
+                </div>
+            </main>
+            </div>
         </div>
       </ProtectedLayout>
     </SidebarProvider>
