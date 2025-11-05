@@ -2,7 +2,7 @@
 
 'use client';
 import Link from "next/link";
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   PlusCircle,
   FileText,
@@ -61,15 +61,15 @@ export default function ProposalsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'draft', 'finalized', 'accepted', 'sent', 'rejected'];
   const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'pending', 'inactive'];
-  const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('active');
+  const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('all');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
 
   const [proposalsCurrentPage, setProposalsCurrentPage] = useState(1);
   const [clientsCurrentPage, setClientsCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
-  const { proposals, isLoading: proposalsLoading } = useProposals();
-  const { clients, isLoading: clientsLoading } = useClients();
+  const { proposals, isLoading: proposalsLoading, error: proposalsError } = useProposals();
+  const { clients, isLoading: clientsLoading, error: clientsError } = useClients();
 
   const getClientById = (id: string): Client | undefined => {
     return clients.find(c => c.id === id);
@@ -79,26 +79,29 @@ export default function ProposalsPage() {
     setActiveView(value as ActiveView);
     setSearchQuery('');
   }
+  
+  // Memoize client data to avoid re-renders
+  const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
+
 
   const renderProposalsTable = () => {
     const filteredProposals = useMemo(() => {
-        const proposalsWithClients = proposals.map(p => ({ ...p, client: getClientById(p.clientId) }));
-
-        return proposalsWithClients.filter(proposal => {
-            if (!proposal.client) return false;
+        return proposals.filter(proposal => {
+            const client = clientMap.get(proposal.clientId);
+            if (!client) return false;
 
             const searchTerm = searchQuery.toLowerCase();
             const matchesSearch = (
               proposal.title.toLowerCase().includes(searchTerm) ||
-              proposal.client.companyName.toLowerCase().includes(searchTerm) ||
-              proposal.client.contactName.toLowerCase().includes(searchTerm)
+              client.companyName.toLowerCase().includes(searchTerm) ||
+              client.contactName.toLowerCase().includes(searchTerm)
             );
             
             const matchesStatus = proposalStatusFilter === 'all' || proposal.status === proposalStatusFilter;
 
             return matchesSearch && matchesStatus;
         });
-    }, [proposals, clients, searchQuery, proposalStatusFilter]);
+    }, [proposals, clientMap, searchQuery, proposalStatusFilter]);
     
     const totalPages = Math.ceil(filteredProposals.length / ITEMS_PER_PAGE);
     const paginatedProposals = filteredProposals.slice(
@@ -107,7 +110,11 @@ export default function ProposalsPage() {
     );
 
     if (proposalsLoading || clientsLoading) {
-        return <div className="text-center p-8">Loading proposals...</div>
+        return <div className="text-center p-8"><span className="animate-spin h-5 w-5 mr-3 ..."></span>Loading proposals...</div>
+    }
+    
+    if (proposalsError || clientsError) {
+        return <div className="text-center p-8 text-destructive">Error loading data. Please try again later.</div>
     }
 
     return (
@@ -125,16 +132,17 @@ export default function ProposalsPage() {
             </TableHeader>
             <TableBody>
               {paginatedProposals.length > 0 ? paginatedProposals.map((proposal) => {
-                if (!proposal.client) return null;
+                const client = clientMap.get(proposal.clientId);
+                if (!client) return null;
                 return (
-                  <ClientOverviewDialog key={proposal.id} client={proposal.client} proposal={proposal} view="proposals" setActiveView={setActiveView}>
+                  <ClientOverviewDialog key={proposal.id} client={client} proposal={proposal} view="proposals" setActiveView={setActiveView}>
                     <TableRow className="cursor-pointer">
                       <TableCell>
-                          <div className="font-bold">{proposal.client.companyName}</div>
+                          <div className="font-bold">{client.companyName}</div>
                       </TableCell>
                        <TableCell>
-                          <div className="font-medium">{proposal.client.contactName}</div>
-                          <div className="text-sm text-muted-foreground">{proposal.client.contactEmail}</div>
+                          <div className="font-medium">{client.contactName}</div>
+                          <div className="text-sm text-muted-foreground">{client.contactEmail}</div>
                       </TableCell>
                        <TableCell>
                           <div className="font-medium">{proposal.title}</div>
@@ -189,15 +197,21 @@ export default function ProposalsPage() {
   }
 
   const renderClientsTable = () => {
-    const filteredClients = (clientStatusFilter === 'all' ? clients : clients.filter(c => c.status === clientStatusFilter))
-      .filter(client => {
-        const searchTerm = searchQuery.toLowerCase();
-        return (
-          client.companyName.toLowerCase().includes(searchTerm) ||
-          client.contactName.toLowerCase().includes(searchTerm) ||
-          client.contactEmail.toLowerCase().includes(searchTerm)
-        );
-      });
+    const filteredClients = useMemo(() => {
+        return clients
+            .filter(client => {
+                const matchesStatus = clientStatusFilter === 'all' || client.status === clientStatusFilter;
+                if (!matchesStatus) return false;
+
+                const searchTerm = searchQuery.toLowerCase();
+                return (
+                    client.companyName.toLowerCase().includes(searchTerm) ||
+                    client.contactName.toLowerCase().includes(searchTerm) ||
+                    client.contactEmail.toLowerCase().includes(searchTerm)
+                );
+            });
+    }, [clients, clientStatusFilter, searchQuery]);
+
 
     const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
     const paginatedClients = filteredClients.slice(
@@ -206,7 +220,11 @@ export default function ProposalsPage() {
     );
       
     if (clientsLoading) {
-        return <div className="text-center p-8">Loading clients...</div>
+        return <div className="text-center p-8"><span className="animate-spin h-5 w-5 mr-3 ..."></span>Loading clients...</div>
+    }
+    
+    if (clientsError) {
+        return <div className="text-center p-8 text-destructive">Error loading clients. Please try again later.</div>
     }
 
     return (
@@ -221,7 +239,25 @@ export default function ProposalsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedClients.map((client) => (
+              {paginatedClients.length > 0 ? paginatedClients.map((client) => {
+                 const clientProposal = proposals.find(p => p.clientId === client.id);
+                 let subscriptionInfo = client.subscription;
+                 if (!subscriptionInfo && clientProposal?.content) {
+                     try {
+                         const content = JSON.parse(clientProposal.content) as FinalPlanDetails;
+                         subscriptionInfo = {
+                            planId: content.plan.id,
+                            planName: content.summaryTitle,
+                            liters: content.totalMonthlyLiters,
+                            amount: parseFloat(content.totalAmountDue.replace(/[^0-9.-]+/g,"")),
+                            refillFrequency: content.refillFrequency,
+                            employees: content.employees,
+                            gallons: parseInt(content.refillableGallons) || 0,
+                         }
+                     } catch(e) {}
+                 }
+
+                return (
                 <ClientOverviewDialog key={client.id} client={client} view="clients">
                   <TableRow className="cursor-pointer">
                     <TableCell>
@@ -236,13 +272,13 @@ export default function ProposalsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {client.subscription ? (
+                      {subscriptionInfo ? (
                           <div>
-                              <div className="font-bold">{client.subscription.planName}</div>
+                              <div className="font-bold">{subscriptionInfo.planName}</div>
                               <div className="font-bold text-sm text-muted-foreground">
-                                  {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)}
+                                  {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(subscriptionInfo.amount)}
                               </div>
-                              <div className="text-sm text-muted-foreground">{client.subscription.liters.toLocaleString()} Liters</div>
+                              <div className="text-sm text-muted-foreground">{subscriptionInfo.liters.toLocaleString()} Liters</div>
                           </div>
                       ) : (
                           <span className="text-muted-foreground">N/A</span>
@@ -250,7 +286,14 @@ export default function ProposalsPage() {
                     </TableCell>
                   </TableRow>
                 </ClientOverviewDialog>
-              ))}
+                )
+              }) : (
+                 <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                        No clients found.
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

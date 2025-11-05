@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
 import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot } from 'lucide-react';
 import type { Client, Remark, OnboardingStep, Proposal } from '@/lib/definitions';
-import { ContractDetails } from '@/components/contract-details';
+import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { useState, useEffect, useMemo } from 'react';
@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
 import { GoogleMap } from './google-map';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs } from 'firebase/firestore';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -137,23 +137,82 @@ export function ClientOverviewDialog({
     if (clientProposals.length > 0) return clientProposals[0];
     return null;
   }, [proposal, clientProposals]);
+  
+  const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
+    if (!selectedProposal?.content) return null;
+    try {
+        return JSON.parse(selectedProposal.content);
+    } catch (e) {
+        console.error("Failed to parse proposal content:", e);
+        return null;
+    }
+  }, [selectedProposal]);
+  
+  const contactInfo = {
+    name: parsedProposalContent?.contactName || client.contactName,
+    company: parsedProposalContent?.companyName || client.companyName,
+    email: parsedProposalContent?.contactEmail || client.contactEmail,
+    phone: parsedProposalContent?.contactPhone || client.contactPhone,
+    address: parsedProposalContent?.address || client.address,
+  }
 
+  const subscriptionInfo = useMemo(() => {
+    if(parsedProposalContent) {
+        return {
+            planId: parsedProposalContent.plan.id,
+            planName: parsedProposalContent.summaryTitle,
+            liters: parsedProposalContent.totalMonthlyLiters,
+            amount: parseFloat(parsedProposalContent.totalAmountDue.replace(/[^0-9.-]+/g,"")),
+            refillFrequency: parsedProposalContent.refillFrequency,
+            employees: parsedProposalContent.employees,
+            gallons: parseInt(parsedProposalContent.refillableGallons) || 0,
+            inclusions: parsedProposalContent.plan.inclusions,
+            addons: [
+                ...Object.keys(parsedProposalContent.selectedAddons).filter(k => parsedProposalContent.selectedAddons[k]),
+                parsedProposalContent.additionalDispensers > 0 ? `Additional Dispensers (${parsedProposalContent.additionalDispensers})` : null,
+                parsedProposalContent.additionalLiters > 0 ? `Additional Liters (${parsedProposalContent.additionalLiters} L)` : null
+            ].filter(Boolean) as string[],
+        }
+    }
+    return client.subscription;
+  }, [parsedProposalContent, client.subscription]);
 
   useEffect(() => {
     if (open && firestore && client.id) {
+      // Fetch proposals for the client
       const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
-      const q = query(proposalsRef);
+      const qProposals = query(proposalsRef);
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unsubscribeProposals = onSnapshot(qProposals, (snapshot) => {
         const fetchedProposals: Proposal[] = [];
         snapshot.forEach((doc) => {
           fetchedProposals.push({ id: doc.id, ...doc.data() } as Proposal);
         });
-        fetchedProposals.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        fetchedProposals.sort((a,b) => (b.createdAt as any) - (a.createdAt as any));
         setClientProposals(fetchedProposals);
       });
+      
+       // Fetch remarks for the client
+      const remarksRef = collection(firestore, `clients/${client.id}/remarks`);
+      const qRemarks = query(remarksRef);
+      const unsubscribeRemarks = onSnapshot(qRemarks, (snapshot) => {
+          const fetchedRemarks: Remark[] = [];
+          snapshot.forEach((doc) => {
+              const data = doc.data();
+              fetchedRemarks.push({
+                  content: data.content,
+                  author: data.author,
+                  timestamp: data.timestamp?.toDate().toLocaleString() || new Date().toLocaleString(),
+              } as Remark);
+          });
+          fetchedRemarks.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          setRemarks(fetchedRemarks);
+      });
 
-      return () => unsubscribe();
+      return () => {
+        unsubscribeProposals();
+        unsubscribeRemarks();
+      }
     }
   }, [firestore, client.id, open]);
 
@@ -164,7 +223,7 @@ export function ClientOverviewDialog({
       .join('');
   };
   
-  const planImage = getPlanImage(client.subscription?.planId);
+  const planImage = getPlanImage(subscriptionInfo?.planId);
   
   const handleUpload = () => {
     setIsUploaded(true);
@@ -210,16 +269,6 @@ export function ClientOverviewDialog({
         });
     }
   }
-  
-  const parsedProposalContent = useMemo(() => {
-    if (!selectedProposal?.content) return null;
-    try {
-        return JSON.parse(selectedProposal.content);
-    } catch (e) {
-        console.error("Failed to parse proposal content:", e);
-        return null;
-    }
-  }, [selectedProposal]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -228,7 +277,7 @@ export function ClientOverviewDialog({
         <DialogHeader>
           <DialogTitle>Client Overview</DialogTitle>
           <DialogDescription>
-            A complete overview of {client.companyName}.
+            A complete overview of {contactInfo.company}.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-[75vh] pr-6">
@@ -238,12 +287,12 @@ export function ClientOverviewDialog({
                          <Avatar className="h-24 w-24 border">
                             <AvatarImage
                                 src={`https://picsum.photos/seed/${client.id}/128/128`}
-                                alt={client.contactName}
+                                alt={contactInfo.name}
                             />
-                            <AvatarFallback>{getInitials(client.contactName)}</AvatarFallback>
+                            <AvatarFallback>{getInitials(contactInfo.name)}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-2 flex-1">
-                            <h2 className="text-2xl font-bold">{client.companyName}</h2>
+                            <h2 className="text-2xl font-bold">{contactInfo.company}</h2>
                             <p className="text-muted-foreground font-mono text-sm">Client ID: {client.id}</p>
                              <Badge className={`capitalize w-fit ${clientStatusStyles[client.status]}`} variant="outline">
                                 {client.status}
@@ -266,38 +315,38 @@ export function ClientOverviewDialog({
                                 <div className="flex items-center gap-3">
                                     <Building className="h-5 w-5 text-muted-foreground" />
                                     <div>
-                                        <p className="font-semibold">{client.companyName}</p>
+                                        <p className="font-semibold">{contactInfo.company}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                 <div className="flex items-center gap-3">
                                     <Mail className="h-5 w-5 text-muted-foreground" />
                                     <div>
-                                        <p className="font-semibold">{client.contactEmail}</p>
+                                        <p className="font-semibold">{contactInfo.email}</p>
                                     </div>
                                 </div>
                                  <div className="flex items-center gap-3">
                                     <Phone className="h-5 w-5 text-muted-foreground" />
                                     <div>
-                                        <p className="font-semibold">{client.contactPhone}</p>
+                                        <p className="font-semibold">{contactInfo.phone}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div className='flex-1'>
-                                        <p className="font-semibold">{client.address}</p>
+                                        <p className="font-semibold">{contactInfo.address}</p>
                                         <Dialog>
                                             <DialogTrigger asChild>
                                                 <div className="aspect-video w-full overflow-hidden rounded-lg mt-2 cursor-pointer border">
-                                                    <GoogleMap address={client.address} />
+                                                    <GoogleMap address={contactInfo.address} />
                                                 </div>
                                             </DialogTrigger>
                                             <DialogContent className="sm:max-w-3xl h-[80vh]">
                                                 <DialogHeader>
-                                                    <DialogTitle>Location: {client.companyName}</DialogTitle>
-                                                    <DialogDescription>{client.address}</DialogDescription>
+                                                    <DialogTitle>Location: {contactInfo.company}</DialogTitle>
+                                                    <DialogDescription>{contactInfo.address}</DialogDescription>
                                                 </DialogHeader>
                                                 <div className="w-full h-full rounded-lg overflow-hidden">
-                                                   <GoogleMap address={client.address} zoom={17} />
+                                                   <GoogleMap address={contactInfo.address} zoom={17} />
                                                 </div>
                                             </DialogContent>
                                         </Dialog>
@@ -346,15 +395,15 @@ export function ClientOverviewDialog({
                         <CardHeader>
                             <CardTitle>Current Subscription</CardTitle>
                         </CardHeader>
-                        {client.subscription ? (
+                        {subscriptionInfo ? (
                             <>
                             <CardContent className="space-y-4">
                                 <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                    <Image src={planImage} alt={client.subscription.planName} fill className="object-cover" />
+                                    <Image src={planImage} alt={subscriptionInfo.planName} fill className="object-cover" />
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-lg font-bold">{client.subscription.planName}</h3>
-                                    <p className="text-2xl font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(client.subscription.amount)} / month</p>
+                                    <h3 className="text-lg font-bold">{subscriptionInfo.planName}</h3>
+                                    <p className="text-2xl font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(subscriptionInfo.amount)} / month</p>
                                 </div>
                                 <Separator />
                                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -362,48 +411,52 @@ export function ClientOverviewDialog({
                                         <GlassWater className="h-4 w-4 text-primary" />
                                         <div>
                                             <p className="text-muted-foreground">Total Liters</p>
-                                            <p className="font-semibold">{client.subscription.liters.toLocaleString()}L</p>
+                                            <p className="font-semibold">{subscriptionInfo.liters.toLocaleString()}L</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Package className="h-4 w-4 text-primary" />
                                         <div>
                                             <p className="text-muted-foreground">Refillable Gallons</p>
-                                            <p className="font-semibold">{client.subscription.gallons}</p>
+                                            <p className="font-semibold">{subscriptionInfo.gallons}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Users className="h-4 w-4 text-primary" />
                                         <div>
                                             <p className="text-muted-foreground">Employees</p>
-                                            <p className="font-semibold">{client.subscription.employees}</p>
+                                            <p className="font-semibold">{subscriptionInfo.employees}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <RefreshCcw className="h-4 w-4 text-primary" />
                                         <div>
                                             <p className="text-muted-foreground">Refill Frequency</p>
-                                            <p className="font-semibold">{client.subscription.refillFrequency}</p>
+                                            <p className="font-semibold">{subscriptionInfo.refillFrequency}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <Separator />
-                                <div>
-                                    <h4 className="font-semibold mb-2">Inclusions</h4>
-                                    <div className="space-y-2">
-                                        {client.subscription.inclusions?.map((item) => (
-                                        <div key={item} className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>{item}</span>
+                                {subscriptionInfo.inclusions && subscriptionInfo.inclusions.length > 0 && (
+                                    <>
+                                        <Separator />
+                                        <div>
+                                            <h4 className="font-semibold mb-2">Inclusions</h4>
+                                            <div className="space-y-2">
+                                                {subscriptionInfo.inclusions.map((item) => (
+                                                <div key={item} className="flex items-center gap-2 text-sm">
+                                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                                    <span>{item}</span>
+                                                </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                {client.subscription.addons && client.subscription.addons.length > 0 && (
+                                    </>
+                                )}
+                                {subscriptionInfo.addons && subscriptionInfo.addons.length > 0 && (
                                     <div>
                                         <h4 className="font-semibold mb-2">Add-ons</h4>
                                         <div className="space-y-2">
-                                            {client.subscription.addons.map((item) => (
+                                            {subscriptionInfo.addons.map((item) => (
                                                 <div key={item} className="flex items-center gap-2 text-sm">
                                                     <Sparkles className="h-4 w-4 text-yellow-500" />
                                                     <span>{item}</span>
@@ -428,7 +481,7 @@ export function ClientOverviewDialog({
                                         </DialogHeader>
                                         <div className="grid md:grid-cols-2 gap-6 py-4">
                                             <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                                <Image src={planImage} alt={client.subscription.planName} fill className="object-cover" />
+                                                <Image src={planImage} alt={subscriptionInfo.planName} fill className="object-cover" />
                                             </div>
                                             <div>
                                                 <div className="flex flex-col">
@@ -451,6 +504,11 @@ export function ClientOverviewDialog({
                             <CardContent>
                                 <div className="text-center py-8">
                                     <p className="text-muted-foreground">No active subscription.</p>
+                                    <Button asChild size="sm" className="mt-4">
+                                        <Link href={`/dashboard/proposals/new?clientId=${client.id}&companyName=${client.companyName}&contactName=${client.contactName}&contactEmail=${client.contactEmail}&contactPhone=${client.contactPhone}&address=${client.address}&clientType=${client.clientType}`}>
+                                            Create New Proposal
+                                        </Link>
+                                    </Button>
                                 </div>
                             </CardContent>
                         )}
@@ -560,4 +618,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
