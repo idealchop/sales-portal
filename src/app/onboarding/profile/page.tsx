@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -96,6 +97,26 @@ function ProfileSetupContent() {
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
 
+    if (isUserLoading) {
+        toast({
+            variant: 'destructive',
+            title: 'Please Wait',
+            description: 'Authentication is still in progress. Please try again in a moment.',
+        });
+        setIsSubmitting(false);
+        return;
+    }
+
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to update your profile. Redirecting to login.',
+        });
+        router.push('/login');
+        return;
+    }
+
     const displayName = `${values.firstName} ${values.lastName}`.trim();
     const params = new URLSearchParams(searchParams.toString());
     params.set('displayName', displayName);
@@ -104,7 +125,7 @@ function ProfileSetupContent() {
     params.delete('photoURL');
 
     try {
-      if (photoFile && user) {
+      if (photoFile) {
         const storage = getStorage();
         const filePath = `user-avatars/${user.uid}/${photoFile.name}`;
         const storageRef = ref(storage, filePath);
