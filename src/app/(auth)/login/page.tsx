@@ -72,6 +72,7 @@ export default function LoginPage() {
         }
       }
       
+      // Always redirect to onboarding after login. The dashboard layout will handle routing from there.
       router.push('/onboarding/profile'); 
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
