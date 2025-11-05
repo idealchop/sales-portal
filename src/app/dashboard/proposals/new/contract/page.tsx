@@ -301,6 +301,9 @@ function ContractPageContent() {
   const customType = searchParams.get('type');
   const companyName = searchParams.get('companyName') || '';
   const contactName = searchParams.get('contactName') || '';
+  const contactEmail = searchParams.get('contactEmail') || '';
+  const contactPhone = searchParams.get('contactPhone') || '';
+  const address = searchParams.get('address') || '';
   const clientType = searchParams.get('clientType') as Client['clientType'];
   const clientId = searchParams.get('clientId'); 
 
@@ -468,19 +471,17 @@ function ContractPageContent() {
     try {
         let finalClientId = clientId;
 
-        // If clientId is not present, we need to create a new client first.
         if (!finalClientId) {
             const newClientRef = doc(collection(firestore, 'clients'));
             const newClientData: Partial<Client> = {
                 id: newClientRef.id,
-                companyName: companyName,
-                contactName: contactName,
-                clientType: clientType,
-                contactEmail: '', // These can be added later
-                contactPhone: '',
-                address: '',
+                companyName,
+                contactName,
+                contactEmail,
+                contactPhone,
+                address,
+                clientType,
                 status: 'pending',
-                // createdAt: serverTimestamp(), // This should be part of the schema
             };
             await setDoc(newClientRef, newClientData);
             finalClientId = newClientRef.id;
@@ -491,6 +492,7 @@ function ContractPageContent() {
         }
 
         const proposalsColRef = collection(firestore, `clients/${finalClientId}/proposals`);
+        
         const newProposalData = {
             title: finalPlanDetails.summaryTitle,
             content: JSON.stringify(finalPlanDetails),
