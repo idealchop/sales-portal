@@ -7,14 +7,22 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // This rule allows the collectionGroup query in useProposals.ts to work.
+    // It allows any signed-in user to list documents across all 'proposals' subcollections.
+    match /{path=**}/proposals/{proposalId} {
+      allow read, list: if isSignedIn();
+    }
+
     match /clients/{clientId} {
       allow read, create, update: if isSignedIn();
       allow delete: if false;
-    }
 
-    match /clients/{clientId}/proposals/{proposalId} {
-      allow read, create, update: if isSignedIn();
-      allow delete: if false;
+      // This rule handles direct access to a specific proposal.
+      // The rule above handles the collection group query.
+      match /proposals/{proposalId} {
+        allow read, create, update: if isSignedIn();
+        allow delete: if false;
+      }
     }
 
     match /sales_materials/{materialId} {
@@ -36,5 +44,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
