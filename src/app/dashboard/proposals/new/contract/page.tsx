@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -212,23 +213,25 @@ export function ContractText() {
 
 function PreviewDialog({ 
     finalPlanDetails,
-    onSaveDraft,
-    onFinalize,
     isSaving,
     isDialogOpen,
-    setDialogOpen
+    setDialogOpen,
+    saveProposal,
 }: { 
     finalPlanDetails: FinalPlanDetails,
-    onSaveDraft: () => Promise<void>;
-    onFinalize: (signatureDataUrl: string) => Promise<void>;
     isSaving: boolean;
     isDialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
+    saveProposal: (status: 'draft' | 'finalized', signature?: string) => Promise<void>;
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
     const { toast } = useToast();
+
+    const handleSaveDraft = async () => {
+      await saveProposal('draft', signaturePadRef.current?.getSignatureDataUrl());
+    };
     
-    const handleFinalizeClick = () => {
+    const handleFinalizeClick = async () => {
         const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
         if (signaturePadRef.current?.isEmpty()) {
             toast({
@@ -238,7 +241,7 @@ function PreviewDialog({
             });
             return;
         }
-        onFinalize(signatureDataUrl!);
+        await saveProposal('finalized', signatureDataUrl!);
     };
 
     return (
@@ -256,7 +259,7 @@ function PreviewDialog({
                     />
                 </ScrollArea>
                 <DialogFooter className="gap-2 sm:justify-end border-t pt-4">
-                    <Button type="button" variant="outline" onClick={onSaveDraft} disabled={isSaving}>
+                    <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
                          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save as Draft
                     </Button>
@@ -319,6 +322,7 @@ function ContractPageContent() {
   const [additionalLiters, setAdditionalLiters] = useState(0);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
+  const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -453,6 +457,7 @@ function ContractPageContent() {
         totalMonthlyLiters,
         totalLitersForCycle,
         clientId: generatedClientId,
+        proposalId: generatedProposalId,
         companyName,
         contactName,
         contactEmail,
@@ -460,7 +465,7 @@ function ContractPageContent() {
         address,
         clientType,
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, companyName, contactName, contactEmail, contactPhone, address, clientType]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -478,7 +483,7 @@ function ContractPageContent() {
     setIsSaving(true);
     
     try {
-        const finalClientId = generatedClientId; // Use the pre-generated ID
+        const finalClientId = generatedClientId;
 
         if (!finalClientId) {
             throw new Error("Client ID was not generated. Cannot save proposal.");
@@ -503,9 +508,9 @@ function ContractPageContent() {
             }
         }
         
-        const newProposalRef = doc(collection(firestore, `clients/${finalClientId}/proposals`));
-        const proposalId = newProposalRef.id;
-        
+        const proposalRef = generatedProposalId ? doc(firestore, `clients/${finalClientId}/proposals`, generatedProposalId) : doc(collection(firestore, `clients/${finalClientId}/proposals`));
+        const proposalId = proposalRef.id;
+
         const proposalContentToSave: FinalPlanDetails = {
             ...finalPlanDetails,
             clientId: finalClientId,
@@ -524,7 +529,7 @@ function ContractPageContent() {
             updatedAt: serverTimestamp(),
         };
         
-        await setDoc(newProposalRef, newProposalData);
+        await setDoc(proposalRef, newProposalData, { merge: true });
         
         toast({
             title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
@@ -545,17 +550,8 @@ function ContractPageContent() {
     }
   };
 
-  const handleSaveDraft = async () => {
-      await saveProposal('draft');
-  }
-
-  const handleFinalize = async (signatureDataUrl: string) => {
-      await saveProposal('finalized', signatureDataUrl);
-  }
-
   const handleReviewAndSignClick = async () => {
-    if (!existingClientId) {
-        // It's a new client, so we need to generate an ID before opening the dialog.
+    if (!existingClientId && !generatedClientId) {
         try {
             const newId = await runTransaction(firestore, async (transaction) => {
                 const counterRef = doc(firestore, 'counters', 'clientCounter');
@@ -577,9 +573,16 @@ function ContractPageContent() {
                 title: "ID Generation Failed",
                 description: "Could not generate a new client ID. Please try again.",
             });
-            return; // Abort opening the dialog if ID generation fails
+            return;
         }
     }
+    
+    // Generate a new proposal ID if one doesn't exist
+    if (!generatedProposalId) {
+        const tempProposalRef = doc(collection(firestore, 'clients', 'temp', 'proposals'));
+        setGeneratedProposalId(tempProposalRef.id);
+    }
+
     setDialogOpen(true);
   };
   
@@ -624,18 +627,20 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-            <Button onClick={handleReviewAndSignClick}>Review &amp; Sign</Button>
+            <Button onClick={handleReviewAndSignClick} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Review &amp; Sign
+            </Button>
         </div>
       </div>
 
        {finalPlanDetails && (
             <PreviewDialog 
                 finalPlanDetails={finalPlanDetails}
-                onSaveDraft={handleSaveDraft}
-                onFinalize={handleFinalize}
                 isSaving={isSaving}
                 isDialogOpen={isDialogOpen}
                 setDialogOpen={setDialogOpen}
+                saveProposal={saveProposal}
             />
        )}
 
@@ -872,3 +877,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
