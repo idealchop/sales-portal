@@ -1,5 +1,4 @@
-
-'use-client';
+'use client';
 import {
   useState,
   useEffect,
@@ -8,7 +7,7 @@ import {
   ReactNode,
 } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { useAuth } from '@/firebase/provider'; // Use the hook that guarantees a ready instance
+import { useAuth, useFirebase } from '@/firebase/provider'; 
 
 interface UserContextType {
   user: User | null;
@@ -22,24 +21,25 @@ interface UserProviderProps {
 }
 
 export const UserProvider = ({ children }: UserProviderProps) => {
-  const auth = useAuth(); // This hook now reliably provides an initialized auth instance.
+  // Use the main firebase hook to get both auth and loading state
+  const { auth, isFirebaseLoading } = useFirebase(); 
   const [user, setUser] = useState<User | null>(null);
-  const [isUserLoading, setIsUserLoading] = useState(true);
+  // User is loading if Firebase is loading OR if we haven't received the first auth state update yet
+  const [isAuthLoading, setIsAuthLoading] = useState(true); 
 
   useEffect(() => {
-    // Because the parent FirebaseProvider waits, 'auth' is guaranteed to be available here.
-    // The check is still good practice for robustness.
-    if (auth) {
+    // Only subscribe if Firebase is fully loaded and auth is available
+    if (!isFirebaseLoading && auth) {
       const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         setUser(firebaseUser);
-        setIsUserLoading(false);
+        setIsAuthLoading(false); // Auth state has been determined
       });
       return () => unsubscribe();
     }
-  }, [auth]); // The effect depends on the auth instance.
+  }, [auth, isFirebaseLoading]); // Rerun when firebase is ready
 
   return (
-    <UserContext.Provider value={{ user, isUserLoading }}>
+    <UserContext.Provider value={{ user, isUserLoading: isFirebaseLoading || isAuthLoading }}>
       {children}
     </UserContext.Provider>
   );

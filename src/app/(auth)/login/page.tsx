@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -66,7 +65,9 @@ export default function LoginPage() {
           await setDoc(userDocRef, {
             id: user.uid,
             email: user.email,
+            displayName: user.email, // Default display name to email
             onboardingCompleted: false, // Set the flag to false for new users.
+            role: 'sales', // Default role
           }, { merge: true });
         }
       }
