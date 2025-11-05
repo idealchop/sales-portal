@@ -162,22 +162,28 @@ export function ClientOverviewDialog({
   }
 
   const subscriptionInfo = useMemo(() => {
-    if(parsedProposalContent) {
-        return {
-            planId: parsedProposalContent.plan.id,
-            planName: parsedProposalContent.summaryTitle,
-            liters: parsedProposalContent.totalMonthlyLiters,
-            amount: parseFloat(parsedProposalContent.totalAmountDue.replace(/[^0-9.-]+/g,"")),
-            refillFrequency: parsedProposalContent.refillFrequency,
-            employees: parsedProposalContent.employees,
-            gallons: parseInt(parsedProposalContent.refillableGallons) || 0,
-            inclusions: parsedProposalContent.plan.inclusions,
-            addons: [
-                ...Object.keys(parsedProposalContent.selectedAddons).filter(k => parsedProposalContent.selectedAddons[k]),
-                parsedProposalContent.additionalDispensers > 0 ? `Additional Dispensers (${parsedProposalContent.additionalDispensers})` : null,
-                parsedProposalContent.additionalLiters > 0 ? `Additional Liters (${parsedProposalContent.additionalLiters} L)` : null
-            ].filter(Boolean) as string[],
-        }
+    if (parsedProposalContent) {
+      return {
+        planId: parsedProposalContent.plan.id,
+        planName: parsedProposalContent.summaryTitle,
+        liters: parsedProposalContent.totalMonthlyLiters,
+        amount: parsedProposalContent.basePrice, // Use the base monthly price
+        refillFrequency: parsedProposalContent.refillFrequency,
+        employees: parsedProposalContent.employees,
+        gallons: parseInt(parsedProposalContent.refillableGallons) || 0,
+        inclusions: parsedProposalContent.plan.inclusions,
+        addons: [
+          ...Object.keys(parsedProposalContent.selectedAddons).filter(
+            (k) => parsedProposalContent.selectedAddons[k]
+          ),
+          parsedProposalContent.additionalDispensers > 0
+            ? `Additional Dispensers (${parsedProposalContent.additionalDispensers})`
+            : null,
+          parsedProposalContent.additionalLiters > 0
+            ? `Additional Liters (${parsedProposalContent.additionalLiters} L)`
+            : null,
+        ].filter(Boolean) as string[],
+      };
     }
     return client.subscription;
   }, [parsedProposalContent, client.subscription]);
