@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -12,8 +13,11 @@ import {
 import { DashboardNav } from '@/components/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { cn } from '@/lib/utils';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider, useUser, useFirestore } from '@/firebase';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 function DashboardSidebar() {
   const { state } = useSidebar();
@@ -39,20 +43,72 @@ function DashboardSidebar() {
   )
 }
 
+function ProtectedLayout({ children }: { children: ReactNode }) {
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isUserLoading) {
+      return; // Wait until user state is loaded
+    }
+
+    if (user) {
+      const docRef = doc(firestore, 'users', user.uid);
+      const checkUserOnboarding = async () => {
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          // **FIX**: Create the user document FIRST, then redirect.
+          await setDoc(docRef, {
+            id: user.uid,
+            email: user.email,
+            onboardingCompleted: false,
+          });
+          router.push('/onboarding/profile');
+        } else {
+          const userData = docSnap.data();
+          if (!userData.onboardingCompleted) {
+            router.push('/onboarding/profile');
+          }
+          // If onboarding is completed, do nothing and allow access to the dashboard.
+        }
+      };
+      checkUserOnboarding();
+    } else {
+      // No user, redirect to login
+      router.push('/login');
+    }
+  }, [user, isUserLoading, firestore, router]);
+
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <FirebaseClientProvider>
       <SidebarProvider>
-        <DashboardSidebar />
-        <div className="flex flex-col flex-1">
-          <DashboardHeader />
-          <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-              <div className="mx-auto w-full max-w-7xl">
-                  {children}
-              </div>
-          </main>
-        </div>
-        <FirebaseErrorListener />
+        <ProtectedLayout>
+          <DashboardSidebar />
+          <div className="flex flex-col flex-1">
+            <DashboardHeader />
+            <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+                <div className="mx-auto w-full max-w-7xl">
+                    {children}
+                </div>
+            </main>
+          </div>
+          <FirebaseErrorListener />
+        </ProtectedLayout>
       </SidebarProvider>
     </FirebaseClientProvider>
   );
