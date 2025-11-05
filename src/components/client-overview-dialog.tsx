@@ -125,6 +125,7 @@ export function ClientOverviewDialog({
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
+  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   
   const [isUploaded, setIsUploaded] = useState(false);
   const [open, setOpen] = useState(false);
@@ -163,41 +164,59 @@ export function ClientOverviewDialog({
 
   const subscriptionInfo = useMemo(() => {
     if (parsedProposalContent) {
-      const addonsList: string[] = [];
+      const addons: {name: string, cost: number}[] = [];
       
       if (parsedProposalContent.selectedAddons) {
         for (const addonKey in parsedProposalContent.selectedAddons) {
           if (parsedProposalContent.selectedAddons[addonKey]) {
             const addonDef = parsedProposalContent.addons.find(a => a.id === addonKey);
             if(addonDef) {
-               addonsList.push(addonDef.name);
+               addons.push({name: addonDef.name, cost: addonDef.feeValue });
             }
           }
         }
       }
 
       if (parsedProposalContent.additionalDispensers > 0) {
-        addonsList.push(`Additional Dispensers (${parsedProposalContent.additionalDispensers})`);
+        addons.push({
+            name: `Additional Dispensers (${parsedProposalContent.additionalDispensers})`,
+            cost: parsedProposalContent.additionalDispensers * parsedProposalContent.additionalDispenserCost
+        });
       }
       
       if (parsedProposalContent.additionalLiters > 0) {
-        addonsList.push(`Additional Liters (${parsedProposalContent.additionalLiters} L)`);
+        addons.push({
+            name: `Additional Liters (${parsedProposalContent.additionalLiters} L)`,
+            cost: parsedProposalContent.additionalLiters * parsedProposalContent.additionalLiterCost
+        });
       }
 
       return {
         planId: parsedProposalContent.plan.id,
         planName: parsedProposalContent.summaryTitle,
         liters: parsedProposalContent.totalMonthlyLiters,
-        amount: parsedProposalContent.basePrice,
+        basePrice: parsedProposalContent.planBaseCost,
+        totalAmountDue: parseFloat(parsedProposalContent.totalAmountDue.replace(/[^0-9.-]+/g, "")),
+        billingCycle: parsedProposalContent.billingCycleLabel,
         refillFrequency: parsedProposalContent.refillFrequency,
         employees: parsedProposalContent.employees,
         gallons: parseInt(parsedProposalContent.refillableGallons) || 0,
         inclusions: parsedProposalContent.plan.inclusions,
-        addons: addonsList,
+        addons,
         dateSigned: parsedProposalContent.date,
       };
     }
-    return client.subscription;
+    // Fallback for older client data structure
+     if (client.subscription) {
+      return {
+        ...client.subscription,
+        basePrice: client.subscription.amount,
+        totalAmountDue: client.subscription.amount,
+        billingCycle: 'Monthly',
+        addons: client.subscription.addons?.map(name => ({ name, cost: 0 })) || [],
+      };
+    }
+    return null;
   }, [parsedProposalContent, client.subscription]);
 
   useEffect(() => {
@@ -342,14 +361,14 @@ export function ClientOverviewDialog({
                                         <p className="font-semibold">{contactInfo.company}</p>
                                     </div>
                                 </div>
-                                 <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3">
                                     <Mail className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div>
                                         <p className="text-xs text-muted-foreground">Email</p>
                                         <p className="font-semibold">{contactInfo.email}</p>
                                     </div>
                                 </div>
-                                 <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3">
                                     <Phone className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div>
                                         <p className="text-xs text-muted-foreground">Phone</p>
@@ -430,71 +449,62 @@ export function ClientOverviewDialog({
                                 </div>
                                 <div className="space-y-2">
                                     <h3 className="text-lg font-bold">{subscriptionInfo.planName}</h3>
-                                    <p className="text-2xl font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(subscriptionInfo.amount)}<span className="text-sm font-normal text-muted-foreground"> / month</span></p>
                                 </div>
                                 <Separator />
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <GlassWater className="h-4 w-4 text-primary" />
-                                        <div>
-                                            <p className="text-muted-foreground">Total Liters</p>
-                                            <p className="font-semibold">{subscriptionInfo.liters.toLocaleString()}L</p>
+                                <div className="space-y-2">
+                                    <h4 className="font-semibold text-sm">Plan Details</h4>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <GlassWater className="h-4 w-4 text-primary" />
+                                            <div>
+                                                <p className="text-muted-foreground">Total Liters</p>
+                                                <p className="font-semibold">{subscriptionInfo.liters.toLocaleString()}L / mo</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Package className="h-4 w-4 text-primary" />
-                                        <div>
-                                            <p className="text-muted-foreground">Refillable Gallons</p>
-                                            <p className="font-semibold">{subscriptionInfo.gallons}</p>
+                                        <div className="flex items-center gap-2">
+                                            <Package className="h-4 w-4 text-primary" />
+                                            <div>
+                                                <p className="text-muted-foreground">Refillable Gallons</p>
+                                                <p className="font-semibold">{subscriptionInfo.gallons}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Users className="h-4 w-4 text-primary" />
-                                        <div>
-                                            <p className="text-muted-foreground">Employees</p>
-                                            <p className="font-semibold">{subscriptionInfo.employees}</p>
+                                        <div className="flex items-center gap-2">
+                                            <Users className="h-4 w-4 text-primary" />
+                                            <div>
+                                                <p className="text-muted-foreground">Employees</p>
+                                                <p className="font-semibold">{subscriptionInfo.employees}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <RefreshCcw className="h-4 w-4 text-primary" />
-                                        <div>
-                                            <p className="text-muted-foreground">Refill Frequency</p>
-                                            <p className="font-semibold">{subscriptionInfo.refillFrequency}</p>
+                                        <div className="flex items-center gap-2">
+                                            <RefreshCcw className="h-4 w-4 text-primary" />
+                                            <div>
+                                                <p className="text-muted-foreground">Refill Frequency</p>
+                                                <p className="font-semibold">{subscriptionInfo.refillFrequency}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                {subscriptionInfo.inclusions && subscriptionInfo.inclusions.length > 0 && (
-                                    <>
-                                        <Separator />
-                                        <div>
-                                            <h4 className="font-semibold mb-2">Inclusions</h4>
-                                            <div className="space-y-2">
-                                                {subscriptionInfo.inclusions.map((item) => (
-                                                <div key={item} className="flex items-center gap-2 text-sm">
-                                                    <CheckCircle className="h-4 w-4 text-green-500" />
-                                                    <span>{item}</span>
-                                                </div>
-                                                ))}
-                                            </div>
+                                
+                                <Separator />
+
+                                <div className="space-y-3">
+                                    <h4 className="font-semibold text-sm">Financial Summary</h4>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Base Plan (Monthly)</span>
+                                        <span className="font-medium">{currencyFormatter.format(subscriptionInfo.basePrice)}</span>
+                                    </div>
+                                    {subscriptionInfo.addons && subscriptionInfo.addons.map((addon) => (
+                                        <div key={addon.name} className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground flex items-center gap-2"><Sparkles className="h-4 w-4 text-yellow-500" />{addon.name}</span>
+                                            {addon.cost > 0 && <span className="font-medium">{currencyFormatter.format(addon.cost)}</span>}
                                         </div>
-                                    </>
-                                )}
-                                {subscriptionInfo.addons && subscriptionInfo.addons.length > 0 && (
-                                    <>
-                                        <Separator />
-                                        <div>
-                                            <h4 className="font-semibold mb-2">Add-ons</h4>
-                                            <div className="space-y-2">
-                                                {subscriptionInfo.addons.map((item) => (
-                                                    <div key={item} className="flex items-center gap-2 text-sm">
-                                                        <Sparkles className="h-4 w-4 text-yellow-500" />
-                                                        <span>{item}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
+                                    ))}
+                                    <Separator />
+                                     <div className="flex justify-between items-center font-bold text-base bg-muted p-3 rounded-md">
+                                        <span>Total ({subscriptionInfo.billingCycle})</span>
+                                        <span>{currencyFormatter.format(subscriptionInfo.totalAmountDue)}</span>
+                                    </div>
+                                </div>
                             </CardContent>
                             {view === 'clients' && client.onboardingStatus && (
                             <CardFooter>
@@ -648,3 +658,4 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
