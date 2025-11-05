@@ -113,7 +113,7 @@ function ChangePasswordContent() {
                   <FormLabel>Confirm New Password</FormLabel>
                    <FormControl>
                     <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Lock className="absolute left-3 top-1/h-5 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirm your new password" {...field} className="pl-10 pr-10" />
                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
                           {showConfirmPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}

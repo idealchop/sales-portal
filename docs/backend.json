@@ -243,7 +243,7 @@
       "schema": { "$ref": "#/entities/Commission" },
       "description": "Stores sales commission records."
     },
-    "/sales/{salesId}": {
+    "/sales/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Stores sales user profiles. Accessible only to the authenticated user."
     }

@@ -63,7 +63,7 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
             router.push('/onboarding/profile');
           }
         } else {
-          console.error("User document not found in /sales, redirecting to login.");
+          console.error("User document not found, redirecting to login.");
           router.push('/login');
         }
       };
