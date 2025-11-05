@@ -163,26 +163,38 @@ export function ClientOverviewDialog({
 
   const subscriptionInfo = useMemo(() => {
     if (parsedProposalContent) {
+      const addonsList: string[] = [];
+      
+      if (parsedProposalContent.selectedAddons) {
+        for (const addonKey in parsedProposalContent.selectedAddons) {
+          if (parsedProposalContent.selectedAddons[addonKey]) {
+            const addonDef = parsedProposalContent.addons.find(a => a.id === addonKey);
+            if(addonDef) {
+               addonsList.push(addonDef.name);
+            }
+          }
+        }
+      }
+
+      if (parsedProposalContent.additionalDispensers > 0) {
+        addonsList.push(`Additional Dispensers (${parsedProposalContent.additionalDispensers})`);
+      }
+      
+      if (parsedProposalContent.additionalLiters > 0) {
+        addonsList.push(`Additional Liters (${parsedProposalContent.additionalLiters} L)`);
+      }
+
       return {
         planId: parsedProposalContent.plan.id,
         planName: parsedProposalContent.summaryTitle,
         liters: parsedProposalContent.totalMonthlyLiters,
-        amount: parsedProposalContent.basePrice, // Use the base monthly price
+        amount: parsedProposalContent.basePrice,
         refillFrequency: parsedProposalContent.refillFrequency,
         employees: parsedProposalContent.employees,
         gallons: parseInt(parsedProposalContent.refillableGallons) || 0,
         inclusions: parsedProposalContent.plan.inclusions,
-        addons: [
-          ...Object.keys(parsedProposalContent.selectedAddons).filter(
-            (k) => parsedProposalContent.selectedAddons[k]
-          ),
-          parsedProposalContent.additionalDispensers > 0
-            ? `Additional Dispensers (${parsedProposalContent.additionalDispensers})`
-            : null,
-          parsedProposalContent.additionalLiters > 0
-            ? `Additional Liters (${parsedProposalContent.additionalLiters} L)`
-            : null,
-        ].filter(Boolean) as string[],
+        addons: addonsList,
+        dateSigned: parsedProposalContent.date,
       };
     }
     return client.subscription;
@@ -330,7 +342,7 @@ export function ClientOverviewDialog({
                                         <p className="font-semibold">{contactInfo.company}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-start gap-3">
+                                 <div className="flex items-start gap-3">
                                     <Mail className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div>
                                         <p className="text-xs text-muted-foreground">Email</p>
@@ -418,7 +430,7 @@ export function ClientOverviewDialog({
                                 </div>
                                 <div className="space-y-2">
                                     <h3 className="text-lg font-bold">{subscriptionInfo.planName}</h3>
-                                    <p className="text-2xl font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(subscriptionInfo.amount)} / month</p>
+                                    <p className="text-2xl font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(subscriptionInfo.amount)}<span className="text-sm font-normal text-muted-foreground"> / month</span></p>
                                 </div>
                                 <Separator />
                                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -468,17 +480,20 @@ export function ClientOverviewDialog({
                                     </>
                                 )}
                                 {subscriptionInfo.addons && subscriptionInfo.addons.length > 0 && (
-                                    <div>
-                                        <h4 className="font-semibold mb-2">Add-ons</h4>
-                                        <div className="space-y-2">
-                                            {subscriptionInfo.addons.map((item) => (
-                                                <div key={item} className="flex items-center gap-2 text-sm">
-                                                    <Sparkles className="h-4 w-4 text-yellow-500" />
-                                                    <span>{item}</span>
-                                                </div>
-                                            ))}
+                                    <>
+                                        <Separator />
+                                        <div>
+                                            <h4 className="font-semibold mb-2">Add-ons</h4>
+                                            <div className="space-y-2">
+                                                {subscriptionInfo.addons.map((item) => (
+                                                    <div key={item} className="flex items-center gap-2 text-sm">
+                                                        <Sparkles className="h-4 w-4 text-yellow-500" />
+                                                        <span>{item}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
+                                    </>
                                 )}
                             </CardContent>
                             {view === 'clients' && client.onboardingStatus && (
