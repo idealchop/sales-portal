@@ -61,7 +61,8 @@ export default function LoginPage() {
         const userDocSnap = await getDoc(userDocRef);
 
         if (!userDocSnap.exists()) {
-          await setDoc(userDocRef, {
+          // Do not await this. Let it run in the background.
+          setDoc(userDocRef, {
             id: user.uid,
             email: user.email,
             displayName: user.email,
@@ -72,8 +73,8 @@ export default function LoginPage() {
         }
       }
       
-      // Always redirect to onboarding after login. The dashboard layout will handle routing from there.
-      router.push('/onboarding/profile'); 
+      // Always redirect to dashboard after login. The dashboard layout will handle routing from there.
+      router.push('/dashboard'); 
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {

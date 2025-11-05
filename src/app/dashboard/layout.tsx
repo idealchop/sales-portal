@@ -63,6 +63,10 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
             router.push('/onboarding/profile');
           }
         } else {
+          // This case can happen if the doc creation is still pending after login.
+          // A short delay and retry could help, but the user will likely see a loader
+          // from the dashboard page which will re-trigger this check anyway.
+          // For now, redirecting to login is a safe fallback.
           console.error("User document not found, redirecting to login.");
           router.push('/login');
         }
