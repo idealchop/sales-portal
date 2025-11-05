@@ -426,17 +426,13 @@ function ContractPageContent() {
 
     const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
 
-    // This is where IDs will come from firestore
-    const newProposalRef = doc(collection(firestore, 'clients', 'proposals-placeholder')); // Placeholder
+    // Generate a placeholder ID here, but the real ID will be set upon saving.
+    const proposalId = 'preview-id';
+    let finalClientId = clientId || 'preview-client-id';
     
-    let finalClientId = clientId;
-    if (!finalClientId) {
-      const newClientRef = doc(collection(firestore, 'clients'));
-      finalClientId = newClientRef.id;
-    }
 
     return {
-        proposalId: newProposalRef.id,
+        proposalId: proposalId,
         clientId: finalClientId,
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         summaryTitle: summaryTitle,
@@ -460,7 +456,7 @@ function ContractPageContent() {
         totalMonthlyLiters,
         totalLitersForCycle
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, clientId, firestore]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, clientId]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -482,8 +478,10 @@ function ContractPageContent() {
 
         // If it's a new client, create them first.
         if (!finalClientId) {
-            const newClientRef = doc(collection(firestore, 'clients'));
-            const newClientData: Omit<Client, 'id' | 'remarks' | 'onboardingStatus' | 'subscription'> = {
+            const clientsCollectionRef = collection(firestore, 'clients');
+            const newClientRef = doc(clientsCollectionRef); // Let Firestore generate the ID
+            
+            const newClientData: Omit<Client, 'id' | 'remarks' | 'onboardingStatus' | 'subscription' | 'proposals'> = {
                 companyName,
                 contactName,
                 contactEmail,
@@ -493,7 +491,7 @@ function ContractPageContent() {
                 status: 'pending',
             };
             await setDoc(newClientRef, newClientData);
-            finalClientId = newClientRef.id;
+            finalClientId = newClientRef.id; // Use the real ID
         }
 
         if (!finalClientId) {
