@@ -59,7 +59,7 @@ export default function ProposalsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'accepted', 'sent', 'draft', 'rejected'];
   const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'pending', 'inactive'];
-  const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('all');
+  const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('active');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
 
   const [proposalsCurrentPage, setProposalsCurrentPage] = useState(1);
@@ -78,14 +78,13 @@ export default function ProposalsPage() {
     setSearchQuery('');
   }
 
-  const renderProposalsTable = (status: ProposalStatus | 'all') => {
-    const filteredProposals = (status === 'all' ? proposals : proposals.filter(p => p.status === status))
+  const renderProposalsTable = () => {
+    const filteredProposals = (proposalStatusFilter === 'all' ? proposals : proposals.filter(p => p.status === proposalStatusFilter))
       .filter(proposal => {
         const client = getClientById(proposal.clientId);
         const searchTerm = searchQuery.toLowerCase();
         return (
-          proposal.id.toLowerCase().includes(searchTerm) ||
-          client?.id.toLowerCase().includes(searchTerm) ||
+          proposal.title.toLowerCase().includes(searchTerm) ||
           client?.companyName.toLowerCase().includes(searchTerm) ||
           client?.contactName.toLowerCase().includes(searchTerm)
         );
@@ -174,8 +173,8 @@ export default function ProposalsPage() {
     )
   }
 
-  const renderClientsTable = (status: ClientStatus | 'all') => {
-    const filteredClients = (status === 'all' ? clients : clients.filter(c => c.status === status))
+  const renderClientsTable = () => {
+    const filteredClients = (clientStatusFilter === 'all' ? clients : clients.filter(c => c.status === clientStatusFilter))
       .filter(client => {
         const searchTerm = searchQuery.toLowerCase();
         return (
@@ -326,7 +325,7 @@ export default function ProposalsPage() {
                       </div>
                   </div>
               </CardHeader>
-              {renderProposalsTable(proposalStatusFilter)}
+              {renderProposalsTable()}
             </Card>
         </TabsContent>
         <TabsContent value="clients" className="mt-4">
@@ -367,7 +366,7 @@ export default function ProposalsPage() {
                         </div>
                     </div>
                 </CardHeader>
-                {renderClientsTable(clientStatusFilter)}
+                {renderClientsTable()}
             </Card>
         </TabsContent>
       </Tabs>

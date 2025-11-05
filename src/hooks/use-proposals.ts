@@ -1,35 +1,70 @@
 
 'use client';
 
-import { useMemo } from 'react';
-import { collectionGroup, query, where } from 'firebase/firestore';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import type { Proposal } from '@/lib/definitions';
+import { useMemo, useEffect, useState } from 'react';
+import { collection, getDocs, query, Query, DocumentData, CollectionReference } from 'firebase/firestore';
+import { useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import type { Client, Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
+import { useClients } from './use-clients';
 
-export function useProposals() {
+interface UseProposalsResult {
+  proposals: WithId<Proposal>[];
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export function useProposals(): UseProposalsResult {
   const { firestore, isFirebaseLoading } = useFirebase();
   const { user, isUserLoading } = useUser();
+  const { clients, isLoading: clientsLoading, error: clientsError } = useClients();
 
-  const proposalsQuery = useMemoFirebase(() => {
-    if (isFirebaseLoading || isUserLoading || !firestore || !user) return null;
-    return query(collectionGroup(firestore, 'proposals'));
-  }, [firestore, user, isFirebaseLoading, isUserLoading]);
+  const [proposals, setProposals] = useState<WithId<Proposal>[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  const { data: proposalsData, isLoading, error } = useCollection<Proposal>(proposalsQuery);
+  useEffect(() => {
+    const fetchAllProposals = async () => {
+      if (isFirebaseLoading || isUserLoading || clientsLoading || !firestore) {
+        return;
+      }
 
-  const proposals = useMemo(() => {
-    if (!proposalsData) return [];
-    return proposalsData.map(proposal => {
-        const pathParts = (proposal as any).ref?.path.split('/');
-        const clientId = pathParts && pathParts.length > 1 ? pathParts[1] : 'unknown';
-        return {
-          ...proposal,
-          id: proposal.id,
-          clientId: clientId,
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const allProposals: WithId<Proposal>[] = [];
+        
+        for (const client of clients) {
+          const proposalsRef = collection(firestore, 'clients', client.id, 'proposals');
+          const proposalsQuery = query(proposalsRef);
+          const proposalSnapshot = await getDocs(proposalsQuery);
+          
+          proposalSnapshot.forEach(doc => {
+            const proposalData = doc.data() as Proposal;
+            allProposals.push({
+              ...proposalData,
+              id: doc.id,
+              clientId: client.id, // Explicitly associate client ID
+            });
+          });
         }
-    }) as WithId<Proposal>[];
-  }, [proposalsData]);
+        setProposals(allProposals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
 
-  return { proposals, isLoading: isLoading || isFirebaseLoading || isUserLoading, error };
+      } catch (e: any) {
+        console.error("Failed to fetch proposals:", e);
+        setError(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAllProposals();
+  }, [firestore, user, isFirebaseLoading, isUserLoading, clients, clientsLoading]);
+
+  return { 
+    proposals, 
+    isLoading: isLoading || isFirebaseLoading || isUserLoading || clientsLoading, 
+    error: error || clientsError 
+  };
 }
