@@ -289,10 +289,11 @@ export function ContractDetails({
             <Card>
                 <CardContent className="pt-6">
                     <p className="text-muted-foreground">
-                        Thank you for considering Smart Refill for your business's water supply needs. We are excited to present this proposal for our automated and reliable water refill service. This document outlines the plan details, benefits, and the terms of our partnership.
+                        Thank you for choosing Smart Refill as your trusted partner in water supply automation.
+                        This proposal presents how our smart, reliable, and fully compliant solution helps your business achieve consistent water availability, lower operational costs, and complete visibility over your consumption and deliveries.
                     </p>
                     <p className="text-muted-foreground mt-4">
-                        At Smart Refill, we are committed to providing a seamless, compliant, and cost-effective solution, so you can focus on what matters most—running your business.
+                        At Smart Refill, we go beyond water delivery — we help you save time, cut inefficiencies, and ensure every liter counts. Our platform is built to keep your operations running smoothly, so you can focus on growth, performance, and customer satisfaction.
                     </p>
                 </CardContent>
             </Card>
