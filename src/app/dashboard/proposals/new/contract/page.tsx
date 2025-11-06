@@ -265,58 +265,63 @@ function PreviewDialog({
     };
 
     const handleDownloadPdf = async () => {
-        const contentToCapture = contractRef.current?.querySelector<HTMLDivElement>(':scope > div');
-
+        // The element to capture is the div inside the ScrollArea that holds all the content.
+        const contentToCapture = contractRef.current;
         if (!contentToCapture) {
-            toast({ variant: "destructive", title: "Download Failed", description: "Contract content not found." });
+            toast({ variant: "destructive", title: "Download Failed", description: "Contract content container not found." });
             return;
         }
         
         setIsDownloading(true);
         
         try {
+            // Use html2canvas to capture the content.
+            // We are capturing the direct content div, not its scrollable parent.
             const canvas = await html2canvas(contentToCapture, {
-                scale: 2,
+                scale: 2, // Higher scale for better quality
                 useCORS: true, // Important for external images
-                allowTaint: true, // Necessary for cross-origin images
+                allowTaint: true, // Also necessary for some cross-origin images
                 onclone: (document) => {
-                    // This function runs on the cloned document before rendering.
-                    // We find all images and wait for them to load.
-                    const promises: Promise<void>[] = [];
+                    // This function runs on the cloned document right before rendering.
+                    // It's the perfect place to ensure all images are fully loaded.
+                    const imagePromises: Promise<void>[] = [];
                     const images = document.getElementsByTagName('img');
                     for (let i = 0; i < images.length; i++) {
                         const img = images[i];
-                        if (img.complete) {
-                            continue;
-                        }
-                        promises.push(new Promise((resolve) => {
+                        if (img.complete) continue; // Skip already loaded images
+                        
+                        imagePromises.push(new Promise((resolve) => {
                             img.onload = () => resolve();
                             img.onerror = () => resolve(); // Resolve even on error to not block PDF generation
                         }));
                     }
-                    return Promise.all(promises);
+                    return Promise.all(imagePromises);
                 }
             });
 
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdf = new jsPDF('p', 'mm', 'a4'); // Portrait, millimeters, A4 size
+
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
             
             const contentWidth = canvas.width;
             const contentHeight = canvas.height;
             
+            // Calculate the ratio to fit the image width to the PDF width
             const ratio = contentWidth / pdfWidth;
             const imgHeight = contentHeight / ratio;
             
             let heightLeft = imgHeight;
             let position = 0;
 
+            // Add the first page
             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
             heightLeft -= pdfHeight;
 
+            // Add new pages if content is taller than one page
             while (heightLeft > 0) {
-                position -= pdfHeight;
+                position = -pdfHeight + position;
                 pdf.addPage();
                 pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
                 heightLeft -= pdfHeight;
@@ -340,8 +345,8 @@ function PreviewDialog({
                     <DialogTitle>Proposal Preview</DialogTitle>
                     <DialogDescription>A preview of the sales proposal for the client to review and sign.</DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="h-[85vh] pr-6" ref={contractRef}>
-                    <div>
+                <ScrollArea className="h-[85vh] pr-6">
+                    <div ref={contractRef}>
                         <ContractDetails
                             finalPlanDetails={finalPlanDetails}
                             isSigned={false}
@@ -1022,3 +1027,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
