@@ -257,7 +257,7 @@ export function ContractDetails({
                         <div className="flex items-start gap-3">
                             <Users className="h-5 w-5 text-primary" />
                             <div>
-                                <p className="text-muted-foreground">Employees</p>
+                                <p className="text-muted-foreground">{source.clientType === 'household' ? 'Family' : 'Employees'}</p>
                                 <p className="font-semibold">{finalPlan.employees}</p>
                             </div>
                         </div>

@@ -332,7 +332,13 @@ function ContractPageContent() {
     return '5+ Stations';
   }
 
-  const getEmployees = (liters: number) => {
+  const getEmployees = (liters: number, isHousehold: boolean) => {
+    if (isHousehold) {
+        const estimatedPeople = Math.round(liters / (2 * 30)); // Assuming 2L per person per day
+        if (estimatedPeople <= 3) return '1-3 People';
+        if (estimatedPeople <= 5) return '3-5 People';
+        return '5+ People';
+    }
     const estimatedEmployees = Math.round(liters / (2 * 22));
     if (estimatedEmployees < 5) return '&lt; 5';
     if (estimatedEmployees > 500) return '500+';
@@ -365,8 +371,8 @@ function ContractPageContent() {
             ...basePlan,
             liters: `${litersNum} L`,
             monthlyFee: `₱${parseFloat(customCost).toLocaleString()}`,
-            employees: getEmployees(litersNum),
-            stations: getStations(litersNum),
+            employees: getEmployees(litersNum, clientType === 'household'),
+            stations: clientType === 'household' ? plan.stations : getStations(litersNum),
         };
     }
     
@@ -378,7 +384,7 @@ function ContractPageContent() {
     }
 
     return basePlan;
-  }, [planId, customLiters, customCost, customFreq, customType]);
+  }, [planId, customLiters, customCost, customFreq, customType, clientType]);
   
   const finalPlan = useMemo(() => {
     if (!plan) return null;
@@ -393,10 +399,10 @@ function ContractPageContent() {
         ...plan,
         liters: `${finalLiters.toLocaleString()} L`,
         inclusions: planInclusions,
-        employees: getEmployees(finalLiters),
-        stations: getStations(finalLiters),
+        employees: getEmployees(finalLiters, clientType === 'household'),
+        stations: clientType === 'household' ? plan.stations : getStations(finalLiters),
     }
-  }, [plan, additionalLiters]);
+  }, [plan, additionalLiters, clientType]);
 
   const handleAddonToggle = (addonId: string) => {
     setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
@@ -675,11 +681,11 @@ function ContractPageContent() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Water Stations</CardTitle>
+                            <CardTitle className="text-sm font-medium">{clientType === 'household' ? 'Family' : 'Employees'}</CardTitle>
                             <Building className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                             <div className="text-2xl font-bold">{finalPlan.stations}</div>
+                             <div className="text-2xl font-bold">{finalPlan.employees}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
