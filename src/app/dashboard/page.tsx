@@ -165,8 +165,9 @@ export default function DashboardPage() {
     
     const quarterlyVolume = acceptedProposals
         .filter(p => {
+            if (!p.createdAt) return false;
             const createdAt = new Date(p.createdAt);
-            return createdAt >= currentQuarterStart && createdAt <= currentQuarterEnd;
+            return isWithinInterval(createdAt, { start: currentQuarterStart, end: currentQuarterEnd });
         })
         .reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
     const quarterlyVolumeTarget = 200000;
@@ -442,19 +443,48 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Quarterly Volume</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary-foreground/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</div>
-             <div className="mt-2 space-y-1">
-              <Progress value={(dashboardData.quarterlyVolume / dashboardData.quarterlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-              <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(dashboardData.quarterlyVolumeTarget)} for a ₱25k bonus</p>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Quarterly Volume</CardTitle>
+                <TrendingUp className="h-4 w-4 text-primary-foreground/80" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</div>
+                 <div className="mt-2 space-y-1">
+                  <Progress value={(dashboardData.quarterlyVolume / dashboardData.quarterlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
+                  <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(dashboardData.quarterlyVolumeTarget)} for a ₱25k bonus</p>
+                </div>
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Quarterly Growth Bonus</DialogTitle>
+                <DialogDescription>Rewards the expansion of your client base and total commission earned in a quarter.</DialogDescription>
+            </DialogHeader>
+             <div className="space-y-4 py-4">
+                <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</span> in new commission volume</p>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Metric</TableHead>
+                            <TableHead>Bonus</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {growthBonusTiers.map(tier => (
+                            <TableRow key={tier.target} className={cn(dashboardData.quarterlyVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
+                                <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
