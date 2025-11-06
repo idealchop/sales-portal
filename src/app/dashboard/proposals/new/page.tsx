@@ -72,7 +72,7 @@ export default function NewProposalPage() {
         setCompanyName(client.companyName);
         setContactName(client.contactName);
         setContactEmail(client.contactEmail);
-        setContactPhone(client.contactPhone);
+        setContactPhone(client.contactPhone || '');
         setAddress(client.address);
         setClientType(client.clientType || '');
     }
@@ -84,7 +84,7 @@ export default function NewProposalPage() {
         setCompanyName(selectedClient.companyName);
         setContactName(selectedClient.contactName);
         setContactEmail(selectedClient.contactEmail);
-        setContactPhone(selectedClient.contactPhone);
+        setContactPhone(selectedClient.contactPhone || '');
         setAddress(selectedClient.address);
         setClientType(selectedClient.clientType || '');
     } else if (clientSelectionType === 'new') {
