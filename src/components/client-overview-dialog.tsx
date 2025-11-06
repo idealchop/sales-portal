@@ -147,6 +147,17 @@ function PaymentHistory({ client, proposals, onPaymentConfirm }: { client: Clien
         setPaymentProofFile(null);
         setSelectedPendingProposalId('');
     };
+    
+    const getFormattedDate = (dateValue: string | { toDate: () => Date; }) => {
+        if (!dateValue) return "Invalid Date";
+        if (typeof dateValue === 'string') {
+            return new Date(dateValue).toLocaleDateString();
+        }
+        if (typeof dateValue.toDate === 'function') {
+            return dateValue.toDate().toLocaleDateString();
+        }
+        return "Invalid Date";
+    };
 
     return (
         <Card>
@@ -163,7 +174,7 @@ function PaymentHistory({ client, proposals, onPaymentConfirm }: { client: Clien
                                 <div className="flex items-center justify-between rounded-lg border p-3">
                                     <div>
                                         <p className="font-medium text-sm">{p.title}</p>
-                                        <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+                                        <p className="text-xs text-muted-foreground">{getFormattedDate(p.createdAt)}</p>
                                     </div>
                                     <DialogTrigger asChild>
                                         <Button variant="outline" size="sm" disabled={!p.paymentProofUrl}>

@@ -37,24 +37,35 @@ export function useProposals(): UseProposalsResult {
         
         const allProposals: WithId<Proposal>[] = [];
         querySnapshot.forEach(doc => {
-            const proposalData = doc.data() as Proposal;
-            // The parent of a document in a subcollection is the client document
+            const proposalData = doc.data() as Omit<Proposal, 'id'>;
             const clientDoc = doc.ref.parent.parent;
             if (clientDoc) {
+                // Ensure createdAt is a string for consistent handling
+                let createdAtString: string;
+                if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
+                    // It's a Firestore Timestamp
+                    createdAtString = (proposalData.createdAt as any).toDate().toISOString();
+                } else {
+                    // It's already a string or something else
+                    createdAtString = proposalData.createdAt as string;
+                }
+
                 allProposals.push({
-                    ...proposalData,
+                    ...(proposalData as Proposal),
                     id: doc.id,
-                    clientId: clientDoc.id, // Extract client ID from parent reference
+                    clientId: clientDoc.id,
+                    createdAt: createdAtString,
                 });
             }
         });
 
-        setProposals(allProposals.sort((a, b) => {
-            // Handle potential string or Firestore Timestamp values for createdAt
-            const dateA = a.createdAt ? (typeof a.createdAt === 'string' ? new Date(a.createdAt) : (a.createdAt as any).toDate()) : new Date(0);
-            const dateB = b.createdAt ? (typeof b.createdAt === 'string' ? new Date(b.createdAt) : (b.createdAt as any).toDate()) : new Date(0);
+        allProposals.sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+            const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
             return dateB.getTime() - dateA.getTime();
-        }));
+        });
+
+        setProposals(allProposals);
         
       } catch (e: any) {
         console.error("Failed to fetch proposals using collectionGroup:", e);
