@@ -127,7 +127,6 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
 
 const defaultOnboardingSteps: OnboardingStep[] = [
     { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
-    { title: 'Account Activated', description: 'Client portal access has been granted.', status: 'pending' },
     { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery.', status: 'pending' },
     { title: 'Onboarding Call', description: 'Initial setup and account walkthrough call completed.', status: 'pending' },
     { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
@@ -137,8 +136,8 @@ export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const [searchQuery, setSearchQuery] = useState('');
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'draft', 'finalized', 'sent', 'rejected'];
-  const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'inactive'];
-  const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('all');
+  const clientStatuses: ('all' | 'active' | 'inactive')[] = ['all', 'active', 'inactive'];
+  const [clientStatusFilter, setClientStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
 
   const [proposalsCurrentPage, setProposalsCurrentPage] = useState(1);
@@ -528,7 +527,7 @@ export default function ProposalsPage() {
                                 />
                                 </div>
                             </div>
-                            <Select value={clientStatusFilter} onValueChange={(value) => setClientStatusFilter(value as ClientStatus | 'all')}>
+                            <Select value={clientStatusFilter} onValueChange={(value) => setClientStatusFilter(value as 'all' | 'active' | 'inactive')}>
                             <SelectTrigger className="w-[180px]">
                                 <div className="flex items-center gap-2">
                                 <Filter className="h-4 w-4" />
