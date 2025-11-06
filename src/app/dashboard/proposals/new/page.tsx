@@ -239,7 +239,7 @@ export default function NewProposalPage() {
                               <Briefcase className="h-4 w-4 text-muted-foreground" />
                               <div>
                                 <p className="text-muted-foreground">Client Type</p>
-                                <p className="font-medium capitalize">{selectedClient.clientType || 'N/A'}</p>
+                                <p className="font-medium capitalize">{selectedClient.clientType === 'household' ? 'Family Plan' : selectedClient.clientType || 'N/A'}</p>
                               </div>
                             </div>
                          </div>
@@ -305,7 +305,7 @@ export default function NewProposalPage() {
                               <SelectValue placeholder="Select client type" />
                           </SelectTrigger>
                           <SelectContent>
-                              <SelectItem value="household">Individual (Household)</SelectItem>
+                              <SelectItem value="household">Family Plan</SelectItem>
                               <SelectItem value="sme">SME</SelectItem>
                               <SelectItem value="commercial">Commercial</SelectItem>
                               <SelectItem value="corporate">Corporate</SelectItem>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -280,7 +281,7 @@ export default function DashboardPage() {
       { term: 'Annual', schedule: 'Spread monthly for 12 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Oct next year' },
   ];
   const commissionTiers = [
-    { clientType: 'Individual (Household)', commission: '20%' },
+    { clientType: 'Family Plan', commission: '20%' },
     { clientType: 'SME', commission: '15%' },
     { clientType: 'Commercial', commission: '15%' },
     { clientType: 'Corporate & Enterprise', commission: '10%' },
@@ -707,14 +708,14 @@ export default function DashboardPage() {
 
                 <BonusCard 
                     icon={<Home className="h-6 w-6 text-primary" />}
-                    title="Individual Closer Bonus"
+                    title="Family Plan Closer Bonus"
                     value={`${dashboardData.individualClientsThisMonth} / ${dashboardData.individualClientsTarget}`}
                     progress={(dashboardData.individualClientsThisMonth / dashboardData.individualClientsTarget) * 100}
                     goal={`Goal: 10 clients for ₱2,500`}
-                    description="For Individual (Household) clients.">
+                    description="For Family Plan clients.">
                      <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Individual Closer Bonus</DialogTitle>
+                            <DialogTitle>Family Plan Closer Bonus</DialogTitle>
                             <DialogDescription>Reward for bringing in household clients. Claimed after clients complete their first paid month.</DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">

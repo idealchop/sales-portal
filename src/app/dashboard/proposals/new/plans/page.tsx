@@ -666,7 +666,7 @@ function PlansGrid({
                          <CustomPlanCalculator
                             onCalculated={onSmeCommercialCustomCalculated}
                             pricePerLiter={businessSize === 'household' ? 2.5 : 3}
-                            title={businessSize === 'household' ? "Customize Household Plan" : "Customize SME/Commercial Plan"}
+                            title={businessSize === 'household' ? "Customize Family Plan" : "Customize SME/Commercial Plan"}
                             maxGallons={businessSize === 'household' ? 10 : undefined}
                             maxDeliveries={businessSize === 'household' ? 2 : undefined}
                         />
@@ -721,7 +721,7 @@ function PlansGrid({
 const businessSizes = [
     { 
         id: 'household' as BusinessSize, 
-        title: 'Individual (Household)', 
+        title: 'Family Plan', 
         description: 'For families and personal home use.', 
         image: {
             imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FSmartRefill_Individual.png?alt=media&token=090d07c4-848a-4cd6-aab6-f7a5909ea839",
@@ -1160,4 +1160,5 @@ export default function PlansPage() {
     
 
     
+
 
