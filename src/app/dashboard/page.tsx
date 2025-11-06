@@ -124,11 +124,11 @@ export default function DashboardPage() {
         enterprise: 0.10,
     };
 
-    const getCommission = (proposal: Proposal): number => {
+    const getCommissionDetails = (proposal: Proposal): { commission: number; rate: number } => {
         const client = getClientById(proposal.clientId);
-        if (!client || !client.clientType) return 0;
+        if (!client || !client.clientType) return { commission: 0, rate: 0 };
         const rate = commissionRates[client.clientType] || 0;
-        return proposal.amount * rate;
+        return { commission: proposal.amount * rate, rate: rate * 100 };
     };
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
@@ -143,8 +143,8 @@ export default function DashboardPage() {
         return createdAt >= lastMonthStart && createdAt <= lastMonthEnd;
     });
 
-    const monthlyCommission = acceptedThisMonth.reduce((sum, p) => sum + getCommission(p), 0);
-    const lastMonthCommission = acceptedLastMonth.reduce((sum, p) => sum + getCommission(p), 0);
+    const monthlyCommission = acceptedThisMonth.reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
+    const lastMonthCommission = acceptedLastMonth.reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
 
 
     const commissionChange = lastMonthCommission > 0 
@@ -168,7 +168,7 @@ export default function DashboardPage() {
             const createdAt = new Date(p.createdAt);
             return createdAt >= currentQuarterStart && createdAt <= currentQuarterEnd;
         })
-        .reduce((sum, p) => sum + getCommission(p), 0);
+        .reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
     const quarterlyVolumeTarget = 200000;
 
 
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                 const createdAt = new Date(p.createdAt);
                 return createdAt >= monthStart && createdAt <= monthEnd;
             })
-            .reduce((sum, p) => sum + getCommission(p), 0);
+            .reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
         
         return { month: monthName, revenue };
     }).reverse();
@@ -191,7 +191,7 @@ export default function DashboardPage() {
     const proposalsSent = proposals.filter(p => p.status !== 'draft').length;
     const winRate = proposalsSent > 0 ? (acceptedProposals.length / proposalsSent) * 100 : 0;
     
-    const totalCommissionValue = acceptedProposals.reduce((sum, p) => sum + getCommission(p), 0);
+    const totalCommissionValue = acceptedProposals.reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
     const avgDealSize = acceptedProposals.length > 0 ? totalCommissionValue / acceptedProposals.length : 0;
 
     const recentProposals = proposals.slice(0, 5);
@@ -261,7 +261,8 @@ export default function DashboardPage() {
         recruitedPartners,
         teamRevenue,
         prepaidContracts,
-        prepaidContractsTarget
+        prepaidContractsTarget,
+        getCommissionDetails
     };
   }, [proposals, clients]);
 
@@ -354,21 +355,26 @@ export default function DashboardPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Client</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead className="text-center">Rate</TableHead>
+                                <TableHead className="text-right">Commission</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {dashboardData.acceptedThisMonth.length > 0 ? dashboardData.acceptedThisMonth.map(p => {
                                 const client = getClientById(p.clientId);
+                                const { commission, rate } = dashboardData.getCommissionDetails(p);
                                 return (
                                     <TableRow key={p.id}>
                                         <TableCell>{client?.companyName || 'Unknown Client'}</TableCell>
-                                        <TableCell className="text-right">{currencyFormatter.format(p.amount)}</TableCell>
+                                        <TableCell>{currencyFormatter.format(p.amount)}</TableCell>
+                                        <TableCell className="text-center">{rate}%</TableCell>
+                                        <TableCell className="text-right font-semibold">{currencyFormatter.format(commission)}</TableCell>
                                     </TableRow>
                                 )
                             }) : (
                                 <TableRow>
-                                    <TableCell colSpan={2} className="text-center">No commissions this month.</TableCell>
+                                    <TableCell colSpan={4} className="text-center">No commissions this month.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
