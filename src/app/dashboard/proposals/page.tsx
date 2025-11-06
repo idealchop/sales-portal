@@ -1,5 +1,4 @@
 
-
 'use client';
 import Link from "next/link";
 import { useState, useMemo, useEffect } from 'react';
@@ -138,7 +137,7 @@ export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const [searchQuery, setSearchQuery] = useState('');
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'draft', 'finalized', 'sent', 'rejected'];
-  const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'pending', 'inactive'];
+  const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'inactive'];
   const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('all');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
 
@@ -281,6 +280,9 @@ export default function ProposalsPage() {
     const filteredClients = useMemo(() => {
         return clients
             .filter(client => {
+                if (client.status === 'pending') {
+                    return false;
+                }
                 const matchesStatus = clientStatusFilter === 'all' || client.status === clientStatusFilter;
                 if (!matchesStatus) return false;
 
