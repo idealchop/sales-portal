@@ -887,7 +887,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
-
-    

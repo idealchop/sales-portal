@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -252,14 +253,16 @@ export function ClientOverviewDialog({
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(proposal);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(null);
   
   useEffect(() => {
     if (open) {
       if (proposal) {
+          // Find the full proposal from the fetched list to ensure it has the content
           const fullProposal = clientProposals.find(p => p.id === proposal.id);
           setSelectedProposal(fullProposal || proposal);
       } else if (clientProposals.length > 0) {
+          // Default to the most recent proposal if none is specified
           setSelectedProposal(clientProposals[0]);
       }
     }
