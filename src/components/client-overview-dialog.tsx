@@ -253,34 +253,41 @@ export function ClientOverviewDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(proposal);
-
+  
+  // This effect ensures we select the most detailed version of the proposal
+  // once the real-time data comes in.
   useEffect(() => {
-    if (proposal) {
-      setSelectedProposal(proposal);
-    } else if (clientProposals.length > 0) {
+    if (proposal && clientProposals.length > 0) {
+      // Find the full proposal from the real-time list that matches the initial one
+      const fullProposal = clientProposals.find(p => p.id === proposal.id);
+      setSelectedProposal(fullProposal || proposal);
+    } else if (!proposal && clientProposals.length > 0) {
+      // If no initial proposal, default to the latest one
       setSelectedProposal(clientProposals[0]);
     }
   }, [proposal, clientProposals]);
-  
+
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
-    const proposalToParse = selectedProposal || proposal;
-    if (!proposalToParse?.content) return null;
+    if (!selectedProposal?.content) return null;
     try {
-        const content = JSON.parse(proposalToParse.content);
-        return { ...content, paymentProofUrl: proposalToParse.paymentProofUrl };
+        const content = JSON.parse(selectedProposal.content);
+        return { ...content, paymentProofUrl: selectedProposal.paymentProofUrl };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
         return null;
     }
-  }, [selectedProposal, proposal]);
+  }, [selectedProposal]);
   
-  const contactInfo = {
-    name: parsedProposalContent?.contactName || client.contactName,
-    company: parsedProposalContent?.companyName || client.companyName,
-    email: parsedProposalContent?.contactEmail || client.contactEmail,
-    phone: parsedProposalContent?.contactPhone || client.contactPhone,
-    address: parsedProposalContent?.address || client.address,
-  }
+  const contactInfo = useMemo(() => {
+    return {
+      name: parsedProposalContent?.contactName || client.contactName,
+      company: parsedProposalContent?.companyName || client.companyName,
+      email: parsedProposalContent?.contactEmail || client.contactEmail,
+      phone: parsedProposalContent?.contactPhone || client.contactPhone,
+      address: parsedProposalContent?.address || client.address,
+    };
+  }, [client, parsedProposalContent]);
+
 
   const subscriptionInfo = useMemo(() => {
     if (parsedProposalContent) {
