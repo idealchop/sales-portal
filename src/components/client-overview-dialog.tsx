@@ -257,14 +257,10 @@ export function ClientOverviewDialog({
   
   useEffect(() => {
     if (open) {
-      // If a specific proposal is passed, prioritize it.
       if (proposal) {
-        // We need to find the full version from clientProposals once it's fetched,
-        // because the 'proposal' prop might be a summary.
         const fullProposal = clientProposals.find(p => p.id === proposal.id);
         setSelectedProposal(fullProposal || proposal);
       } else if (clientProposals.length > 0) {
-          // Otherwise, default to the most recent proposal for the client.
           setSelectedProposal(clientProposals[0]);
       }
     }
@@ -272,7 +268,6 @@ export function ClientOverviewDialog({
 
 
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
-    // Ensure we are using the 'content' from the full proposal object.
     const proposalWithContent = clientProposals.find(p => p.id === selectedProposal?.id);
     if (!proposalWithContent?.content) return null;
     try {
@@ -285,7 +280,6 @@ export function ClientOverviewDialog({
   }, [selectedProposal, clientProposals]);
   
   const contactInfo = useMemo(() => {
-    // Prioritize data from the parsed proposal, fall back to the base client object.
     return {
       name: parsedProposalContent?.contactName || client.contactName,
       company: parsedProposalContent?.companyName || client.companyName,
@@ -366,8 +360,7 @@ export function ClientOverviewDialog({
         });
         fetchedProposals.sort((a,b) => (b.createdAt as any) - (a.createdAt as any));
         setClientProposals(fetchedProposals);
-        // This is a key change: after fetching, if we have a specific proposal ID,
-        // make sure we select the full version of it.
+        
         if (proposal) {
           const fullProposal = fetchedProposals.find(p => p.id === proposal.id);
           setSelectedProposal(fullProposal || proposal);
