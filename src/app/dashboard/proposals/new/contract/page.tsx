@@ -57,6 +57,8 @@ import type { Client } from '@/lib/definitions';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc } from 'firebase/firestore';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 const billingCycles = [
@@ -237,7 +239,9 @@ function PreviewDialog({
     saveProposal: (status: 'draft' | 'finalized', signature?: string) => Promise<void>;
 }) {
     const signaturePadRef = useRef<SignaturePadRef>(null);
+    const contractRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
+    const [isDownloading, setIsDownloading] = useState(false);
 
     const handleSaveDraft = async () => {
       await saveProposal('draft', signaturePadRef.current?.getSignatureDataUrl());
@@ -256,6 +260,52 @@ function PreviewDialog({
         await saveProposal('finalized', signatureDataUrl!);
     };
 
+    const handleDownloadPdf = async () => {
+        const contractElement = contractRef.current;
+        if (!contractElement) {
+            toast({
+                variant: "destructive",
+                title: "Download Failed",
+                description: "Could not find the contract content to download.",
+            });
+            return;
+        }
+        
+        setIsDownloading(true);
+
+        try {
+            const canvas = await html2canvas(contractElement, {
+                scale: 2, // Increase scale for better resolution
+                useCORS: true,
+                logging: false,
+                width: contractElement.scrollWidth,
+                height: contractElement.scrollHeight,
+                windowWidth: contractElement.scrollWidth,
+                windowHeight: contractElement.scrollHeight,
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.proposalId}.pdf`);
+
+        } catch (error) {
+            console.error("PDF Download Error:", error);
+            toast({
+                variant: "destructive",
+                title: "Download Failed",
+                description: "An error occurred while generating the PDF.",
+            });
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     return (
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
              <DialogContent className="sm:max-w-5xl">
@@ -264,35 +314,28 @@ function PreviewDialog({
                     <DialogDescription>A preview of the sales proposal for the client to review and sign.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[85vh] pr-6">
-                    <ContractDetails
-                        finalPlanDetails={finalPlanDetails}
-                        isSigned={false}
-                        signaturePadRef={signaturePadRef}
-                    />
+                    <div ref={contractRef}>
+                        <ContractDetails
+                            finalPlanDetails={finalPlanDetails}
+                            isSigned={false}
+                            signaturePadRef={signaturePadRef}
+                        />
+                    </div>
                 </ScrollArea>
                 <DialogFooter className="gap-2 sm:justify-end border-t pt-4">
-                    <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
+                    <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={isSaving || isDownloading}>
                          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save as Draft
                     </Button>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span tabIndex={0}>
-                            <Button type="button" disabled={true}>
-                              <Download className="mr-2 h-4 w-4" /> Download PDF
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>PDF generation is coming soon.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    
+                    <Button type="button" onClick={handleDownloadPdf} disabled={isSaving || isDownloading}>
+                        {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        Download PDF
+                    </Button>
 
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                             <Button type="button" disabled={isSaving}>
+                             <Button type="button" disabled={isSaving || isDownloading}>
                                 <Send className="mr-2 h-4 w-4" />
                                 Finalize &amp; Send
                             </Button>
