@@ -116,6 +116,21 @@ export default function DashboardPage() {
     const currentQuarterStart = startOfQuarter(now);
     const currentQuarterEnd = endOfQuarter(now);
 
+    const commissionRates: { [key: string]: number } = {
+        household: 0.20,
+        sme: 0.15,
+        commercial: 0.15,
+        corporate: 0.10,
+        enterprise: 0.10,
+    };
+
+    const getCommission = (proposal: Proposal): number => {
+        const client = getClientById(proposal.clientId);
+        if (!client || !client.clientType) return 0;
+        const rate = commissionRates[client.clientType] || 0;
+        return proposal.amount * rate;
+    };
+
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
 
     const acceptedThisMonth = acceptedProposals.filter(p => {
@@ -128,8 +143,9 @@ export default function DashboardPage() {
         return createdAt >= lastMonthStart && createdAt <= lastMonthEnd;
     });
 
-    const monthlyCommission = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
-    const lastMonthCommission = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
+    const monthlyCommission = acceptedThisMonth.reduce((sum, p) => sum + getCommission(p), 0);
+    const lastMonthCommission = acceptedLastMonth.reduce((sum, p) => sum + getCommission(p), 0);
+
 
     const commissionChange = lastMonthCommission > 0 
         ? ((monthlyCommission - lastMonthCommission) / lastMonthCommission) * 100 
@@ -146,12 +162,15 @@ export default function DashboardPage() {
 
     const corporateClientsTarget = 10;
     const individualClientsTarget = 30;
-
-    const quarterlyVolume = acceptedProposals.filter(p => {
-      const createdAt = new Date(p.createdAt);
-      return createdAt >= currentQuarterStart && createdAt <= currentQuarterEnd;
-    }).reduce((sum, p) => sum + p.amount, 0);
+    
+    const quarterlyVolume = acceptedProposals
+        .filter(p => {
+            const createdAt = new Date(p.createdAt);
+            return createdAt >= currentQuarterStart && createdAt <= currentQuarterEnd;
+        })
+        .reduce((sum, p) => sum + getCommission(p), 0);
     const quarterlyVolumeTarget = 200000;
+
 
     const commissionHistory = Array.from({ length: 6 }).map((_, i) => {
         const monthDate = subMonths(now, i);
@@ -164,15 +183,17 @@ export default function DashboardPage() {
                 const createdAt = new Date(p.createdAt);
                 return createdAt >= monthStart && createdAt <= monthEnd;
             })
-            .reduce((sum, p) => sum + p.amount, 0);
+            .reduce((sum, p) => sum + getCommission(p), 0);
         
         return { month: monthName, revenue };
     }).reverse();
 
     const proposalsSent = proposals.filter(p => p.status !== 'draft').length;
     const winRate = proposalsSent > 0 ? (acceptedProposals.length / proposalsSent) * 100 : 0;
-    const totalAcceptedValue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
-    const avgDealSize = acceptedProposals.length > 0 ? totalAcceptedValue / acceptedProposals.length : 0;
+    
+    const totalCommissionValue = acceptedProposals.reduce((sum, p) => sum + getCommission(p), 0);
+    const avgDealSize = acceptedProposals.length > 0 ? totalCommissionValue / acceptedProposals.length : 0;
+
     const recentProposals = proposals.slice(0, 5);
 
     const activityData = [
@@ -211,7 +232,7 @@ export default function DashboardPage() {
 
     // Team Builder
     const recruitedPartners = 1; // Assuming self is the first partner for now
-    const teamRevenue = totalAcceptedValue; 
+    const teamRevenue = totalCommissionValue; 
 
     // Prepayment Power-Up
     const prepaidContracts = clients.filter(c => c.status === 'active' && c.subscription?.planId).length;
