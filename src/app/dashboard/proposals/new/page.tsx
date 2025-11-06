@@ -65,9 +65,13 @@ export default function NewProposalPage() {
   
   const isNewClient = clientSelectionType === 'new';
 
+  const availableClients = useMemo(() => {
+    return clients.filter(client => client.status === 'pending');
+  }, [clients]);
+
   const selectedClient = useMemo(() => {
     if (!selectedClientId || selectedClientId === 'new') return null;
-    const client = clients.find(c => c.id === selectedClientId);
+    const client = availableClients.find(c => c.id === selectedClientId);
     if(client) {
         setCompanyName(client.companyName);
         setContactName(client.contactName);
@@ -77,7 +81,7 @@ export default function NewProposalPage() {
         setClientType(client.clientType || '');
     }
     return client;
-  }, [clients, selectedClientId]);
+  }, [availableClients, selectedClientId]);
 
   useEffect(() => {
     if (clientSelectionType === 'existing' && selectedClient) {
@@ -185,7 +189,7 @@ export default function NewProposalPage() {
                                 <SelectValue placeholder="Select an existing client" />
                             </SelectTrigger>
                             <SelectContent>
-                                {clients.map(client => (
+                                {availableClients.map(client => (
                                     <SelectItem key={client.id} value={client.id}>{client.companyName}</SelectItem>
                                 ))}
                             </SelectContent>
