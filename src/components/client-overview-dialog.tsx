@@ -264,16 +264,17 @@ export function ClientOverviewDialog({
   }, [proposal, clientProposals]);
   
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
-    if (!selectedProposal?.content) return null;
+    const proposalToParse = selectedProposal || proposal;
+    if (!proposalToParse?.content) return null;
     try {
-        const content = JSON.parse(selectedProposal.content);
+        const content = JSON.parse(proposalToParse.content);
         // Ensure paymentProofUrl is carried over if it exists
-        return { ...content, paymentProofUrl: selectedProposal.paymentProofUrl };
+        return { ...content, paymentProofUrl: proposalToParse.paymentProofUrl };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
         return null;
     }
-  }, [selectedProposal]);
+  }, [selectedProposal, proposal]);
   
   const contactInfo = {
     name: parsedProposalContent?.contactName || client.contactName,
@@ -785,7 +786,7 @@ export function ClientOverviewDialog({
                             <DialogHeader className="sr-only">
                                 <DialogTitle>Smart Refill™ Water Supply Subscription Agreement</DialogTitle>
                                 <DialogDescription>
-                                    Between: River Tech Group, Inc. (“Provider”) and {client.companyName} (“Client”).
+                                    Between: River Tech Group, Inc. (“Provider”) and {client.companyName}.
                                 </DialogDescription>
                             </DialogHeader>
                             <ScrollArea className="h-[85vh] pr-6">
