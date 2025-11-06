@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Image from 'next/image';
@@ -343,6 +342,7 @@ export function ClientOverviewDialog({
         addons,
         dateSigned: parsedProposalContent.date,
         monthlyAmount: parsedProposalContent.basePrice,
+        clientType: parsedProposalContent.clientType
       };
     }
     if (client.subscription) {
@@ -353,10 +353,11 @@ export function ClientOverviewDialog({
         billingCycle: 'Monthly',
         addons: client.subscription.addons?.map(name => ({ name, cost: 0 })) || [],
         monthlyAmount: client.subscription.amount,
+        clientType: client.clientType,
       };
     }
     return null;
-  }, [parsedProposalContent, client.subscription]);
+  }, [parsedProposalContent, client.subscription, client.clientType]);
 
   useEffect(() => {
     if (open && firestore && client.id) {
@@ -634,8 +635,8 @@ export function ClientOverviewDialog({
                                 </div>
                                 <div className="space-y-2">
                                     <h3 className="text-lg font-bold">{subscriptionInfo.planName}</h3>
-                                    {client.clientType && (
-                                        <Badge variant="secondary" className="capitalize">{clientTypeMap[client.clientType] || client.clientType}</Badge>
+                                    {subscriptionInfo.clientType && (
+                                        <Badge variant="secondary" className="capitalize">{clientTypeMap[subscriptionInfo.clientType] || subscriptionInfo.clientType}</Badge>
                                     )}
                                      <p className="text-2xl font-bold">{currencyFormatter.format(subscriptionInfo.monthlyAmount || 0)} <span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                                 </div>
