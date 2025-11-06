@@ -11,7 +11,7 @@ import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
 import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
 import { ContractText } from '@/app/dashboard/proposals/new/contract/page';
 import { Logo } from '@/components/logo';
-import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle } from 'lucide-react';
+import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
 import Image from 'next/image';
 
@@ -216,13 +216,13 @@ export function ContractDetails({
                             <span className="text-muted-foreground">Client ID:</span>
                             <span className="font-semibold font-mono">{clientId || 'Pending'}</span>
                         </div>
-                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                            <span className="text-muted-foreground">Name:</span>
-                            <span className="font-semibold">{client.contactName || "N/A"}</span>
-                        </div>
                          <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                             <span className="text-muted-foreground">Company:</span>
                             <span className="font-semibold">{client.companyName || "N/A"}</span>
+                        </div>
+                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                            <span className="text-muted-foreground">Name:</span>
+                            <span className="font-semibold">{client.contactName || "N/A"}</span>
                         </div>
                         <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                             <span className="text-muted-foreground">Email:</span>
@@ -247,32 +247,39 @@ export function ContractDetails({
                         <CardTitle>Plan Details: {summaryTitle}</CardTitle>
                     </CardHeader>
                      <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                            <Waves className="h-4 w-4 text-primary" />
+                        <div className="flex items-start gap-3">
+                            <Waves className="h-5 w-5 text-primary" />
                             <div>
                                 <p className="text-muted-foreground">Total Liters</p>
                                 <p className="font-semibold">{finalPlan.liters}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-primary" />
+                        <div className="flex items-start gap-3">
+                            <Users className="h-5 w-5 text-primary" />
                             <div>
                                 <p className="text-muted-foreground">Employees</p>
                                 <p className="font-semibold">{finalPlan.employees}</p>
                             </div>
                         </div>
-                         <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-primary" />
+                         <div className="flex items-start gap-3">
+                            <Package className="h-5 w-5 text-primary" />
                             <div>
                                 <p className="text-muted-foreground">Refillable Gallons</p>
                                 <p className="font-semibold">{refillableGallons}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <RefreshCcw className="h-4 w-4 text-primary" />
+                        <div className="flex items-start gap-3">
+                            <RefreshCcw className="h-5 w-5 text-primary" />
                             <div>
                                 <p className="text-muted-foreground">Refill Frequency</p>
                                 <p className="font-semibold">{finalPlan.refillFrequency}</p>
+                            </div>
+                        </div>
+                         <div className="flex items-start gap-3">
+                            <Ship className="h-5 w-5 text-primary" />
+                            <div>
+                                <p className="text-muted-foreground">Water Stations</p>
+                                <p className="font-semibold">{finalPlan.stations}</p>
                             </div>
                         </div>
                     </CardContent>
