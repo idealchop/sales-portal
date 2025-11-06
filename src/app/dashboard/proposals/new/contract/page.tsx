@@ -261,38 +261,52 @@ function PreviewDialog({
     };
 
     const handleDownloadPdf = async () => {
-        const content = contractRef.current;
-        if (!content) {
+        const contentToCapture = contractRef.current?.querySelector<HTMLDivElement>(':scope > div');
+
+        if (!contentToCapture) {
             toast({ variant: "destructive", title: "Download Failed", description: "Contract content not found." });
             return;
         }
-
+        
         setIsDownloading(true);
+        
         try {
-            const canvas = await html2canvas(content, { scale: 2, useCORS: true, logging: false });
+            const canvas = await html2canvas(contentToCapture, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                allowTaint: true,
+                onclone: (document) => {
+                    // Ensure all images are loaded before capture
+                    const promises = Array.from(document.getElementsByTagName('img')).map(img => {
+                        if (img.complete) return Promise.resolve();
+                        return new Promise(resolve => { img.onload = img.onerror = resolve; });
+                    });
+                    return Promise.all(promises);
+                }
+            });
+
             const imgData = canvas.toDataURL('image/png');
-            
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
             
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
-            const ratio = imgWidth / imgHeight;
+            const contentWidth = canvas.width;
+            const contentHeight = canvas.height;
             
-            const canvasPdfWidth = pdfWidth;
-            const canvasPdfHeight = canvasPdfWidth / ratio;
+            const ratio = contentWidth / pdfWidth;
+            const imgHeight = contentHeight / ratio;
             
             let position = 0;
-            let heightLeft = canvasPdfHeight;
+            let heightLeft = imgHeight;
 
-            pdf.addImage(imgData, 'PNG', 0, position, canvasPdfWidth, canvasPdfHeight);
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
             heightLeft -= pdfHeight;
 
             while (heightLeft > 0) {
-                position = heightLeft - canvasPdfHeight;
+                position = position - pdfHeight;
                 pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, canvasPdfWidth, canvasPdfHeight);
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
                 heightLeft -= pdfHeight;
             }
             
@@ -306,6 +320,7 @@ function PreviewDialog({
         }
     };
 
+
     return (
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
              <DialogContent className="sm:max-w-5xl">
@@ -313,8 +328,8 @@ function PreviewDialog({
                     <DialogTitle>Proposal Preview</DialogTitle>
                     <DialogDescription>A preview of the sales proposal for the client to review and sign.</DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="h-[85vh] pr-6">
-                    <div ref={contractRef}>
+                <ScrollArea className="h-[85vh] pr-6" ref={contractRef}>
+                    <div>
                         <ContractDetails
                             finalPlanDetails={finalPlanDetails}
                             isSigned={false}
