@@ -170,7 +170,7 @@ export default function DashboardPage() {
             const createdAt = new Date(p.createdAt);
             return isWithinInterval(createdAt, { start: currentQuarterStart, end: currentQuarterEnd });
         })
-        .reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
+        .reduce((sum, p) => sum + p.amount, 0);
     const quarterlyVolumeTarget = 200000;
 
 
@@ -367,17 +367,20 @@ export default function DashboardPage() {
                             {dashboardData.acceptedThisMonth.length > 0 ? dashboardData.acceptedThisMonth.map(p => {
                                 const client = clientMap.get(p.clientId);
                                 const { commission, rate } = dashboardData.getCommissionDetails(p);
-                                let planName = p.title;
-                                try {
-                                    if (p.content) {
-                                        const content = JSON.parse(p.content);
-                                        planName = content.summaryTitle || p.title;
-                                    }
-                                } catch (e) { /* use proposal title */ }
+
+                                const clientTypeMap = {
+                                    household: 'Family Plan',
+                                    sme: 'SME',
+                                    commercial: 'Commercial',
+                                    corporate: 'Corporate',
+                                    enterprise: 'Enterprise'
+                                };
+                                const planCategory = client?.clientType ? clientTypeMap[client.clientType] : 'N/A';
+                                
                                 return (
                                     <TableRow key={p.id}>
                                         <TableCell>{client?.companyName || 'Unknown Client'}</TableCell>
-                                        <TableCell>{planName}</TableCell>
+                                        <TableCell>{planCategory}</TableCell>
                                         <TableCell>{currencyFormatter.format(p.amount)}</TableCell>
                                         <TableCell className="text-center">{rate}%</TableCell>
                                         <TableCell className="text-right font-semibold">{currencyFormatter.format(commission)}</TableCell>
