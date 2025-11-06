@@ -173,7 +173,9 @@ export default function ProposalsPage() {
             const matchesSearch = (
               proposal.title.toLowerCase().includes(searchTerm) ||
               client.companyName.toLowerCase().includes(searchTerm) ||
-              client.contactName.toLowerCase().includes(searchTerm)
+              client.contactName.toLowerCase().includes(searchTerm) ||
+              proposal.id.toLowerCase().includes(searchTerm) ||
+              client.id.toLowerCase().includes(searchTerm)
             );
             
             const matchesStatus = proposalStatusFilter === 'all' || proposal.status === proposalStatusFilter;
@@ -289,7 +291,8 @@ export default function ProposalsPage() {
                 return (
                     client.companyName.toLowerCase().includes(searchTerm) ||
                     client.contactName.toLowerCase().includes(searchTerm) ||
-                    client.contactEmail.toLowerCase().includes(searchTerm)
+                    client.contactEmail.toLowerCase().includes(searchTerm) ||
+                    client.id.toLowerCase().includes(searchTerm)
                 );
             });
     }, [clients, clientStatusFilter, searchQuery]);
@@ -370,39 +373,37 @@ export default function ProposalsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Dialog>
-                          <DialogTrigger asChild>
-                              {client.onboardingStatus ? (
-                                  <Button variant="outline" size="sm">
-                                      View Progress
-                                  </Button>
-                              ) : (
-                                  <Button variant="link" className="text-xs text-muted-foreground p-0 h-auto">Not Started</Button>
-                              )}
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-2xl">
-                              <DialogHeader>
-                                  <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
-                                  <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
-                              </DialogHeader>
-                              <div className="grid md:grid-cols-2 gap-6 py-4">
-                                <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                    {subscriptionInfo && <Image src={planImages[client.clientType || 'sme']} alt={subscriptionInfo.planName} fill className="object-cover" />}
-                                </div>
-                                <div>
-                                    <div className="flex flex-col">
-                                        {(client.onboardingStatus || defaultOnboardingSteps).map((step, index) => (
-                                            <OnboardingStepItem 
-                                                key={index} 
-                                                step={step} 
-                                                isLast={index === (client.onboardingStatus || defaultOnboardingSteps).length - 1} 
-                                            />
-                                        ))}
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                {client.onboardingStatus ? (
+                                    <Button variant="outline" size="sm">View Progress</Button>
+                                ) : (
+                                    <Button variant="link" className="text-xs text-muted-foreground p-0 h-auto">Not Started</Button>
+                                )}
+                            </DialogTrigger>
+                             <DialogContent className="sm:max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
+                                    <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
+                                </DialogHeader>
+                                <div className="grid md:grid-cols-2 gap-6 py-4">
+                                    <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                                        {subscriptionInfo && <Image src={planImages[client.clientType || 'sme']} alt={subscriptionInfo.planName} fill className="object-cover" />}
+                                    </div>
+                                    <div>
+                                        <div className="flex flex-col">
+                                            {(client.onboardingStatus || defaultOnboardingSteps).map((step, index) => (
+                                                <OnboardingStepItem 
+                                                    key={index} 
+                                                    step={step} 
+                                                    isLast={index === (client.onboardingStatus || defaultOnboardingSteps).length - 1} 
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
-                              </div>
-                          </DialogContent>
-                      </Dialog>
+                            </DialogContent>
+                        </Dialog>
                     </TableCell>
                   </TableRow>
                 )
@@ -550,3 +551,5 @@ export default function ProposalsPage() {
     </div>
   );
 }
+
+    
