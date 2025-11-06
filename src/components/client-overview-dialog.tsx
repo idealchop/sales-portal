@@ -504,6 +504,14 @@ export function ClientOverviewDialog({
         });
     }
   }
+  
+  const clientTypeMap = {
+    household: 'Family Plan',
+    sme: 'SME',
+    commercial: 'Commercial',
+    corporate: 'Corporate',
+    enterprise: 'Enterprise'
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -626,6 +634,9 @@ export function ClientOverviewDialog({
                                 </div>
                                 <div className="space-y-2">
                                     <h3 className="text-lg font-bold">{subscriptionInfo.planName}</h3>
+                                    {client.clientType && (
+                                        <Badge variant="secondary" className="capitalize">{clientTypeMap[client.clientType] || client.clientType}</Badge>
+                                    )}
                                      <p className="text-2xl font-bold">{currencyFormatter.format(subscriptionInfo.monthlyAmount || 0)} <span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                                 </div>
                                 <Separator />
