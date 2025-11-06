@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -29,6 +30,17 @@ import {
   DialogClose,
   DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -231,7 +243,7 @@ function PreviewDialog({
       await saveProposal('draft', signaturePadRef.current?.getSignatureDataUrl());
     };
     
-    const handleFinalizeClick = async () => {
+    const handleFinalize = async () => {
         const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
         if (signaturePadRef.current?.isEmpty()) {
             toast({
@@ -277,10 +289,36 @@ function PreviewDialog({
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    <Button type="button" onClick={handleFinalizeClick} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                        Finalize &amp; Send
-                    </Button>
+
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                             <Button type="button" disabled={isSaving}>
+                                <Send className="mr-2 h-4 w-4" />
+                                Finalize &amp; Send
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Finalize and Send Proposal?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will finalize the proposal and mark it as sent to the client.
+                                    The proposal will be sent to the following email:
+                                    <br />
+                                    <strong className="font-mono">{finalPlanDetails.contactEmail}</strong>
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
+                                    {isSaving ? (
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+                                    ) : (
+                                        'Yes, Send Proposal'
+                                    )}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -908,5 +946,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
