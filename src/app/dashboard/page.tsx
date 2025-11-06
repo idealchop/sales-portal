@@ -102,9 +102,8 @@ export default function DashboardPage() {
   const { user } = useUser();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-  const getClientById = (id: string): Client | undefined => {
-    return clients.find(c => c.id === id);
-  }
+  // Memoize clients map for quick lookup
+  const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
 
   // Memoized calculations for dashboard data
   const dashboardData = useMemo(() => {
@@ -125,8 +124,10 @@ export default function DashboardPage() {
     };
 
     const getCommissionDetails = (proposal: Proposal): { commission: number; rate: number } => {
-        const client = getClientById(proposal.clientId);
-        if (!client || !client.clientType) return { commission: 0, rate: 0 };
+        const client = clientMap.get(proposal.clientId);
+        if (!client || !client.clientType) {
+            return { commission: 0, rate: 0 };
+        }
         const rate = commissionRates[client.clientType] || 0;
         return { commission: proposal.amount * rate, rate: rate * 100 };
     };
@@ -265,7 +266,7 @@ export default function DashboardPage() {
         prepaidContractsTarget,
         getCommissionDetails
     };
-  }, [proposals, clients]);
+  }, [proposals, clients, clientMap]);
 
   // Static mock data for bonus tiers which are configuration, not dynamic data
   const closerBonusTiers = [
@@ -364,7 +365,7 @@ export default function DashboardPage() {
                         </TableHeader>
                         <TableBody>
                             {dashboardData.acceptedThisMonth.length > 0 ? dashboardData.acceptedThisMonth.map(p => {
-                                const client = getClientById(p.clientId);
+                                const client = clientMap.get(p.clientId);
                                 const { commission, rate } = dashboardData.getCommissionDetails(p);
                                 let planName = p.title;
                                 try {
@@ -692,7 +693,7 @@ export default function DashboardPage() {
                 </TableRow>
               )}
               {!(proposalsLoading || clientsLoading) && dashboardData.recentProposals.map((proposal) => {
-                const client = getClientById(proposal.clientId);
+                const client = clientMap.get(proposal.clientId);
                 if (!client) return null;
                 return (
                   <TableRow key={proposal.id}>
