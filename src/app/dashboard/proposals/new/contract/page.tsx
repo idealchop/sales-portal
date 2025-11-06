@@ -261,46 +261,46 @@ function PreviewDialog({
     };
 
     const handleDownloadPdf = async () => {
-        const contractElement = contractRef.current;
-        if (!contractElement) {
-            toast({
-                variant: "destructive",
-                title: "Download Failed",
-                description: "Could not find the contract content to download.",
-            });
+        const content = contractRef.current;
+        if (!content) {
+            toast({ variant: "destructive", title: "Download Failed", description: "Contract content not found." });
             return;
         }
-        
-        setIsDownloading(true);
 
+        setIsDownloading(true);
         try {
-            const canvas = await html2canvas(contractElement, {
-                scale: 2, // Increase scale for better resolution
-                useCORS: true,
-                logging: false,
-                width: contractElement.scrollWidth,
-                height: contractElement.scrollHeight,
-                windowWidth: contractElement.scrollWidth,
-                windowHeight: contractElement.scrollHeight,
-            });
-            
+            const canvas = await html2canvas(content, { scale: 2, useCORS: true, logging: false });
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'px',
-                format: [canvas.width, canvas.height]
-            });
             
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = imgWidth / imgHeight;
+            
+            const canvasPdfWidth = pdfWidth;
+            const canvasPdfHeight = canvasPdfWidth / ratio;
+            
+            let position = 0;
+            let heightLeft = canvasPdfHeight;
+
+            pdf.addImage(imgData, 'PNG', 0, position, canvasPdfWidth, canvasPdfHeight);
+            heightLeft -= pdfHeight;
+
+            while (heightLeft > 0) {
+                position = heightLeft - canvasPdfHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, canvasPdfWidth, canvasPdfHeight);
+                heightLeft -= pdfHeight;
+            }
+            
             pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.proposalId}.pdf`);
 
         } catch (error) {
             console.error("PDF Download Error:", error);
-            toast({
-                variant: "destructive",
-                title: "Download Failed",
-                description: "An error occurred while generating the PDF.",
-            });
+            toast({ variant: "destructive", title: "Download Failed", description: "An error occurred while generating the PDF." });
         } finally {
             setIsDownloading(false);
         }
@@ -989,3 +989,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
