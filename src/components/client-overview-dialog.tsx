@@ -383,6 +383,7 @@ export function ClientOverviewDialog({
   }, [firestore, client.id, open]);
 
   const getInitials = (name: string) => {
+    if (!name) return "";
     return name
       .split(' ')
       .map((n) => n[0])
@@ -804,3 +805,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
