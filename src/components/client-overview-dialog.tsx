@@ -257,12 +257,14 @@ export function ClientOverviewDialog({
   
   useEffect(() => {
     if (open) {
+      // If a specific proposal is passed, prioritize it.
       if (proposal) {
-          // Find the full proposal from the fetched list to ensure it has the content
-          const fullProposal = clientProposals.find(p => p.id === proposal.id);
-          setSelectedProposal(fullProposal || proposal);
+        // We need to find the full version from clientProposals once it's fetched,
+        // because the 'proposal' prop might be a summary.
+        const fullProposal = clientProposals.find(p => p.id === proposal.id);
+        setSelectedProposal(fullProposal || proposal);
       } else if (clientProposals.length > 0) {
-          // Default to the most recent proposal if none is specified
+          // Otherwise, default to the most recent proposal for the client.
           setSelectedProposal(clientProposals[0]);
       }
     }
@@ -270,17 +272,20 @@ export function ClientOverviewDialog({
 
 
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
-    if (!selectedProposal?.content) return null;
+    // Ensure we are using the 'content' from the full proposal object.
+    const proposalWithContent = clientProposals.find(p => p.id === selectedProposal?.id);
+    if (!proposalWithContent?.content) return null;
     try {
-        const content = JSON.parse(selectedProposal.content);
-        return { ...content, paymentProofUrl: selectedProposal.paymentProofUrl };
+        const content = JSON.parse(proposalWithContent.content);
+        return { ...content, paymentProofUrl: proposalWithContent.paymentProofUrl };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
         return null;
     }
-  }, [selectedProposal]);
+  }, [selectedProposal, clientProposals]);
   
   const contactInfo = useMemo(() => {
+    // Prioritize data from the parsed proposal, fall back to the base client object.
     return {
       name: parsedProposalContent?.contactName || client.contactName,
       company: parsedProposalContent?.companyName || client.companyName,
@@ -361,6 +366,14 @@ export function ClientOverviewDialog({
         });
         fetchedProposals.sort((a,b) => (b.createdAt as any) - (a.createdAt as any));
         setClientProposals(fetchedProposals);
+        // This is a key change: after fetching, if we have a specific proposal ID,
+        // make sure we select the full version of it.
+        if (proposal) {
+          const fullProposal = fetchedProposals.find(p => p.id === proposal.id);
+          setSelectedProposal(fullProposal || proposal);
+        } else if (fetchedProposals.length > 0 && !selectedProposal) {
+          setSelectedProposal(fetchedProposals[0]);
+        }
       });
       
       const remarksRef = collection(firestore, `clients/${client.id}/remarks`);
@@ -384,7 +397,7 @@ export function ClientOverviewDialog({
         unsubscribeRemarks();
       }
     }
-  }, [firestore, client.id, open]);
+  }, [firestore, client.id, open, proposal, selectedProposal]);
 
   const getInitials = (name: string) => {
     if (!name) return "";
