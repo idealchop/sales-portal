@@ -20,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot, Loader2 } from 'lucide-react';
 import type { Client, Remark, OnboardingStep, Proposal } from '@/lib/definitions';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
@@ -33,7 +33,8 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
 import { GoogleMap } from './google-map';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -134,6 +135,7 @@ export function ClientOverviewDialog({
 
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Use the passed-in proposal if available, otherwise default to the first fetched proposal
@@ -150,7 +152,9 @@ export function ClientOverviewDialog({
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
     if (!selectedProposal?.content) return null;
     try {
-        return JSON.parse(selectedProposal.content);
+        const content = JSON.parse(selectedProposal.content);
+        // Ensure paymentProofUrl is carried over if it exists
+        return { ...content, paymentProofUrl: selectedProposal.paymentProofUrl };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
         return null;
@@ -284,15 +288,48 @@ export function ClientOverviewDialog({
     }
   };
 
-  const handleConfirmPayment = () => {
-    if (setActiveView) {
-        setActiveView('clients');
+  const handleConfirmPayment = async () => {
+    if (!paymentProofFile || !selectedProposal || !firestore) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof or proposal details.' });
+        return;
     }
-    setOpen(false); // Close the dialog
-    toast({
-        title: "Payment Confirmed!",
-        description: `${client.companyName} is now an active client.`,
-    })
+
+    setIsConfirmingPayment(true);
+    try {
+        const storage = getStorage();
+        const filePath = `payment_proofs/${client.id}/${selectedProposal.id}/${paymentProofFile.name}`;
+        const storageRef = ref(storage, filePath);
+
+        const snapshot = await uploadBytes(storageRef, paymentProofFile);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        const proposalRef = doc(firestore, `clients/${client.id}/proposals`, selectedProposal.id);
+        const clientRef = doc(firestore, 'clients', client.id);
+
+        await updateDoc(proposalRef, {
+            status: 'accepted',
+            paymentProofUrl: downloadURL
+        });
+        await updateDoc(clientRef, {
+            status: 'active'
+        });
+
+        toast({
+            title: "Payment Confirmed!",
+            description: `${client.companyName} is now an active client.`,
+        });
+
+        setOpen(false);
+        if (setActiveView) {
+            setActiveView('clients');
+        }
+
+    } catch (error) {
+        console.error("Payment confirmation failed:", error);
+        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not confirm payment. Please try again.' });
+    } finally {
+        setIsConfirmingPayment(false);
+    }
   }
 
   const handleAddRemark = async () => {
@@ -458,7 +495,7 @@ export function ClientOverviewDialog({
                                 </div>
                                 <div className="space-y-2">
                                     <h3 className="text-lg font-bold">{subscriptionInfo.planName}</h3>
-                                     <p className="font-semibold text-primary">{currencyFormatter.format(subscriptionInfo.monthlyAmount || 0)} / mo</p>
+                                     <p className="text-2xl font-bold">{currencyFormatter.format(subscriptionInfo.monthlyAmount || 0)} <span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                                 </div>
                                 <Separator />
                                 <div className="space-y-2">
@@ -565,7 +602,7 @@ export function ClientOverviewDialog({
                     </Card>
                  </div>
 
-                 {view === 'proposals' ? (
+                 {view === 'proposals' && client.status === 'pending' && selectedProposal?.status !== 'accepted' &&(
                      <Card>
                         <CardHeader>
                             <CardTitle>Payment Confirmation</CardTitle>
@@ -588,7 +625,7 @@ export function ClientOverviewDialog({
                             )}
 
                              <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-                                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isConfirmingPayment}>
                                     <Upload className="mr-2 h-4 w-4" />
                                     {paymentProofFile ? 'Change File' : 'Upload File'}
                                 </Button>
@@ -599,14 +636,16 @@ export function ClientOverviewDialog({
                                     className="hidden"
                                     accept="image/png, image/jpeg, image/gif, application/pdf"
                                 />
-                                <Button onClick={handleConfirmPayment} disabled={!paymentProofFile}>
-                                    <CreditCard className="mr-2 h-4 w-4" />
-                                    Confirm Payment
+                                <Button onClick={handleConfirmPayment} disabled={!paymentProofFile || isConfirmingPayment}>
+                                    {isConfirmingPayment ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                                    {isConfirmingPayment ? 'Confirming...' : 'Confirm Payment'}
                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
-                 ) : (
+                 )}
+
+                 {client.status === 'active' && parsedProposalContent?.paymentProofUrl && (
                     <Dialog>
                         <DialogTrigger asChild>
                              <Card className="cursor-pointer hover:bg-accent transition-colors">
@@ -631,7 +670,7 @@ export function ClientOverviewDialog({
                             <div className="mt-4 space-y-4">
                                 <div className="aspect-square w-full relative rounded-md overflow-hidden border">
                                     <Image
-                                        src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Freceipt-placeholder.png?alt=media&token=e9e8f498-38f3-4e4c-b5f7-91a5823158f1"
+                                        src={parsedProposalContent.paymentProofUrl}
                                         alt="Payment Receipt"
                                         fill
                                         className="object-contain p-4"

@@ -1,4 +1,5 @@
 
+
 export type OnboardingStep = {
   title: string;
   description: string;
@@ -58,9 +59,10 @@ export type Proposal = {
   client?: Pick<Client, 'id' | 'companyName' | 'contactName'>;
   title: string;
   content: string;
-  status: 'draft' | 'sent' | 'accepted' | 'rejected';
+  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'finalized';
   amount: number;
   createdAt: string;
+  paymentProofUrl?: string;
 };
 
 export type SalesMaterial = {
