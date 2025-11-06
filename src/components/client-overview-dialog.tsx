@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Image from 'next/image';
@@ -20,7 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot, Loader2 } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot, Loader2, Receipt } from 'lucide-react';
 import type { Client, Remark, OnboardingStep, Proposal } from '@/lib/definitions';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
@@ -35,6 +34,13 @@ import { GoogleMap } from './google-map';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -109,6 +115,114 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
     </div>
   </div>
 );
+
+function PaymentHistory({ client, proposals, onPaymentConfirm }: { client: Client; proposals: Proposal[]; onPaymentConfirm: (proposalId: string, file: File) => Promise<void>; }) {
+    const acceptedProposals = proposals.filter(p => p.status === 'accepted');
+    const pendingProposals = proposals.filter(p => p.status === 'finalized');
+    const [selectedPendingProposalId, setSelectedPendingProposalId] = useState<string>('');
+    const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
+    const [isConfirming, setIsConfirming] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setPaymentProofFile(file);
+        }
+    };
+
+    const handleConfirmClick = async () => {
+        if (!selectedPendingProposalId || !paymentProofFile) {
+            toast({
+                variant: 'destructive',
+                title: 'Missing Information',
+                description: 'Please select a proposal and upload a payment proof file.',
+            });
+            return;
+        }
+        setIsConfirming(true);
+        await onPaymentConfirm(selectedPendingProposalId, paymentProofFile);
+        setIsConfirming(false);
+        setPaymentProofFile(null);
+        setSelectedPendingProposalId('');
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Payment History</CardTitle>
+                <CardDescription>Review past payments and confirm new ones for this client.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <h4 className="font-semibold text-sm">Confirmed Payments</h4>
+                {acceptedProposals.length > 0 ? (
+                    <div className="space-y-2">
+                        {acceptedProposals.map(p => (
+                            <Dialog key={p.id}>
+                                <div className="flex items-center justify-between rounded-lg border p-3">
+                                    <div>
+                                        <p className="font-medium text-sm">{p.title}</p>
+                                        <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" disabled={!p.paymentProofUrl}>
+                                            <Receipt className="mr-2 h-4 w-4" /> View Receipt
+                                        </Button>
+                                    </DialogTrigger>
+                                </div>
+                                {p.paymentProofUrl && (
+                                     <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Payment Receipt</DialogTitle>
+                                            <DialogDescription>For proposal: {p.title}</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="relative aspect-square w-full mt-4">
+                                            <Image src={p.paymentProofUrl} alt="Payment proof" fill className="object-contain"/>
+                                        </div>
+                                    </DialogContent>
+                                )}
+                            </Dialog>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No confirmed payments yet.</p>
+                )}
+                
+                <Separator />
+
+                <h4 className="font-semibold text-sm">Record New Payment</h4>
+                {pendingProposals.length > 0 ? (
+                    <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
+                        <Select value={selectedPendingProposalId} onValueChange={setSelectedPendingProposalId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a finalized proposal..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {pendingProposals.map(p => (
+                                    <SelectItem key={p.id} value={p.id}>{p.title} - {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(p.amount)}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                         <Input
+                            id="payment-proof-upload"
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            accept="image/png, image/jpeg, image/gif, application/pdf"
+                        />
+                         <Button onClick={handleConfirmClick} disabled={!selectedPendingProposalId || !paymentProofFile || isConfirming} className="w-full">
+                            {isConfirming ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                            Confirm This Payment
+                        </Button>
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No finalized proposals available to confirm.</p>
+                )}
+            </CardContent>
+        </Card>
+    )
+}
 
 export function ClientOverviewDialog({
   children,
@@ -288,8 +402,11 @@ export function ClientOverviewDialog({
     }
   };
 
-  const handleConfirmPayment = async () => {
-    if (!paymentProofFile || !selectedProposal || !firestore) {
+  const handleConfirmPayment = async (proposalIdToConfirm?: string, fileToUpload?: File) => {
+    const finalProposalId = proposalIdToConfirm || selectedProposal?.id;
+    const finalFile = fileToUpload || paymentProofFile;
+
+    if (!finalFile || !finalProposalId || !firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof or proposal details.' });
         return;
     }
@@ -297,13 +414,13 @@ export function ClientOverviewDialog({
     setIsConfirmingPayment(true);
     try {
         const storage = getStorage();
-        const filePath = `payment_proofs/${client.id}/${selectedProposal.id}/${paymentProofFile.name}`;
+        const filePath = `payment_proofs/${client.id}/${finalProposalId}/${finalFile.name}`;
         const storageRef = ref(storage, filePath);
 
-        const snapshot = await uploadBytes(storageRef, paymentProofFile);
+        const snapshot = await uploadBytes(storageRef, finalFile);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
-        const proposalRef = doc(firestore, `clients/${client.id}/proposals`, selectedProposal.id);
+        const proposalRef = doc(firestore, `clients/${client.id}/proposals`, finalProposalId);
         const clientRef = doc(firestore, 'clients', client.id);
 
         await updateDoc(proposalRef, {
@@ -319,11 +436,13 @@ export function ClientOverviewDialog({
             description: `${client.companyName} is now an active client.`,
         });
 
-        setOpen(false);
-        if (setActiveView) {
-            setActiveView('clients');
+        if (view === 'proposals') {
+             setOpen(false);
+             if (setActiveView) {
+                setActiveView('clients');
+             }
         }
-
+       
     } catch (error) {
         console.error("Payment confirmation failed:", error);
         toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not confirm payment. Please try again.' });
@@ -636,7 +755,7 @@ export function ClientOverviewDialog({
                                     className="hidden"
                                     accept="image/png, image/jpeg, image/gif, application/pdf"
                                 />
-                                <Button onClick={handleConfirmPayment} disabled={!paymentProofFile || isConfirmingPayment}>
+                                <Button onClick={() => handleConfirmPayment()} disabled={!paymentProofFile || isConfirmingPayment}>
                                     {isConfirmingPayment ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
                                     {isConfirmingPayment ? 'Confirming...' : 'Confirm Payment'}
                                 </Button>
@@ -644,44 +763,11 @@ export function ClientOverviewDialog({
                         </CardContent>
                     </Card>
                  )}
-
-                 {client.status === 'active' && parsedProposalContent?.paymentProofUrl && (
-                    <Dialog>
-                        <DialogTrigger asChild>
-                             <Card className="cursor-pointer hover:bg-accent transition-colors">
-                                <CardHeader className="flex-row items-center gap-4 space-y-0">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                                        <FileCheck className="h-6 w-6 text-green-600" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-base">Payment Confirmed</CardTitle>
-                                        <CardDescription>Click to view the payment receipt.</CardDescription>
-                                    </div>
-                                </CardHeader>
-                            </Card>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-xl">
-                            <DialogHeader>
-                                <DialogTitle>Payment Confirmation: {client.companyName}</DialogTitle>
-                                <DialogDescription>
-                                    Official receipt for the subscription payment.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="mt-4 space-y-4">
-                                <div className="aspect-square w-full relative rounded-md overflow-hidden border">
-                                    <Image
-                                        src={parsedProposalContent.paymentProofUrl}
-                                        alt="Payment Receipt"
-                                        fill
-                                        className="object-contain p-4"
-                                        data-ai-hint="receipt"
-                                    />
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                 )}
                 
+                 {view === 'clients' && (
+                     <PaymentHistory client={client} proposals={clientProposals} onPaymentConfirm={handleConfirmPayment} />
+                 )}
+
                  {parsedProposalContent && (
                     <Dialog>
                         <DialogTrigger asChild>
