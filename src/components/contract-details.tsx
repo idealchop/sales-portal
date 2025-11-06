@@ -152,6 +152,9 @@ export function ContractDetails({
     const client = {
         companyName: source.companyName,
         contactName: source.contactName,
+        contactEmail: source.contactEmail,
+        contactPhone: source.contactPhone,
+        address: source.address,
     };
 
     const summaryTitle = source.summaryTitle;
@@ -220,6 +223,18 @@ export function ContractDetails({
                          <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                             <span className="text-muted-foreground">Company:</span>
                             <span className="font-semibold">{client.companyName || "N/A"}</span>
+                        </div>
+                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                            <span className="text-muted-foreground">Email:</span>
+                            <span className="font-semibold">{client.contactEmail || "N/A"}</span>
+                        </div>
+                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
+                            <span className="text-muted-foreground">Phone:</span>
+                            <span className="font-semibold">{client.contactPhone || "N/A"}</span>
+                        </div>
+                        <div className="grid grid-cols-[100px_1fr] items-start gap-2">
+                            <span className="text-muted-foreground">Address:</span>
+                            <span className="font-semibold">{client.address || "N/A"}</span>
                         </div>
                         <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                             <span className="text-muted-foreground">Date:</span>
@@ -473,4 +488,3 @@ export function ContractDetails({
         </div>
     );
 }
-
