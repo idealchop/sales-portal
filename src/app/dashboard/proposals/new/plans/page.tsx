@@ -886,8 +886,6 @@ function EnterpriseTypeSelector({
 
 export default function PlansPage() {
     const searchParams = useSearchParams();
-    const companyName = searchParams.get('companyName');
-    const contactName = searchParams.get('contactName');
 
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
@@ -1004,9 +1002,7 @@ export default function PlansPage() {
     const getNextLink = () => {
         if (!selectedPlan) return '#';
         
-        const params = new URLSearchParams();
-        params.set('companyName', companyName || '');
-        params.set('contactName', contactName || '');
+        const params = new URLSearchParams(searchParams.toString());
         params.set('plan', selectedPlan);
 
         if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
@@ -1164,3 +1160,4 @@ export default function PlansPage() {
     
 
     
+

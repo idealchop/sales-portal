@@ -61,11 +61,10 @@ const comparisonData = [
 
 export default function ComparisonPage() {
   const searchParams = useSearchParams();
-  const companyName = searchParams.get('companyName');
-  const contactName = searchParams.get('contactName');
+  const params = new URLSearchParams(searchParams.toString());
 
-  const prevLink = `/dashboard/proposals/new/about?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`;
-  const nextLink = `/dashboard/proposals/new/plans?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`;
+  const prevLink = `/dashboard/proposals/new/about?${params.toString()}`;
+  const nextLink = `/dashboard/proposals/new/plans?${params.toString()}`;
 
   return (
     <div className="flex flex-col gap-6">

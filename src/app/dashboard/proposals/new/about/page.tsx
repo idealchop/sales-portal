@@ -99,11 +99,10 @@ function SmartRefillIntro() {
 
 export default function AboutPage() {
     const searchParams = useSearchParams();
-    const companyName = searchParams.get('companyName');
-    const contactName = searchParams.get('contactName');
+    const params = new URLSearchParams(searchParams.toString());
 
-    const prevLink = `/dashboard/proposals/new?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`;
-    const nextLink = `/dashboard/proposals/new/comparison?companyName=${encodeURIComponent(companyName || '')}&contactName=${encodeURIComponent(contactName || '')}`;
+    const prevLink = `/dashboard/proposals/new?${params.toString()}`;
+    const nextLink = `/dashboard/proposals/new/comparison?${params.toString()}`;
 
 
     return (
