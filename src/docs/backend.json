@@ -48,6 +48,22 @@
             "type": "string",
             "description": "The type of client, used for bonus calculations.",
             "enum": ["household", "sme", "commercial", "corporate", "enterprise"]
+        },
+        "onboardingStatus": {
+            "type": "array",
+            "description": "An array of objects representing the client's onboarding journey.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "description": {"type": "string"},
+                    "status": {"type": "string", "enum": ["completed", "pending"]},
+                    "date": {"type": "string", "format": "date-time"},
+                    "providerName": {"type": "string"},
+                    "providerLocation": {"type": "string"}
+                },
+                "required": ["title", "description", "status"]
+            }
         }
       },
       "required": [
@@ -274,4 +290,3 @@
     }
   }
 }
-

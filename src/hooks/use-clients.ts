@@ -24,10 +24,9 @@ export function useClients() {
       ...client,
       id: client.id,
       clientType: client.clientType,
+      onboardingStatus: client.onboardingStatus, // Ensure onboardingStatus is passed through
     })) as WithId<Client>[];
   }, [clientsData]);
 
   return { clients, isLoading: isLoading || isFirebaseLoading || isUserLoading, error };
 }
-
-    
