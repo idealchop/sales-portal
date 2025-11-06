@@ -59,7 +59,7 @@ export type ActiveView = 'proposals' | 'clients';
 export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const [searchQuery, setSearchQuery] = useState('');
-  const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'draft', 'finalized', 'accepted', 'sent', 'rejected'];
+  const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'draft', 'finalized', 'sent', 'rejected'];
   const clientStatuses: (ClientStatus | 'all')[] = ['all', 'active', 'pending', 'inactive'];
   const [clientStatusFilter, setClientStatusFilter] = useState<ClientStatus | 'all'>('all');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
@@ -87,6 +87,9 @@ export default function ProposalsPage() {
   const renderProposalsTable = () => {
     const filteredProposals = useMemo(() => {
         return proposals.filter(proposal => {
+            if (proposal.status === 'accepted') {
+                return false;
+            }
             const client = clientMap.get(proposal.clientId);
             if (!client) return false;
 
@@ -240,11 +243,13 @@ export default function ProposalsPage() {
             </TableHeader>
             <TableBody>
               {paginatedClients.length > 0 ? paginatedClients.map((client) => {
-                 const clientProposal = proposals.find(p => p.clientId === client.id);
+                 const clientProposals = proposals.filter(p => p.clientId === client.id);
+                 const acceptedProposal = clientProposals.find(p => p.status === 'accepted');
+
                  let subscriptionInfo = client.subscription;
-                 if (!subscriptionInfo && clientProposal?.content) {
+                 if (!subscriptionInfo && acceptedProposal?.content) {
                      try {
-                         const content = JSON.parse(clientProposal.content) as FinalPlanDetails;
+                         const content = JSON.parse(acceptedProposal.content) as FinalPlanDetails;
                          subscriptionInfo = {
                             planId: content.plan.id,
                             planName: content.summaryTitle,
@@ -431,3 +436,6 @@ export default function ProposalsPage() {
     </div>
   );
 }
+
+
+    
