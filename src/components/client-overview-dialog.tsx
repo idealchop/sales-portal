@@ -256,26 +256,15 @@ export function ClientOverviewDialog({
   
   useEffect(() => {
     if (open) {
-      // When opening, if there's an initial proposal, use it.
-      // Otherwise, don't select one until the real-time data arrives.
-      setSelectedProposal(proposal);
-    }
-  }, [open, proposal]);
-
-  // This effect ensures we select the most detailed version of the proposal
-  // once the real-time data comes in.
-  useEffect(() => {
-    if (open && clientProposals.length > 0) {
-      if (selectedProposal) {
-        // A proposal is already selected, find its full version from the new list.
-        const fullProposal = clientProposals.find(p => p.id === selectedProposal.id);
-        setSelectedProposal(fullProposal || selectedProposal); // Fallback to current if not found
-      } else {
-        // No proposal selected yet, default to the latest one.
-        setSelectedProposal(clientProposals[0]);
+      if (proposal) {
+          const fullProposal = clientProposals.find(p => p.id === proposal.id);
+          setSelectedProposal(fullProposal || proposal);
+      } else if (clientProposals.length > 0) {
+          setSelectedProposal(clientProposals[0]);
       }
     }
-  }, [clientProposals, open]); // Reruns when dialog opens or proposal list updates
+  }, [open, proposal, clientProposals]);
+
 
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
     if (!selectedProposal?.content) return null;
