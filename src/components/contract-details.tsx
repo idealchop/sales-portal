@@ -130,13 +130,17 @@ export type FinalPlanDetails = {
 interface ContractDetailsProps {
     finalPlanDetails: FinalPlanDetails;
     isSigned: boolean;
-    signaturePadRef?: React.RefObject<SignaturePadRef>;
+    signatureData?: string;
+    onSaveSignature: (dataUrl: string) => void;
+    onClearSignature: () => void;
 }
 
 export function ContractDetails({
     finalPlanDetails,
     isSigned,
-    signaturePadRef,
+    signatureData,
+    onSaveSignature,
+    onClearSignature,
 }: ContractDetailsProps) {
 
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -483,7 +487,11 @@ export function ContractDetails({
                                     <Image src={source.signature} alt="Client Signature" width={300} height={150} className="object-contain" />
                                 </div>
                             ) : !isSigned ? (
-                                <SignaturePad ref={signaturePadRef} />
+                                <SignaturePad 
+                                    signatureData={signatureData}
+                                    onSave={onSaveSignature}
+                                    onClear={onClearSignature}
+                                />
                             ) : (
                                 <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
                                      <p className="text-muted-foreground">No signature on file.</p>

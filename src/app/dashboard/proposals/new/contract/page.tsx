@@ -231,33 +231,37 @@ function PreviewDialog({
     isDialogOpen,
     setDialogOpen,
     saveProposal,
+    signatureData,
+    onSaveSignature,
+    onClearSignature
 }: { 
     finalPlanDetails: FinalPlanDetails,
     isSaving: boolean;
     isDialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
     saveProposal: (status: 'draft' | 'finalized', signature?: string) => Promise<void>;
+    signatureData?: string;
+    onSaveSignature: (dataUrl: string) => void;
+    onClearSignature: () => void;
 }) {
-    const signaturePadRef = useRef<SignaturePadRef>(null);
     const contractRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleSaveDraft = async () => {
-      await saveProposal('draft', signaturePadRef.current?.getSignatureDataUrl());
+      await saveProposal('draft', signatureData);
     };
     
     const handleFinalize = async () => {
-        const signatureDataUrl = signaturePadRef.current?.getSignatureDataUrl();
-        if (signaturePadRef.current?.isEmpty()) {
+        if (!signatureData) {
             toast({
                 variant: "destructive",
                 title: "Signature Required",
-                description: "Please provide a signature before finalizing.",
+                description: "Please provide and save a signature before finalizing.",
             });
             return;
         }
-        await saveProposal('finalized', signatureDataUrl!);
+        await saveProposal('finalized', signatureData);
     };
 
     const handleDownloadPdf = async () => {
@@ -277,7 +281,6 @@ function PreviewDialog({
                 logging: false,
                 allowTaint: true,
                 onclone: (document) => {
-                    // Ensure all images are loaded before capture
                     const promises = Array.from(document.getElementsByTagName('img')).map(img => {
                         if (img.complete) return Promise.resolve();
                         return new Promise(resolve => { img.onload = img.onerror = resolve; });
@@ -333,7 +336,9 @@ function PreviewDialog({
                         <ContractDetails
                             finalPlanDetails={finalPlanDetails}
                             isSigned={false}
-                            signaturePadRef={signaturePadRef}
+                            signatureData={signatureData}
+                            onSaveSignature={onSaveSignature}
+                            onClearSignature={onClearSignature}
                         />
                     </div>
                 </ScrollArea>
@@ -433,6 +438,7 @@ function ContractPageContent() {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
+  const [signatureData, setSignatureData] = useState<string | undefined>();
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -768,6 +774,9 @@ function ContractPageContent() {
                 isDialogOpen={isDialogOpen}
                 setDialogOpen={setDialogOpen}
                 saveProposal={saveProposal}
+                signatureData={signatureData}
+                onSaveSignature={(data) => setSignatureData(data)}
+                onClearSignature={() => setSignatureData(undefined)}
             />
        )}
 
@@ -1004,5 +1013,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    

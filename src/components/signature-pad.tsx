@@ -1,29 +1,43 @@
 
 'use client';
 
-import { useRef, useEffect, useImperativeHandle, forwardRef, useState } from 'react';
+import { useRef, useEffect, forwardRef, Ref } from 'react';
 import { Button } from './ui/button';
 import { RotateCcw, Save } from 'lucide-react';
 
 export type SignaturePadRef = {
+  clear: () => void;
   getSignatureDataUrl: () => string | undefined;
   isEmpty: () => boolean;
 };
 
-export const SignaturePad = forwardRef<SignaturePadRef, {}>((props, ref) => {
+interface SignaturePadProps {
+  signatureData?: string;
+  onSave: (dataUrl: string) => void;
+  onClear: () => void;
+}
+
+export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(({ signatureData, onSave, onClear }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
   const lastX = useRef(0);
   const lastY = useRef(0);
-  const [signatureData, setSignatureData] = useState<string | undefined>();
+
+  const drawImageFromData = (ctx: CanvasRenderingContext2D, data: string) => {
+    const img = new Image();
+    img.src = data;
+    img.onload = () => {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.drawImage(img, 0, 0);
+    };
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const resizeCanvas = () => {
       const parent = canvas.parentElement;
       if (parent) {
@@ -34,13 +48,22 @@ export const SignaturePad = forwardRef<SignaturePadRef, {}>((props, ref) => {
         ctx.lineWidth = 2;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        
+        // If there's existing signature data, redraw it on resize
         if (signatureData) {
-            const img = new Image();
-            img.src = signatureData;
-            img.onload = () => ctx.drawImage(img, 0, 0);
+          drawImageFromData(ctx, signatureData);
+        } else {
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
       }
     };
+    
+    resizeCanvas();
+    if(signatureData) {
+        drawImageFromData(ctx, signatureData);
+    } else {
+         ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
     const getMousePos = (evt: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
@@ -83,7 +106,6 @@ export const SignaturePad = forwardRef<SignaturePadRef, {}>((props, ref) => {
       isDrawing.current = false;
     };
     
-    resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
     canvas.addEventListener('mousedown', startDrawing);
@@ -94,7 +116,6 @@ export const SignaturePad = forwardRef<SignaturePadRef, {}>((props, ref) => {
     canvas.addEventListener('touchstart', startDrawing);
     canvas.addEventListener('touchmove', draw);
     canvas.addEventListener('touchend', stopDrawing);
-
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
@@ -107,32 +128,16 @@ export const SignaturePad = forwardRef<SignaturePadRef, {}>((props, ref) => {
       canvas.removeEventListener('touchend', stopDrawing);
     };
   }, [signatureData]);
-
-  const clearSignature = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setSignatureData(undefined);
-  };
   
-  const saveSignature = () => {
-      if (canvasRef.current && !isEmpty()) {
-          setSignatureData(canvasRef.current.toDataURL('image/png'));
-      }
+  const handleSave = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+        onSave(canvas.toDataURL('image/png'));
+    }
   }
 
-  useImperativeHandle(ref, () => ({
-    getSignatureDataUrl: () => {
-        return signatureData;
-    },
-    isEmpty: () => {
-        return !signatureData;
-    }
-  }));
-
   const isEmpty = () => {
+    if (signatureData) return false;
     const canvas = canvasRef.current;
     if (!canvas) return true;
     const ctx = canvas.getContext('2d');
@@ -148,11 +153,11 @@ export const SignaturePad = forwardRef<SignaturePadRef, {}>((props, ref) => {
         className="w-full h-[200px] border rounded-md bg-gray-50 cursor-crosshair touch-none"
       />
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={clearSignature} className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={onClear} className="flex items-center gap-2">
             <RotateCcw className="h-4 w-4" />
             Clear Signature
         </Button>
-        <Button variant="default" size="sm" onClick={saveSignature} className="flex items-center gap-2">
+        <Button variant="default" size="sm" onClick={handleSave} className="flex items-center gap-2">
             <Save className="h-4 w-4" />
             Save Signature
         </Button>
