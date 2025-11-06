@@ -128,8 +128,8 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
 const defaultOnboardingSteps: OnboardingStep[] = [
     { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
     { title: 'Account Activated', description: 'Client portal access has been granted.', status: 'pending' },
-    { title: 'Onboarding Call', description: 'Initial setup and walkthrough call completed.', status: 'pending' },
     { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery.', status: 'pending' },
+    { title: 'Onboarding Call', description: 'Initial setup and account walkthrough call completed.', status: 'pending' },
     { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
 ];
 
