@@ -126,6 +126,14 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
   </div>
 );
 
+const defaultOnboardingSteps: OnboardingStep[] = [
+    { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
+    { title: 'Account Activated', description: 'Client portal access has been granted.', status: 'pending' },
+    { title: 'Onboarding Call', description: 'Initial setup and walkthrough call completed.', status: 'pending' },
+    { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery.', status: 'pending' },
+    { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
+];
+
 export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const [searchQuery, setSearchQuery] = useState('');
@@ -361,39 +369,39 @@ export default function ProposalsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {client.onboardingStatus ? (
-                         <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    View Progress
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
-                                    <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
-                                </DialogHeader>
-                                <div className="grid md:grid-cols-2 gap-6 py-4">
-                                  <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                      {subscriptionInfo && <Image src={planImages[client.clientType || 'sme']} alt={subscriptionInfo.planName} fill className="object-cover" />}
-                                  </div>
-                                  <div>
-                                      <div className="flex flex-col">
-                                          {client.onboardingStatus.map((step, index) => (
-                                              <OnboardingStepItem 
-                                                  key={index} 
-                                                  step={step} 
-                                                  isLast={index === client.onboardingStatus!.length - 1} 
-                                              />
-                                          ))}
-                                      </div>
-                                  </div>
+                      <Dialog>
+                          <DialogTrigger asChild>
+                              {client.onboardingStatus ? (
+                                  <Button variant="outline" size="sm">
+                                      View Progress
+                                  </Button>
+                              ) : (
+                                  <Button variant="link" className="text-xs text-muted-foreground p-0 h-auto">Not Started</Button>
+                              )}
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-2xl">
+                              <DialogHeader>
+                                  <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
+                                  <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
+                              </DialogHeader>
+                              <div className="grid md:grid-cols-2 gap-6 py-4">
+                                <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                                    {subscriptionInfo && <Image src={planImages[client.clientType || 'sme']} alt={subscriptionInfo.planName} fill className="object-cover" />}
                                 </div>
-                            </DialogContent>
-                        </Dialog>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Not Started</span>
-                      )}
+                                <div>
+                                    <div className="flex flex-col">
+                                        {(client.onboardingStatus || defaultOnboardingSteps).map((step, index) => (
+                                            <OnboardingStepItem 
+                                                key={index} 
+                                                step={step} 
+                                                isLast={index === (client.onboardingStatus || defaultOnboardingSteps).length - 1} 
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                              </div>
+                          </DialogContent>
+                      </Dialog>
                     </TableCell>
                   </TableRow>
                 )
