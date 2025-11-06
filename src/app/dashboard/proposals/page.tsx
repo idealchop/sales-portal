@@ -9,6 +9,9 @@ import {
   Users,
   Search,
   Filter,
+  CheckCircle,
+  Clock,
+  Ship,
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -31,12 +34,21 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ClientOverviewDialog } from "@/components/client-overview-dialog";
-import type { Client, Proposal } from "@/lib/definitions";
+import type { Client, Proposal, OnboardingStep } from "@/lib/definitions";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import Image from "next/image";
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -55,6 +67,56 @@ const clientStatusStyles: { [key: string]: string } = {
 export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'finalized';
 export type ClientStatus = 'active' | 'inactive' | 'pending';
 export type ActiveView = 'proposals' | 'clients';
+
+const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: boolean }) => (
+  <div className="flex gap-x-4">
+    <div className={cn(
+        "relative last:after:hidden after:absolute after:top-11 after:bottom-0 after:w-px after:bg-border after:left-1/2 after:-translate-x-1/2",
+        !isLast && "min-h-[7rem]"
+    )}>
+        <div className="relative z-10 flex h-10 w-10 items-center justify-center">
+            <div
+                className={cn(
+                "flex items-center justify-center w-10 h-10 rounded-full ring-4 ring-background",
+                step.status === 'completed' ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
+                )}
+            >
+                {step.status === 'completed' ? (
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                ) : (
+                <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                )}
+            </div>
+        </div>
+    </div>
+
+    <div className="grow pt-1.5 pb-8">
+      <h3 className="font-semibold text-foreground">{step.title}</h3>
+      <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+      {step.providerName && (
+        <Card className="mt-3 bg-muted/50">
+            <CardHeader className="p-3">
+                <CardTitle className="text-sm">Paired Water Provider</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0 text-sm">
+                 <div className="flex items-center gap-3">
+                    <Ship className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                        <p className="font-semibold">{step.providerName}</p>
+                        <p className="text-xs text-muted-foreground">{step.providerLocation}</p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+      )}
+      {step.date && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Completed on: {step.date}
+        </p>
+      )}
+    </div>
+  </div>
+);
 
 export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
@@ -239,6 +301,7 @@ export default function ProposalsPage() {
                 <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Onboarding</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -263,13 +326,13 @@ export default function ProposalsPage() {
                  }
 
                 return (
-                <ClientOverviewDialog key={client.id} client={client} view="clients">
-                  <TableRow className="cursor-pointer">
+                  <TableRow key={client.id}>
                     <TableCell>
-                        <div className="font-bold">{client.companyName}</div>
+                      <ClientOverviewDialog client={client} view="clients">
+                          <div className="font-bold text-primary cursor-pointer hover:underline">{client.companyName}</div>
+                      </ClientOverviewDialog>
                         <div className="font-mono text-xs text-muted-foreground">Client ID: {client.id}</div>
-                        <div className="text-sm text-muted-foreground">{client.contactName} - {client.contactEmail}</div>
-                        <div className="text-sm text-muted-foreground hidden md:block">{client.address}</div>
+                        <div className="text-sm text-muted-foreground">{client.contactName}</div>
                     </TableCell>
                     <TableCell>
                       <Badge className={cn("capitalize", clientStatusStyles[client.status])} variant="outline">
@@ -289,12 +352,46 @@ export default function ProposalsPage() {
                           <span className="text-muted-foreground">N/A</span>
                       )}
                     </TableCell>
+                    <TableCell>
+                      {client.onboardingStatus ? (
+                         <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                    View Progress
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
+                                    <DialogDescription>Tracking the client's journey to full activation.</DialogDescription>
+                                </DialogHeader>
+                                <div className="grid md:grid-cols-2 gap-6 py-4">
+                                  <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                                      {subscriptionInfo && <Image src={planImages[client.clientType || 'sme']} alt={subscriptionInfo.planName} fill className="object-cover" />}
+                                  </div>
+                                  <div>
+                                      <div className="flex flex-col">
+                                          {client.onboardingStatus.map((step, index) => (
+                                              <OnboardingStepItem 
+                                                  key={index} 
+                                                  step={step} 
+                                                  isLast={index === client.onboardingStatus!.length - 1} 
+                                              />
+                                          ))}
+                                      </div>
+                                  </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Not Started</span>
+                      )}
+                    </TableCell>
                   </TableRow>
-                </ClientOverviewDialog>
                 )
               }) : (
                  <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                         No clients found.
                     </TableCell>
                 </TableRow>
@@ -436,6 +533,3 @@ export default function ProposalsPage() {
     </div>
   );
 }
-
-
-    
