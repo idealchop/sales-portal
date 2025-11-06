@@ -252,7 +252,6 @@ export function ClientOverviewDialog({
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Use the passed-in proposal if available, otherwise default to the first fetched proposal
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(proposal);
 
   useEffect(() => {
@@ -268,7 +267,6 @@ export function ClientOverviewDialog({
     if (!proposalToParse?.content) return null;
     try {
         const content = JSON.parse(proposalToParse.content);
-        // Ensure paymentProofUrl is carried over if it exists
         return { ...content, paymentProofUrl: proposalToParse.paymentProofUrl };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
@@ -329,8 +327,7 @@ export function ClientOverviewDialog({
         monthlyAmount: parsedProposalContent.basePrice,
       };
     }
-    // Fallback for older client data structure
-     if (client.subscription) {
+    if (client.subscription) {
       return {
         ...client.subscription,
         basePrice: client.subscription.amount,
@@ -345,7 +342,6 @@ export function ClientOverviewDialog({
 
   useEffect(() => {
     if (open && firestore && client.id) {
-      // Fetch proposals for the client
       const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
       const qProposals = query(proposalsRef);
 
@@ -358,7 +354,6 @@ export function ClientOverviewDialog({
         setClientProposals(fetchedProposals);
       });
       
-       // Fetch remarks for the client
       const remarksRef = collection(firestore, `clients/${client.id}/remarks`);
       const qRemarks = query(remarksRef);
       const unsubscribeRemarks = onSnapshot(qRemarks, (snapshot) => {
@@ -805,5 +800,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
