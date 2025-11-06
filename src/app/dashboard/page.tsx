@@ -356,6 +356,7 @@ export default function DashboardPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Client</TableHead>
+                                <TableHead>Plan</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead className="text-center">Rate</TableHead>
                                 <TableHead className="text-right">Commission</TableHead>
@@ -365,9 +366,17 @@ export default function DashboardPage() {
                             {dashboardData.acceptedThisMonth.length > 0 ? dashboardData.acceptedThisMonth.map(p => {
                                 const client = getClientById(p.clientId);
                                 const { commission, rate } = dashboardData.getCommissionDetails(p);
+                                let planName = p.title;
+                                try {
+                                    if (p.content) {
+                                        const content = JSON.parse(p.content);
+                                        planName = content.summaryTitle || p.title;
+                                    }
+                                } catch (e) { /* use proposal title */ }
                                 return (
                                     <TableRow key={p.id}>
                                         <TableCell>{client?.companyName || 'Unknown Client'}</TableCell>
+                                        <TableCell>{planName}</TableCell>
                                         <TableCell>{currencyFormatter.format(p.amount)}</TableCell>
                                         <TableCell className="text-center">{rate}%</TableCell>
                                         <TableCell className="text-right font-semibold">{currencyFormatter.format(commission)}</TableCell>
@@ -375,7 +384,7 @@ export default function DashboardPage() {
                                 )
                             }) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center">No commissions this month.</TableCell>
+                                    <TableCell colSpan={5} className="text-center">No commissions this month.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
