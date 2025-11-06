@@ -277,14 +277,23 @@ function PreviewDialog({
         try {
             const canvas = await html2canvas(contentToCapture, {
                 scale: 2,
-                useCORS: true,
-                logging: false,
-                allowTaint: true,
+                useCORS: true, // Important for external images
+                allowTaint: true, // Necessary for cross-origin images
                 onclone: (document) => {
-                    const promises = Array.from(document.getElementsByTagName('img')).map(img => {
-                        if (img.complete) return Promise.resolve();
-                        return new Promise(resolve => { img.onload = img.onerror = resolve; });
-                    });
+                    // This function runs on the cloned document before rendering.
+                    // We find all images and wait for them to load.
+                    const promises: Promise<void>[] = [];
+                    const images = document.getElementsByTagName('img');
+                    for (let i = 0; i < images.length; i++) {
+                        const img = images[i];
+                        if (img.complete) {
+                            continue;
+                        }
+                        promises.push(new Promise((resolve) => {
+                            img.onload = () => resolve();
+                            img.onerror = () => resolve(); // Resolve even on error to not block PDF generation
+                        }));
+                    }
                     return Promise.all(promises);
                 }
             });
@@ -300,14 +309,14 @@ function PreviewDialog({
             const ratio = contentWidth / pdfWidth;
             const imgHeight = contentHeight / ratio;
             
-            let position = 0;
             let heightLeft = imgHeight;
+            let position = 0;
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
             heightLeft -= pdfHeight;
 
             while (heightLeft > 0) {
-                position = position - pdfHeight;
+                position -= pdfHeight;
                 pdf.addPage();
                 pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
                 heightLeft -= pdfHeight;
