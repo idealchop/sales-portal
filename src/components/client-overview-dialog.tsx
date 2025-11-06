@@ -31,7 +31,6 @@ import type { ActiveView } from '@/app/dashboard/proposals/page';
 import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
-import { GoogleMap } from './google-map';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -557,22 +556,6 @@ export function ClientOverviewDialog({
                                     <div className='flex-1'>
                                         <p className="text-xs text-muted-foreground">Address</p>
                                         <p className="font-semibold">{contactInfo.address}</p>
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <div className="aspect-video w-full overflow-hidden rounded-lg mt-2 cursor-pointer border">
-                                                    <GoogleMap address={contactInfo.address} />
-                                                </div>
-                                            </DialogTrigger>
-                                            <DialogContent className="sm:max-w-3xl h-[80vh]">
-                                                <DialogHeader>
-                                                    <DialogTitle>Location: {contactInfo.company}</DialogTitle>
-                                                    <DialogDescription>{contactInfo.address}</DialogDescription>
-                                                </DialogHeader>
-                                                <div className="w-full h-full rounded-lg overflow-hidden">
-                                                   <GoogleMap address={contactInfo.address} zoom={17} />
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
                                     </div>
                                 </div>
                             </CardContent>
