@@ -417,8 +417,8 @@ export function ClientOverviewDialog({
     const finalProposalId = proposalIdToConfirm || selectedProposal?.id;
     const finalFile = fileToUpload || paymentProofFile;
 
-    if (!finalFile || !finalProposalId || !firestore) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof or proposal details.' });
+    if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof, proposal details, or subscription info.' });
         return;
     }
 
@@ -438,8 +438,14 @@ export function ClientOverviewDialog({
             status: 'accepted',
             paymentProofUrl: downloadURL
         });
+
+        // Set the subscription object on the client
         await updateDoc(clientRef, {
-            status: 'active'
+            status: 'active',
+            subscription: {
+              ...subscriptionInfo,
+              dateSigned: new Date().toISOString()
+            }
         });
 
         toast({
