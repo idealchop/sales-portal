@@ -19,7 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot, Loader2, Receipt } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot, Loader2, Receipt, User } from 'lucide-react';
 import type { Client, Remark, OnboardingStep, Proposal } from '@/lib/definitions';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
@@ -254,18 +254,28 @@ export function ClientOverviewDialog({
   
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(proposal);
   
+  useEffect(() => {
+    if (open) {
+      // When opening, if there's an initial proposal, use it.
+      // Otherwise, don't select one until the real-time data arrives.
+      setSelectedProposal(proposal);
+    }
+  }, [open, proposal]);
+
   // This effect ensures we select the most detailed version of the proposal
   // once the real-time data comes in.
   useEffect(() => {
-    if (proposal && clientProposals.length > 0) {
-      // Find the full proposal from the real-time list that matches the initial one
-      const fullProposal = clientProposals.find(p => p.id === proposal.id);
-      setSelectedProposal(fullProposal || proposal);
-    } else if (!proposal && clientProposals.length > 0) {
-      // If no initial proposal, default to the latest one
-      setSelectedProposal(clientProposals[0]);
+    if (open && clientProposals.length > 0) {
+      if (selectedProposal) {
+        // A proposal is already selected, find its full version from the new list.
+        const fullProposal = clientProposals.find(p => p.id === selectedProposal.id);
+        setSelectedProposal(fullProposal || selectedProposal); // Fallback to current if not found
+      } else {
+        // No proposal selected yet, default to the latest one.
+        setSelectedProposal(clientProposals[0]);
+      }
     }
-  }, [proposal, clientProposals]);
+  }, [clientProposals, open]); // Reruns when dialog opens or proposal list updates
 
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
     if (!selectedProposal?.content) return null;
@@ -520,14 +530,14 @@ export function ClientOverviewDialog({
                     <div className="space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Contact Information</CardTitle>
+                                <CardTitle>Client Information</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3 text-sm">
                                 <div className="flex items-start gap-3">
-                                    <Building className="h-5 w-5 text-muted-foreground mt-1" />
+                                    <User className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div>
-                                        <p className="text-xs text-muted-foreground">Company</p>
-                                        <p className="font-semibold">{contactInfo.company}</p>
+                                        <p className="text-xs text-muted-foreground">Contact Person</p>
+                                        <p className="font-semibold">{contactInfo.name}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3">
@@ -807,5 +817,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
