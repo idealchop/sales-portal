@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -45,6 +44,7 @@ import { ContractDetails, type FinalPlanDetails } from '@/components/contract-de
 import type { Client } from '@/lib/definitions';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc } from 'firebase/firestore';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 
 const billingCycles = [
@@ -263,7 +263,20 @@ function PreviewDialog({
                          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save as Draft
                     </Button>
-                    <Button type="button" disabled={isSaving}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span tabIndex={0}>
+                            <Button type="button" disabled={true}>
+                              <Download className="mr-2 h-4 w-4" /> Download PDF
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>PDF generation is coming soon.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <Button type="button" onClick={handleFinalizeClick} disabled={isSaving}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                         Finalize &amp; Send
@@ -355,6 +368,8 @@ function ContractPageContent() {
             typeName = 'SME';
         } else if (customType === 'commercial') {
             typeName = 'Commercial';
+        } else if (customType === 'household') {
+            typeName = 'Family';
         } else {
             typeName = customType.charAt(0).toUpperCase() + customType.slice(1);
         }
@@ -372,7 +387,7 @@ function ContractPageContent() {
             liters: `${litersNum} L`,
             monthlyFee: `₱${parseFloat(customCost).toLocaleString()}`,
             employees: getEmployees(litersNum, clientType === 'household'),
-            stations: clientType === 'household' ? plan.stations : getStations(litersNum),
+            stations: clientType === 'household' ? basePlan.stations : getStations(litersNum),
         };
     }
     
@@ -893,3 +908,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
