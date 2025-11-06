@@ -135,7 +135,7 @@ const defaultOnboardingSteps: OnboardingStep[] = [
 export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const [searchQuery, setSearchQuery] = useState('');
-  const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'draft', 'finalized', 'sent', 'rejected'];
+  const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'draft', 'finalized', 'rejected'];
   const clientStatuses: ('all' | 'active' | 'inactive')[] = ['all', 'active', 'inactive'];
   const [clientStatusFilter, setClientStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
@@ -496,7 +496,7 @@ export default function ProposalsPage() {
                           </SelectTrigger>
                           <SelectContent>
                             {proposalStatuses.map(status => (
-                              <SelectItem key={status} value={status} className="capitalize">{status}</SelectItem>
+                              <SelectItem key={status} value={status} className="capitalize">{status === 'finalized' ? 'Pending' : status}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -551,5 +551,7 @@ export default function ProposalsPage() {
     </div>
   );
 }
+
+    
 
     
