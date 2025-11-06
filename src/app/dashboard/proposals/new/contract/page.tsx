@@ -694,8 +694,7 @@ function ContractPageContent() {
   const handleReviewAndSignClick = async () => {
     setIsGeneratingIds(true);
     let finalClientId = generatedClientId;
-    let finalProposalId = generatedProposalId;
-
+    
     try {
         if (!existingClientId && !finalClientId) {
             finalClientId = await runTransaction(firestore, async (transaction) => {
@@ -713,11 +712,20 @@ function ContractPageContent() {
             setGeneratedClientId(finalClientId);
         }
 
-        if (!finalProposalId) {
-            const randomNumber = Math.floor(1000000000 + Math.random() * 9000000000);
-            finalProposalId = String(randomNumber);
-            setGeneratedProposalId(finalProposalId);
-        }
+        // Always generate a new unique proposal ID
+        const finalProposalId = await runTransaction(firestore, async (transaction) => {
+            const counterRef = doc(firestore, 'counters', 'proposalCounter');
+            const counterSnap = await transaction.get(counterRef);
+            let newIdNumber = 1;
+            if (counterSnap.exists()) {
+                newIdNumber = counterSnap.data().currentId + 1;
+            }
+            // Simple sequential ID for proposals
+            const newProposalId = String(newIdNumber).padStart(10, '0');
+            transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
+            return newProposalId;
+        });
+        setGeneratedProposalId(finalProposalId);
 
         setDialogOpen(true);
 
