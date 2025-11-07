@@ -300,14 +300,14 @@ function PayoutHistoryDialogContent() {
     return (
         <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-                 <div className="flex items-center justify-between">
+                 <div className="flex items-start justify-between">
                     <div>
                         <DialogTitle>My Payout History</DialogTitle>
                         <DialogDescription>
                             A monthly summary of your commissions and their status.
                         </DialogDescription>
                     </div>
-                     <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-2 pt-1.5">
                         <Select value={selectedYear} onValueChange={setSelectedYear}>
                             <SelectTrigger className="w-[180px]">
                                 <SelectValue placeholder="Filter by year" />
@@ -353,12 +353,17 @@ function PayoutHistoryDialogContent() {
                                                 </Dialog>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge
-                                                    variant={payout.status === 'paid' ? 'success' : 'warning'}
-                                                    className="capitalize"
-                                                >
-                                                    {payout.status}
-                                                </Badge>
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Badge
+                                                            variant={payout.status === 'paid' ? 'success' : 'warning'}
+                                                            className="capitalize cursor-pointer"
+                                                        >
+                                                            {payout.status}
+                                                        </Badge>
+                                                    </DialogTrigger>
+                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} bonuses={payout.bonuses} />
+                                                </Dialog>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -471,14 +476,14 @@ function AchievementsDialogContent() {
     return (
         <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                     <div>
                         <DialogTitle>My Achievements</DialogTitle>
                         <DialogDescription>
                             A history of your unlocked bonuses and milestones.
                         </DialogDescription>
                     </div>
-                     <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-2 pt-1.5">
                         <Select value={selectedYear} onValueChange={setSelectedYear}>
                             <SelectTrigger className="w-[180px]">
                                 <SelectValue placeholder="Filter by year" />
