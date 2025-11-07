@@ -103,6 +103,10 @@
           "type": "string",
           "description": "Reference to Client. (Relationship: Client 1:N Proposal)"
         },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Proposal). This represents who created the proposal."
+        },
         "title": {
           "type": "string",
           "description": "The title of the sales proposal."
@@ -125,6 +129,7 @@
       "required": [
         "id",
         "clientId",
+        "userId",
         "title",
         "content",
         "createdAt"

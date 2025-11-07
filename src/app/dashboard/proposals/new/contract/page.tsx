@@ -662,6 +662,7 @@ function ContractPageContent() {
         const newProposalData = {
             id: proposalId,
             clientId: finalClientId,
+            userId: user.uid, // Add the user's ID
             title: proposalContentToSave.summaryTitle,
             content: JSON.stringify(proposalContentToSave),
             status: status,
