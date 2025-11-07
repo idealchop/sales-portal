@@ -39,8 +39,10 @@ service cloud.firestore {
     }
 
     match /sales/{userId} {
-      allow read, update: if request.auth.uid == userId;
-      allow create: if request.auth.uid == userId;
+      // Allow any signed-in user to read sales profiles to display names
+      allow read: if isSignedIn();
+      // Only the owner can create or update their own profile
+      allow create, update: if request.auth.uid == userId;
     }
 
     match /counters/{counterId} {

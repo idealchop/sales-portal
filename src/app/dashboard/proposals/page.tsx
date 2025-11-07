@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Clock,
   Ship,
+  User,
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import Image from "next/image";
+import { useSalesUsers } from "@/hooks/use-sales-users";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -146,6 +149,7 @@ export default function ProposalsPage() {
 
   const { proposals, isLoading: proposalsLoading, error: proposalsError } = useProposals();
   const { clients, isLoading: clientsLoading, error: clientsError } = useClients();
+  const { salesUsers, isLoading: usersLoading, error: usersError } = useSalesUsers();
 
   const getClientById = (id: string): Client | undefined => {
     return clients.find(c => c.id === id);
@@ -158,6 +162,7 @@ export default function ProposalsPage() {
   
   // Memoize client data to avoid re-renders
   const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
+  const userMap = useMemo(() => new Map(salesUsers.map(u => [u.id, u])), [salesUsers]);
 
 
   const renderProposalsTable = () => {
@@ -190,11 +195,11 @@ export default function ProposalsPage() {
       proposalsCurrentPage * ITEMS_PER_PAGE
     );
 
-    if (proposalsLoading || clientsLoading) {
+    if (proposalsLoading || clientsLoading || usersLoading) {
         return <div className="text-center p-8"><span className="animate-spin h-5 w-5 mr-3 ..."></span>Loading proposals...</div>
     }
     
-    if (proposalsError || clientsError) {
+    if (proposalsError || clientsError || usersError) {
         return <div className="text-center p-8 text-destructive">Error loading data. Please try again later.</div>
     }
 
@@ -205,7 +210,7 @@ export default function ProposalsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
-                <TableHead>Contact</TableHead>
+                <TableHead>Owner</TableHead>
                 <TableHead>Proposal</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
@@ -214,16 +219,23 @@ export default function ProposalsPage() {
             <TableBody>
               {paginatedProposals.length > 0 ? paginatedProposals.map((proposal) => {
                 const client = clientMap.get(proposal.clientId);
+                const owner = userMap.get(proposal.userId);
                 if (!client) return null;
                 return (
                   <ClientOverviewDialog key={proposal.id} client={client} proposal={proposal} view="proposals" setActiveView={setActiveView}>
                     <TableRow className="cursor-pointer">
                       <TableCell>
                           <div className="font-bold">{client.companyName}</div>
+                          <div className="text-sm text-muted-foreground">{client.contactName}</div>
                       </TableCell>
                        <TableCell>
-                          <div className="font-medium">{client.contactName}</div>
-                          <div className="text-sm text-muted-foreground">{client.contactEmail}</div>
+                          <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                  <AvatarImage src={owner?.photoURL ?? undefined} />
+                                  <AvatarFallback className="text-xs">{owner?.displayName?.[0]}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium text-sm">{owner?.displayName ?? 'N/A'}</span>
+                          </div>
                       </TableCell>
                        <TableCell>
                           <div className="font-medium">{proposal.title}</div>
@@ -332,7 +344,7 @@ export default function ProposalsPage() {
                  let subscriptionInfo = client.subscription;
                  if (!subscriptionInfo && acceptedProposal?.content) {
                      try {
-                         const content = JSON.parse(acceptedProposal.content) as FinalPlanDetails;
+                         const content = JSON.parse(acceptedProposal.content) as any; //FinalPlanDetails
                          subscriptionInfo = {
                             planId: content.plan.id,
                             planName: content.summaryTitle,
@@ -551,7 +563,3 @@ export default function ProposalsPage() {
     </div>
   );
 }
-
-    
-
-    

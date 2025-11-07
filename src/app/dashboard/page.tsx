@@ -24,6 +24,7 @@ import {
   Percent,
   CheckCircle,
   Receipt,
+  User,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -69,6 +70,7 @@ import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter
 import { useUser } from '@/firebase';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
+import { useSalesUsers } from '@/hooks/use-sales-users';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -102,11 +104,13 @@ const BonusCard = ({ icon, title, value, progress, goal, description, children }
 export default function DashboardPage() {
   const { proposals, isLoading: proposalsLoading } = useProposals();
   const { clients, isLoading: clientsLoading } = useClients();
+  const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const { user } = useUser();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
   // Memoize clients map for quick lookup
   const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
+  const userMap = useMemo(() => new Map(salesUsers.map(u => [u.id, u])), [salesUsers]);
 
   // Memoized calculations for dashboard data
   const dashboardData = useMemo(() => {
@@ -306,7 +310,7 @@ export default function DashboardPage() {
       { term: 'Quarterly', schedule: '⅓ each month after payment', example: 'e.g., Client pays Nov 1 → Payouts in Nov–Dec–Jan' },
       { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Apr' },
       { term: 'Annual', schedule: 'Spread monthly for 12 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Oct next year' },
-      { term: 'Recurring Commission', schedule: '3% of client payment, paid monthly' },
+      { term: 'Recurring Commission', schedule: '3% of client payment, paid monthly', example: 'Example: Your 3% recurring commission is calculated and paid out monthly based on the client\'s confirmed monthly payment.'},
   ];
   const commissionTiers = [
     { clientType: 'Family Plan', commission: '15%' },
@@ -314,7 +318,7 @@ export default function DashboardPage() {
     { clientType: 'Commercial & Corporate', commission: '8%' },
   ];
   
-  if (proposalsLoading || clientsLoading) {
+  if (proposalsLoading || clientsLoading || usersLoading) {
       return (
         <div className="flex h-[80vh] w-full items-center justify-center">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
@@ -565,7 +569,7 @@ export default function DashboardPage() {
                           </TableBody>
                       </Table>
                        <p className="text-xs text-muted-foreground mt-4">
-                          Example: Your 3% recurring commission is calculated and paid out monthly based on the client's confirmed monthly payment.
+                          {payoutTimeline.find(p => p.term === 'Recurring Commission')?.example}
                       </p>
                   </div>
                    <div className="md:col-span-2">
@@ -695,21 +699,23 @@ export default function DashboardPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
+                <TableHead className="hidden sm:table-cell">Owner</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead className="hidden md:table-cell text-right">Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(proposalsLoading || clientsLoading) && (
+              {(proposalsLoading || clientsLoading || usersLoading) && (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     Loading proposals...
                   </TableCell>
                 </TableRow>
               )}
-              {!(proposalsLoading || clientsLoading) && dashboardData.recentProposals.map((proposal) => {
+              {!(proposalsLoading || clientsLoading || usersLoading) && dashboardData.recentProposals.map((proposal) => {
                 const client = clientMap.get(proposal.clientId);
+                const owner = userMap.get(proposal.userId);
                 if (!client) return null;
                 return (
                   <TableRow key={proposal.id}>
@@ -718,6 +724,15 @@ export default function DashboardPage() {
                         <div className="font-medium text-primary hover:underline cursor-pointer">{client.companyName}</div>
                       </ClientPopover>
                       <div className="text-sm text-muted-foreground">{client.contactName}</div>
+                    </TableCell>
+                     <TableCell className="hidden sm:table-cell">
+                        <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                                <AvatarImage src={owner?.photoURL ?? undefined} />
+                                <AvatarFallback className="text-xs">{owner?.displayName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{owner?.displayName ?? 'N/A'}</span>
+                        </div>
                     </TableCell>
                     <TableCell>
                       <Badge className={cn("capitalize", statusStyles[proposal.status])} variant="outline">{proposal.status}</Badge>
@@ -729,7 +744,7 @@ export default function DashboardPage() {
               })}
                {!(proposalsLoading || clientsLoading) && proposals.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No proposals found.
                   </TableCell>
                 </TableRow>
@@ -746,7 +761,7 @@ export default function DashboardPage() {
             <CardDescription>Track your progress towards your next payout. Click a card to see the rewards!</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-8 lg:grid-cols-2 items-center">
-            <div className="relative h-full w-full min-h-[30rem] hidden lg:block rounded-lg overflow-hidden">
+            <div className="relative aspect-video w-full min-h-[30rem] hidden lg:block rounded-lg overflow-hidden">
                 <Image
                     src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FHappy_Team_v2.png?alt=media&token=cfd3d9c7-acfc-4da8-93f4-6ad8d96cc325"
                     alt="Happy Team"
@@ -918,7 +933,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    
