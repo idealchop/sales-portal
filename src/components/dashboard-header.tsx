@@ -1,7 +1,7 @@
 
 'use client';
 import Link from 'next/link';
-import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2, Award } from 'lucide-react';
+import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2, Award, Trophy } from 'lucide-react';
 import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
@@ -92,79 +92,49 @@ function AchievementsDialogContent() {
     const { clients, isLoading: clientsLoading } = useClients();
     const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
 
-    const achievements = useMemo(() => {
-        const corporateBonusTiers = [
-            { target: 3, name: 'Corporate Closer I', bonus: '₱2,000' },
-            { target: 5, name: 'Corporate Closer II', bonus: '₱5,000' },
-            { target: 10, name: 'Corporate Closer III', bonus: '₱12,000' },
-        ];
-        const familyBonusTiers = [
-            { target: 10, name: 'Family Plan Closer I', bonus: '₱2,500' },
-            { target: 20, name: 'Family Plan Closer II', bonus: '₱6,000' },
-            { target: 30, name: 'Family Plan Closer III', bonus: '₱15,000' },
-        ];
+    const corporateBonusTiers = [
+        { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+        { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+        { target: 10, name: 'Corporate Closer III', bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    ];
+    const familyBonusTiers = [
+        { target: 10, name: 'Family Plan Closer I', bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+        { target: 20, name: 'Family Plan Closer II', bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+        { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
+    ];
+    
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-        const acceptedProposals = proposals
-            .filter(p => p.status === 'accepted' && p.createdAt)
-            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const achievements = useMemo(() => {
+        const acceptedProposals = proposals.filter(p => p.status === 'accepted' && p.createdAt);
 
         const monthlyAchievements: {
-            corporate: { [key: string]: { client: string; date: string; }[] };
-            household: { [key: string]: { client: string; date: string; }[] };
+            corporate: { [key: string]: number };
+            household: { [key: string]: number };
         } = { corporate: {}, household: {} };
 
         for (const proposal of acceptedProposals) {
             const client = clientMap.get(proposal.clientId);
             if (!client) continue;
 
-            const monthYear = format(new Date(proposal.createdAt), 'MMMM yyyy');
+            const monthYear = format(new Date(proposal.createdAt), 'yyyy-MM');
 
             if (['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '')) {
-                if (!monthlyAchievements.corporate[monthYear]) {
-                    monthlyAchievements.corporate[monthYear] = [];
-                }
-                monthlyAchievements.corporate[monthYear].push({ client: client.companyName, date: proposal.createdAt });
+                if (!monthlyAchievements.corporate[monthYear]) monthlyAchievements.corporate[monthYear] = 0;
+                monthlyAchievements.corporate[monthYear]++;
             } else if (client.clientType === 'household') {
-                if (!monthlyAchievements.household[monthYear]) {
-                    monthlyAchievements.household[monthYear] = [];
-                }
-                monthlyAchievements.household[monthYear].push({ client: client.companyName, date: proposal.createdAt });
+                if (!monthlyAchievements.household[monthYear]) monthlyAchievements.household[monthYear] = 0;
+                monthlyAchievements.household[monthYear]++;
             }
         }
-
-        const unlocked: { name: string; bonus: string; client: string; date: string }[] = [];
-
-        Object.keys(monthlyAchievements.corporate).forEach(month => {
-            const clientsInMonth = monthlyAchievements.corporate[month];
-            corporateBonusTiers.forEach(tier => {
-                if (clientsInMonth.length >= tier.target) {
-                    const achievingClient = clientsInMonth[tier.target - 1];
-                    unlocked.push({
-                        name: tier.name,
-                        bonus: tier.bonus,
-                        client: achievingClient.client,
-                        date: achievingClient.date,
-                    });
-                }
-            });
-        });
         
-        Object.keys(monthlyAchievements.household).forEach(month => {
-            const clientsInMonth = monthlyAchievements.household[month];
-            familyBonusTiers.forEach(tier => {
-                if (clientsInMonth.length >= tier.target) {
-                    const achievingClient = clientsInMonth[tier.target - 1];
-                    unlocked.push({
-                        name: tier.name,
-                        bonus: tier.bonus,
-                        client: achievingClient.client,
-                        date: achievingClient.date,
-                    });
-                }
-            });
-        });
+        const latestCorporateMonth = Object.keys(monthlyAchievements.corporate).sort().pop();
+        const latestHouseholdMonth = Object.keys(monthlyAchievements.household).sort().pop();
 
-        return unlocked.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const corporateCount = latestCorporateMonth ? monthlyAchievements.corporate[latestCorporateMonth] : 0;
+        const householdCount = latestHouseholdMonth ? monthlyAchievements.household[latestHouseholdMonth] : 0;
+        
+        return { corporateCount, householdCount };
 
     }, [proposals, clients, clientMap]);
 
@@ -177,46 +147,68 @@ function AchievementsDialogContent() {
     }
 
     return (
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-xl">
             <DialogHeader>
-                <DialogTitle>My Achievement History</DialogTitle>
+                <DialogTitle>My Achievements</DialogTitle>
                 <DialogDescription>
-                    A log of all the bonuses and milestones you've unlocked.
+                    Track your unlocked bonuses and milestones.
                 </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="h-[60vh]">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Achievement</TableHead>
-                            <TableHead>Bonus</TableHead>
-                            <TableHead>Unlocked via Client</TableHead>
-                            <TableHead className="text-right">Date</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {achievements.length > 0 ? (
-                            achievements.map((ach, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>
-                                        <div className="font-medium">{ach.name}</div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary" className="font-semibold">{ach.bonus}</Badge>
-                                    </TableCell>
-                                    <TableCell>{ach.client}</TableCell>
-                                    <TableCell className="text-right">{format(new Date(ach.date), 'PPP')}</TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">
-                                    No achievements unlocked yet. Keep closing deals!
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+            <ScrollArea className="h-[60vh] pr-4">
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">Corporate Closer Bonus</CardTitle>
+                             <p className="text-sm text-muted-foreground">
+                                Current Progress (this month): <span className="font-bold">{achievements.corporateCount} clients</span>
+                             </p>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Metric</TableHead>
+                                        <TableHead>Bonus</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {corporateBonusTiers.map(tier => (
+                                        <TableRow key={tier.target} className={cn(achievements.corporateCount >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                            <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new clients</TableCell>
+                                            <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">Family Plan Closer Bonus</CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                                Current Progress (this month): <span className="font-bold">{achievements.householdCount} clients</span>
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Metric</TableHead>
+                                        <TableHead>Bonus</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {familyBonusTiers.map(tier => (
+                                        <TableRow key={tier.target} className={cn(achievements.householdCount >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                            <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new household clients</TableCell>
+                                            <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
             </ScrollArea>
         </DialogContent>
     );
@@ -580,5 +572,7 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
 
     
