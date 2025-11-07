@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -24,6 +23,7 @@ import {
   FileText,
   Percent,
   CheckCircle,
+  Receipt,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -67,6 +67,7 @@ import { useMemo } from 'react';
 import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths } from 'date-fns';
 import { useUser } from '@/firebase';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -572,6 +573,14 @@ export default function DashboardPage() {
                   </div>
               </div>
             </ScrollArea>
+             <DialogFooter>
+                <PayoutHistoryDialog>
+                  <Button variant="outline">
+                    <Receipt className="mr-2 h-4 w-4" />
+                    View Full Payout History
+                  </Button>
+                </PayoutHistoryDialog>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
         <Card className="overflow-hidden">
