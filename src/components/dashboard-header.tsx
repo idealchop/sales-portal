@@ -1,7 +1,7 @@
 
 'use client';
 import Link from 'next/link';
-import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2, Award, Trophy } from 'lucide-react';
+import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2, Award, Trophy, Filter } from 'lucide-react';
 import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
@@ -51,6 +51,7 @@ import { useClients } from '@/hooks/use-clients';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 
 function QrCodeIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -91,10 +92,11 @@ function AchievementsDialogContent() {
     const { proposals, isLoading: proposalsLoading } = useProposals();
     const { clients, isLoading: clientsLoading } = useClients();
     const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
-
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const [selectedYear, setSelectedYear] = useState<string>('all');
+    const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
-    const unlockedAchievements = useMemo(() => {
+    const { unlockedAchievements, availableYears, availableMonths } = useMemo(() => {
         const corporateBonusTiers = [
             { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
             { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
@@ -106,20 +108,29 @@ function AchievementsDialogContent() {
             { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
         ];
         
-        if (proposalsLoading || clientsLoading) return [];
+        if (proposalsLoading || clientsLoading) return { unlockedAchievements: [], availableYears: [], availableMonths: [] };
 
         const acceptedProposals = proposals.filter(p => p.status === 'accepted' && p.createdAt);
 
         const monthlyCounts: { [key: string]: { corporate: number, household: number } } = {};
+        const yearSet = new Set<string>();
+        const monthSet = new Set<string>();
         
         for (const proposal of acceptedProposals) {
-            const client = clientMap.get(proposal.clientId);
-            if (!client) continue;
+            const date = new Date(proposal.createdAt);
+            const year = date.getFullYear().toString();
+            const monthName = format(date, 'MMMM');
+            const monthYear = format(date, 'yyyy-MM');
 
-            const monthYear = format(new Date(proposal.createdAt), 'yyyy-MM');
+            yearSet.add(year);
+            monthSet.add(monthName);
+            
             if (!monthlyCounts[monthYear]) {
                 monthlyCounts[monthYear] = { corporate: 0, household: 0 };
             }
+
+            const client = clientMap.get(proposal.clientId);
+            if (!client) continue;
 
             if (['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '')) {
                 monthlyCounts[monthYear].corporate++;
@@ -134,24 +145,36 @@ function AchievementsDialogContent() {
             const { corporate, household } = monthlyCounts[monthYear];
             const achievementDate = format(new Date(monthYear), 'MMMM yyyy');
 
-            for (const tier of corporateBonusTiers) {
+            corporateBonusTiers.forEach(tier => {
                 if (corporate >= tier.target) {
                     achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon });
                 }
-            }
-            for (const tier of familyBonusTiers) {
+            });
+            familyBonusTiers.forEach(tier => {
                 if (household >= tier.target) {
                     achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon });
                 }
-            }
+            });
         }
         
-        // Sort by date, most recent first
-        achievements.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const filteredAchievements = achievements.filter(ach => {
+            const achDate = new Date(ach.date);
+            const matchesYear = selectedYear === 'all' || achDate.getFullYear().toString() === selectedYear;
+            const matchesMonth = selectedMonth === 'all' || format(achDate, 'MMMM') === selectedMonth;
+            return matchesYear && matchesMonth;
+        });
 
-        return achievements;
+        filteredAchievements.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    }, [proposals, clients, proposalsLoading, clientsLoading, clientMap]);
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
+        return { 
+            unlockedAchievements: filteredAchievements,
+            availableYears: Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a)),
+            availableMonths: monthNames.filter(m => monthSet.has(m))
+        };
+
+    }, [proposals, clients, proposalsLoading, clientsLoading, clientMap, selectedYear, selectedMonth]);
 
     if (proposalsLoading || clientsLoading) {
         return (
@@ -162,7 +185,7 @@ function AchievementsDialogContent() {
     }
 
     return (
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>My Achievements</DialogTitle>
                 <DialogDescription>
@@ -173,7 +196,29 @@ function AchievementsDialogContent() {
                 <div className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Achievement History</CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-base">Achievement History</CardTitle>
+                                <div className="flex items-center gap-2">
+                                     <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                                        <SelectTrigger className="w-[180px]">
+                                            <SelectValue placeholder="Filter by month" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Months</SelectItem>
+                                            {availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                        <SelectTrigger className="w-[120px]">
+                                            <SelectValue placeholder="Filter by year" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Years</SelectItem>
+                                            {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent>
                              <Table>
@@ -195,7 +240,7 @@ function AchievementsDialogContent() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={3} className="text-center h-24">No achievements unlocked yet.</TableCell>
+                                            <TableCell colSpan={3} className="text-center h-24">No achievements found for the selected period.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
