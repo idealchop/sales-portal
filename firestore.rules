@@ -28,17 +28,19 @@ service cloud.firestore {
 
     // Commissions can only be read/written by the user they belong to.
     match /commissions/{commissionId} {
-        allow read, write: if request.auth.uid == resource.data.userId;
+        allow read, write: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
 
     // A user can read/write a client document. More specific rules can be added later.
     match /clients/{clientId} {
-      allow read, create, update: if isSignedIn();
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isOwner(resource.data.userId);
       allow delete: if false;
       
       // Proposals can only be read or written by their owner.
       match /proposals/{proposalId} {
-        allow read, create, update: if isSignedIn() && request.auth.uid == resource.data.userId;
+        allow read, create, update: if isSignedIn() && request.auth.uid == request.resource.data.userId;
         allow delete: if false;
       }
       
@@ -56,3 +58,4 @@ service cloud.firestore {
     }
   }
 }
+

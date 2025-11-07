@@ -641,6 +641,7 @@ function ContractPageContent() {
                     address: address,
                     clientType: clientType || 'sme',
                     status: 'pending',
+                    userId: user.uid, // Add the user's ID
                 };
                 await setDoc(newClientRef, newClientData);
             }
@@ -1038,3 +1039,4 @@ export default function ContractPage() {
 }
 
     
+
