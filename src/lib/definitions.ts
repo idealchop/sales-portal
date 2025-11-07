@@ -91,4 +91,12 @@ export type UserProfile = {
     onboardingCompleted: boolean;
 };
 
+export type Commission = {
+  id: string;
+  proposalId: string;
+  userId: string;
+  amount: number;
+  status: 'pending' | 'paid';
+  createdAt: string;
+};
     

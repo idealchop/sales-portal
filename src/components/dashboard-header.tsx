@@ -1,7 +1,7 @@
 
 'use client';
 import Link from 'next/link';
-import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2, Award, Trophy, Filter } from 'lucide-react';
+import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2, Award, Trophy, Filter, Receipt } from 'lucide-react';
 import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
@@ -42,7 +42,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { doc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
@@ -52,6 +52,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import type { Commission } from '@/lib/definitions';
 
 
 function QrCodeIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -87,6 +88,109 @@ const profileSchema = z.object({
   birthday: z.date().optional(),
 });
 type ProfileFormValues = z.infer<typeof profileSchema>;
+
+function PayoutHistoryDialogContent() {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const [commissions, setCommissions] = useState<Commission[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
+    useEffect(() => {
+        const fetchCommissions = async () => {
+            if (!user || !firestore) return;
+            setIsLoading(true);
+            try {
+                const commissionsRef = collection(firestore, 'commissions');
+                const q = query(commissionsRef, where('userId', '==', user.uid));
+                const querySnapshot = await getDocs(q);
+                const fetchedCommissions: Commission[] = [];
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    let createdAtString: string;
+                    if (data.createdAt && typeof (data.createdAt as any).toDate === 'function') {
+                        createdAtString = (data.createdAt as any).toDate().toISOString();
+                    } else {
+                        createdAtString = data.createdAt as string;
+                    }
+
+                    fetchedCommissions.push({
+                        id: doc.id,
+                        ...data,
+                        createdAt: createdAtString,
+                    } as Commission);
+                });
+                
+                fetchedCommissions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setCommissions(fetchedCommissions);
+            } catch (error) {
+                console.error("Error fetching commissions: ", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCommissions();
+    }, [user, firestore]);
+
+    return (
+        <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>My Payout History</DialogTitle>
+                <DialogDescription>
+                    A complete record of your commissions and their status.
+                </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[60vh] pr-4">
+                 <Card>
+                    <CardContent className="pt-6">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Proposal ID</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : commissions.length > 0 ? (
+                                    commissions.map((commission) => (
+                                        <TableRow key={commission.id}>
+                                            <TableCell>{new Date(commission.createdAt).toLocaleDateString()}</TableCell>
+                                            <TableCell className="font-mono text-xs">{commission.proposalId}</TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={commission.status === 'paid' ? 'success' : 'warning'}
+                                                    className="capitalize"
+                                                >
+                                                    {commission.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            No payout records found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </ScrollArea>
+        </DialogContent>
+    )
+}
 
 function AchievementsDialogContent() {
     const { proposals, isLoading: proposalsLoading } = useProposals();
@@ -473,8 +577,6 @@ function ProfileDialogContent() {
 
 export function DashboardHeader() {
   const { user } = useUser();
-  const referralLink = "https://smartrefill.app/referral?code=SR12345";
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(referralLink)}&size=200x200&bgcolor=F1F8E9`;
   const auth = useAuth();
   const router = useRouter();
 
@@ -548,42 +650,21 @@ export function DashboardHeader() {
                         </DialogTrigger>
                         <AchievementsDialogContent />
                     </Dialog>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-start text-sm font-normal">
+                                <Receipt className="mr-2 h-4 w-4" />
+                                Payout History
+                            </Button>
+                        </DialogTrigger>
+                        <PayoutHistoryDialogContent />
+                    </Dialog>
                     <Button variant="ghost" className="w-full justify-start text-sm font-normal" asChild>
                         <Link href="/dashboard/settings">
                             <Settings className="mr-2 h-4 w-4" />
                             Account Settings
                         </Link>
                     </Button>
-                    <Dialog>
-                        <DialogTrigger asChild>
-                             <Button variant="ghost" className="w-full justify-start text-sm font-normal">
-                                <QrCodeIcon className="mr-2 h-4 w-4" />
-                                Refer a Friend
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                            <DialogHeader>
-                                <DialogTitle>Refer a Friend</DialogTitle>
-                                <DialogDescription>
-                                    Share this QR code with a friend to have them join the team. They can scan it with their phone's camera.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="flex items-center justify-center p-4 bg-background rounded-lg">
-                                <Image src={qrCodeUrl} alt="Referral QR Code" width={200} height={200} />
-                            </div>
-                            <DialogFooter className="sm:justify-start">
-                                <div className="flex-1 space-y-2">
-                                    <Label htmlFor="link" className="sr-only">
-                                        Link
-                                    </Label>
-                                    <Input id="link" defaultValue={referralLink} readOnly />
-                                    <Button type="submit" size="sm" className="w-full" onClick={() => navigator.clipboard.writeText(referralLink)}>
-                                        Copy Link
-                                    </Button>
-                                </div>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
                     <Button variant="ghost" className="w-full justify-start text-sm font-normal">
                         <HelpCircle className="mr-2 h-4 w-4" />
                         Help & Support
@@ -611,9 +692,3 @@ export function DashboardHeader() {
     </header>
   );
 }
-
-    
-
-    
-
-    
