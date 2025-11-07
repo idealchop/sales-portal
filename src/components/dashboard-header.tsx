@@ -1,7 +1,7 @@
 
 'use client';
 import Link from 'next/link';
-import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2, Award, Trophy, Filter, Receipt } from 'lucide-react';
+import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2, Award, Trophy, Filter, Receipt, CheckCircle, Clock } from 'lucide-react';
 import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
@@ -153,6 +153,53 @@ function PayoutMonthDetailsDialog({ month, commissions, bonuses }: { month: stri
     );
 }
 
+function PaymentTimelineDialog({ month, status, totalAmount }: { month: string, status: 'paid' | 'pending', totalAmount: number }) {
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
+    const timelineSteps = [
+        { name: 'Calculation', description: 'Commissions and bonuses tallied.', isComplete: true },
+        { name: 'Review', description: 'Payouts verified by finance.', isComplete: true },
+        { name: 'Processing', description: 'Sent to payment provider.', isComplete: status === 'paid' },
+        { name: 'Paid', description: 'Funds deposited to your account.', isComplete: status === 'paid' },
+    ];
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Payout Timeline for {month}</DialogTitle>
+                <DialogDescription>
+                    Status for your payout of <span className="font-bold text-primary">{currencyFormatter.format(totalAmount)}</span>.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-6">
+                <ul className="space-y-4">
+                    {timelineSteps.map((step, index) => (
+                        <li key={step.name} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center">
+                                <div className={cn(
+                                    "flex h-10 w-10 items-center justify-center rounded-full ring-4 ring-background",
+                                    step.isComplete ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
+                                )}>
+                                    {step.isComplete ? <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" /> : <Clock className="h-5 w-5 text-gray-500" />}
+                                </div>
+                                {index < timelineSteps.length - 1 && (
+                                    <div className={cn(
+                                        "h-12 w-px",
+                                        step.isComplete ? "bg-green-300" : "bg-border"
+                                    )}></div>
+                                )}
+                            </div>
+                            <div>
+                                <h4 className="font-semibold">{step.name}</h4>
+                                <p className="text-sm text-muted-foreground">{step.description}</p>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </DialogContent>
+    )
+}
 
 function PayoutHistoryDialogContent() {
     const { user } = useUser();
@@ -259,7 +306,7 @@ function PayoutHistoryDialogContent() {
                     const bonusTotal = monthBonuses.reduce((sum, b) => sum + b.bonus, 0);
                     
                     const totalAmount = commissionTotal + bonusTotal;
-                    const status = monthCommissions.some(c => c.status === 'pending') ? 'pending' : 'paid';
+                    const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
                     
                     return { month, totalAmount, status, commissions: monthCommissions, bonuses: monthBonuses };
                 });
@@ -362,7 +409,7 @@ function PayoutHistoryDialogContent() {
                                                             {payout.status}
                                                         </Badge>
                                                     </DialogTrigger>
-                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} bonuses={payout.bonuses} />
+                                                    <PaymentTimelineDialog month={payout.month} status={payout.status} totalAmount={payout.totalAmount} />
                                                 </Dialog>
                                             </TableCell>
                                         </TableRow>
@@ -861,5 +908,8 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
+
 
     
