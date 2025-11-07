@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
@@ -89,22 +89,76 @@ const profileSchema = z.object({
 });
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
+type MonthlyPayout = {
+    month: string;
+    totalAmount: number;
+    status: 'paid' | 'pending';
+    commissions: Commission[];
+};
+
+function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: Commission[] }) {
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    
+    return (
+        <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+                <DialogTitle>Payout Details for {month}</DialogTitle>
+                <DialogDescription>
+                    Detailed breakdown of commissions for this period.
+                </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[50vh] pr-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Proposal ID</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {commissions.map((commission) => (
+                            <TableRow key={commission.id}>
+                                <TableCell>{new Date(commission.createdAt).toLocaleDateString()}</TableCell>
+                                <TableCell className="font-mono text-xs">{commission.proposalId}</TableCell>
+                                <TableCell>
+                                    <Badge
+                                        variant={commission.status === 'paid' ? 'success' : 'warning'}
+                                        className="capitalize"
+                                    >
+                                        {commission.status}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </ScrollArea>
+        </DialogContent>
+    );
+}
+
+
 function PayoutHistoryDialogContent() {
     const { user } = useUser();
     const firestore = useFirestore();
-    const [commissions, setCommissions] = useState<Commission[]>([]);
+    const [monthlyPayouts, setMonthlyPayouts] = useState<MonthlyPayout[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const [selectedMonthData, setSelectedMonthData] = useState<{ month: string; commissions: Commission[] } | null>(null);
 
     useEffect(() => {
-        const fetchCommissions = async () => {
+        const fetchAndProcessCommissions = async () => {
             if (!user || !firestore) return;
             setIsLoading(true);
             try {
                 const commissionsRef = collection(firestore, 'commissions');
                 const q = query(commissionsRef, where('userId', '==', user.uid));
                 const querySnapshot = await getDocs(q);
-                const fetchedCommissions: Commission[] = [];
+                
+                const commissions: Commission[] = [];
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
                     let createdAtString: string;
@@ -113,16 +167,27 @@ function PayoutHistoryDialogContent() {
                     } else {
                         createdAtString = data.createdAt as string;
                     }
+                    commissions.push({ id: doc.id, ...data, createdAt: createdAtString } as Commission);
+                });
 
-                    fetchedCommissions.push({
-                        id: doc.id,
-                        ...data,
-                        createdAt: createdAtString,
-                    } as Commission);
+                const groupedByMonth = commissions.reduce((acc, commission) => {
+                    const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
+                    if (!acc[monthKey]) {
+                        acc[monthKey] = [];
+                    }
+                    acc[monthKey].push(commission);
+                    return acc;
+                }, {} as Record<string, Commission[]>);
+
+                const processedPayouts: MonthlyPayout[] = Object.entries(groupedByMonth).map(([month, commissions]) => {
+                    const totalAmount = commissions.reduce((sum, c) => sum + c.amount, 0);
+                    const status = commissions.some(c => c.status === 'pending') ? 'pending' : 'paid';
+                    return { month, totalAmount, status, commissions };
                 });
                 
-                fetchedCommissions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setCommissions(fetchedCommissions);
+                processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+                setMonthlyPayouts(processedPayouts);
+
             } catch (error) {
                 console.error("Error fetching commissions: ", error);
             } finally {
@@ -130,7 +195,7 @@ function PayoutHistoryDialogContent() {
             }
         };
 
-        fetchCommissions();
+        fetchAndProcessCommissions();
     }, [user, firestore]);
 
     return (
@@ -138,47 +203,52 @@ function PayoutHistoryDialogContent() {
             <DialogHeader>
                 <DialogTitle>My Payout History</DialogTitle>
                 <DialogDescription>
-                    A complete record of your commissions and their status.
+                    A monthly summary of your commissions and their status.
                 </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-[60vh] pr-4">
-                 <Card>
+                <Card>
                     <CardContent className="pt-6">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Proposal ID</TableHead>
+                                    <TableHead>Month</TableHead>
+                                    <TableHead>Total Payout</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
+                                        <TableCell colSpan={3} className="h-24 text-center">
                                             <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                         </TableCell>
                                     </TableRow>
-                                ) : commissions.length > 0 ? (
-                                    commissions.map((commission) => (
-                                        <TableRow key={commission.id}>
-                                            <TableCell>{new Date(commission.createdAt).toLocaleDateString()}</TableCell>
-                                            <TableCell className="font-mono text-xs">{commission.proposalId}</TableCell>
+                                ) : monthlyPayouts.length > 0 ? (
+                                    monthlyPayouts.map((payout) => (
+                                        <TableRow key={payout.month}>
+                                            <TableCell className="font-semibold">{payout.month}</TableCell>
+                                            <TableCell>{currencyFormatter.format(payout.totalAmount)}</TableCell>
                                             <TableCell>
-                                                <Badge
-                                                    variant={commission.status === 'paid' ? 'success' : 'warning'}
-                                                    className="capitalize"
-                                                >
-                                                    {commission.status}
-                                                </Badge>
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Button variant="link" size="sm" className="p-0 h-auto">
+                                                            <Badge
+                                                                variant={payout.status === 'paid' ? 'success' : 'warning'}
+                                                                className="capitalize cursor-pointer"
+                                                            >
+                                                                {payout.status}
+                                                            </Badge>
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} />
+                                                </Dialog>
                                             </TableCell>
-                                            <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
+                                        <TableCell colSpan={3} className="h-24 text-center">
                                             No payout records found.
                                         </TableCell>
                                     </TableRow>
@@ -189,8 +259,9 @@ function PayoutHistoryDialogContent() {
                 </Card>
             </ScrollArea>
         </DialogContent>
-    )
+    );
 }
+
 
 function AchievementsDialogContent() {
     const { proposals, isLoading: proposalsLoading } = useProposals();
@@ -692,3 +763,5 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
