@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
-import { collection, collectionGroup, getDocs, query, Query, DocumentData, CollectionReference } from 'firebase/firestore';
+import { collection, collectionGroup, getDocs, query, Query, DocumentData, CollectionReference, where } from 'firebase/firestore';
 import { useFirebase, useUser, useMemoFirebase } from '@/firebase';
 import type { Client, Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -14,7 +14,7 @@ interface UseProposalsResult {
   error: Error | null;
 }
 
-export function useProposals(): UseProposalsResult {
+export function useProposals(userId?: string): UseProposalsResult {
   const { firestore, isFirebaseLoading } = useFirebase();
   const { user, isUserLoading } = useUser();
 
@@ -22,9 +22,15 @@ export function useProposals(): UseProposalsResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  const targetUserId = userId || user?.uid;
+
   useEffect(() => {
     const fetchAllProposals = async () => {
-      if (isFirebaseLoading || isUserLoading || !firestore) {
+      if (isFirebaseLoading || isUserLoading || !firestore || !targetUserId) {
+        if (!targetUserId) {
+          // If no user ID is available yet, don't set loading to false, just wait.
+           setIsLoading(true);
+        }
         return;
       }
 
@@ -32,7 +38,10 @@ export function useProposals(): UseProposalsResult {
       setError(null);
 
       try {
-        const proposalsQuery = query(collectionGroup(firestore, 'proposals'));
+        const proposalsQuery = query(
+          collectionGroup(firestore, 'proposals'),
+          where('userId', '==', targetUserId)
+        );
         const querySnapshot = await getDocs(proposalsQuery);
         
         const allProposals: WithId<Proposal>[] = [];
@@ -40,13 +49,10 @@ export function useProposals(): UseProposalsResult {
             const proposalData = doc.data() as Omit<Proposal, 'id'>;
             const clientDoc = doc.ref.parent.parent;
             if (clientDoc) {
-                // Ensure createdAt is a string for consistent handling
                 let createdAtString: string;
                 if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
-                    // It's a Firestore Timestamp
                     createdAtString = (proposalData.createdAt as any).toDate().toISOString();
                 } else {
-                    // It's already a string or something else
                     createdAtString = proposalData.createdAt as string;
                 }
 
@@ -68,7 +74,7 @@ export function useProposals(): UseProposalsResult {
         setProposals(allProposals);
         
       } catch (e: any) {
-        console.error("Failed to fetch proposals using collectionGroup:", e);
+        console.error("Failed to fetch user-specific proposals:", e);
         setError(e);
       } finally {
         setIsLoading(false);
@@ -76,7 +82,7 @@ export function useProposals(): UseProposalsResult {
     };
 
     fetchAllProposals();
-  }, [firestore, user, isFirebaseLoading, isUserLoading]);
+  }, [firestore, targetUserId, isFirebaseLoading, isUserLoading]);
 
   return { 
     proposals, 

@@ -102,10 +102,10 @@ const BonusCard = ({ icon, title, value, progress, goal, description, children }
 )
 
 export default function DashboardPage() {
-  const { proposals, isLoading: proposalsLoading } = useProposals();
-  const { clients, isLoading: clientsLoading } = useClients();
-  const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const { user } = useUser();
+  const { proposals, isLoading: proposalsLoading } = useProposals(user?.uid);
+  const { clients, isLoading: clientsLoading } = useClients(user?.uid);
+  const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
   // Memoize clients map for quick lookup
