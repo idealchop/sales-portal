@@ -92,51 +92,66 @@ function AchievementsDialogContent() {
     const { clients, isLoading: clientsLoading } = useClients();
     const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
 
-    const corporateBonusTiers = [
-        { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-        { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-        { target: 10, name: 'Corporate Closer III', bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-    ];
-    const familyBonusTiers = [
-        { target: 10, name: 'Family Plan Closer I', bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-        { target: 20, name: 'Family Plan Closer II', bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-        { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
-    ];
-    
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-    const achievements = useMemo(() => {
+    const unlockedAchievements = useMemo(() => {
+        const corporateBonusTiers = [
+            { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+            { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+            { target: 10, name: 'Corporate Closer III', bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+        ];
+        const familyBonusTiers = [
+            { target: 10, name: 'Family Plan Closer I', bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+            { target: 20, name: 'Family Plan Closer II', bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+            { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
+        ];
+        
+        if (proposalsLoading || clientsLoading) return [];
+
         const acceptedProposals = proposals.filter(p => p.status === 'accepted' && p.createdAt);
 
-        const monthlyAchievements: {
-            corporate: { [key: string]: number };
-            household: { [key: string]: number };
-        } = { corporate: {}, household: {} };
-
+        const monthlyCounts: { [key: string]: { corporate: number, household: number } } = {};
+        
         for (const proposal of acceptedProposals) {
             const client = clientMap.get(proposal.clientId);
             if (!client) continue;
 
             const monthYear = format(new Date(proposal.createdAt), 'yyyy-MM');
+            if (!monthlyCounts[monthYear]) {
+                monthlyCounts[monthYear] = { corporate: 0, household: 0 };
+            }
 
             if (['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '')) {
-                if (!monthlyAchievements.corporate[monthYear]) monthlyAchievements.corporate[monthYear] = 0;
-                monthlyAchievements.corporate[monthYear]++;
+                monthlyCounts[monthYear].corporate++;
             } else if (client.clientType === 'household') {
-                if (!monthlyAchievements.household[monthYear]) monthlyAchievements.household[monthYear] = 0;
-                monthlyAchievements.household[monthYear]++;
+                monthlyCounts[monthYear].household++;
+            }
+        }
+
+        const achievements: { name: string; date: string; bonus: number; icon: React.ReactNode }[] = [];
+
+        for (const monthYear in monthlyCounts) {
+            const { corporate, household } = monthlyCounts[monthYear];
+            const achievementDate = format(new Date(monthYear), 'MMMM yyyy');
+
+            for (const tier of corporateBonusTiers) {
+                if (corporate >= tier.target) {
+                    achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon });
+                }
+            }
+            for (const tier of familyBonusTiers) {
+                if (household >= tier.target) {
+                    achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon });
+                }
             }
         }
         
-        const latestCorporateMonth = Object.keys(monthlyAchievements.corporate).sort().pop();
-        const latestHouseholdMonth = Object.keys(monthlyAchievements.household).sort().pop();
+        // Sort by date, most recent first
+        achievements.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-        const corporateCount = latestCorporateMonth ? monthlyAchievements.corporate[latestCorporateMonth] : 0;
-        const householdCount = latestHouseholdMonth ? monthlyAchievements.household[latestHouseholdMonth] : 0;
-        
-        return { corporateCount, householdCount };
+        return achievements;
 
-    }, [proposals, clients, clientMap]);
+    }, [proposals, clients, proposalsLoading, clientsLoading, clientMap]);
 
     if (proposalsLoading || clientsLoading) {
         return (
@@ -151,59 +166,38 @@ function AchievementsDialogContent() {
             <DialogHeader>
                 <DialogTitle>My Achievements</DialogTitle>
                 <DialogDescription>
-                    Track your unlocked bonuses and milestones.
+                    A history of your unlocked bonuses and milestones.
                 </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-[60vh] pr-4">
                 <div className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Corporate Closer Bonus</CardTitle>
-                             <p className="text-sm text-muted-foreground">
-                                Current Progress (this month): <span className="font-bold">{achievements.corporateCount} clients</span>
-                             </p>
+                            <CardTitle className="text-base">Achievement History</CardTitle>
                         </CardHeader>
                         <CardContent>
                              <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Metric</TableHead>
-                                        <TableHead>Bonus</TableHead>
+                                        <TableHead>Achievement</TableHead>
+                                        <TableHead>Date Unlocked</TableHead>
+                                        <TableHead className="text-right">Bonus</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {corporateBonusTiers.map(tier => (
-                                        <TableRow key={tier.target} className={cn(achievements.corporateCount >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
-                                            <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new clients</TableCell>
-                                            <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
+                                    {unlockedAchievements.length > 0 ? (
+                                        unlockedAchievements.map((ach, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell className="font-medium flex items-center gap-2">{ach.icon} {ach.name}</TableCell>
+                                                <TableCell>{ach.date}</TableCell>
+                                                <TableCell className="text-right font-bold text-primary">{currencyFormatter.format(ach.bonus)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center h-24">No achievements unlocked yet.</TableCell>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Family Plan Closer Bonus</CardTitle>
-                            <p className="text-sm text-muted-foreground">
-                                Current Progress (this month): <span className="font-bold">{achievements.householdCount} clients</span>
-                            </p>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Metric</TableHead>
-                                        <TableHead>Bonus</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {familyBonusTiers.map(tier => (
-                                        <TableRow key={tier.target} className={cn(achievements.householdCount >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
-                                            <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new household clients</TableCell>
-                                            <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
-                                        </TableRow>
-                                    ))}
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
@@ -572,6 +566,8 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
 
     
 
