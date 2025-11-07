@@ -31,15 +31,12 @@ service cloud.firestore {
         allow read, write: if request.auth.uid == resource.data.userId;
     }
 
-    // A user can read a client if they have created a proposal for that client.
-    // This is a simplified rule; a more robust solution might use custom claims or a user-to-client mapping.
-    // For now, we allow any signed-in user to read client docs, but hooks will filter them.
-    // Write access is also open but should be locked down further in a real-world scenario.
+    // A user can read/write a client document. More specific rules can be added later.
     match /clients/{clientId} {
       allow read, create, update: if isSignedIn();
       allow delete: if false;
       
-      // Proposals can only be read by their owner.
+      // Proposals can only be read or written by their owner.
       match /proposals/{proposalId} {
         allow read, create, update: if isSignedIn() && request.auth.uid == resource.data.userId;
         allow delete: if false;

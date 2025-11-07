@@ -2,11 +2,10 @@
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
 import { useFirebase, useUser } from '@/firebase';
 import type { Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
-import { useClients } from './use-clients';
 
 interface UseProposalsResult {
   proposals: WithId<Proposal>[];
@@ -19,24 +18,13 @@ export function useProposals(userId?: string): UseProposalsResult {
   const { user, isUserLoading } = useUser();
   const targetUserId = userId || user?.uid;
   
-  // Use the useClients hook to get clients for the current user first.
-  const { clients: userClients, isLoading: clientsAreLoading, error: clientsError } = useClients(targetUserId);
-
   const [proposals, setProposals] = useState<WithId<Proposal>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // This effect now depends on the result of the useClients hook.
-    const fetchProposalsForClients = async () => {
-      if (clientsAreLoading || !firestore) {
-        return;
-      }
-      
-      // If there are no clients, there can be no proposals.
-      if (userClients.length === 0) {
-        setProposals([]);
-        setIsLoading(false);
+    const fetchProposals = async () => {
+      if (isFirebaseLoading || isUserLoading || !firestore || !targetUserId) {
         return;
       }
       
@@ -44,59 +32,58 @@ export function useProposals(userId?: string): UseProposalsResult {
       setError(null);
 
       try {
-        const allProposals: WithId<Proposal>[] = [];
-        // Create an array of promises, one for each client's proposals subcollection.
-        const proposalPromises = userClients.map(client => {
-          const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
-          const proposalsQuery = query(proposalsRef, where('userId', '==', targetUserId));
-          return getDocs(proposalsQuery);
-        });
+        const proposalsQuery = query(
+          collectionGroup(firestore, 'proposals'),
+          where('userId', '==', targetUserId)
+        );
 
-        // Await all promises to resolve.
-        const allSnapshots = await Promise.all(proposalPromises);
+        const querySnapshot = await getDocs(proposalsQuery);
+        const fetchedProposals: WithId<Proposal>[] = [];
 
-        allSnapshots.forEach((snapshot, index) => {
-            const client = userClients[index];
-            snapshot.forEach(doc => {
-                const proposalData = doc.data() as Omit<Proposal, 'id'>;
-                 let createdAtString: string;
-                if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
-                    createdAtString = (proposalData.createdAt as any).toDate().toISOString();
-                } else {
-                    createdAtString = proposalData.createdAt as string;
-                }
-                allProposals.push({
-                    ...(proposalData as Proposal),
-                    id: doc.id,
-                    clientId: client.id,
-                    createdAt: createdAtString,
-                });
+        querySnapshot.forEach(doc => {
+          const proposalData = doc.data() as Omit<Proposal, 'id'>;
+          let createdAtString: string;
+          if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
+            createdAtString = (proposalData.createdAt as any).toDate().toISOString();
+          } else {
+            createdAtString = proposalData.createdAt as string;
+          }
+
+          const clientId = doc.ref.parent.parent?.id;
+
+          if (clientId) {
+            fetchedProposals.push({
+                ...(proposalData as Proposal),
+                id: doc.id,
+                clientId: clientId, 
+                createdAt: createdAtString,
             });
+          }
         });
         
-        allProposals.sort((a, b) => {
+        fetchedProposals.sort((a, b) => {
             const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
             const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
             return dateB.getTime() - dateA.getTime();
         });
 
-        setProposals(allProposals);
+        setProposals(fetchedProposals);
 
       } catch (e: any) {
-        console.error("Failed to fetch proposals for clients:", e);
+        console.error("Failed to fetch proposals:", e);
         setError(e);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProposalsForClients();
+    fetchProposals();
 
-  }, [firestore, targetUserId, clientsAreLoading, userClients]);
+  }, [firestore, targetUserId, isFirebaseLoading, isUserLoading]);
 
   return { 
     proposals, 
-    isLoading: isLoading || isFirebaseLoading || isUserLoading || clientsAreLoading, 
-    error: error || clientsError
+    isLoading: isLoading || isFirebaseLoading || isUserLoading, 
+    error
   };
 }
