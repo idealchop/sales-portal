@@ -55,7 +55,7 @@ service cloud.firestore {
     // but the `where('userId', '==', request.auth.uid)` clause in the client-side
     // query is what actually enforces the security.
     match /{path=**}/proposals/{proposalId} {
-       allow read: if isSignedIn();
+       allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
   }
 }
