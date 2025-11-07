@@ -220,30 +220,27 @@ function PayoutHistoryDialogContent() {
 
     return (
         <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-                <DialogTitle>My Payout History</DialogTitle>
-                <DialogDescription>
-                    A monthly summary of your commissions and their status.
-                </DialogDescription>
+            <DialogHeader className="flex-row items-center justify-between">
+                <div>
+                    <DialogTitle>My Payout History</DialogTitle>
+                    <DialogDescription>
+                        A monthly summary of your commissions and their status.
+                    </DialogDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filter by year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Years</SelectItem>
+                            {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
             </DialogHeader>
              <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="text-base">Payouts</CardTitle>
-                        <div className="flex items-center gap-2">
-                            <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Filter by year" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Years</SelectItem>
-                                    {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-6">
                     <ScrollArea className="h-[60vh] pr-4">
                         <Table>
                             <TableHeader>
@@ -395,30 +392,27 @@ function AchievementsDialogContent() {
     return (
         <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
-                <DialogTitle>My Achievements</DialogTitle>
-                <DialogDescription>
-                    A history of your unlocked bonuses and milestones.
-                </DialogDescription>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <DialogTitle>My Achievements</DialogTitle>
+                        <DialogDescription>
+                            A history of your unlocked bonuses and milestones.
+                        </DialogDescription>
+                    </div>
+                     <div className="flex items-center gap-2">
+                        <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Filter by year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Years</SelectItem>
+                                {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
             </DialogHeader>
             <div className="space-y-4">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">Filters</CardTitle>
-                            <div className="flex items-center gap-2">
-                                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Filter by year" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Years</SelectItem>
-                                        {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </CardHeader>
-                </Card>
                 <ScrollArea className="h-[60vh] pr-4 -mr-4">
                     {unlockedAchievements.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
