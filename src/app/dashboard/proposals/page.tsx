@@ -210,7 +210,7 @@ export default function ProposalsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
-                <TableHead>Owner</TableHead>
+                <TableHead>Sales Rep</TableHead>
                 <TableHead>Proposal</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
@@ -331,6 +331,7 @@ export default function ProposalsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Company</TableHead>
+                <TableHead>Sales Rep</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Onboarding</TableHead>
@@ -340,6 +341,9 @@ export default function ProposalsPage() {
               {paginatedClients.length > 0 ? paginatedClients.map((client) => {
                  const clientProposals = proposals.filter(p => p.clientId === client.id);
                  const acceptedProposal = clientProposals.find(p => p.status === 'accepted');
+                 const latestProposal = clientProposals[0]; // Assumes proposals are sorted by date desc
+                 const owner = userMap.get(latestProposal?.userId);
+
 
                  let subscriptionInfo = client.subscription;
                  if (!subscriptionInfo && acceptedProposal?.content) {
@@ -365,6 +369,19 @@ export default function ProposalsPage() {
                       </ClientOverviewDialog>
                         <div className="font-mono text-xs text-muted-foreground">Client ID: {client.id}</div>
                         <div className="text-sm text-muted-foreground">{client.contactName}</div>
+                    </TableCell>
+                    <TableCell>
+                        {owner ? (
+                            <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                    <AvatarImage src={owner.photoURL ?? undefined} />
+                                    <AvatarFallback className="text-xs">{owner.displayName?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium text-sm">{owner.displayName}</span>
+                            </div>
+                        ) : (
+                            <span className="text-muted-foreground text-sm">N/A</span>
+                        )}
                     </TableCell>
                     <TableCell>
                       <Badge className={cn("capitalize", clientStatusStyles[client.status])} variant="outline">
@@ -421,7 +438,7 @@ export default function ProposalsPage() {
                 )
               }) : (
                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                         No clients found.
                     </TableCell>
                 </TableRow>
