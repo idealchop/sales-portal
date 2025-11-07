@@ -566,7 +566,7 @@ export default function DashboardPage() {
                           </TableBody>
                       </Table>
                        <p className="text-xs text-muted-foreground mt-4">
-                          Example: A client pays for a full year in November. Your commission for that sale will be paid out in 12 monthly installments from November of this year to October of the next.
+                          Example: Your 3% recurring commission is calculated and paid out monthly based on the client's confirmed monthly payment.
                       </p>
                   </div>
                    <div className="md:col-span-2">
