@@ -147,7 +147,6 @@ function PayoutHistoryDialogContent() {
     const [monthlyPayouts, setMonthlyPayouts] = useState<MonthlyPayout[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-    const [selectedMonthData, setSelectedMonthData] = useState<{ month: string; commissions: Commission[] } | null>(null);
 
     useEffect(() => {
         const fetchAndProcessCommissions = async () => {
@@ -228,21 +227,23 @@ function PayoutHistoryDialogContent() {
                                     monthlyPayouts.map((payout) => (
                                         <TableRow key={payout.month}>
                                             <TableCell className="font-semibold">{payout.month}</TableCell>
-                                            <TableCell>{currencyFormatter.format(payout.totalAmount)}</TableCell>
                                             <TableCell>
-                                                <Dialog>
+                                                 <Dialog>
                                                     <DialogTrigger asChild>
-                                                        <Button variant="link" size="sm" className="p-0 h-auto">
-                                                            <Badge
-                                                                variant={payout.status === 'paid' ? 'success' : 'warning'}
-                                                                className="capitalize cursor-pointer"
-                                                            >
-                                                                {payout.status}
-                                                            </Badge>
+                                                        <Button variant="link" className="p-0 h-auto font-semibold">
+                                                            {currencyFormatter.format(payout.totalAmount)}
                                                         </Button>
                                                     </DialogTrigger>
                                                     <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} />
                                                 </Dialog>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={payout.status === 'paid' ? 'success' : 'warning'}
+                                                    className="capitalize"
+                                                >
+                                                    {payout.status}
+                                                </Badge>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -320,16 +321,21 @@ function AchievementsDialogContent() {
             const { corporate, household } = monthlyCounts[monthYear];
             const achievementDate = format(new Date(monthYear), 'MMMM yyyy');
 
-            corporateBonusTiers.forEach(tier => {
-                if (corporate >= tier.target) {
+            // Find the highest unlocked tier for corporate
+            const unlockedCorporateTiers = corporateBonusTiers.filter(tier => corporate >= tier.target);
+            if(unlockedCorporateTiers.length > 0) {
+                 unlockedCorporateTiers.forEach(tier => {
                     achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon });
-                }
-            });
-            familyBonusTiers.forEach(tier => {
-                if (household >= tier.target) {
+                });
+            }
+
+            // Find the highest unlocked tier for household
+            const unlockedFamilyTiers = familyBonusTiers.filter(tier => household >= tier.target);
+            if(unlockedFamilyTiers.length > 0) {
+                 unlockedFamilyTiers.forEach(tier => {
                     achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon });
-                }
-            });
+                });
+            }
         }
         
         const filteredAchievements = achievements.filter(ach => {
@@ -763,5 +769,7 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
 
     
