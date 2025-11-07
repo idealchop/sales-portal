@@ -48,7 +48,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from '@/hooks/use-toast';
 import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -328,14 +328,14 @@ function AchievementsDialogContent() {
 
     const { unlockedAchievements, availableYears, availableMonths } = useMemo(() => {
         const corporateBonusTiers = [
-            { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-            { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-            { target: 10, name: 'Corporate Closer III', bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+            { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-8 w-8" />, color: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-500' },
+            { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-8 w-8" />, color: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-500' },
+            { target: 10, name: 'Corporate Closer III', bonus: 12000, icon: <Trophy className="h-8 w-8" />, color: 'bg-amber-100 dark:bg-amber-900/50 text-amber-500' },
         ];
         const familyBonusTiers = [
-            { target: 10, name: 'Family Plan Closer I', bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-            { target: 20, name: 'Family Plan Closer II', bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-            { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
+            { target: 10, name: 'Family Plan Closer I', bonus: 2500, icon: <Star className="h-8 w-8" />, color: 'bg-green-100 dark:bg-green-900/50 text-green-500' },
+            { target: 20, name: 'Family Plan Closer II', bonus: 6000, icon: <Trophy className="h-8 w-8" />, color: 'bg-green-100 dark:bg-green-900/50 text-green-500' },
+            { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-8 w-8" />, color: 'bg-violet-100 dark:bg-violet-900/50 text-violet-500' },
         ];
         
         if (proposalsLoading || clientsLoading) return { unlockedAchievements: [], availableYears: [], availableMonths: [] };
@@ -369,25 +369,23 @@ function AchievementsDialogContent() {
             }
         }
 
-        const achievements: { name: string; date: string; bonus: number; icon: React.ReactNode }[] = [];
+        const achievements: { name: string; date: string; bonus: number; icon: React.ReactNode; color: string; }[] = [];
 
         for (const monthYear in monthlyCounts) {
             const { corporate, household } = monthlyCounts[monthYear];
             const achievementDate = format(new Date(monthYear), 'MMMM yyyy');
-
-            // Find the highest unlocked tier for corporate
+            
             const unlockedCorporateTiers = corporateBonusTiers.filter(tier => corporate >= tier.target);
             if(unlockedCorporateTiers.length > 0) {
                  unlockedCorporateTiers.forEach(tier => {
-                    achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon });
+                    achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon, color: tier.color });
                 });
             }
 
-            // Find the highest unlocked tier for household
             const unlockedFamilyTiers = familyBonusTiers.filter(tier => household >= tier.target);
             if(unlockedFamilyTiers.length > 0) {
                  unlockedFamilyTiers.forEach(tier => {
-                    achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon });
+                    achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon, color: tier.color });
                 });
             }
         }
@@ -420,70 +418,66 @@ function AchievementsDialogContent() {
     }
 
     return (
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
                 <DialogTitle>My Achievements</DialogTitle>
                 <DialogDescription>
                     A history of your unlocked bonuses and milestones.
                 </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="h-[60vh] pr-4">
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-base">Achievement History</CardTitle>
-                                <div className="flex items-center gap-2">
-                                     <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Filter by month" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Months</SelectItem>
-                                            {availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                    <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                        <SelectTrigger className="w-[120px]">
-                                            <SelectValue placeholder="Filter by year" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Years</SelectItem>
-                                            {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+            <div className="space-y-4">
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-base">Filters</CardTitle>
+                            <div className="flex items-center gap-2">
+                                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="Filter by month" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Months</SelectItem>
+                                        {availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                    <SelectTrigger className="w-[120px]">
+                                        <SelectValue placeholder="Filter by year" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Years</SelectItem>
+                                        {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Achievement</TableHead>
-                                        <TableHead>Date Unlocked</TableHead>
-                                        <TableHead className="text-right">Bonus</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {unlockedAchievements.length > 0 ? (
-                                        unlockedAchievements.map((ach, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell className="font-medium flex items-center gap-2">{ach.icon} {ach.name}</TableCell>
-                                                <TableCell>{ach.date}</TableCell>
-                                                <TableCell className="text-right font-bold text-primary">{currencyFormatter.format(ach.bonus)}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="text-center h-24">No achievements found for the selected period.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </div>
-            </ScrollArea>
+                        </div>
+                    </CardHeader>
+                </Card>
+                <ScrollArea className="h-[60vh] pr-4 -mr-4">
+                    {unlockedAchievements.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {unlockedAchievements.map((ach, index) => (
+                                <Card key={index} className="flex flex-col items-center justify-center p-6 text-center space-y-4">
+                                    <div className={cn("flex h-20 w-20 items-center justify-center rounded-full", ach.color)}>
+                                        {ach.icon}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h3 className="font-semibold text-lg">{ach.name}</h3>
+                                        <p className="text-sm text-muted-foreground">Unlocked: {ach.date}</p>
+                                    </div>
+                                    <Badge variant="secondary" className="text-base font-bold">{currencyFormatter.format(ach.bonus)}</Badge>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-center py-16">
+                            <Award className="h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-lg font-semibold">No Achievements Yet</h3>
+                            <p className="text-sm text-muted-foreground">Keep closing deals to unlock your first achievement!</p>
+                        </div>
+                    )}
+                </ScrollArea>
+            </div>
         </DialogContent>
     );
 }
@@ -823,9 +817,3 @@ export function DashboardHeader() {
     </header>
   );
 }
-
-    
-
-    
-
-    
