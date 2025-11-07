@@ -147,7 +147,6 @@ function PayoutHistoryDialogContent() {
     const [allPayouts, setAllPayouts] = useState<MonthlyPayout[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedYear, setSelectedYear] = useState<string>('all');
-    const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     useEffect(() => {
@@ -199,32 +198,25 @@ function PayoutHistoryDialogContent() {
         fetchAndProcessCommissions();
     }, [user, firestore]);
 
-    const { filteredPayouts, availableYears, availableMonths } = useMemo(() => {
+    const { filteredPayouts, availableYears } = useMemo(() => {
         const yearSet = new Set<string>();
-        const monthSet = new Set<string>();
 
         allPayouts.forEach(payout => {
             const date = new Date(payout.month);
             yearSet.add(date.getFullYear().toString());
-            monthSet.add(format(date, 'MMMM'));
         });
         
         const filtered = allPayouts.filter(payout => {
             const date = new Date(payout.month);
-            const matchesYear = selectedYear === 'all' || date.getFullYear().toString() === selectedYear;
-            const matchesMonth = selectedMonth === 'all' || format(date, 'MMMM') === selectedMonth;
-            return matchesYear && matchesMonth;
+            return selectedYear === 'all' || date.getFullYear().toString() === selectedYear;
         });
 
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        
         return {
             filteredPayouts: filtered,
             availableYears: Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a)),
-            availableMonths: monthNames.filter(m => monthSet.has(m))
         }
 
-    }, [allPayouts, selectedYear, selectedMonth]);
+    }, [allPayouts, selectedYear]);
 
     return (
         <DialogContent className="sm:max-w-2xl">
@@ -239,17 +231,8 @@ function PayoutHistoryDialogContent() {
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-base">Payouts</CardTitle>
                         <div className="flex items-center gap-2">
-                             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Filter by month" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Months</SelectItem>
-                                    {availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
                             <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                <SelectTrigger className="w-[120px]">
+                                <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Filter by year" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -324,36 +307,32 @@ function AchievementsDialogContent() {
     const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const [selectedYear, setSelectedYear] = useState<string>('all');
-    const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
-    const { unlockedAchievements, availableYears, availableMonths } = useMemo(() => {
+    const { unlockedAchievements, availableYears } = useMemo(() => {
         const corporateBonusTiers = [
-            { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-8 w-8" />, color: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-500' },
-            { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-8 w-8" />, color: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-500' },
-            { target: 10, name: 'Corporate Closer III', bonus: 12000, icon: <Trophy className="h-8 w-8" />, color: 'bg-amber-100 dark:bg-amber-900/50 text-amber-500' },
+            { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
+            { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
+            { target: 10, name: 'Corporate Closer III', bonus: 12000, icon: <Trophy className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
         ];
         const familyBonusTiers = [
-            { target: 10, name: 'Family Plan Closer I', bonus: 2500, icon: <Star className="h-8 w-8" />, color: 'bg-green-100 dark:bg-green-900/50 text-green-500' },
-            { target: 20, name: 'Family Plan Closer II', bonus: 6000, icon: <Trophy className="h-8 w-8" />, color: 'bg-green-100 dark:bg-green-900/50 text-green-500' },
-            { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-8 w-8" />, color: 'bg-violet-100 dark:bg-violet-900/50 text-violet-500' },
+            { target: 10, name: 'Family Plan Closer I', bonus: 2500, icon: <Star className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
+            { target: 20, name: 'Family Plan Closer II', bonus: 6000, icon: <Trophy className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
+            { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
         ];
         
-        if (proposalsLoading || clientsLoading) return { unlockedAchievements: [], availableYears: [], availableMonths: [] };
+        if (proposalsLoading || clientsLoading) return { unlockedAchievements: [], availableYears: [] };
 
         const acceptedProposals = proposals.filter(p => p.status === 'accepted' && p.createdAt);
 
         const monthlyCounts: { [key: string]: { corporate: number, household: number } } = {};
         const yearSet = new Set<string>();
-        const monthSet = new Set<string>();
         
         for (const proposal of acceptedProposals) {
             const date = new Date(proposal.createdAt);
             const year = date.getFullYear().toString();
-            const monthName = format(date, 'MMMM');
             const monthYear = format(date, 'yyyy-MM');
 
             yearSet.add(year);
-            monthSet.add(monthName);
             
             if (!monthlyCounts[monthYear]) {
                 monthlyCounts[monthYear] = { corporate: 0, household: 0 };
@@ -392,22 +371,18 @@ function AchievementsDialogContent() {
         
         const filteredAchievements = achievements.filter(ach => {
             const achDate = new Date(ach.date);
-            const matchesYear = selectedYear === 'all' || achDate.getFullYear().toString() === selectedYear;
-            const matchesMonth = selectedMonth === 'all' || format(achDate, 'MMMM') === selectedMonth;
-            return matchesYear && matchesMonth;
+            return selectedYear === 'all' || achDate.getFullYear().toString() === selectedYear;
         });
 
         filteredAchievements.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        
         return { 
             unlockedAchievements: filteredAchievements,
             availableYears: Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a)),
-            availableMonths: monthNames.filter(m => monthSet.has(m))
         };
 
-    }, [proposals, clients, proposalsLoading, clientsLoading, clientMap, selectedYear, selectedMonth]);
+    }, [proposals, clients, proposalsLoading, clientsLoading, clientMap, selectedYear]);
+
 
     if (proposalsLoading || clientsLoading) {
         return (
@@ -431,17 +406,8 @@ function AchievementsDialogContent() {
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-base">Filters</CardTitle>
                             <div className="flex items-center gap-2">
-                                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Filter by month" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Months</SelectItem>
-                                        {availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
                                 <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                    <SelectTrigger className="w-[120px]">
+                                    <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Filter by year" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -817,3 +783,5 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
