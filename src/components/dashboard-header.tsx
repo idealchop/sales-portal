@@ -189,6 +189,7 @@ function AchievementsDialogContent() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Achievement</TableHead>
+                            <TableHead>Bonus</TableHead>
                             <TableHead>Unlocked via Client</TableHead>
                             <TableHead className="text-right">Date</TableHead>
                         </TableRow>
@@ -199,7 +200,9 @@ function AchievementsDialogContent() {
                                 <TableRow key={index}>
                                     <TableCell>
                                         <div className="font-medium">{ach.name}</div>
-                                        <div className="text-sm text-muted-foreground">Bonus: {ach.bonus}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary" className="font-semibold">{ach.bonus}</Badge>
                                     </TableCell>
                                     <TableCell>{ach.client}</TableCell>
                                     <TableCell className="text-right">{format(new Date(ach.date), 'PPP')}</TableCell>
@@ -207,7 +210,7 @@ function AchievementsDialogContent() {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={3} className="h-24 text-center">
+                                <TableCell colSpan={4} className="h-24 text-center">
                                     No achievements unlocked yet. Keep closing deals!
                                 </TableCell>
                             </TableRow>
