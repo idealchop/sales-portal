@@ -84,6 +84,9 @@ export default function LoginPage() {
           case 'auth/invalid-credential':
             description = 'Invalid email or password. Please try again.';
             break;
+          case 'auth/too-many-requests':
+            description = 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.';
+            break;
           default:
             description = "An error occurred during login. Please check the console for details.";
             console.error("Firebase Auth Error:", error.message);

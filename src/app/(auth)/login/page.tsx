@@ -61,8 +61,8 @@ export default function LoginPage() {
         const userDocSnap = await getDoc(userDocRef);
 
         if (!userDocSnap.exists()) {
-          // Do not await this. Let it run in the background.
-          setDoc(userDocRef, {
+          // Await this to ensure the document exists before redirecting
+          await setDoc(userDocRef, {
             id: user.uid,
             email: user.email,
             displayName: user.email,
@@ -83,6 +83,9 @@ export default function LoginPage() {
           case 'auth/wrong-password':
           case 'auth/invalid-credential':
             description = 'Invalid email or password. Please try again.';
+            break;
+          case 'auth/too-many-requests':
+            description = 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.';
             break;
           default:
             description = "An error occurred during login. Please check the console for details.";
