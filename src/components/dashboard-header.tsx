@@ -1,7 +1,7 @@
 
 'use client';
 import Link from 'next/link';
-import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2 } from 'lucide-react';
+import { Bell, User, Calendar as CalendarIcon, Upload, LogOut, Settings, HelpCircle, Star, Percent, CreditCard, ChevronRight, Users, Trash2, Edit, X, Loader2, Award } from 'lucide-react';
 import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
@@ -29,7 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { Logo } from './logo';
@@ -46,6 +46,11 @@ import { doc, setDoc, updateDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
+import { useProposals } from '@/hooks/use-proposals';
+import { useClients } from '@/hooks/use-clients';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { ScrollArea } from './ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 
 
 function QrCodeIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -81,6 +86,138 @@ const profileSchema = z.object({
   birthday: z.date().optional(),
 });
 type ProfileFormValues = z.infer<typeof profileSchema>;
+
+function AchievementsDialogContent() {
+    const { proposals, isLoading: proposalsLoading } = useProposals();
+    const { clients, isLoading: clientsLoading } = useClients();
+    const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
+
+    const achievements = useMemo(() => {
+        const corporateBonusTiers = [
+            { target: 3, name: 'Corporate Closer I', bonus: '₱2,000' },
+            { target: 5, name: 'Corporate Closer II', bonus: '₱5,000' },
+            { target: 10, name: 'Corporate Closer III', bonus: '₱12,000' },
+        ];
+        const familyBonusTiers = [
+            { target: 10, name: 'Family Plan Closer I', bonus: '₱2,500' },
+            { target: 20, name: 'Family Plan Closer II', bonus: '₱6,000' },
+            { target: 30, name: 'Family Plan Closer III', bonus: '₱15,000' },
+        ];
+
+        const acceptedProposals = proposals
+            .filter(p => p.status === 'accepted' && p.createdAt)
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+        const monthlyAchievements: {
+            corporate: { [key: string]: { client: string; date: string; }[] };
+            household: { [key: string]: { client: string; date: string; }[] };
+        } = { corporate: {}, household: {} };
+
+        for (const proposal of acceptedProposals) {
+            const client = clientMap.get(proposal.clientId);
+            if (!client) continue;
+
+            const monthYear = format(new Date(proposal.createdAt), 'MMMM yyyy');
+
+            if (['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '')) {
+                if (!monthlyAchievements.corporate[monthYear]) {
+                    monthlyAchievements.corporate[monthYear] = [];
+                }
+                monthlyAchievements.corporate[monthYear].push({ client: client.companyName, date: proposal.createdAt });
+            } else if (client.clientType === 'household') {
+                if (!monthlyAchievements.household[monthYear]) {
+                    monthlyAchievements.household[monthYear] = [];
+                }
+                monthlyAchievements.household[monthYear].push({ client: client.companyName, date: proposal.createdAt });
+            }
+        }
+
+        const unlocked: { name: string; bonus: string; client: string; date: string }[] = [];
+
+        Object.keys(monthlyAchievements.corporate).forEach(month => {
+            const clientsInMonth = monthlyAchievements.corporate[month];
+            corporateBonusTiers.forEach(tier => {
+                if (clientsInMonth.length >= tier.target) {
+                    const achievingClient = clientsInMonth[tier.target - 1];
+                    unlocked.push({
+                        name: tier.name,
+                        bonus: tier.bonus,
+                        client: achievingClient.client,
+                        date: achievingClient.date,
+                    });
+                }
+            });
+        });
+        
+        Object.keys(monthlyAchievements.household).forEach(month => {
+            const clientsInMonth = monthlyAchievements.household[month];
+            familyBonusTiers.forEach(tier => {
+                if (clientsInMonth.length >= tier.target) {
+                    const achievingClient = clientsInMonth[tier.target - 1];
+                    unlocked.push({
+                        name: tier.name,
+                        bonus: tier.bonus,
+                        client: achievingClient.client,
+                        date: achievingClient.date,
+                    });
+                }
+            });
+        });
+
+        return unlocked.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    }, [proposals, clients, clientMap]);
+
+    if (proposalsLoading || clientsLoading) {
+        return (
+            <div className="flex h-64 w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    return (
+        <DialogContent className="sm:max-w-3xl">
+            <DialogHeader>
+                <DialogTitle>My Achievement History</DialogTitle>
+                <DialogDescription>
+                    A log of all the bonuses and milestones you've unlocked.
+                </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[60vh]">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Achievement</TableHead>
+                            <TableHead>Unlocked via Client</TableHead>
+                            <TableHead className="text-right">Date</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {achievements.length > 0 ? (
+                            achievements.map((ach, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>
+                                        <div className="font-medium">{ach.name}</div>
+                                        <div className="text-sm text-muted-foreground">Bonus: {ach.bonus}</div>
+                                    </TableCell>
+                                    <TableCell>{ach.client}</TableCell>
+                                    <TableCell className="text-right">{format(new Date(ach.date), 'PPP')}</TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={3} className="h-24 text-center">
+                                    No achievements unlocked yet. Keep closing deals!
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </ScrollArea>
+        </DialogContent>
+    );
+}
 
 function ProfileDialogContent() {
     const { user } = useUser();
@@ -368,6 +505,15 @@ export function DashboardHeader() {
                             View Profile
                         </Button>
                     </DialogTrigger>
+                     <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-start text-sm font-normal">
+                                <Award className="mr-2 h-4 w-4" />
+                                My Achievements
+                            </Button>
+                        </DialogTrigger>
+                        <AchievementsDialogContent />
+                    </Dialog>
                     <Button variant="ghost" className="w-full justify-start text-sm font-normal" asChild>
                         <Link href="/dashboard/settings">
                             <Settings className="mr-2 h-4 w-4" />
@@ -431,3 +577,5 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
