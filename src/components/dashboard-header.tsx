@@ -144,8 +144,10 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
 function PayoutHistoryDialogContent() {
     const { user } = useUser();
     const firestore = useFirestore();
-    const [monthlyPayouts, setMonthlyPayouts] = useState<MonthlyPayout[]>([]);
+    const [allPayouts, setAllPayouts] = useState<MonthlyPayout[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedYear, setSelectedYear] = useState<string>('all');
+    const [selectedMonth, setSelectedMonth] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     useEffect(() => {
@@ -185,7 +187,7 @@ function PayoutHistoryDialogContent() {
                 });
                 
                 processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
-                setMonthlyPayouts(processedPayouts);
+                setAllPayouts(processedPayouts);
 
             } catch (error) {
                 console.error("Error fetching commissions: ", error);
@@ -197,6 +199,33 @@ function PayoutHistoryDialogContent() {
         fetchAndProcessCommissions();
     }, [user, firestore]);
 
+    const { filteredPayouts, availableYears, availableMonths } = useMemo(() => {
+        const yearSet = new Set<string>();
+        const monthSet = new Set<string>();
+
+        allPayouts.forEach(payout => {
+            const date = new Date(payout.month);
+            yearSet.add(date.getFullYear().toString());
+            monthSet.add(format(date, 'MMMM'));
+        });
+        
+        const filtered = allPayouts.filter(payout => {
+            const date = new Date(payout.month);
+            const matchesYear = selectedYear === 'all' || date.getFullYear().toString() === selectedYear;
+            const matchesMonth = selectedMonth === 'all' || format(date, 'MMMM') === selectedMonth;
+            return matchesYear && matchesMonth;
+        });
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
+        return {
+            filteredPayouts: filtered,
+            availableYears: Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a)),
+            availableMonths: monthNames.filter(m => monthSet.has(m))
+        }
+
+    }, [allPayouts, selectedYear, selectedMonth]);
+
     return (
         <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
@@ -205,9 +234,34 @@ function PayoutHistoryDialogContent() {
                     A monthly summary of your commissions and their status.
                 </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="h-[60vh] pr-4">
-                <Card>
-                    <CardContent className="pt-6">
+             <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">Payouts</CardTitle>
+                        <div className="flex items-center gap-2">
+                             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Filter by month" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Months</SelectItem>
+                                    {availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                <SelectTrigger className="w-[120px]">
+                                    <SelectValue placeholder="Filter by year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Years</SelectItem>
+                                    {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                    <ScrollArea className="h-[60vh] pr-4">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -223,8 +277,8 @@ function PayoutHistoryDialogContent() {
                                             <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                         </TableCell>
                                     </TableRow>
-                                ) : monthlyPayouts.length > 0 ? (
-                                    monthlyPayouts.map((payout) => (
+                                ) : filteredPayouts.length > 0 ? (
+                                    filteredPayouts.map((payout) => (
                                         <TableRow key={payout.month}>
                                             <TableCell className="font-semibold">{payout.month}</TableCell>
                                             <TableCell>
@@ -250,15 +304,15 @@ function PayoutHistoryDialogContent() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={3} className="h-24 text-center">
-                                            No payout records found.
+                                            No payout records found for the selected period.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
-                    </CardContent>
-                </Card>
-            </ScrollArea>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
         </DialogContent>
     );
 }
@@ -769,6 +823,8 @@ export function DashboardHeader() {
     </header>
   );
 }
+
+    
 
     
 
