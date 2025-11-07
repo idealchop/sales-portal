@@ -94,9 +94,10 @@ type MonthlyPayout = {
     totalAmount: number;
     status: 'paid' | 'pending';
     commissions: Commission[];
+    bonuses: { name: string; bonus: number }[];
 };
 
-function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: Commission[] }) {
+function PayoutMonthDetailsDialog({ month, commissions, bonuses }: { month: string, commissions: Commission[], bonuses: {name: string, bonus: number}[] }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
     return (
@@ -104,20 +105,32 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
             <DialogHeader>
                 <DialogTitle>Payout Details for {month}</DialogTitle>
                 <DialogDescription>
-                    Detailed breakdown of commissions for this period.
+                    Detailed breakdown of commissions and bonuses for this period.
                 </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-[50vh] pr-4">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Proposal ID</TableHead>
+                            <TableHead>Date / Type</TableHead>
+                            <TableHead>Details</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
+                        {bonuses.map((bonus, index) => (
+                             <TableRow key={`bonus-${index}`}>
+                                <TableCell>Bonus</TableCell>
+                                <TableCell className="font-semibold">{bonus.name}</TableCell>
+                                <TableCell>
+                                    <Badge variant='success' className="capitalize">
+                                        Achieved
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-semibold">{currencyFormatter.format(bonus.bonus)}</TableCell>
+                            </TableRow>
+                        ))}
                         {commissions.map((commission) => (
                             <TableRow key={commission.id}>
                                 <TableCell>{new Date(commission.createdAt).toLocaleDateString()}</TableCell>
@@ -144,16 +157,22 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
 function PayoutHistoryDialogContent() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const { proposals, isLoading: proposalsLoading } = useProposals();
+    const { clients, isLoading: clientsLoading } = useClients();
+    const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
+
     const [allPayouts, setAllPayouts] = useState<MonthlyPayout[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedYear, setSelectedYear] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     useEffect(() => {
-        const fetchAndProcessCommissions = async () => {
-            if (!user || !firestore) return;
+        const fetchAndProcessData = async () => {
+            if (!user || !firestore || proposalsLoading || clientsLoading) return;
             setIsLoading(true);
+
             try {
+                // 1. Fetch Commissions
                 const commissionsRef = collection(firestore, 'commissions');
                 const q = query(commissionsRef, where('userId', '==', user.uid));
                 const querySnapshot = await getDocs(q);
@@ -170,7 +189,7 @@ function PayoutHistoryDialogContent() {
                     commissions.push({ id: doc.id, ...data, createdAt: createdAtString } as Commission);
                 });
 
-                const groupedByMonth = commissions.reduce((acc, commission) => {
+                const commissionsByMonth = commissions.reduce((acc, commission) => {
                     const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
                     if (!acc[monthKey]) {
                         acc[monthKey] = [];
@@ -178,25 +197,85 @@ function PayoutHistoryDialogContent() {
                     acc[monthKey].push(commission);
                     return acc;
                 }, {} as Record<string, Commission[]>);
+                
+                // 2. Calculate Bonuses
+                const acceptedProposals = proposals.filter(p => p.status === 'accepted' && p.createdAt);
+                const monthlyClientCounts: { [key: string]: { corporate: number, household: number } } = {};
+                
+                for (const proposal of acceptedProposals) {
+                    const date = new Date(proposal.createdAt);
+                    const monthYear = format(date, 'MMMM yyyy');
+                    
+                    if (!monthlyClientCounts[monthYear]) {
+                        monthlyClientCounts[monthYear] = { corporate: 0, household: 0 };
+                    }
 
-                const processedPayouts: MonthlyPayout[] = Object.entries(groupedByMonth).map(([month, commissions]) => {
-                    const totalAmount = commissions.reduce((sum, c) => sum + c.amount, 0);
-                    const status = commissions.some(c => c.status === 'pending') ? 'pending' : 'paid';
-                    return { month, totalAmount, status, commissions };
+                    const client = clientMap.get(proposal.clientId);
+                    if (!client) continue;
+
+                    if (['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '')) {
+                        monthlyClientCounts[monthYear].corporate++;
+                    } else if (client.clientType === 'household') {
+                        monthlyClientCounts[monthYear].household++;
+                    }
+                }
+                
+                const bonusesByMonth: Record<string, { name: string; bonus: number }[]> = {};
+                const corporateBonusTiers = [
+                    { target: 3, name: 'Corporate Closer I', bonus: 2000 },
+                    { target: 5, name: 'Corporate Closer II', bonus: 5000 },
+                    { target: 10, name: 'Corporate Closer III', bonus: 12000 },
+                ];
+                const familyBonusTiers = [
+                    { target: 10, name: 'Family Plan Closer I', bonus: 2500 },
+                    { target: 20, name: 'Family Plan Closer II', bonus: 6000 },
+                    { target: 30, name: 'Family Plan Closer III', bonus: 15000 },
+                ];
+                
+                for (const monthYear in monthlyClientCounts) {
+                    const { corporate, household } = monthlyClientCounts[monthYear];
+                    bonusesByMonth[monthYear] = bonusesByMonth[monthYear] || [];
+                    
+                    corporateBonusTiers.forEach(tier => {
+                        if(corporate >= tier.target) {
+                             bonusesByMonth[monthYear].push({ name: tier.name, bonus: tier.bonus });
+                        }
+                    });
+                     familyBonusTiers.forEach(tier => {
+                        if(household >= tier.target) {
+                             bonusesByMonth[monthYear].push({ name: tier.name, bonus: tier.bonus });
+                        }
+                    });
+                }
+
+                // 3. Combine Commissions and Bonuses
+                const allMonths = new Set([...Object.keys(commissionsByMonth), ...Object.keys(bonusesByMonth)]);
+                
+                const processedPayouts: MonthlyPayout[] = Array.from(allMonths).map(month => {
+                    const monthCommissions = commissionsByMonth[month] || [];
+                    const monthBonuses = bonusesByMonth[month] || [];
+                    
+                    const commissionTotal = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
+                    const bonusTotal = monthBonuses.reduce((sum, b) => sum + b.bonus, 0);
+                    
+                    const totalAmount = commissionTotal + bonusTotal;
+                    const status = monthCommissions.some(c => c.status === 'pending') ? 'pending' : 'paid';
+                    
+                    return { month, totalAmount, status, commissions: monthCommissions, bonuses: monthBonuses };
                 });
                 
                 processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
                 setAllPayouts(processedPayouts);
 
             } catch (error) {
-                console.error("Error fetching commissions: ", error);
+                console.error("Error processing payouts: ", error);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchAndProcessCommissions();
-    }, [user, firestore]);
+        fetchAndProcessData();
+    }, [user, firestore, proposals, clients, clientMap, proposalsLoading, clientsLoading]);
 
     const { filteredPayouts, availableYears } = useMemo(() => {
         const yearSet = new Set<string>();
@@ -220,23 +299,25 @@ function PayoutHistoryDialogContent() {
 
     return (
         <DialogContent className="sm:max-w-2xl">
-            <DialogHeader className="flex-row items-center justify-between">
-                <div>
-                    <DialogTitle>My Payout History</DialogTitle>
-                    <DialogDescription>
-                        A monthly summary of your commissions and their status.
-                    </DialogDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Select value={selectedYear} onValueChange={setSelectedYear}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Years</SelectItem>
-                            {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+            <DialogHeader>
+                 <div className="flex items-center justify-between">
+                    <div>
+                        <DialogTitle>My Payout History</DialogTitle>
+                        <DialogDescription>
+                            A monthly summary of your commissions and their status.
+                        </DialogDescription>
+                    </div>
+                     <div className="flex items-center gap-2">
+                        <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Filter by year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Years</SelectItem>
+                                {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </DialogHeader>
              <Card>
@@ -268,7 +349,7 @@ function PayoutHistoryDialogContent() {
                                                             {currencyFormatter.format(payout.totalAmount)}
                                                         </Button>
                                                     </DialogTrigger>
-                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} />
+                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} bonuses={payout.bonuses} />
                                                 </Dialog>
                                             </TableCell>
                                             <TableCell>
@@ -327,7 +408,7 @@ function AchievementsDialogContent() {
         for (const proposal of acceptedProposals) {
             const date = new Date(proposal.createdAt);
             const year = date.getFullYear().toString();
-            const monthYear = format(date, 'yyyy-MM');
+            const monthYear = format(date, 'MMMM yyyy');
 
             yearSet.add(year);
             
@@ -349,21 +430,19 @@ function AchievementsDialogContent() {
 
         for (const monthYear in monthlyCounts) {
             const { corporate, household } = monthlyCounts[monthYear];
-            const achievementDate = format(new Date(monthYear), 'MMMM yyyy');
+            const achievementDate = monthYear;
             
-            const unlockedCorporateTiers = corporateBonusTiers.filter(tier => corporate >= tier.target);
-            if(unlockedCorporateTiers.length > 0) {
-                 unlockedCorporateTiers.forEach(tier => {
-                    achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon, color: tier.color });
-                });
-            }
+            corporateBonusTiers.forEach(tier => {
+                if(corporate >= tier.target) {
+                   achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon, color: tier.color });
+                }
+            });
 
-            const unlockedFamilyTiers = familyBonusTiers.filter(tier => household >= tier.target);
-            if(unlockedFamilyTiers.length > 0) {
-                 unlockedFamilyTiers.forEach(tier => {
-                    achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon, color: tier.color });
-                });
-            }
+            familyBonusTiers.forEach(tier => {
+                if(household >= tier.target) {
+                   achievements.push({ name: tier.name, date: achievementDate, bonus: tier.bonus, icon: tier.icon, color: tier.color });
+                }
+            });
         }
         
         const filteredAchievements = achievements.filter(ach => {
