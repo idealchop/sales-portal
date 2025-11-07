@@ -316,14 +316,12 @@ export default function NewProposalPage() {
                 </div>
               )}
           </div>
-          <div className="relative h-48 mt-8">
+          <div className="relative aspect-video mt-8">
             <Image
               src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FBG_Web_v2.png?alt=media&token=e944282b-6f8d-4cdd-8463-eeaf96746522"
               alt="background"
-              layout="fill"
-              objectFit="cover"
-              objectPosition="bottom"
-              className="rounded-b-lg"
+              fill
+              className="object-cover object-bottom rounded-b-lg"
             />
           </div>
         </div>
