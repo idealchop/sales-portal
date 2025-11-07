@@ -66,6 +66,7 @@ import { useClients } from '@/hooks/use-clients';
 import { useMemo } from 'react';
 import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths } from 'date-fns';
 import { useUser } from '@/firebase';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -522,53 +523,55 @@ export default function DashboardPage() {
                     This chart shows your commission history. Earnings from long-term client payments are distributed monthly to ensure a stable income.
                 </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-8 py-6 md:grid-cols-2">
-                <div>
-                    <h3 className="text-lg font-semibold mb-2">Commission Rate by Client Type</h3>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Client Type</TableHead>
-                                <TableHead className="text-right">Commission</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {commissionTiers.map((tier) => (
-                                <TableRow key={tier.clientType}>
-                                    <TableCell className="font-medium">{tier.clientType}</TableCell>
-                                    <TableCell className="text-right font-bold text-primary">{tier.commission}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-                <div>
-                    <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Client Payment Term</TableHead>
-                                <TableHead>Payout Schedule</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {payoutTimeline.map((item) => (
-                                <TableRow key={item.term}>
-                                    <TableCell className="font-medium">{item.term}</TableCell>
-                                    <TableCell>{item.schedule}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                     <p className="text-xs text-muted-foreground mt-4">
-                        Example: A client pays for a full year in November. Your commission for that sale will be paid out in 12 monthly installments from November of this year to October of the next.
-                    </p>
-                </div>
-                 <div className="md:col-span-2">
-                    <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
-                    <RevenueChart data={dashboardData.commissionHistory} />
-                </div>
-            </div>
+            <ScrollArea className="h-[60vh] pr-4">
+              <div className="grid gap-8 py-6 md:grid-cols-2">
+                  <div>
+                      <h3 className="text-lg font-semibold mb-2">Commission Rate by Client Type</h3>
+                      <Table>
+                          <TableHeader>
+                              <TableRow>
+                                  <TableHead>Client Type</TableHead>
+                                  <TableHead className="text-right">Commission</TableHead>
+                              </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                              {commissionTiers.map((tier) => (
+                                  <TableRow key={tier.clientType}>
+                                      <TableCell className="font-medium">{tier.clientType}</TableCell>
+                                      <TableCell className="text-right font-bold text-primary">{tier.commission}</TableCell>
+                                  </TableRow>
+                              ))}
+                          </TableBody>
+                      </Table>
+                  </div>
+                  <div>
+                      <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
+                      <Table>
+                          <TableHeader>
+                              <TableRow>
+                                  <TableHead>Client Payment Term</TableHead>
+                                  <TableHead>Payout Schedule</TableHead>
+                              </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                              {payoutTimeline.map((item) => (
+                                  <TableRow key={item.term}>
+                                      <TableCell className="font-medium">{item.term}</TableCell>
+                                      <TableCell>{item.schedule}</TableCell>
+                                  </TableRow>
+                              ))}
+                          </TableBody>
+                      </Table>
+                       <p className="text-xs text-muted-foreground mt-4">
+                          Example: A client pays for a full year in November. Your commission for that sale will be paid out in 12 monthly installments from November of this year to October of the next.
+                      </p>
+                  </div>
+                   <div className="md:col-span-2">
+                      <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
+                      <RevenueChart data={dashboardData.commissionHistory} />
+                  </div>
+              </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
         <Card className="overflow-hidden">
@@ -576,7 +579,7 @@ export default function DashboardPage() {
             <CardTitle>Sales Materials</CardTitle>
             <CardDescription>Your toolkit for success.</CardDescription>
           </CardHeader>
-          <div className="relative h-48 w-full">
+          <div className="relative aspect-video w-full">
             <Image
                 src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
                 alt="Sales Materials Preview"
