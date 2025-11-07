@@ -26,8 +26,6 @@ export function useClients(userId?: string) {
 
       try {
         // 1. Find all proposals created by the user using a collectionGroup query.
-        // This is the query that was causing an error before, but it's acceptable here now
-        // because we will fix the security rules to allow it.
         const proposalsQuery = query(
           collectionGroup(firestore, 'proposals'),
           where('userId', '==', targetUserId)
@@ -50,9 +48,10 @@ export function useClients(userId?: string) {
             return;
         }
 
-        // 2. Fetch the client documents in batches.
+        // 2. Fetch the client documents in batches to avoid hitting query limits.
         const clientPromises = [];
         const idsArray = Array.from(clientIds);
+        // Firestore 'in' queries are limited to 30 items
         for (let i = 0; i < idsArray.length; i += 30) {
           const batchIds = idsArray.slice(i, i + 30);
           const clientsQuery = query(collection(firestore, "clients"), where('id', 'in', batchIds));

@@ -29,12 +29,14 @@ export function useProposals(userId?: string): UseProposalsResult {
   useEffect(() => {
     // This effect now depends on the result of the useClients hook.
     const fetchProposalsForClients = async () => {
-      if (clientsAreLoading || !firestore || userClients.length === 0) {
-        if (!clientsAreLoading) {
-           // If clients are loaded but there are none, we can stop loading.
-           setProposals([]);
-           setIsLoading(false);
-        }
+      if (clientsAreLoading || !firestore) {
+        return;
+      }
+      
+      // If there are no clients, there can be no proposals.
+      if (userClients.length === 0) {
+        setProposals([]);
+        setIsLoading(false);
         return;
       }
       
