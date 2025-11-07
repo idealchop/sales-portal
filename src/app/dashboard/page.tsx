@@ -209,7 +209,7 @@ export default function DashboardPage() {
 
     // Recurring Commission: sum of monthly fees for all active clients
     const activeClientsWithSubscription = clients.filter(c => c.status === 'active' && c.subscription);
-    const recurringCommission = activeClientsWithSubscription.reduce((sum, c) => sum + (c.subscription?.amount || 0), 0);
+    const recurringCommission = activeClientsWithSubscription.reduce((sum, c) => sum + (c.subscription?.amount || 0), 0) * 0.03;
 
     // Retention Bonus: clients with anniversaries coming up
     const clientsForRetention = clients
@@ -305,6 +305,7 @@ export default function DashboardPage() {
       { term: 'Quarterly', schedule: '⅓ each month after payment', example: 'e.g., Client pays Nov 1 → Payouts in Nov–Dec–Jan' },
       { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Apr' },
       { term: 'Annual', schedule: 'Spread monthly for 12 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Oct next year' },
+      { term: 'Recurring Commission', schedule: '3% of client payment, paid monthly' },
   ];
   const commissionTiers = [
     { clientType: 'Family Plan', commission: '20%' },
@@ -408,7 +409,7 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent className="p-0 pt-2">
                             <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.recurringCommission)}</div>
-                            <p className="text-xs text-primary-foreground/80">Your stable monthly base income</p>
+                            <p className="text-xs text-primary-foreground/80">Your stable monthly base income (3%)</p>
                              <p className="text-xs text-primary-foreground/80 mt-2 underline">Click to see breakdown</p>
                         </CardContent>
                     </div>
@@ -917,3 +918,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
