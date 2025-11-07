@@ -100,14 +100,14 @@ function AchievementsDialogContent() {
 
     const { unlockedAchievements, availableYears } = useMemo(() => {
         const corporateBonusTiers = [
-            { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
-            { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
-            { target: 10, name: 'Corporate Closer III', bonus: 12000, icon: <Trophy className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
+            { target: 3, name: 'Corporate Closer I', bonus: 2000, icon: <Star className="h-5 w-5" />, color: 'text-yellow-400' },
+            { target: 5, name: 'Corporate Closer II', bonus: 5000, icon: <Star className="h-5 w-5" />, color: 'text-yellow-400' },
+            { target: 10, name: 'Corporate Closer III', bonus: 12000, icon: <Trophy className="h-5 w-5" />, color: 'text-amber-500' },
         ];
         const familyBonusTiers = [
-            { target: 10, name: 'Family Plan Closer I', bonus: 2500, icon: <Star className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
-            { target: 20, name: 'Family Plan Closer II', bonus: 6000, icon: <Trophy className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
-            { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-8 w-8" />, color: 'bg-primary/10 text-primary' },
+            { target: 10, name: 'Family Plan Closer I', bonus: 2500, icon: <Star className="h-5 w-5" />, color: 'text-yellow-400' },
+            { target: 20, name: 'Family Plan Closer II', bonus: 6000, icon: <Trophy className="h-5 w-5" />, color: 'text-amber-500' },
+            { target: 30, name: 'Family Plan Closer III', bonus: 15000, icon: <Award className="h-5 w-5" />, color: 'text-violet-500' },
         ];
         
         if (proposalsLoading || clientsLoading) return { unlockedAchievements: [], availableYears: [] };
@@ -181,7 +181,7 @@ function AchievementsDialogContent() {
     }
 
     return (
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <div className="flex items-start justify-between">
                     <div>
@@ -206,20 +206,23 @@ function AchievementsDialogContent() {
             <div className="space-y-4">
                 <ScrollArea className="h-[60vh] pr-4 -mr-4">
                     {unlockedAchievements.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {unlockedAchievements.map((ach, index) => (
-                                <Card key={index} className="flex flex-col items-center justify-center p-6 text-center space-y-4">
-                                    <div className={cn("flex h-20 w-20 items-center justify-center rounded-full", ach.color)}>
-                                        {ach.icon}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <h3 className="font-semibold text-lg">{ach.name}</h3>
-                                        <p className="text-sm text-muted-foreground">Unlocked: {ach.date}</p>
-                                    </div>
-                                    <Badge variant="secondary" className="text-base font-bold">{currencyFormatter.format(ach.bonus)}</Badge>
-                                </Card>
-                            ))}
-                        </div>
+                       <div className="relative pl-6 after:absolute after:inset-y-0 after:w-px after:bg-border after:left-0">
+                           {unlockedAchievements.map((ach, index) => (
+                               <div key={index} className="grid grid-cols-[auto_1fr] gap-x-6 pb-8">
+                                   <div className={cn("relative", ach.color)}>
+                                        <div className="relative">
+                                            {React.cloneElement(ach.icon as React.ReactElement, { className: "h-6 w-6" })}
+                                            <span className="absolute -top-1 -left-1 h-3 w-3 rounded-full bg-background ring-2 ring-border"></span>
+                                        </div>
+                                   </div>
+                                   <div className="space-y-1">
+                                       <h3 className="font-semibold text-base">{ach.name}</h3>
+                                       <p className="text-sm text-muted-foreground">Unlocked: {ach.date}</p>
+                                        <Badge variant="secondary" className="text-sm font-bold">{currencyFormatter.format(ach.bonus)}</Badge>
+                                   </div>
+                               </div>
+                           ))}
+                       </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full text-center py-16">
                             <Award className="h-12 w-12 text-muted-foreground" />
