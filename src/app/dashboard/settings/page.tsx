@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar as CalendarIcon, Upload, Trash2, User, Lock, Loader2, Edit, X } from "lucide-react";
+import { Calendar as CalendarIcon, Upload, Trash2, User, Lock, Loader2, Edit, X, Copy } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -230,6 +231,13 @@ export default function SettingsPage() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2);
   }
 
+  const handleCopyUid = () => {
+    if (user?.uid) {
+        navigator.clipboard.writeText(user.uid);
+        toast({ title: 'UID Copied!', description: 'Your user ID has been copied to the clipboard.' });
+    }
+  }
+
   if (isUserLoading) {
     return (
       <div className="flex h-[80vh] w-full items-center justify-center">
@@ -416,6 +424,15 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                      <Label>User ID</Label>
+                      <div className="flex items-center">
+                          <Input value={user?.uid ?? 'N/A'} readOnly className="font-mono bg-muted" />
+                          <Button variant="ghost" size="icon" type="button" onClick={handleCopyUid}>
+                              <Copy className="h-4 w-4" />
+                          </Button>
+                      </div>
+                  </div>
                   <FormField
                     control={passwordForm.control}
                     name="currentPassword"
