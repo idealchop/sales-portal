@@ -119,11 +119,11 @@ export default function DashboardPage() {
     const currentQuarterEnd = endOfQuarter(now);
 
     const commissionRates: { [key: string]: number } = {
-        household: 0.20,
-        sme: 0.15,
-        commercial: 0.15,
-        corporate: 0.10,
-        enterprise: 0.10,
+        household: 0.15,
+        sme: 0.10,
+        commercial: 0.08,
+        corporate: 0.08,
+        enterprise: 0.08,
     };
 
     const getCommissionDetails = (proposal: Proposal): { commission: number; rate: number } => {
@@ -309,10 +309,9 @@ export default function DashboardPage() {
       { term: 'Recurring Commission', schedule: '3% of client payment, paid monthly' },
   ];
   const commissionTiers = [
-    { clientType: 'Family Plan', commission: '20%' },
-    { clientType: 'SME', commission: '15%' },
-    { clientType: 'Commercial', commission: '15%' },
-    { clientType: 'Corporate & Enterprise', commission: '10%' },
+    { clientType: 'Family Plan', commission: '15%' },
+    { clientType: 'SME', commission: '10%' },
+    { clientType: 'Commercial & Corporate', commission: '8%' },
   ];
   
   if (proposalsLoading || clientsLoading) {
@@ -919,5 +918,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
