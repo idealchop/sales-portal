@@ -54,7 +54,7 @@ type Plan = {
   liters: string;
   refillFrequency: string;
   inclusions: string[];
-  employees: string; // Represents "People" for household
+  employees: string; // Represents "Persons" for household
   stations: string; // Represents "Gallons" for household
   isRecommended?: boolean;
 };
@@ -155,7 +155,7 @@ const householdPlans: Plan[] = [
         liters: '250 L',
         refillFrequency: '1/week',
         inclusions: [],
-        employees: '1-3 People',
+        employees: '1-3 Persons',
         stations: '~3 Gallons/week',
     },
     {
@@ -165,7 +165,7 @@ const householdPlans: Plan[] = [
         liters: '400 L',
         refillFrequency: '1-2/week',
         inclusions: [],
-        employees: '3-5 People',
+        employees: '3-5 Persons',
         stations: '~5 Gallons/week',
         isRecommended: true,
     },
@@ -503,12 +503,16 @@ function PlansGrid({
         return '5+ Stations';
     }
 
-    const getEmployees = (liters: number) => {
-        // Assuming average 2 liters per employee per day, 22 work days a month
+    const getEmployees = (liters: number, isHousehold: boolean) => {
+        if (isHousehold) {
+            const estimatedPeople = Math.round(liters / (2 * 30)); // Assuming 2L per person per day
+            if (estimatedPeople <= 3) return '1-3 Persons';
+            if (estimatedPeople <= 5) return '3-5 Persons';
+            return '5+ Persons';
+        }
         const estimatedEmployees = Math.round(liters / (2 * 22));
         if (estimatedEmployees < 5) return '< 5';
         if (estimatedEmployees > 500) return '500+';
-        // round to nearest 10
         return `~${Math.round(estimatedEmployees / 10) * 10}`;
     };
 
@@ -551,7 +555,7 @@ function PlansGrid({
         const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household') && (plan.id === 'custom-plan');
         const isDisabled = false;
 
-        let employees = businessSize === 'household' ? plan.employees.replace('Employees', 'People') : plan.employees;
+        let employees = businessSize === 'household' ? plan.employees.replace('Employees', 'Persons') : plan.employees;
         let stations = plan.stations;
         let monthlyFee = plan.monthlyFee;
         let liters = plan.liters;
@@ -559,14 +563,14 @@ function PlansGrid({
         let inclusions = [...plan.inclusions];
 
         if (isCustom && customCalculatedValues) {
-            employees = getEmployees(customCalculatedValues.totalLiters);
+            employees = getEmployees(customCalculatedValues.totalLiters, false);
             stations = getStations(customCalculatedValues.totalLiters);
             monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(customCalculatedValues.totalCost);
             liters = `${customCalculatedValues.totalLiters.toLocaleString()} L`;
         }
         
         if (isOverflow && overflowCalculatedValues) {
-            employees = getEmployees(overflowCalculatedValues.totalLiters);
+            employees = getEmployees(overflowCalculatedValues.totalLiters, false);
             stations = getStations(overflowCalculatedValues.totalLiters);
             // Keep the monthly fee as the fixed top-up, but liters are calculated
             monthlyFee = '₱50,000';
@@ -579,7 +583,7 @@ function PlansGrid({
             const pricePerLiter = businessSize === 'household' ? 2.5 : 3;
             inclusions[0] = `Priced at ₱${pricePerLiter.toFixed(2)} per liter`;
             if (smeCommercialCustomValues) {
-                employees = getEmployees(smeCommercialCustomValues.totalLiters);
+                employees = getEmployees(smeCommercialCustomValues.totalLiters, businessSize === 'household');
                 stations = getStations(smeCommercialCustomValues.totalLiters);
                 monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(smeCommercialCustomValues.totalCost);
                 liters = `${smeCommercialCustomValues.totalLiters.toLocaleString()} L`;
@@ -1160,4 +1164,5 @@ export default function PlansPage() {
     
 
     
+
 
