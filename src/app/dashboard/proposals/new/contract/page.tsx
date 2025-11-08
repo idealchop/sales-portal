@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -609,108 +610,102 @@ function ContractPageContent() {
   
   const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
     if (!finalPlanDetails || !firestore || !user) {
-        toast({
-            variant: "destructive",
-            title: "Missing Information",
-            description: "Cannot save proposal without complete plan details, user session, or Firestore instance.",
-        });
-        return;
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Cannot save proposal without complete plan details, user session, or Firestore instance.",
+      });
+      return;
     }
 
     setIsSaving(true);
-    
     let finalClientId = generatedClientId;
-    
-    if (!finalClientId && !existingClientId) {
-      toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
-      setIsSaving(false);
-      return;
-    }
 
-    if (existingClientId && !finalClientId) {
-        finalClientId = existingClientId;
-    }
-    
-    const proposalId = generatedProposalId;
-    if (!proposalId) {
-      toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
-      setIsSaving(false);
-      return;
-    }
-    
     try {
-        await runTransaction(firestore, async (transaction) => {
-            const clientRef = doc(firestore, 'clients', finalClientId!);
+      // Step 1: Ensure client exists and has userId
+      if (!finalClientId && existingClientId) {
+        finalClientId = existingClientId;
+      }
 
-            if (existingClientId) {
-                 transaction.update(clientRef, { userId: user.uid });
-            } else {
-                const newClientData = {
-                    id: finalClientId,
-                    userId: user.uid,
-                    companyName: companyName,
-                    contactName: contactName,
-                    contactEmail: contactEmail,
-                    contactPhone: contactPhone,
-                    address: address,
-                    clientType: clientType || 'sme',
-                    status: 'pending',
-                    createdAt: serverTimestamp(),
-                };
-                transaction.set(clientRef, newClientData);
-            }
+      if (!finalClientId) {
+        toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
+        setIsSaving(false);
+        return;
+      }
 
-            // Handle Proposal Creation/Update
-            const proposalContentToSave: FinalPlanDetails = {
-                ...finalPlanDetails,
-                clientId: finalClientId!,
-                proposalId: proposalId!,
-                signature,
-            };
+      const clientRef = doc(firestore, 'clients', finalClientId);
 
-            const newProposalData = {
-                id: proposalId,
-                clientId: finalClientId,
-                userId: user.uid,
-                title: proposalContentToSave.summaryTitle,
-                content: JSON.stringify(proposalContentToSave),
-                status: status,
-                amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-            };
+      if (existingClientId) {
+        // This is an existing client, ensure it has the userId before proceeding.
+        await updateDoc(clientRef, { userId: user.uid });
+      } else {
+        // This is a new client, create it.
+        const newClientData = {
+          id: finalClientId,
+          userId: user.uid,
+          companyName: companyName,
+          contactName: contactName,
+          contactEmail: contactEmail,
+          contactPhone: contactPhone,
+          address: address,
+          clientType: clientType || 'sme',
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        };
+        await setDoc(clientRef, newClientData);
+      }
 
-            const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
-            transaction.set(proposalRef, newProposalData, { merge: true });
-        });
-        
-        toast({
-            title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
-            description: `Your proposal for ${companyName} has been successfully saved.`,
-        });
-        router.push('/dashboard/proposals');
+      // Step 2: Create the proposal
+      const proposalId = generatedProposalId;
+      if (!proposalId) {
+        toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
+        setIsSaving(false);
+        return;
+      }
+      
+      const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, clientId: finalClientId, proposalId, signature };
+      const newProposalData = {
+        id: proposalId,
+        clientId: finalClientId,
+        userId: user.uid,
+        title: proposalContentToSave.summaryTitle,
+        content: JSON.stringify(proposalContentToSave),
+        status: status,
+        amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      
+      const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
+      await setDoc(proposalRef, newProposalData, { merge: true });
+
+      toast({
+        title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
+        description: `Your proposal for ${companyName} has been successfully saved.`,
+      });
+      router.push('/dashboard/proposals');
 
     } catch (error) {
-        console.error("Error saving proposal:", error);
-        
-        const permissionError = new FirestorePermissionError({
-          path: `clients/${finalClientId}/proposals/${proposalId}`,
-          operation: 'write', 
-          requestResourceData: 'Sensitive data omitted',
-        });
-        errorEmitter.emit('permission-error', permissionError);
+      console.error("Error saving proposal:", error);
+      const permissionError = new FirestorePermissionError({
+        path: `clients/${finalClientId}/proposals/${generatedProposalId}`,
+        operation: 'write', 
+        requestResourceData: 'Sensitive data omitted',
+      });
+      errorEmitter.emit('permission-error', permissionError);
 
-        if (!(error instanceof FirestorePermissionError)) {
-          toast({
-              variant: "destructive",
-              title: "Save Failed",
-              description: (error as Error).message || "An error occurred while saving the proposal.",
-          });
-        }
+      if (!(error instanceof FirestorePermissionError)) {
+        toast({
+          variant: "destructive",
+          title: "Save Failed",
+          description: (error as Error).message || "An error occurred while saving the proposal.",
+        });
+      }
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
+
 
   const handleReviewAndSignClick = async () => {
     if (!firestore) return;
@@ -718,42 +713,35 @@ function ContractPageContent() {
 
     try {
         await runTransaction(firestore, async (transaction) => {
-            let finalClientId = generatedClientId;
-            let newClientNumber = null;
-
             // --- ALL READS FIRST ---
             const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const proposalCounterSnap = await transaction.get(proposalCounterRef);
-            
-            let clientCounterSnap = null;
             const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-            if (!existingClientId && !finalClientId) {
+            
+            const proposalCounterSnap = await transaction.get(proposalCounterRef);
+            let clientCounterSnap = null;
+            if (!existingClientId && !generatedClientId) {
                 clientCounterSnap = await transaction.get(clientCounterRef);
             }
 
             // --- ALL CALCULATIONS SECOND ---
+            let finalClientId = generatedClientId;
+            let newClientNumber = null;
             if (clientCounterSnap) {
-                newClientNumber = 1;
-                if (clientCounterSnap.exists()) {
-                    newClientNumber = clientCounterSnap.data().currentId + 1;
-                }
+                newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
                 const year = new Date().getFullYear().toString().slice(-2);
                 finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
             }
             
-            let newProposalNumber = 1;
-            if (proposalCounterSnap.exists()) {
-                newProposalNumber = proposalCounterSnap.data().currentId + 1;
-            }
+            const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
             const newProposalId = String(newProposalNumber).padStart(10, '0');
 
             // --- ALL WRITES LAST ---
             if (newClientNumber) {
                 transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                setGeneratedClientId(finalClientId); // Update state after calculations
+                setGeneratedClientId(finalClientId);
             }
             transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-            setGeneratedProposalId(newProposalId); // Update state after calculations
+            setGeneratedProposalId(newProposalId);
         });
 
         setDialogOpen(true);
@@ -1078,3 +1066,6 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+
+    
