@@ -18,10 +18,8 @@ service cloud.firestore {
     }
     
     match /counters/{counterId} {
-      // Allow any authenticated user to read the counter.
       allow read: if isSignedIn();
-      // Only allow transactional writes (create/update) for ID generation.
-      allow write: if isSignedIn() && getAfter(request.path) != null;
+      allow write: if isSignedIn();
     }
 
     match /sales_materials/{materialId} {

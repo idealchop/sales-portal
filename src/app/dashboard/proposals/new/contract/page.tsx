@@ -645,6 +645,7 @@ function ContractPageContent() {
                 if (!clientSnap.exists()) {
                     const newClientData: Partial<Client> & { userId: string; createdAt: any; } = {
                         id: finalClientId,
+                        userId: user.uid,
                         companyName: companyName,
                         contactName: contactName,
                         contactEmail: contactEmail,
@@ -652,7 +653,6 @@ function ContractPageContent() {
                         address: address,
                         clientType: clientType || 'sme',
                         status: 'pending',
-                        userId: user.uid,
                         createdAt: serverTimestamp(),
                     };
                     transaction.set(newClientRef, newClientData);
@@ -719,14 +719,14 @@ function ContractPageContent() {
         if (!existingClientId && !finalClientId) {
             finalClientId = await runTransaction(firestore, async (transaction) => {
                 const counterRef = doc(firestore, 'counters', 'clientCounter');
-                const counterSnap = await transaction.get(counterRef); // Explicit read
+                const counterSnap = await transaction.get(counterRef);
                 let newIdNumber = 1;
                 if (counterSnap.exists()) {
                     newIdNumber = counterSnap.data().currentId + 1;
                 }
                 const year = new Date().getFullYear().toString().slice(-2);
                 const newClientId = `SC${year}${String(newIdNumber).padStart(8, '0')}`;
-                transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
+                transaction.set(counterRef, { currentId: newIdNumber });
                 return newClientId;
             });
             setGeneratedClientId(finalClientId);
@@ -734,13 +734,13 @@ function ContractPageContent() {
 
         const finalProposalId = await runTransaction(firestore, async (transaction) => {
             const counterRef = doc(firestore, 'counters', 'proposalCounter');
-            const counterSnap = await transaction.get(counterRef); // Explicit read
+            const counterSnap = await transaction.get(counterRef);
             let newIdNumber = 1;
             if (counterSnap.exists()) {
                 newIdNumber = counterSnap.data().currentId + 1;
             }
             const newProposalId = String(newIdNumber).padStart(10, '0');
-            transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
+            transaction.set(counterRef, { currentId: newIdNumber });
             return newProposalId;
         });
         setGeneratedProposalId(finalProposalId);
