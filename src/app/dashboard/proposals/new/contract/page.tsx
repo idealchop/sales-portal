@@ -55,7 +55,7 @@ import { PaymentMethods } from '@/components/payment-methods';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import type { Client } from '@/lib/definitions';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc, updateDoc } from 'firebase/firestore';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -469,7 +469,7 @@ function ContractPageContent() {
         return '5+ Persons';
     }
     const estimatedEmployees = Math.round(liters / (2 * 22));
-    if (estimatedEmployees < 5) return '&lt; 5';
+    if (estimatedEmployees < 5) return '< 5';
     if (estimatedEmployees > 500) return '500+';
     return `~${Math.round(estimatedEmployees / 10) * 10}`;
   };
@@ -640,7 +640,7 @@ function ContractPageContent() {
         const newClientRef = doc(firestore, 'clients', finalClientId);
         const clientSnap = await getDoc(newClientRef);
         if (!clientSnap.exists()) {
-          const newClientData: Partial<Client> = {
+          const newClientData: Partial<Client> & { userId: string } = {
             id: finalClientId,
             companyName: companyName,
             contactName: contactName,
@@ -659,7 +659,6 @@ function ContractPageContent() {
               requestResourceData: newClientData,
             });
             errorEmitter.emit('permission-error', permissionError);
-            // Re-throw to stop the chain
             throw permissionError;
           });
         }
@@ -696,7 +695,6 @@ function ContractPageContent() {
                 requestResourceData: newProposalData,
             });
             errorEmitter.emit('permission-error', permissionError);
-            // Re-throw to stop the chain
             throw permissionError;
         });
     };
@@ -719,7 +717,6 @@ function ContractPageContent() {
               description: error.message || "An error occurred while saving the proposal.",
           });
         }
-        // If it's a FirestorePermissionError, the emitter already handled it.
       })
       .finally(() => {
         setIsSaving(false);
@@ -747,7 +744,6 @@ function ContractPageContent() {
             setGeneratedClientId(finalClientId);
         }
 
-        // Always generate a new unique proposal ID
         const finalProposalId = await runTransaction(firestore, async (transaction) => {
             const counterRef = doc(firestore, 'counters', 'proposalCounter');
             const counterSnap = await transaction.get(counterRef);
@@ -755,7 +751,6 @@ function ContractPageContent() {
             if (counterSnap.exists()) {
                 newIdNumber = counterSnap.data().currentId + 1;
             }
-            // Simple sequential ID for proposals
             const newProposalId = String(newIdNumber).padStart(10, '0');
             transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
             return newProposalId;
@@ -803,6 +798,19 @@ function ContractPageContent() {
   const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
   
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
+
+  const clientTypeMap: { [key: string]: string } = {
+    household: 'Family',
+    sme: 'SME',
+    commercial: 'Commercial',
+    corporate: 'Corporate',
+    enterprise: 'Enterprise'
+  };
+
+  const getClientTypeLabel = (type: Client['clientType']) => {
+    if (!type) return 'Employees';
+    return clientTypeMap[type] || 'Employees';
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -858,7 +866,7 @@ function ContractPageContent() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{clientType === 'household' ? 'Family' : 'Employees'}</CardTitle>
+                            <CardTitle className="text-sm font-medium">{getClientTypeLabel(clientType)}</CardTitle>
                             <Building className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
@@ -1072,6 +1080,7 @@ export default function ContractPage() {
 }
 
     
+
 
 
 
