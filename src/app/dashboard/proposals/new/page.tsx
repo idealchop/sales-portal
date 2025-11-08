@@ -161,7 +161,7 @@ export default function NewProposalPage() {
         </div>
 
       <div className="relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm">
-          <div className="p-6 md:p-8 mb-6">
+          <div className="p-6 md:p-8">
             {!clientSelectionType && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <motion.div whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}>
@@ -325,7 +325,7 @@ export default function NewProposalPage() {
                 </div>
               )}
           </div>
-          <div className="relative aspect-[32/9]">
+          <div className="relative aspect-[32/9] mt-6">
             <Image
               src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FBG_Web_v2.png?alt=media&token=e944282b-6f8d-4cdd-8463-eeaf96746522"
               alt="background"
