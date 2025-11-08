@@ -331,5 +331,3 @@ export default function ProfileSetupPage() {
         </Suspense>
     )
 }
-
-    
