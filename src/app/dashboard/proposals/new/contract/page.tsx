@@ -608,7 +608,7 @@ function ContractPageContent() {
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
- const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
+  const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
     if (!finalPlanDetails || !firestore || !user) {
         toast({
             variant: "destructive",
@@ -726,7 +726,7 @@ function ContractPageContent() {
                 }
                 const year = new Date().getFullYear().toString().slice(-2);
                 const newClientId = `SC${year}${String(newIdNumber).padStart(8, '0')}`;
-                transaction.set(counterRef, { currentId: newIdNumber });
+                transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
                 return newClientId;
             });
             setGeneratedClientId(finalClientId);
@@ -740,7 +740,7 @@ function ContractPageContent() {
                 newIdNumber = counterSnap.data().currentId + 1;
             }
             const newProposalId = String(newIdNumber).padStart(10, '0');
-            transaction.set(counterRef, { currentId: newIdNumber });
+            transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
             return newProposalId;
         });
         setGeneratedProposalId(finalProposalId);
@@ -1066,3 +1066,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
