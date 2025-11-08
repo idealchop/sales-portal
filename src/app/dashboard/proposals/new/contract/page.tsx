@@ -54,7 +54,7 @@ import { allPlans, deliveryFrequencies, gallonRotationData } from '../plans/page
 import { PaymentMethods } from '@/components/payment-methods';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import type { Client } from '@/lib/definitions';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc } from 'firebase/firestore';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import jsPDF from 'jspdf';
@@ -608,7 +608,7 @@ function ContractPageContent() {
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
-  const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
+ const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
     if (!finalPlanDetails || !firestore || !user) {
         toast({
             variant: "destructive",
@@ -620,50 +620,65 @@ function ContractPageContent() {
 
     setIsSaving(true);
     
-    try {
-        const finalClientId = generatedClientId;
-
-        if (!finalClientId) {
-            throw new Error("Client ID was not generated. Cannot save proposal.");
+    let finalClientId = generatedClientId;
+    
+    if (!finalClientId) {
+      toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
+      setIsSaving(false);
+      return;
+    }
+    
+    let proposalId = generatedProposalId;
+    if (!proposalId) {
+      toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
+      setIsSaving(false);
+      return;
+    }
+    
+    const handleClientCreation = async () => {
+      if (!existingClientId && finalClientId) {
+        const newClientRef = doc(firestore, 'clients', finalClientId);
+        const clientSnap = await getDoc(newClientRef);
+        if (!clientSnap.exists()) {
+          const newClientData: Partial<Client> = {
+            id: finalClientId,
+            companyName: companyName,
+            contactName: contactName,
+            contactEmail: contactEmail,
+            contactPhone: contactPhone,
+            address: address,
+            clientType: clientType || 'sme',
+            status: 'pending',
+            userId: user.uid,
+          };
+          
+          return setDoc(newClientRef, newClientData).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: newClientRef.path,
+              operation: 'create',
+              requestResourceData: newClientData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            // Re-throw to stop the chain
+            throw permissionError;
+          });
         }
+      }
+      return Promise.resolve();
+    };
 
-        // If it was a new client, create the document now.
-        if (!existingClientId) {
-            const newClientRef = doc(firestore, 'clients', finalClientId);
-            const clientSnap = await getDoc(newClientRef);
-            if (!clientSnap.exists()) {
-                 const newClientData: Partial<Client> = {
-                    id: finalClientId,
-                    companyName: companyName,
-                    contactName: contactName,
-                    contactEmail: contactEmail,
-                    contactPhone: contactPhone,
-                    address: address,
-                    clientType: clientType || 'sme',
-                    status: 'pending',
-                    userId: user.uid, // Add the user's ID
-                };
-                await setDoc(newClientRef, newClientData);
-            }
-        }
-        
-        const proposalId = generatedProposalId;
-        if (!proposalId) {
-             throw new Error("Proposal ID was not generated. Cannot save proposal.");
-        }
-        const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
-
+    const handleProposalCreation = async () => {
         const proposalContentToSave: FinalPlanDetails = {
             ...finalPlanDetails,
-            clientId: finalClientId,
-            proposalId: proposalId,
+            clientId: finalClientId!,
+            proposalId: proposalId!,
             signature,
         };
-        
+
         const newProposalData = {
             id: proposalId,
             clientId: finalClientId,
-            userId: user.uid, // Add the user's ID
+            userId: user.uid,
             title: proposalContentToSave.summaryTitle,
             content: JSON.stringify(proposalContentToSave),
             status: status,
@@ -671,26 +686,44 @@ function ContractPageContent() {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
+
+        const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
         
-        await setDoc(proposalRef, newProposalData, { merge: true });
-        
+        return setDoc(proposalRef, newProposalData, { merge: true }).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: proposalRef.path,
+                operation: 'create',
+                requestResourceData: newProposalData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            // Re-throw to stop the chain
+            throw permissionError;
+        });
+    };
+
+    handleClientCreation()
+      .then(handleProposalCreation)
+      .then(() => {
         toast({
             title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
             description: `Your proposal for ${companyName} has been successfully saved.`,
         });
-        
         router.push('/dashboard/proposals');
-
-    } catch (error: any) {
-        console.error("Error saving proposal:", error);
-        toast({
-            variant: "destructive",
-            title: "Save Failed",
-            description: error.message || "An error occurred while saving the proposal.",
-        });
-    } finally {
+      })
+      .catch((error) => {
+        if (!(error instanceof FirestorePermissionError)) {
+          console.error("Error saving proposal:", error);
+          toast({
+              variant: "destructive",
+              title: "Save Failed",
+              description: error.message || "An error occurred while saving the proposal.",
+          });
+        }
+        // If it's a FirestorePermissionError, the emitter already handled it.
+      })
+      .finally(() => {
         setIsSaving(false);
-    }
+      });
   };
 
   const handleReviewAndSignClick = async () => {
@@ -1039,4 +1072,5 @@ export default function ContractPage() {
 }
 
     
+
 
