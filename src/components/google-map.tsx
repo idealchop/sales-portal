@@ -249,7 +249,7 @@ export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: numb
     };
 
     return (
-        <Wrapper apiKey={apiKey} render={(status) => render(status, wrapperError)} libraries={['geocoding']} onReady={() => handleWrapperStatusChange(Status.SUCCESS)} onError={() => handleWrapperStatusChange(Status.FAILURE)}>
+        <Wrapper apiKey={apiKey} render={(status) => render(status, wrapperError)} libraries={['geocoding']}>
             <MapComponent address={address} zoom={zoom} />
         </Wrapper>
     );

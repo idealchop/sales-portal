@@ -25,6 +25,16 @@ import type { Client } from '@/lib/definitions';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { GoogleMap } from '@/components/google-map';
+
 
 function InputField({
   id,
@@ -286,14 +296,31 @@ export default function NewProposalPage() {
                     />
                   </div>
                    <div className="space-y-2">
-                        <InputField
-                          id="address"
-                          label="Company Address"
-                          icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
-                          placeholder="e.g., 123 Tech Lane, BGC, Taguig"
-                          value={address}
-                          onChange={(e) => setAddress(e.target.value)}
-                        />
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <div className="cursor-pointer">
+                              <InputField
+                                id="address"
+                                label="Company Address"
+                                icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
+                                placeholder="e.g., 123 Tech Lane, BGC, Taguig"
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
+                              />
+                            </div>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-2xl">
+                              <DialogHeader>
+                                  <DialogTitle>Locate Address</DialogTitle>
+                                  <DialogDescription>
+                                      Enter an address to pinpoint the location on the map.
+                                  </DialogDescription>
+                              </DialogHeader>
+                              <div className="h-96 w-full rounded-md overflow-hidden">
+                                  <GoogleMap address={address} />
+                              </div>
+                          </DialogContent>
+                        </Dialog>
                     </div>
                 </div>
               )}
