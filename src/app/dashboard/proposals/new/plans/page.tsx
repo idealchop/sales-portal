@@ -724,7 +724,7 @@ function PlansGrid({
 const businessSizes = [
     { 
         id: 'household' as BusinessSize, 
-        title: 'Family Plan', 
+        title: 'Family', 
         description: 'For families and personal home use.', 
         image: {
             imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FSmartRefill_Individual.png?alt=media&token=090d07c4-848a-4cd6-aab6-f7a5909ea839",
