@@ -505,9 +505,9 @@ function PlansGrid({
     const getEmployees = (liters: number, isHousehold: boolean) => {
         if (isHousehold) {
             const estimatedPeople = Math.round(liters / (2 * 30)); // Assuming 2L per person per day
-            if (estimatedPeople <= 3) return '1-3 Persons';
-            if (estimatedPeople <= 5) return '3-5 Persons';
-            return '5+ Persons';
+            if (estimatedPeople <= 3) return '1-3';
+            if (estimatedPeople <= 5) return '3-5';
+            return '5+';
         }
         const estimatedEmployees = Math.round(liters / (2 * 22));
         if (estimatedEmployees < 5) return '< 5';
@@ -680,7 +680,7 @@ function PlansGrid({
                         <div className="flex justify-between items-center w-full text-sm">
                             <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
                                 {businessSize === 'household' ? <Home className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                                <span className="font-semibold">{employees}</span>
+                                <span className="font-semibold">{employees} {businessSize === 'household' ? 'Persons' : 'Employees'}</span>
                             </div>
                             <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
                                 {businessSize === 'household' ? <GlassWater className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
@@ -1162,3 +1162,5 @@ export default function PlansPage() {
         </div>
     );
 }
+
+    
