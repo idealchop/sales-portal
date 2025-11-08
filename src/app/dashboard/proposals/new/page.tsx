@@ -296,20 +296,25 @@ export default function NewProposalPage() {
                     />
                   </div>
                    <div className="space-y-2">
+                        <Label htmlFor="address">Company Address</Label>
                         <Dialog>
-                          <DialogTrigger asChild>
-                            <div className="cursor-pointer">
-                              <InputField
-                                id="address"
-                                label="Company Address"
-                                icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
-                                placeholder="e.g., 123 Tech Lane, BGC, Taguig"
-                                value={address}
-                                onFocus={(e) => e.target.blur()} // Prevent typing, open dialog on click
-                                readOnly
-                              />
+                            <div className="relative">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <Input
+                                    id="address"
+                                    placeholder="e.g., 123 Tech Lane, BGC, Taguig"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    className="pl-10 pr-10"
+                                />
+                                <DialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
+                                        <MapPin className="h-5 w-5 text-primary" />
+                                    </Button>
+                                </DialogTrigger>
                             </div>
-                          </DialogTrigger>
                           <DialogContent className="sm:max-w-2xl">
                               <DialogHeader>
                                   <DialogTitle>Locate Address</DialogTitle>
