@@ -18,8 +18,7 @@ service cloud.firestore {
     }
     
     match /counters/{counterId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     match /sales_materials/{materialId} {
@@ -29,26 +28,27 @@ service cloud.firestore {
 
     // Commissions can only be read/written by the user they belong to.
     match /commissions/{commissionId} {
-        allow read, write: if isSignedIn() && request.auth.uid == resource.data.userId;
+        allow read, write: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // A user can read/write a client document if they are the owner.
+    // Any signed-in user can read client documents, but only the owner can write.
     match /clients/{clientId} {
-      allow read, update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow update: if isSignedIn() && isOwner(resource.data.userId);
       allow delete: if false;
       
-      // A user can only create a proposal for a client they own.
-      // They can read/update their own proposals.
+      // Any signed-in user can read proposals, but only the owner can write.
       match /proposals/{proposalId} {
-        allow read, update: if isSignedIn() && resource.data.userId == request.auth.uid;
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid;
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+        allow update: if isSignedIn() && isOwner(resource.data.userId);
         allow delete: if false;
       }
       
-      // A user can only read/create remarks for a client they own.
+      // Remarks can be read and created by any signed-in user for any client.
       match /remarks/{remarkId} {
-        allow read, create: if isSignedIn() && get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid;
+        allow read, create: if isSignedIn();
       }
     }
   }
