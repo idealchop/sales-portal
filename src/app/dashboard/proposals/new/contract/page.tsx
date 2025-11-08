@@ -715,32 +715,45 @@ function ContractPageContent() {
   const handleReviewAndSignClick = async () => {
     if (!firestore) return;
     setIsGeneratingIds(true);
-    let finalClientId = generatedClientId;
-    
+
     try {
         await runTransaction(firestore, async (transaction) => {
+            let finalClientId = generatedClientId;
+            let newClientNumber = null;
+
+            // --- ALL READS FIRST ---
+            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+            const proposalCounterSnap = await transaction.get(proposalCounterRef);
+            
+            let clientCounterSnap = null;
+            const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
             if (!existingClientId && !finalClientId) {
-                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                const clientCounterSnap = await transaction.get(clientCounterRef);
-                let newClientNumber = 1;
+                clientCounterSnap = await transaction.get(clientCounterRef);
+            }
+
+            // --- ALL CALCULATIONS SECOND ---
+            if (clientCounterSnap) {
+                newClientNumber = 1;
                 if (clientCounterSnap.exists()) {
                     newClientNumber = clientCounterSnap.data().currentId + 1;
                 }
                 const year = new Date().getFullYear().toString().slice(-2);
                 finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                setGeneratedClientId(finalClientId);
             }
-    
-            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const proposalCounterSnap = await transaction.get(proposalCounterRef);
+            
             let newProposalNumber = 1;
             if (proposalCounterSnap.exists()) {
                 newProposalNumber = proposalCounterSnap.data().currentId + 1;
             }
             const newProposalId = String(newProposalNumber).padStart(10, '0');
+
+            // --- ALL WRITES LAST ---
+            if (newClientNumber) {
+                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                setGeneratedClientId(finalClientId); // Update state after calculations
+            }
             transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-            setGeneratedProposalId(newProposalId);
+            setGeneratedProposalId(newProposalId); // Update state after calculations
         });
 
         setDialogOpen(true);
