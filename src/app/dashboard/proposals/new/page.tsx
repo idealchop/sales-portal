@@ -61,7 +61,6 @@ export default function NewProposalPage() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [clientType, setClientType] = useState<Client['clientType'] | ''>('');
   
   const isNewClient = clientSelectionType === 'new';
 
@@ -78,7 +77,6 @@ export default function NewProposalPage() {
         setContactEmail(client.contactEmail);
         setContactPhone(client.contactPhone || '');
         setAddress(client.address);
-        setClientType(client.clientType || '');
     }
     return client;
   }, [availableClients, selectedClientId]);
@@ -90,7 +88,6 @@ export default function NewProposalPage() {
         setContactEmail(selectedClient.contactEmail);
         setContactPhone(selectedClient.contactPhone || '');
         setAddress(selectedClient.address);
-        setClientType(selectedClient.clientType || '');
     } else if (clientSelectionType === 'new') {
         // Reset fields when switching to "new client"
         setSelectedClientId('');
@@ -99,7 +96,6 @@ export default function NewProposalPage() {
         setContactEmail('');
         setContactPhone('');
         setAddress('');
-        setClientType('');
     }
   }, [clientSelectionType, selectedClient]);
 
@@ -115,8 +111,9 @@ export default function NewProposalPage() {
     params.set('contactEmail', contactEmail);
     params.set('contactPhone', contactPhone);
     params.set('address', address);
-    if (clientType) {
-        params.set('clientType', clientType);
+
+    if (selectedClient?.clientType) {
+        params.set('clientType', selectedClient.clientType);
     }
     
     const baseUrl = clientSelectionType === 'existing'
@@ -128,7 +125,7 @@ export default function NewProposalPage() {
   
   const isNextDisabled = clientSelectionType === 'existing' 
     ? !selectedClientId
-    : (isNewClient && (!companyName || !contactName || !clientType || !contactEmail || !contactPhone || !address));
+    : (isNewClient && (!companyName || !contactName || !contactEmail || !contactPhone || !address));
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
@@ -297,21 +294,6 @@ export default function NewProposalPage() {
                           value={address}
                           onChange={(e) => setAddress(e.target.value)}
                         />
-                    </div>
-                   <div className="space-y-2">
-                      <Label htmlFor="client-type">Client Type</Label>
-                      <Select onValueChange={value => setClientType(value as Client['clientType'])} value={clientType}>
-                          <SelectTrigger id="client-type">
-                              <SelectValue placeholder="Select client type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="household">Family Plan</SelectItem>
-                              <SelectItem value="sme">SME</SelectItem>
-                              <SelectItem value="commercial">Commercial</SelectItem>
-                              <SelectItem value="corporate">Corporate</SelectItem>
-                              <SelectItem value="enterprise">Enterprise</SelectItem>
-                          </SelectContent>
-                      </Select>
                     </div>
                 </div>
               )}

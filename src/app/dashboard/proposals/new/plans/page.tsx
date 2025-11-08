@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -34,7 +33,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle, Home } from 'lucide-react';
+import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle, Home, RefreshCw as RefreshIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Input } from '@/components/ui/input';
@@ -890,21 +889,13 @@ function EnterpriseTypeSelector({
 
 export default function PlansPage() {
     const searchParams = useSearchParams();
-    const clientTypeFromParams = searchParams.get('clientType') as BusinessSize | null;
-
-    const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(clientTypeFromParams);
+    const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [customCalculatedValues, setCustomCalculatedValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
     const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
     const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
     
-    useEffect(() => {
-        if (clientTypeFromParams) {
-            setSelectedSize(clientTypeFromParams);
-        }
-    }, [clientTypeFromParams]);
-
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
         setSelectedEnterpriseType(null); 
@@ -941,10 +932,6 @@ export default function PlansPage() {
     }, []);
 
     const resetSelection = () => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete('clientType');
-        // This is a bit of a trick to update the URL without a full navigation,
-        // but for this flow, a simple state reset is cleaner.
         setSelectedSize(null);
         setSelectedEnterpriseType(null);
         setSelectedPlan(null);
@@ -1019,6 +1006,10 @@ export default function PlansPage() {
         
         const params = new URLSearchParams(searchParams.toString());
         params.set('plan', selectedPlan);
+        
+        if (selectedSize) {
+          params.set('clientType', selectedSize);
+        }
 
         if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
             params.set('liters', customCalculatedValues.totalLiters.toString());
@@ -1047,7 +1038,7 @@ export default function PlansPage() {
             <div>
             <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
             <p className="text-muted-foreground">
-                Step 4: Select a Subscription Plan & Review Inclusions
+                Step 4: Select a Client Type, Choose a Plan & Review Inclusions
             </p>
             </div>
             <div className="flex gap-2">
@@ -1071,7 +1062,7 @@ export default function PlansPage() {
                     </div>
                     {selectedSize && (
                         <Button variant="outline" onClick={resetSelection}>
-                            <RefreshCcw className="mr-2 h-4 w-4" />
+                            <RefreshIcon className="mr-2 h-4 w-4" />
                             Change
                         </Button>
                     )}
@@ -1171,11 +1162,3 @@ export default function PlansPage() {
         </div>
     );
 }
-
-    
-
-    
-
-
-
-
