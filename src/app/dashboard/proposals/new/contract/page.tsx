@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -138,7 +137,7 @@ export function ContractText() {
 
             <ContractSection title="4. Delivery & Refills">
                  <p>
-                    Water is delivered automatically based on usage data or a pre-set refill schedule configured in the Smart Refill™ system. All deliveries are performed by accredited local partner refill stations within the Smart Refill™ network. For operational efficiency and to ensure service reliability, delivery schedules may be adjusted by Smart Refill™, with prior notification to the client.
+                    Water is delivered automatically based on usage data or a pre-set refill schedule configured in the Smart Refill™ system. All deliveries are performed by accredited local partner refill stations within the Smart Refill™ network. For operational efficiency and to ensure service reliability, delivery schedules may be adjusted by Smart Refill™ , with prior notification to the client.
                 </p>
             </ContractSection>
             
@@ -531,7 +530,7 @@ function ContractPageContent() {
         liters: `${finalLiters.toLocaleString()} L`,
         inclusions: planInclusions,
         employees: getEmployees(finalLiters, clientType === 'household'),
-        stations: clientType === 'household' ? plan.stations : getStations(finalLiters),
+        stations: clientType === 'household' ? getStations(finalLiters) : finalPlan.stations,
     }
   }, [plan, additionalLiters, clientType]);
 
@@ -639,30 +638,27 @@ function ContractPageContent() {
         await runTransaction(firestore, async (transaction) => {
             const clientRef = doc(firestore, 'clients', finalClientId);
 
+            // If it's an existing client, ensure it has the userId before proceeding
             if (existingClientId) {
-                // If it's an existing client, ensure it has the userId before proceeding
                 transaction.update(clientRef, { userId: user.uid });
             } else {
                 // If it's a new client, create it with all necessary details
-                const clientSnap = await transaction.get(clientRef);
-                if (!clientSnap.exists()) {
-                    const newClientData = {
-                        id: finalClientId,
-                        userId: user.uid,
-                        companyName: companyName,
-                        contactName: contactName,
-                        contactEmail: contactEmail,
-                        contactPhone: contactPhone,
-                        address: address,
-                        clientType: clientType || 'sme',
-                        status: 'pending',
-                        createdAt: serverTimestamp(),
-                    };
-                    transaction.set(clientRef, newClientData);
-                }
+                const newClientData = {
+                    id: finalClientId,
+                    userId: user.uid,
+                    companyName: companyName,
+                    contactName: contactName,
+                    contactEmail: contactEmail,
+                    contactPhone: contactPhone,
+                    address: address,
+                    clientType: clientType || 'sme',
+                    status: 'pending',
+                    createdAt: serverTimestamp(),
+                };
+                transaction.set(clientRef, newClientData);
             }
 
-            // 2. Handle Proposal Creation/Update
+            // Handle Proposal Creation/Update
             const proposalContentToSave: FinalPlanDetails = {
                 ...finalPlanDetails,
                 clientId: finalClientId!,
@@ -715,38 +711,35 @@ function ContractPageContent() {
   };
 
   const handleReviewAndSignClick = async () => {
+    if (!firestore) return;
     setIsGeneratingIds(true);
     let finalClientId = generatedClientId;
     
     try {
-        if (!existingClientId && !finalClientId) {
-            finalClientId = await runTransaction(firestore, async (transaction) => {
-                const counterRef = doc(firestore, 'counters', 'clientCounter');
-                const counterSnap = await transaction.get(counterRef);
-                let newIdNumber = 1;
-                if (counterSnap.exists()) {
-                    newIdNumber = counterSnap.data().currentId + 1;
+        await runTransaction(firestore, async (transaction) => {
+            if (!existingClientId && !finalClientId) {
+                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                const clientCounterSnap = await transaction.get(clientCounterRef);
+                let newClientNumber = 1;
+                if (clientCounterSnap.exists()) {
+                    newClientNumber = clientCounterSnap.data().currentId + 1;
                 }
                 const year = new Date().getFullYear().toString().slice(-2);
-                const newClientId = `SC${year}${String(newIdNumber).padStart(8, '0')}`;
-                transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
-                return newClientId;
-            });
-            setGeneratedClientId(finalClientId);
-        }
-
-        const finalProposalId = await runTransaction(firestore, async (transaction) => {
-            const counterRef = doc(firestore, 'counters', 'proposalCounter');
-            const counterSnap = await transaction.get(counterRef);
-            let newIdNumber = 1;
-            if (counterSnap.exists()) {
-                newIdNumber = counterSnap.data().currentId + 1;
+                finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                setGeneratedClientId(finalClientId);
             }
-            const newProposalId = String(newIdNumber).padStart(10, '0');
-            transaction.set(counterRef, { currentId: newIdNumber }, { merge: true });
-            return newProposalId;
+    
+            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+            const proposalCounterSnap = await transaction.get(proposalCounterRef);
+            let newProposalNumber = 1;
+            if (proposalCounterSnap.exists()) {
+                newProposalNumber = proposalCounterSnap.data().currentId + 1;
+            }
+            const newProposalId = String(newProposalNumber).padStart(10, '0');
+            transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+            setGeneratedProposalId(newProposalId);
         });
-        setGeneratedProposalId(finalProposalId);
 
         setDialogOpen(true);
 
@@ -857,11 +850,11 @@ function ContractPageContent() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{getClientTypeLabel(clientType)}</CardTitle>
+                            <CardTitle className="text-sm font-medium">Water Stations</CardTitle>
                             <Building className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
-                             <div className="text-2xl font-bold">{finalPlan.employees}</div>
+                             <div className="text-2xl font-bold">{finalPlan.stations}</div>
                         </CardContent>
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
@@ -1069,3 +1062,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
