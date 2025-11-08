@@ -486,7 +486,7 @@ export function DashboardHeader() {
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="overflow-hidden rounded-full">
                 <Avatar className="h-9 w-9">
-                    <AvatarImage src={user?.photoURL ?? `https://picsum.photos/seed/${user?.uid}/32/32`} alt="User Avatar" />
+                    <AvatarImage src={user?.photoURL ?? undefined} alt="User Avatar" />
                     <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                 </Avatar>
               </Button>
@@ -495,7 +495,7 @@ export function DashboardHeader() {
                 <div className="p-4">
                     <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12">
-                            <AvatarImage src={user?.photoURL ?? `https://picsum.photos/seed/${user?.uid}/48/48`} alt="User Avatar" />
+                            <AvatarImage src={user?.photoURL ?? undefined} alt="User Avatar" />
                             <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                         </Avatar>
                         <div>
