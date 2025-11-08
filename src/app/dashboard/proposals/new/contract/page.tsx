@@ -652,7 +652,7 @@ function ContractPageContent() {
                         address: address,
                         clientType: clientType || 'sme',
                         status: 'pending',
-                        userId: user.uid, // Add this line
+                        userId: user.uid,
                         createdAt: serverTimestamp(),
                     };
                     transaction.set(newClientRef, newClientData);
@@ -692,14 +692,10 @@ function ContractPageContent() {
     } catch (error) {
         console.error("Error saving proposal:", error);
         
-        // This is a generic catch block. We create a contextual error for the LLM.
         const permissionError = new FirestorePermissionError({
           path: `clients/${finalClientId}/proposals/${proposalId}`,
-          operation: 'write', // Use 'write' for transactions as it can be create or update
-          requestResourceData: { 
-            clientData: '...', // Can add client data if needed
-            proposalData: '...' // Can add proposal data if needed
-          },
+          operation: 'write', 
+          requestResourceData: 'Sensitive data omitted',
         });
         errorEmitter.emit('permission-error', permissionError);
 
@@ -723,7 +719,7 @@ function ContractPageContent() {
         if (!existingClientId && !finalClientId) {
             finalClientId = await runTransaction(firestore, async (transaction) => {
                 const counterRef = doc(firestore, 'counters', 'clientCounter');
-                const counterSnap = await transaction.get(counterRef);
+                const counterSnap = await transaction.get(counterRef); // Explicit read
                 let newIdNumber = 1;
                 if (counterSnap.exists()) {
                     newIdNumber = counterSnap.data().currentId + 1;
@@ -738,7 +734,7 @@ function ContractPageContent() {
 
         const finalProposalId = await runTransaction(firestore, async (transaction) => {
             const counterRef = doc(firestore, 'counters', 'proposalCounter');
-            const counterSnap = await transaction.get(counterRef);
+            const counterSnap = await transaction.get(counterRef); // Explicit read
             let newIdNumber = 1;
             if (counterSnap.exists()) {
                 newIdNumber = counterSnap.data().currentId + 1;
@@ -792,7 +788,7 @@ function ContractPageContent() {
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
 
   const clientTypeMap: { [key: string]: string } = {
-    household: 'Family Plan',
+    household: 'Family',
     sme: 'SME',
     commercial: 'Commercial',
     corporate: 'Corporate',
@@ -858,7 +854,7 @@ function ContractPageContent() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{clientTypeMap[clientType || 'sme']}</CardTitle>
+                            <CardTitle className="text-sm font-medium">{getClientTypeLabel(clientType)}</CardTitle>
                             <Building className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
@@ -1070,14 +1066,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
-
-
-
-
-
-
-
-
-    
