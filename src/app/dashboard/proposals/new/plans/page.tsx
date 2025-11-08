@@ -555,7 +555,7 @@ function PlansGrid({
         const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household') && (plan.id === 'custom-plan');
         const isDisabled = false;
 
-        let employees = businessSize === 'household' ? plan.employees.replace('Employees', 'Persons') : plan.employees;
+        let employees = plan.employees;
         let stations = plan.stations;
         let monthlyFee = plan.monthlyFee;
         let liters = plan.liters;
@@ -1164,5 +1164,6 @@ export default function PlansPage() {
     
 
     
+
 
 

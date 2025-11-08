@@ -464,9 +464,9 @@ function ContractPageContent() {
   const getEmployees = (liters: number, isHousehold: boolean) => {
     if (isHousehold) {
         const estimatedPeople = Math.round(liters / (2 * 30)); // Assuming 2L per person per day
-        if (estimatedPeople <= 3) return '1-3 People';
-        if (estimatedPeople <= 5) return '3-5 People';
-        return '5+ People';
+        if (estimatedPeople <= 3) return '1-3 Persons';
+        if (estimatedPeople <= 5) return '3-5 Persons';
+        return '5+ Persons';
     }
     const estimatedEmployees = Math.round(liters / (2 * 22));
     if (estimatedEmployees < 5) return '&lt; 5';
@@ -1072,6 +1072,7 @@ export default function ContractPage() {
 }
 
     
+
 
 
 
