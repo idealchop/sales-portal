@@ -305,7 +305,8 @@ export default function NewProposalPage() {
                                 icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
                                 placeholder="e.g., 123 Tech Lane, BGC, Taguig"
                                 value={address}
-                                onChange={(e) => setAddress(e.target.value)}
+                                onFocus={(e) => e.target.blur()} // Prevent typing, open dialog on click
+                                readOnly
                               />
                             </div>
                           </DialogTrigger>
@@ -313,11 +314,19 @@ export default function NewProposalPage() {
                               <DialogHeader>
                                   <DialogTitle>Locate Address</DialogTitle>
                                   <DialogDescription>
-                                      Enter an address to pinpoint the location on the map.
+                                      Enter an address to search, or drag the pin to the exact location.
                                   </DialogDescription>
                               </DialogHeader>
+                               <InputField
+                                id="address-search"
+                                label="Search Address"
+                                icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
+                                placeholder="Type to search..."
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
+                              />
                               <div className="h-96 w-full rounded-md overflow-hidden">
-                                  <GoogleMap address={address} />
+                                  <GoogleMap address={address} onAddressChange={setAddress} />
                               </div>
                           </DialogContent>
                         </Dialog>

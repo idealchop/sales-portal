@@ -172,54 +172,74 @@ const render = (status: Status, error?: Error) => {
 function MapComponent({
   address,
   zoom,
+  onAddressChange,
 }: {
   address: string;
   zoom: number;
+  onAddressChange: (address: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map>();
+  const [marker, setMarker] = useState<google.maps.Marker>();
 
   useEffect(() => {
-    const geocodeAddress = async () => {
-      // The Geocoder is now guaranteed to be available here
-      const geocoder = new google.maps.Geocoder();
+    const geocodeAddress = (geocoder: google.maps.Geocoder, newMap: google.maps.Map, newMarker: google.maps.Marker) => {
       geocoder.geocode({ address }, (results, status) => {
         if (status === "OK" && results && results[0]) {
           const location = results[0].geometry.location;
-          const newCenter = { lat: location.lat(), lng: location.lng() };
-          if (ref.current && !map) {
-            const newMap = new window.google.maps.Map(ref.current, {
-              center: newCenter,
-              zoom,
-              styles: mapStyles,
-              mapId: "SMART_REFILL_MAP",
-            });
-            setMap(newMap);
-            new google.maps.Marker({
-              position: newCenter,
-              map: newMap,
-            });
-          } else if (map) {
-            map.setCenter(newCenter);
-          }
+          newMap.setCenter(location);
+          newMarker.setPosition(location);
         } else {
-          console.error(
-            `Geocode was not successful for the following reason: ${status}`
-          );
+          console.error(`Geocode was not successful for the following reason: ${status}`);
         }
       });
     };
     
-    // Check if google.maps and Geocoder are available before calling
-    if (window.google && window.google.maps && window.google.maps.Geocoder) {
-        geocodeAddress();
+    if (ref.current && !map) {
+      const initialCenter = { lat: 14.5995, lng: 120.9842 }; // Default to Manila
+      const newMap = new window.google.maps.Map(ref.current, {
+        center: initialCenter,
+        zoom,
+        styles: mapStyles,
+        mapId: "SMART_REFILL_MAP",
+      });
+      const newMarker = new google.maps.Marker({
+        position: initialCenter,
+        map: newMap,
+        draggable: true,
+      });
+
+      const geocoder = new google.maps.Geocoder();
+      
+      newMarker.addListener('dragend', () => {
+          const newPosition = newMarker.getPosition();
+          if (newPosition) {
+              geocoder.geocode({ location: newPosition }, (results, status) => {
+                  if (status === "OK" && results && results[0]) {
+                      onAddressChange(results[0].formatted_address);
+                  } else {
+                      console.error(`Reverse geocode failed: ${status}`);
+                  }
+              })
+          }
+      });
+
+      setMap(newMap);
+      setMarker(newMarker);
+
+      if (address) {
+        geocodeAddress(geocoder, newMap, newMarker);
+      }
+    } else if (map && marker && address) {
+        const geocoder = new google.maps.Geocoder();
+        geocodeAddress(geocoder, map, marker);
     }
-  }, [address, zoom, map]);
+  }, [address, zoom, map, marker, onAddressChange]);
 
   return <div ref={ref} style={{ width: "100%", height: "100%" }} />;
 }
 
-export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: number }) {
+export function GoogleMap({ address, onAddressChange, zoom = 15 }: { address: string, onAddressChange: (address: string) => void, zoom?: number }) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const [wrapperError, setWrapperError] = useState<Error | undefined>(undefined);
     
@@ -250,7 +270,7 @@ export function GoogleMap({ address, zoom = 15 }: { address: string, zoom?: numb
 
     return (
         <Wrapper apiKey={apiKey} render={(status) => render(status, wrapperError)} libraries={['geocoding']}>
-            <MapComponent address={address} zoom={zoom} />
+            <MapComponent address={address} zoom={zoom} onAddressChange={onAddressChange} />
         </Wrapper>
     );
 }
