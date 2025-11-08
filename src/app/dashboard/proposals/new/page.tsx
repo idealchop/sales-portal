@@ -166,12 +166,12 @@ export default function NewProposalPage() {
                     </motion.div>
                      <motion.div whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}>
                         <Card 
-                            className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-shadow duration-300 h-full bg-card/50 border-border/50"
+                            className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 h-full bg-gradient-to-br from-primary to-[#3ab7b1] text-primary-foreground"
                             onClick={() => setClientSelectionType('existing')}
                         >
-                            <Users className="h-12 w-12 text-primary mb-4" />
+                            <Users className="h-12 w-12 text-primary-foreground mb-4" />
                             <CardTitle>Use Existing Client</CardTitle>
-                            <CardDescription>Select from your current list of clients.</CardDescription>
+                            <CardDescription className="text-primary-foreground/80">Select from your current list of clients.</CardDescription>
                         </Card>
                     </motion.div>
                 </div>
