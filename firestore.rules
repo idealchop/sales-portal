@@ -37,9 +37,11 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow delete: if false;
       
-      // Proposals can only be read or written by their owner.
+      // A user can only create a proposal for a client they own.
+      // They can read/update their own proposals.
       match /proposals/{proposalId} {
-        allow read, create, update: if isSignedIn() && request.auth.uid == resource.data.userId;
+        allow read, update: if isSignedIn() && resource.data.userId == request.auth.uid;
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid;
         allow delete: if false;
       }
       
