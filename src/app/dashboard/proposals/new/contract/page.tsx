@@ -635,92 +635,84 @@ function ContractPageContent() {
       return;
     }
     
-    const handleClientCreation = async () => {
-      if (!existingClientId && finalClientId) {
-        const newClientRef = doc(firestore, 'clients', finalClientId);
-        const clientSnap = await getDoc(newClientRef);
-        if (!clientSnap.exists()) {
-          const newClientData: Partial<Client> & { userId: string } = {
-            id: finalClientId,
-            companyName: companyName,
-            contactName: contactName,
-            contactEmail: contactEmail,
-            contactPhone: contactPhone,
-            address: address,
-            clientType: clientType || 'sme',
-            status: 'pending',
-            userId: user.uid, // Add the user ID here
-          };
-          
-          return setDoc(newClientRef, newClientData).catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-              path: newClientRef.path,
-              operation: 'create',
-              requestResourceData: newClientData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            throw permissionError;
-          });
-        }
-      }
-      return Promise.resolve();
-    };
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            // 1. Handle Client Creation (if new)
+            if (!existingClientId && finalClientId) {
+                const newClientRef = doc(firestore, 'clients', finalClientId);
+                const clientSnap = await transaction.get(newClientRef);
 
-    const handleProposalCreation = async () => {
-        const proposalContentToSave: FinalPlanDetails = {
-            ...finalPlanDetails,
-            clientId: finalClientId!,
-            proposalId: proposalId!,
-            signature,
-        };
+                if (!clientSnap.exists()) {
+                    const newClientData: Partial<Client> & { userId: string; createdAt: any; } = {
+                        id: finalClientId,
+                        companyName: companyName,
+                        contactName: contactName,
+                        contactEmail: contactEmail,
+                        contactPhone: contactPhone,
+                        address: address,
+                        clientType: clientType || 'sme',
+                        status: 'pending',
+                        userId: user.uid,
+                        createdAt: serverTimestamp(),
+                    };
+                    transaction.set(newClientRef, newClientData);
+                }
+            }
 
-        const newProposalData = {
-            id: proposalId,
-            clientId: finalClientId,
-            userId: user.uid,
-            title: proposalContentToSave.summaryTitle,
-            content: JSON.stringify(proposalContentToSave),
-            status: status,
-            amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        };
+            // 2. Handle Proposal Creation/Update
+            const proposalContentToSave: FinalPlanDetails = {
+                ...finalPlanDetails,
+                clientId: finalClientId!,
+                proposalId: proposalId!,
+                signature,
+            };
 
-        const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
-        
-        return setDoc(proposalRef, newProposalData, { merge: true }).catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: proposalRef.path,
-                operation: 'create',
-                requestResourceData: newProposalData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            throw permissionError;
+            const newProposalData = {
+                id: proposalId,
+                clientId: finalClientId,
+                userId: user.uid,
+                title: proposalContentToSave.summaryTitle,
+                content: JSON.stringify(proposalContentToSave),
+                status: status,
+                amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            };
+
+            const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
+            transaction.set(proposalRef, newProposalData, { merge: true });
         });
-    };
-
-    handleClientCreation()
-      .then(handleProposalCreation)
-      .then(() => {
+        
         toast({
             title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
             description: `Your proposal for ${companyName} has been successfully saved.`,
         });
         router.push('/dashboard/proposals');
-      })
-      .catch((error) => {
+
+    } catch (error) {
+        console.error("Error saving proposal:", error);
+        
+        // This is a generic catch block. We create a contextual error for the LLM.
+        const permissionError = new FirestorePermissionError({
+          path: `clients/${finalClientId}/proposals/${proposalId}`,
+          operation: 'write', // Use 'write' for transactions as it can be create or update
+          requestResourceData: { 
+            clientData: '...', // Can add client data if needed
+            proposalData: '...' // Can add proposal data if needed
+          },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+
         if (!(error instanceof FirestorePermissionError)) {
-          console.error("Error saving proposal:", error);
           toast({
               variant: "destructive",
               title: "Save Failed",
-              description: error.message || "An error occurred while saving the proposal.",
+              description: (error as Error).message || "An error occurred while saving the proposal.",
           });
         }
-      })
-      .finally(() => {
+    } finally {
         setIsSaving(false);
-      });
+    }
   };
 
   const handleReviewAndSignClick = async () => {
@@ -867,7 +859,7 @@ function ContractPageContent() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{getClientTypeLabel(clientType)}</CardTitle>
+                            <CardTitle className="text-sm font-medium">{clientTypeMap[clientType || 'sme']}</CardTitle>
                             <Building className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
