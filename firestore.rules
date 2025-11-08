@@ -46,8 +46,9 @@ service cloud.firestore {
         allow delete: if false;
       }
       
+      // A user can only read/create remarks for a client they own.
       match /remarks/{remarkId} {
-        allow read, create: if isSignedIn();
+        allow read, create: if isSignedIn() && get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid;
       }
     }
   }
