@@ -43,7 +43,7 @@ const paymentOptions = [
   {
     name: 'Maya',
     description: 'Pay with Maya',
-    logo: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FPayments%2Fwaterstations_paymaya.png?alt=media&token=d8572000-937b-40d7-999a-108b5017ab02',
+    logo: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FPayments%2Fwaterstations_Maya.png?alt=media&token=1fd59b11-8b0c-4a6a-bcf8-4a6f38bdb9c4',
     qrCode: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2Fqr-placeholder.png?alt=media&token=d1c8c511-e674-4b08-8f85-3b7722909404',
     accountDetails: {
         'Account Name': 'River Tech Group Inc.',
