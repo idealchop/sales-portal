@@ -652,7 +652,7 @@ function ContractPageContent() {
                         address: address,
                         clientType: clientType || 'sme',
                         status: 'pending',
-                        userId: user.uid,
+                        userId: user.uid, // Add this line
                         createdAt: serverTimestamp(),
                     };
                     transaction.set(newClientRef, newClientData);
@@ -792,7 +792,7 @@ function ContractPageContent() {
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
 
   const clientTypeMap: { [key: string]: string } = {
-    household: 'Family',
+    household: 'Family Plan',
     sme: 'SME',
     commercial: 'Commercial',
     corporate: 'Corporate',
@@ -801,7 +801,6 @@ function ContractPageContent() {
 
   const getClientTypeLabel = (type: Client['clientType']) => {
     if (!type) return 'Employees'; // Default label
-    if (type === 'household') return 'Persons';
     return clientTypeMap[type] || 'Employees';
   };
 
