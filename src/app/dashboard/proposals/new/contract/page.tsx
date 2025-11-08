@@ -649,7 +649,7 @@ function ContractPageContent() {
             address: address,
             clientType: clientType || 'sme',
             status: 'pending',
-            userId: user.uid,
+            userId: user.uid, // Add the user ID here
           };
           
           return setDoc(newClientRef, newClientData).catch(async (serverError) => {
