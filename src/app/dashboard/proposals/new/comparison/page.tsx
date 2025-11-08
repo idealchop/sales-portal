@@ -16,7 +16,7 @@ const comparisonData = [
   {
     aspect: 'Pricing Structure',
     traditional: 'Pay per gallon, with prices ranging from ₱30 to ₱100 each, depending on the business location.',
-    smartRefill: 'Pay a fixed monthly fee based on liters (₱1.90–₱2.50/L), predictable and budget-friendly.',
+    smartRefill: 'Pay a fixed monthly fee based on liters (₱2.50–₱3.00/L), predictable and budget-friendly.',
     advantage: '🧾 Predictable billing — easier budgeting for clients.',
   },
   {
