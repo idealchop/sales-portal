@@ -622,7 +622,7 @@ function ContractPageContent() {
     let finalClientId = generatedClientId;
 
     try {
-      // Step 1: Ensure client exists and has userId
+      // Step 1: Ensure client ID is present
       if (!finalClientId && existingClientId) {
         finalClientId = existingClientId;
       }
@@ -635,11 +635,10 @@ function ContractPageContent() {
 
       const clientRef = doc(firestore, 'clients', finalClientId);
 
+      // Step 2: Create or update the client document *first*.
       if (existingClientId) {
-        // This is an existing client, ensure it has the userId before proceeding.
         await updateDoc(clientRef, { userId: user.uid });
       } else {
-        // This is a new client, create it.
         const newClientData = {
           id: finalClientId,
           userId: user.uid,
@@ -654,8 +653,8 @@ function ContractPageContent() {
         };
         await setDoc(clientRef, newClientData);
       }
-
-      // Step 2: Create the proposal
+      
+      // Step 3: Now that client exists, create the proposal.
       const proposalId = generatedProposalId;
       if (!proposalId) {
         toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
@@ -718,18 +717,22 @@ function ContractPageContent() {
             const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
             
             const proposalCounterSnap = await transaction.get(proposalCounterRef);
-            let clientCounterSnap = null;
+            let clientCounterSnap;
             if (!existingClientId && !generatedClientId) {
                 clientCounterSnap = await transaction.get(clientCounterRef);
             }
 
             // --- ALL CALCULATIONS SECOND ---
             let finalClientId = generatedClientId;
-            let newClientNumber = null;
-            if (clientCounterSnap) {
-                newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
+            let newClientNumber;
+            if (clientCounterSnap && clientCounterSnap.exists()) {
+                newClientNumber = clientCounterSnap.data().currentId + 1;
                 const year = new Date().getFullYear().toString().slice(-2);
                 finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+            } else if (clientCounterSnap) { // It's a new client, but counter doc doesn't exist
+                 newClientNumber = 1;
+                 const year = new Date().getFullYear().toString().slice(-2);
+                 finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
             }
             
             const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
@@ -1068,4 +1071,3 @@ export default function ContractPage() {
 }
 
 
-    
