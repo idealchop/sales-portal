@@ -808,7 +808,8 @@ function ContractPageContent() {
   };
 
   const getClientTypeLabel = (type: Client['clientType']) => {
-    if (!type) return 'Employees';
+    if (!type) return 'Employees'; // Default label
+    if (type === 'household') return 'Persons';
     return clientTypeMap[type] || 'Employees';
   };
 
@@ -1080,6 +1081,7 @@ export default function ContractPage() {
 }
 
     
+
 
 
 
