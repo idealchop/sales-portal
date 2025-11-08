@@ -5,6 +5,12 @@ import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "./ui/skeleton";
 
+export type MapMarker = {
+    position: google.maps.LatLngLiteral;
+    title: string;
+    icon?: string;
+};
+
 const mapStyles = [
     {
         "featureType": "all",
@@ -173,28 +179,34 @@ function MapComponent({
   address,
   zoom,
   onAddressChange,
+  additionalMarkers = [],
 }: {
   address: string;
   zoom: number;
   onAddressChange: (address: string) => void;
+  additionalMarkers?: MapMarker[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map>();
-  const [marker, setMarker] = useState<google.maps.Marker>();
+  const [mainMarker, setMainMarker] = useState<google.maps.Marker>();
+  const [otherMarkers, setOtherMarkers] = useState<google.maps.Marker[]>([]);
 
   useEffect(() => {
-    const geocodeAddress = (geocoder: google.maps.Geocoder, newMap: google.maps.Map, newMarker: google.maps.Marker) => {
+    // Function to geocode and center the map
+    const geocodeAddress = (geocoder: google.maps.Geocoder, newMap: google.maps.Map, markerToUpdate: google.maps.Marker) => {
+      if (!address) return;
       geocoder.geocode({ address }, (results, status) => {
         if (status === "OK" && results && results[0]) {
           const location = results[0].geometry.location;
           newMap.setCenter(location);
-          newMarker.setPosition(location);
+          markerToUpdate.setPosition(location);
         } else {
           console.error(`Geocode was not successful for the following reason: ${status}`);
         }
       });
     };
-    
+
+    // Initialize map and main marker
     if (ref.current && !map) {
       const initialCenter = { lat: 14.5995, lng: 120.9842 }; // Default to Manila
       const newMap = new window.google.maps.Map(ref.current, {
@@ -203,43 +215,80 @@ function MapComponent({
         styles: mapStyles,
         mapId: "SMART_REFILL_MAP",
       });
-      const newMarker = new google.maps.Marker({
+      const geocoder = new google.maps.Geocoder();
+
+      const newMainMarker = new google.maps.Marker({
         position: initialCenter,
         map: newMap,
         draggable: true,
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: "#007bff",
+            fillOpacity: 1,
+            strokeColor: "white",
+            strokeWeight: 2,
+        },
+        zIndex: 10
       });
 
-      const geocoder = new google.maps.Geocoder();
-      
-      newMarker.addListener('dragend', () => {
-          const newPosition = newMarker.getPosition();
-          if (newPosition) {
-              geocoder.geocode({ location: newPosition }, (results, status) => {
-                  if (status === "OK" && results && results[0]) {
-                      onAddressChange(results[0].formatted_address);
-                  } else {
-                      console.error(`Reverse geocode failed: ${status}`);
-                  }
-              })
-          }
+      newMainMarker.addListener('dragend', () => {
+        const newPosition = newMainMarker.getPosition();
+        if (newPosition) {
+          geocoder.geocode({ location: newPosition }, (results, status) => {
+            if (status === "OK" && results && results[0]) {
+              onAddressChange(results[0].formatted_address);
+            } else {
+              console.error(`Reverse geocode failed: ${status}`);
+            }
+          });
+        }
       });
 
       setMap(newMap);
-      setMarker(newMarker);
+      setMainMarker(newMainMarker);
 
       if (address) {
-        geocodeAddress(geocoder, newMap, newMarker);
+        geocodeAddress(geocoder, newMap, newMainMarker);
       }
-    } else if (map && marker && address) {
-        const geocoder = new google.maps.Geocoder();
-        geocodeAddress(geocoder, map, marker);
+    } else if (map && mainMarker && address) {
+      const geocoder = new google.maps.Geocoder();
+      geocodeAddress(geocoder, map, mainMarker);
     }
-  }, [address, zoom, map, marker, onAddressChange]);
+  }, [address, zoom, map, mainMarker, onAddressChange]);
+
+  // Handle additional markers
+  useEffect(() => {
+    if (map) {
+      // Clear old markers
+      otherMarkers.forEach(marker => marker.setMap(null));
+
+      const newMarkers = additionalMarkers.map(markerInfo => {
+        return new google.maps.Marker({
+          position: markerInfo.position,
+          map: map,
+          title: markerInfo.title,
+          icon: markerInfo.icon,
+        });
+      });
+      setOtherMarkers(newMarkers);
+    }
+  }, [map, additionalMarkers]); // Rerun when additionalMarkers change
 
   return <div ref={ref} style={{ width: "100%", height: "100%" }} />;
 }
 
-export function GoogleMap({ address, onAddressChange, zoom = 15 }: { address: string, onAddressChange: (address: string) => void, zoom?: number }) {
+export function GoogleMap({
+  address,
+  onAddressChange,
+  zoom = 15,
+  additionalMarkers,
+}: {
+  address: string,
+  onAddressChange: (address: string) => void,
+  zoom?: number,
+  additionalMarkers?: MapMarker[],
+}) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const [wrapperError, setWrapperError] = useState<Error | undefined>(undefined);
     
@@ -269,8 +318,13 @@ export function GoogleMap({ address, onAddressChange, zoom = 15 }: { address: st
     };
 
     return (
-        <Wrapper apiKey={apiKey} render={(status) => render(status, wrapperError)} libraries={['geocoding']}>
-            <MapComponent address={address} zoom={zoom} onAddressChange={onAddressChange} />
+        <Wrapper apiKey={apiKey} render={(status) => render(status, wrapperError)} libraries={['geocoding', 'marker']}>
+            <MapComponent 
+                address={address} 
+                zoom={zoom} 
+                onAddressChange={onAddressChange}
+                additionalMarkers={additionalMarkers}
+            />
         </Wrapper>
     );
 }

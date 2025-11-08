@@ -12,6 +12,7 @@ import {
   MapPin,
   PlusCircle,
   ChevronLeft,
+  Map,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { GoogleMap } from '@/components/google-map';
+import { waterStations } from '@/lib/water-stations';
 
 
 function InputField({
@@ -136,6 +138,12 @@ export default function NewProposalPage() {
   const isNextDisabled = clientSelectionType === 'existing' 
     ? !selectedClientId
     : (isNewClient && (!companyName || !contactName || !contactEmail || !contactPhone || !address));
+    
+  const stationMarkers = waterStations.map(station => ({
+    position: station.location,
+    title: station.name,
+    icon: '/water-drop.png' // You can create a custom icon for stations
+  }));
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
@@ -205,7 +213,27 @@ export default function NewProposalPage() {
 
                     {selectedClient && (
                       <div className="space-y-4 pt-4 border-t">
-                        <h3 className="font-semibold">Client Details</h3>
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-semibold">Client Details</h3>
+                             <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm" disabled={!selectedClient.address}>
+                                        <Map className="mr-2 h-4 w-4" /> See Partner Stations
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col">
+                                    <DialogHeader>
+                                        <DialogTitle>Nearby Partner Water Stations</DialogTitle>
+                                        <DialogDescription>
+                                            Showing stations near {selectedClient.address}.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="h-full w-full rounded-md overflow-hidden flex-1">
+                                        <GoogleMap address={selectedClient.address} onAddressChange={() => {}} additionalMarkers={stationMarkers} />
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="flex items-center gap-3">
                                 <Building className="h-4 w-4 text-muted-foreground" />
@@ -307,33 +335,37 @@ export default function NewProposalPage() {
                                     placeholder="e.g., 123 Tech Lane, BGC, Taguig"
                                     value={address}
                                     onChange={(e) => setAddress(e.target.value)}
-                                    className="pl-10 pr-10"
+                                    className="pl-10 pr-20"
                                 />
-                                <DialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
-                                        <MapPin className="h-5 w-5 text-primary" />
-                                    </Button>
-                                </DialogTrigger>
+                                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                                     <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <MapPin className="h-5 w-5 text-primary" />
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-2xl">
+                                            <DialogHeader>
+                                                <DialogTitle>Locate Address</DialogTitle>
+                                                <DialogDescription>
+                                                    Enter an address to search, or drag the pin to the exact location.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <InputField
+                                                id="address-search"
+                                                label="Search Address"
+                                                icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
+                                                placeholder="Type to search..."
+                                                value={address}
+                                                onChange={(e) => setAddress(e.target.value)}
+                                            />
+                                            <div className="h-96 w-full rounded-md overflow-hidden">
+                                                <GoogleMap address={address} onAddressChange={setAddress} />
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
                             </div>
-                          <DialogContent className="sm:max-w-2xl">
-                              <DialogHeader>
-                                  <DialogTitle>Locate Address</DialogTitle>
-                                  <DialogDescription>
-                                      Enter an address to search, or drag the pin to the exact location.
-                                  </DialogDescription>
-                              </DialogHeader>
-                               <InputField
-                                id="address-search"
-                                label="Search Address"
-                                icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
-                                placeholder="Type to search..."
-                                value={address}
-                                onChange={(e) => setAddress(e.target.value)}
-                              />
-                              <div className="h-96 w-full rounded-md overflow-hidden">
-                                  <GoogleMap address={address} onAddressChange={setAddress} />
-                              </div>
-                          </DialogContent>
                         </Dialog>
                     </div>
                 </div>
