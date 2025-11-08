@@ -890,13 +890,20 @@ function EnterpriseTypeSelector({
 
 export default function PlansPage() {
     const searchParams = useSearchParams();
+    const clientTypeFromParams = searchParams.get('clientType') as BusinessSize | null;
 
-    const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
+    const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(clientTypeFromParams);
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [customCalculatedValues, setCustomCalculatedValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
     const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
     const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
+    
+    useEffect(() => {
+        if (clientTypeFromParams) {
+            setSelectedSize(clientTypeFromParams);
+        }
+    }, [clientTypeFromParams]);
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
@@ -934,6 +941,10 @@ export default function PlansPage() {
     }, []);
 
     const resetSelection = () => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('clientType');
+        // This is a bit of a trick to update the URL without a full navigation,
+        // but for this flow, a simple state reset is cleaner.
         setSelectedSize(null);
         setSelectedEnterpriseType(null);
         setSelectedPlan(null);
@@ -1164,6 +1175,7 @@ export default function PlansPage() {
     
 
     
+
 
 
 
