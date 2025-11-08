@@ -620,7 +620,7 @@ function ContractPageContent() {
 
     setIsSaving(true);
     
-    let finalClientId = generatedClientId;
+    const finalClientId = generatedClientId;
     
     if (!finalClientId) {
       toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
@@ -628,7 +628,7 @@ function ContractPageContent() {
       return;
     }
     
-    let proposalId = generatedProposalId;
+    const proposalId = generatedProposalId;
     if (!proposalId) {
       toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
       setIsSaving(false);
@@ -637,13 +637,16 @@ function ContractPageContent() {
     
     try {
         await runTransaction(firestore, async (transaction) => {
-            // 1. Handle Client Creation (if new)
-            if (!existingClientId && finalClientId) {
-                const newClientRef = doc(firestore, 'clients', finalClientId);
-                const clientSnap = await transaction.get(newClientRef);
+            const clientRef = doc(firestore, 'clients', finalClientId);
 
+            if (existingClientId) {
+                // If it's an existing client, ensure it has the userId before proceeding
+                transaction.update(clientRef, { userId: user.uid });
+            } else {
+                // If it's a new client, create it with all necessary details
+                const clientSnap = await transaction.get(clientRef);
                 if (!clientSnap.exists()) {
-                    const newClientData: Partial<Client> & { userId: string; createdAt: any; } = {
+                    const newClientData = {
                         id: finalClientId,
                         userId: user.uid,
                         companyName: companyName,
@@ -655,7 +658,7 @@ function ContractPageContent() {
                         status: 'pending',
                         createdAt: serverTimestamp(),
                     };
-                    transaction.set(newClientRef, newClientData);
+                    transaction.set(clientRef, newClientData);
                 }
             }
 
@@ -1066,5 +1069,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
