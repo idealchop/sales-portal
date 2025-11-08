@@ -2,9 +2,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore';
 import { useFirebase, useUser } from '@/firebase';
-import type { Client, Proposal } from '@/lib/definitions';
+import type { Client } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 
 export function useClients(userId?: string) {
@@ -25,45 +25,12 @@ export function useClients(userId?: string) {
       setIsLoading(true);
 
       try {
-        // 1. Find all proposals created by the user using a collectionGroup query.
-        const proposalsQuery = query(
-          collectionGroup(firestore, 'proposals'),
-          where('userId', '==', targetUserId)
-        );
-        const proposalSnapshots = await getDocs(proposalsQuery);
+        const clientsQuery = query(collection(firestore, "clients"), where('userId', '==', targetUserId));
+        const querySnapshot = await getDocs(clientsQuery);
         
-        const clientIds = new Set<string>();
-        proposalSnapshots.forEach(doc => {
-          // The parent of a document in a subcollection is the collection,
-          // and the parent of that collection is the client document.
-          const clientDoc = doc.ref.parent.parent;
-          if (clientDoc) {
-            clientIds.add(clientDoc.id);
-          }
-        });
-
-        if (clientIds.size === 0) {
-            setClients([]);
-            setIsLoading(false);
-            return;
-        }
-
-        // 2. Fetch the client documents in batches to avoid hitting query limits.
-        const clientPromises = [];
-        const idsArray = Array.from(clientIds);
-        // Firestore 'in' queries are limited to 30 items
-        for (let i = 0; i < idsArray.length; i += 30) {
-          const batchIds = idsArray.slice(i, i + 30);
-          const clientsQuery = query(collection(firestore, "clients"), where('id', 'in', batchIds));
-          clientPromises.push(getDocs(clientsQuery));
-        }
-
-        const clientSnapshots = await Promise.all(clientPromises);
         const userClients: WithId<Client>[] = [];
-        clientSnapshots.forEach(snapshot => {
-           snapshot.forEach(doc => {
+        querySnapshot.forEach(doc => {
             userClients.push({ id: doc.id, ...doc.data() } as WithId<Client>);
-          });
         });
 
         setClients(userClients);
