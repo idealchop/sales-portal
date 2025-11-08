@@ -530,7 +530,7 @@ function ContractPageContent() {
         liters: `${finalLiters.toLocaleString()} L`,
         inclusions: planInclusions,
         employees: getEmployees(finalLiters, clientType === 'household'),
-        stations: clientType === 'household' ? getStations(finalLiters) : finalPlan.stations,
+        stations: clientType === 'household' ? getStations(finalLiters) : plan.stations,
     }
   }, [plan, additionalLiters, clientType]);
 
@@ -619,12 +619,16 @@ function ContractPageContent() {
 
     setIsSaving(true);
     
-    const finalClientId = generatedClientId;
+    let finalClientId = generatedClientId;
     
-    if (!finalClientId) {
+    if (!finalClientId && !existingClientId) {
       toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
       setIsSaving(false);
       return;
+    }
+
+    if (existingClientId && !finalClientId) {
+        finalClientId = existingClientId;
     }
     
     const proposalId = generatedProposalId;
@@ -636,13 +640,11 @@ function ContractPageContent() {
     
     try {
         await runTransaction(firestore, async (transaction) => {
-            const clientRef = doc(firestore, 'clients', finalClientId);
+            const clientRef = doc(firestore, 'clients', finalClientId!);
 
-            // If it's an existing client, ensure it has the userId before proceeding
             if (existingClientId) {
-                transaction.update(clientRef, { userId: user.uid });
+                 transaction.update(clientRef, { userId: user.uid });
             } else {
-                // If it's a new client, create it with all necessary details
                 const newClientData = {
                     id: finalClientId,
                     userId: user.uid,
@@ -793,7 +795,8 @@ function ContractPageContent() {
 
   const getClientTypeLabel = (type: Client['clientType']) => {
     if (!type) return 'Employees'; // Default label
-    return clientTypeMap[type] || 'Employees';
+    if (type === 'household') return 'Family';
+    return 'Employees';
   };
 
   return (
@@ -1062,5 +1065,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
