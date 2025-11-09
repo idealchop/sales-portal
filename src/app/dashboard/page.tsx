@@ -567,12 +567,6 @@ export default function DashboardPage() {
             </DialogHeader>
             <ScrollArea className="h-[60vh] pr-4">
               <div className="space-y-8 py-6">
-                  <div className="p-4 border rounded-lg bg-muted/50">
-                      <h3 className="text-lg font-semibold mb-2">Payout Process</h3>
-                      <p className="text-sm text-muted-foreground">
-                          Your total monthly earnings—including one-time commissions, recurring commissions, and any achieved bonuses—are calculated at the end of each month. Payouts are processed and credited to your account within 30 days after the end of the commission period.
-                      </p>
-                  </div>
                   <div className="grid gap-8 md:grid-cols-2">
                       <div>
                           <h3 className="text-lg font-semibold mb-2">Commission Structure</h3>
@@ -613,6 +607,12 @@ export default function DashboardPage() {
                    <div className="md:col-span-2">
                       <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
                       <RevenueChart data={dashboardData.commissionHistory} />
+                  </div>
+                   <div className="p-4 border rounded-lg bg-muted/50">
+                      <h3 className="text-lg font-semibold mb-2">Payout Process</h3>
+                      <p className="text-sm text-muted-foreground">
+                          All earnings for the month (one-time & recurring commissions, plus bonuses) are calculated and paid out within 30 days after the month ends.
+                      </p>
                   </div>
               </div>
             </ScrollArea>
