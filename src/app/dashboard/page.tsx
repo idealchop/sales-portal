@@ -119,14 +119,11 @@ export default function DashboardPage() {
     const lastMonthStart = startOfMonth(subMonths(now, 1));
     const currentMonthEnd = endOfMonth(now);
     const lastMonthEnd = endOfMonth(lastMonthStart);
-    const currentQuarterStart = startOfQuarter(now);
-    const currentQuarterEnd = endOfQuarter(now);
 
     const commissionRates: { [key: string]: number } = {
         household: 0.12,
         sme: 0.12,
         commercial: 0.10,
-        corporate: 0.10, // Included under 'Business' visually
         enterprise: 0.08,
     };
     
@@ -143,7 +140,14 @@ export default function DashboardPage() {
         if (!client || !client.clientType) {
             return { commission: 0, rate: 0 };
         }
-        const rate = commissionRates[client.clientType] || 0;
+        
+        let rate = 0;
+        if (client.clientType === 'corporate') {
+            rate = commissionRates['commercial'] || 0; // Use commercial rate for corporate
+        } else {
+            rate = commissionRates[client.clientType] || 0;
+        }
+
         return { commission: proposal.amount * rate, rate: rate * 100 };
     };
 
@@ -173,20 +177,14 @@ export default function DashboardPage() {
     };
 
     const newClientsObjectsThisMonth = getClientsFromProposals(acceptedThisMonth);
-    const corporateClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'corporate' || c.clientType === 'sme' || c.clientType === 'commercial' || c.clientType === 'enterprise').length;
+    const corporateClientsThisMonth = newClientsObjectsThisMonth.filter(c => ['sme', 'commercial', 'corporate', 'enterprise'].includes(c.clientType || '')).length;
     const individualClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'household').length;
 
     const corporateClientsTarget = 3;
     const individualClientsTarget = 10;
     
-    const quarterlyVolume = acceptedProposals
-        .filter(p => {
-            if (!p.createdAt) return false;
-            const createdAt = new Date(p.createdAt);
-            return isWithinInterval(createdAt, { start: currentQuarterStart, end: currentQuarterEnd });
-        })
-        .reduce((sum, p) => sum + p.amount, 0);
-    const quarterlyVolumeTarget = 200000;
+    const monthlySalesVolume = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
+    const monthlyVolumeTarget = 200000;
 
 
     const commissionHistory = Array.from({ length: 6 }).map((_, i) => {
@@ -266,8 +264,8 @@ export default function DashboardPage() {
         corporateClientsTarget,
         individualClientsThisMonth,
         individualClientsTarget,
-        quarterlyVolume,
-        quarterlyVolumeTarget,
+        monthlySalesVolume,
+        monthlyVolumeTarget,
         commissionHistory,
         proposalsSent,
         winRate,
@@ -329,6 +327,12 @@ export default function DashboardPage() {
     { clientType: 'Business', commission: '10%' },
     { clientType: 'Enterprise', commission: '8%' },
   ];
+  const recurringCommissionTiers = [
+    { clientType: 'Family Plan', commission: 'None' },
+    { clientType: 'SME', commission: '3%' },
+    { clientType: 'Business (Commercial/Corporate)', commission: '3%' },
+    { clientType: 'Enterprise', commission: '3%' },
+];
   
   if (proposalsLoading || clientsLoading || usersLoading) {
       return (
@@ -479,25 +483,25 @@ export default function DashboardPage() {
           <DialogTrigger asChild>
             <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Quarterly Volume</CardTitle>
+                <CardTitle className="text-sm font-medium">Monthly Sales Volume</CardTitle>
                 <TrendingUp className="h-4 w-4 text-primary-foreground/80" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</div>
+                <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.monthlySalesVolume)}</div>
                  <div className="mt-2 space-y-1">
-                  <Progress value={(dashboardData.quarterlyVolume / dashboardData.quarterlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-                  <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(dashboardData.quarterlyVolumeTarget)} for a ₱25k bonus</p>
+                  <Progress value={(dashboardData.monthlySalesVolume / dashboardData.monthlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
+                  <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(dashboardData.monthlyVolumeTarget)} for a ₱25k bonus</p>
                 </div>
               </CardContent>
             </Card>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-                <DialogTitle>Quarterly Growth Bonus</DialogTitle>
-                <DialogDescription>Rewards the expansion of your client base and total commission earned in a quarter.</DialogDescription>
+                <DialogTitle>Monthly Growth Bonus</DialogTitle>
+                <DialogDescription>Rewards the expansion of your client base and total commission earned in a month.</DialogDescription>
             </DialogHeader>
              <div className="space-y-4 py-4">
-                <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</span> in new commission volume</p>
+                <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.monthlySalesVolume)}</span> in new commission volume</p>
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -507,7 +511,7 @@ export default function DashboardPage() {
                     </TableHeader>
                     <TableBody>
                         {growthBonusTiers.map(tier => (
-                            <TableRow key={tier.target} className={cn(dashboardData.quarterlyVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                            <TableRow key={tier.target} className={cn(dashboardData.monthlySalesVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                 <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
                                 <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
                             </TableRow>
@@ -544,24 +548,24 @@ export default function DashboardPage() {
             <ScrollArea className="h-[60vh] pr-4">
               <div className="grid gap-8 py-6 md:grid-cols-2">
                   <div>
-                      <h3 className="text-lg font-semibold mb-2">One-Time Commission Rates</h3>
-                      <Table>
-                          <TableHeader>
-                              <TableRow>
-                                  <TableHead>Client Tier</TableHead>
-                                  <TableHead className="text-right">Commission</TableHead>
-                              </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                              {commissionTiers.map((tier) => (
-                                  <TableRow key={tier.clientType}>
-                                      <TableCell className="font-medium">{tier.clientType}</TableCell>
-                                      <TableCell className="text-right font-bold text-primary">{tier.commission}</TableCell>
-                                  </TableRow>
-                              ))}
-                          </TableBody>
-                      </Table>
-                  </div>
+                        <h3 className="text-lg font-semibold mb-2">Recurring Commission Rates</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Client Tier</TableHead>
+                                    <TableHead className="text-right">Commission</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {recurringCommissionTiers.map((tier) => (
+                                    <TableRow key={tier.clientType}>
+                                        <TableCell className="font-medium">{tier.clientType}</TableCell>
+                                        <TableCell className="text-right font-bold text-primary">{tier.commission}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                   <div>
                       <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
                       <Table>
@@ -785,9 +789,9 @@ export default function DashboardPage() {
                  <BonusCard 
                     icon={<Target className="h-6 w-6 text-primary" />}
                     title="Corporate Closer Bonus"
-                    value={`${dashboardData.corporateClientsThisMonth} / ${dashboardData.corporateClientsTarget}`}
-                    progress={(dashboardData.corporateClientsThisMonth / dashboardData.corporateClientsTarget) * 100}
-                    goal={`Goal: ${dashboardData.corporateClientsTarget} clients for ₱2,000`}
+                    value={`${dashboardData.corporateClientsThisMonth} / 3`}
+                    progress={(dashboardData.corporateClientsThisMonth / 3) * 100}
+                    goal={`Goal: 3 clients for ₱2,000`}
                     description="For SME, Commercial & Business clients.">
                      <DialogContent>
                         <DialogHeader>
@@ -852,18 +856,18 @@ export default function DashboardPage() {
 
                  <BonusCard 
                     icon={<Award className="h-6 w-6 text-primary" />}
-                    title="Quarterly Growth Bonus"
-                    value={`${currencyFormatter.format(dashboardData.quarterlyVolume)} / ${currencyFormatter.format(dashboardData.quarterlyVolumeTarget)}`}
-                    progress={(dashboardData.quarterlyVolume / dashboardData.quarterlyVolumeTarget) * 100}
+                    title="Monthly Growth Bonus"
+                    value={`${currencyFormatter.format(dashboardData.monthlySalesVolume)} / ${currencyFormatter.format(dashboardData.monthlyVolumeTarget)}`}
+                    progress={(dashboardData.monthlySalesVolume / dashboardData.monthlyVolumeTarget) * 100}
                     goal={`Goal: ${currencyFormatter.format(50000)} volume for ₱5,000`}
                     description="Scale up with higher-volume enterprise accounts.">
                      <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Quarterly Growth Bonus</DialogTitle>
+                            <DialogTitle>Monthly Growth Bonus</DialogTitle>
                             <DialogDescription>Rewards the expansion of your client base and total liters sold.</DialogDescription>
                         </DialogHeader>
                          <div className="space-y-4">
-                            <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlyVolume)}</span> in new volume</p>
+                            <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.monthlySalesVolume)}</span> in new volume</p>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -873,7 +877,7 @@ export default function DashboardPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {growthBonusTiers.map(tier => (
-                                        <TableRow key={tier.target} className={cn(dashboardData.quarterlyVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                        <TableRow key={tier.target} className={cn(dashboardData.monthlySalesVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                             <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
                                             <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
                                         </TableRow>
@@ -922,7 +926,7 @@ export default function DashboardPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Contracts Closed (this quarter)</TableHead>
+                                        <TableHead>Contracts Closed (this month)</TableHead>
                                         <TableHead>Reward</TableHead>
                                     </TableRow>
                                 </TableHeader>
