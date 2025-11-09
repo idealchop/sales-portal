@@ -360,17 +360,15 @@ export function ClientOverviewDialog({
       };
     }
     if (client.subscription) {
-      // Correctly handle addons if they are just an array of strings
       const mappedAddons = Array.isArray(client.subscription.addons)
-        ? client.subscription.addons.map(addonString => (typeof addonString === 'string' ? { name: addonString, cost: 0 } : addonString))
+        ? client.subscription.addons.map(addon => (typeof addon === 'string' ? addon : addon.name))
         : [];
-
       return {
         ...client.subscription,
         basePrice: client.subscription.amount,
         totalAmountDue: client.subscription.amount,
         billingCycle: 'Monthly',
-        addons: mappedAddons, // Use the correctly mapped array
+        addons: mappedAddons.map(name => ({ name, cost: 0 })),
         monthlyAmount: client.subscription.amount,
         clientType: client.clientType,
       };
@@ -734,9 +732,9 @@ export function ClientOverviewDialog({
                                         <div key={index} className="flex justify-between text-sm">
                                             <span className="text-muted-foreground flex items-center gap-2">
                                                 <Sparkles className="h-4 w-4 text-yellow-500" />
-                                                {addon.name}
+                                                {typeof addon === 'string' ? addon : addon.name}
                                             </span>
-                                            {addon.cost > 0 && <span className="font-medium">{currencyFormatter.format(addon.cost)}</span>}
+                                            {typeof addon !== 'string' && addon.cost > 0 && <span className="font-medium">{currencyFormatter.format(addon.cost)}</span>}
                                         </div>
                                     ))}
                                     <Separator />
