@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { cn } from '@/lib/utils';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth, isWithinInterval, addMonths, addYears, parseISO } from 'date-fns';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Badge } from './ui/badge';
 import { useUser } from '@/firebase';
@@ -22,8 +22,9 @@ import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { CheckCircle, Clock, Loader2, Award, Star, Trophy } from 'lucide-react';
-import type { Commission } from '@/lib/definitions';
+import type { Commission, Proposal, Client } from '@/lib/definitions';
 import { useCommissions } from "@/hooks/use-commissions";
+import type { FinalPlanDetails } from '@/components/contract-details';
 
 type PayoutCommission = Commission & { clientName?: string };
 
@@ -129,50 +130,138 @@ function PaymentTimelineDialog({ month, status, totalAmount }: { month: string, 
 
 export function PayoutHistoryDialog({ children }: { children: React.ReactNode }) {
     const { user } = useUser();
-    const { commissions, isLoading } = useCommissions(user?.uid);
+    const { commissions, clients, proposals, isLoading } = useCommissions(user?.uid);
     const [selectedYear, setSelectedYear] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     const allPayouts = useMemo(() => {
-        if (!commissions) return [];
+        if (isLoading) return [];
+        
+        const clientMap = new Map(clients.map(client => [client.id, client]));
 
+        // Calculate Current Month's Pending Payout
+        const now = new Date();
+        const currentMonthKey = format(startOfMonth(now), 'MMMM yyyy');
+        const currentMonthStart = startOfMonth(now);
+        const currentMonthEnd = new Date();
+
+        const commissionRates: { [key: string]: number } = {
+            household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08,
+        };
+        const recurringCommissionRate = 0.03;
+        
+        const currentMonthCommissions: PayoutCommission[] = [];
+
+        // 1. One-time commissions from this month
+        const acceptedThisMonth = proposals.filter(p => {
+            const createdAt = new Date(p.createdAt);
+            return p.status === 'accepted' && isWithinInterval(createdAt, { start: currentMonthStart, end: currentMonthEnd });
+        });
+
+        acceptedThisMonth.forEach(proposal => {
+            const client = clientMap.get(proposal.clientId);
+            if (!client || !client.clientType) return;
+            const rate = commissionRates[client.clientType] || 0;
+            const commissionAmount = proposal.amount * rate;
+            if (commissionAmount > 0) {
+                 currentMonthCommissions.push({
+                    id: `otc-${proposal.id}`,
+                    amount: commissionAmount,
+                    createdAt: proposal.createdAt,
+                    description: `One-time commission for ${proposal.title}`,
+                    clientName: client.companyName,
+                    proposalId: proposal.id,
+                    status: 'pending',
+                    type: 'commission',
+                    userId: proposal.userId,
+                    referenceId: proposal.id,
+                 });
+            }
+        });
+
+        // 2. Recurring commissions
+        const oneYearAgo = addYears(now, -1);
+        const activeClients = clients.filter(c => c.status === 'active' && c.clientType !== 'household');
+        activeClients.forEach(client => {
+             const acceptedProposalForClient = proposals.find(p => p.clientId === client.id && p.status === 'accepted');
+             if (!acceptedProposalForClient || !acceptedProposalForClient.content) return;
+             try {
+                const proposalContent = JSON.parse(acceptedProposalForClient.content) as FinalPlanDetails;
+                const dateSigned = proposalContent.date ? parseISO(proposalContent.date) : new Date(0);
+                if (dateSigned < oneYearAgo) return;
+
+                const monthlyFee = proposalContent.basePrice || 0;
+                const annualValue = monthlyFee * 12;
+                const totalCommission = annualValue * recurringCommissionRate;
+                const monthlyPayout = totalCommission / 12;
+                 if (monthlyPayout > 0) {
+                    currentMonthCommissions.push({
+                        id: `rec-${client.id}`,
+                        amount: monthlyPayout,
+                        createdAt: now.toISOString(),
+                        description: `Recurring commission for ${proposalContent.summaryTitle}`,
+                        clientName: client.companyName,
+                        proposalId: acceptedProposalForClient.id,
+                        status: 'pending',
+                        type: 'commission',
+                        userId: acceptedProposalForClient.userId,
+                        referenceId: client.id,
+                    });
+                 }
+            } catch {}
+        });
+
+        // Group historical commissions by month
         const commissionsByMonth = commissions.reduce((acc, commission) => {
             const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
-            if (!acc[monthKey]) {
-                acc[monthKey] = [];
-            }
+            if (!acc[monthKey]) acc[monthKey] = [];
             acc[monthKey].push(commission);
             return acc;
         }, {} as Record<string, PayoutCommission[]>);
 
+        // Add current month's commissions if not already present from historical data
+        if (!commissionsByMonth[currentMonthKey]) {
+            commissionsByMonth[currentMonthKey] = [];
+        }
+        // This simple addition can lead to duplicates if some commissions for the current month are already in `commissions`.
+        // A more robust solution would merge based on commission ID. For now, we combine and will filter later if needed.
+        commissionsByMonth[currentMonthKey].push(...currentMonthCommissions);
+
+
         const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
             const monthCommissions = commissionsByMonth[month] || [];
-            const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
-            const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
+            // Remove duplicates for pending commissions calculated in real-time
+            const uniqueCommissions = Array.from(new Map(monthCommissions.map(c => [c.id, c])).values());
+            
+            const totalAmount = uniqueCommissions.reduce((sum, c) => sum + c.amount, 0);
+            const isCurrentMonth = month === currentMonthKey;
+            
+            // If it's the current month, it's always pending. Otherwise, check historical status.
+            const status = isCurrentMonth ? 'pending' : (uniqueCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending');
             
             return { 
                 month, 
                 totalAmount, 
                 status, 
-                commissions: monthCommissions,
+                commissions: uniqueCommissions,
                 transactionId: `SR${String(Math.floor(10000 + Math.random() * 90000))}`
             };
         });
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions]);
+    }, [commissions, clients, proposals, isLoading]);
 
 
     const { filteredPayouts, availableYears } = useMemo(() => {
         const yearSet = new Set<string>();
-
         allPayouts.forEach(payout => {
             const date = new Date(payout.month);
             yearSet.add(date.getFullYear().toString());
         });
         
         const filtered = allPayouts.filter(payout => {
+            if (payout.totalAmount === 0) return false;
             const date = new Date(payout.month);
             return selectedYear === 'all' || date.getFullYear().toString() === selectedYear;
         });
