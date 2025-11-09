@@ -406,7 +406,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </div>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-3xl">
                     <DialogHeader>
                         <DialogTitle>Monthly Commission Breakdown</DialogTitle>
                         <DialogDescription>
@@ -612,7 +612,7 @@ export default function DashboardPage() {
                         </Table>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
+                    <h3 className="text-lg font-semibold mb-2">Recurring Commission Explained</h3>
                     <ul className="space-y-4">
                         {payoutTimeline.map((item) => (
                             <li key={item.term} className="flex items-start gap-3">
