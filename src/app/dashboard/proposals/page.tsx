@@ -333,7 +333,6 @@ export default function ProposalsPage() {
                 <TableHead>Company</TableHead>
                 <TableHead>Sales Rep</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Plan</TableHead>
                 <TableHead>Onboarding</TableHead>
               </TableRow>
             </TableHeader>
@@ -394,19 +393,6 @@ export default function ProposalsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {subscriptionInfo ? (
-                          <div>
-                              <div className="font-bold">{subscriptionInfo.planName}</div>
-                              <div className="font-bold text-sm text-muted-foreground">
-                                  {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(subscriptionInfo.amount)}
-                              </div>
-                              <div className="text-sm text-muted-foreground">{subscriptionInfo.liters.toLocaleString()} Liters</div>
-                          </div>
-                      ) : (
-                          <span className="text-muted-foreground">N/A</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
                         <Dialog>
                             <DialogTrigger asChild>
                                 {client.onboardingStatus ? (
@@ -443,7 +429,7 @@ export default function ProposalsPage() {
                 )
               }) : (
                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                         No clients found.
                     </TableCell>
                 </TableRow>
@@ -586,4 +572,3 @@ export default function ProposalsPage() {
   );
 }
 
-    
