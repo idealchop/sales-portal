@@ -360,12 +360,13 @@ export function ClientOverviewDialog({
       };
     }
     if (client.subscription) {
+      const mappedAddons = client.subscription.addons?.map(addonName => ({ name: addonName, cost: 0 })) || [];
       return {
         ...client.subscription,
         basePrice: client.subscription.amount,
         totalAmountDue: client.subscription.amount,
         billingCycle: 'Monthly',
-        addons: client.subscription.addons?.map(name => ({ name, cost: 0 })) || [],
+        addons: mappedAddons,
         monthlyAmount: client.subscription.amount,
         clientType: client.clientType,
       };
@@ -787,7 +788,7 @@ export function ClientOverviewDialog({
                  </div>
 
                  {(view === 'proposals' || (view === 'clients' && client.status === 'pending' && selectedProposal?.status === 'finalized')) && selectedProposal?.status !== 'accepted' && (
-                     <Card>
+                    <Card>
                         <CardHeader>
                             <CardTitle>Payment Confirmation</CardTitle>
                             <CardDescription>
