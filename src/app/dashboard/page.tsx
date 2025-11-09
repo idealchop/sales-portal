@@ -216,10 +216,18 @@ export default function DashboardPage() {
 
     // Recurring Commission: sum of monthly fees for all active clients
     const activeClientsWithSubscription = clients.filter(c => c.status === 'active' && c.subscription);
-    const recurringCommission = activeClientsWithSubscription.reduce((sum, c) => {
-        const rate = (c.clientType && recurringCommissionRates[c.clientType]) || 0;
-        return sum + (c.subscription?.amount || 0) * rate;
-    }, 0);
+    
+    const recurringCommissionDetails = activeClientsWithSubscription.map(client => {
+      const rate = (client.clientType && recurringCommissionRates[client.clientType]) || 0;
+      const earning = (client.subscription?.amount || 0) * rate;
+      return {
+        ...client,
+        recurringEarning: earning,
+        commissionRate: rate * 100,
+      }
+    });
+
+    const recurringCommission = recurringCommissionDetails.reduce((sum, client) => sum + client.recurringEarning, 0);
 
     // Retention Bonus: clients with anniversaries coming up
     const clientsForRetention = clients
@@ -274,6 +282,7 @@ export default function DashboardPage() {
         monthlyCommission,
         commissionChange,
         recurringCommission,
+        recurringCommissionDetails,
         corporateClientsThisMonth,
         corporateClientsTarget,
         individualClientsThisMonth,
@@ -453,7 +462,7 @@ export default function DashboardPage() {
                     <DialogHeader>
                         <DialogTitle>Recurring Commission Breakdown</DialogTitle>
                         <DialogDescription>
-                            Monthly fees from all your active clients.
+                            Your 3% recurring commission from all active clients' monthly fees.
                         </DialogDescription>
                     </DialogHeader>
                     <Table>
@@ -461,19 +470,23 @@ export default function DashboardPage() {
                             <TableRow>
                                 <TableHead>Client</TableHead>
                                 <TableHead>Plan</TableHead>
-                                <TableHead className="text-right">Monthly Fee</TableHead>
+                                <TableHead>Monthly Fee</TableHead>
+                                <TableHead className="text-center">Rate</TableHead>
+                                <TableHead className="text-right">Your Earning</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                             {dashboardData.activeClientsWithSubscription.length > 0 ? dashboardData.activeClientsWithSubscription.map(c => (
+                             {dashboardData.recurringCommissionDetails.length > 0 ? dashboardData.recurringCommissionDetails.map(c => (
                                 <TableRow key={c.id}>
                                     <TableCell>{c.companyName}</TableCell>
                                     <TableCell>{c.subscription?.planName || 'N/A'}</TableCell>
-                                    <TableCell className="text-right">{currencyFormatter.format(c.subscription?.amount || 0)}</TableCell>
+                                    <TableCell>{currencyFormatter.format(c.subscription?.amount || 0)}</TableCell>
+                                    <TableCell className="text-center">{c.commissionRate}%</TableCell>
+                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(c.recurringEarning)}</TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center">No active recurring subscriptions.</TableCell>
+                                    <TableCell colSpan={5} className="text-center">No active recurring subscriptions.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -990,4 +1003,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 
