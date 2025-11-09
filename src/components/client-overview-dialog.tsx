@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -723,8 +724,8 @@ export function ClientOverviewDialog({
                                         <span className="text-muted-foreground">Base Plan (Monthly)</span>
                                         <span className="font-medium">{currencyFormatter.format(subscriptionInfo.basePrice)}</span>
                                     </div>
-                                    {subscriptionInfo.addons && subscriptionInfo.addons.map((addon) => (
-                                        <div key={addon.name} className="flex justify-between text-sm">
+                                    {subscriptionInfo.addons && subscriptionInfo.addons.map((addon, index) => (
+                                        <div key={`${addon.name}-${index}`} className="flex justify-between text-sm">
                                             <span className="text-muted-foreground flex items-center gap-2"><Sparkles className="h-4 w-4 text-yellow-500" />{addon.name}</span>
                                             {addon.cost > 0 && <span className="font-medium">{currencyFormatter.format(addon.cost)}</span>}
                                         </div>
