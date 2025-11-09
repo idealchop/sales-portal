@@ -126,7 +126,7 @@ export default function DashboardPage() {
         household: 0.12,
         sme: 0.12,
         commercial: 0.10,
-        corporate: 0.10,
+        corporate: 0.10, // Included under 'Business' visually
         enterprise: 0.08,
     };
     
@@ -173,7 +173,7 @@ export default function DashboardPage() {
     };
 
     const newClientsObjectsThisMonth = getClientsFromProposals(acceptedThisMonth);
-    const corporateClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'corporate' || c.clientType === 'sme' || c.clientType === 'commercial').length;
+    const corporateClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'corporate' || c.clientType === 'sme' || c.clientType === 'commercial' || c.clientType === 'enterprise').length;
     const individualClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'household').length;
 
     const corporateClientsTarget = 3;
