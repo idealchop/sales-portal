@@ -40,6 +40,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -416,8 +427,12 @@ export function ClientOverviewDialog({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (file.type.startsWith('image/')) {
+        setPaymentProofPreview(URL.createObjectURL(file));
+      } else {
+        setPaymentProofPreview(null);
+      }
       setPaymentProofFile(file);
-      setPaymentProofPreview(URL.createObjectURL(file));
       toast({
         title: "File Selected",
         description: `${file.name} is ready to be confirmed.`,
@@ -777,20 +792,25 @@ export function ClientOverviewDialog({
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                             {paymentProofPreview ? (
+                            {paymentProofFile && (
                                 <div className="space-y-2">
-                                    <Label>Payment Proof Preview</Label>
-                                    <div className="relative aspect-video w-full max-w-sm mx-auto overflow-hidden rounded-lg border">
-                                        <Image src={paymentProofPreview} alt="Payment proof preview" fill className="object-contain"/>
+                                    <Label>Payment Proof Upload</Label>
+                                    <div className="flex items-center gap-2 rounded-md border p-2 bg-muted/50">
+                                        {paymentProofPreview ? (
+                                            <div className="relative h-12 w-12 flex-shrink-0">
+                                                <Image src={paymentProofPreview} alt="Preview" fill className="object-cover rounded-sm" />
+                                            </div>
+                                        ) : (
+                                            <FileText className="h-8 w-8 text-muted-foreground flex-shrink-0" />
+                                        )}
+                                        <div className="flex-grow">
+                                            <p className="text-sm font-medium truncate">{paymentProofFile.name}</p>
+                                            <p className="text-xs text-muted-foreground">{(paymentProofFile.size / 1024).toFixed(1)} KB</p>
+                                        </div>
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="text-sm text-muted-foreground text-center py-4 border-dashed border-2 rounded-lg">
-                                    Awaiting proof of payment from client.
-                                </div>
                             )}
-
-                             <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
                                 <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isConfirmingPayment}>
                                     <Upload className="mr-2 h-4 w-4" />
                                     {paymentProofFile ? 'Change File' : 'Upload File'}
@@ -802,10 +822,36 @@ export function ClientOverviewDialog({
                                     className="hidden"
                                     accept="image/png, image/jpeg, image/gif, application/pdf"
                                 />
-                                <Button onClick={() => handleConfirmPayment()} disabled={!paymentProofFile || isConfirmingPayment}>
-                                    {isConfirmingPayment ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                                    {isConfirmingPayment ? 'Confirming...' : 'Confirm Payment'}
-                                </Button>
+
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button disabled={!paymentProofFile || isConfirmingPayment}>
+                                            <CreditCard className="mr-2 h-4 w-4" />
+                                            Confirm Payment
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action will mark the proposal as accepted and set the client's status to <span className="font-bold text-green-600">active</span>. This cannot be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleConfirmPayment()} disabled={isConfirmingPayment}>
+                                                 {isConfirmingPayment ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        Confirming...
+                                                    </>
+                                                ) : (
+                                                    "Yes, Confirm Payment"
+                                                )}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
                         </CardContent>
                     </Card>
