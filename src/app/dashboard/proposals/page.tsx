@@ -210,7 +210,7 @@ export default function ProposalsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
-                <TableHead>Sales Rep</TableHead>
+                <TableHead className="hidden sm:table-cell">Sales Rep</TableHead>
                 <TableHead>Proposal</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
@@ -228,7 +228,7 @@ export default function ProposalsPage() {
                           <div className="font-bold">{client.companyName}</div>
                           <div className="text-sm text-muted-foreground">{client.contactName}</div>
                       </TableCell>
-                       <TableCell>
+                       <TableCell className="hidden sm:table-cell">
                           <div className="flex items-center gap-2">
                               <Avatar className="h-6 w-6">
                                   <AvatarImage src={owner?.photoURL ?? undefined} />
@@ -331,7 +331,7 @@ export default function ProposalsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Company</TableHead>
-                <TableHead>Sales Rep</TableHead>
+                <TableHead className="hidden sm:table-cell">Sales Rep</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Onboarding</TableHead>
               </TableRow>
@@ -374,7 +374,7 @@ export default function ProposalsPage() {
                         <div className="font-mono text-xs text-muted-foreground">Client ID: {client.id}</div>
                         <div className="text-sm text-muted-foreground">{client.contactName}</div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                         {owner ? (
                             <div className="flex items-center gap-2">
                                 <Avatar className="h-6 w-6">
@@ -495,15 +495,15 @@ export default function ProposalsPage() {
         <TabsContent value="proposals" className="mt-4">
             <Card>
               <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                       <div className="flex-1">
                           <CardTitle>All Proposals</CardTitle>
                           <CardDescription>
                               View, manage, and create sales proposals.
                           </CardDescription>
                       </div>
-                      <div className="flex items-center gap-2">
-                          <div className="w-full max-w-sm">
+                      <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                          <div className="w-full sm:w-auto sm:max-w-sm">
                             <div className="relative">
                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                               <Input 
@@ -515,7 +515,7 @@ export default function ProposalsPage() {
                             </div>
                         </div>
                         <Select value={proposalStatusFilter} onValueChange={(value) => setProposalStatusFilter(value as ProposalStatus | 'all')}>
-                          <SelectTrigger className="w-[180px]">
+                          <SelectTrigger className="w-full sm:w-[180px]">
                             <div className="flex items-center gap-2">
                               <Filter className="h-4 w-4" />
                               <SelectValue placeholder="Filter by status" />
@@ -536,15 +536,15 @@ export default function ProposalsPage() {
         <TabsContent value="clients" className="mt-4">
              <Card>
                 <CardHeader>
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                         <div className="flex-1">
                             <CardTitle>Clients</CardTitle>
                             <CardDescription>
                                 Manage your clients and view their sales history.
                             </CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-full max-w-sm">
+                        <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                            <div className="w-full sm:w-auto sm:max-w-sm">
                                 <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                 <Input 
@@ -556,7 +556,7 @@ export default function ProposalsPage() {
                                 </div>
                             </div>
                             <Select value={clientStatusFilter} onValueChange={(value) => setClientStatusFilter(value as 'all' | 'active' | 'inactive')}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                                 <div className="flex items-center gap-2">
                                 <Filter className="h-4 w-4" />
                                 <SelectValue placeholder="Filter by status" />
