@@ -26,18 +26,20 @@ import { CheckCircle, Clock, Loader2, Award, Star, Trophy } from 'lucide-react';
 import type { Commission } from '@/lib/definitions';
 import { doc, collection, query, where, getDocs } from "firebase/firestore";
 
+type PayoutCommission = Commission & { clientName?: string };
+
 type MonthlyPayout = {
     month: string;
     totalAmount: number;
     status: 'paid' | 'pending';
-    commissions: Commission[];
+    commissions: PayoutCommission[];
 };
 
-function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: Commission[] }) {
+function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: PayoutCommission[] }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
     return (
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
                 <DialogTitle>Payout Details for {month}</DialogTitle>
                 <DialogDescription>
@@ -50,7 +52,8 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                         <TableRow>
                             <TableHead>Type</TableHead>
                             <TableHead>Description</TableHead>
-                            <TableHead>Reference ID</TableHead>
+                            <TableHead>Client</TableHead>
+                            <TableHead>Transaction ID</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -66,6 +69,7 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="font-semibold">{commission.description}</TableCell>
+                                <TableCell>{commission.clientName || 'N/A'}</TableCell>
                                 <TableCell className="font-mono text-xs">{commission.referenceId}</TableCell>
                                 <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
                             </TableRow>
@@ -137,13 +141,13 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
     useEffect(() => {
         const fetchAndProcessData = async () => {
              // MOCK DATA INJECTION
-            const mockCommissions: Commission[] = [
-                { id: 'c1', proposalId: 'P001', userId: 'user1', amount: 1200, status: 'paid', createdAt: '2024-07-15T10:00:00Z', type: 'commission', description: 'SME Plan Commission', referenceId: 'P001' },
-                { id: 'c2', proposalId: 'P002', userId: 'user1', amount: 2400, status: 'paid', createdAt: '2024-07-20T10:00:00Z', type: 'commission', description: 'Commercial Plan Commission', referenceId: 'P002' },
-                { id: 'b1', proposalId: '', userId: 'user1', amount: 2000, status: 'paid', createdAt: '2024-07-30T10:00:00Z', type: 'bonus', description: 'Corporate Closer I Bonus', referenceId: 'Corporate Closer I' },
-                { id: 'c3', proposalId: 'P003', userId: 'user1', amount: 800, status: 'paid', createdAt: '2024-06-10T10:00:00Z', type: 'commission', description: 'Family Plan Commission', referenceId: 'P003' },
-                { id: 'c4', proposalId: 'P004', userId: 'user1', amount: 3000, status: 'paid', createdAt: '2024-06-25T10:00:00Z', type: 'commission', description: 'Enterprise Plan Commission', referenceId: 'P004' },
-                { id: 'c5', proposalId: 'P005', userId: 'user1', amount: 1500, status: 'pending', createdAt: '2024-08-05T10:00:00Z', type: 'commission', description: 'SME Plan Commission', referenceId: 'P005' },
+            const mockCommissions: PayoutCommission[] = [
+                { id: 'c1', proposalId: 'P001', userId: 'user1', amount: 1200, status: 'paid', createdAt: '2024-07-15T10:00:00Z', type: 'commission', description: 'SME Plan Commission', clientName: 'Innovate Corp', referenceId: '072401' },
+                { id: 'c2', proposalId: 'P002', userId: 'user1', amount: 2400, status: 'paid', createdAt: '2024-07-20T10:00:00Z', type: 'commission', description: 'Commercial Plan Commission', clientName: 'Tech Solutions Inc.', referenceId: '072402' },
+                { id: 'b1', proposalId: '', userId: 'user1', amount: 2000, status: 'paid', createdAt: '2024-07-30T10:00:00Z', type: 'bonus', description: 'Corporate Closer I Bonus', referenceId: '072403' },
+                { id: 'c3', proposalId: 'P003', userId: 'user1', amount: 800, status: 'paid', createdAt: '2024-06-10T10:00:00Z', type: 'commission', description: 'Family Plan Commission', clientName: 'John Doe Household', referenceId: '062401' },
+                { id: 'c4', proposalId: 'P004', userId: 'user1', amount: 3000, status: 'paid', createdAt: '2024-06-25T10:00:00Z', type: 'commission', description: 'Enterprise Plan Commission', clientName: 'Global Exports', referenceId: '062402' },
+                { id: 'c5', proposalId: 'P005', userId: 'user1', amount: 1500, status: 'pending', createdAt: '2024-08-05T10:00:00Z', type: 'commission', description: 'SME Plan Commission', clientName: 'Local Cafe', referenceId: '082401' },
             ];
 
             const commissionsByMonth = mockCommissions.reduce((acc, commission) => {
@@ -153,7 +157,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                 }
                 acc[monthKey].push(commission);
                 return acc;
-            }, {} as Record<string, Commission[]>);
+            }, {} as Record<string, PayoutCommission[]>);
 
             const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
                 const monthCommissions = commissionsByMonth[month] || [];
