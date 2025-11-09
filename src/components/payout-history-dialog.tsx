@@ -33,6 +33,7 @@ type MonthlyPayout = {
     totalAmount: number;
     status: 'paid' | 'pending';
     commissions: PayoutCommission[];
+    transactionId: string;
 };
 
 function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: PayoutCommission[] }) {
@@ -53,7 +54,6 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                             <TableHead>Type</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Client</TableHead>
-                            <TableHead>Transaction ID</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -70,7 +70,6 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                                 </TableCell>
                                 <TableCell className="font-semibold">{commission.description}</TableCell>
                                 <TableCell>{commission.clientName || 'N/A'}</TableCell>
-                                <TableCell className="font-mono text-xs">{commission.referenceId}</TableCell>
                                 <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
                             </TableRow>
                         ))}
@@ -159,12 +158,20 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                 return acc;
             }, {} as Record<string, PayoutCommission[]>);
 
+            let transactionIdCounter = 100001;
+
             const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
                 const monthCommissions = commissionsByMonth[month] || [];
                 const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
                 const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
                 
-                return { month, totalAmount, status, commissions: monthCommissions };
+                return { 
+                    month, 
+                    totalAmount, 
+                    status, 
+                    commissions: monthCommissions,
+                    transactionId: String(transactionIdCounter++) 
+                };
             });
 
             processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
@@ -228,6 +235,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Month</TableHead>
+                                        <TableHead>Transaction ID</TableHead>
                                         <TableHead>Total Payout</TableHead>
                                         <TableHead>Status</TableHead>
                                     </TableRow>
@@ -235,7 +243,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                                 <TableBody>
                                     {isLoading ? (
                                         <TableRow>
-                                            <TableCell colSpan={3} className="h-24 text-center">
+                                            <TableCell colSpan={4} className="h-24 text-center">
                                                 <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                             </TableCell>
                                         </TableRow>
@@ -243,6 +251,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                                         filteredPayouts.map((payout) => (
                                             <TableRow key={payout.month}>
                                                 <TableCell className="font-semibold">{payout.month}</TableCell>
+                                                <TableCell className="font-mono text-xs">{payout.transactionId}</TableCell>
                                                 <TableCell>
                                                     <Dialog>
                                                         <DialogTrigger asChild>
@@ -270,7 +279,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={3} className="h-24 text-center">
+                                            <TableCell colSpan={4} className="h-24 text-center">
                                                 No payout records found for the selected period.
                                             </TableCell>
                                         </TableRow>
