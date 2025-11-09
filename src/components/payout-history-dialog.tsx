@@ -158,8 +158,6 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                 return acc;
             }, {} as Record<string, PayoutCommission[]>);
 
-            let transactionIdCounter = 100001;
-
             const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
                 const monthCommissions = commissionsByMonth[month] || [];
                 const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
@@ -170,7 +168,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                     totalAmount, 
                     status, 
                     commissions: monthCommissions,
-                    transactionId: String(transactionIdCounter++) 
+                    transactionId: `SR${String(Math.floor(Math.random() * 90000) + 10000)}`
                 };
             });
 
@@ -235,7 +233,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Month</TableHead>
-                                        <TableHead>Transaction ID</TableHead>
+                                        <TableHead>Payout Reference ID</TableHead>
                                         <TableHead>Total Payout</TableHead>
                                         <TableHead>Status</TableHead>
                                     </TableRow>
@@ -293,3 +291,5 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
         </Dialog>
     );
 }
+
+    
