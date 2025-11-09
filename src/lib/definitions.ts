@@ -101,5 +101,6 @@ export type Commission = {
   type: 'commission' | 'bonus';
   description: string;
   referenceId: string;
+  clientName?: string;
 };
     

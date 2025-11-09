@@ -13,10 +13,9 @@ import { cn } from '@/lib/utils';
 import { format, startOfMonth } from 'date-fns';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Badge } from './ui/badge';
-import { useAuth, useUser, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
@@ -24,7 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { CheckCircle, Clock, Loader2, Award, Star, Trophy } from 'lucide-react';
 import type { Commission } from '@/lib/definitions';
-import { doc, collection, query, where, getDocs } from "firebase/firestore";
+import { useCommissions } from "@/hooks/use-commissions";
 
 type PayoutCommission = Commission & { clientName?: string };
 
@@ -130,54 +129,40 @@ function PaymentTimelineDialog({ month, status, totalAmount }: { month: string, 
 
 export function PayoutHistoryDialog({ children }: { children: React.ReactNode }) {
     const { user } = useUser();
-    const firestore = useFirestore();
-
-    const [allPayouts, setAllPayouts] = useState<MonthlyPayout[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { commissions, isLoading } = useCommissions(user?.uid);
     const [selectedYear, setSelectedYear] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-    useEffect(() => {
-        const fetchAndProcessData = async () => {
-             // MOCK DATA INJECTION
-            const mockCommissions: PayoutCommission[] = [
-                { id: 'c1', proposalId: 'P001', userId: 'user1', amount: 1200, status: 'paid', createdAt: '2024-07-15T10:00:00Z', type: 'commission', description: 'SME Plan Commission', clientName: 'Innovate Corp', referenceId: '072401' },
-                { id: 'c2', proposalId: 'P002', userId: 'user1', amount: 2400, status: 'paid', createdAt: '2024-07-20T10:00:00Z', type: 'commission', description: 'Commercial Plan Commission', clientName: 'Tech Solutions Inc.', referenceId: '072402' },
-                { id: 'b1', proposalId: '', userId: 'user1', amount: 2000, status: 'paid', createdAt: '2024-07-30T10:00:00Z', type: 'bonus', description: 'Corporate Closer I Bonus', referenceId: '072403' },
-                { id: 'c3', proposalId: 'P003', userId: 'user1', amount: 800, status: 'paid', createdAt: '2024-06-10T10:00:00Z', type: 'commission', description: 'Family Plan Commission', clientName: 'John Doe Household', referenceId: '062401' },
-                { id: 'c4', proposalId: 'P004', userId: 'user1', amount: 3000, status: 'paid', createdAt: '2024-06-25T10:00:00Z', type: 'commission', description: 'Enterprise Plan Commission', clientName: 'Global Exports', referenceId: '062402' },
-                { id: 'c5', proposalId: 'P005', userId: 'user1', amount: 1500, status: 'pending', createdAt: '2024-08-05T10:00:00Z', type: 'commission', description: 'SME Plan Commission', clientName: 'Local Cafe', referenceId: '082401' },
-            ];
+    const allPayouts = useMemo(() => {
+        if (!commissions) return [];
 
-            const commissionsByMonth = mockCommissions.reduce((acc, commission) => {
-                const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
-                if (!acc[monthKey]) {
-                    acc[monthKey] = [];
-                }
-                acc[monthKey].push(commission);
-                return acc;
-            }, {} as Record<string, PayoutCommission[]>);
+        const commissionsByMonth = commissions.reduce((acc, commission) => {
+            const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
+            if (!acc[monthKey]) {
+                acc[monthKey] = [];
+            }
+            acc[monthKey].push(commission);
+            return acc;
+        }, {} as Record<string, PayoutCommission[]>);
 
-            const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
-                const monthCommissions = commissionsByMonth[month] || [];
-                const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
-                const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
-                
-                return { 
-                    month, 
-                    totalAmount, 
-                    status, 
-                    commissions: monthCommissions,
-                    transactionId: `SR${String(Math.floor(Math.random() * 90000) + 10000)}`
-                };
-            });
+        const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
+            const monthCommissions = commissionsByMonth[month] || [];
+            const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
+            const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
+            
+            return { 
+                month, 
+                totalAmount, 
+                status, 
+                commissions: monthCommissions,
+                transactionId: `SR${String(Math.floor(10000 + Math.random() * 90000))}`
+            };
+        });
 
-            processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
-            setAllPayouts(processedPayouts);
-            setIsLoading(false);
-        };
-        fetchAndProcessData();
-    }, [user, firestore]);
+        processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+        return processedPayouts;
+    }, [commissions]);
+
 
     const { filteredPayouts, availableYears } = useMemo(() => {
         const yearSet = new Set<string>();
@@ -291,5 +276,3 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
         </Dialog>
     );
 }
-
-    
