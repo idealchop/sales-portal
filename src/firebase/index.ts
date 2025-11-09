@@ -34,7 +34,6 @@ export function initializeFirebase(): {
 export * from './provider';
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
-export * from './non-blocking-login';
+export * from './auth/use-user';
 export * from './errors';
 export * from './error-emitter';
-export * from './auth/use-user';
