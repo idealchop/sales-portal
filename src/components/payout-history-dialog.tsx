@@ -49,37 +49,25 @@ function PayoutMonthDetailsDialog({ month, commissions, bonuses }: { month: stri
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Date / Type</TableHead>
-                            <TableHead>Details</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Reference ID</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {bonuses.map((bonus, index) => (
-                             <TableRow key={`bonus-${index}`}>
-                                <TableCell>Bonus</TableCell>
-                                <TableCell className="font-semibold">{bonus.name}</TableCell>
-                                <TableCell>
-                                    <Badge variant='success' className="capitalize">
-                                        Achieved
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right font-semibold">{currencyFormatter.format(bonus.bonus)}</TableCell>
-                            </TableRow>
-                        ))}
                         {commissions.map((commission) => (
                             <TableRow key={commission.id}>
-                                <TableCell>{new Date(commission.createdAt).toLocaleDateString()}</TableCell>
-                                <TableCell className="font-mono text-xs">{commission.proposalId}</TableCell>
-                                <TableCell>
+                                <TableCell className="capitalize">
                                     <Badge
-                                        variant={commission.status === 'paid' ? 'success' : 'warning'}
+                                        variant={commission.type === 'bonus' ? 'special' : 'default'}
                                         className="capitalize"
                                     >
-                                        {commission.status}
+                                        {commission.type}
                                     </Badge>
                                 </TableCell>
+                                <TableCell className="font-semibold">{commission.description}</TableCell>
+                                <TableCell className="font-mono text-xs">{commission.referenceId}</TableCell>
                                 <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
                             </TableRow>
                         ))}
@@ -182,56 +170,9 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                     return acc;
                 }, {} as Record<string, Commission[]>);
                 
-                // 2. Calculate Bonuses
-                const acceptedProposals = proposals.filter(p => p.status === 'accepted' && p.createdAt);
-                const monthlyClientCounts: { [key: string]: { corporate: number, household: number } } = {};
-                
-                for (const proposal of acceptedProposals) {
-                    const date = new Date(proposal.createdAt);
-                    const monthYear = format(date, 'MMMM yyyy');
-                    
-                    if (!monthlyClientCounts[monthYear]) {
-                        monthlyClientCounts[monthYear] = { corporate: 0, household: 0 };
-                    }
-
-                    const client = clientMap.get(proposal.clientId);
-                    if (!client) continue;
-
-                    if (['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '')) {
-                        monthlyClientCounts[monthYear].corporate++;
-                    } else if (client.clientType === 'household') {
-                        monthlyClientCounts[monthYear].household++;
-                    }
-                }
-                
+                // 2. Calculate Bonuses (This part would be replaced by fetching bonus-type commissions)
                 const bonusesByMonth: Record<string, { name: string; bonus: number }[]> = {};
-                const corporateBonusTiers = [
-                    { target: 3, name: 'Corporate Closer I', bonus: 2000 },
-                    { target: 5, name: 'Corporate Closer II', bonus: 5000 },
-                    { target: 10, name: 'Corporate Closer III', bonus: 12000 },
-                ];
-                const familyBonusTiers = [
-                    { target: 10, name: 'Family Plan Closer I', bonus: 2500 },
-                    { target: 20, name: 'Family Plan Closer II', bonus: 6000 },
-                    { target: 30, name: 'Family Plan Closer III', bonus: 15000 },
-                ];
                 
-                for (const monthYear in monthlyClientCounts) {
-                    const { corporate, household } = monthlyClientCounts[monthYear];
-                    bonusesByMonth[monthYear] = bonusesByMonth[monthYear] || [];
-                    
-                    corporateBonusTiers.forEach(tier => {
-                        if(corporate >= tier.target) {
-                             bonusesByMonth[monthYear].push({ name: tier.name, bonus: tier.bonus });
-                        }
-                    });
-                     familyBonusTiers.forEach(tier => {
-                        if(household >= tier.target) {
-                             bonusesByMonth[monthYear].push({ name: tier.name, bonus: tier.bonus });
-                        }
-                    });
-                }
-
                 // 3. Combine Commissions and Bonuses
                 const allMonths = new Set([...Object.keys(commissionsByMonth), ...Object.keys(bonusesByMonth)]);
                 
@@ -239,10 +180,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                     const monthCommissions = commissionsByMonth[month] || [];
                     const monthBonuses = bonusesByMonth[month] || [];
                     
-                    const commissionTotal = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
-                    const bonusTotal = monthBonuses.reduce((sum, b) => sum + b.bonus, 0);
-                    
-                    const totalAmount = commissionTotal + bonusTotal;
+                    const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
                     const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
                     
                     return { month, totalAmount, status, commissions: monthCommissions, bonuses: monthBonuses };
@@ -371,4 +309,3 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
         </Dialog>
     );
 }
-
