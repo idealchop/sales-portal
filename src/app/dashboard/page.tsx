@@ -66,7 +66,7 @@ import { ActivityChart } from '@/components/activity-chart';
 import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
 import { useMemo } from 'react';
-import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears } from 'date-fns';
 import { useUser } from '@/firebase';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
@@ -213,9 +213,14 @@ export default function DashboardPage() {
     ];
     
     // --- Live Data Calculations for Bonuses ---
-
-    // Recurring Commission: sum of monthly fees for all active clients
-    const activeClientsWithSubscription = clients.filter(c => c.status === 'active' && c.subscription);
+    const oneYearAgo = addYears(now, -1);
+    
+    const activeClientsWithSubscription = clients.filter(c => 
+        c.status === 'active' && 
+        c.subscription && 
+        c.subscription.dateSigned && 
+        new Date(c.subscription.dateSigned) > oneYearAgo
+    );
     
     const recurringCommissionDetails = activeClientsWithSubscription.map(client => {
       const rate = (client.clientType && recurringCommissionRates[client.clientType]) || 0;
@@ -229,7 +234,6 @@ export default function DashboardPage() {
 
     const recurringCommission = recurringCommissionDetails.reduce((sum, client) => sum + client.recurringEarning, 0);
 
-    // Retention Bonus: clients with anniversaries coming up
     const clientsForRetention = clients
         .filter(c => c.status === 'active' && c.subscription?.dateSigned)
         .map(c => {
@@ -249,14 +253,11 @@ export default function DashboardPage() {
             
             return upcomingMilestone ? { ...c, milestone: upcomingMilestone } : null;
         })
-        .filter(Boolean)
+        .filter((item): item is (Client & { milestone: { anniversary: string; date: Date; bonus: number } }) => !!item)
         .slice(0, 3);
 
-    // Team Builder
-    const recruitedPartners = 1; // Assuming self is the first partner for now
     const teamRevenue = totalCommissionValue; 
 
-    // Prepayment Power-Up
     const prepaidContractDetails = acceptedThisMonth
       .map(proposal => {
         try {
@@ -299,7 +300,6 @@ export default function DashboardPage() {
         acceptedThisMonth,
         activeClientsWithSubscription,
         clientsForRetention,
-        recruitedPartners,
         teamRevenue,
         prepaidContracts,
         prepaidContractsTarget,
@@ -912,84 +912,47 @@ export default function DashboardPage() {
                      </DialogContent>
                  </BonusCard>
 
-                <BonusCard
-                    icon={<CreditCard className="h-6 w-6 text-primary" />}
-                    title="Prepayment Power-Up"
-                    value={`${dashboardData.prepaidContracts} / ${dashboardData.prepaidContractsTarget}`}
-                    progress={(dashboardData.prepaidContracts / dashboardData.prepaidContractsTarget) * 100}
-                    goal={`Goal: ${dashboardData.prepaidContractsTarget} prepaid contracts`}
-                    description="Reward for closing long-term prepaid contracts."
-                >
+                 <BonusCard 
+                    icon={<CalendarCheck className="h-6 w-6 text-primary" />}
+                    title="Retention Bonus"
+                    value={`${dashboardData.clientsForRetention.length} Client(s)`}
+                    progress={0}
+                    goal={`Upcoming Anniversaries`}
+                    description="Secure renewals to earn a bonus.">
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Prepayment Power-Up Bonus</DialogTitle>
-                            <DialogDescription>Earn extra for improving cash flow with upfront client payments.</DialogDescription>
+                            <DialogTitle>Client Retention Bonus</DialogTitle>
+                            <DialogDescription>Earn bonuses by maintaining relationships with clients at key milestones.</DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4">
-                            <p>Your current progress: <span className="font-bold">{dashboardData.prepaidContracts} prepaid contracts</span> closed.</p>
-                            <Separator />
-                            <h4 className="font-semibold">Commission Per Contract</h4>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Prepayment Term</TableHead>
-                                        <TableHead>Minimum Contract Value</TableHead>
-                                        <TableHead>Bonus per Contract</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {prepaymentBonusTiers.map(tier => (
-                                        <TableRow key={tier.term}>
-                                            <TableCell className="font-medium">{tier.term}</TableCell>
-                                            <TableCell className="font-medium">{currencyFormatter.format(tier.minContract)}</TableCell>
-                                            <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            <Separator />
-                            <h4 className="font-semibold">Milestone Bonus</h4>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Contracts Closed (this month)</TableHead>
-                                        <TableHead>Reward</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {prepaymentProgressTiers.map(tier => (
-                                        <TableRow key={tier.target} className={cn(dashboardData.prepaidContracts >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
-                                            <TableCell className="font-medium">Close {tier.target} prepaid contracts</TableCell>
-                                            <TableCell className="font-bold text-primary">{tier.reward}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            {dashboardData.prepaidContractDetails.length > 0 && (
+                        <div className="space-y-4 py-4">
+                             {dashboardData.clientsForRetention.length > 0 ? (
                                 <>
-                                    <Separator />
-                                    <h4 className="font-semibold">Qualifying Prepaid Clients</h4>
-                                    <ScrollArea className="h-40">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Client</TableHead>
-                                                    <TableHead>Term</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {dashboardData.prepaidContractDetails.map((detail, index) => (
-                                                    <TableRow key={index}>
-                                                        <TableCell>{detail.clientName}</TableCell>
-                                                        <TableCell>{detail.term}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </ScrollArea>
+                                <p className="font-semibold">Upcoming Anniversaries:</p>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Client</TableHead>
+                                            <TableHead>Milestone</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right">Bonus</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {dashboardData.clientsForRetention.map((client) => (
+                                            <TableRow key={client.id}>
+                                                <TableCell>{client.companyName}</TableCell>
+                                                <TableCell className="font-medium">{client.milestone.anniversary}</TableCell>
+                                                <TableCell>{format(client.milestone.date, 'MMM dd, yyyy')}</TableCell>
+                                                <TableCell className="text-right font-bold text-primary">{currencyFormatter.format(client.milestone.bonus)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                                 </>
+                            ) : (
+                                <p className="text-muted-foreground text-center">No client anniversaries in the next two months.</p>
                             )}
-                            <p className="text-xs text-muted-foreground">Commissions and bonuses are paid out after the client's payment is confirmed.</p>
+                             <p className="text-xs text-muted-foreground pt-4">This bonus is awarded if the client remains active past their anniversary date. Contact them to ensure they're happy!</p>
                         </div>
                     </DialogContent>
                 </BonusCard>
