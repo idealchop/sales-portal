@@ -405,7 +405,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </div>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Monthly Commission Breakdown</DialogTitle>
                         <DialogDescription>
