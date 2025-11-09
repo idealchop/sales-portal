@@ -249,14 +249,25 @@ export default function DashboardPage() {
     const teamRevenue = totalCommissionValue; 
 
     // Prepayment Power-Up
-    const prepaidContracts = acceptedProposals.filter(proposal => {
+    const prepaidContractDetails = acceptedProposals
+      .map(proposal => {
         try {
-            const content = JSON.parse(proposal.content);
-            return content.billingCycleLabel && content.billingCycleLabel !== 'Monthly';
+          const content = JSON.parse(proposal.content);
+          if (content.billingCycleLabel && content.billingCycleLabel !== 'Monthly') {
+            const client = clientMap.get(proposal.clientId);
+            return {
+              clientName: client?.companyName || 'Unknown Client',
+              term: content.billingCycleLabel,
+            };
+          }
+          return null;
         } catch {
-            return false;
+          return null;
         }
-    }).length;
+      })
+      .filter((item): item is { clientName: string; term: string } => item !== null);
+
+    const prepaidContracts = prepaidContractDetails.length;
     const prepaidContractsTarget = 5;
 
     return {
@@ -283,6 +294,7 @@ export default function DashboardPage() {
         teamRevenue,
         prepaidContracts,
         prepaidContractsTarget,
+        prepaidContractDetails,
         getCommissionDetails
     };
   }, [proposals, clients, clientMap]);
@@ -944,6 +956,30 @@ export default function DashboardPage() {
                                     ))}
                                 </TableBody>
                             </Table>
+                            {dashboardData.prepaidContractDetails.length > 0 && (
+                                <>
+                                    <Separator />
+                                    <h4 className="font-semibold">Qualifying Prepaid Clients</h4>
+                                    <ScrollArea className="h-40">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Client</TableHead>
+                                                    <TableHead>Term</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {dashboardData.prepaidContractDetails.map((detail, index) => (
+                                                    <TableRow key={index}>
+                                                        <TableCell>{detail.clientName}</TableCell>
+                                                        <TableCell>{detail.term}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </ScrollArea>
+                                </>
+                            )}
                             <p className="text-xs text-muted-foreground">Commissions and bonuses are paid out after the client's payment is confirmed.</p>
                         </div>
                     </DialogContent>
