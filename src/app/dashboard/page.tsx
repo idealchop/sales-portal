@@ -252,28 +252,6 @@ export default function DashboardPage() {
 
     const recurringCommission = recurringCommissionDetails.reduce((sum, client) => sum + client.monthlyPayout, 0);
 
-    const clientsForRetention = clients
-        .filter(c => c.status === 'active' && c.subscription?.dateSigned)
-        .map(c => {
-            const dateSigned = new Date(c.subscription!.dateSigned!);
-            const threeMonth = addMonths(dateSigned, 3);
-            const sixMonth = addMonths(dateSigned, 6);
-            const twelveMonth = addMonths(dateSigned, 12);
-            let upcomingMilestone: { anniversary: string; date: Date; bonus: number } | null = null;
-            
-            if (isWithinInterval(threeMonth, { start: now, end: addMonths(now, 2) })) {
-                upcomingMilestone = { anniversary: '3-month', date: threeMonth, bonus: 500 };
-            } else if (isWithinInterval(sixMonth, { start: now, end: addMonths(now, 2) })) {
-                upcomingMilestone = { anniversary: '6-month', date: sixMonth, bonus: 1000 };
-            } else if (isWithinInterval(twelveMonth, { start: now, end: addMonths(now, 2) })) {
-                upcomingMilestone = { anniversary: '12-month', date: twelveMonth, bonus: 3000 };
-            }
-            
-            return upcomingMilestone ? { ...c, milestone: upcomingMilestone } : null;
-        })
-        .filter((item): item is (Client & { milestone: { anniversary: string; date: Date; bonus: number } }) => !!item)
-        .slice(0, 3);
-
     const teamRevenue = totalCommissionValue; 
 
     const prepaidContractDetails = acceptedThisMonth
@@ -318,7 +296,6 @@ export default function DashboardPage() {
         acceptedProposals,
         acceptedThisMonth,
         activeClients,
-        clientsForRetention,
         teamRevenue,
         prepaidContracts,
         prepaidContractsTarget,
@@ -589,43 +566,51 @@ export default function DashboardPage() {
                 </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-[60vh] pr-4">
-              <div className="grid gap-8 py-6 md:grid-cols-2">
-                   <div className="md:col-span-2">
-                      <h3 className="text-lg font-semibold mb-2">Commission Structure</h3>
-                       <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Client Tier</TableHead>
-                                    <TableHead className="text-center">One-Time Commission</TableHead>
-                                    <TableHead className="text-center">Recurring Commission</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {commissionTiers.map((tier) => (
-                                    <TableRow key={tier.clientType}>
-                                        <TableCell className="font-medium">{tier.clientType}</TableCell>
-                                        <TableCell className="text-center font-bold text-primary">{tier.commission}</TableCell>
-                                        <TableCell className="text-center font-bold text-primary">{tier.recurring}</TableCell>
+              <div className="space-y-8 py-6">
+                  <div className="p-4 border rounded-lg bg-muted/50">
+                      <h3 className="text-lg font-semibold mb-2">Payout Process</h3>
+                      <p className="text-sm text-muted-foreground">
+                          Your total monthly earnings—including one-time commissions, recurring commissions, and any achieved bonuses—are calculated at the end of each month. Payouts are processed and credited to your account within 30 days after the end of the commission period.
+                      </p>
+                  </div>
+                  <div className="grid gap-8 md:grid-cols-2">
+                      <div>
+                          <h3 className="text-lg font-semibold mb-2">Commission Structure</h3>
+                          <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Client Tier</TableHead>
+                                        <TableHead className="text-center">One-Time</TableHead>
+                                        <TableHead className="text-center">Recurring</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {commissionTiers.map((tier) => (
+                                        <TableRow key={tier.clientType}>
+                                            <TableCell className="font-medium">{tier.clientType}</TableCell>
+                                            <TableCell className="text-center font-bold text-primary">{tier.commission}</TableCell>
+                                            <TableCell className="text-center font-bold text-primary">{tier.recurring}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Recurring Commission Explained</h3>
+                        <ul className="space-y-4">
+                            {payoutTimeline.map((item) => (
+                                <li key={item.term} className="flex items-start gap-3">
+                                    <CalendarDays className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                    <div>
+                                        <p className="font-semibold">{item.term}</p>
+                                        <p className="text-sm text-muted-foreground">{item.schedule}</p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                      </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Recurring Commission Explained</h3>
-                    <ul className="space-y-4">
-                        {payoutTimeline.map((item) => (
-                            <li key={item.term} className="flex items-start gap-3">
-                                <CalendarDays className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                <div>
-                                    <p className="font-semibold">{item.term}</p>
-                                    <p className="text-sm text-muted-foreground">{item.schedule}</p>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                  </div>
-                   <div className="md:col-span-1">
+                   <div className="md:col-span-2">
                       <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
                       <RevenueChart data={dashboardData.commissionHistory} />
                   </div>
