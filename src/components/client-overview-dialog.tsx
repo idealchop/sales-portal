@@ -429,8 +429,8 @@ export function ClientOverviewDialog({
     const finalProposalId = proposalIdToConfirm || selectedProposal?.id;
     const finalFile = fileToUpload || paymentProofFile;
 
-    if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof, proposal details, or subscription info.' });
+    if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof, proposal details, user, or subscription info.' });
         return;
     }
 
@@ -459,6 +459,29 @@ export function ClientOverviewDialog({
               dateSigned: new Date().toISOString()
             }
         });
+
+        // Calculate and save commission
+        const commissionRates: { [key: string]: number } = {
+            household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08,
+        };
+        const rate = (subscriptionInfo.clientType && commissionRates[subscriptionInfo.clientType]) || 0;
+        const commissionAmount = subscriptionInfo.totalAmountDue * rate;
+        
+        if (commissionAmount > 0) {
+            const commissionRef = collection(firestore, 'commissions');
+            await addDoc(commissionRef, {
+                userId: user.uid,
+                proposalId: finalProposalId,
+                amount: commissionAmount,
+                createdAt: serverTimestamp(),
+                status: 'pending',
+                type: 'commission',
+                description: `Commission for ${subscriptionInfo.planName}`,
+                clientName: client.companyName,
+                referenceId: finalProposalId
+            });
+        }
+
 
         toast({
             title: "Payment Confirmed!",
