@@ -77,8 +77,8 @@ export default function NewProposalPage() {
   const isNewClient = clientSelectionType === 'new';
 
   const availableClients = useMemo(() => {
-    // Return all clients, as a new proposal can be made for any client.
-    return clients;
+    // Only show clients with a 'pending' status, as active clients already have a subscription.
+    return clients.filter(client => client.status === 'pending');
   }, [clients]);
 
   const selectedClient = useMemo(() => {
@@ -205,9 +205,13 @@ export default function NewProposalPage() {
                                 <SelectValue placeholder="Select an existing client" />
                             </SelectTrigger>
                             <SelectContent>
-                                {availableClients.map(client => (
-                                    <SelectItem key={client.id} value={client.id}>{client.companyName}</SelectItem>
-                                ))}
+                                {availableClients.length > 0 ? (
+                                    availableClients.map(client => (
+                                        <SelectItem key={client.id} value={client.id}>{client.companyName}</SelectItem>
+                                    ))
+                                ) : (
+                                    <div className="p-4 text-sm text-muted-foreground text-center">No pending clients available.</div>
+                                )}
                             </SelectContent>
                         </Select>
                     </div>
