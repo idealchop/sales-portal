@@ -8,6 +8,7 @@ export type ImagePlaceholder = {
   imageUrl: string;
   imageHint: string;
   category: string;
+  type: 'image' | 'pdf';
 };
 
 export const PlaceHolderImages: ImagePlaceholder[] = data.placeholderImages;

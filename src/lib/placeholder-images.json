@@ -2,91 +2,102 @@
   "placeholderImages": [
     {
       "id": "sales-presentation-template",
-      "title": "sales-presentation-template",
+      "title": "Sales Presentation Template",
       "description": "A template for sales presentations.",
-      "imageUrl": "https://images.unsplash.com/photo-1758691736067-b309ee3ef7b9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwcmVzZW50YXRpb24lMjBjaGFydHxlbnwwfHx8fDE3NjE4ODI2ODN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPresentation_Sales.pdf?alt=media&token=c19b2512-a720-43e8-bd1d-d24b611e9f16",
       "imageHint": "presentation chart",
-      "category": "Business Profile"
+      "category": "Business Profile",
+      "type": "pdf"
     },
     {
       "id": "product-brochure-2024",
-      "title": "product-brochure-2024",
+      "title": "Product Brochure 2024",
       "description": "The latest product brochure for 2024.",
-      "imageUrl": "https://images.unsplash.com/photo-1669690972278-2680553fe7bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxicm9jaHVyZSUyMGRlc2lnbnxlbnwwfHx8fDE3NjE4MzM1NjN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_Product_Brochure.pdf?alt=media&token=6a9d1645-a48a-442b-9860-20150937c4d5",
       "imageHint": "brochure design",
-      "category": "Business Profile"
+      "category": "Business Profile",
+      "type": "pdf"
     },
     {
       "id": "competitor-analysis-q2",
-      "title": "competitor-analysis-q2",
+      "title": "Competitor Analysis Q2",
       "description": "In-depth analysis of key competitors for Q2.",
       "imageUrl": "https://images.unsplash.com/photo-1758876204763-5b346b174d0e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxhbmFseXNpcyUyMGRvY3VtZW50fGVufDB8fHx8MTc2MTg4MjY4M3ww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "analysis document",
-      "category": "Business Profile"
+      "category": "Business Profile",
+      "type": "image"
     },
     {
       "id": "case-study-acme-corp",
-      "title": "case-study-acme-corp",
+      "title": "Case Study: Acme Corp",
       "description": "Success story of our partnership with Acme Corp.",
       "imageUrl": "https://images.unsplash.com/photo-1488998427799-e3362cec87c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjYXNlJTIwc3R1ZHl8ZW58MHx8fHwxNzYxODgyNjgzfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "case study",
-      "category": "Testimonials / Clients / Social Proof"
+      "category": "Testimonials / Clients / Social Proof",
+      "type": "image"
     },
     {
       "id": "q3-marketing-plan",
-      "title": "q3-marketing-plan",
+      "title": "Q3 Marketing Plan",
       "description": "The comprehensive marketing plan for the third quarter.",
       "imageUrl": "https://images.unsplash.com/photo-1651684195895-38708dc94cfa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtYXJrZXRpbmclMjBwbGFufGVufDB8fHx8MTc2MTg4MjY4M3ww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "marketing plan",
-      "category": "Business Profile"
+      "category": "Business Profile",
+      "type": "image"
     },
     {
       "id": "user-onboarding-guide",
-      "title": "user-onboarding-guide",
+      "title": "User Onboarding Guide",
       "description": "A guide for new users to get started with our products.",
       "imageUrl": "https://images.unsplash.com/photo-1581553678585-d7b899e86b7e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxndWlkZSUyMGJvb2t8ZW58MHx8fHwxNzYxODU5MTU4fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "guide book",
-      "category": "Explainer Videos"
+      "category": "Explainer Videos",
+      "type": "image"
     },
     {
       "id": "small-business-plan",
-      "title": "small-business",
+      "title": "Small Business",
       "description": "A small business storefront.",
       "imageUrl": "https://images.unsplash.com/photo-1594402919317-9e67dca0a305?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzbWFsbCUyMGJ1c2luZXNzfGVufDB8fHx8MTc2MTk0NDQ3Mnww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "small business",
-      "category": "Creative Assets"
+      "category": "Creative Assets",
+      "type": "image"
     },
     {
       "id": "medium-business-plan",
-      "title": "medium-business",
+      "title": "Medium Business",
       "description": "A medium-sized office building.",
       "imageUrl": "https://images.unsplash.com/photo-1582061575118-93cc82eca33b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxvZmZpY2UlMjBidWlsZGluZ3xlbnwwfHx8fDE3NjE4NTg2ODR8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "office building",
-      "category": "Creative Assets"
+      "category": "Creative Assets",
+      "type": "image"
     },
     {
       "id": "large-business-plan",
-      "title": "large-business",
+      "title": "Large Business",
       "description": "A large corporate building.",
       "imageUrl": "https://images.unsplash.com/photo-1501324682324-0d8d7c4b9706?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjb3Jwb3JhdGUlMjBidWlsZGluZ3xlbnwwfHx8fDE3NjE4OTM5NDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "corporate building",
-      "category": "Creative Assets"
+      "category": "Creative Assets",
+      "type": "image"
     },
     {
       "id": "flow-plan",
-      "title": "flow-plan",
+      "title": "Flow Plan",
       "description": "An abstract representation of a data flow.",
       "imageUrl": "https://images.unsplash.com/photo-1501526029524-a8ea952b15be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkYXRhJTIwZmxvd3xlbnwwfHx8fDE3NjE5NzYyNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "data flow",
-      "category": "Creative Assets"
+      "category": "Creative Assets",
+      "type": "image"
     },
     {
       "id": "household-plan",
-      "title": "household-plan",
+      "title": "Household Plan",
       "description": "A modern kitchen with a water dispenser.",
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FSmartRefill_Individual.png?alt=media&token=090d07c4-848a-4cd6-aab6-f7a5909ea839",
       "imageHint": "kitchen water",
-      "category": "Creative Assets"
+      "category": "Creative Assets",
+      "type": "image"
     }
   ]
 }
