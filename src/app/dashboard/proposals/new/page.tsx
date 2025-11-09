@@ -77,7 +77,8 @@ export default function NewProposalPage() {
   const isNewClient = clientSelectionType === 'new';
 
   const availableClients = useMemo(() => {
-    return clients.filter(client => client.status === 'pending');
+    // Return all clients, as a new proposal can be made for any client.
+    return clients;
   }, [clients]);
 
   const selectedClient = useMemo(() => {
