@@ -931,51 +931,6 @@ export default function DashboardPage() {
                         </div>
                      </DialogContent>
                  </BonusCard>
-
-                 <BonusCard 
-                    icon={<CalendarCheck className="h-6 w-6 text-primary" />}
-                    title="Retention Bonus"
-                    value={`${dashboardData.clientsForRetention.length} Client(s)`}
-                    progress={0}
-                    goal={`Upcoming Anniversaries`}
-                    description="Secure renewals to earn a bonus.">
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Client Retention Bonus</DialogTitle>
-                            <DialogDescription>Earn bonuses by maintaining relationships with clients at key milestones.</DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                             {dashboardData.clientsForRetention.length > 0 ? (
-                                <>
-                                <p className="font-semibold">Upcoming Anniversaries:</p>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Client</TableHead>
-                                            <TableHead>Milestone</TableHead>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead className="text-right">Bonus</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {dashboardData.clientsForRetention.map((client) => (
-                                            <TableRow key={client.id}>
-                                                <TableCell>{client.companyName}</TableCell>
-                                                <TableCell className="font-medium">{client.milestone.anniversary}</TableCell>
-                                                <TableCell>{format(client.milestone.date, 'MMM dd, yyyy')}</TableCell>
-                                                <TableCell className="text-right font-bold text-primary">{currencyFormatter.format(client.milestone.bonus)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                                </>
-                            ) : (
-                                <p className="text-muted-foreground text-center">No client anniversaries in the next two months.</p>
-                            )}
-                             <p className="text-xs text-muted-foreground pt-4">This bonus is awarded if the client remains active past their anniversary date. Contact them to ensure they're happy!</p>
-                        </div>
-                    </DialogContent>
-                </BonusCard>
                 <BonusCard 
                     icon={<Power className="h-6 w-6 text-primary" />}
                     title="Prepayment Power-Up"
