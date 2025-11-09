@@ -288,16 +288,18 @@ export function ClientOverviewDialog({
 
 
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
-    const proposalWithContent = clientProposals.find(p => p.id === selectedProposal?.id);
-    if (!proposalWithContent?.content) return null;
+    const proposalToParse = selectedProposal || proposal;
+    if (!proposalToParse?.content) return null;
     try {
-        const content = JSON.parse(proposalWithContent.content);
-        return { ...content, paymentProofUrl: proposalWithContent.paymentProofUrl };
+        const content = JSON.parse(proposalToParse.content);
+        // Find the full proposal from the state to get the paymentProofUrl
+        const fullProposal = clientProposals.find(p => p.id === proposalToParse.id);
+        return { ...content, paymentProofUrl: fullProposal?.paymentProofUrl };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
         return null;
     }
-  }, [selectedProposal, clientProposals]);
+  }, [selectedProposal, proposal, clientProposals]);
   
   const contactInfo = useMemo(() => {
     return {
@@ -353,7 +355,7 @@ export function ClientOverviewDialog({
         addons,
         dateSigned: parsedProposalContent.date,
         monthlyAmount: parsedProposalContent.basePrice,
-        clientType: parsedProposalContent.clientType
+        clientType: parsedProposalContent.clientType,
       };
     }
     if (client.subscription) {
@@ -783,7 +785,7 @@ export function ClientOverviewDialog({
                     </Card>
                  </div>
 
-                 {view === 'proposals' && client.status === 'pending' && selectedProposal?.status !== 'accepted' &&(
+                 {(view === 'proposals' || (view === 'clients' && client.status === 'pending' && selectedProposal?.status === 'finalized')) && selectedProposal?.status !== 'accepted' && (
                      <Card>
                         <CardHeader>
                             <CardTitle>Payment Confirmation</CardTitle>
@@ -857,7 +859,7 @@ export function ClientOverviewDialog({
                     </Card>
                  )}
                 
-                 {view === 'clients' && (
+                 {view === 'clients' && client.status === 'active' && (
                      <PaymentHistory client={client} proposals={clientProposals} onPaymentConfirm={handleConfirmPayment} />
                  )}
 
