@@ -306,9 +306,9 @@ export default function DashboardPage() {
     { term: 'Annual', bonus: '₱5,000 + "Cash Flow Champion" Badge' },
   ];
   const prepaymentProgressTiers = [
-    { target: 1, reward: '₱2,000' },
-    { target: 3, reward: '₱7,500' },
-    { target: 5, reward: '₱15,000 Milestone Bonus' },
+    { target: 3, reward: '₱1,000' },
+    { target: 9, reward: '₱4,000' },
+    { target: 15, reward: '₱10,000 Milestone Bonus' },
   ];
   const payoutTimeline = [
       { term: 'Monthly', schedule: 'Within 7–15 days after payment', example: 'e.g., Client pays Nov 1 → Commission by Nov 10–15' },
@@ -320,7 +320,7 @@ export default function DashboardPage() {
   const commissionTiers = [
     { clientType: 'Family Plan', commission: '12%' },
     { clientType: 'SME', commission: '12%' },
-    { clientType: 'Business', commission: '10%' },
+    { clientType: 'Business (Commercial/Corporate)', commission: '10%' },
     { clientType: 'Enterprise', commission: '8%' },
   ];
   const recurringCommissionTiers = [
