@@ -58,8 +58,8 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {commissions.map((commission) => (
-                            <TableRow key={commission.id}>
+                        {commissions.map((commission, index) => (
+                            <TableRow key={`${commission.id}-${index}`}>
                                 <TableCell>
                                     <Badge
                                         variant={commission.type === 'bonus' ? 'special' : 'default'}
@@ -154,6 +154,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
 
         // 1. One-time commissions from this month
         const acceptedThisMonth = proposals.filter(p => {
+            if (!p.createdAt) return false;
             const createdAt = new Date(p.createdAt);
             return p.status === 'accepted' && isWithinInterval(createdAt, { start: currentMonthStart, end: currentMonthEnd });
         });
@@ -168,7 +169,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                     id: `otc-${proposal.id}`,
                     amount: commissionAmount,
                     createdAt: proposal.createdAt,
-                    description: `One-time commission for ${proposal.title}`,
+                    description: `One-time commission`,
                     clientName: client.companyName,
                     proposalId: proposal.id,
                     status: 'pending',
@@ -187,7 +188,8 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
              if (!acceptedProposalForClient || !acceptedProposalForClient.content) return;
              try {
                 const proposalContent = JSON.parse(acceptedProposalForClient.content) as FinalPlanDetails;
-                const dateSigned = proposalContent.date ? parseISO(proposalContent.date) : new Date(0);
+                if (!proposalContent.date) return;
+                const dateSigned = parseISO(proposalContent.date);
                 if (dateSigned < oneYearAgo) return;
 
                 const monthlyFee = proposalContent.basePrice || 0;
@@ -199,7 +201,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                         id: `rec-${client.id}`,
                         amount: monthlyPayout,
                         createdAt: now.toISOString(),
-                        description: `Recurring commission for ${proposalContent.summaryTitle}`,
+                        description: `Recurring commission`,
                         clientName: client.companyName,
                         proposalId: acceptedProposalForClient.id,
                         status: 'pending',
@@ -211,6 +213,48 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
             } catch {}
         });
 
+        // 3. Bonuses
+        const corporateBonusTiers = [
+            { target: 3, name: 'Corporate Closer I', bonus: 2000 },
+            { target: 5, name: 'Corporate Closer II', bonus: 5000 },
+            { target: 10, name: 'Corporate Closer III', bonus: 12000 },
+        ];
+        const familyBonusTiers = [
+            { target: 10, name: 'Family Plan Closer I', bonus: 2500 },
+            { target: 20, name: 'Family Plan Closer II', bonus: 6000 },
+            { target: 30, name: 'Family Plan Closer III', bonus: 15000 },
+        ];
+
+        const corpClientsThisMonth = acceptedThisMonth.filter(p => {
+            const client = clientMap.get(p.clientId);
+            return client && ['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '');
+        }).length;
+
+        const householdClientsThisMonth = acceptedThisMonth.filter(p => {
+            const client = clientMap.get(p.clientId);
+            return client && client.clientType === 'household';
+        }).length;
+        
+        corporateBonusTiers.forEach(tier => {
+            if (corpClientsThisMonth >= tier.target) {
+                currentMonthCommissions.push({
+                    id: `bonus-corp-${tier.target}`, amount: tier.bonus, createdAt: now.toISOString(),
+                    description: tier.name, clientName: 'N/A', proposalId: 'N/A',
+                    status: 'pending', type: 'bonus', userId: user?.uid || '', referenceId: `bonus-corp-${tier.target}`
+                });
+            }
+        });
+         familyBonusTiers.forEach(tier => {
+            if (householdClientsThisMonth >= tier.target) {
+                currentMonthCommissions.push({
+                    id: `bonus-fam-${tier.target}`, amount: tier.bonus, createdAt: now.toISOString(),
+                    description: tier.name, clientName: 'N/A', proposalId: 'N/A',
+                    status: 'pending', type: 'bonus', userId: user?.uid || '', referenceId: `bonus-fam-${tier.target}`
+                });
+            }
+        });
+
+
         // Group historical commissions by month
         const commissionsByMonth = commissions.reduce((acc, commission) => {
             const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
@@ -219,24 +263,19 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
             return acc;
         }, {} as Record<string, PayoutCommission[]>);
 
-        // Add current month's commissions if not already present from historical data
         if (!commissionsByMonth[currentMonthKey]) {
             commissionsByMonth[currentMonthKey] = [];
         }
-        // This simple addition can lead to duplicates if some commissions for the current month are already in `commissions`.
-        // A more robust solution would merge based on commission ID. For now, we combine and will filter later if needed.
+        
         commissionsByMonth[currentMonthKey].push(...currentMonthCommissions);
-
 
         const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
             const monthCommissions = commissionsByMonth[month] || [];
-            // Remove duplicates for pending commissions calculated in real-time
             const uniqueCommissions = Array.from(new Map(monthCommissions.map(c => [c.id, c])).values());
             
             const totalAmount = uniqueCommissions.reduce((sum, c) => sum + c.amount, 0);
             const isCurrentMonth = month === currentMonthKey;
             
-            // If it's the current month, it's always pending. Otherwise, check historical status.
             const status = isCurrentMonth ? 'pending' : (uniqueCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending');
             
             return { 
@@ -250,7 +289,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, clients, proposals, isLoading]);
+    }, [commissions, clients, proposals, isLoading, user]);
 
 
     const { filteredPayouts, availableYears } = useMemo(() => {
@@ -365,3 +404,5 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
         </Dialog>
     );
 }
+
+    
