@@ -324,9 +324,10 @@ export default function DashboardPage() {
       { term: 'Recurring Commission', schedule: '3% of client payment, paid monthly', example: 'Example: Your 3% recurring commission is calculated and paid out monthly based on the client\'s confirmed monthly payment.'},
   ];
   const commissionTiers = [
-    { clientType: 'Family Plan', commission: '15%' },
-    { clientType: 'SME', commission: '10%' },
-    { clientType: 'Commercial & Corporate', commission: '8%' },
+    { clientType: 'Family Plan', commission: '12%' },
+    { clientType: 'SME', commission: '12%' },
+    { clientType: 'Business', commission: '10%' },
+    { clientType: 'Enterprise', commission: '8%' },
   ];
   
   if (proposalsLoading || clientsLoading || usersLoading) {
@@ -467,10 +468,10 @@ export default function DashboardPage() {
             <Target className="h-4 w-4 text-primary-foreground/80" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{dashboardData.corporateClientsThisMonth} / 3</div>
+            <div className="text-3xl font-bold">{dashboardData.corporateClientsThisMonth} / {dashboardData.corporateClientsTarget}</div>
             <div className="mt-2 space-y-1">
-              <Progress value={(dashboardData.corporateClientsThisMonth / 3) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-              <p className="text-xs text-primary-foreground/80">You're {Math.max(0, 3 - dashboardData.corporateClientsThisMonth)} client(s) away from your ₱2,000 bonus!</p>
+              <Progress value={(dashboardData.corporateClientsThisMonth / dashboardData.corporateClientsTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
+              <p className="text-xs text-primary-foreground/80">You're {Math.max(0, dashboardData.corporateClientsTarget - dashboardData.corporateClientsThisMonth)} client(s) away from your ₱2,000 bonus!</p>
             </div>
           </CardContent>
         </Card>
@@ -543,11 +544,11 @@ export default function DashboardPage() {
             <ScrollArea className="h-[60vh] pr-4">
               <div className="grid gap-8 py-6 md:grid-cols-2">
                   <div>
-                      <h3 className="text-lg font-semibold mb-2">Commission Rate by Client Type</h3>
+                      <h3 className="text-lg font-semibold mb-2">One-Time Commission Rates</h3>
                       <Table>
                           <TableHeader>
                               <TableRow>
-                                  <TableHead>Client Type</TableHead>
+                                  <TableHead>Client Tier</TableHead>
                                   <TableHead className="text-right">Commission</TableHead>
                               </TableRow>
                           </TableHeader>
