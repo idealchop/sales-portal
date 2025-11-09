@@ -123,16 +123,16 @@ export default function DashboardPage() {
     const commissionRates: { [key: string]: number } = {
         household: 0.12,
         sme: 0.12,
-        commercial: 0.10,
-        corporate: 0.10,
+        commercial: 0.10, // Business Tier
+        corporate: 0.10, // Business Tier
         enterprise: 0.08,
     };
     
     const recurringCommissionRates: { [key: string]: number } = {
         household: 0,
         sme: 0.03,
-        commercial: 0.03,
-        corporate: 0.03,
+        commercial: 0.03, // Business Tier
+        corporate: 0.03, // Business Tier
         enterprise: 0.03,
     };
 
@@ -346,17 +346,11 @@ export default function DashboardPage() {
       { term: 'Recurring Commission', schedule: '3% of client payment, paid monthly', example: 'Example: Your 3% recurring commission is calculated and paid out monthly based on the client\'s confirmed monthly payment.'},
   ];
   const commissionTiers = [
-    { clientType: 'Family Plan', commission: '12%' },
-    { clientType: 'SME', commission: '12%' },
-    { clientType: 'Business (Commercial/Corporate)', commission: '10%' },
-    { clientType: 'Enterprise', commission: '8%' },
+    { clientType: 'Household', commission: '12%', recurring: 'None' },
+    { clientType: 'SME', commission: '12%', recurring: '3%' },
+    { clientType: 'Business', commission: '10%', recurring: '3%' },
+    { clientType: 'Enterprise', commission: '8%', recurring: '3%' },
   ];
-  const recurringCommissionTiers = [
-    { clientType: 'Family Plan', commission: 'None' },
-    { clientType: 'SME', commission: '3%' },
-    { clientType: 'Business (Commercial/Corporate)', commission: '3%' },
-    { clientType: 'Enterprise', commission: '3%' },
-];
   
   if (proposalsLoading || clientsLoading || usersLoading) {
       return (
@@ -568,32 +562,34 @@ export default function DashboardPage() {
           </DialogTrigger>
           <DialogContent className="max-w-4xl">
             <DialogHeader>
-                <DialogTitle>Recurring Commission &amp; Payouts</DialogTitle>
+                <DialogTitle>Commission &amp; Payouts Guide</DialogTitle>
                 <DialogDescription>
-                    This chart shows your commission history. Earnings from long-term client payments are distributed monthly to ensure a stable income.
+                    This guide explains how your commissions are calculated and paid out.
                 </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-[60vh] pr-4">
               <div className="grid gap-8 py-6 md:grid-cols-2">
-                  <div>
-                        <h3 className="text-lg font-semibold mb-2">Recurring Commission Rates</h3>
-                        <Table>
+                   <div className="md:col-span-2">
+                      <h3 className="text-lg font-semibold mb-2">Commission Structure</h3>
+                       <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Client Tier</TableHead>
-                                    <TableHead className="text-right">Commission</TableHead>
+                                    <TableHead className="text-center">One-Time Commission</TableHead>
+                                    <TableHead className="text-center">Recurring Commission</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {recurringCommissionTiers.map((tier) => (
+                                {commissionTiers.map((tier) => (
                                     <TableRow key={tier.clientType}>
                                         <TableCell className="font-medium">{tier.clientType}</TableCell>
-                                        <TableCell className="text-right font-bold text-primary">{tier.commission}</TableCell>
+                                        <TableCell className="text-center font-bold text-primary">{tier.commission}</TableCell>
+                                        <TableCell className="text-center font-bold text-primary">{tier.recurring}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
-                    </div>
+                  </div>
                   <div>
                       <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
                       <Table>
@@ -616,7 +612,7 @@ export default function DashboardPage() {
                           {payoutTimeline.find(p => p.term === 'Recurring Commission')?.example}
                       </p>
                   </div>
-                   <div className="md:col-span-2">
+                   <div className="md:col-span-1">
                       <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
                       <RevenueChart data={dashboardData.commissionHistory} />
                   </div>
@@ -1004,5 +1000,4 @@ export default function DashboardPage() {
   );
 }
 
-
-
+    
