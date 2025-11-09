@@ -25,7 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
-  topic: z.string().min(10, 'Please describe the topic in at least 10 characters.'),
+  prompt: z.string().min(10, 'Please describe the image you want in at least 10 characters.'),
 });
 
 type SocialPostFormValues = z.infer<typeof formSchema>;
@@ -33,16 +33,16 @@ type SocialPostFormValues = z.infer<typeof formSchema>;
 type GeneratedContent = {
   caption: string;
   imageUrl: string;
-  topic: string;
+  prompt: string;
   timestamp: string;
 };
 
 const contentSuggestions = [
-    "A new case study showing how Smart Refill saved a client 20% on water costs.",
-    "The convenience of automated water delivery for busy offices.",
-    "Our commitment to water safety and compliance standards.",
-    "A behind-the-scenes look at our delivery network.",
-    "Highlighting a positive customer testimonial."
+    "A team of happy professionals in a modern office, collaborating on a project, with glasses of water on their desks.",
+    "A warehouse worker feeling energetic and successful, taking a break with a refreshing water bottle.",
+    "A family in their clean, bright kitchen, laughing and drinking water together.",
+    "An aerial shot of a delivery van with the 'Smart Refill' logo driving through a business district, symbolizing efficiency.",
+    "A close-up shot of a person's hand holding a glass of sparkling clean water, with a blurred office background."
 ];
 
 export default function ContentStudioPage() {
@@ -54,7 +54,7 @@ export default function ContentStudioPage() {
   const form = useForm<SocialPostFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      topic: '',
+      prompt: '',
     },
   });
 
@@ -62,10 +62,10 @@ export default function ContentStudioPage() {
     setIsGenerating(true);
     setGeneratedContent(null);
     try {
-      const result = await generateSocialPost(values);
+      const result = await generateSocialPost({ prompt: values.prompt });
       const newContent: GeneratedContent = {
         ...result,
-        topic: values.topic,
+        prompt: values.prompt,
         timestamp: new Date().toLocaleString(),
       }
       setGeneratedContent(newContent);
@@ -106,7 +106,7 @@ export default function ContentStudioPage() {
   }
 
   const handleSuggestionClick = (suggestion: string) => {
-    form.setValue('topic', suggestion);
+    form.setValue('prompt', suggestion);
   }
 
   return (
@@ -125,9 +125,9 @@ export default function ContentStudioPage() {
         <div className="lg:col-span-1 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Step 1: Create a Post</CardTitle>
+                    <CardTitle>Step 1: Create Visuals</CardTitle>
                     <CardDescription>
-                        Describe your post topic and let our AI, with its built-in professional persona, do the rest.
+                        Provide a complete prompt to generate a unique image. The AI will use this context to create a caption.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -135,14 +135,14 @@ export default function ContentStudioPage() {
                         <form onSubmit={form.handleSubmit(handleGenerate)} className="space-y-6">
                         <FormField
                             control={form.control}
-                            name="topic"
+                            name="prompt"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Post Topic</FormLabel>
+                                <FormLabel>Image Prompt</FormLabel>
                                 <FormControl>
                                 <Textarea
                                     {...field}
-                                    placeholder="e.g., A new case study showing how Smart Refill saved a client 20% on water costs."
+                                    placeholder="e.g., A team of happy professionals in a modern office, collaborating on a project, with glasses of water on their desks."
                                     className="min-h-[120px]"
                                 />
                                 </FormControl>
@@ -181,9 +181,9 @@ export default function ContentStudioPage() {
         <div className="lg:col-span-2 space-y-6">
             <Card>
                 <CardHeader>
-                <CardTitle>Step 2: Generated Preview</CardTitle>
+                <CardTitle>Step 2: Review Content</CardTitle>
                 <CardDescription>
-                    Review your latest AI-generated content below.
+                    Review your AI-generated visual and caption below.
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -203,7 +203,7 @@ export default function ContentStudioPage() {
                     <div className="space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-lg">Generated Image</CardTitle>
+                                <CardTitle className="text-lg">Generated Visual</CardTitle>
                             </CardHeader>
                             <CardContent className="relative aspect-video w-full overflow-hidden rounded-lg">
                                 <Image
@@ -264,7 +264,7 @@ export default function ContentStudioPage() {
                 {history.map((item, index) => (
                     <div key={index} className="flex items-center justify-between rounded-lg border p-3">
                         <div className="flex-1 overflow-hidden">
-                            <p className="truncate text-sm font-medium">{item.topic}</p>
+                            <p className="truncate text-sm font-medium">{item.prompt}</p>
                             <p className="text-xs text-muted-foreground">{item.timestamp}</p>
                         </div>
                         <div className="flex items-center gap-1">
@@ -319,3 +319,5 @@ export default function ContentStudioPage() {
     </div>
   );
 }
+
+    

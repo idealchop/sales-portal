@@ -4,7 +4,7 @@
 /**
  * @fileOverview This file defines a Genkit flow for generating social media posts with AI.
  *
- * The flow takes a topic as input and returns a post caption and a generated image.
+ * The flow takes a detailed prompt for an image and returns a generated image and a relevant caption.
  */
 
 import { ai } from '@/ai/genkit';
@@ -14,7 +14,7 @@ import { initializeFirebase } from '@/firebase';
 import { googleAI } from '@genkit-ai/google-genai';
 
 const SocialPostInputSchema = z.object({
-  topic: z.string().describe('The topic for the social media post.'),
+  prompt: z.string().describe('A detailed prompt for the social media image to be generated.'),
 });
 
 export type SocialPostInput = z.infer<typeof SocialPostInputSchema>;
@@ -37,7 +37,7 @@ const socialPostCaptionPrompt = ai.definePrompt({
     model: googleAI.model('gemini-1.5-flash-latest'),
     prompt: `You are a friendly and caring social media manager for Smart Refill.
 
-    Your goal is to write a short, positive caption (under 25 words) that makes customers feel looked after and secure.
+    Your goal is to write a short, positive caption (under 25 words) that makes customers feel looked after and secure, based on the theme of an image.
 
     Your tone should be:
     - Caring and reassuring
@@ -49,9 +49,9 @@ const socialPostCaptionPrompt = ai.definePrompt({
     - How we take care of water safety and compliance so they don't have to.
     - The convenience and reliability we bring to their daily lives.
 
-    Generate a compelling caption based on the following details. The caption should be concise and leave the reader with a feeling of trust and positivity.
+    Generate a compelling caption based on the following image description. The caption should be concise and leave the reader with a feeling of trust and positivity.
 
-    Topic: {{{topic}}}
+    Image Description: {{{prompt}}}
     `,
 });
 
@@ -76,7 +76,7 @@ const generateSocialPostFlow = ai.defineFlow(
         It should show them working, feeling successful, productive, and healthy.
         The underlying theme is that Smart Refill's water service fuels their success.
         The image should NOT be a static product shot.
-        The overall topic is: ${input.topic}.`,
+        The overall topic is: ${input.prompt}.`,
       }),
     ]);
 
@@ -97,3 +97,5 @@ const generateSocialPostFlow = ai.defineFlow(
     };
   }
 );
+
+    
