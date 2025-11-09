@@ -3,7 +3,7 @@
 
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import { useEffect, useRef, useState } from "react";
-import { Skeleton } from "./ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type MapMarker = {
     position: google.maps.LatLngLiteral;
