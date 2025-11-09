@@ -11,6 +11,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getStorage, ref, uploadString } from 'firebase/storage';
 import { initializeFirebase } from '@/firebase';
+import { googleAI } from '@genkit-ai/google-genai';
 
 const SocialPostInputSchema = z.object({
   topic: z.string().describe('The topic for the social media post.'),
@@ -33,6 +34,7 @@ const socialPostCaptionPrompt = ai.definePrompt({
     name: 'socialPostCaptionPrompt',
     input: { schema: SocialPostInputSchema },
     output: { schema: z.object({ caption: z.string() })},
+    model: googleAI.model('gemini-1.5-flash-latest'),
     prompt: `You are a friendly and caring social media manager for Smart Refill.
 
     Your goal is to write a short, positive caption (under 25 words) that makes customers feel looked after and secure.
