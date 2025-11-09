@@ -34,7 +34,7 @@ const socialPostCaptionPrompt = ai.definePrompt({
     name: 'socialPostCaptionPrompt',
     input: { schema: SocialPostInputSchema },
     output: { schema: z.object({ caption: z.string() })},
-    model: googleAI.model('gemini-1.5-flash-latest'),
+    model: googleAI.model('gemini-1.0-pro'),
     prompt: `You are a friendly and caring social media manager for Smart Refill.
 
     Your goal is to write a short, positive caption (under 25 words) that makes customers feel looked after and secure, based on the theme of an image.
