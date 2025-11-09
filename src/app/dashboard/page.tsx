@@ -608,10 +608,10 @@ export default function DashboardPage() {
                       <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
                       <RevenueChart data={dashboardData.commissionHistory} />
                   </div>
-                   <div className="p-4 border rounded-lg bg-muted/50">
-                      <h3 className="text-lg font-semibold mb-2">Payout Process</h3>
+                   <div className="space-y-2">
+                      <h3 className="text-lg font-semibold">Payout Process</h3>
                       <p className="text-sm text-muted-foreground">
-                          All earnings for the month (one-time & recurring commissions, plus bonuses) are calculated and paid out within 30 days after the month ends.
+                          All earnings (commissions & bonuses) are calculated at the end of each month and paid out within 30 days.
                       </p>
                   </div>
               </div>
