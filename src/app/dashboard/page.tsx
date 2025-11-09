@@ -124,6 +124,7 @@ export default function DashboardPage() {
         household: 0.12,
         sme: 0.12,
         commercial: 0.10,
+        corporate: 0.10,
         enterprise: 0.08,
     };
     
@@ -141,13 +142,8 @@ export default function DashboardPage() {
             return { commission: 0, rate: 0 };
         }
         
-        let rate = 0;
-        if (client.clientType === 'corporate') {
-            rate = commissionRates['commercial'] || 0; // Use commercial rate for corporate
-        } else {
-            rate = commissionRates[client.clientType] || 0;
-        }
-
+        const rate = commissionRates[client.clientType] || 0;
+        
         return { commission: proposal.amount * rate, rate: rate * 100 };
     };
 
@@ -715,7 +711,7 @@ export default function DashboardPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
-                <TableHead className="hidden sm:table-cell">Owner</TableHead>
+                <TableHead className="hidden sm:table-cell">Sales Rep</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead className="hidden md:table-cell text-right">Date</TableHead>
