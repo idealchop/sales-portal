@@ -98,5 +98,8 @@ export type Commission = {
   amount: number;
   status: 'pending' | 'paid';
   createdAt: string;
+  type: 'commission' | 'bonus';
+  description: string;
+  referenceId: string;
 };
     

@@ -31,10 +31,9 @@ type MonthlyPayout = {
     totalAmount: number;
     status: 'paid' | 'pending';
     commissions: Commission[];
-    bonuses: { name: string; bonus: number }[];
 };
 
-function PayoutMonthDetailsDialog({ month, commissions, bonuses }: { month: string, commissions: Commission[], bonuses: {name: string, bonus: number}[] }) {
+function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: Commission[] }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
     return (
@@ -58,7 +57,7 @@ function PayoutMonthDetailsDialog({ month, commissions, bonuses }: { month: stri
                     <TableBody>
                         {commissions.map((commission) => (
                             <TableRow key={commission.id}>
-                                <TableCell className="capitalize">
+                                <TableCell>
                                     <Badge
                                         variant={commission.type === 'bonus' ? 'special' : 'default'}
                                         className="capitalize"
@@ -129,9 +128,6 @@ function PaymentTimelineDialog({ month, status, totalAmount }: { month: string, 
 export function PayoutHistoryDialog({ children }: { children: React.ReactNode }) {
     const { user } = useUser();
     const firestore = useFirestore();
-    const { proposals, isLoading: proposalsLoading } = useProposals();
-    const { clients, isLoading: clientsLoading } = useClients();
-    const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
 
     const [allPayouts, setAllPayouts] = useState<MonthlyPayout[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -140,64 +136,39 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
 
     useEffect(() => {
         const fetchAndProcessData = async () => {
-            if (!user || !firestore || proposalsLoading || clientsLoading) return;
-            setIsLoading(true);
+             // MOCK DATA INJECTION
+            const mockCommissions: Commission[] = [
+                { id: 'c1', proposalId: 'P001', userId: 'user1', amount: 1200, status: 'paid', createdAt: '2024-07-15T10:00:00Z', type: 'commission', description: 'SME Plan Commission', referenceId: 'P001' },
+                { id: 'c2', proposalId: 'P002', userId: 'user1', amount: 2400, status: 'paid', createdAt: '2024-07-20T10:00:00Z', type: 'commission', description: 'Commercial Plan Commission', referenceId: 'P002' },
+                { id: 'b1', proposalId: '', userId: 'user1', amount: 2000, status: 'paid', createdAt: '2024-07-30T10:00:00Z', type: 'bonus', description: 'Corporate Closer I Bonus', referenceId: 'Corporate Closer I' },
+                { id: 'c3', proposalId: 'P003', userId: 'user1', amount: 800, status: 'paid', createdAt: '2024-06-10T10:00:00Z', type: 'commission', description: 'Family Plan Commission', referenceId: 'P003' },
+                { id: 'c4', proposalId: 'P004', userId: 'user1', amount: 3000, status: 'paid', createdAt: '2024-06-25T10:00:00Z', type: 'commission', description: 'Enterprise Plan Commission', referenceId: 'P004' },
+                { id: 'c5', proposalId: 'P005', userId: 'user1', amount: 1500, status: 'pending', createdAt: '2024-08-05T10:00:00Z', type: 'commission', description: 'SME Plan Commission', referenceId: 'P005' },
+            ];
 
-            try {
-                // 1. Fetch Commissions
-                const commissionsRef = collection(firestore, 'commissions');
-                const q = query(commissionsRef, where('userId', '==', user.uid));
-                const querySnapshot = await getDocs(q);
-                
-                const commissions: Commission[] = [];
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    let createdAtString: string;
-                    if (data.createdAt && typeof (data.createdAt as any).toDate === 'function') {
-                        createdAtString = (data.createdAt as any).toDate().toISOString();
-                    } else {
-                        createdAtString = data.createdAt as string;
-                    }
-                    commissions.push({ id: doc.id, ...data, createdAt: createdAtString } as Commission);
-                });
+            const commissionsByMonth = mockCommissions.reduce((acc, commission) => {
+                const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
+                if (!acc[monthKey]) {
+                    acc[monthKey] = [];
+                }
+                acc[monthKey].push(commission);
+                return acc;
+            }, {} as Record<string, Commission[]>);
 
-                const commissionsByMonth = commissions.reduce((acc, commission) => {
-                    const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
-                    if (!acc[monthKey]) {
-                        acc[monthKey] = [];
-                    }
-                    acc[monthKey].push(commission);
-                    return acc;
-                }, {} as Record<string, Commission[]>);
+            const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
+                const monthCommissions = commissionsByMonth[month] || [];
+                const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
+                const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
                 
-                // 2. Calculate Bonuses (This part would be replaced by fetching bonus-type commissions)
-                const bonusesByMonth: Record<string, { name: string; bonus: number }[]> = {};
-                
-                // 3. Combine Commissions and Bonuses
-                const allMonths = new Set([...Object.keys(commissionsByMonth), ...Object.keys(bonusesByMonth)]);
-                
-                const processedPayouts: MonthlyPayout[] = Array.from(allMonths).map(month => {
-                    const monthCommissions = commissionsByMonth[month] || [];
-                    const monthBonuses = bonusesByMonth[month] || [];
-                    
-                    const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
-                    const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
-                    
-                    return { month, totalAmount, status, commissions: monthCommissions, bonuses: monthBonuses };
-                });
-                
-                processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
-                setAllPayouts(processedPayouts);
+                return { month, totalAmount, status, commissions: monthCommissions };
+            });
 
-            } catch (error) {
-                console.error("Error processing payouts: ", error);
-            } finally {
-                setIsLoading(false);
-            }
+            processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+            setAllPayouts(processedPayouts);
+            setIsLoading(false);
         };
-
         fetchAndProcessData();
-    }, [user, firestore, proposals, clients, clientMap, proposalsLoading, clientsLoading]);
+    }, [user, firestore]);
 
     const { filteredPayouts, availableYears } = useMemo(() => {
         const yearSet = new Set<string>();
@@ -275,7 +246,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
                                                                 {currencyFormatter.format(payout.totalAmount)}
                                                             </button>
                                                         </DialogTrigger>
-                                                        <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} bonuses={payout.bonuses} />
+                                                        <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} />
                                                     </Dialog>
                                                 </TableCell>
                                                 <TableCell>
