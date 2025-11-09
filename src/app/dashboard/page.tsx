@@ -167,8 +167,8 @@ export default function DashboardPage() {
         ? ((monthlyCommission - lastMonthCommission) / lastMonthCommission) * 100 
         : (monthlyCommission > 0 ? 100 : 0);
     
-    const getClientsFromProposals = (proposals: typeof acceptedThisMonth) => {
-        const clientIds = new Set(proposals.map(p => p.clientId));
+    const getClientsFromProposals = (proposalsList: Proposal[]) => {
+        const clientIds = new Set(proposalsList.map(p => p.clientId));
         return clients.filter(c => clientIds.has(c.id));
     };
 
@@ -249,7 +249,7 @@ export default function DashboardPage() {
     const teamRevenue = totalCommissionValue; 
 
     // Prepayment Power-Up
-    const prepaidContractDetails = acceptedProposals
+    const prepaidContractDetails = acceptedThisMonth
       .map(proposal => {
         try {
           const content = JSON.parse(proposal.content);
@@ -991,4 +991,3 @@ export default function DashboardPage() {
   );
 }
 
-    
