@@ -72,7 +72,13 @@ const generateSocialPostFlow = ai.defineFlow(
       socialPostCaptionPrompt(input),
       ai.generate({
         model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: `A modern, clean, and professional social media image for a company called 'Smart Refill' about the topic: ${input.topic}. Style: ${input.style}`,
+        prompt: `Create a modern, clean, and professional social media image for 'Smart Refill'.
+        The image must feature people in their environment (office, house, or warehouse).
+        It should show them working, feeling successful, productive, and healthy.
+        The underlying theme is that Smart Refill's water service fuels their success.
+        The image should NOT be a static product shot.
+        The overall topic is: ${input.topic}.
+        The visual style must be: ${input.style}.`,
       }),
     ]);
 
