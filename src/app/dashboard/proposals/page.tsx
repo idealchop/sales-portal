@@ -349,8 +349,8 @@ export default function ProposalsPage() {
                  if (!subscriptionInfo && acceptedProposal?.content) {
                      try {
                         const content = JSON.parse(acceptedProposal.content) as any;
-                        const amountString = String(content.totalAmountDue || '0');
-                        const cleanedAmount = parseFloat(amountString.replace(/[^0-9.-]+/g, ''));
+                        const amountString = String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, "");
+                        const cleanedAmount = parseFloat(amountString);
 
                         subscriptionInfo = {
                             planId: content.plan.id,
@@ -585,5 +585,3 @@ export default function ProposalsPage() {
     </div>
   );
 }
-
-    
