@@ -7,6 +7,7 @@ import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
 import { UserProvider } from './auth/use-user';
 import { initializeFirebase } from './index';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 interface FirebaseContextState {
   firebaseApp: FirebaseApp | null;
@@ -25,7 +26,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   useEffect(() => {
-    // This effect runs once on the client to initialize Firebase.
     const { firebaseApp, auth, firestore } = initializeFirebase();
     setServices({ firebaseApp, auth, firestore });
   }, []);
@@ -38,8 +38,6 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
   }, [services]);
 
-  // CRITICAL: Do not render children until Firebase is fully initialized.
-  // This prevents any component from trying to access null Firebase services.
   if (contextValue.isFirebaseLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -48,15 +46,15 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({ children }
     );
   }
 
-  // The UserProvider now safely sits inside, guaranteed to receive a valid auth instance.
   return (
     <FirebaseContext.Provider value={contextValue}>
-      <UserProvider>{children}</UserProvider>
+      <UserProvider>
+        {children}
+        <FirebaseErrorListener />
+      </UserProvider>
     </FirebaseContext.Provider>
   );
 };
-
-// --- HOOKS to access Firebase services ---
 
 export const useFirebase = (): FirebaseContextState => {
   const context = useContext(FirebaseContext);
@@ -89,8 +87,6 @@ export const useFirebaseApp = (): FirebaseApp => {
   }
   return firebaseApp!;
 };
-
-// --- UTILITY HOOK for memoization ---
 
 type MemoFirebase<T> = T & { __memo?: boolean };
 

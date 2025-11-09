@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseProvider } from '@/firebase/provider';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+
 
 export const metadata: Metadata = {
   title: 'Smart Refill Sales Portal',
@@ -25,7 +25,6 @@ export default function RootLayout({
         <FirebaseProvider>
           {children}
           <Toaster />
-          <FirebaseErrorListener />
         </FirebaseProvider>
       </body>
     </html>
