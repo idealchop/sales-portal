@@ -362,7 +362,7 @@ export function ClientOverviewDialog({
     if (client.subscription) {
       // Correctly handle addons if they are just an array of strings
       const mappedAddons = Array.isArray(client.subscription.addons)
-        ? client.subscription.addons.map(addonString => ({ name: addonString, cost: 0 }))
+        ? client.subscription.addons.map(addonString => (typeof addonString === 'string' ? { name: addonString, cost: 0 } : addonString))
         : [];
 
       return {
@@ -734,9 +734,9 @@ export function ClientOverviewDialog({
                                         <div key={index} className="flex justify-between text-sm">
                                             <span className="text-muted-foreground flex items-center gap-2">
                                                 <Sparkles className="h-4 w-4 text-yellow-500" />
-                                                {typeof addon === 'string' ? addon : addon.name}
+                                                {addon.name}
                                             </span>
-                                            {typeof addon !== 'string' && addon.cost > 0 && <span className="font-medium">{currencyFormatter.format(addon.cost)}</span>}
+                                            {addon.cost > 0 && <span className="font-medium">{currencyFormatter.format(addon.cost)}</span>}
                                         </div>
                                     ))}
                                     <Separator />
