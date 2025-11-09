@@ -129,13 +129,7 @@ export default function DashboardPage() {
         enterprise: 0.08,
     };
     
-    const recurringCommissionRates: { [key: string]: number } = {
-        household: 0,
-        sme: 0.03,
-        commercial: 0.03, // Business Tier
-        corporate: 0.03, // Business Tier
-        enterprise: 0.03,
-    };
+    const recurringCommissionRate = 0.03;
 
     const getCommissionDetails = (proposal: Proposal): { commission: number; rate: number } => {
         const client = clientMap.get(proposal.clientId);
@@ -220,20 +214,26 @@ export default function DashboardPage() {
         c.status === 'active' && 
         c.subscription && 
         c.subscription.dateSigned && 
-        new Date(c.subscription.dateSigned) > oneYearAgo
+        new Date(c.subscription.dateSigned) > oneYearAgo &&
+        c.clientType !== 'household'
     );
     
     const recurringCommissionDetails = activeClientsWithSubscription.map(client => {
-      const rate = (client.clientType && recurringCommissionRates[client.clientType]) || 0;
-      const earning = (client.subscription?.amount || 0) * rate;
+      const monthlyFee = client.subscription?.amount || 0;
+      const annualValue = monthlyFee * 12;
+      const totalCommission = annualValue * recurringCommissionRate;
+      const monthlyPayout = totalCommission / 12;
+      
       return {
         ...client,
-        recurringEarning: earning,
-        commissionRate: rate * 100,
+        annualValue,
+        totalCommission,
+        monthlyPayout,
+        commissionRate: recurringCommissionRate * 100,
       }
     });
 
-    const recurringCommission = recurringCommissionDetails.reduce((sum, client) => sum + client.recurringEarning, 0);
+    const recurringCommission = recurringCommissionDetails.reduce((sum, client) => sum + client.monthlyPayout, 0);
 
     const clientsForRetention = clients
         .filter(c => c.status === 'active' && c.subscription?.dateSigned)
@@ -451,36 +451,34 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent className="p-0 pt-2">
                             <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.recurringCommission)}</div>
-                            <p className="text-xs text-primary-foreground/80">Your stable monthly base income (3%)</p>
+                            <p className="text-xs text-primary-foreground/80">Your stable monthly base income.</p>
                              <p className="text-xs text-primary-foreground/80 mt-2 underline">Click to see breakdown</p>
                         </CardContent>
                     </div>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-3xl">
                     <DialogHeader>
                         <DialogTitle>Recurring Commission Breakdown</DialogTitle>
                         <DialogDescription>
-                            Your 3% recurring commission from all active clients' monthly fees.
+                            Your recurring commission is 3% of the annual contract value, paid out monthly over 12 months.
                         </DialogDescription>
                     </DialogHeader>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Client</TableHead>
-                                <TableHead>Plan</TableHead>
-                                <TableHead>Monthly Fee</TableHead>
-                                <TableHead className="text-center">Rate</TableHead>
-                                <TableHead className="text-right">Your Earning</TableHead>
+                                <TableHead>Annual Value</TableHead>
+                                <TableHead>Total Commission (3%)</TableHead>
+                                <TableHead className="text-right">Monthly Payout</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                              {dashboardData.recurringCommissionDetails.length > 0 ? dashboardData.recurringCommissionDetails.map(c => (
                                 <TableRow key={c.id}>
                                     <TableCell>{c.companyName}</TableCell>
-                                    <TableCell>{c.subscription?.planName || 'N/A'}</TableCell>
-                                    <TableCell>{currencyFormatter.format(c.subscription?.amount || 0)}</TableCell>
-                                    <TableCell className="text-center">{c.commissionRate}%</TableCell>
-                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(c.recurringEarning)}</TableCell>
+                                    <TableCell>{currencyFormatter.format(c.annualValue)}</TableCell>
+                                    <TableCell>{currencyFormatter.format(c.totalCommission)}</TableCell>
+                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(c.monthlyPayout)}</TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>
