@@ -249,7 +249,14 @@ export default function DashboardPage() {
     const teamRevenue = totalCommissionValue; 
 
     // Prepayment Power-Up
-    const prepaidContracts = clients.filter(c => c.status === 'active' && c.subscription?.planId).length;
+    const prepaidContracts = acceptedProposals.filter(proposal => {
+        try {
+            const content = JSON.parse(proposal.content);
+            return content.billingCycleLabel && content.billingCycleLabel !== 'Monthly';
+        } catch {
+            return false;
+        }
+    }).length;
     const prepaidContractsTarget = 5;
 
     return {
@@ -947,3 +954,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
