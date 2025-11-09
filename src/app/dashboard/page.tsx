@@ -26,6 +26,7 @@ import {
   Receipt,
   User,
   Power,
+  CalendarDays,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -357,11 +358,11 @@ export default function DashboardPage() {
     { target: 15, reward: '₱10,000 Milestone Bonus' },
   ];
   const payoutTimeline = [
-      { term: 'Monthly', schedule: 'Within 7–15 days after payment', example: 'e.g., Client pays Nov 1 → Commission by Nov 10–15' },
-      { term: 'Quarterly', schedule: '⅓ each month after payment', example: 'e.g., Client pays Nov 1 → Payouts in Nov–Dec–Jan' },
-      { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Apr' },
-      { term: 'Annual', schedule: 'Spread monthly for 12 months', example: 'e.g., Client pays Nov 1 → Paid monthly until Oct next year' },
-      { term: 'Recurring Commission', schedule: '3% of client payment, paid monthly', example: 'Example: Your 3% recurring commission is calculated and paid out monthly based on the client\'s confirmed monthly payment.'},
+      { term: 'Monthly', schedule: 'Within 7–15 days after payment' },
+      { term: 'Quarterly', schedule: '⅓ each month after payment' },
+      { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months' },
+      { term: 'Annual', schedule: 'Spread monthly for 12 months' },
+      { term: 'Recurring Commission', schedule: '3% of client payment, paid monthly'},
   ];
   const commissionTiers = [
     { clientType: 'Household', commission: '12%', recurring: 'None' },
@@ -611,26 +612,18 @@ export default function DashboardPage() {
                         </Table>
                   </div>
                   <div>
-                      <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
-                      <Table>
-                          <TableHeader>
-                              <TableRow>
-                                  <TableHead>Client Payment Term</TableHead>
-                                  <TableHead>Payout Schedule</TableHead>
-                              </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                              {payoutTimeline.map((item) => (
-                                  <TableRow key={item.term}>
-                                      <TableCell className="font-medium">{item.term}</TableCell>
-                                      <TableCell>{item.schedule}</TableCell>
-                                  </TableRow>
-                              ))}
-                          </TableBody>
-                      </Table>
-                       <p className="text-xs text-muted-foreground mt-4">
-                          {payoutTimeline.find(p => p.term === 'Recurring Commission')?.example}
-                      </p>
+                    <h3 className="text-lg font-semibold mb-2">Payout Timeline Explained</h3>
+                    <ul className="space-y-4">
+                        {payoutTimeline.map((item) => (
+                            <li key={item.term} className="flex items-start gap-3">
+                                <CalendarDays className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                <div>
+                                    <p className="font-semibold">{item.term}</p>
+                                    <p className="text-sm text-muted-foreground">{item.schedule}</p>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
                   </div>
                    <div className="md:col-span-1">
                       <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
@@ -997,3 +990,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
