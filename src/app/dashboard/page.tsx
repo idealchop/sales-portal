@@ -302,8 +302,8 @@ export default function DashboardPage() {
     { milestone: 'Reach ₱100,000 combined team revenue', reward: '₱5,000 leadership bonus' },
   ]
   const prepaymentBonusTiers = [
-    { term: 'Semi-Annual', bonus: '₱3,000' },
-    { term: 'Annual', bonus: '₱5,000 + "Cash Flow Champion" Badge' },
+    { term: 'Semi-Annual', bonus: '₱1,000', minContract: 50000 },
+    { term: 'Annual', bonus: '₱2,500 + "Cash Flow Champion" Badge', minContract: 100000 },
   ];
   const prepaymentProgressTiers = [
     { target: 3, reward: '₱1,000' },
@@ -905,6 +905,7 @@ export default function DashboardPage() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Prepayment Term</TableHead>
+                                        <TableHead>Minimum Contract Value</TableHead>
                                         <TableHead>Bonus per Contract</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -912,6 +913,7 @@ export default function DashboardPage() {
                                     {prepaymentBonusTiers.map(tier => (
                                         <TableRow key={tier.term}>
                                             <TableCell className="font-medium">{tier.term}</TableCell>
+                                            <TableCell className="font-medium">{currencyFormatter.format(tier.minContract)}</TableCell>
                                             <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
                                         </TableRow>
                                     ))}
