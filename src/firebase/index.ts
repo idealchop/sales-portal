@@ -3,6 +3,7 @@ import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
+import { useMemo } from 'react';
 
 export function initializeFirebase(): {
   firebaseApp: FirebaseApp;
@@ -26,6 +27,17 @@ export function initializeFirebase(): {
   };
 }
 
+type MemoFirebase<T> = T & { __memo?: boolean };
+
+export function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList): T | (MemoFirebase<T>) {
+  const memoized = useMemo(factory, deps);
+  
+  if (typeof memoized !== 'object' || memoized === null) return memoized;
+  (memoized as MemoFirebase<T>).__memo = true;
+  
+  return memoized;
+}
+
 export * from './provider';
 export * from './client-provider';
 export * from './firestore/use-collection';
@@ -33,3 +45,4 @@ export * from './firestore/use-doc';
 export * from './auth/use-user';
 export * from './errors';
 export * from './error-emitter';
+
