@@ -25,6 +25,7 @@ import {
   CheckCircle,
   Receipt,
   User,
+  Power,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -151,12 +152,12 @@ export default function DashboardPage() {
 
     const acceptedThisMonth = acceptedProposals.filter(p => {
         const createdAt = new Date(p.createdAt);
-        return createdAt >= currentMonthStart && createdAt <= currentMonthEnd;
+        return isWithinInterval(createdAt, { start: currentMonthStart, end: currentMonthEnd });
     });
 
     const acceptedLastMonth = acceptedProposals.filter(p => {
         const createdAt = new Date(p.createdAt);
-        return createdAt >= lastMonthStart && createdAt <= lastMonthEnd;
+        return isWithinInterval(createdAt, { start: lastMonthStart, end: lastMonthEnd });
     });
 
     const monthlyCommission = acceptedThisMonth.reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
@@ -192,7 +193,7 @@ export default function DashboardPage() {
         const revenue = acceptedProposals
             .filter(p => {
                 const createdAt = new Date(p.createdAt);
-                return createdAt >= monthStart && createdAt <= monthEnd;
+                return isWithinInterval(createdAt, { start: monthStart, end: monthEnd });
             })
             .reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
         
@@ -261,6 +262,8 @@ export default function DashboardPage() {
     const prepaidContractDetails = acceptedThisMonth
       .map(proposal => {
         try {
+          // Guard against proposals without content
+          if (!proposal.content) return null;
           const content = JSON.parse(proposal.content);
           if (content.billingCycleLabel && content.billingCycleLabel !== 'Monthly') {
             const client = clientMap.get(proposal.clientId);
@@ -271,6 +274,7 @@ export default function DashboardPage() {
           }
           return null;
         } catch {
+          // Ignore proposals with invalid JSON content
           return null;
         }
       })
@@ -956,6 +960,66 @@ export default function DashboardPage() {
                         </div>
                     </DialogContent>
                 </BonusCard>
+                <BonusCard 
+                    icon={<Power className="h-6 w-6 text-primary" />}
+                    title="Prepayment Power-Up"
+                    value={`${dashboardData.prepaidContracts} / 5`}
+                    progress={(dashboardData.prepaidContracts / 5) * 100}
+                    goal={`Goal: 5 prepaid contracts`}
+                    description="Reward for closing long-term prepaid contracts.">
+                     <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Prepayment Power-Up Bonus</DialogTitle>
+                            <DialogDescription>Rewards for securing long-term financial commitments from clients.</DialogDescription>
+                        </DialogHeader>
+                         <div className="space-y-4 py-4">
+                           <div className="grid grid-cols-2 gap-4">
+                              <Card className="p-4">
+                                  <p className="text-sm text-muted-foreground">Your Progress</p>
+                                  <p className="text-2xl font-bold">{dashboardData.prepaidContracts} <span className="text-lg">/ {dashboardData.prepaidContractsTarget} contracts</span></p>
+                              </Card>
+                               <Card className="p-4">
+                                  <p className="text-sm text-muted-foreground">Next Bonus At</p>
+                                  <p className="text-2xl font-bold">
+                                      {prepaymentProgressTiers.find(t => dashboardData.prepaidContracts < t.target)?.target || prepaymentProgressTiers[prepaymentProgressTiers.length - 1].target} contracts
+                                  </p>
+                              </Card>
+                           </div>
+                           
+                            {dashboardData.prepaidContractDetails.length > 0 && (
+                              <div>
+                                  <h4 className="font-semibold text-sm mb-2">Your Prepaid Contracts This Month:</h4>
+                                  <div className="space-y-2">
+                                      {dashboardData.prepaidContractDetails.map((detail, index) => (
+                                          <div key={index} className="flex justify-between items-center text-sm p-2 bg-muted rounded-md">
+                                              <span>{detail.clientName}</span>
+                                              <Badge variant="secondary">{detail.term}</Badge>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+                           )}
+
+                            <h4 className="font-semibold text-sm pt-4">Bonus Tiers</h4>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Milestone</TableHead>
+                                        <TableHead>Reward</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {prepaymentProgressTiers.map(tier => (
+                                        <TableRow key={tier.target} className={cn(dashboardData.prepaidContracts >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
+                                            <TableCell className="font-medium">Close {tier.target} prepaid contracts</TableCell>
+                                            <TableCell className="font-bold text-primary">{tier.reward}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                     </DialogContent>
+                 </BonusCard>
             </div>
         </CardContent>
       </Card>
