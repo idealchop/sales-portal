@@ -123,11 +123,19 @@ export default function DashboardPage() {
     const currentQuarterEnd = endOfQuarter(now);
 
     const commissionRates: { [key: string]: number } = {
-        household: 0.15,
-        sme: 0.10,
-        commercial: 0.08,
-        corporate: 0.08,
+        household: 0.12,
+        sme: 0.12,
+        commercial: 0.10,
+        corporate: 0.10,
         enterprise: 0.08,
+    };
+    
+    const recurringCommissionRates: { [key: string]: number } = {
+        household: 0,
+        sme: 0.03,
+        commercial: 0.03,
+        corporate: 0.03,
+        enterprise: 0.03,
     };
 
     const getCommissionDetails = (proposal: Proposal): { commission: number; rate: number } => {
@@ -214,7 +222,10 @@ export default function DashboardPage() {
 
     // Recurring Commission: sum of monthly fees for all active clients
     const activeClientsWithSubscription = clients.filter(c => c.status === 'active' && c.subscription);
-    const recurringCommission = activeClientsWithSubscription.reduce((sum, c) => sum + (c.subscription?.amount || 0), 0) * 0.03;
+    const recurringCommission = activeClientsWithSubscription.reduce((sum, c) => {
+        const rate = (c.clientType && recurringCommissionRates[c.clientType]) || 0;
+        return sum + (c.subscription?.amount || 0) * rate;
+    }, 0);
 
     // Retention Bonus: clients with anniversaries coming up
     const clientsForRetention = clients
