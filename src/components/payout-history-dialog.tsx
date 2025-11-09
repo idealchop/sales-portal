@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { useClients } from '@/hooks/use-clients';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TFooter } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { CheckCircle, Clock, Loader2, Award, Star, Trophy } from 'lucide-react';
 import type { Commission, Proposal, Client } from '@/lib/definitions';
@@ -38,6 +38,7 @@ type MonthlyPayout = {
 
 function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: PayoutCommission[] }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const totalAmount = commissions.reduce((sum, commission) => sum + commission.amount, 0);
     
     return (
         <DialogContent className="sm:max-w-3xl">
@@ -74,6 +75,12 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                             </TableRow>
                         ))}
                     </TableBody>
+                    <TFooter>
+                        <TableRow>
+                            <TableCell colSpan={3} className="text-right font-bold text-base">Total Amount</TableCell>
+                            <TableCell className="text-right font-bold text-base">{currencyFormatter.format(totalAmount)}</TableCell>
+                        </TableRow>
+                    </TFooter>
                 </Table>
             </ScrollArea>
         </DialogContent>
@@ -404,5 +411,3 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
         </Dialog>
     );
 }
-
-    
