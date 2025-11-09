@@ -67,11 +67,12 @@ import { ActivityChart } from '@/components/activity-chart';
 import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
 import { useMemo } from 'react';
-import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears, parseISO } from 'date-fns';
 import { useUser } from '@/firebase';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
 import { useSalesUsers } from '@/hooks/use-sales-users';
+import type { FinalPlanDetails } from '@/components/contract-details';
 
 const statusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -210,28 +211,43 @@ export default function DashboardPage() {
     // --- Live Data Calculations for Bonuses ---
     const oneYearAgo = addYears(now, -1);
     
-    const activeClientsWithSubscription = clients.filter(c => 
-        c.status === 'active' && 
-        c.subscription && 
-        c.subscription.dateSigned && 
-        new Date(c.subscription.dateSigned) > oneYearAgo &&
-        c.clientType !== 'household'
-    );
-    
-    const recurringCommissionDetails = activeClientsWithSubscription.map(client => {
-      const monthlyFee = client.subscription?.amount || 0;
-      const annualValue = monthlyFee * 12;
-      const totalCommission = annualValue * recurringCommissionRate;
-      const monthlyPayout = totalCommission / 12;
-      
-      return {
-        ...client,
-        annualValue,
-        totalCommission,
-        monthlyPayout,
-        commissionRate: recurringCommissionRate * 100,
-      }
-    });
+    const activeClients = clients.filter(c => c.status === 'active' && c.clientType !== 'household');
+
+    const recurringCommissionDetails = activeClients.map(client => {
+        const acceptedProposalForClient = acceptedProposals.find(p => p.clientId === client.id);
+        
+        if (!acceptedProposalForClient || !acceptedProposalForClient.content) {
+            return null;
+        }
+
+        try {
+            const proposalContent = JSON.parse(acceptedProposalForClient.content) as FinalPlanDetails;
+            const dateSigned = proposalContent.date ? parseISO(proposalContent.date) : new Date(0);
+            
+            // Check if the contract was signed within the last year
+            if (dateSigned < oneYearAgo) {
+                return null;
+            }
+
+            const monthlyFee = proposalContent.basePrice || 0;
+            const annualValue = monthlyFee * 12;
+            const totalCommission = annualValue * recurringCommissionRate;
+            const monthlyPayout = totalCommission / 12;
+
+            return {
+                ...client,
+                planName: proposalContent.summaryTitle,
+                monthlyFee: monthlyFee,
+                annualValue,
+                totalCommission,
+                monthlyPayout,
+                commissionRate: recurringCommissionRate * 100,
+            };
+        } catch (e) {
+            console.error("Error parsing proposal content for recurring commission:", e);
+            return null;
+        }
+    }).filter((details): details is NonNullable<typeof details>[0] => details !== null);
 
     const recurringCommission = recurringCommissionDetails.reduce((sum, client) => sum + client.monthlyPayout, 0);
 
@@ -262,7 +278,6 @@ export default function DashboardPage() {
     const prepaidContractDetails = acceptedThisMonth
       .map(proposal => {
         try {
-          // Guard against proposals without content
           if (!proposal.content) return null;
           const content = JSON.parse(proposal.content);
           if (content.billingCycleLabel && content.billingCycleLabel !== 'Monthly') {
@@ -274,7 +289,6 @@ export default function DashboardPage() {
           }
           return null;
         } catch {
-          // Ignore proposals with invalid JSON content
           return null;
         }
       })
@@ -302,7 +316,7 @@ export default function DashboardPage() {
         activityData,
         acceptedProposals,
         acceptedThisMonth,
-        activeClientsWithSubscription,
+        activeClients,
         clientsForRetention,
         teamRevenue,
         prepaidContracts,
@@ -456,7 +470,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </div>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl">
+                <DialogContent className="max-w-4xl">
                     <DialogHeader>
                         <DialogTitle>Recurring Commission Breakdown</DialogTitle>
                         <DialogDescription>
@@ -467,6 +481,8 @@ export default function DashboardPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Client</TableHead>
+                                <TableHead>Plan</TableHead>
+                                <TableHead>Monthly Fee</TableHead>
                                 <TableHead>Annual Value</TableHead>
                                 <TableHead>Total Commission (3%)</TableHead>
                                 <TableHead className="text-right">Monthly Payout</TableHead>
@@ -476,13 +492,15 @@ export default function DashboardPage() {
                              {dashboardData.recurringCommissionDetails.length > 0 ? dashboardData.recurringCommissionDetails.map(c => (
                                 <TableRow key={c.id}>
                                     <TableCell>{c.companyName}</TableCell>
+                                    <TableCell>{c.planName}</TableCell>
+                                    <TableCell>{currencyFormatter.format(c.monthlyFee)}</TableCell>
                                     <TableCell>{currencyFormatter.format(c.annualValue)}</TableCell>
                                     <TableCell>{currencyFormatter.format(c.totalCommission)}</TableCell>
                                     <TableCell className="text-right font-semibold">{currencyFormatter.format(c.monthlyPayout)}</TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center">No active recurring subscriptions.</TableCell>
+                                    <TableCell colSpan={6} className="text-center">No active recurring subscriptions.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -1024,5 +1042,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

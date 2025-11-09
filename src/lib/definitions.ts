@@ -29,6 +29,7 @@ export type Plan = {
 
 export type Client = {
   id: string;
+  userId: string;
   companyName: string;
   contactName: string;
   contactEmail: string;
@@ -56,6 +57,7 @@ export type Client = {
 export type Proposal = {
   id: string;
   clientId: string;
+  userId: string;
   client?: Pick<Client, 'id' | 'companyName' | 'contactName'>;
   title: string;
   content: string;
