@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Sparkles, Copy, Download, Eye, History, Trash2, Lightbulb } from 'lucide-react';
@@ -23,12 +22,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
   topic: z.string().min(10, 'Please describe the topic in at least 10 characters.'),
-  style: z.string().min(1, 'Please select a style for the post.'),
 });
 
 type SocialPostFormValues = z.infer<typeof formSchema>;
@@ -37,7 +34,6 @@ type GeneratedContent = {
   caption: string;
   imageUrl: string;
   topic: string;
-  style: string;
   timestamp: string;
 };
 
@@ -59,7 +55,6 @@ export default function ContentStudioPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       topic: '',
-      style: 'professional',
     },
   });
 
@@ -71,7 +66,6 @@ export default function ContentStudioPage() {
       const newContent: GeneratedContent = {
         ...result,
         topic: values.topic,
-        style: values.style,
         timestamp: new Date().toLocaleString(),
       }
       setGeneratedContent(newContent);
@@ -133,7 +127,7 @@ export default function ContentStudioPage() {
                 <CardHeader>
                     <CardTitle>Step 1: Create a Post</CardTitle>
                     <CardDescription>
-                        Describe your post, select a tone, and let AI do the rest.
+                        Describe your post topic and let our AI, with its built-in professional persona, do the rest.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -171,30 +165,6 @@ export default function ContentStudioPage() {
                                 </ul>
                             </AlertDescription>
                         </Alert>
-                        <FormField
-                            control={form.control}
-                            name="style"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Tone of Voice</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Select a style" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="professional">Professional</SelectItem>
-                                    <SelectItem value="friendly">Friendly</SelectItem>
-                                    <SelectItem value="witty">Witty</SelectItem>
-                                    <SelectItem value="urgent">Urgent</SelectItem>
-                                    <SelectItem value="inspirational">Inspirational</SelectItem>
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
                         <Button type="submit" disabled={isGenerating} className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold transition-all duration-300 hover:shadow-lg hover:scale-105">
                             {isGenerating ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -349,5 +319,3 @@ export default function ContentStudioPage() {
     </div>
   );
 }
-
-    

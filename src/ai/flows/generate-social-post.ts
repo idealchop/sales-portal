@@ -4,7 +4,7 @@
 /**
  * @fileOverview This file defines a Genkit flow for generating social media posts with AI.
  *
- * The flow takes a topic and a style as input and returns a post caption and a generated image.
+ * The flow takes a topic as input and returns a post caption and a generated image.
  */
 
 import { ai } from '@/ai/genkit';
@@ -14,7 +14,6 @@ import { initializeFirebase } from '@/firebase';
 
 const SocialPostInputSchema = z.object({
   topic: z.string().describe('The topic for the social media post.'),
-  style: z.string().describe('The desired style or tone of the post (e.g., Professional, Witty, Urgent).'),
 });
 
 export type SocialPostInput = z.infer<typeof SocialPostInputSchema>;
@@ -51,7 +50,6 @@ const socialPostCaptionPrompt = ai.definePrompt({
     Generate a compelling caption based on the following details. The caption should be concise and leave the reader with a feeling of trust and positivity.
 
     Topic: {{{topic}}}
-    Style: {{{style}}}
     `,
 });
 
@@ -76,8 +74,7 @@ const generateSocialPostFlow = ai.defineFlow(
         It should show them working, feeling successful, productive, and healthy.
         The underlying theme is that Smart Refill's water service fuels their success.
         The image should NOT be a static product shot.
-        The overall topic is: ${input.topic}.
-        The visual style must be: ${input.style}.`,
+        The overall topic is: ${input.topic}.`,
       }),
     ]);
 
