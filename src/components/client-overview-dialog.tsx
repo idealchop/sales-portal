@@ -313,9 +313,9 @@ export function ClientOverviewDialog({
   }, [client, parsedProposalContent]);
 
 
-  const subscriptionInfo = useMemo(() => {
+ const subscriptionInfo = useMemo(() => {
     if (parsedProposalContent) {
-      const addons: {name: string, cost: number}[] = [];
+      const addons: { name: string, cost: number }[] = [];
       
       if (parsedProposalContent.selectedAddons) {
         for (const addonKey in parsedProposalContent.selectedAddons) {
@@ -360,12 +360,17 @@ export function ClientOverviewDialog({
       };
     }
     if (client.subscription) {
+      // Correctly handle addons if they are just an array of strings
+      const mappedAddons = Array.isArray(client.subscription.addons)
+        ? client.subscription.addons.map(addonString => ({ name: addonString, cost: 0 }))
+        : [];
+
       return {
         ...client.subscription,
         basePrice: client.subscription.amount,
         totalAmountDue: client.subscription.amount,
         billingCycle: 'Monthly',
-        addons: client.subscription.addons || [],
+        addons: mappedAddons, // Use the correctly mapped array
         monthlyAmount: client.subscription.amount,
         clientType: client.clientType,
       };
@@ -531,6 +536,7 @@ export function ClientOverviewDialog({
             content: newRemark,
             author: user.displayName || 'Sales Agent',
             timestamp: serverTimestamp(),
+            userId: user.uid,
         });
         setNewRemark('');
         toast({
