@@ -349,17 +349,22 @@ export default function ProposalsPage() {
                  let subscriptionInfo = client.subscription;
                  if (!subscriptionInfo && acceptedProposal?.content) {
                      try {
-                         const content = JSON.parse(acceptedProposal.content) as any; //FinalPlanDetails
-                         subscriptionInfo = {
+                        const content = JSON.parse(acceptedProposal.content) as any;
+                        const amountString = String(content.totalAmountDue || '0');
+                        const cleanedAmount = parseFloat(amountString.replace(/[^0-9.]/g, ''));
+
+                        subscriptionInfo = {
                             planId: content.plan.id,
                             planName: content.summaryTitle,
                             liters: content.totalMonthlyLiters,
-                            amount: parseFloat(content.totalAmountDue.replace(/[^0-9.-]+/g,"")),
+                            amount: cleanedAmount,
                             refillFrequency: content.refillFrequency,
                             employees: content.employees,
                             gallons: parseInt(content.refillableGallons) || 0,
-                         }
-                     } catch(e) {}
+                        };
+                     } catch(e) {
+                        console.error("Failed to parse subscription from proposal content:", e);
+                     }
                  }
 
                 return (
