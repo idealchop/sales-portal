@@ -168,8 +168,8 @@ export default function DashboardPage() {
     const corporateClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'corporate' || c.clientType === 'sme' || c.clientType === 'commercial').length;
     const individualClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'household').length;
 
-    const corporateClientsTarget = 10;
-    const individualClientsTarget = 30;
+    const corporateClientsTarget = 3;
+    const individualClientsTarget = 10;
     
     const quarterlyVolume = acceptedProposals
         .filter(p => {
@@ -773,10 +773,10 @@ export default function DashboardPage() {
                  <BonusCard 
                     icon={<Target className="h-6 w-6 text-primary" />}
                     title="Corporate Closer Bonus"
-                    value={`${dashboardData.corporateClientsThisMonth} / 10`}
-                    progress={(dashboardData.corporateClientsThisMonth / 10) * 100}
-                    goal="Goal: 3 clients for ₱2,000"
-                    description="For SME, Commercial &amp; Business clients.">
+                    value={`${dashboardData.corporateClientsThisMonth} / ${dashboardData.corporateClientsTarget}`}
+                    progress={(dashboardData.corporateClientsThisMonth / dashboardData.corporateClientsTarget) * 100}
+                    goal={`Goal: ${dashboardData.corporateClientsTarget} clients for ₱2,000`}
+                    description="For SME, Commercial & Business clients.">
                      <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Corporate Closer Bonus</DialogTitle>
@@ -809,7 +809,7 @@ export default function DashboardPage() {
                     title="Family Plan Closer Bonus"
                     value={`${dashboardData.individualClientsThisMonth} / ${dashboardData.individualClientsTarget}`}
                     progress={(dashboardData.individualClientsThisMonth / dashboardData.individualClientsTarget) * 100}
-                    goal={`Goal: 10 clients for ₱2,500`}
+                    goal={`Goal: ${dashboardData.individualClientsTarget} clients for ₱2,500`}
                     description="For Family Plan clients.">
                      <DialogContent>
                         <DialogHeader>
