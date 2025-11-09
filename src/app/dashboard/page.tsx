@@ -853,7 +853,7 @@ export default function DashboardPage() {
                  <BonusCard 
                     icon={<Award className="h-6 w-6 text-primary" />}
                     title="Monthly Growth Bonus"
-                    value={`${currencyFormatter.format(dashboardData.monthlySalesVolume)} / ${currencyFormatter.format(dashboardData.monthlyVolumeTarget)}`}
+                    value={`${currencyFormatter.format(dashboardData.monthlySalesVolume)}`}
                     progress={(dashboardData.monthlySalesVolume / dashboardData.monthlyVolumeTarget) * 100}
                     goal={`Goal: ${currencyFormatter.format(50000)} volume for ₱5,000`}
                     description="Scale up with higher-volume enterprise accounts.">
