@@ -360,13 +360,12 @@ export function ClientOverviewDialog({
       };
     }
     if (client.subscription) {
-      const mappedAddons = client.subscription.addons?.map(addonName => ({ name: addonName, cost: 0 })) || [];
       return {
         ...client.subscription,
         basePrice: client.subscription.amount,
         totalAmountDue: client.subscription.amount,
         billingCycle: 'Monthly',
-        addons: mappedAddons,
+        addons: client.subscription.addons || [],
         monthlyAmount: client.subscription.amount,
         clientType: client.clientType,
       };
@@ -726,8 +725,11 @@ export function ClientOverviewDialog({
                                         <span className="font-medium">{currencyFormatter.format(subscriptionInfo.basePrice)}</span>
                                     </div>
                                     {subscriptionInfo.addons && Array.isArray(subscriptionInfo.addons) && subscriptionInfo.addons.map((addon, index) => (
-                                        <div key={`${typeof addon === 'string' ? addon : addon.name}-${index}`} className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground flex items-center gap-2"><Sparkles className="h-4 w-4 text-yellow-500" />{typeof addon === 'string' ? addon : addon.name}</span>
+                                        <div key={index} className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground flex items-center gap-2">
+                                                <Sparkles className="h-4 w-4 text-yellow-500" />
+                                                {typeof addon === 'string' ? addon : addon.name}
+                                            </span>
                                             {typeof addon !== 'string' && addon.cost > 0 && <span className="font-medium">{currencyFormatter.format(addon.cost)}</span>}
                                         </div>
                                     ))}
