@@ -1,5 +1,4 @@
 
-
 'use client';
 import Link from "next/link";
 import { useState, useMemo, useEffect } from 'react';
@@ -351,7 +350,7 @@ export default function ProposalsPage() {
                      try {
                         const content = JSON.parse(acceptedProposal.content) as any;
                         const amountString = String(content.totalAmountDue || '0');
-                        const cleanedAmount = parseFloat(amountString.replace(/[^0-9.]/g, ''));
+                        const cleanedAmount = parseFloat(amountString.replace(/[^0-9.-]+/g, ''));
 
                         subscriptionInfo = {
                             planId: content.plan.id,
@@ -586,3 +585,5 @@ export default function ProposalsPage() {
     </div>
   );
 }
+
+    
