@@ -328,13 +328,25 @@ export default function AdminPage() {
     const totalProposals = proposals.length;
     const proposalPerClient = totalClients > 0 ? totalProposals / totalClients : 0;
     
+    const clientMap = new Map(clients.map(c => [c.id, c]));
+    const clientTypeMap: { [key: string]: string } = {
+        household: 'Family',
+        sme: 'SME',
+        commercial: 'Commercial',
+        corporate: 'Corporate',
+        enterprise: 'Enterprise'
+    };
+
     const planCounts: { [key: string]: number } = {};
     acceptedProposals.forEach(p => {
-        if (p.content) {
+        const client = clientMap.get(p.clientId);
+        if (p.content && client && client.clientType) {
             try {
                 const content = JSON.parse(p.content);
                 const planName = content.summaryTitle || 'Unknown Plan';
-                planCounts[planName] = (planCounts[planName] || 0) + 1;
+                const clientCategory = clientTypeMap[client.clientType] || 'Other';
+                const fullPlanName = `${clientCategory} - ${planName}`;
+                planCounts[fullPlanName] = (planCounts[fullPlanName] || 0) + 1;
             } catch (e) {
                 console.warn("Could not parse proposal content:", e);
             }
@@ -415,54 +427,50 @@ export default function AdminPage() {
                   </CardContent>
                 </Card>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-3">
-                    <ClientDataTable clients={clients} users={salesUsers} proposals={proposals} />
-                </div>
-                <div className="lg:col-span-2">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <BarChart3 />
-                                Plan Distribution
-                            </CardTitle>
-                            <CardDescription>
-                                Popularity of subscribed plans across all active clients.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {stats.planDistribution.length > 0 ? (
-                                <ResponsiveContainer width="100%" height={300}>
-                                <BarChart
-                                    layout="vertical"
-                                    data={stats.planDistribution}
-                                    margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                                    <XAxis type="number" allowDecimals={false} />
-                                    <YAxis 
-                                        type="category" 
-                                        dataKey="name" 
-                                        width={120}
-                                        tick={{ fontSize: 12 }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                    />
-                                    <Tooltip 
-                                        cursor={{ fill: 'hsl(var(--muted))' }}
-                                        contentStyle={{ backgroundColor: 'hsl(var(--background))' }}
-                                    />
-                                    <Bar dataKey="count" name="Subscriptions" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
-                                </BarChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
-                                    No subscription data available.
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+            <div className="flex flex-col gap-6">
+                <ClientDataTable clients={clients} users={salesUsers} proposals={proposals} />
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <BarChart3 />
+                            Plan Distribution
+                        </CardTitle>
+                        <CardDescription>
+                            Popularity of subscribed plans across all active clients.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {stats.planDistribution.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={300}>
+                            <BarChart
+                                layout="vertical"
+                                data={stats.planDistribution}
+                                margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                <XAxis type="number" allowDecimals={false} />
+                                <YAxis 
+                                    type="category" 
+                                    dataKey="name" 
+                                    width={200}
+                                    tick={{ fontSize: 12 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <Tooltip 
+                                    cursor={{ fill: 'hsl(var(--muted))' }}
+                                    contentStyle={{ backgroundColor: 'hsl(var(--background))' }}
+                                />
+                                <Bar dataKey="count" name="Subscriptions" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
+                            </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                                No subscription data available.
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </TabsContent>
         <TabsContent value="sales-team" className="mt-6 space-y-6">
