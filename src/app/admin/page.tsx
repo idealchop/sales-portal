@@ -18,7 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -312,7 +312,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [] };
+      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusDistribution: [], clientStatusChartData: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
@@ -320,6 +320,7 @@ export default function AdminPage() {
 
     const activeClients = clients.filter(c => c.status === 'active').length;
     const pendingClients = clients.filter(c => c.status === 'pending').length;
+    const inactiveClients = clients.filter(c => c.status === 'inactive').length;
     const totalClients = clients.length;
     const salesReps = salesUsers.length;
 
@@ -336,6 +337,18 @@ export default function AdminPage() {
         corporate: 'Corporate',
         enterprise: 'Enterprise'
     };
+    
+    const clientStatusDistribution = [
+      { name: 'Active', value: activeClients, fill: 'hsl(var(--chart-1))' },
+      { name: 'Pending', value: pendingClients, fill: 'hsl(var(--chart-4))' },
+      { name: 'Inactive', value: inactiveClients, fill: 'hsl(var(--chart-2))' },
+    ];
+    
+    const clientStatusChartData = [
+      { name: 'Active', value: activeClients },
+      { name: 'Pending', value: pendingClients },
+      { name: 'Inactive', value: inactiveClients },
+    ];
 
     const planCounts: { [key: string]: number } = {};
     acceptedProposals.forEach(p => {
@@ -365,7 +378,7 @@ export default function AdminPage() {
       .sort((a, b) => b.count - a.count);
 
 
-    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution };
+    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusDistribution, clientStatusChartData };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -373,14 +386,27 @@ export default function AdminPage() {
   if (isLoading) {
     return <AdminDashboardSkeleton />;
   }
+  
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8">
-       <Tabs defaultValue="crm">
+       <Tabs defaultValue="crm" className="w-full">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-6">
               <h1 className="text-2xl font-bold whitespace-nowrap">Dashboard</h1>
-              <TabsList>
+              <TabsList className="gap-1">
                 <TabsTrigger value="crm"><UsersRound className="mr-2 h-4 w-4"/>CRM</TabsTrigger>
                 <TabsTrigger value="sales-team"><Users className="mr-2 h-4 w-4"/>Sales Team</TabsTrigger>
                 <TabsTrigger value="payroll"><CreditCard className="mr-2 h-4 w-4"/>Payroll</TabsTrigger>
@@ -432,6 +458,56 @@ export default function AdminPage() {
                     <div className="text-2xl font-bold">{stats.proposalPerClient.toFixed(2)}</div>
                     <p className="text-xs text-muted-foreground">Average proposals per client</p>
                   </CardContent>
+                </Card>
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Client Status</CardTitle>
+                        <CardDescription>Breakdown of clients by their current status.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={stats.clientStatusDistribution}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    label={renderCustomizedLabel}
+                                    outerRadius={80}
+                                    dataKey="value"
+                                >
+                                    {stats.clientStatusDistribution.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Pie>
+                                <Tooltip formatter={(value, name) => [value, name]} />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Client Pipeline</CardTitle>
+                        <CardDescription>Number of clients in each stage.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                       <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={stats.clientStatusChartData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                          <Bar dataKey="value" name="Clients" radius={[4, 4, 0, 0]}>
+                            {stats.clientStatusDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
                 </Card>
             </div>
             <div className="flex flex-col gap-6">
@@ -524,5 +600,7 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
