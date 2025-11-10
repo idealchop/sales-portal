@@ -28,7 +28,23 @@ export function useSalesUsers() {
         const querySnapshot = await getDocs(usersQuery);
         const users: WithId<UserProfile>[] = [];
         querySnapshot.forEach((doc) => {
-          users.push({ id: doc.id, ...doc.data() } as WithId<UserProfile>);
+            const data = doc.data() as Omit<UserProfile, 'id'>;
+            
+            let createdAtString: string | undefined = undefined;
+            if (data.createdAt) {
+                // Handle both Firestore Timestamp and string formats
+                if (typeof (data.createdAt as any).toDate === 'function') {
+                    createdAtString = (data.createdAt as any).toDate().toISOString();
+                } else if (typeof data.createdAt === 'string') {
+                    createdAtString = data.createdAt;
+                }
+            }
+
+            users.push({ 
+                id: doc.id, 
+                ...data,
+                createdAt: createdAtString
+            } as WithId<UserProfile>);
         });
         setSalesUsers(users);
       } catch (e: any) {

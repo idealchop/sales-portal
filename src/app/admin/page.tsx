@@ -353,7 +353,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
         }
     };
     
-    const clientTypeMap = {
+    const clientTypeMap: { [key: string]: string } = {
         household: 'Family',
         sme: 'SME',
         commercial: 'Commercial',
@@ -417,7 +417,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             
                             const onboardingStepsToUse = (client.onboardingStatus && client.onboardingStatus.length > 0)
                                 ? client.onboardingStatus
-                                : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
+                                : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' } as OnboardingStep));
                             
                             let subscriptionDetails = {
                                 planName: 'N/A',
@@ -436,10 +436,13 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                     try {
                                         const content = JSON.parse(acceptedProposal.content);
                                         planName = content.summaryTitle || planName;
-                                        // Correctly extract billing cycle from the proposal content
                                         billingCycle = content.billingCycleLabel || 'Monthly';
-                                        proposalClientType = content.clientType || client.clientType;
                                         
+                                        // Prioritize the clientType from the proposal content
+                                        if (content.clientType) {
+                                            proposalClientType = content.clientType;
+                                        }
+
                                         if (amount <= 0) {
                                           const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
                                           if (!isNaN(parsedAmount)) {
@@ -897,13 +900,13 @@ export default function AdminPage() {
                 const planName = content.summaryTitle?.replace(' Plan', '') || 'Unknown';
                 let clientCategory = 'Other';
 
-                // Check for custom enterprise plans first
-                if (content.plan?.id?.includes('enterprise')) {
-                    clientCategory = 'Enterprise';
+                // Prioritize clientType from the proposal content itself
+                if (content.clientType && clientTypeMap[content.clientType]) {
+                    clientCategory = clientTypeMap[content.clientType];
                 } else {
                     const client = clientMap.get(p.clientId);
-                    if (client && client.clientType) {
-                        clientCategory = clientTypeMap[client.clientType] || 'Other';
+                    if (client && client.clientType && clientTypeMap[client.clientType]) {
+                        clientCategory = clientTypeMap[client.clientType];
                     }
                 }
                 
@@ -1123,7 +1126,7 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl">
+                    <DialogContent className="sm:max-w-3xl">
                         <DialogHeader>
                              <div className="flex items-center gap-2">
                                 <TrendingUp className="h-6 w-6 text-primary"/>
@@ -1161,13 +1164,13 @@ export default function AdminPage() {
                                     </CardHeader>
                                     <CardContent className="h-[250px]">
                                          <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={stats.proposalsCreatedHistory}>
+                                            <BarChart data={stats.proposalsCreatedHistory}>
                                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                                 <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                                <Line type="monotone" dataKey="Proposals Created" stroke="hsl(var(--chart-2))" strokeWidth={2} />
-                                            </LineChart>
+                                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ fill: 'hsl(var(--muted))' }} />
+                                                <Bar dataKey="Proposals Created" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                                            </BarChart>
                                         </ResponsiveContainer>
                                     </CardContent>
                                 </Card>
@@ -1583,6 +1586,7 @@ export default function AdminPage() {
 
 
     
+
 
 
 

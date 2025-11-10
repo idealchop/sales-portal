@@ -61,6 +61,7 @@ export type Client = {
   paymentStatus?: 'Paid' | 'Pending' | 'Unpaid';
   paymentHistory?: PaymentHistoryItem[];
   createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Proposal = {
@@ -95,11 +96,12 @@ export type UserProfile = {
     email: string;
     displayName: string;
     phone?: string;
-    role: 'sales' | 'admin';
+    role: 'sales' | 'admin' | 'manager';
     team?: string;
     birthday?: string;
     photoURL?: string;
     onboardingCompleted: boolean;
+    createdAt?: string;
 };
 
 export type Commission = {
