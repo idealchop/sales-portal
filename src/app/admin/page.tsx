@@ -75,9 +75,9 @@ export default function AdminPage() {
     <div className="flex flex-col gap-8">
        <Tabs defaultValue="crm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-              <TabsList className="bg-muted p-1 rounded-full">
+            <div className="flex items-center gap-6">
+              <h1 className="text-2xl font-bold whitespace-nowrap">Admin Dashboard</h1>
+              <TabsList className="bg-muted p-1 rounded-full h-auto">
                 <TabsTrigger value="crm" className="rounded-full gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                     <UsersRound /> CRM
                 </TabsTrigger>
@@ -183,5 +183,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
