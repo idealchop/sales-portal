@@ -300,7 +300,6 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             <div className="font-medium cursor-pointer text-primary hover:underline">{client.companyName}</div>
                                         </ClientOverviewDialog>
                                         <div className="font-mono text-xs text-muted-foreground">ID: {client.id}</div>
-                                        <div className="text-sm text-muted-foreground">{client.contactName}</div>
                                         <div className="text-sm mt-1">
                                             <span className="font-semibold">{subscriptionDetails.planName}</span>
                                             <span className="text-muted-foreground"> - {currencyFormatter.format(subscriptionDetails.amount)}</span>
@@ -942,5 +941,7 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
