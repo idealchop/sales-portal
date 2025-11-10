@@ -23,7 +23,7 @@ import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse } from 'date-fns';
 import Image from 'next/image';
 import {
   Dialog,
@@ -190,7 +190,6 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         file: File | null;
         planName: string;
         planImage: string;
-        amount: string;
     }>({
         clientId: '',
         isUploading: false,
@@ -198,13 +197,11 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         file: null,
         planName: '',
         planImage: '',
-        amount: '',
     });
     
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterYear, setFilterYear] = useState<string>('all');
-    const [filterMonth, setFilterMonth] = useState<string>('all');
+    const [dateFilter, setDateFilter] = useState<string>('all');
     
     const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
         { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
@@ -213,25 +210,28 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
     ];
     
-    const availableYears = useMemo(() => {
-        const years = new Set(clients.map(client => client.createdAt ? getYear(new Date(client.createdAt)) : null).filter(Boolean));
-        return Array.from(years).sort((a, b) => b! - a!);
+    const availableMonths = useMemo(() => {
+        const monthSet = new Set<string>();
+        clients.forEach(client => {
+            if (client.createdAt) {
+                const clientDate = new Date(client.createdAt);
+                monthSet.add(format(clientDate, 'MMMM yyyy'));
+            }
+        });
+        return Array.from(monthSet).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
     }, [clients]);
 
     const filteredClients = useMemo(() => {
         return clients.filter(client => {
-            const clientDate = client.createdAt ? new Date(client.createdAt) : null;
-            
-            const yearMatch = filterYear === 'all' || (clientDate && getYear(clientDate).toString() === filterYear);
-            const monthMatch = filterMonth === 'all' || (clientDate && getMonth(clientDate).toString() === filterMonth);
+            const dateMatch = dateFilter === 'all' || (client.createdAt && format(new Date(client.createdAt), 'MMMM yyyy') === dateFilter);
 
             const searchMatch = searchQuery === '' || 
                 client.companyName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 client.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-            return yearMatch && monthMatch && searchMatch;
+            return dateMatch && searchMatch;
         });
-    }, [clients, searchQuery, filterYear, filterMonth]);
+    }, [clients, searchQuery, dateFilter]);
 
 
     const getOnboardingProgress = (onboardingStatus: OnboardingStep[] | undefined) => {
@@ -300,7 +300,10 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     };
 
     const handleUploadPayment = async () => {
-        const { clientId, amount, date, file } = paymentUploadState;
+        const { clientId, date, file } = paymentUploadState;
+        const client = clients.find(c => c.id === clientId);
+        const amount = client?.subscription?.amount || 0;
+
         if (!clientId || !amount || !date || !file) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide all required details and a file.' });
             return;
@@ -319,7 +322,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
             await updateDoc(clientRef, {
                 paymentHistory: arrayUnion({
                     date: date.toISOString(),
-                    amount: parseFloat(amount),
+                    amount: amount,
                     proofUrl: downloadURL
                 }),
                 paymentStatus: 'Paid'
@@ -327,8 +330,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
 
             toast({ title: 'Payment Uploaded', description: 'The proof of payment has been added to the client\'s history.' });
             
-            // Close dialog by resetting state
-            setPaymentUploadState({ clientId: '', isUploading: false, amount: '', date: new Date(), file: null, planName: '', planImage: '' });
+            setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '' });
 
         } catch (error) {
             console.error('Error uploading payment:', error);
@@ -360,24 +362,13 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                             className="pl-9"
                         />
                     </div>
-                    <Select value={filterYear} onValueChange={setFilterYear}>
+                     <Select value={dateFilter} onValueChange={setDateFilter}>
                         <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by year..." />
+                            <SelectValue placeholder="Filter by date..." />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Years</SelectItem>
-                            {availableYears.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                    <Select value={filterMonth} onValueChange={setFilterMonth}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by month..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Months</SelectItem>
-                            {Array.from({ length: 12 }, (_, i) => (
-                                <SelectItem key={i} value={String(i)}>{format(new Date(0, i), 'MMMM')}</SelectItem>
-                            ))}
+                            <SelectItem value="all">All Time</SelectItem>
+                            {availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
@@ -403,13 +394,13 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 ? client.onboardingStatus
                                 : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
                             
-                            let subscriptionDetails = {
+                             let subscriptionDetails = {
                                 planName: 'N/A',
                                 amount: 0,
                                 billingCycle: 'N/A'
                             };
                             
-                            if (acceptedProposal) {
+                           if (acceptedProposal) {
                                 let planNameFromContent = 'Custom Plan';
                                 let billingCycleFromContent = 'Monthly';
                                 if (acceptedProposal.content) {
@@ -445,7 +436,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                         </ClientOverviewDialog>
                                         <div className="font-mono text-xs text-muted-foreground">ID: {client.id}</div>
                                         <div className="space-y-1 mt-2">
-                                            <h4 className="font-semibold text-sm">{clientTypeLabel ? `${clientTypeLabel} - ${subscriptionDetails.planName}` : subscriptionDetails.planName}</h4>
+                                             <h4 className="font-semibold text-sm">{clientTypeLabel ? `${clientTypeLabel} - ${subscriptionDetails.planName}` : subscriptionDetails.planName}</h4>
                                             <p className="font-bold text-lg">{currencyFormatter.format(subscriptionDetails.amount)}</p>
                                             <Badge variant="outline">{subscriptionDetails.billingCycle}</Badge>
                                         </div>
@@ -513,9 +504,9 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                     </TableCell>
                                     <TableCell className="text-right">
                                         {client.status === 'active' && (
-                                            <Dialog onOpenChange={(open) => !open && setPaymentUploadState({ clientId: '', isUploading: false, amount: '', date: new Date(), file: null, planName: '', planImage: '' })}>
+                                            <Dialog onOpenChange={(open) => !open && setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '' })}>
                                                 <DialogTrigger asChild>
-                                                    <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, amount: String(subscriptionDetails.amount), planName: subscriptionDetails.planName, planImage: planImage}))}>
+                                                    <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, planName: subscriptionDetails.planName, planImage: planImage}))}>
                                                         <Upload className="mr-2 h-4 w-4" /> Upload
                                                     </Button>
                                                 </DialogTrigger>
@@ -1137,6 +1128,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 
