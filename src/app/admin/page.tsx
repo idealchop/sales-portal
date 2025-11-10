@@ -239,7 +239,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     };
     
     const clientTypeMap = {
-        household: 'Family Plan',
+        household: 'Family',
         sme: 'SME',
         commercial: 'Commercial',
         corporate: 'Corporate',
@@ -305,6 +305,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                             }
                             
                             const paymentStatus = client.paymentStatus || (client.status === 'active' ? 'Paid' : 'Pending');
+                            const clientTypeLabel = client.clientType ? clientTypeMap[client.clientType] : '';
 
                             return (
                                 <TableRow key={client.id}>
@@ -314,8 +315,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                         </ClientOverviewDialog>
                                         <div className="font-mono text-xs text-muted-foreground">ID: {client.id}</div>
                                         <div className="space-y-1 mt-2">
-                                            {client.clientType && <Badge variant="secondary" className="capitalize">{clientTypeMap[client.clientType]}</Badge>}
-                                            <h4 className="font-semibold text-sm">{subscriptionDetails.planName}</h4>
+                                            <h4 className="font-semibold text-sm">{clientTypeLabel ? `${clientTypeLabel} - ${subscriptionDetails.planName}` : subscriptionDetails.planName}</h4>
                                             <p className="font-bold text-lg">{currencyFormatter.format(subscriptionDetails.amount)}</p>
                                             <Badge variant="outline">{subscriptionDetails.billingCycle}</Badge>
                                         </div>
