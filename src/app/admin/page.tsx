@@ -238,6 +238,14 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         }
     };
     
+    const clientTypeMap = {
+        household: 'Family Plan',
+        sme: 'SME',
+        commercial: 'Commercial',
+        corporate: 'Corporate',
+        enterprise: 'Enterprise'
+    };
+    
     return (
         <Card>
             <CardHeader>
@@ -273,6 +281,8 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                             if (acceptedProposal) {
                                 let planNameFromContent = 'Custom Plan';
                                 let billingCycleFromContent = 'Monthly';
+                                let amountFromProposal = acceptedProposal.amount;
+                                
                                 if (acceptedProposal.content) {
                                     try {
                                         const content = JSON.parse(acceptedProposal.content) as any;
@@ -284,7 +294,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 }
                                 subscriptionDetails = {
                                     planName: planNameFromContent,
-                                    amount: acceptedProposal.amount,
+                                    amount: amountFromProposal,
                                     billingCycle: billingCycleFromContent
                                 };
                             } else if (client.subscription) {
@@ -304,11 +314,12 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             <div className="font-medium cursor-pointer text-primary hover:underline">{client.companyName}</div>
                                         </ClientOverviewDialog>
                                         <div className="font-mono text-xs text-muted-foreground">ID: {client.id}</div>
-                                        <div className="text-sm mt-1">
-                                            <span className="font-semibold">{subscriptionDetails.planName}</span>
-                                            <span className="text-muted-foreground"> - {currencyFormatter.format(subscriptionDetails.amount)}</span>
+                                        <div className="space-y-1 mt-2">
+                                            {client.clientType && <Badge variant="secondary" className="capitalize">{clientTypeMap[client.clientType]}</Badge>}
+                                            <h4 className="font-semibold text-sm">{subscriptionDetails.planName}</h4>
+                                            <p className="font-bold text-lg">{currencyFormatter.format(subscriptionDetails.amount)} <span className="text-xs font-normal text-muted-foreground">/ mo</span></p>
+                                            <Badge variant="outline">{subscriptionDetails.billingCycle}</Badge>
                                         </div>
-                                        <Badge variant="outline" className="mt-2">{subscriptionDetails.billingCycle}</Badge>
                                     </TableCell>
                                     <TableCell>
                                         {isAdmin ? (
@@ -949,3 +960,4 @@ export default function AdminPage() {
     
 
     
+
