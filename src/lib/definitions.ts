@@ -60,6 +60,7 @@ export type Client = {
   };
   paymentStatus?: 'Paid' | 'Pending' | 'Unpaid';
   paymentHistory?: PaymentHistoryItem[];
+  createdAt?: string;
 };
 
 export type Proposal = {

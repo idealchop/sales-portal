@@ -2,9 +2,9 @@
 
 'use client';
 
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -23,7 +23,7 @@ import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth } from 'date-fns';
 import Image from 'next/image';
 import {
   Dialog,
@@ -44,6 +44,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -185,22 +186,25 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     const [paymentUploadState, setPaymentUploadState] = useState<{
         clientId: string;
         isUploading: boolean;
-        amount: string;
         date: Date | undefined;
         file: File | null;
         planName: string;
         planImage: string;
+        amount: string;
     }>({
         clientId: '',
         isUploading: false,
-        amount: '',
         date: new Date(),
         file: null,
         planName: '',
         planImage: '',
+        amount: '',
     });
     
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterYear, setFilterYear] = useState<string>('all');
+    const [filterMonth, setFilterMonth] = useState<string>('all');
     
     const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
         { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
@@ -208,6 +212,26 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         { title: 'Onboarding Call', description: 'Initial setup and account walkthrough call completed.', status: 'pending' },
         { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
     ];
+    
+    const availableYears = useMemo(() => {
+        const years = new Set(clients.map(client => client.createdAt ? getYear(new Date(client.createdAt)) : null).filter(Boolean));
+        return Array.from(years).sort((a, b) => b! - a!);
+    }, [clients]);
+
+    const filteredClients = useMemo(() => {
+        return clients.filter(client => {
+            const clientDate = client.createdAt ? new Date(client.createdAt) : null;
+            
+            const yearMatch = filterYear === 'all' || (clientDate && getYear(clientDate).toString() === filterYear);
+            const monthMatch = filterMonth === 'all' || (clientDate && getMonth(clientDate).toString() === filterMonth);
+
+            const searchMatch = searchQuery === '' || 
+                client.companyName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                client.id.toLowerCase().includes(searchQuery.toLowerCase());
+
+            return yearMatch && monthMatch && searchMatch;
+        });
+    }, [clients, searchQuery, filterYear, filterMonth]);
 
 
     const getOnboardingProgress = (onboardingStatus: OnboardingStep[] | undefined) => {
@@ -326,6 +350,37 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
             <CardHeader>
                 <CardTitle>All Clients</CardTitle>
                 <CardDescription>A complete list of every client in the system.</CardDescription>
+                <div className="flex items-center gap-2 pt-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by client name or ID..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9"
+                        />
+                    </div>
+                    <Select value={filterYear} onValueChange={setFilterYear}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filter by year..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Years</SelectItem>
+                            {availableYears.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <Select value={filterMonth} onValueChange={setFilterMonth}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filter by month..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Months</SelectItem>
+                            {Array.from({ length: 12 }, (_, i) => (
+                                <SelectItem key={i} value={String(i)}>{format(new Date(0, i), 'MMMM')}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -339,7 +394,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {clients.map(client => {
+                        {filteredClients.map(client => {
                             const clientProposals = proposalsByClient[client.id] || [];
                             const acceptedProposal = clientProposals.find(p => p.status === 'accepted');
                             const progress = getOnboardingProgress(client.onboardingStatus);
@@ -467,7 +522,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                                 <DialogContent className="sm:max-w-md">
                                                     <DialogHeader>
                                                         <DialogTitle>Upload Payment Proof</DialogTitle>
-                                                        <DialogDescription>For {client.companyName}'s next billing cycle.</DialogDescription>
+                                                        <DialogDescription>For {client.companyName}'s next billing cycle of {currencyFormatter.format(subscriptionDetails.amount)}.</DialogDescription>
                                                     </DialogHeader>
                                                      <div className="space-y-4 py-4">
                                                         <Card className="overflow-hidden">
@@ -478,7 +533,6 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                                             </div>
                                                             <CardHeader>
                                                                 <CardTitle>{paymentUploadState.planName}</CardTitle>
-                                                                <CardDescription>{currencyFormatter.format(parseFloat(paymentUploadState.amount))}</CardDescription>
                                                             </CardHeader>
                                                         </Card>
                                                         <div className="space-y-2">
@@ -1083,5 +1137,6 @@ export default function AdminPage() {
     
 
     
+
 
 
