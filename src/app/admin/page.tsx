@@ -3,11 +3,14 @@
 
 import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3 } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllCommissions } from '@/hooks/use-all-commissions';
+import { useUser } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,10 +19,20 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
-import type { UserProfile, Client, Proposal, Commission } from '@/lib/definitions';
+import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -79,6 +92,9 @@ const AdminDashboardSkeleton = () => (
 
 
 const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client>[], users: WithId<UserProfile>[], proposals: WithId<Proposal>[] }) => {
+    const { isAdmin } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
     const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
     const proposalsByClient = useMemo(() => {
         return proposals.reduce((acc, p) => {
@@ -89,11 +105,63 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
             return acc;
         }, {} as { [key: string]: Proposal[] });
     }, [proposals]);
+    
+    const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
+        { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
+        { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery.', status: 'pending' },
+        { title: 'Onboarding Call', description: 'Initial setup and account walkthrough call completed.', status: 'pending' },
+        { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
+    ];
 
-    const getOnboardingProgress = (client: Client) => {
-        if (!client.onboardingStatus || client.onboardingStatus.length === 0) return 0;
-        const completedSteps = client.onboardingStatus.filter(step => step.status === 'completed').length;
-        return (completedSteps / client.onboardingStatus.length) * 100;
+
+    const getOnboardingProgress = (onboardingStatus: OnboardingStep[]) => {
+        if (!onboardingStatus || onboardingStatus.length === 0) return { progress: 0, steps: [] };
+        const completedSteps = onboardingStatus.filter(step => step.status === 'completed').length;
+        return {
+            progress: (completedSteps / onboardingStatus.length) * 100,
+            steps: onboardingStatus,
+        };
+    };
+    
+    const handleUpdateOnboarding = async (clientId: string, currentSteps: OnboardingStep[] | undefined, stepIndexToComplete: number) => {
+        const clientRef = doc(firestore, 'clients', clientId);
+
+        let stepsToUpdate: OnboardingStep[] = currentSteps 
+            ? JSON.parse(JSON.stringify(currentSteps)) // Deep copy
+            : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
+
+        stepsToUpdate[stepIndexToComplete].status = 'completed';
+        stepsToUpdate[stepIndexToComplete].date = new Date().toLocaleDateString();
+
+        const isLastStep = stepIndexToComplete === stepsToUpdate.length - 1;
+        
+        try {
+            if (isLastStep) {
+                 await updateDoc(clientRef, {
+                    onboardingStatus: stepsToUpdate,
+                    status: 'active'
+                });
+                toast({
+                    title: "Onboarding Complete!",
+                    description: "Client status has been updated to 'active'.",
+                });
+            } else {
+                 await updateDoc(clientRef, {
+                    onboardingStatus: stepsToUpdate,
+                });
+                toast({
+                    title: "Onboarding Updated",
+                    description: `Step ${stepIndexToComplete + 1} has been marked as complete.`,
+                });
+            }
+        } catch (error) {
+            console.error("Error updating onboarding status:", error);
+            toast({
+                variant: 'destructive',
+                title: "Update Failed",
+                description: "Could not update onboarding status.",
+            });
+        }
     };
     
     return (
@@ -117,43 +185,68 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                             const clientProposals = proposalsByClient[client.id] || [];
                             const latestProposal = clientProposals[0];
                             const salesRep = latestProposal ? userMap.get(latestProposal.userId) : userMap.get(client.userId);
-                            const progress = getOnboardingProgress(client);
+                            const { progress, steps } = getOnboardingProgress(client.onboardingStatus || []);
+                            
+                            const onboardingStepsToUse = (client.onboardingStatus && client.onboardingStatus.length > 0)
+                                ? client.onboardingStatus
+                                : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
+                            
+                            const isFullyOnboarded = progress === 100;
+                            
                             return (
-                                <ClientOverviewDialog key={client.id} client={client} proposal={latestProposal} allUsers={users} view="clients">
-                                    <TableRow className="cursor-pointer">
-                                        <TableCell>
-                                            <div className="font-medium">{client.companyName}</div>
-                                            <div className="text-sm text-muted-foreground">{client.contactName}</div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {salesRep ? (
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={salesRep.photoURL} />
-                                                        <AvatarFallback>{salesRep.displayName?.[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="text-sm">{salesRep.displayName}</span>
-                                                </div>
-                                            ) : 'N/A'}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className={cn("capitalize", client.status && clientStatusStyles[client.status])}>{client.status || 'N/A'}</Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            {client.status === 'active' && client.onboardingStatus ? (
-                                                <div className="flex items-center gap-2">
-                                                    <Progress value={progress} className="w-24 h-2" />
-                                                    <span className="text-xs text-muted-foreground">{progress.toFixed(0)}%</span>
-                                                </div>
-                                            ) : client.status === 'active' ? (
-                                                <div className="flex items-center gap-2">
-                                                     <Progress value={0} className="w-24 h-2" />
-                                                    <span className="text-xs text-muted-foreground">0%</span>
-                                                </div>
-                                            ) : null}
-                                        </TableCell>
-                                    </TableRow>
-                                </ClientOverviewDialog>
+                                <TableRow key={client.id}>
+                                    <TableCell>
+                                        <ClientOverviewDialog client={client} proposal={latestProposal} allUsers={users} view="clients">
+                                            <div className="font-medium cursor-pointer text-primary hover:underline">{client.companyName}</div>
+                                        </ClientOverviewDialog>
+                                        <div className="text-sm text-muted-foreground">{client.contactName}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {salesRep ? (
+                                            <div className="flex items-center gap-2">
+                                                <Avatar className="h-6 w-6">
+                                                    <AvatarImage src={salesRep.photoURL} />
+                                                    <AvatarFallback>{salesRep.displayName?.[0]}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="text-sm">{salesRep.displayName}</span>
+                                            </div>
+                                        ) : 'N/A'}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className={cn("capitalize", client.status && clientStatusStyles[client.status])}>{client.status || 'N/A'}</Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                       {client.status === 'active' || client.status === 'pending' ? (
+                                           <div className="flex items-center gap-2 w-48">
+                                                <Progress value={progress} className="w-24 h-2" />
+                                                <span className="text-xs text-muted-foreground">{progress.toFixed(0)}%</span>
+                                                {isAdmin && !isFullyOnboarded && (
+                                                     <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                                <MoreHorizontal className="h-4 w-4"/>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Update Progress</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            {onboardingStepsToUse.map((step, index) => (
+                                                                <DropdownMenuItem 
+                                                                    key={index}
+                                                                    disabled={step.status === 'completed'}
+                                                                    onClick={() => handleUpdateOnboarding(client.id, client.onboardingStatus, index)}
+                                                                >
+                                                                    {step.status === 'completed' && <CheckCircle className="mr-2 h-4 w-4 text-green-500"/>}
+                                                                    Mark "{step.title}" as Complete
+                                                                </DropdownMenuItem>
+                                                            ))}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                )}
+                                           </div>
+                                       ) : null}
+                                    </TableCell>
+                                </TableRow>
                             );
                         })}
                     </TableBody>
@@ -725,6 +818,8 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
 
