@@ -1222,7 +1222,7 @@ export default function AdminPage() {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-base">Proposal Funnel</CardTitle>
+                                    <CardTitle className="text-base">Team Performance Overview</CardTitle>
                                     <CardDescription>Sent vs. Accepted proposals.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="h-[250px]">
@@ -1384,7 +1384,7 @@ export default function AdminPage() {
                 </Card>
                 <Card className="md:col-span-2">
                     <CardHeader>
-                        <CardTitle>Proposal Funnel Over Time</CardTitle>
+                        <CardTitle>Team Performance Overview</CardTitle>
                         <CardDescription>Cumulative proposals sent vs. accepted over the last 6 months.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[250px]">
@@ -1481,3 +1481,4 @@ export default function AdminPage() {
     
 
     
+
