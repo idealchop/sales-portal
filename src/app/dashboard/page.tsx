@@ -206,9 +206,9 @@ const DashboardSkeleton = () => (
 )
 
 export default function DashboardPage() {
-  const { user } = useUser();
-  const { proposals, isLoading: proposalsLoading } = useProposals(user?.uid);
-  const { clients, isLoading: clientsLoading } = useClients(user?.uid);
+  const { user, isAdmin } = useUser();
+  const { proposals, isLoading: proposalsLoading } = useProposals(isAdmin ? undefined : user?.uid);
+  const { clients, isLoading: clientsLoading } = useClients(isAdmin ? undefined : user?.uid);
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
