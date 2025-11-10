@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
@@ -61,3 +62,4 @@ export function useSalesUsers() {
 
   return { salesUsers, isLoading: isLoading || isFirebaseLoading, error };
 }
+
