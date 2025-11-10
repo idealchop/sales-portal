@@ -248,7 +248,6 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                     <TableHeader>
                         <TableRow>
                             <TableHead>Client</TableHead>
-                            <TableHead>Payment Schedule</TableHead>
                             <TableHead>Payment Status</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Onboarding</TableHead>
@@ -303,8 +302,8 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             <span className="font-semibold">{subscriptionDetails.planName}</span>
                                             <span className="text-muted-foreground"> - {currencyFormatter.format(subscriptionDetails.amount)}</span>
                                         </div>
+                                        <Badge variant="outline" className="mt-2">{subscriptionDetails.billingCycle}</Badge>
                                     </TableCell>
-                                    <TableCell>{subscriptionDetails.billingCycle}</TableCell>
                                     <TableCell>
                                         {isAdmin ? (
                                             <DropdownMenu>
