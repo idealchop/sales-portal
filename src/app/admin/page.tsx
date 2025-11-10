@@ -343,7 +343,7 @@ export default function AdminPage() {
         if (p.content) {
             try {
                 const content = JSON.parse(p.content);
-                const planName = content.summaryTitle || 'Unknown Plan';
+                const planName = content.summaryTitle?.replace(' Plan', '') || 'Unknown';
                 let clientCategory = 'Other';
 
                 if (content.plan?.id?.includes('enterprise')) {
@@ -524,3 +524,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
