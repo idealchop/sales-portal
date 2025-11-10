@@ -15,7 +15,7 @@ service firebase.storage {
 
     // ===== SALES & MARKETING MATERIALS =====
     // This path matches the URL encoding for "Sales Portal/Marketing Mats"
-    match /Sales Portal/Marketing Mats/{allPaths=**} {
+    match /sales_portal/marketing_mats/{allPaths=**} {
       // Public read access for all sales and marketing materials.
       allow read;
       // Only authenticated users (e.g. sales team) can upload or modify.
@@ -28,9 +28,15 @@ service firebase.storage {
     }
 
     // ===== PAYMENT PROOFS =====
-    // Path: payment_proofs/{clientId}/{proposalId}/{fileName}
+    // Path for initial proposal payment proof
     match /payment_proofs/{clientId}/{proposalId}/{allPaths=**} {
       // Allow read and write access for any authenticated user (sales agents)
+      allow read, write: if request.auth != null;
+    }
+    
+    // Path for recurring subscription payments from admin dashboard
+    match /payment_proofs/{clientId}/ongoing/{allPaths=**} {
+      // Allow read and write access for any authenticated user (sales agents/admin)
       allow read, write: if request.auth != null;
     }
   }
