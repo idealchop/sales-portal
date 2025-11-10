@@ -807,15 +807,18 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [] };
+      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
+    const rejectedProposals = proposals.filter(p => p.status === 'rejected');
     const totalRevenue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
 
     const activeClients = clients.filter(c => c.status === 'active').length;
     const inactiveClients = clients.filter(c => c.status === 'inactive').length;
     const pendingClients = clients.filter(c => c.status === 'pending').length;
+    const rejectedClientIds = new Set(rejectedProposals.map(p => p.clientId));
+    const rejectedClients = rejectedClientIds.size;
     const totalClients = clients.length;
     const salesReps = salesUsers.length;
 
@@ -837,7 +840,7 @@ export default function AdminPage() {
     const clientStatusChartData = [
       { name: 'Active', value: activeClients, fill: 'hsl(var(--chart-1))' },
       { name: 'Pending', value: pendingClients, fill: 'hsl(var(--chart-4))' },
-      { name: 'Inactive', value: clients.filter(c => c.status === 'inactive').length, fill: 'hsl(var(--chart-2))' },
+      { name: 'Rejected', value: rejectedClients, fill: 'hsl(var(--destructive))' },
     ];
     
     const now = new Date();
@@ -959,7 +962,7 @@ export default function AdminPage() {
     }).sort((a, b) => b.proposals - a.proposals);
 
 
-    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData };
+    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1073,12 +1076,12 @@ export default function AdminPage() {
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:border-primary transition-colors">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Client Pipeline</CardTitle>
+                                <CardTitle className="text-sm font-medium">Client Funnel Stage</CardTitle>
                                 <Users className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{stats.activeClients} Active</div>
-                                <p className="text-xs text-muted-foreground">{stats.pendingClients} pending</p>
+                                <p className="text-xs text-muted-foreground">{stats.pendingClients} pending, {stats.rejectedClients} rejected</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
@@ -1086,21 +1089,23 @@ export default function AdminPage() {
                         <DialogHeader>
                              <div className="flex items-center gap-2">
                                 <LineChartIcon className="h-6 w-6 text-primary"/>
-                                <DialogTitle>Client Pipeline Growth</DialogTitle>
+                                <DialogTitle>Client Funnel</DialogTitle>
                             </div>
-                            <DialogDescription>A detailed look at new and pending clients over the last 6 months.</DialogDescription>
+                            <DialogDescription>A breakdown of clients in each stage of the funnel.</DialogDescription>
                         </DialogHeader>
                         <div className="h-[350px] w-full">
                              <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={stats.clientGrowthData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" />
-                                    <YAxis allowDecimals={false} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} name="New Active Clients" />
-                                    <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} name="Total Pending Clients" />
-                                </LineChart>
+                                <BarChart data={stats.clientStatusChartData}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="name" />
+                                  <YAxis allowDecimals={false}/>
+                                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                                  <Bar dataKey="value" name="Clients" radius={[4, 4, 0, 0]}>
+                                    {stats.clientStatusChartData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                  </Bar>
+                                </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </DialogContent>
