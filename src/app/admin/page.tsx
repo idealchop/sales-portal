@@ -429,14 +429,15 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             if (acceptedProposal) {
                                 let amount = acceptedProposal.amount || 0;
                                 let planName = acceptedProposal.title || 'Custom Plan';
-                                let billingCycle = 'Monthly'; // Default fallback
+                                let billingCycle = 'Monthly';
                                 let proposalClientType = client.clientType;
-
+                            
                                 if (acceptedProposal.content) {
                                     try {
                                         const content = JSON.parse(acceptedProposal.content);
                                         planName = content.summaryTitle || planName;
-                                        billingCycle = content.billingCycleLabel || billingCycle;
+                                        // Correctly extract billing cycle from the proposal content
+                                        billingCycle = content.billingCycleLabel || 'Monthly';
                                         proposalClientType = content.clientType || client.clientType;
                                         
                                         if (amount <= 0) {
@@ -1068,6 +1069,8 @@ export default function AdminPage() {
     );
   };
 
+  const topPlan = stats.planDistribution[0] || null;
+
   return (
     <div className="flex flex-col gap-8">
        <Tabs defaultValue="crm" className="w-full">
@@ -1376,30 +1379,25 @@ export default function AdminPage() {
                 </Card>
                 <Card className="lg:col-span-2">
                     <CardHeader>
-                        <CardTitle>Proposal Value by Status</CardTitle>
-                        <CardDescription>Pipeline value across all stages.</CardDescription>
+                        <CardTitle className="text-base">Top Selling Plan</CardTitle>
+                        <CardDescription>
+                            Your most popular plan across all sales.
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                         <ResponsiveContainer width="100%" height={300}>
-                             <PieChart>
-                                <Pie
-                                    data={stats.proposalValueByStatus}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={renderCustomizedLabel}
-                                    outerRadius={100}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {stats.proposalValueByStatus.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => currencyFormatter.format(Number(value))} />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
+                    <CardContent className="flex flex-col items-center justify-center h-[250px] text-center">
+                        {topPlan ? (
+                            <>
+                                <div className="flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4">
+                                    <Trophy className="h-12 w-12 text-primary" />
+                                </div>
+                                <p className="text-2xl font-bold">{topPlan.name}</p>
+                                <p className="text-muted-foreground">
+                                    Sold <span className="font-bold text-foreground">{topPlan.count}</span> times
+                                </p>
+                            </>
+                        ) : (
+                            <p className="text-muted-foreground">No sales data available.</p>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -1525,6 +1523,7 @@ export default function AdminPage() {
 
 
     
+
 
 
 
