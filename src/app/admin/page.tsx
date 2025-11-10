@@ -348,13 +348,13 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 ? client.onboardingStatus
                                 : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
                             
-                             let subscriptionDetails = {
+                            let subscriptionDetails = {
                                 planName: 'N/A',
                                 amount: 0,
                                 billingCycle: 'N/A'
                             };
                             
-                             if (acceptedProposal) {
+                            if (acceptedProposal) {
                                 let planNameFromContent = 'Custom Plan';
                                 let billingCycleFromContent = 'Monthly';
                                 if (acceptedProposal.content) {
@@ -467,7 +467,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                                 <DialogContent className="sm:max-w-md">
                                                     <DialogHeader>
                                                         <DialogTitle>Upload Payment Proof</DialogTitle>
-                                                        <DialogDescription>For {client.companyName}'s next billing cycle of {currencyFormatter.format(subscriptionDetails.amount)}.</DialogDescription>
+                                                        <DialogDescription>For {client.companyName}'s next billing cycle.</DialogDescription>
                                                     </DialogHeader>
                                                      <div className="space-y-4 py-4">
                                                         <Card className="overflow-hidden">
@@ -1083,4 +1083,5 @@ export default function AdminPage() {
     
 
     
+
 
