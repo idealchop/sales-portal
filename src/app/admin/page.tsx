@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -56,6 +57,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useCommissions } from '@/hooks/use-commissions';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -805,7 +807,7 @@ export default function AdminPage() {
   const { proposals, isLoading: proposalsLoading } = useAllProposals();
   const { clients, isLoading: clientsLoading } = useAllClients();
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
-  const { commissions, isLoading: commissionsLoading } = useAllCommissions();
+  const { commissions: commissionsFromHook, isLoading: commissionsLoading } = useCommissions();
   const { isAdmin } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -1076,7 +1078,7 @@ export default function AdminPage() {
     
     const commissionsByUserAndMonth: Record<string, Record<string, WithId<Commission>[]>> = {};
 
-    commissions.forEach(commission => {
+    commissionsFromHook.forEach(commission => {
         const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
         const userId = commission.userId;
         
@@ -1107,7 +1109,7 @@ export default function AdminPage() {
 
     processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
     return processedPayouts;
-}, [commissions, commissionsLoading]);
+}, [commissionsFromHook, commissionsLoading]);
 
 
   const handleProcessPayout = async (payoutId: string, commissionsToUpdate: WithId<Commission>[]) => {
@@ -1656,3 +1658,4 @@ export default function AdminPage() {
 
     
 
+    

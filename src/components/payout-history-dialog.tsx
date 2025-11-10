@@ -1,4 +1,5 @@
 
+
 'use client';
 import {
   Dialog,
@@ -14,9 +15,6 @@ import { format, startOfMonth, isWithinInterval, addMonths, addYears, parseISO }
 import React, { useState, useEffect, useMemo } from 'react';
 import { Badge } from './ui/badge';
 import { useUser } from '@/firebase';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { useClients } from '@/hooks/use-clients';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TFooter } from './ui/table';
@@ -411,3 +409,5 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
         </Dialog>
     );
 }
+
+    

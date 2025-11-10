@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { useFirebase, useUser } from '@/firebase';
 import type { Commission, Client, Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -23,16 +23,14 @@ export function useCommissions(userId?: string) {
       return;
     }
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
 
-      try {
-        // Fetch commissions for the user
-        const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', '==', targetUserId));
-        const commissionsSnapshot = await getDocs(commissionsQuery);
+    const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', '==', targetUserId));
+    const clientsQuery = query(collection(firestore, 'clients'), where('userId', '==', targetUserId));
+
+    const unsubCommissions = onSnapshot(commissionsQuery, (snapshot) => {
         const userCommissions: WithId<Commission>[] = [];
-        commissionsSnapshot.forEach(doc => {
+        snapshot.forEach(doc => {
             const data = doc.data() as Omit<Commission, 'id'>;
             let createdAtString: string;
             if (data.createdAt && typeof (data.createdAt as any).toDate === 'function') {
@@ -48,17 +46,22 @@ export function useCommissions(userId?: string) {
         });
         userCommissions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setCommissions(userCommissions);
-        
-        // Fetch all clients associated with the user
-        const clientsQuery = query(collection(firestore, "clients"), where('userId', '==', targetUserId));
-        const clientsSnapshot = await getDocs(clientsQuery);
+        if(!areClientsLoading) setIsLoading(false);
+    }, (e) => {
+        console.error("Error fetching commissions:", e);
+        setError(e);
+        setIsLoading(false);
+    });
+
+    let areClientsLoading = true;
+    const unsubClients = onSnapshot(clientsQuery, async (snapshot) => {
         const userClients: WithId<Client>[] = [];
-        clientsSnapshot.forEach(doc => {
+        snapshot.forEach(doc => {
             userClients.push({ id: doc.id, ...doc.data() } as WithId<Client>);
         });
         setClients(userClients);
-
-        // Fetch all proposals for those clients
+        
+        // After getting clients, fetch their proposals
         const allProposals: WithId<Proposal>[] = [];
         if (userClients.length > 0) {
             for (const client of userClients) {
@@ -84,16 +87,20 @@ export function useCommissions(userId?: string) {
             allProposals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         }
         setProposals(allProposals);
-
-      } catch (e: any) {
-        setError(e);
-        console.error("Error fetching commissions and related data:", e);
-      } finally {
+        areClientsLoading = false;
         setIsLoading(false);
-      }
-    };
 
-    fetchData();
+    }, (e) => {
+        console.error("Error fetching clients:", e);
+        setError(e);
+        setIsLoading(false);
+    });
+    
+
+    return () => {
+        unsubCommissions();
+        unsubClients();
+    };
 
   }, [firestore, targetUserId, isFirebaseLoading]);
 
