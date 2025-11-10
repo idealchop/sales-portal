@@ -564,6 +564,12 @@ export function ClientOverviewDialog({
     enterprise: 'Enterprise'
   };
 
+  const getFormattedDate = (dateString: string) => {
+    if (!dateString) return 'Invalid Date';
+    return new Date(dateString).toLocaleDateString();
+  };
+
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -798,23 +804,35 @@ export function ClientOverviewDialog({
                     <CardHeader>
                         <CardTitle>Proposal History</CardTitle>
                          <CardDescription>
-                            Review all proposals sent to this client.
+                            Review all proposals sent to this client. Click one to view details.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                         {clientProposals.length > 0 ? (
-                             <div className="space-y-2">
-                                <Select onValueChange={(proposalId) => setSelectedProposal(clientProposals.find(p => p.id === proposalId))} defaultValue={selectedProposal?.id}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a proposal to view" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {clientProposals.map(p => (
-                                            <SelectItem key={p.id} value={p.id}>{p.title} - {new Date(p.createdAt).toLocaleDateString()}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                             </div>
+                        {clientProposals.length > 0 ? (
+                            <div className="grid gap-2">
+                                {clientProposals.map(p => (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => setSelectedProposal(p)}
+                                        className={cn(
+                                            "flex items-center justify-between rounded-lg border p-3 text-left transition-colors w-full",
+                                            selectedProposal?.id === p.id 
+                                                ? "bg-primary text-primary-foreground border-primary" 
+                                                : "hover:bg-accent"
+                                        )}
+                                    >
+                                        <div>
+                                            <p className="font-medium text-sm">{p.title}</p>
+                                            <p className={cn("text-xs", selectedProposal?.id === p.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                                {getFormattedDate(p.createdAt)}
+                                            </p>
+                                        </div>
+                                        <div className="text-xs font-mono rounded bg-muted px-2 py-1">
+                                            {p.id}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
                         ) : (
                             <p className="text-sm text-muted-foreground text-center py-4">No proposals found for this client.</p>
                         )}
