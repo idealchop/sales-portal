@@ -272,20 +272,22 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                             if (acceptedProposal?.content) {
                                 try {
                                     const content = JSON.parse(acceptedProposal.content) as any;
+                                    const amountString = String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, "");
+                                    const cleanedAmount = parseFloat(amountString);
+                                    
                                     subscriptionDetails = {
                                         planName: content.summaryTitle || 'Custom Plan',
-                                        amount: parseFloat(String(content.totalAmountDue).replace(/[^0-9.-]+/g, "")),
+                                        amount: isNaN(cleanedAmount) ? 0 : cleanedAmount,
                                         billingCycle: content.billingCycleLabel || 'Monthly'
                                     };
                                 } catch (e) {
                                     console.warn("Could not parse proposal content for client:", client.id);
                                 }
                             } else if (client.subscription) {
-                                // This is a fallback, but the primary source should be the accepted proposal content.
                                 subscriptionDetails = {
                                     planName: client.subscription.planName,
                                     amount: client.subscription.amount,
-                                    billingCycle: 'Monthly', // Assuming monthly if not specified in proposal
+                                    billingCycle: client.subscription.billingCycle || 'Monthly',
                                 };
                             }
                             
@@ -297,6 +299,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                         <ClientOverviewDialog client={client} proposal={acceptedProposal} allUsers={users} view="clients">
                                             <div className="font-medium cursor-pointer text-primary hover:underline">{client.companyName}</div>
                                         </ClientOverviewDialog>
+                                        <div className="font-mono text-xs text-muted-foreground">ID: {client.id}</div>
                                         <div className="text-sm text-muted-foreground">{client.contactName}</div>
                                         <div className="text-sm mt-1">
                                             <span className="font-semibold">{subscriptionDetails.planName}</span>
@@ -939,3 +942,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
