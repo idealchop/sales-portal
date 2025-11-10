@@ -807,7 +807,7 @@ export default function AdminPage() {
   const { proposals, isLoading: proposalsLoading } = useAllProposals();
   const { clients, isLoading: clientsLoading } = useAllClients();
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
-  const { commissions: commissionsFromHook, isLoading: commissionsLoading } = useCommissions();
+  const { commissions: commissionsFromHook, isLoading: commissionsLoading } = useAllCommissions();
   const { isAdmin } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -1111,6 +1111,24 @@ export default function AdminPage() {
     return processedPayouts;
 }, [commissionsFromHook, commissionsLoading]);
 
+const salesRepPayouts = useMemo(() => {
+    if (commissionsLoading || usersLoading) return [];
+    
+    const userPayouts = salesUsers.map(user => {
+        const userCommissions = commissionsFromHook.filter(c => c.userId === user.id);
+        const pendingAmount = userCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.amount, 0);
+        const paidAmount = userCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.amount, 0);
+        return {
+            user,
+            pendingAmount,
+            paidAmount,
+        };
+    });
+
+    return userPayouts;
+
+}, [commissionsFromHook, salesUsers, commissionsLoading, usersLoading]);
+
 
   const handleProcessPayout = async (payoutId: string, commissionsToUpdate: WithId<Commission>[]) => {
       if (!firestore) return;
@@ -1199,7 +1217,7 @@ export default function AdminPage() {
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                  <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
@@ -1383,19 +1401,6 @@ export default function AdminPage() {
                         </div>
                     </DialogContent>
                 </Dialog>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Sales Team</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.salesReps} Reps</div>
-                        <p className={cn("text-xs text-muted-foreground flex items-center", stats.teamGrowthChange >= 0 ? "text-green-600" : "text-red-600")}>
-                            {stats.teamGrowthChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                            {stats.teamGrowthChange.toFixed(1)}% from last month
-                        </p>
-                    </CardContent>
-                </Card>
             </div>
              <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                 <Card className="lg:col-span-3">
@@ -1488,7 +1493,7 @@ export default function AdminPage() {
             </div>
         </TabsContent>
         <TabsContent value="sales-team" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 md:gap-8">
                 <Card className="md:col-span-2">
                     <CardHeader>
                         <CardTitle>Team Performance Overview</CardTitle>
@@ -1562,92 +1567,62 @@ export default function AdminPage() {
                     <CardDescription>Review and process monthly payouts for the sales team.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
+                   <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Sales Rep</TableHead>
-                                <TableHead>Payout Period</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
+                                <TableHead>Pending Payout</TableHead>
+                                <TableHead>Total Paid</TableHead>
                                 <TableHead className="text-center">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
+                                    <TableCell colSpan={4} className="h-24 text-center">
                                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                     </TableCell>
                                 </TableRow>
-                            ) : allPayouts.length > 0 ? (
-                                allPayouts.map((payout) => {
-                                    const user = salesUsers.find(u => u.id === payout.userId);
-                                    return (
-                                        <TableRow key={payout.payoutId}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar>
-                                                        <AvatarImage src={user?.photoURL} />
-                                                        <AvatarFallback>{user?.displayName?.[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <p className="font-medium">{user?.displayName}</p>
-                                                        <p className="text-sm text-muted-foreground">{user?.email}</p>
-                                                    </div>
+                            ) : salesRepPayouts.length > 0 ? (
+                                salesRepPayouts.map(payout => (
+                                    <TableRow key={payout.user.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar>
+                                                    <AvatarImage src={payout.user?.photoURL} />
+                                                    <AvatarFallback>{payout.user?.displayName?.[0]}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-medium">{payout.user?.displayName}</p>
+                                                    <p className="text-sm text-muted-foreground">{payout.user?.email}</p>
                                                 </div>
-                                            </TableCell>
-                                            <TableCell>{payout.month}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={payout.status === 'paid' ? 'success' : 'warning'} className="capitalize">{payout.status}</Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right font-semibold">
-                                                <Dialog>
-                                                    <DialogTrigger asChild>
-                                                        <Button variant="link" className="text-primary p-0 h-auto">{currencyFormatter.format(payout.totalAmount)}</Button>
-                                                    </DialogTrigger>
-                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} users={salesUsers} />
-                                                </Dialog>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {payout.status === 'pending' ? (
-                                                     <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                          <Button size="sm" disabled={processingPayouts[payout.payoutId]}>
-                                                            {processingPayouts[payout.payoutId] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                                                                Process Payout
-                                                          </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Confirm Payout</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Are you sure you want to mark the {payout.month} payout of <span className="font-bold">{currencyFormatter.format(payout.totalAmount)}</span> for <span className="font-bold">{user?.displayName}</span> as paid? This action cannot be undone.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleProcessPayout(payout.payoutId, payout.commissions)}>
-                                                                    Confirm & Mark as Paid
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                ) : (
-                                                    <span className="text-sm text-muted-foreground italic">Paid</span>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="font-semibold">{currencyFormatter.format(payout.pendingAmount)}</TableCell>
+                                        <TableCell>{currencyFormatter.format(payout.paidAmount)}</TableCell>
+                                        <TableCell className="text-center">
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="outline" size="sm">View Payouts</Button>
+                                                </DialogTrigger>
+                                                <UserPayoutsDialog 
+                                                    user={payout.user}
+                                                    allPayouts={allPayouts.filter(p => p.userId === payout.user.id)}
+                                                    onProcessPayout={handleProcessPayout}
+                                                    processingPayouts={processingPayouts}
+                                                    salesUsers={salesUsers}
+                                                />
+                                            </Dialog>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
-                                        No payouts to process.
-                                    </TableCell>
+                                    <TableCell colSpan={4} className="h-24 text-center">No sales representatives found.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
-                    </Table>
+                   </Table>
                 </CardContent>
             </Card>
         </TabsContent>
@@ -1656,6 +1631,85 @@ export default function AdminPage() {
   );
 }
 
+
+function UserPayoutsDialog({ user, allPayouts, onProcessPayout, processingPayouts, salesUsers }: { user: WithId<UserProfile>, allPayouts: any[], onProcessPayout: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts: Record<string, boolean>, salesUsers: WithId<UserProfile>[] }) {
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    
+    return (
+        <DialogContent className="sm:max-w-3xl">
+            <DialogHeader>
+                <DialogTitle>Payouts for {user.displayName}</DialogTitle>
+                <DialogDescription>Review and process pending payments for this sales representative.</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[60vh] pr-4">
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Payout Period</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="text-center">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {allPayouts.length > 0 ? (
+                            allPayouts.map((payout) => (
+                                <TableRow key={payout.payoutId}>
+                                    <TableCell>{payout.month}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={payout.status === 'paid' ? 'success' : 'warning'} className="capitalize">{payout.status}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right font-semibold">
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="link" className="text-primary p-0 h-auto">{currencyFormatter.format(payout.totalAmount)}</Button>
+                                            </DialogTrigger>
+                                            <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} users={salesUsers} />
+                                        </Dialog>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        {payout.status === 'pending' ? (
+                                                <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button size="sm" disabled={processingPayouts[payout.payoutId]}>
+                                                    {processingPayouts[payout.payoutId] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                                                        Process Payout
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Confirm Payout</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Are you sure you want to mark the {payout.month} payout of <span className="font-bold">{currencyFormatter.format(payout.totalAmount)}</span> for <span className="font-bold">{user?.displayName}</span> as paid? This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => onProcessPayout(payout.payoutId, payout.commissions)}>
+                                                            Confirm & Mark as Paid
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        ) : (
+                                            <span className="text-sm text-muted-foreground italic">Paid</span>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">
+                                    No payouts to process for this user.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </ScrollArea>
+        </DialogContent>
+    );
+}
     
 
     
