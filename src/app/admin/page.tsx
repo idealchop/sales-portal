@@ -248,7 +248,6 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                     <TableHeader>
                         <TableRow>
                             <TableHead>Client</TableHead>
-                            <TableHead>Plan</TableHead>
                             <TableHead>Payment Schedule</TableHead>
                             <TableHead>Payment Status</TableHead>
                             <TableHead>Status</TableHead>
@@ -300,10 +299,10 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             <div className="font-medium cursor-pointer text-primary hover:underline">{client.companyName}</div>
                                         </ClientOverviewDialog>
                                         <div className="text-sm text-muted-foreground">{client.contactName}</div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="font-medium">{subscriptionDetails.planName}</div>
-                                        <div className="text-sm text-muted-foreground">{currencyFormatter.format(subscriptionDetails.amount)}</div>
+                                        <div className="text-sm mt-1">
+                                            <span className="font-semibold">{subscriptionDetails.planName}</span>
+                                            <span className="text-muted-foreground"> - {currencyFormatter.format(subscriptionDetails.amount)}</span>
+                                        </div>
                                     </TableCell>
                                     <TableCell>{subscriptionDetails.billingCycle}</TableCell>
                                     <TableCell>
@@ -941,5 +940,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
