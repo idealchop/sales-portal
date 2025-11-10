@@ -151,46 +151,41 @@ export default function ProposalsPage() {
   const { clients, isLoading: clientsLoading, error: clientsError } = useClients();
   const { salesUsers, isLoading: usersLoading, error: usersError } = useSalesUsers();
 
-  const getClientById = (id: string): Client | undefined => {
-    return clients.find(c => c.id === id);
-  }
-
   const handleTabChange = (value: string) => {
     setActiveView(value as ActiveView);
     setSearchQuery('');
   }
   
-  // Memoize client data to avoid re-renders
   const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
   const userMap = useMemo(() => new Map(salesUsers.map(u => [u.id, u])), [salesUsers]);
 
-
   const renderProposalsTable = () => {
-    const filteredProposals = useMemo(() => {
-        return proposals.filter(proposal => {
-            if (proposal.status === 'accepted') {
-                return false;
-            }
+    const clientsWithProposals = useMemo(() => {
+        if (proposalsLoading || clientsLoading) return [];
+        
+        const clientsMap = new Map<string, { client: Client, proposals: Proposal[] }>();
+        
+        proposals.forEach(proposal => {
+            if (proposal.status === 'accepted') return;
             const client = clientMap.get(proposal.clientId);
-            if (!client) return false;
+            if (!client) return;
 
-            const searchTerm = searchQuery.toLowerCase();
-            const matchesSearch = (
-              proposal.title.toLowerCase().includes(searchTerm) ||
-              client.companyName.toLowerCase().includes(searchTerm) ||
-              client.contactName.toLowerCase().includes(searchTerm) ||
-              proposal.id.toLowerCase().includes(searchTerm) ||
-              client.id.toLowerCase().includes(searchTerm)
-            );
-            
-            const matchesStatus = proposalStatusFilter === 'all' || proposal.status === proposalStatusFilter;
-
-            return matchesSearch && matchesStatus;
+            if (!clientsMap.has(client.id)) {
+                clientsMap.set(client.id, { client, proposals: [] });
+            }
+            clientsMap.get(client.id)!.proposals.push(proposal);
         });
-    }, [proposals, clientMap, searchQuery, proposalStatusFilter]);
+
+        return Array.from(clientsMap.values()).filter(({ client }) => {
+            const searchTerm = searchQuery.toLowerCase();
+            return client.companyName.toLowerCase().includes(searchTerm) ||
+                   client.contactName.toLowerCase().includes(searchTerm);
+        });
+
+    }, [proposals, clientMap, searchQuery, proposalsLoading, clientsLoading]);
     
-    const totalPages = Math.ceil(filteredProposals.length / ITEMS_PER_PAGE);
-    const paginatedProposals = filteredProposals.slice(
+    const totalPages = Math.ceil(clientsWithProposals.length / ITEMS_PER_PAGE);
+    const paginatedClients = clientsWithProposals.slice(
       (proposalsCurrentPage - 1) * ITEMS_PER_PAGE,
       proposalsCurrentPage * ITEMS_PER_PAGE
     );
@@ -210,49 +205,33 @@ export default function ProposalsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
-                <TableHead className="hidden sm:table-cell">Sales Rep</TableHead>
-                <TableHead>Proposal</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Proposals</TableHead>
+                <TableHead className="hidden sm:table-cell">Last Activity</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedProposals.length > 0 ? paginatedProposals.map((proposal) => {
-                const client = clientMap.get(proposal.clientId);
-                const owner = userMap.get(proposal.userId);
-                if (!client) return null;
+              {paginatedClients.length > 0 ? paginatedClients.map(({ client, proposals }) => {
+                const latestProposal = proposals[0];
+                const owner = userMap.get(latestProposal?.userId);
                 return (
-                  <ClientOverviewDialog key={proposal.id} client={client} proposal={proposal} view="proposals" setActiveView={setActiveView}>
+                  <ClientOverviewDialog key={client.id} client={client} proposal={latestProposal} view="proposals" setActiveView={setActiveView}>
                     <TableRow className="cursor-pointer">
                       <TableCell>
                           <div className="font-bold">{client.companyName}</div>
                           <div className="text-sm text-muted-foreground">{client.contactName}</div>
                       </TableCell>
-                       <TableCell className="hidden sm:table-cell">
-                          <div className="flex items-center gap-2">
-                              <Avatar className="h-6 w-6">
-                                  <AvatarImage src={owner?.photoURL ?? undefined} />
-                                  <AvatarFallback className="text-xs">{owner?.displayName?.[0]}</AvatarFallback>
-                              </Avatar>
-                              <span className="font-medium text-sm">{owner?.displayName ?? 'N/A'}</span>
-                          </div>
-                      </TableCell>
                        <TableCell>
-                          <div className="font-medium">{proposal.title}</div>
-                          <div className="font-mono text-xs text-muted-foreground">ID: {proposal.id}</div>
+                          <Badge variant="outline">{proposals.length} Proposal(s)</Badge>
+                       </TableCell>
+                       <TableCell className="hidden sm:table-cell">
+                          {new Date(latestProposal.createdAt).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>
-                        <Badge className={cn("capitalize", proposalStatusStyles[proposal.status])} variant="outline">
-                          {proposal.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(proposal.amount)}</TableCell>
                     </TableRow>
                   </ClientOverviewDialog>
                 )
               }) : (
                 <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={3} className="h-24 text-center">
                         No proposals found.
                     </TableCell>
                 </TableRow>
@@ -263,7 +242,7 @@ export default function ProposalsPage() {
          <CardFooter>
           <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
             <span>
-              Showing {Math.min(paginatedProposals.length, ITEMS_PER_PAGE)} of {filteredProposals.length} proposals.
+              Showing {Math.min(paginatedClients.length, ITEMS_PER_PAGE)} of {clientsWithProposals.length} clients.
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -499,7 +478,7 @@ export default function ProposalsPage() {
                       <div className="flex-1">
                           <CardTitle>All Proposals</CardTitle>
                           <CardDescription>
-                              View, manage, and create sales proposals.
+                              View, manage, and create sales proposals. Proposals are grouped by client.
                           </CardDescription>
                       </div>
                       <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
@@ -507,26 +486,13 @@ export default function ProposalsPage() {
                             <div className="relative">
                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                               <Input 
-                                placeholder="Search proposals..." 
+                                placeholder="Search by client name..." 
                                 className="pl-10" 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                               />
                             </div>
                         </div>
-                        <Select value={proposalStatusFilter} onValueChange={(value) => setProposalStatusFilter(value as ProposalStatus | 'all')}>
-                          <SelectTrigger className="w-full sm:w-[180px]">
-                            <div className="flex items-center gap-2">
-                              <Filter className="h-4 w-4" />
-                              <SelectValue placeholder="Filter by status" />
-                            </div>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {proposalStatuses.map(status => (
-                              <SelectItem key={status} value={status} className="capitalize">{status === 'finalized' ? 'Pending' : status}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </div>
                   </div>
               </CardHeader>

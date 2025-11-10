@@ -793,6 +793,33 @@ export function ClientOverviewDialog({
                         )}
                     </Card>
                  </div>
+                  
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Proposal History</CardTitle>
+                         <CardDescription>
+                            Review all proposals sent to this client.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         {clientProposals.length > 0 ? (
+                             <div className="space-y-2">
+                                <Select onValueChange={(proposalId) => setSelectedProposal(clientProposals.find(p => p.id === proposalId))} defaultValue={selectedProposal?.id}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a proposal to view" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {clientProposals.map(p => (
+                                            <SelectItem key={p.id} value={p.id}>{p.title} - {new Date(p.createdAt).toLocaleDateString()}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                             </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground text-center py-4">No proposals found for this client.</p>
+                        )}
+                    </CardContent>
+                </Card>
 
                  {(view === 'proposals' || (view === 'clients' && client.status === 'pending' && selectedProposal?.status === 'finalized')) && selectedProposal?.status !== 'accepted' && (
                     <Card>
