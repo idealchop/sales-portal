@@ -1141,7 +1141,7 @@ export default function AdminPage() {
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                  <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
@@ -1322,94 +1322,6 @@ export default function AdminPage() {
                                     <Area type="monotone" dataKey="Inactive" stroke="hsl(var(--destructive))" strokeWidth={2} fillOpacity={1} fill="url(#colorInactive)" />
                                 </AreaChart>
                             </ResponsiveContainer>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Card className="cursor-pointer hover:border-primary transition-colors">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Sales Team</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stats.salesReps} Reps</div>
-                                <p className={cn("text-xs text-muted-foreground flex items-center", stats.teamGrowthChange >= 0 ? "text-green-600" : "text-red-600")}>
-                                     {stats.teamGrowthChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                                    {stats.teamGrowthChange.toFixed(1)}% from last month
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </DialogTrigger>
-                     <DialogContent className="sm:max-w-3xl">
-                        <DialogHeader>
-                            <DialogTitle>Team Performance Overview</DialogTitle>
-                            <DialogDescription>A breakdown of proposal activity by sales representative.</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base">Team Performance Overview</CardTitle>
-                                    <CardDescription>Sent vs. Accepted proposals.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="h-[250px]">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={stats.proposalFunnelData}>
-                                            <defs>
-                                                <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
-                                                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
-                                                </linearGradient>
-                                                <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                            <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                            <Legend wrapperStyle={{paddingTop: '20px'}} />
-                                            <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" strokeWidth={2} fillOpacity={1} fill="url(#colorSent)" />
-                                            <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorAccepted)" />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base">Proposals By Rep</CardTitle>
-                                    <CardDescription>Total proposals created per rep.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="h-[250px] pr-6">
-                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={stats.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
-                                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                            <XAxis 
-                                                dataKey="userId" 
-                                                tickLine={false} 
-                                                axisLine={false} 
-                                                tick={<CustomXAxisTick salesUsers={salesUsers} />}
-                                                interval={0}
-                                            />
-                                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                                            <Tooltip
-                                                cursor={{ fill: 'hsl(var(--muted))' }}
-                                                contentStyle={{ 
-                                                    backgroundColor: 'hsl(var(--background))',
-                                                    border: '1px solid hsl(var(--border))',
-                                                    borderRadius: 'var(--radius)'
-                                                }}
-                                                labelFormatter={(value) => {
-                                                    const user = salesUsers.find(u => u.id === value);
-                                                    return user ? user.displayName : 'Unknown';
-                                                }}
-                                            />
-                                            <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </CardContent>
-                            </Card>
                         </div>
                     </DialogContent>
                 </Dialog>
