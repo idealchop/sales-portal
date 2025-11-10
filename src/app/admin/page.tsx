@@ -420,7 +420,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                 let planName = acceptedProposal.title || 'Custom Plan';
                                 let billingCycle = 'Monthly';
 
-                                if (acceptedProposal.content) {
+                                if (amount <= 0 && acceptedProposal.content) {
                                     try {
                                         const content = JSON.parse(acceptedProposal.content);
                                         // Use parsed content as a fallback
@@ -429,11 +429,10 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                         }
                                         billingCycle = content.billingCycleLabel || billingCycle;
                                         // Only parse content for amount if the top-level one is zero.
-                                        if (amount <= 0) {
-                                            const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
-                                            if (!isNaN(parsedAmount)) {
-                                                amount = parsedAmount;
-                                            }
+                                        
+                                        const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
+                                        if (!isNaN(parsedAmount)) {
+                                            amount = parsedAmount;
                                         }
                                     } catch (e) {
                                         console.warn("Could not parse proposal content for client:", client.id);
@@ -809,7 +808,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [] };
+      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
@@ -900,13 +899,21 @@ export default function AdminPage() {
         const monthEnd = endOfMonth(date);
 
         const newClients = clients.filter(c => c.createdAt && isWithinInterval(new Date(c.createdAt), { start: monthStart, end: monthEnd })).length;
+        
+        const endOfMonthPendingClients = clients.filter(c => {
+          const createdAt = new Date(c.createdAt);
+          return c.status === 'pending' && createdAt <= monthEnd;
+        }).length;
+
         const proposalsCreated = proposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd })).length;
         const proposalsAccepted = acceptedProposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd })).length;
 
-        return { month: monthName, newClients, proposalsCreated, proposalsAccepted };
+        return { month: monthName, newClients, proposalsCreated, proposalsAccepted, pendingClients: endOfMonthPendingClients };
     });
     
     const clientGrowthData = monthlyData.map(d => ({ month: d.month, "New Clients": d.newClients }));
+    const pendingClientsHistory = monthlyData.map(d => ({ month: d.month, "Pending Clients": d.pendingClients }));
+    const proposalsCreatedHistory = monthlyData.map(d => ({ month: d.month, "Proposals Created": d.proposalsCreated }));
     
     const proposalFunnelData = Array.from({ length: 6 }).map((_, i) => {
         const date = subMonths(now, 5 - i);
@@ -940,7 +947,7 @@ export default function AdminPage() {
     }).sort((a, b) => b.proposals - a.proposals);
 
 
-    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData };
+    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, pendingClientsHistory, proposalsCreatedHistory };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1019,8 +1026,8 @@ export default function AdminPage() {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>Active Clients Insights</DialogTitle>
-                            <DialogDescription>A detailed look at your active client base and growth trends.</DialogDescription>
+                            <DialogTitle>Active Clients Growth</DialogTitle>
+                            <DialogDescription>A detailed look at your new client acquisition over the last 6 months.</DialogDescription>
                         </DialogHeader>
                         <div className="h-[350px] w-full">
                              <ResponsiveContainer width="100%" height="100%">
@@ -1052,22 +1059,19 @@ export default function AdminPage() {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-2xl">
                          <DialogHeader>
-                            <DialogTitle>Pending Client Details</DialogTitle>
-                            <DialogDescription>Breakdown of clients currently in the onboarding pipeline.</DialogDescription>
+                            <DialogTitle>Pending Clients Over Time</DialogTitle>
+                            <DialogDescription>Number of clients in the 'pending' state at the end of each month.</DialogDescription>
                         </DialogHeader>
                          <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats.clientStatusChartData}>
+                            <LineChart data={stats.pendingClientsHistory}>
                               <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" />
+                              <XAxis dataKey="month" />
                               <YAxis allowDecimals={false} />
                               <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                              <Bar dataKey="value" name="Clients" radius={[4, 4, 0, 0]}>
-                                {stats.clientStatusChartData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
-                              </Bar>
-                            </BarChart>
+                              <Legend />
+                              <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} />
+                            </LineChart>
                           </ResponsiveContainer>
                         </div>
                     </DialogContent>
@@ -1088,18 +1092,19 @@ export default function AdminPage() {
                     </DialogTrigger>
                      <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>Proposal Status Distribution</DialogTitle>
-                            <DialogDescription>An overview of all proposals by their current status.</DialogDescription>
+                            <DialogTitle>Proposals Created Over Time</DialogTitle>
+                            <DialogDescription>Number of new proposals created each month for the last 6 months.</DialogDescription>
                         </DialogHeader>
                          <div className="h-[350px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie data={stats.proposalStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} activeShape={renderActiveShape} onSectorEnter={(e, index) => {}} >
-                                        {stats.proposalStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                                    </Pie>
-                                    <Legend />
-                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                </PieChart>
+                                <BarChart data={stats.proposalsCreatedHistory}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="month" />
+                                  <YAxis allowDecimals={false} />
+                                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                                  <Legend />
+                                  <Bar dataKey="Proposals Created" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </DialogContent>
@@ -1120,8 +1125,8 @@ export default function AdminPage() {
                     </DialogTrigger>
                      <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>Proposal Efficiency</DialogTitle>
-                            <DialogDescription>Tracking the number of proposals needed to win a client.</DialogDescription>
+                            <DialogTitle>Proposal Conversion Funnel</DialogTitle>
+                            <DialogDescription>Cumulative proposals sent vs. accepted over the last 6 months.</DialogDescription>
                         </DialogHeader>
                          <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
@@ -1141,8 +1146,8 @@ export default function AdminPage() {
                                     <YAxis allowDecimals={false} />
                                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
                                     <Legend />
-                                    <Area type="monotone" dataKey="sent" stroke="hsl(var(--chart-2))" fill="url(#colorSent)" />
-                                    <Area type="monotone" dataKey="accepted" stroke="hsl(var(--chart-1))" fill="url(#colorAccepted)" />
+                                    <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fill="url(#colorSent)" />
+                                    <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fill="url(#colorAccepted)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -1268,8 +1273,8 @@ export default function AdminPage() {
                                 <YAxis allowDecimals={false} />
                                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
                                 <Legend />
-                                <Area type="monotone" dataKey="sent" stroke="hsl(var(--chart-2))" fill="url(#colorSent)" />
-                                <Area type="monotone" dataKey="accepted" stroke="hsl(var(--chart-1))" fill="url(#colorAccepted)" />
+                                <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fill="url(#colorSent)" />
+                                <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fill="url(#colorAccepted)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </CardContent>
