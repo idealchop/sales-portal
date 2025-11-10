@@ -468,7 +468,7 @@ function ContractPageContent() {
         return '5+ Persons';
     }
     const estimatedEmployees = Math.round(liters / (2 * 22));
-    if (estimatedEmployees < 5) return '&lt; 5';
+    if (estimatedEmployees < 5) return '< 5';
     if (estimatedEmployees > 500) return '500+';
     return `~${Math.round(estimatedEmployees / 10) * 10}`;
   };
@@ -660,7 +660,6 @@ function ContractPageContent() {
         return;
       }
       
-      // THIS IS THE FIX: Ensure the signature is included in the object being saved.
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
       
       const newProposalData = {
@@ -692,8 +691,6 @@ function ContractPageContent() {
       router.push('/dashboard/proposals');
   
     } catch (error) {
-        // This outer catch block is less likely to be hit for permission errors with the .catch() above,
-        // but it's good for other unexpected errors during the process.
         console.error("Error saving proposal:", error);
         if (!(error instanceof FirestorePermissionError)) { // Avoid double-toasting
           toast({

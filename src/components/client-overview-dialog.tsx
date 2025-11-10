@@ -297,7 +297,7 @@ export function ClientOverviewDialog({
         let signature;
         if (content.signature) {
             signature = content.signature;
-        } else if (fullProposal && fullProposal.content && typeof fullProposal.content === 'string') {
+        } else if (fullProposal && fullProposal.content && typeof fullProposal.content === 'string' && fullProposal.content.includes('"signature":')) {
             try {
                 // Safely parse the full content to get the signature
                 const fullContentParsed = JSON.parse(fullProposal.content);
@@ -589,8 +589,8 @@ export function ClientOverviewDialog({
             <div className="space-y-6 py-4">
                  <Card>
                     <CardContent className="p-6 flex items-start gap-6">
-                        <Avatar className="h-24 w-24 border">
-                            <AvatarFallback className="text-3xl bg-primary text-primary-foreground">{getInitials(contactInfo.company)}</AvatarFallback>
+                         <Avatar className="h-24 w-24 border">
+                           <AvatarFallback className="text-3xl bg-primary text-primary-foreground">{getInitials(contactInfo.company)}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-2 flex-1">
                             <h2 className="text-2xl font-bold">{contactInfo.company}</h2>
