@@ -590,9 +590,14 @@ export default function DashboardPage() {
                         </TableBody>
                     </Table>
                     <DialogFooter>
-                         <p className="text-xs text-muted-foreground text-left w-full pt-4">
-                            Note: Recurring commissions are paid out monthly for the first 12 months of a client's subscription. If a client cancels their subscription, the associated recurring commission will also stop.
-                        </p>
+                         <div className="text-xs text-muted-foreground text-left w-full pt-4 space-y-2">
+                           <p className="font-semibold">Important Notes:</p>
+                           <ul className="list-disc list-inside space-y-1">
+                               <li>Recurring commissions are paid monthly for the first 12 months of a new client contract.</li>
+                               <li>If a client cancels their subscription, recurring commissions for that client will stop.</li>
+                               <li>For contract renewals after 12 months, the standard one-time commission applies, but recurring commissions do not.</li>
+                           </ul>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -1086,5 +1091,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
