@@ -1115,6 +1115,7 @@ export default function AdminPage() {
                                             <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
                                         </linearGradient>
                                     </defs>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                     <YAxis 
                                         tickFormatter={(value) => `₱${Number(value) / 1000}k`}
@@ -1158,6 +1159,7 @@ export default function AdminPage() {
                          <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={stats.clientGrowthData}>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                     <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
@@ -1191,6 +1193,7 @@ export default function AdminPage() {
                         <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={stats.clientRetentionData}>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                     <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
@@ -1239,6 +1242,7 @@ export default function AdminPage() {
                                                     <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
                                                 </linearGradient>
                                             </defs>
+                                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                             <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                             <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
@@ -1296,6 +1300,7 @@ export default function AdminPage() {
                     <CardContent className="h-[300px]">
                        <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={stats.clientGrowthData}>
+                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                 <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
@@ -1340,6 +1345,7 @@ export default function AdminPage() {
                                 data={stats.planDistribution}
                                 margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
                             >
+                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                 <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                 <YAxis 
                                     type="category" 
@@ -1398,6 +1404,7 @@ export default function AdminPage() {
                                         <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
                                     </linearGradient>
                                 </defs>
+                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                 <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }}/>
@@ -1478,5 +1485,6 @@ export default function AdminPage() {
     
 
     
+
 
 
