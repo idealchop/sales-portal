@@ -166,8 +166,7 @@ const OnboardingStepItem = ({ step, isLast, onClick, isAdmin, isCompleted }: { s
 );
 
 
-const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client>[], users: WithId<UserProfile>[], proposals: WithId<Proposal>[] }) => {
-    const { isAdmin } = useUser();
+const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: WithId<Client>[], users: WithId<UserProfile>[], proposals: WithId<Proposal>[], isAdmin: boolean }) => {
     const firestore = useFirestore();
     const { toast } = useToast();
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -415,6 +414,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                             };
                             
                            if (acceptedProposal) {
+                                subscriptionDetails.amount = acceptedProposal.amount;
                                 let planNameFromContent = 'Custom Plan';
                                 let billingCycleFromContent = 'Monthly';
                                 if (acceptedProposal.content) {
@@ -424,11 +424,8 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                         billingCycleFromContent = content.billingCycleLabel || 'Monthly';
                                     } catch (e) { console.warn("Could not parse proposal content for client:", client.id); }
                                 }
-                                subscriptionDetails = {
-                                    planName: planNameFromContent,
-                                    amount: acceptedProposal.amount,
-                                    billingCycle: billingCycleFromContent,
-                                };
+                                subscriptionDetails.planName = planNameFromContent;
+                                subscriptionDetails.billingCycle = billingCycleFromContent;
                             } else if (client.subscription) {
                                 subscriptionDetails = {
                                     planName: client.subscription.planName || 'N/A',
@@ -787,6 +784,7 @@ export default function AdminPage() {
   const { clients, isLoading: clientsLoading } = useAllClients();
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const { commissions, isLoading: commissionsLoading } = useAllCommissions();
+  const { isAdmin } = useUser();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
   const stats = useMemo(() => {
@@ -1028,7 +1026,7 @@ export default function AdminPage() {
                 </Card>
             </div>
             <div className="flex flex-col gap-6">
-                <ClientDataTable clients={clients} users={salesUsers} proposals={proposals} />
+                <ClientDataTable clients={clients} users={salesUsers} proposals={proposals} isAdmin={isAdmin} />
             </div>
         </TabsContent>
         <TabsContent value="sales-team" className="mt-6 space-y-6">
