@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -1070,6 +1069,8 @@ export default function AdminPage() {
     return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
+  const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
+
   const allPayouts = useMemo(() => {
     if (isLoading) return [];
     
@@ -1138,7 +1139,6 @@ export default function AdminPage() {
       }
   };
 
-  const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
 
   if (isLoading) {
     return <AdminDashboardSkeleton />;
