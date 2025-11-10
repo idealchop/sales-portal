@@ -27,6 +27,8 @@ import {
   User,
   Power,
   CalendarDays,
+  Activity,
+  Building,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -58,6 +60,7 @@ import {
 } from "@/components/ui/dialog"
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import { RevenueChart } from '@/components/revenue-chart';
 import { ClientPopover } from '@/components/client-popover';
@@ -102,6 +105,100 @@ const BonusCard = ({ icon, title, value, progress, goal, description, children }
         </DialogTrigger>
         {children}
     </Dialog>
+)
+
+const DashboardSkeleton = () => (
+    <div className="flex flex-col gap-8">
+      {/* Header */}
+      <div>
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-96 mt-2" />
+      </div>
+
+      {/* Commission Stats */}
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-3 w-32 mt-2" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Charts and Materials */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-64 mt-1" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[250px] w-full" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-48 mt-1" />
+          </CardHeader>
+          <Skeleton className="aspect-video w-full" />
+          <CardContent className="pt-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4 mt-1" />
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-9 w-full" />
+          </CardFooter>
+        </Card>
+      </div>
+
+      {/* Proposal Snapshot */}
+      <Card>
+        <CardHeader className='flex flex-row items-center justify-between'>
+          <div>
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-64 mt-1" />
+          </div>
+          <Skeleton className="h-9 w-32" />
+        </CardHeader>
+        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card><CardContent className="p-6"><Skeleton className="h-32 w-32 mx-auto rounded-full" /></CardContent></Card>
+          <Card className="lg:col-span-2"><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
+          <Card><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
+        </CardContent>
+      </Card>
+
+      {/* Recent Proposals Table */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-56 mt-1" />
+          </div>
+          <Skeleton className="h-9 w-36" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-2">
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
 )
 
 export default function DashboardPage() {
@@ -349,11 +446,7 @@ export default function DashboardPage() {
   ];
   
   if (proposalsLoading || clientsLoading || usersLoading) {
-      return (
-        <div className="flex h-[80vh] w-full items-center justify-center">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-        </div>
-      );
+      return <DashboardSkeleton />;
   }
 
   return (
@@ -567,7 +660,7 @@ export default function DashboardPage() {
             </DialogHeader>
             <ScrollArea className="h-[60vh] pr-4">
               <div className="space-y-8 py-6">
-                  <div className="grid gap-8 md:grid-cols-2">
+                   <div className="grid gap-8 md:grid-cols-2">
                       <div>
                           <h3 className="text-lg font-semibold mb-2">Commission Structure</h3>
                           <Table>
@@ -608,12 +701,9 @@ export default function DashboardPage() {
                       <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
                       <RevenueChart data={dashboardData.commissionHistory} />
                   </div>
-                   <div className="space-y-2">
-                      <h3 className="text-lg font-semibold">Payout Process</h3>
-                      <p className="text-sm text-muted-foreground">
-                          All earnings (commissions & bonuses) are calculated at the end of each month and paid out within 30 days.
-                      </p>
-                  </div>
+                   <p className="text-sm text-muted-foreground">
+                      All earnings (commissions & bonuses) are calculated at the end of each month and paid out within 30 days.
+                  </p>
               </div>
             </ScrollArea>
              <DialogFooter>
