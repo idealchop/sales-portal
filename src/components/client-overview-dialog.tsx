@@ -292,12 +292,23 @@ export function ClientOverviewDialog({
     if (!proposalToParse?.content) return null;
     try {
         const content = JSON.parse(proposalToParse.content);
-        // Find the full proposal from the state to get the paymentProofUrl and signature
         const fullProposal = clientProposals.find(p => p.id === proposalToParse.id);
+
+        let signature;
+        if (content.signature) {
+            signature = content.signature;
+        } else if (fullProposal?.content && typeof fullProposal.content === 'string' && fullProposal.content.includes('"signature"')) {
+            try {
+                signature = JSON.parse(fullProposal.content).signature;
+            } catch (e) {
+                // If parsing the full content fails, we'll just ignore it.
+            }
+        }
+
         return { 
             ...content, 
             paymentProofUrl: fullProposal?.paymentProofUrl,
-            signature: content.signature || (fullProposal && fullProposal.content && typeof fullProposal.content === 'string' && fullProposal.content.includes('"signature":')) ? JSON.parse(fullProposal.content).signature : undefined
+            signature: signature
         };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
@@ -576,8 +587,8 @@ export function ClientOverviewDialog({
             <div className="space-y-6 py-4">
                  <Card>
                     <CardContent className="p-6 flex items-start gap-6">
-                         <Avatar className="h-24 w-24 border">
-                            <AvatarFallback className="text-3xl bg-primary text-primary-foreground">{getInitials(contactInfo.name)}</AvatarFallback>
+                        <Avatar className="h-24 w-24 border">
+                            <AvatarFallback className="text-3xl bg-primary text-primary-foreground">{getInitials(contactInfo.company)}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-2 flex-1">
                             <h2 className="text-2xl font-bold">{contactInfo.company}</h2>
@@ -905,3 +916,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
