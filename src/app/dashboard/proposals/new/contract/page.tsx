@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -659,6 +660,7 @@ function ContractPageContent() {
       }
       
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
+      const amountToSave = parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, ""));
       
       const newProposalData = {
         id: proposalId,
@@ -667,7 +669,7 @@ function ContractPageContent() {
         title: proposalContentToSave.summaryTitle,
         content: JSON.stringify(proposalContentToSave),
         status: status,
-        amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
+        amount: amountToSave,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };

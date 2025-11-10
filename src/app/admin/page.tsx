@@ -415,15 +415,20 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             };
 
                             if (acceptedProposal) {
-                                let amount = acceptedProposal.amount;
-                                let planName = 'Custom Plan';
+                                // Prioritize the top-level amount field.
+                                let amount = acceptedProposal.amount || 0;
+                                let planName = acceptedProposal.title || 'Custom Plan';
                                 let billingCycle = 'Monthly';
 
                                 if (acceptedProposal.content) {
                                     try {
                                         const content = JSON.parse(acceptedProposal.content);
-                                        planName = content.summaryTitle || planName;
+                                        // Use parsed content as a fallback
+                                        if (!planName || planName === 'Custom Plan') {
+                                            planName = content.summaryTitle || planName;
+                                        }
                                         billingCycle = content.billingCycleLabel || billingCycle;
+                                        // Only parse content for amount if the top-level one is zero.
                                         if (amount <= 0) {
                                             const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
                                             if (!isNaN(parsedAmount)) {
@@ -1153,6 +1158,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 

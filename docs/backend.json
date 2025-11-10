@@ -208,6 +208,15 @@
           "type": "string",
           "description": "The main content or description of the proposal (e.g., JSON string)."
         },
+        "status": {
+          "type": "string",
+          "description": "The status of the proposal.",
+          "enum": ["draft", "sent", "accepted", "rejected", "finalized"]
+        },
+        "amount": {
+            "type": "number",
+            "description": "The total amount of the proposal."
+        },
         "createdAt": {
           "type": "string",
           "description": "The timestamp indicating when the proposal was created.",
@@ -225,6 +234,8 @@
         "userId",
         "title",
         "content",
+        "status",
+        "amount",
         "createdAt"
       ]
     },
