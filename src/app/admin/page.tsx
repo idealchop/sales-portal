@@ -18,7 +18,8 @@ import { Progress } from '@/components/ui/progress';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -312,7 +313,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusDistribution: [], clientStatusChartData: [] };
+      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusDistribution: [], clientStatusChartData: [], proposalFunnelData: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
@@ -324,7 +325,8 @@ export default function AdminPage() {
     const totalClients = clients.length;
     const salesReps = salesUsers.length;
 
-    const sentProposalsCount = proposals.filter(p => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status)).length;
+    const sentProposals = proposals.filter(p => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status));
+    const sentProposalsCount = sentProposals.length;
     const winRate = sentProposalsCount > 0 ? (acceptedProposals.length / sentProposalsCount) * 100 : 0;
     const totalProposals = proposals.length;
     const proposalPerClient = totalClients > 0 ? totalProposals / totalClients : 0;
@@ -377,8 +379,20 @@ export default function AdminPage() {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
 
+    const now = new Date();
+    const proposalFunnelData = Array.from({ length: 6 }).map((_, i) => {
+        const date = subMonths(now, 5 - i);
+        const monthName = format(date, 'MMM');
+        const monthStart = startOfMonth(date);
+        
+        const cumulativeSent = sentProposals.filter(p => new Date(p.createdAt) <= endOfMonth(date)).length;
+        const cumulativeAccepted = acceptedProposals.filter(p => new Date(p.createdAt) <= endOfMonth(date)).length;
+        
+        return { month: monthName, sent: cumulativeSent, accepted: cumulativeAccepted };
+    });
 
-    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusDistribution, clientStatusChartData };
+
+    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusDistribution, clientStatusChartData, proposalFunnelData };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -404,7 +418,7 @@ export default function AdminPage() {
     <div className="flex flex-col gap-8">
        <Tabs defaultValue="crm" className="w-full">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold whitespace-nowrap">Dashboard</h1>
               <TabsList className="gap-1">
                 <TabsTrigger value="crm"><UsersRound className="mr-2 h-4 w-4"/>CRM</TabsTrigger>
@@ -568,6 +582,35 @@ export default function AdminPage() {
                     <p className="text-xs text-muted-foreground">Total sales representatives</p>
                   </CardContent>
                 </Card>
+                 <Card className="col-span-1 lg:col-span-3">
+                    <CardHeader>
+                        <CardTitle>Proposal Funnel Over Time</CardTitle>
+                        <CardDescription>Cumulative proposals sent vs. accepted over the last 6 months.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[250px] pr-6">
+                         <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={stats.proposalFunnelData}>
+                                <defs>
+                                    <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.4}/>
+                                        <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="month" />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }}/>
+                                <Legend />
+                                <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fillOpacity={1} fill="url(#colorSent)" />
+                                <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fillOpacity={1} fill="url(#colorAccepted)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
             </div>
             <SalesTeamLeaderboard users={salesUsers} proposals={proposals} />
         </TabsContent>
@@ -600,6 +643,8 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
 
