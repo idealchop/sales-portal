@@ -212,9 +212,8 @@ export default function ProposalsPage() {
             <TableBody>
               {paginatedClients.length > 0 ? paginatedClients.map(({ client, proposals }) => {
                 const latestProposal = proposals[0];
-                const owner = userMap.get(latestProposal?.userId);
                 return (
-                  <ClientOverviewDialog key={client.id} client={client} proposal={latestProposal} view="proposals" setActiveView={setActiveView}>
+                  <ClientOverviewDialog key={client.id} client={client} proposal={latestProposal} allUsers={salesUsers} view="proposals" setActiveView={setActiveView}>
                     <TableRow className="cursor-pointer">
                       <TableCell>
                           <div className="font-bold">{client.companyName}</div>
@@ -347,7 +346,7 @@ export default function ProposalsPage() {
                 return (
                   <TableRow key={client.id}>
                     <TableCell>
-                      <ClientOverviewDialog client={client} view="clients">
+                      <ClientOverviewDialog client={client} view="clients" allUsers={salesUsers}>
                           <div className="font-bold text-primary cursor-pointer hover:underline">{client.companyName}</div>
                       </ClientOverviewDialog>
                         <div className="font-mono text-xs text-muted-foreground">Client ID: {client.id}</div>

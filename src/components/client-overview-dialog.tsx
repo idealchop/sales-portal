@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
 import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot, Loader2, Receipt, User } from 'lucide-react';
-import type { Client, Remark, OnboardingStep, Proposal } from '@/lib/definitions';
+import type { Client, Remark, OnboardingStep, Proposal, UserProfile } from '@/lib/definitions';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
@@ -161,12 +161,14 @@ function PaymentHistory({ client, proposals, onPaymentConfirm }: { client: Clien
     const getFormattedDate = (dateValue: string | { toDate: () => Date; }) => {
         if (!dateValue) return "Invalid Date";
         try {
-          if (typeof dateValue === 'string') {
-              return new Date(dateValue).toLocaleDateString();
-          }
-          if (typeof dateValue.toDate === 'function') {
-              return dateValue.toDate().toLocaleDateString();
-          }
+            if (typeof dateValue === 'string') {
+              const date = new Date(dateValue);
+              if (isNaN(date.getTime())) return "Invalid Date";
+              return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            if (dateValue && typeof (dateValue as any).toDate === 'function') {
+                return (dateValue as any).toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
         } catch (e) {
           return "Invalid Date";
         }
@@ -253,12 +255,14 @@ export function ClientOverviewDialog({
   children,
   client,
   proposal,
+  allUsers,
   view,
   setActiveView,
 }: {
   children: React.ReactNode;
   client: Client;
   proposal?: Proposal;
+  allUsers: UserProfile[];
   view: 'proposals' | 'clients';
   setActiveView?: (view: ActiveView) => void;
 }) {
@@ -280,17 +284,7 @@ export function ClientOverviewDialog({
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(null);
   const [parsedProposalContent, setParsedProposalContent] = useState<FinalPlanDetails | null>(null);
   
-  useEffect(() => {
-    if (open) {
-      if (proposal) {
-        const fullProposal = clientProposals.find(p => p.id === proposal.id);
-        setSelectedProposal(fullProposal || proposal);
-      } else if (clientProposals.length > 0) {
-          setSelectedProposal(clientProposals[0]);
-      }
-    }
-  }, [open, proposal, clientProposals]);
-
+  const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
   useEffect(() => {
     if (selectedProposal?.content) {
@@ -395,7 +389,11 @@ export function ClientOverviewDialog({
         snapshot.forEach((doc) => {
           fetchedProposals.push({ id: doc.id, ...doc.data() } as Proposal);
         });
-        fetchedProposals.sort((a,b) => (b.createdAt as any) - (a.createdAt as any));
+        fetchedProposals.sort((a,b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+          const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+          return dateB.getTime() - dateA.getTime();
+        });
         setClientProposals(fetchedProposals);
         
         if (proposal) {
@@ -568,14 +566,21 @@ export function ClientOverviewDialog({
     enterprise: 'Enterprise'
   };
 
-  const getFormattedDate = (dateString: string) => {
-    if (!dateString) return 'Invalid Date';
+  const getFormattedDate = (dateValue: string | { toDate: () => Date; }) => {
+    if (!dateValue) return "Invalid Date";
     try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      if (typeof dateValue === 'string') {
+          const date = new Date(dateValue);
+          if (isNaN(date.getTime())) return "Invalid Date";
+          return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+      if (dateValue && typeof (dateValue as any).toDate === 'function') {
+          return (dateValue as any).toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
     } catch (e) {
-        return 'Invalid Date';
+      return "Invalid Date";
     }
+    return "Invalid Date";
   };
 
 
@@ -819,28 +824,37 @@ export function ClientOverviewDialog({
                     <CardContent>
                         {clientProposals.length > 0 ? (
                             <div className="grid gap-2">
-                                {clientProposals.map(p => (
-                                    <button
-                                        key={p.id}
-                                        onClick={() => setSelectedProposal(p)}
-                                        className={cn(
-                                            "flex items-center justify-between rounded-lg border p-3 text-left transition-colors w-full",
-                                            selectedProposal?.id === p.id 
-                                                ? "bg-primary text-primary-foreground border-primary" 
-                                                : "hover:bg-accent"
-                                        )}
-                                    >
-                                        <div>
-                                            <p className="font-semibold text-sm">{p.title}</p>
-                                            <p className={cn("text-xs", selectedProposal?.id === p.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                                                {getFormattedDate(p.createdAt)}
-                                            </p>
-                                        </div>
-                                        <div className={cn("text-xs font-mono rounded px-2 py-1", selectedProposal?.id === p.id ? "bg-primary-foreground/20" : "bg-muted")}>
-                                            {p.id}
-                                        </div>
-                                    </button>
-                                ))}
+                                {clientProposals.map(p => {
+                                    const owner = userMap.get(p.userId);
+                                    return (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => setSelectedProposal(p)}
+                                            className={cn(
+                                                "flex items-center justify-between rounded-lg border p-3 text-left transition-colors w-full",
+                                                selectedProposal?.id === p.id 
+                                                    ? "bg-primary text-primary-foreground border-primary" 
+                                                    : "hover:bg-accent"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={owner?.photoURL || undefined} />
+                                                    <AvatarFallback className="text-xs">{owner?.displayName?.[0]}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-semibold text-sm">{p.title}</p>
+                                                    <p className={cn("text-xs", selectedProposal?.id === p.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                                        {getFormattedDate(p.createdAt)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className={cn("text-xs font-mono rounded px-2 py-1", selectedProposal?.id === p.id ? "bg-primary-foreground/20 text-primary-foreground font-bold" : "bg-muted")}>
+                                                {p.id}
+                                            </div>
+                                        </button>
+                                    )
+                                })}
                             </div>
                         ) : (
                             <p className="text-sm text-muted-foreground text-center py-4">No proposals found for this client.</p>
