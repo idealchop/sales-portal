@@ -340,11 +340,18 @@ export default function AdminPage() {
     const planCounts: { [key: string]: number } = {};
     acceptedProposals.forEach(p => {
         const client = clientMap.get(p.clientId);
-        if (p.content && client && client.clientType) {
+        if (p.content) {
             try {
                 const content = JSON.parse(p.content);
                 const planName = content.summaryTitle || 'Unknown Plan';
-                const clientCategory = clientTypeMap[client.clientType] || 'Other';
+                let clientCategory = 'Other';
+
+                if (content.plan?.id?.includes('enterprise')) {
+                    clientCategory = 'Enterprise';
+                } else if (client && client.clientType) {
+                    clientCategory = clientTypeMap[client.clientType] || 'Other';
+                }
+                
                 const fullPlanName = `${clientCategory} - ${planName}`;
                 planCounts[fullPlanName] = (planCounts[fullPlanName] || 0) + 1;
             } catch (e) {
@@ -517,7 +524,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
-
-    
