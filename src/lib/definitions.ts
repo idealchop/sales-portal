@@ -27,6 +27,12 @@ export type Plan = {
   isRecommended?: boolean;
 };
 
+export type PaymentHistoryItem = {
+    date: string;
+    amount: number;
+    proofUrl: string;
+}
+
 export type Client = {
   id: string;
   userId: string;
@@ -53,6 +59,7 @@ export type Client = {
     dateSigned?: string;
   };
   paymentStatus?: 'Paid' | 'Pending' | 'Unpaid';
+  paymentHistory?: PaymentHistoryItem[];
 };
 
 export type Proposal = {
@@ -106,7 +113,5 @@ export type Commission = {
   referenceId: string;
   clientName?: string;
 };
-    
-
     
     

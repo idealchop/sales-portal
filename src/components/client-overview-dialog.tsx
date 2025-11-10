@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -31,7 +32,7 @@ import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   Select,
@@ -175,6 +176,29 @@ function PaymentHistory({ client, proposals, onPaymentConfirm }: { client: Clien
         return "Invalid Date";
     };
 
+    const allPayments = useMemo(() => {
+        const proposalPayments = acceptedProposals.map(p => ({
+            date: p.createdAt,
+            amount: p.amount,
+            proofUrl: p.paymentProofUrl,
+            source: 'Proposal',
+            id: p.id
+        }));
+
+        const historyPayments = (client.paymentHistory || []).map(p => ({
+            date: p.date,
+            amount: p.amount,
+            proofUrl: p.proofUrl,
+            source: 'History',
+            id: p.date + p.amount
+        }));
+
+        const combined = [...proposalPayments, ...historyPayments];
+        combined.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return combined;
+
+    }, [client.paymentHistory, acceptedProposals]);
+
     return (
         <Card>
             <CardHeader>
@@ -183,29 +207,28 @@ function PaymentHistory({ client, proposals, onPaymentConfirm }: { client: Clien
             </CardHeader>
             <CardContent className="space-y-4">
                 <h4 className="font-semibold text-sm">Confirmed Payments</h4>
-                {acceptedProposals.length > 0 ? (
+                {allPayments.length > 0 ? (
                     <div className="space-y-2">
-                        {acceptedProposals.map(p => (
+                        {allPayments.map(p => (
                             <Dialog key={p.id}>
                                 <div className="flex items-center justify-between rounded-lg border p-3">
                                     <div>
-                                        <p className="font-medium text-sm">{p.title}</p>
-                                        <p className="text-xs text-muted-foreground">{getFormattedDate(p.createdAt)}</p>
+                                        <p className="font-medium text-sm">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(p.amount)}</p>
+                                        <p className="text-xs text-muted-foreground">{getFormattedDate(p.date)}</p>
                                     </div>
                                     <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" disabled={!p.paymentProofUrl}>
+                                        <Button variant="outline" size="sm" disabled={!p.proofUrl}>
                                             <Receipt className="mr-2 h-4 w-4" /> View Receipt
                                         </Button>
                                     </DialogTrigger>
                                 </div>
-                                {p.paymentProofUrl && (
+                                {p.proofUrl && (
                                      <DialogContent>
                                         <DialogHeader>
                                             <DialogTitle>Payment Receipt</DialogTitle>
-                                            <DialogDescription>For proposal: {p.title}</DialogDescription>
                                         </DialogHeader>
                                         <div className="relative aspect-square w-full mt-4">
-                                            <Image src={p.paymentProofUrl} alt="Payment proof" fill className="object-contain"/>
+                                            <Image src={p.proofUrl} alt="Payment proof" fill className="object-contain"/>
                                         </div>
                                     </DialogContent>
                                 )}
@@ -485,6 +508,11 @@ export function ClientOverviewDialog({
         // Set the subscription object on the client
         await updateDoc(clientRef, {
             status: 'active',
+            paymentHistory: arrayUnion({
+              date: new Date().toISOString(),
+              amount: subscriptionInfo.totalAmountDue,
+              proofUrl: downloadURL
+            }),
             subscription: {
               ...subscriptionInfo,
               dateSigned: new Date().toISOString()

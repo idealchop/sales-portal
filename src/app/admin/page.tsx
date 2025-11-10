@@ -2,16 +2,17 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllCommissions } from '@/hooks/use-all-commissions';
 import { useUser } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -30,11 +31,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog"
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -164,6 +172,22 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
             return acc;
         }, {} as { [key: string]: Proposal[] });
     }, [proposals]);
+
+    const [paymentUploadState, setPaymentUploadState] = useState<{
+        clientId: string;
+        isUploading: boolean;
+        amount: string;
+        date: Date | undefined;
+        file: File | null;
+    }>({
+        clientId: '',
+        isUploading: false,
+        amount: '',
+        date: new Date(),
+        file: null,
+    });
+    
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
         { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
@@ -237,6 +261,44 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
             });
         }
     };
+
+    const handleUploadPayment = async () => {
+        const { clientId, amount, date, file } = paymentUploadState;
+        if (!clientId || !amount || !date || !file) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide amount, date, and a file.' });
+            return;
+        }
+
+        setPaymentUploadState(prev => ({ ...prev, isUploading: true }));
+
+        try {
+            const storage = getStorage();
+            const filePath = `payment_proofs/${clientId}/ongoing/${Date.now()}-${file.name}`;
+            const storageRef = ref(storage, filePath);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            const clientRef = doc(firestore, 'clients', clientId);
+            await updateDoc(clientRef, {
+                paymentHistory: arrayUnion({
+                    date: date.toISOString(),
+                    amount: parseFloat(amount),
+                    proofUrl: downloadURL
+                }),
+                paymentStatus: 'Paid'
+            });
+
+            toast({ title: 'Payment Uploaded', description: 'The proof of payment has been added to the client\'s history.' });
+            
+            // Close dialog by resetting state
+            setPaymentUploadState({ clientId: '', isUploading: false, amount: '', date: new Date(), file: null });
+
+        } catch (error) {
+            console.error('Error uploading payment:', error);
+            toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload payment proof.' });
+            setPaymentUploadState(prev => ({ ...prev, isUploading: false }));
+        }
+    };
     
     const clientTypeMap = {
         household: 'Family',
@@ -260,6 +322,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                             <TableHead>Payment Status</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Onboarding</TableHead>
+                             <TableHead className="text-right">Proof of Payment</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -352,7 +415,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             <Dialog>
                                                 <DialogTrigger asChild>
                                                     <button className="flex flex-col items-start gap-1 w-full text-left">
-                                                         <Progress value={progress} className="w-24 h-2 bg-muted" style={{ backgroundColor: 'grey' }}/>
+                                                         <Progress value={progress} className="w-24 h-2 bg-muted" />
                                                          <p className="text-xs text-muted-foreground">Click to update</p>
                                                     </button>
                                                 </DialogTrigger>
@@ -380,6 +443,56 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                                 </DialogContent>
                                             </Dialog>
                                        ) : null}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {client.status === 'active' && (
+                                            <Dialog onOpenChange={(open) => !open && setPaymentUploadState({ clientId: '', isUploading: false, amount: '', date: new Date(), file: null })}>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, amount: String(subscriptionDetails.amount)}))}>
+                                                        <Upload className="mr-2 h-4 w-4" /> Upload
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="sm:max-w-md">
+                                                    <DialogHeader>
+                                                        <DialogTitle>Upload Payment Proof</DialogTitle>
+                                                        <DialogDescription>For {client.companyName}'s next billing cycle.</DialogDescription>
+                                                    </DialogHeader>
+                                                    <div className="space-y-4 py-4">
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="payment-amount">Payment Amount</Label>
+                                                            <Input id="payment-amount" type="number" placeholder="Enter amount" value={paymentUploadState.amount} onChange={(e) => setPaymentUploadState(prev => ({ ...prev, amount: e.target.value }))} />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label>Payment Date</Label>
+                                                            <Popover>
+                                                                <PopoverTrigger asChild>
+                                                                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !paymentUploadState.date && "text-muted-foreground")}>
+                                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                                        {paymentUploadState.date ? format(paymentUploadState.date, "PPP") : <span>Pick a date</span>}
+                                                                    </Button>
+                                                                </PopoverTrigger>
+                                                                <PopoverContent className="w-auto p-0">
+                                                                    <Calendar mode="single" selected={paymentUploadState.date} onSelect={(d) => setPaymentUploadState(prev => ({ ...prev, date: d }))} initialFocus />
+                                                                </PopoverContent>
+                                                            </Popover>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="payment-file">Proof of Payment File</Label>
+                                                            <Input id="payment-file" type="file" ref={fileInputRef} onChange={(e) => setPaymentUploadState(prev => ({ ...prev, file: e.target.files?.[0] || null }))} accept="image/png, image/jpeg, application/pdf" />
+                                                        </div>
+                                                    </div>
+                                                    <DialogFooter>
+                                                        <DialogClose asChild>
+                                                            <Button type="button" variant="secondary">Cancel</Button>
+                                                        </DialogClose>
+                                                        <Button onClick={handleUploadPayment} disabled={paymentUploadState.isUploading}>
+                                                            {paymentUploadState.isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                            Confirm Upload
+                                                        </Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             );
@@ -954,5 +1067,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    

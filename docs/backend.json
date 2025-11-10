@@ -146,6 +146,31 @@
             "Pending",
             "Unpaid"
           ]
+        },
+        "paymentHistory": {
+          "type": "array",
+          "description": "An array of objects representing the client's payment history for ongoing subscriptions.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "amount": {
+                "type": "number"
+              },
+              "proofUrl": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "required": [
+              "date",
+              "amount",
+              "proofUrl"
+            ]
+          }
         }
       },
       "required": [
@@ -390,6 +415,3 @@
     }
   }
 }
-
-    
-    
