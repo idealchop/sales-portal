@@ -304,6 +304,35 @@ const CommissionPayoutsTable = ({ commissions, users, clients, proposals }: { co
 };
 
 
+const CustomBarLabel = (props: any) => {
+  const { x, y, width, height, value } = props;
+  return (
+    <text x={x + width / 2} y={y} fill="hsl(var(--foreground))" textAnchor="middle" dy={-6} fontSize={12}>
+      {value}
+    </text>
+  );
+};
+
+const CustomXAxisTick = (props: any) => {
+    const { x, y, payload, salesUsers } = props;
+    const user = salesUsers.find((u: WithId<UserProfile>) => u.id === payload.value);
+    
+    if (user) {
+        return (
+            <g transform={`translate(${x},${y})`}>
+                <foreignObject x={-16} y={8} width={32} height={32}>
+                    <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.photoURL} alt={user.displayName} />
+                        <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
+                    </Avatar>
+                </foreignObject>
+            </g>
+        );
+    }
+    return null;
+}
+
+
 export default function AdminPage() {
   const { proposals, isLoading: proposalsLoading } = useAllProposals();
   const { clients, isLoading: clientsLoading } = useAllClients();
@@ -313,7 +342,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusDistribution: [], clientStatusChartData: [], proposalFunnelData: [] };
+      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
@@ -361,7 +390,7 @@ export default function AdminPage() {
                 const planName = content.summaryTitle?.replace(' Plan', '') || 'Unknown';
                 let clientCategory = 'Other';
 
-                if (content.plan?.id?.includes('enterprise')) {
+                 if (content.plan?.id?.includes('enterprise')) {
                     clientCategory = 'Enterprise';
                 } else if (client && client.clientType) {
                     clientCategory = clientTypeMap[client.clientType] || 'Other';
@@ -391,8 +420,22 @@ export default function AdminPage() {
         return { month: monthName, sent: cumulativeSent, accepted: cumulativeAccepted };
     });
 
+    const proposalCountsByRep = proposals.reduce((acc, proposal) => {
+        acc[proposal.userId] = (acc[proposal.userId] || 0) + 1;
+        return acc;
+    }, {} as { [key: string]: number });
 
-    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusDistribution, clientStatusChartData, proposalFunnelData };
+    const proposalsByRep = Object.entries(proposalCountsByRep).map(([userId, count]) => {
+        const user = salesUsers.find(u => u.id === userId);
+        return {
+            userId: userId,
+            name: user?.displayName || 'Unknown',
+            proposals: count
+        };
+    }).sort((a, b) => b.proposals - a.proposals);
+
+
+    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -584,30 +627,35 @@ export default function AdminPage() {
                 </Card>
                  <Card className="col-span-1 lg:col-span-3">
                     <CardHeader>
-                        <CardTitle>Proposal Funnel Over Time</CardTitle>
-                        <CardDescription>Cumulative proposals sent vs. accepted over the last 6 months.</CardDescription>
+                        <CardTitle>Proposals By Sales Rep</CardTitle>
+                        <CardDescription>Total proposals created by each team member.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[250px] pr-6">
                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={stats.proposalFunnelData}>
-                                <defs>
-                                    <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
-                                    </linearGradient>
-                                    <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }}/>
-                                <Legend />
-                                <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fillOpacity={1} fill="url(#colorSent)" />
-                                <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fillOpacity={1} fill="url(#colorAccepted)" />
-                            </AreaChart>
+                            <BarChart data={stats.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
+                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                <XAxis 
+                                    dataKey="userId" 
+                                    tickLine={false} 
+                                    axisLine={false} 
+                                    tick={<CustomXAxisTick salesUsers={salesUsers} />}
+                                    interval={0}
+                                />
+                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <Tooltip
+                                    cursor={{ fill: 'hsl(var(--muted))' }}
+                                    contentStyle={{ 
+                                        backgroundColor: 'hsl(var(--background))',
+                                        border: '1px solid hsl(var(--border))',
+                                        borderRadius: 'var(--radius)'
+                                    }}
+                                    labelFormatter={(value) => {
+                                        const user = salesUsers.find(u => u.id === value);
+                                        return user ? user.displayName : 'Unknown';
+                                    }}
+                                />
+                                <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
+                            </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
