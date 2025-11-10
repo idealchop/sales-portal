@@ -408,25 +408,35 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                 ? client.onboardingStatus
                                 : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
                             
-                             let subscriptionDetails = {
+                            let subscriptionDetails = {
                                 planName: 'N/A',
                                 amount: 0,
                                 billingCycle: 'N/A'
                             };
-                            
-                           if (acceptedProposal) {
-                                subscriptionDetails.amount = acceptedProposal.amount;
+
+                            if (acceptedProposal) {
                                 let planNameFromContent = 'Custom Plan';
                                 let billingCycleFromContent = 'Monthly';
+                                let amountFromContent = 0;
+
                                 if (acceptedProposal.content) {
                                     try {
                                         const content = JSON.parse(acceptedProposal.content);
                                         planNameFromContent = content.summaryTitle || 'Custom Plan';
                                         billingCycleFromContent = content.billingCycleLabel || 'Monthly';
+                                        const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
+                                        if (!isNaN(parsedAmount)) {
+                                          amountFromContent = parsedAmount;
+                                        }
                                     } catch (e) { console.warn("Could not parse proposal content for client:", client.id); }
                                 }
-                                subscriptionDetails.planName = planNameFromContent;
-                                subscriptionDetails.billingCycle = billingCycleFromContent;
+                                
+                                subscriptionDetails = {
+                                    amount: acceptedProposal.amount || amountFromContent,
+                                    planName: planNameFromContent,
+                                    billingCycle: billingCycleFromContent,
+                                };
+
                             } else if (client.subscription) {
                                 subscriptionDetails = {
                                     planName: client.subscription.planName || 'N/A',
@@ -1141,4 +1151,6 @@ export default function AdminPage() {
     
 
     
+
+
 
