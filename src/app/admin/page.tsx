@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -269,25 +270,28 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 billingCycle: 'N/A'
                             };
 
-                            if (acceptedProposal?.content) {
-                                try {
-                                    const content = JSON.parse(acceptedProposal.content) as any;
-                                    const amountString = String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, "");
-                                    const cleanedAmount = parseFloat(amountString);
-                                    
-                                    subscriptionDetails = {
-                                        planName: content.summaryTitle || 'Custom Plan',
-                                        amount: isNaN(cleanedAmount) ? 0 : cleanedAmount,
-                                        billingCycle: content.billingCycleLabel || 'Monthly'
-                                    };
-                                } catch (e) {
-                                    console.warn("Could not parse proposal content for client:", client.id);
+                            if (acceptedProposal) {
+                                let planNameFromContent = 'Custom Plan';
+                                let billingCycleFromContent = 'Monthly';
+                                if (acceptedProposal.content) {
+                                    try {
+                                        const content = JSON.parse(acceptedProposal.content) as any;
+                                        planNameFromContent = content.summaryTitle || 'Custom Plan';
+                                        billingCycleFromContent = content.billingCycleLabel || 'Monthly';
+                                    } catch (e) {
+                                         console.warn("Could not parse proposal content for client:", client.id);
+                                    }
                                 }
+                                subscriptionDetails = {
+                                    planName: planNameFromContent,
+                                    amount: acceptedProposal.amount,
+                                    billingCycle: billingCycleFromContent
+                                };
                             } else if (client.subscription) {
                                 subscriptionDetails = {
                                     planName: client.subscription.planName,
                                     amount: client.subscription.amount,
-                                    billingCycle: client.subscription.billingCycle || 'Monthly',
+                                    billingCycle: (client.subscription as any).billingCycle || 'Monthly',
                                 };
                             }
                             
