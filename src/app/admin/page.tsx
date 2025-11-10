@@ -1205,115 +1205,84 @@ export default function AdminPage() {
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Proposal Funnel</CardTitle>
-                                <Activity className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-sm font-medium">Sales Team</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{stats.winRate.toFixed(1)}%</div>
-                                <p className="text-xs text-muted-foreground">Win rate from {stats.proposalsSent} proposals</p>
+                                <div className="text-2xl font-bold">{stats.salesReps} Reps</div>
+                                <p className="text-xs text-muted-foreground">Total sales representatives</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
                      <DialogContent className="sm:max-w-3xl">
                         <DialogHeader>
-                            <DialogTitle>Proposal Funnel Analysis</DialogTitle>
-                            <DialogDescription>A breakdown of proposal activity, value, and categories.</DialogDescription>
+                            <DialogTitle>Team Performance Overview</DialogTitle>
+                            <DialogDescription>A breakdown of proposal activity by sales representative.</DialogDescription>
                         </DialogHeader>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-base">Proposals Created</CardTitle>
-                                    <CardDescription>New proposals per month.</CardDescription>
+                                    <CardTitle className="text-base">Proposal Funnel</CardTitle>
+                                    <CardDescription>Sent vs. Accepted proposals.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="h-[250px]">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={stats.proposalsCreatedHistory}>
+                                        <AreaChart data={stats.proposalFunnelData}>
+                                            <defs>
+                                                <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
+                                                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
+                                                </linearGradient>
+                                                <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                                </linearGradient>
+                                            </defs>
                                             <CartesianGrid strokeDasharray="3 3" />
                                             <XAxis dataKey="month" />
                                             <YAxis allowDecimals={false} />
                                             <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                            <Line type="monotone" dataKey="Proposals Created" stroke="hsl(var(--chart-2))" strokeWidth={2} />
-                                        </LineChart>
+                                            <Legend />
+                                            <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fill="url(#colorSent)" />
+                                            <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fill="url(#colorAccepted)" />
+                                        </AreaChart>
                                     </ResponsiveContainer>
                                 </CardContent>
                             </Card>
-                            <Card>
+                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-base">Proposal Value by Status</CardTitle>
-                                    <CardDescription>Total value in each stage.</CardDescription>
+                                    <CardTitle className="text-base">Proposals By Rep</CardTitle>
+                                    <CardDescription>Total proposals created per rep.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="h-[250px]">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={stats.proposalValueByStatus} layout="vertical" margin={{ left: 20 }}>
-                                            <CartesianGrid horizontal={false} />
-                                            <XAxis type="number" tickFormatter={(value) => `₱${Number(value) / 1000}k`} />
-                                            <YAxis type="category" dataKey="name" width={60} axisLine={false} tickLine={false} />
-                                            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} formatter={(value) => [currencyFormatter.format(Number(value)), "Value"]} />
-                                            <Bar dataKey="value" name="Value" radius={[0, 4, 4, 0]} >
-                                                {stats.proposalValueByStatus.map(entry => <Cell key={entry.name} fill={entry.fill} />)}
-                                            </Bar>
+                                <CardContent className="h-[250px] pr-6">
+                                     <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={stats.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
+                                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                            <XAxis 
+                                                dataKey="userId" 
+                                                tickLine={false} 
+                                                axisLine={false} 
+                                                tick={<CustomXAxisTick salesUsers={salesUsers} />}
+                                                interval={0}
+                                            />
+                                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                            <Tooltip
+                                                cursor={{ fill: 'hsl(var(--muted))' }}
+                                                contentStyle={{ 
+                                                    backgroundColor: 'hsl(var(--background))',
+                                                    border: '1px solid hsl(var(--border))',
+                                                    borderRadius: 'var(--radius)'
+                                                }}
+                                                labelFormatter={(value) => {
+                                                    const user = salesUsers.find(u => u.id === value);
+                                                    return user ? user.displayName : 'Unknown';
+                                                }}
+                                            />
+                                            <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </CardContent>
                             </Card>
-                            <div className="lg:col-span-2">
-                                <Card>
-                                     <CardHeader>
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <CardTitle className="flex items-center gap-2 text-base">
-                                                    Plan Distribution
-                                                </CardTitle>
-                                                <CardDescription>
-                                                    Popularity in accepted proposals.
-                                                </CardDescription>
-                                            </div>
-                                            <Select value={planDistributionPeriod} onValueChange={setPlanDistributionPeriod}>
-                                                <SelectTrigger className="w-[180px]">
-                                                    <SelectValue placeholder="Select period" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all">All Time</SelectItem>
-                                                    <SelectItem value="12m">Last 12 Months</SelectItem>
-                                                    <SelectItem value="6m">Last 6 Months</SelectItem>
-                                                    <SelectItem value="30d">Last 30 Days</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {stats.planDistribution.length > 0 ? (
-                                            <ResponsiveContainer width="100%" height={300}>
-                                            <BarChart
-                                                layout="vertical"
-                                                data={stats.planDistribution}
-                                                margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
-                                            >
-                                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                                                <XAxis type="number" allowDecimals={false} />
-                                                <YAxis 
-                                                    type="category" 
-                                                    dataKey="name" 
-                                                    width={200}
-                                                    tick={{ fontSize: 12 }}
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                />
-                                                <Tooltip 
-                                                    cursor={{ fill: 'hsl(var(--muted))' }}
-                                                    contentStyle={{ backgroundColor: 'hsl(var(--background))' }}
-                                                />
-                                                <Bar dataKey="count" name="Subscriptions" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
-                                            </BarChart>
-                                            </ResponsiveContainer>
-                                        ) : (
-                                            <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
-                                                No subscription data available for the selected period.
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
