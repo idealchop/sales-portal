@@ -274,6 +274,7 @@ export function ClientOverviewDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(null);
+  const [parsedProposalContent, setParsedProposalContent] = useState<FinalPlanDetails | null>(null);
   
   useEffect(() => {
     if (open) {
@@ -287,23 +288,24 @@ export function ClientOverviewDialog({
   }, [open, proposal, clientProposals]);
 
 
-  const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
-    // This now depends on selectedProposal, so it will re-run when it changes.
-    const proposalToParse = selectedProposal;
-    if (!proposalToParse?.content) return null;
-    try {
-        const content = JSON.parse(proposalToParse.content);
-        // We return the full parsed content, including the signature if it exists.
-        return { 
-            ...content, 
-            paymentProofUrl: proposalToParse.paymentProofUrl,
-            signature: content.signature, 
-        };
-    } catch (e) {
-        console.error("Failed to parse proposal content:", e);
-        return null;
+  useEffect(() => {
+    if (selectedProposal?.content) {
+        try {
+            const content = JSON.parse(selectedProposal.content);
+            setParsedProposalContent({
+                ...content,
+                paymentProofUrl: selectedProposal.paymentProofUrl,
+                signature: content.signature,
+            });
+        } catch (e) {
+            console.error("Failed to parse proposal content:", e);
+            setParsedProposalContent(null);
+        }
+    } else {
+        setParsedProposalContent(null);
     }
   }, [selectedProposal]);
+
   
   const contactInfo = useMemo(() => {
     return {
