@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, TrendingUp, Percent, ShieldCheck, CreditCard, UsersRound, Trophy, Award, Activity } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3 } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -18,6 +18,8 @@ import { Progress } from '@/components/ui/progress';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -134,7 +136,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             ) : 'N/A'}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className={cn("capitalize", clientStatusStyles[client.status])}>{client.status}</Badge>
+                                            <Badge variant="outline" className={cn("capitalize", client.status && clientStatusStyles[client.status])}>{client.status || 'N/A'}</Badge>
                                         </TableCell>
                                         <TableCell>
                                             {client.status === 'active' && (
@@ -225,29 +227,27 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
     );
 };
 
-const CommissionPayoutsTable = ({ commissions, users, clients }: { commissions: WithId<Commission>[], users: WithId<UserProfile>[], clients: WithId<Client>[] }) => {
+const CommissionPayoutsTable = ({ commissions, users, clients, proposals }: { commissions: WithId<Commission>[], users: WithId<UserProfile>[], clients: WithId<Client>[], proposals: WithId<Proposal>[] }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
     
-    // Create a map from proposalId to clientId
+    // Create a map from proposalId to its client
     const proposalClientMap = useMemo(() => {
-        const map = new Map<string, string>();
-        clients.forEach(client => {
-            client.proposals?.forEach(proposal => {
-                map.set(proposal.id, client.id);
-            });
+        const map = new Map<string, WithId<Client>>();
+        proposals.forEach(proposal => {
+            const client = clients.find(c => c.id === proposal.clientId);
+            if (client) {
+                map.set(proposal.id, client);
+            }
         });
         return map;
-    }, [clients]);
+    }, [clients, proposals]);
 
-    // Create clientMap for direct lookup
-    const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
 
     const getClientName = (commission: Commission) => {
-        // Fallback logic
         if (commission.clientName) return commission.clientName;
-        const clientId = proposalClientMap.get(commission.proposalId);
-        return clientId ? clientMap.get(clientId)?.companyName : 'N/A';
+        const client = proposalClientMap.get(commission.proposalId);
+        return client ? client.companyName : 'N/A';
     };
 
     return (
@@ -286,7 +286,7 @@ const CommissionPayoutsTable = ({ commissions, users, clients }: { commissions: 
                                     </TableCell>
                                     <TableCell>{clientName}</TableCell>
                                     <TableCell>
-                                        <Badge variant="outline" className={cn("capitalize", commissionStatusStyles[commission.status])}>
+                                        <Badge variant="outline" className={cn("capitalize", commission.status && commissionStatusStyles[commission.status])}>
                                             {commission.status}
                                         </Badge>
                                     </TableCell>
@@ -312,7 +312,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0 };
+      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
@@ -327,8 +327,26 @@ export default function AdminPage() {
     const winRate = sentProposalsCount > 0 ? (acceptedProposals.length / sentProposalsCount) * 100 : 0;
     const totalProposals = proposals.length;
     const proposalPerClient = totalClients > 0 ? totalProposals / totalClients : 0;
+    
+    const planCounts: { [key: string]: number } = {};
+    acceptedProposals.forEach(p => {
+        if (p.content) {
+            try {
+                const content = JSON.parse(p.content);
+                const planName = content.summaryTitle || 'Unknown Plan';
+                planCounts[planName] = (planCounts[planName] || 0) + 1;
+            } catch (e) {
+                console.warn("Could not parse proposal content:", e);
+            }
+        }
+    });
 
-    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient };
+    const planDistribution = Object.entries(planCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+
+
+    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -343,16 +361,10 @@ export default function AdminPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-6">
               <h1 className="text-2xl font-bold whitespace-nowrap">Dashboard</h1>
-              <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:inline-flex h-auto p-1.5 bg-muted rounded-full">
-                <TabsTrigger value="crm" className="rounded-full gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <UsersRound /> CRM
-                </TabsTrigger>
-                <TabsTrigger value="sales-team" className="rounded-full gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <Users /> Sales Team
-                </TabsTrigger>
-                <TabsTrigger value="payroll" className="rounded-full gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <CreditCard /> Payroll
-                </TabsTrigger>
+              <TabsList>
+                <TabsTrigger value="crm"><UsersRound className="mr-2 h-4 w-4"/>CRM</TabsTrigger>
+                <TabsTrigger value="sales-team"><Users className="mr-2 h-4 w-4"/>Sales Team</TabsTrigger>
+                <TabsTrigger value="payroll"><CreditCard className="mr-2 h-4 w-4"/>Payroll</TabsTrigger>
               </TabsList>
             </div>
              <p className="text-muted-foreground text-sm">
@@ -361,7 +373,7 @@ export default function AdminPage() {
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
@@ -403,7 +415,55 @@ export default function AdminPage() {
                   </CardContent>
                 </Card>
             </div>
-            <ClientDataTable clients={clients} users={salesUsers} proposals={proposals} />
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <div className="lg:col-span-3">
+                    <ClientDataTable clients={clients} users={salesUsers} proposals={proposals} />
+                </div>
+                <div className="lg:col-span-2">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <BarChart3 />
+                                Plan Distribution
+                            </CardTitle>
+                            <CardDescription>
+                                Popularity of subscribed plans across all active clients.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {stats.planDistribution.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={300}>
+                                <BarChart
+                                    layout="vertical"
+                                    data={stats.planDistribution}
+                                    margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                    <XAxis type="number" allowDecimals={false} />
+                                    <YAxis 
+                                        type="category" 
+                                        dataKey="name" 
+                                        width={120}
+                                        tick={{ fontSize: 12 }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <Tooltip 
+                                        cursor={{ fill: 'hsl(var(--muted))' }}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--background))' }}
+                                    />
+                                    <Bar dataKey="count" name="Subscriptions" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
+                                </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                                    No subscription data available.
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </TabsContent>
         <TabsContent value="sales-team" className="mt-6 space-y-6">
             <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -443,11 +503,13 @@ export default function AdminPage() {
                   </CardContent>
                 </Card>
             </div>
-            <CommissionPayoutsTable commissions={commissions} users={salesUsers} clients={clients} />
+            <CommissionPayoutsTable commissions={commissions} users={salesUsers} clients={clients} proposals={proposals} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+    
 
     
