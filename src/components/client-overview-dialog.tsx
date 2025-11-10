@@ -297,7 +297,7 @@ export function ClientOverviewDialog({
         return { 
             ...content, 
             paymentProofUrl: fullProposal?.paymentProofUrl,
-            signature: content.signature || fullProposal?.content.includes('"signature":') ? JSON.parse(fullProposal.content).signature : undefined
+            signature: content.signature || (fullProposal && fullProposal.content.includes('"signature":')) ? JSON.parse(fullProposal.content).signature : undefined
         };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
@@ -905,5 +905,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
