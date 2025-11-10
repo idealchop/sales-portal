@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -807,13 +807,14 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [] };
+      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
     const totalRevenue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
 
     const activeClients = clients.filter(c => c.status === 'active').length;
+    const inactiveClients = clients.filter(c => c.status === 'inactive').length;
     const pendingClients = clients.filter(c => c.status === 'pending').length;
     const totalClients = clients.length;
     const salesReps = salesUsers.length;
@@ -904,16 +905,27 @@ export default function AdminPage() {
           return c.status === 'pending' && createdAt <= monthEnd;
         }).length;
 
+        const endOfMonthActiveClients = clients.filter(c => {
+          const createdAt = new Date(c.createdAt);
+          return c.status === 'active' && createdAt <= monthEnd;
+        }).length;
+
+        const endOfMonthInactiveClients = clients.filter(c => {
+          const createdAt = new Date(c.createdAt);
+          return c.status === 'inactive' && createdAt <= monthEnd;
+        }).length;
+
         const proposalsCreated = proposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd })).length;
         const proposalsAccepted = acceptedProposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd }));
         const monthlyRevenue = proposalsAccepted.reduce((sum, p) => sum + p.amount, 0);
 
-        return { month: monthName, newClients, proposalsCreated, proposalsAccepted: proposalsAccepted.length, pendingClients: endOfMonthPendingClients, revenue: monthlyRevenue };
+        return { month: monthName, newClients, proposalsCreated, proposalsAccepted: proposalsAccepted.length, pendingClients: endOfMonthPendingClients, revenue: monthlyRevenue, active: endOfMonthActiveClients, inactive: endOfMonthInactiveClients };
     });
     
     const clientGrowthData = monthlyData.map(d => ({ month: d.month, "New Clients": d.newClients, "Pending Clients": d.pendingClients }));
     const proposalsCreatedHistory = monthlyData.map(d => ({ month: d.month, "Proposals Created": d.proposalsCreated }));
     const revenueHistory = monthlyData.map(d => ({ month: d.month, "Revenue": d.revenue }));
+    const clientRetentionData = monthlyData.map(d => ({ month: d.month, "Active": d.active, "Inactive": d.inactive }));
     
     const proposalFunnelData = Array.from({ length: 6 }).map((_, i) => {
         const date = subMonths(now, 5 - i);
@@ -947,7 +959,7 @@ export default function AdminPage() {
     }).sort((a, b) => b.proposals - a.proposals);
 
 
-    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, proposalsCreatedHistory, revenueHistory };
+    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1010,7 +1022,7 @@ export default function AdminPage() {
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                  <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
@@ -1093,7 +1105,39 @@ export default function AdminPage() {
                         </div>
                     </DialogContent>
                 </Dialog>
-                
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="cursor-pointer hover:border-primary transition-colors">
+                           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Client Retention</CardTitle>
+                                <HeartCrack className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.activeClients} Active</div>
+                                <p className="text-xs text-muted-foreground">{stats.inactiveClients} inactive</p>
+                            </CardContent>
+                        </Card>
+                    </DialogTrigger>
+                     <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Client Retention & Churn</DialogTitle>
+                            <DialogDescription>Active vs. Inactive clients over the last 6 months.</DialogDescription>
+                        </DialogHeader>
+                        <div className="h-[350px] w-full">
+                           <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={stats.clientRetentionData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis allowDecimals={false} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="Active" stroke="hsl(var(--chart-1))" strokeWidth={2} />
+                                    <Line type="monotone" dataKey="Inactive" stroke="hsl(var(--destructive))" strokeWidth={2} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </DialogContent>
+                </Dialog>
                 <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
