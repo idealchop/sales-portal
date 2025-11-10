@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, query, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, DocumentData, FirestoreError } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import type { Client } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -14,34 +14,34 @@ export function useAllClients() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchAllClients = async () => {
-      if (isFirebaseLoading || !firestore) {
-        return;
-      }
-      setIsLoading(true);
+    if (isFirebaseLoading || !firestore) {
+      return;
+    }
+    setIsLoading(true);
 
-      try {
-        const clientsQuery = query(collection(firestore, "clients"));
-        const querySnapshot = await getDocs(clientsQuery);
-        
+    const clientsQuery = query(collection(firestore, "clients"));
+
+    const unsubscribe = onSnapshot(clientsQuery, 
+      (querySnapshot) => {
         const allClients: WithId<Client>[] = [];
         querySnapshot.forEach(doc => {
             allClients.push({ id: doc.id, ...doc.data() } as WithId<Client>);
         });
-
         setClients(allClients);
-      } catch (e: any) {
+        setError(null);
+        setIsLoading(false);
+      },
+      (e: FirestoreError) => {
         setError(e);
-        console.error("Error fetching all clients:", e);
-      } finally {
+        console.error("Error fetching all clients with snapshot:", e);
         setIsLoading(false);
       }
-    };
+    );
 
-    fetchAllClients();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
 
   }, [firestore, isFirebaseLoading]);
-
 
   return { clients, isLoading: isLoading || isFirebaseLoading, error };
 }

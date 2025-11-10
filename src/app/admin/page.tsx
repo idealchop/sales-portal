@@ -17,7 +17,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Progress } from '@/components/ui/progress';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
@@ -114,13 +113,10 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     ];
 
 
-    const getOnboardingProgress = (onboardingStatus: OnboardingStep[]) => {
-        if (!onboardingStatus || onboardingStatus.length === 0) return { progress: 0, steps: [] };
+    const getOnboardingProgress = (onboardingStatus: OnboardingStep[] | undefined) => {
+        if (!onboardingStatus || onboardingStatus.length === 0) return 0;
         const completedSteps = onboardingStatus.filter(step => step.status === 'completed').length;
-        return {
-            progress: (completedSteps / onboardingStatus.length) * 100,
-            steps: onboardingStatus,
-        };
+        return (completedSteps / onboardingStatus.length) * 100;
     };
     
     const handleUpdateOnboarding = async (clientId: string, currentSteps: OnboardingStep[] | undefined, stepIndexToComplete: number) => {
@@ -128,7 +124,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
 
         let stepsToUpdate: OnboardingStep[] = currentSteps 
             ? JSON.parse(JSON.stringify(currentSteps)) // Deep copy
-            : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
+            : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' } as OnboardingStep));
 
         stepsToUpdate[stepIndexToComplete].status = 'completed';
         stepsToUpdate[stepIndexToComplete].date = new Date().toLocaleDateString();
@@ -185,7 +181,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                             const clientProposals = proposalsByClient[client.id] || [];
                             const latestProposal = clientProposals[0];
                             const salesRep = latestProposal ? userMap.get(latestProposal.userId) : userMap.get(client.userId);
-                            const { progress, steps } = getOnboardingProgress(client.onboardingStatus || []);
+                            const progress = getOnboardingProgress(client.onboardingStatus);
                             
                             const onboardingStepsToUse = (client.onboardingStatus && client.onboardingStatus.length > 0)
                                 ? client.onboardingStatus
@@ -217,9 +213,8 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                     </TableCell>
                                     <TableCell>
                                        {client.status === 'active' || client.status === 'pending' ? (
-                                           <div className="flex items-center gap-2 w-48">
-                                                <Progress value={progress} className="w-24 h-2" />
-                                                <span className="text-xs text-muted-foreground">{progress.toFixed(0)}%</span>
+                                           <div className="flex items-center gap-2">
+                                                <span className="text-sm text-muted-foreground">{progress.toFixed(0)}%</span>
                                                 {isAdmin && !isFullyOnboarded && (
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
