@@ -1,34 +1,47 @@
 
 'use client';
 
-import { useMemo } from 'react';
-import { collection, query } from 'firebase/firestore';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { useMemo, useEffect, useState } from 'react';
+import { collection, query, getDocs } from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
 import type { UserProfile } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 
 /**
  * Hook to fetch all sales user profiles.
- * Note: Requires security rules to allow reading the 'sales' collection.
+ * This hook fetches data once and does not subscribe to real-time updates.
  */
 export function useSalesUsers() {
   const { firestore, isFirebaseLoading } = useFirebase();
-  const { user, isUserLoading } = useUser();
+  const [salesUsers, setSalesUsers] = useState<WithId<UserProfile>[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  const usersQuery = useMemoFirebase(() => {
-    if (isFirebaseLoading || !firestore) return null;
-    return query(collection(firestore, 'sales'));
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (isFirebaseLoading || !firestore) {
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const usersQuery = query(collection(firestore, 'sales'));
+        const querySnapshot = await getDocs(usersQuery);
+        const users: WithId<UserProfile>[] = [];
+        querySnapshot.forEach((doc) => {
+          users.push({ id: doc.id, ...doc.data() } as WithId<UserProfile>);
+        });
+        setSalesUsers(users);
+      } catch (e: any) {
+        setError(e);
+        console.error("Error fetching sales users:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+
   }, [firestore, isFirebaseLoading]);
-
-  const { data: salesUsersData, isLoading, error } = useCollection<UserProfile>(usersQuery);
-
-  const salesUsers = useMemo(() => {
-    if (!salesUsersData) return [];
-    return salesUsersData.map(userProfile => ({
-      ...userProfile,
-      id: userProfile.id,
-    })) as WithId<UserProfile>[];
-  }, [salesUsersData]);
 
   return { salesUsers, isLoading: isLoading || isFirebaseLoading, error };
 }
