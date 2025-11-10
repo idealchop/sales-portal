@@ -45,6 +45,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -825,7 +826,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0 };
+      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [] };
     }
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
@@ -1043,9 +1044,40 @@ export default function AdminPage() {
             proposals: count
         };
     }).sort((a, b) => b.proposals - a.proposals);
+    
+    const topSellingPlansByMonth = Array.from({ length: 6 }).map((_, i) => {
+        const date = subMonths(now, i);
+        const monthName = format(date, 'MMMM yyyy');
+        const monthStart = startOfMonth(date);
+        const monthEnd = endOfMonth(date);
+
+        const monthlyProposals = acceptedProposals.filter(p => {
+             const createdAt = p.createdAt ? (typeof p.createdAt === 'string' ? parseISO(p.createdAt) : new Date(p.createdAt)) : null;
+             return createdAt && isWithinInterval(createdAt, { start: monthStart, end: monthEnd });
+        });
+        
+        if (monthlyProposals.length === 0) {
+            return { month: monthName, plan: null, count: 0 };
+        }
+
+        const counts: { [key: string]: number } = {};
+        monthlyProposals.forEach(p => {
+             if (p.content) {
+                try {
+                    const content = JSON.parse(p.content);
+                    const planName = content.summaryTitle || 'Unknown';
+                    counts[planName] = (counts[planName] || 0) + 1;
+                } catch {}
+            }
+        });
+        
+        const topPlan = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+        
+        return { month: monthName, plan: topPlan[0], count: topPlan[1] };
+    });
 
 
-    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients };
+    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1442,25 +1474,29 @@ export default function AdminPage() {
                 </Card>
                 <Card className="lg:col-span-2">
                     <CardHeader>
-                        <CardTitle className="text-base">Top Selling Plan</CardTitle>
+                        <CardTitle className="text-base">Monthly Top Sellers</CardTitle>
                         <CardDescription>
-                            Your most popular plan across all sales.
+                            The most popular plan for each of the last 6 months.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center justify-center h-[250px] text-center">
-                        {topPlan ? (
-                            <>
-                                <div className="flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4">
-                                    <Trophy className="h-12 w-12 text-primary" />
-                                </div>
-                                <p className="text-2xl font-bold">{topPlan.name}</p>
-                                <p className="text-muted-foreground">
-                                    Sold <span className="font-bold text-foreground">{topPlan.count}</span> times
-                                </p>
-                            </>
-                        ) : (
-                            <p className="text-muted-foreground">No sales data available.</p>
-                        )}
+                    <CardContent>
+                        <ScrollArea className="h-[250px]">
+                            <div className="space-y-4">
+                                {stats.topSellingPlansByMonth.map((item, index) => (
+                                    <div key={index}>
+                                        <p className="text-sm font-semibold text-muted-foreground">{item.month}</p>
+                                        {item.plan ? (
+                                            <div className="flex items-center justify-between mt-1">
+                                                <p className="font-bold text-primary truncate pr-2">{item.plan}</p>
+                                                <Badge variant="outline">Sold: {item.count}</Badge>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground mt-1">No sales data</p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
                     </CardContent>
                 </Card>
             </div>
@@ -1577,22 +1613,3 @@ export default function AdminPage() {
 }
 
     
-
-    
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
