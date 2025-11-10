@@ -589,6 +589,11 @@ export default function DashboardPage() {
                             )}
                         </TableBody>
                     </Table>
+                    <DialogFooter>
+                         <p className="text-xs text-muted-foreground text-left w-full pt-4">
+                            Note: Recurring commissions are paid out monthly for the first 12 months of a client's subscription. If a client cancels their subscription, the associated recurring commission will also stop.
+                        </p>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </Card>
@@ -1081,3 +1086,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
