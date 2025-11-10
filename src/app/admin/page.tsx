@@ -808,7 +808,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [] };
+      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
@@ -906,13 +906,15 @@ export default function AdminPage() {
         }).length;
 
         const proposalsCreated = proposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd })).length;
-        const proposalsAccepted = acceptedProposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd })).length;
+        const proposalsAccepted = acceptedProposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd }));
+        const monthlyRevenue = proposalsAccepted.reduce((sum, p) => sum + p.amount, 0);
 
-        return { month: monthName, newClients, proposalsCreated, proposalsAccepted, pendingClients: endOfMonthPendingClients };
+        return { month: monthName, newClients, proposalsCreated, proposalsAccepted: proposalsAccepted.length, pendingClients: endOfMonthPendingClients, revenue: monthlyRevenue };
     });
     
     const clientGrowthData = monthlyData.map(d => ({ month: d.month, "New Clients": d.newClients, "Pending Clients": d.pendingClients }));
     const proposalsCreatedHistory = monthlyData.map(d => ({ month: d.month, "Proposals Created": d.proposalsCreated }));
+    const revenueHistory = monthlyData.map(d => ({ month: d.month, "Revenue": d.revenue }));
     
     const proposalFunnelData = Array.from({ length: 6 }).map((_, i) => {
         const date = subMonths(now, 5 - i);
@@ -946,7 +948,7 @@ export default function AdminPage() {
     }).sort((a, b) => b.proposals - a.proposals);
 
 
-    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, proposalsCreatedHistory };
+    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, proposalsCreatedHistory, revenueHistory };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1009,7 +1011,53 @@ export default function AdminPage() {
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="cursor-pointer hover:border-primary transition-colors">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                                <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{currencyFormatter.format(stats.totalRevenue)}</div>
+                                <p className="text-xs text-muted-foreground">From all accepted proposals</p>
+                            </CardContent>
+                        </Card>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                             <div className="flex items-center gap-2">
+                                <TrendingUp className="h-6 w-6 text-primary"/>
+                                <DialogTitle>Revenue Growth</DialogTitle>
+                            </div>
+                            <DialogDescription>A detailed look at revenue generated over the last 6 months.</DialogDescription>
+                        </DialogHeader>
+                        <div className="h-[350px] w-full">
+                           <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={stats.revenueHistory}>
+                                    <defs>
+                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis 
+                                        tickFormatter={(value) => `₱${Number(value) / 1000}k`}
+                                    />
+                                    <Tooltip 
+                                        contentStyle={{ backgroundColor: 'hsl(var(--background))' }} 
+                                        formatter={(value) => [currencyFormatter.format(Number(value)), "Revenue"]}
+                                    />
+                                    <Legend />
+                                    <Area type="monotone" dataKey="Revenue" stroke="hsl(var(--chart-1))" fill="url(#colorRevenue)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </DialogContent>
+                </Dialog>
                 <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:border-primary transition-colors">
