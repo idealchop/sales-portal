@@ -297,11 +297,13 @@ export function ClientOverviewDialog({
         let signature;
         if (content.signature) {
             signature = content.signature;
-        } else if (fullProposal?.content && typeof fullProposal.content === 'string' && fullProposal.content.includes('"signature"')) {
+        } else if (fullProposal && fullProposal.content && typeof fullProposal.content === 'string') {
             try {
-                signature = JSON.parse(fullProposal.content).signature;
+                // Safely parse the full content to get the signature
+                const fullContentParsed = JSON.parse(fullProposal.content);
+                signature = fullContentParsed.signature;
             } catch (e) {
-                // If parsing the full content fails, we'll just ignore it.
+                 // Ignore if parsing fails, signature remains undefined
             }
         }
 
@@ -916,5 +918,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    

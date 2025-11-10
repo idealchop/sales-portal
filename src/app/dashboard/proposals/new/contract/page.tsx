@@ -238,7 +238,7 @@ function PreviewDialog({
     isSaving: boolean;
     isDialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
-    saveProposal: (status: 'draft' | 'finalized', signature?: string) => Promise<void>;
+    saveProposal: (status: 'draft' | 'finalized') => Promise<void>;
     signatureData?: string;
     onSaveSignature: (dataUrl: string) => void;
     onClearSignature: () => void;
@@ -248,7 +248,7 @@ function PreviewDialog({
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleSaveDraft = async () => {
-      await saveProposal('draft', signatureData);
+      await saveProposal('draft');
     };
     
     const handleFinalize = async () => {
@@ -260,7 +260,7 @@ function PreviewDialog({
             });
             return;
         }
-        await saveProposal('finalized', signatureData);
+        await saveProposal('finalized');
     };
 
     const handleDownloadPdf = async () => {
@@ -468,7 +468,7 @@ function ContractPageContent() {
         return '5+ Persons';
     }
     const estimatedEmployees = Math.round(liters / (2 * 22));
-    if (estimatedEmployees < 5) return '< 5';
+    if (estimatedEmployees < 5) return '&lt; 5';
     if (estimatedEmployees > 500) return '500+';
     return `~${Math.round(estimatedEmployees / 10) * 10}`;
   };
@@ -608,7 +608,7 @@ function ContractPageContent() {
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
-  const saveProposal = async (status: 'draft' | 'finalized', signature?: string) => {
+  const saveProposal = async (status: 'draft' | 'finalized') => {
     if (!finalPlanDetails || !firestore || !user) {
       toast({
         variant: "destructive",
@@ -660,7 +660,8 @@ function ContractPageContent() {
         return;
       }
       
-      const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature };
+      // THIS IS THE FIX: Ensure the signature is included in the object being saved.
+      const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
       
       const newProposalData = {
         id: proposalId,
@@ -675,7 +676,14 @@ function ContractPageContent() {
       };
       
       const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
-      await setDoc(proposalRef, newProposalData, { merge: true });
+      setDoc(proposalRef, newProposalData, { merge: true }).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: proposalRef.path,
+          operation: 'write', 
+          requestResourceData: newProposalData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   
       toast({
         title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
@@ -684,21 +692,16 @@ function ContractPageContent() {
       router.push('/dashboard/proposals');
   
     } catch (error) {
-      console.error("Error saving proposal:", error);
-      const permissionError = new FirestorePermissionError({
-        path: `clients/${finalClientId}/proposals/${generatedProposalId}`,
-        operation: 'write', 
-        requestResourceData: 'Sensitive data omitted',
-      });
-      errorEmitter.emit('permission-error', permissionError);
-  
-      if (!(error instanceof FirestorePermissionError)) {
-        toast({
-          variant: "destructive",
-          title: "Save Failed",
-          description: (error as Error).message || "An error occurred while saving the proposal.",
-        });
-      }
+        // This outer catch block is less likely to be hit for permission errors with the .catch() above,
+        // but it's good for other unexpected errors during the process.
+        console.error("Error saving proposal:", error);
+        if (!(error instanceof FirestorePermissionError)) { // Avoid double-toasting
+          toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: (error as Error).message || "An error occurred while saving the proposal.",
+          });
+        }
     } finally {
       setIsSaving(false);
     }
@@ -1068,5 +1071,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
