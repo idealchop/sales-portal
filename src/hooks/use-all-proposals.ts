@@ -48,6 +48,7 @@ export function useAllProposals(): UseAllProposalsResult {
                 id: doc.id,
                 clientId: doc.ref.parent.parent?.id || '',
                 createdAt: createdAtString,
+                amount: proposalData.amount || 0, // Ensure amount is always present
             });
         });
 
