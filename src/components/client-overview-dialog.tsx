@@ -703,11 +703,11 @@ export function ClientOverviewDialog({
                                     <Image src={planImage} alt={subscriptionInfo.planName} fill className="object-cover" />
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-lg font-bold">{subscriptionInfo.planName}</h3>
                                     {subscriptionInfo.clientType && (
                                         <Badge variant="secondary" className="capitalize">{clientTypeMap[subscriptionInfo.clientType] || subscriptionInfo.clientType}</Badge>
                                     )}
-                                     <p className="text-2xl font-bold">{currencyFormatter.format(subscriptionInfo.monthlyAmount || 0)} <span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
+                                    <h3 className="text-lg font-bold">{subscriptionInfo.planName}</h3>
+                                    <p className="text-2xl font-bold">{currencyFormatter.format(subscriptionInfo.monthlyAmount || 0)} <span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
                                 </div>
                                 <Separator />
                                 <div className="space-y-2">
