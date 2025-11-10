@@ -1068,11 +1068,11 @@ export default function AdminPage() {
 
     return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
-
+  
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
 
   const allPayouts = useMemo(() => {
-    if (isLoading) return [];
+    if (commissionsLoading) return [];
     
     const commissionsByUserAndMonth: Record<string, Record<string, WithId<Commission>[]>> = {};
 
@@ -1107,7 +1107,7 @@ export default function AdminPage() {
 
     processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
     return processedPayouts;
-}, [commissions, isLoading]);
+}, [commissions, commissionsLoading]);
 
 
   const handleProcessPayout = async (payoutId: string, commissionsToUpdate: WithId<Commission>[]) => {
@@ -1655,3 +1655,4 @@ export default function AdminPage() {
 }
 
     
+
