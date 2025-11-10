@@ -294,8 +294,7 @@ export function ClientOverviewDialog({
         const content = JSON.parse(proposalToParse.content);
         return { 
             ...content, 
-            paymentProofUrl: proposalToParse?.paymentProofUrl,
-            signature: content.signature,
+            paymentProofUrl: proposalToParse.paymentProofUrl,
         };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
@@ -904,5 +903,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    

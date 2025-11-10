@@ -452,7 +452,7 @@ function ContractPageContent() {
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
   const [signatureData, setSignatureData] = useState<string | undefined>();
-  const [_, setForceUpdate] = useState(0); // Add a state to force re-render
+  const [_, setForceUpdate] = useState(0);
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -469,7 +469,7 @@ function ContractPageContent() {
         return '5+ Persons';
     }
     const estimatedEmployees = Math.round(liters / (2 * 22));
-    if (estimatedEmployees < 5) return '&lt; 5';
+    if (estimatedEmployees < 5) return '< 5';
     if (estimatedEmployees > 500) return '500+';
     return `~${Math.round(estimatedEmployees / 10) * 10}`;
   };
@@ -602,7 +602,7 @@ function ContractPageContent() {
         contactPhone,
         address,
         clientType,
-        signature: signatureData, // Include signature here
+        signature: signatureData,
     };
   }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData]);
 
@@ -761,7 +761,7 @@ function ContractPageContent() {
             title: "Signature Saved",
             description: "Your signature has been captured and is ready to be included in the final proposal.",
         });
-        setForceUpdate(v => v + 1); // Force a re-render to update the dialog
+        setForceUpdate(v => v + 1);
     };
   
   if (!plan || !finalPlanDetails) {
