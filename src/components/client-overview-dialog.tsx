@@ -307,48 +307,42 @@ export function ClientOverviewDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(null);
-  const [parsedProposalContent, setParsedProposalContent] = useState<FinalPlanDetails | null>(null);
   
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
-  useEffect(() => {
-    if (selectedProposal?.content) {
-        try {
-            const content = JSON.parse(selectedProposal.content);
-            setParsedProposalContent({
-                ...content,
-                paymentProofUrl: selectedProposal.paymentProofUrl,
-                signature: content.signature,
-            });
-        } catch (e) {
-            console.error("Failed to parse proposal content:", e);
-            setParsedProposalContent(null);
-        }
-    } else {
-        setParsedProposalContent(null);
-    }
-  }, [selectedProposal]);
-
-  
   const contactInfo = useMemo(() => {
+    let parsedContent;
+    try {
+      parsedContent = selectedProposal?.content ? JSON.parse(selectedProposal.content) : null;
+    } catch {
+      parsedContent = null;
+    }
+
     return {
-      name: parsedProposalContent?.contactName || client.contactName,
-      company: parsedProposalContent?.companyName || client.companyName,
-      email: parsedProposalContent?.contactEmail || client.contactEmail,
-      phone: parsedProposalContent?.contactPhone || client.contactPhone,
-      address: parsedProposalContent?.address || client.address,
+      name: parsedContent?.contactName || client.contactName,
+      company: parsedContent?.companyName || client.companyName,
+      email: parsedContent?.contactEmail || client.contactEmail,
+      phone: parsedContent?.contactPhone || client.contactPhone,
+      address: parsedContent?.address || client.address,
     };
-  }, [client, parsedProposalContent]);
+  }, [client, selectedProposal]);
 
 
  const subscriptionInfo = useMemo(() => {
-    if (parsedProposalContent) {
+    let content;
+    try {
+        content = selectedProposal?.content ? JSON.parse(selectedProposal.content) : null;
+    } catch {
+        content = null;
+    }
+    
+    if (content) {
       const addons: { name: string, cost: number }[] = [];
       
-      if (parsedProposalContent.selectedAddons) {
-        for (const addonKey in parsedProposalContent.selectedAddons) {
-          if (parsedProposalContent.selectedAddons[addonKey]) {
-            const addonDef = parsedProposalContent.addons.find(a => a.id === addonKey);
+      if (content.selectedAddons) {
+        for (const addonKey in content.selectedAddons) {
+          if (content.selectedAddons[addonKey]) {
+            const addonDef = content.addons.find((a:any) => a.id === addonKey);
             if(addonDef) {
                addons.push({name: addonDef.name, cost: addonDef.feeValue });
             }
@@ -356,53 +350,56 @@ export function ClientOverviewDialog({
         }
       }
 
-      if (parsedProposalContent.additionalDispensers > 0) {
+      if (content.additionalDispensers > 0) {
         addons.push({
-            name: `Additional Dispensers (${parsedProposalContent.additionalDispensers})`,
-            cost: parsedProposalContent.additionalDispensers * parsedProposalContent.additionalDispenserCost
+            name: `Additional Dispensers (${content.additionalDispensers})`,
+            cost: content.additionalDispensers * content.additionalDispenserCost
         });
       }
       
-      if (parsedProposalContent.additionalLiters > 0) {
+      if (content.additionalLiters > 0) {
         addons.push({
-            name: `Additional Liters (${parsedProposalContent.additionalLiters} L)`,
-            cost: parsedProposalContent.additionalLiters * parsedProposalContent.additionalLiterCost
+            name: `Additional Liters (${content.additionalLiters} L)`,
+            cost: content.additionalLiters * content.additionalLiterCost
         });
       }
 
       return {
-        planId: parsedProposalContent.plan.id,
-        planName: parsedProposalContent.summaryTitle,
-        liters: parsedProposalContent.totalMonthlyLiters,
-        basePrice: parsedProposalContent.planBaseCost,
-        totalAmountDue: parseFloat(parsedProposalContent.totalAmountDue.replace(/[^0-9.-]+/g, "")),
-        billingCycle: parsedProposalContent.billingCycleLabel,
-        refillFrequency: parsedProposalContent.refillFrequency,
-        employees: parsedProposalContent.employees,
-        gallons: parseInt(parsedProposalContent.refillableGallons) || 0,
-        inclusions: parsedProposalContent.plan.inclusions,
+        planId: content.plan.id,
+        planName: content.summaryTitle,
+        liters: content.totalMonthlyLiters,
+        basePrice: content.planBaseCost,
+        totalAmountDue: parseFloat(content.totalAmountDue.replace(/[^0-9.-]+/g, "")),
+        billingCycle: content.billingCycleLabel,
+        refillFrequency: content.refillFrequency,
+        employees: content.employees,
+        gallons: parseInt(content.refillableGallons) || 0,
+        inclusions: content.plan.inclusions,
         addons,
-        dateSigned: parsedProposalContent.date,
-        monthlyAmount: parsedProposalContent.basePrice,
-        clientType: parsedProposalContent.clientType,
+        dateSigned: content.date,
+        monthlyAmount: content.basePrice,
+        clientType: content.clientType,
+        signature: content.signature,
+        rawContent: content,
       };
     }
     if (client.subscription) {
       const mappedAddons = Array.isArray(client.subscription.addons)
-        ? client.subscription.addons.map(addon => (typeof addon === 'string' ? addon : addon.name))
+        ? client.subscription.addons.map(addon => (typeof addon === 'string' ? { name: addon, cost: 0 } : addon))
         : [];
       return {
         ...client.subscription,
         basePrice: client.subscription.amount,
         totalAmountDue: client.subscription.amount,
         billingCycle: 'Monthly',
-        addons: mappedAddons.map(name => ({ name, cost: 0 })),
+        addons: mappedAddons,
         monthlyAmount: client.subscription.amount,
         clientType: client.clientType,
+        rawContent: client.subscription,
       };
     }
     return null;
-  }, [parsedProposalContent, client.subscription, client.clientType]);
+  }, [selectedProposal, client.subscription, client.clientType]);
 
   useEffect(() => {
     if (open && firestore && client.id) {
@@ -516,7 +513,7 @@ export function ClientOverviewDialog({
               proofUrl: downloadURL
             }),
             subscription: {
-              ...subscriptionInfo,
+              ...subscriptionInfo.rawContent,
               dateSigned: new Date().toISOString()
             }
         });
@@ -615,6 +612,23 @@ export function ClientOverviewDialog({
     }
     return "Invalid Date";
   };
+  
+  const contractDetailsForDisplay: FinalPlanDetails | null = useMemo(() => {
+    if (!subscriptionInfo) return null;
+    return {
+      ...subscriptionInfo.rawContent,
+      totalAmountDue: currencyFormatter.format(subscriptionInfo.totalAmountDue),
+      date: subscriptionInfo.dateSigned ? getFormattedDate(subscriptionInfo.dateSigned) : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      companyName: contactInfo.company,
+      contactName: contactInfo.name,
+      contactEmail: contactInfo.email,
+      contactPhone: contactInfo.phone,
+      address: contactInfo.address,
+      clientId: client.id,
+      proposalId: selectedProposal?.id,
+      signature: subscriptionInfo.signature,
+    };
+  }, [subscriptionInfo, contactInfo, client.id, selectedProposal?.id, currencyFormatter]);
 
 
   return (
@@ -972,7 +986,7 @@ export function ClientOverviewDialog({
                      <PaymentHistory client={client} proposals={clientProposals} onPaymentConfirm={handleConfirmPayment} />
                  )}
 
-                 {parsedProposalContent && (view === 'proposals' || isAdmin) && (
+                 {contractDetailsForDisplay && (view === 'proposals' || isAdmin) && (
                     <Dialog>
                         <DialogTrigger asChild>
                              <Card className="cursor-pointer hover:bg-accent transition-colors">
@@ -994,9 +1008,9 @@ export function ClientOverviewDialog({
                             </DialogHeader>
                             <ScrollArea className="h-[85vh] pr-6">
                                 <ContractDetails 
-                                    finalPlanDetails={parsedProposalContent}
+                                    finalPlanDetails={contractDetailsForDisplay}
                                     isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
-                                    signatureData={parsedProposalContent.signature}
+                                    signatureData={contractDetailsForDisplay.signature}
                                 />
                             </ScrollArea>
                         </DialogContent>
