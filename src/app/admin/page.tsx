@@ -270,13 +270,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 billingCycle: 'N/A'
                             };
 
-                            if (client.subscription) {
-                                subscriptionDetails = {
-                                    planName: client.subscription.planName,
-                                    amount: client.subscription.amount,
-                                    billingCycle: client.subscription.refillFrequency, // This might need adjustment
-                                };
-                            } else if (acceptedProposal?.content) {
+                            if (acceptedProposal?.content) {
                                 try {
                                     const content = JSON.parse(acceptedProposal.content) as any;
                                     subscriptionDetails = {
@@ -287,6 +281,13 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 } catch (e) {
                                     console.warn("Could not parse proposal content for client:", client.id);
                                 }
+                            } else if (client.subscription) {
+                                // This is a fallback, but the primary source should be the accepted proposal content.
+                                subscriptionDetails = {
+                                    planName: client.subscription.planName,
+                                    amount: client.subscription.amount,
+                                    billingCycle: 'Monthly', // Assuming monthly if not specified in proposal
+                                };
                             }
                             
                             const paymentStatus = client.paymentStatus || (client.status === 'active' ? 'Paid' : 'Pending');
@@ -936,15 +937,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
