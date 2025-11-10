@@ -88,25 +88,23 @@ export default function NewProposalPage() {
     return clients.filter(client => client.status === 'pending');
   }, [clients]);
 
-  // Check for duplicates when debounced values change
+  // Check for duplicates and auto-switch
   useEffect(() => {
     if (isNewClient && (debouncedCompanyName || debouncedContactEmail)) {
       const found = clients.find(c => 
         (debouncedCompanyName && c.companyName.toLowerCase() === debouncedCompanyName.toLowerCase()) ||
         (debouncedContactEmail && c.contactEmail.toLowerCase() === debouncedContactEmail.toLowerCase())
       );
-      setPotentialDuplicate(found || null);
+      if (found) {
+        setClientSelectionType('existing');
+        setSelectedClientId(found.id);
+      } else {
+        setPotentialDuplicate(null);
+      }
     } else {
       setPotentialDuplicate(null);
     }
   }, [debouncedCompanyName, debouncedContactEmail, clients, isNewClient]);
-
-  const handleUseExisting = () => {
-    if (potentialDuplicate) {
-      setClientSelectionType('existing');
-      setSelectedClientId(potentialDuplicate.id);
-    }
-  };
 
 
   const selectedClient = useMemo(() => {
@@ -345,20 +343,6 @@ export default function NewProposalPage() {
                       onChange={(e) => setContactPhone(e.target.value)}
                     />
                   </div>
-                  {potentialDuplicate && (
-                    <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="h-5 w-5 mt-0.5" />
-                        <div>
-                          <h4 className="font-semibold">Potential Duplicate Found</h4>
-                          <p>A client named '{potentialDuplicate.companyName}' already exists.</p>
-                          <Button variant="link" className="p-0 h-auto text-yellow-800 font-semibold" onClick={handleUseExisting}>
-                            Click here to use the existing client record instead.
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                    <div className="space-y-2">
                         <Label htmlFor="address">Company Address</Label>
                         <div className="relative">
