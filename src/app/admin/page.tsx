@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -215,7 +214,9 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         clients.forEach(client => {
             if (client.createdAt) {
                 const clientDate = new Date(client.createdAt);
-                monthSet.add(format(clientDate, 'MMMM yyyy'));
+                if (!isNaN(clientDate.getTime())) { // Check if the date is valid
+                  monthSet.add(format(clientDate, 'MMMM yyyy'));
+                }
             }
         });
         return Array.from(monthSet).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
@@ -412,7 +413,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 }
                                 subscriptionDetails = {
                                     planName: planNameFromContent,
-                                    amount: acceptedProposal.amount || 0,
+                                    amount: acceptedProposal.amount,
                                     billingCycle: billingCycleFromContent,
                                 };
                             } else if (client.subscription) {
@@ -473,7 +474,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             <Dialog>
                                                 <DialogTrigger asChild>
                                                     <button className="flex flex-col items-start gap-1 w-full text-left">
-                                                         <Progress value={progress} className="w-24 h-2 bg-muted/50" />
+                                                         <Progress value={progress} className="w-24 h-2 bg-muted/50" indicatorClassName="bg-primary" />
                                                          <p className="text-xs text-muted-foreground">Click to update</p>
                                                     </button>
                                                 </DialogTrigger>
@@ -1126,9 +1127,3 @@ export default function AdminPage() {
 }
 
     
-
-    
-
-
-
-
