@@ -166,7 +166,7 @@ export default function NewProposalPage() {
   
   const isNextDisabled = clientSelectionType === 'existing' 
     ? !selectedClientId
-    : (isNewClient && (!companyName || !contactName || !contactEmail || !contactPhone || !address));
+    : (isNewClient && (!companyName || !contactName || !contactEmail || !contactPhone || !address || !!potentialDuplicate));
     
   const stationMarkers = waterStations.map(station => ({
     position: station.location,
