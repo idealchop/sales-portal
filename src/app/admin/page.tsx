@@ -22,8 +22,8 @@ import { cn } from '@/lib/utils';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, LineChart, Line } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, LineChart, Line, Sector as RechartsPrimitiveSector } from 'recharts';
+import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub } from 'date-fns';
 import Image from 'next/image';
 import {
   Dialog,
@@ -805,6 +805,7 @@ export default function AdminPage() {
   const { commissions, isLoading: commissionsLoading } = useAllCommissions();
   const { isAdmin } = useUser();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+  const [planDistributionPeriod, setPlanDistributionPeriod] = useState('all');
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
@@ -839,9 +840,28 @@ export default function AdminPage() {
       { name: 'Pending', value: pendingClients, fill: 'hsl(var(--chart-4))' },
       { name: 'Inactive', value: clients.filter(c => c.status === 'inactive').length, fill: 'hsl(var(--chart-2))' },
     ];
+    
+    const now = new Date();
+    let filteredProposals = acceptedProposals;
+    if (planDistributionPeriod !== 'all') {
+        let startDate: Date;
+        if (planDistributionPeriod === '30d') {
+            startDate = subDays(now, 30);
+        } else if (planDistributionPeriod === '6m') {
+            startDate = subMonths(now, 6);
+        } else if (planDistributionPeriod === '12m') {
+            startDate = subMonths(now, 12);
+        } else {
+             startDate = new Date(0);
+        }
+        filteredProposals = acceptedProposals.filter(p => {
+             const createdAt = new Date(p.createdAt);
+             return createdAt >= startDate;
+        });
+    }
 
     const planCounts: { [key: string]: number } = {};
-    acceptedProposals.forEach(p => {
+    filteredProposals.forEach(p => {
         if (p.content) {
             try {
                 const content = JSON.parse(p.content);
@@ -870,7 +890,7 @@ export default function AdminPage() {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
 
-    const now = new Date();
+    
     const sixMonthsAgo = subMonths(now, 5);
 
     const monthlyData = Array.from({ length: 6 }).map((_, i) => {
@@ -921,7 +941,7 @@ export default function AdminPage() {
 
 
     return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData };
-  }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading]);
+  }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
 
@@ -952,7 +972,7 @@ export default function AdminPage() {
             <text x={cx} y={cy} dy={10} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="text-sm">
                 {payload.name}
             </text>
-            <RechartsPrimitive.Sector
+            <RechartsPrimitiveSector
                 cx={cx}
                 cy={cy}
                 innerRadius={innerRadius}
@@ -1153,13 +1173,28 @@ export default function AdminPage() {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <BarChart3 />
-                            Plan Distribution
-                        </CardTitle>
-                        <CardDescription>
-                            Popularity of subscribed plans across all active clients.
-                        </CardDescription>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BarChart3 />
+                                    Plan Distribution
+                                </CardTitle>
+                                <CardDescription>
+                                    Popularity of subscribed plans.
+                                </CardDescription>
+                            </div>
+                             <Select value={planDistributionPeriod} onValueChange={setPlanDistributionPeriod}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select period" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Time</SelectItem>
+                                    <SelectItem value="12m">Last 12 Months</SelectItem>
+                                    <SelectItem value="6m">Last 6 Months</SelectItem>
+                                    <SelectItem value="30d">Last 30 Days</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         {stats.planDistribution.length > 0 ? (
@@ -1188,7 +1223,7 @@ export default function AdminPage() {
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
-                                No subscription data available.
+                                No subscription data available for the selected period.
                             </div>
                         )}
                     </CardContent>
@@ -1305,15 +1340,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
-
-    
-
-
-
-
-
-
-
-
