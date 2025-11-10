@@ -18,7 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 
@@ -140,12 +140,17 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             <Badge variant="outline" className={cn("capitalize", client.status && clientStatusStyles[client.status])}>{client.status || 'N/A'}</Badge>
                                         </TableCell>
                                         <TableCell>
-                                            {client.status === 'active' && (
+                                            {client.status === 'active' && client.onboardingStatus ? (
                                                 <div className="flex items-center gap-2">
                                                     <Progress value={progress} className="w-24 h-2" />
                                                     <span className="text-xs text-muted-foreground">{progress.toFixed(0)}%</span>
                                                 </div>
-                                            )}
+                                            ) : client.status === 'active' ? (
+                                                <div className="flex items-center gap-2">
+                                                     <Progress value={0} className="w-24 h-2" />
+                                                    <span className="text-xs text-muted-foreground">0%</span>
+                                                </div>
+                                            ) : null}
                                         </TableCell>
                                     </TableRow>
                                 </ClientOverviewDialog>
@@ -389,7 +394,7 @@ export default function AdminPage() {
                 const content = JSON.parse(p.content);
                 const planName = content.summaryTitle?.replace(' Plan', '') || 'Unknown';
                 let clientCategory = 'Other';
-
+                
                  if (content.plan?.id?.includes('enterprise')) {
                     clientCategory = 'Enterprise';
                 } else if (client && client.clientType) {
@@ -625,7 +630,36 @@ export default function AdminPage() {
                     <p className="text-xs text-muted-foreground">Total sales representatives</p>
                   </CardContent>
                 </Card>
-                 <Card className="col-span-1 lg:col-span-3">
+                <Card className="md:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Proposal Funnel Over Time</CardTitle>
+                        <CardDescription>Cumulative proposals sent vs. accepted over the last 6 months.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={stats.proposalFunnelData}>
+                                <defs>
+                                    <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="month" />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                                <Legend />
+                                <Area type="monotone" dataKey="sent" stroke="hsl(var(--chart-2))" fill="url(#colorSent)" />
+                                <Area type="monotone" dataKey="accepted" stroke="hsl(var(--chart-1))" fill="url(#colorAccepted)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+                 <Card>
                     <CardHeader>
                         <CardTitle>Proposals By Sales Rep</CardTitle>
                         <CardDescription>Total proposals created by each team member.</CardDescription>
@@ -691,5 +725,7 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
