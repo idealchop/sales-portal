@@ -426,27 +426,26 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             };
 
                             if (acceptedProposal) {
-                                // Prioritize the top-level amount field.
                                 let amount = acceptedProposal.amount || 0;
                                 let planName = acceptedProposal.title || 'Custom Plan';
-                                let billingCycle = 'Monthly';
+                                let billingCycle = 'Monthly'; // Default fallback
 
-                                if (amount <= 0 && acceptedProposal.content) {
+                                if (acceptedProposal.content) {
                                     try {
                                         const content = JSON.parse(acceptedProposal.content);
-                                        // Use parsed content as a fallback
-                                        if (!planName || planName === 'Custom Plan') {
-                                            planName = content.summaryTitle || planName;
-                                        }
+                                        // Always try to parse the content for the most accurate data
+                                        planName = content.summaryTitle || planName;
                                         billingCycle = content.billingCycleLabel || billingCycle;
-                                        // Only parse content for amount if the top-level one is zero.
                                         
-                                        const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
-                                        if (!isNaN(parsedAmount)) {
-                                            amount = parsedAmount;
+                                        // Only overwrite amount if the top-level one is zero or missing
+                                        if (amount <= 0) {
+                                          const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
+                                          if (!isNaN(parsedAmount)) {
+                                              amount = parsedAmount;
+                                          }
                                         }
                                     } catch (e) {
-                                        console.warn("Could not parse proposal content for client:", client.id);
+                                        console.warn("Could not parse proposal content for client:", client.id, e);
                                     }
                                 }
                                 
