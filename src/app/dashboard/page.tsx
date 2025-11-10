@@ -664,40 +664,46 @@ export default function DashboardPage() {
             </DialogHeader>
             <ScrollArea className="h-[60vh] pr-4">
               <div className="space-y-8 py-6">
-                   <div className="grid gap-8 md:grid-cols-2">
-                      <div>
-                          <h3 className="text-lg font-semibold mb-2">Commission Structure</h3>
-                          <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Client Tier</TableHead>
-                                        <TableHead className="text-center">One-Time</TableHead>
-                                        <TableHead className="text-center">Recurring</TableHead>
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Commission Structure</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Client Tier</TableHead>
+                                    <TableHead className="text-center">One-Time</TableHead>
+                                    <TableHead className="text-center">Recurring</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {commissionTiers.map((tier) => (
+                                    <TableRow key={tier.clientType}>
+                                        <TableCell className="font-medium">{tier.clientType}</TableCell>
+                                        <TableCell className="text-center font-bold text-primary">{tier.commission}</TableCell>
+                                        <TableCell className="text-center font-bold text-primary">{tier.recurring}</TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {commissionTiers.map((tier) => (
-                                        <TableRow key={tier.clientType}>
-                                            <TableCell className="font-medium">{tier.clientType}</TableCell>
-                                            <TableCell className="text-center font-bold text-primary">{tier.commission}</TableCell>
-                                            <TableCell className="text-center font-bold text-primary">{tier.recurring}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                      </div>
-                      <div>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <div>
                         <h3 className="text-lg font-semibold mb-2">Payout Schedule</h3>
-                        <ul className="space-y-3">
-                            {payoutTimeline.map((item) => (
-                                <li key={item.term}>
-                                    <p className="font-semibold text-sm">{item.term}</p>
-                                    <p className="text-xs text-muted-foreground">{item.schedule}</p>
-                                </li>
-                            ))}
-                        </ul>
-                      </div>
-                  </div>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Contract Term</TableHead>
+                                    <TableHead>Payout Schedule</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {payoutTimeline.map((item) => (
+                                    <TableRow key={item.term}>
+                                        <TableCell className="font-semibold">{item.term}</TableCell>
+                                        <TableCell>{item.schedule}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                    <div className="md:col-span-2">
                       <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
                       <RevenueChart data={dashboardData.commissionHistory} />
