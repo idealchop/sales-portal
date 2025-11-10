@@ -338,8 +338,7 @@ export function ContractDetails({
                      {(Object.values(selectedAddons).some(v => v) || additionalDispensers > 0 || additionalLiters > 0) && (
                         <div className="space-y-2 p-4 border rounded-lg">
                              <h4 className="font-semibold text-foreground">Add-Ons</h4>
-                            {addons.map((addon) => (
-                                addon.type === 'checkbox' && selectedAddons[addon.id] && (
+                            {addons.map((addon) => (addon.type === 'checkbox' && selectedAddons[addon.id] && (
                                     <div key={addon.id} className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">{addon.name}</span>
                                         <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
@@ -448,30 +447,23 @@ export function ContractDetails({
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Smart Refill™ Water Supply Subscription Agreement</CardTitle>
+                    <CardTitle>Smart Refill Water Supply Subscription Agreement</CardTitle>
                      <CardDescription>
                         Between: River Tech Group, Inc. (“Provider”) and the Subscriber (“Client”).
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <ContractSection title="3. Subscription Plans">
-                        <ul className="list-disc pl-5 space-y-2">
-                            <li><span className="font-semibold">Plan:</span> {summaryTitle}</li>
-                            <li><span className="font-semibold">Monthly Liters:</span> {finalPlan.liters} (includes {baseLiters * 0.2}L bonus)</li>
-                            <li><span className="font-semibold">Billing Cycle:</span> {billingCycleLabel}</li>
-                            <li><span className="font-semibold">Total Amount Due per Cycle:</span> {totalAmountDue}</li>
-                             {(Object.values(selectedAddons).some(v => v) || additionalDispensers > 0 || additionalLiters > 0) && (
-                                <li className="font-semibold">Add-Ons:
-                                    <ul className="list-circle pl-5 font-normal">
-                                        {addons.map((addon) => (addon.type === 'checkbox' && selectedAddons[addon.id] && <li key={addon.id}>{addon.name}</li>))}
-                                        {Number(additionalDispensers) > 0 && (<li>{additionalDispensers}x Additional Dispensers</li>)}
-                                        {additionalLiters > 0 && (<li>{additionalLiters} Additional Liters</li>)}
-                                    </ul>
-                                </li>
-                            )}
-                        </ul>
-                    </ContractSection>
-                    <ContractText />
+                    <ContractText 
+                        summaryTitle={summaryTitle}
+                        finalPlan={finalPlan}
+                        baseLiters={baseLiters}
+                        billingCycleLabel={billingCycleLabel}
+                        totalAmountDue={totalAmountDue}
+                        selectedAddons={selectedAddons}
+                        additionalDispensers={additionalDispensers}
+                        additionalLiters={additionalLiters}
+                        addons={addons}
+                    />
                 </CardContent>
             </Card>
 
