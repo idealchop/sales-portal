@@ -422,19 +422,22 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             let subscriptionDetails = {
                                 planName: 'N/A',
                                 amount: 0,
-                                billingCycle: 'N/A'
+                                billingCycle: 'N/A',
+                                clientType: client.clientType,
                             };
 
                             if (acceptedProposal) {
                                 let amount = acceptedProposal.amount || 0;
                                 let planName = acceptedProposal.title || 'Custom Plan';
                                 let billingCycle = 'Monthly'; // Default fallback
+                                let proposalClientType = client.clientType;
 
                                 if (acceptedProposal.content) {
                                     try {
                                         const content = JSON.parse(acceptedProposal.content);
                                         planName = content.summaryTitle || planName;
                                         billingCycle = content.billingCycleLabel || billingCycle;
+                                        proposalClientType = content.clientType || client.clientType;
                                         
                                         if (amount <= 0) {
                                           const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
@@ -451,18 +454,20 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                     amount: amount,
                                     planName: planName,
                                     billingCycle: billingCycle,
+                                    clientType: proposalClientType,
                                 };
                             } else if (client.subscription) {
                                 subscriptionDetails = {
                                     planName: client.subscription.planName || 'N/A',
                                     amount: client.subscription.amount || 0,
                                     billingCycle: (client.subscription as any).billingCycle || 'Monthly',
+                                    clientType: client.clientType,
                                 };
                             }
                             
                             const paymentStatus = client.paymentStatus || (client.status === 'active' ? 'Paid' : 'Pending');
-                            const clientTypeLabel = client.clientType ? clientTypeMap[client.clientType] : '';
-                            const planImage = (client.clientType && planImages[client.clientType]) || planImages.sme;
+                            const clientTypeLabel = subscriptionDetails.clientType ? clientTypeMap[subscriptionDetails.clientType] : '';
+                            const planImage = (subscriptionDetails.clientType && planImages[subscriptionDetails.clientType]) || planImages.sme;
 
 
                             return (
@@ -1311,8 +1316,8 @@ export default function AdminPage() {
                     </DialogContent>
                 </Dialog>
             </div>
-             <div className="grid grid-cols-1 gap-6">
-                <Card>
+             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+                <Card className="lg:col-span-3">
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div>
@@ -1367,6 +1372,34 @@ export default function AdminPage() {
                                 No subscription data available for the selected period.
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Proposal Value by Status</CardTitle>
+                        <CardDescription>Pipeline value across all stages.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <ResponsiveContainer width="100%" height={300}>
+                             <PieChart>
+                                <Pie
+                                    data={stats.proposalValueByStatus}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    label={renderCustomizedLabel}
+                                    outerRadius={100}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                >
+                                    {stats.proposalValueByStatus.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Pie>
+                                <Tooltip formatter={(value) => currencyFormatter.format(Number(value))} />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
             </div>
@@ -1492,6 +1525,7 @@ export default function AdminPage() {
 
 
     
+
 
 
 
