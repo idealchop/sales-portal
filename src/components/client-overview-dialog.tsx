@@ -396,7 +396,10 @@ export function ClientOverviewDialog({
         });
         setClientProposals(fetchedProposals);
         
-        if (proposal) {
+        if (view === 'clients') {
+            const acceptedProposal = fetchedProposals.find(p => p.status === 'accepted');
+            setSelectedProposal(acceptedProposal || fetchedProposals[0]);
+        } else if (proposal) {
           const fullProposal = fetchedProposals.find(p => p.id === proposal.id);
           setSelectedProposal(fullProposal || proposal);
         } else if (fetchedProposals.length > 0 && !selectedProposal) {
@@ -425,7 +428,7 @@ export function ClientOverviewDialog({
         unsubscribeRemarks();
       }
     }
-  }, [firestore, client.id, open, proposal]);
+  }, [firestore, client.id, open, proposal, view]);
 
   const getInitials = (name: string) => {
     if (!name) return "";
@@ -814,6 +817,7 @@ export function ClientOverviewDialog({
                     </Card>
                  </div>
                   
+                {view === 'proposals' && (
                 <Card>
                     <CardHeader>
                         <CardTitle>Proposal History</CardTitle>
@@ -843,7 +847,7 @@ export function ClientOverviewDialog({
                                                     <AvatarFallback className="text-xs">{owner?.displayName?.[0]}</AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-semibold text-sm">{p.title}</p>
+                                                    <p className={cn("font-semibold text-sm", selectedProposal?.id === p.id && "text-primary-foreground")}>{p.title}</p>
                                                     <p className={cn("text-xs", selectedProposal?.id === p.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
                                                         {getFormattedDate(p.createdAt)}
                                                     </p>
@@ -861,6 +865,7 @@ export function ClientOverviewDialog({
                         )}
                     </CardContent>
                 </Card>
+                )}
 
                  {(view === 'proposals' || (view === 'clients' && client.status === 'pending' && selectedProposal?.status === 'finalized')) && selectedProposal?.status !== 'accepted' && (
                     <Card>
