@@ -49,7 +49,7 @@ function CompleteSetupContent() {
   }, [isUserLoading, displayName, currentPassword, newPassword, phone, router, toast]);
 
   const handleFinalize = async () => {
-    if (!user || !user.email || !displayName || !birthday || !phone || !currentPassword || !newPassword) {
+    if (!auth.currentUser || !displayName || !birthday || !phone || !currentPassword || !newPassword) {
       toast({
         variant: 'destructive',
         title: 'Incomplete Information',
@@ -59,16 +59,18 @@ function CompleteSetupContent() {
       return;
     }
 
+    const liveUser = auth.currentUser;
+
     setStatus('finalizing');
     try {
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
+      const credential = EmailAuthProvider.credential(liveUser.email!, currentPassword);
+      await reauthenticateWithCredential(liveUser, credential);
 
-      await updatePassword(user, newPassword);
+      await updatePassword(liveUser, newPassword);
       
-      await updateProfile(user, { displayName, photoURL: photoURL || null });
+      await updateProfile(liveUser, { displayName, photoURL: photoURL || null });
 
-      const userDocRef = doc(firestore, 'sales', user.uid);
+      const userDocRef = doc(firestore, 'sales', liveUser.uid);
       await setDoc(userDocRef, {
         displayName: displayName,
         phone: phone,
