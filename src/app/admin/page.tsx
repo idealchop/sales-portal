@@ -278,7 +278,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     const handleUploadPayment = async () => {
         const { clientId, amount, date, file } = paymentUploadState;
         if (!clientId || !amount || !date || !file) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a file.' });
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide all required details and a file.' });
             return;
         }
 
@@ -348,29 +348,26 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 ? client.onboardingStatus
                                 : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
                             
-                            let subscriptionDetails = {
+                             let subscriptionDetails = {
                                 planName: 'N/A',
                                 amount: 0,
                                 billingCycle: 'N/A'
                             };
-
-                            if (acceptedProposal) {
+                            
+                             if (acceptedProposal) {
                                 let planNameFromContent = 'Custom Plan';
                                 let billingCycleFromContent = 'Monthly';
-                                
                                 if (acceptedProposal.content) {
                                     try {
-                                        const content = JSON.parse(acceptedProposal.content) as any;
+                                        const content = JSON.parse(acceptedProposal.content);
                                         planNameFromContent = content.summaryTitle || 'Custom Plan';
                                         billingCycleFromContent = content.billingCycleLabel || 'Monthly';
-                                    } catch (e) {
-                                         console.warn("Could not parse proposal content for client:", client.id);
-                                    }
+                                    } catch (e) { console.warn("Could not parse proposal content for client:", client.id); }
                                 }
                                 subscriptionDetails = {
                                     planName: planNameFromContent,
-                                    amount: acceptedProposal.amount,
-                                    billingCycle: billingCycleFromContent
+                                    amount: acceptedProposal.amount || 0,
+                                    billingCycle: billingCycleFromContent,
                                 };
                             } else if (client.subscription) {
                                 subscriptionDetails = {
@@ -430,7 +427,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             <Dialog>
                                                 <DialogTrigger asChild>
                                                     <button className="flex flex-col items-start gap-1 w-full text-left">
-                                                         <Progress value={progress} className="w-24 h-2 bg-muted" />
+                                                         <Progress value={progress} className="w-24 h-2 bg-muted/50" />
                                                          <p className="text-xs text-muted-foreground">Click to update</p>
                                                     </button>
                                                 </DialogTrigger>
@@ -1086,3 +1083,4 @@ export default function AdminPage() {
     
 
     
+
