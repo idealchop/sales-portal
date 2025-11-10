@@ -145,7 +145,7 @@ export default function ProposalsPage() {
 
   const [proposalsCurrentPage, setProposalsCurrentPage] = useState(1);
   const [clientsCurrentPage, setClientsCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = 10;
 
   const { proposals, isLoading: proposalsLoading, error: proposalsError } = useProposals();
   const { clients, isLoading: clientsLoading, error: clientsError } = useClients();
@@ -544,3 +544,5 @@ export default function ProposalsPage() {
     </div>
   );
 }
+
+    
