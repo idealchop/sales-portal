@@ -38,6 +38,7 @@ import {
 import { GoogleMap } from '@/components/google-map';
 import { waterStations } from '@/lib/water-stations';
 import { useDebounce } from 'use-debounce';
+import { useToast } from '@/hooks/use-toast';
 
 
 function InputField({
@@ -80,6 +81,7 @@ export default function NewProposalPage() {
   const [debouncedCompanyName] = useDebounce(companyName, 500);
   const [debouncedContactEmail] = useDebounce(contactEmail, 500);
   const [potentialDuplicate, setPotentialDuplicate] = useState<Client | null>(null);
+  const { toast } = useToast();
   
   const isNewClient = clientSelectionType === 'new';
 
@@ -96,6 +98,10 @@ export default function NewProposalPage() {
         (debouncedContactEmail && c.contactEmail.toLowerCase() === debouncedContactEmail.toLowerCase())
       );
       if (found) {
+        toast({
+          title: "Existing Client Found",
+          description: `Switched to existing client record for ${found.companyName}.`,
+        });
         setClientSelectionType('existing');
         setSelectedClientId(found.id);
       } else {
@@ -104,7 +110,7 @@ export default function NewProposalPage() {
     } else {
       setPotentialDuplicate(null);
     }
-  }, [debouncedCompanyName, debouncedContactEmail, clients, isNewClient]);
+  }, [debouncedCompanyName, debouncedContactEmail, clients, isNewClient, toast]);
 
 
   const selectedClient = useMemo(() => {
