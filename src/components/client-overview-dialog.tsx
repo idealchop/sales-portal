@@ -288,19 +288,22 @@ export function ClientOverviewDialog({
 
 
   const parsedProposalContent: FinalPlanDetails | null = useMemo(() => {
-    const proposalToParse = selectedProposal || proposal;
+    // This now depends on selectedProposal, so it will re-run when it changes.
+    const proposalToParse = selectedProposal;
     if (!proposalToParse?.content) return null;
     try {
         const content = JSON.parse(proposalToParse.content);
+        // We return the full parsed content, including the signature if it exists.
         return { 
             ...content, 
             paymentProofUrl: proposalToParse.paymentProofUrl,
+            signature: content.signature, 
         };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
         return null;
     }
-  }, [selectedProposal, proposal]);
+  }, [selectedProposal]);
   
   const contactInfo = useMemo(() => {
     return {
@@ -418,7 +421,7 @@ export function ClientOverviewDialog({
         unsubscribeRemarks();
       }
     }
-  }, [firestore, client.id, open, proposal, selectedProposal]);
+  }, [firestore, client.id, open, proposal]);
 
   const getInitials = (name: string) => {
     if (!name) return "";
