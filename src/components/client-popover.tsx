@@ -46,10 +46,10 @@ export function ClientPopover({
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
               <AvatarImage
-                src={`https://picsum.photos/seed/${client.id}/64/64`}
+                src={undefined}
                 alt={client.contactName}
               />
-              <AvatarFallback>{getInitials(client.contactName)}</AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(client.contactName)}</AvatarFallback>
             </Avatar>
             <div className="grid gap-1">
               <h3 className="font-semibold">{client.contactName}</h3>

@@ -574,11 +574,8 @@ export function ClientOverviewDialog({
                  <Card>
                     <CardContent className="p-6 flex items-start gap-6">
                          <Avatar className="h-24 w-24 border">
-                            <AvatarImage
-                                src={`https://picsum.photos/seed/${client.id}/128/128`}
-                                alt={contactInfo.name}
-                            />
-                            <AvatarFallback>{getInitials(contactInfo.name)}</AvatarFallback>
+                            <AvatarImage src={undefined} alt={contactInfo.name} />
+                            <AvatarFallback className="text-3xl bg-primary text-primary-foreground">{getInitials(contactInfo.name)}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-2 flex-1">
                             <h2 className="text-2xl font-bold">{contactInfo.company}</h2>
