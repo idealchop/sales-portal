@@ -440,7 +440,6 @@ export default function DashboardPage() {
       { term: 'Quarterly', schedule: '⅓ each month after payment' },
       { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months' },
       { term: 'Annual', schedule: 'Spread monthly for 12 months' },
-      { term: 'Recurring Commission', schedule: '3% of client payment, paid monthly'},
   ];
   const commissionTiers = [
     { clientType: 'Household', commission: '12%', recurring: 'None' },
@@ -686,7 +685,7 @@ export default function DashboardPage() {
                         </Table>
                     </div>
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Payout Schedule</h3>
+                        <h3 className="text-lg font-semibold mb-2">Recurring Commission Payout Schedule</h3>
                         <Table>
                             <TableHeader>
                                 <TableRow>
