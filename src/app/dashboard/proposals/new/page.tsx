@@ -13,6 +13,7 @@ import {
   PlusCircle,
   ChevronLeft,
   Map,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useClients } from '@/hooks/use-clients';
 import type { Client } from '@/lib/definitions';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { GoogleMap } from '@/components/google-map';
 import { waterStations } from '@/lib/water-stations';
+import { useDebounce } from 'use-debounce';
 
 
 function InputField({
@@ -73,6 +75,11 @@ export default function NewProposalPage() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [address, setAddress] = useState('');
+
+  // States for duplicate detection
+  const [debouncedCompanyName] = useDebounce(companyName, 500);
+  const [debouncedContactEmail] = useDebounce(contactEmail, 500);
+  const [potentialDuplicate, setPotentialDuplicate] = useState<Client | null>(null);
   
   const isNewClient = clientSelectionType === 'new';
 
@@ -81,9 +88,30 @@ export default function NewProposalPage() {
     return clients.filter(client => client.status === 'pending');
   }, [clients]);
 
+  // Check for duplicates when debounced values change
+  useEffect(() => {
+    if (isNewClient && (debouncedCompanyName || debouncedContactEmail)) {
+      const found = clients.find(c => 
+        (debouncedCompanyName && c.companyName.toLowerCase() === debouncedCompanyName.toLowerCase()) ||
+        (debouncedContactEmail && c.contactEmail.toLowerCase() === debouncedContactEmail.toLowerCase())
+      );
+      setPotentialDuplicate(found || null);
+    } else {
+      setPotentialDuplicate(null);
+    }
+  }, [debouncedCompanyName, debouncedContactEmail, clients, isNewClient]);
+
+  const handleUseExisting = () => {
+    if (potentialDuplicate) {
+      setClientSelectionType('existing');
+      setSelectedClientId(potentialDuplicate.id);
+    }
+  };
+
+
   const selectedClient = useMemo(() => {
     if (!selectedClientId || selectedClientId === 'new') return null;
-    const client = availableClients.find(c => c.id === selectedClientId);
+    const client = clients.find(c => c.id === selectedClientId); // Search all clients, not just available ones
     if(client) {
         setCompanyName(client.companyName);
         setContactName(client.contactName);
@@ -92,7 +120,7 @@ export default function NewProposalPage() {
         setAddress(client.address);
     }
     return client;
-  }, [availableClients, selectedClientId]);
+  }, [clients, selectedClientId]);
 
   useEffect(() => {
     if (clientSelectionType === 'existing' && selectedClient) {
@@ -310,6 +338,20 @@ export default function NewProposalPage() {
                       onChange={(e) => setContactPhone(e.target.value)}
                     />
                   </div>
+                  {potentialDuplicate && (
+                    <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold">Potential Duplicate Found</h4>
+                          <p>A client named '{potentialDuplicate.companyName}' already exists.</p>
+                          <Button variant="link" className="p-0 h-auto text-yellow-800 font-semibold" onClick={handleUseExisting}>
+                            Click here to use the existing client record instead.
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                    <div className="space-y-2">
                         <Label htmlFor="address">Company Address</Label>
                         <div className="relative">
