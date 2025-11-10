@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -263,9 +264,8 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                        {client.status === 'active' || client.status === 'pending' ? (
                                             <Dialog>
                                                 <DialogTrigger asChild>
-                                                    <Button variant="ghost" className="h-auto p-0 flex items-center gap-2">
-                                                        <span className="text-sm font-medium">{progress.toFixed(0)}%</span>
-                                                        <MoreHorizontal className="h-4 w-4 text-muted-foreground"/>
+                                                    <Button variant="ghost" className="w-full h-auto p-0 flex items-center justify-start gap-2 group">
+                                                         <Progress value={progress} className="w-24 h-2 group-hover:bg-muted-foreground/20" />
                                                     </Button>
                                                 </DialogTrigger>
                                                 <DialogContent>
@@ -868,6 +868,8 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
 
