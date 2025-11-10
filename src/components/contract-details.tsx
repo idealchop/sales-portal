@@ -454,25 +454,13 @@ export function ContractDetails({
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <ContractSection title="1. Purpose">
-                        <p>This Agreement governs the prepaid water supply subscription service delivered through Smart Refill’s automated system and partner refill stations.</p>
-                    </ContractSection>
-                    <ContractSection title="2. Service Overview">
-                        <p>Smart Refill provides:</p>
-                        <ul className="list-disc pl-5 space-y-1">
-                            <li>Scheduled and automated water deliveries through verified local partner refill stations.</li>
-                            <li>Water compliant with DOH, DENR, and FDA standards.</li>
-                            <li>Usage tracking, scheduling, and roll-over management via the Smart Refill platform.</li>
-                            <li>Monthly consumption and compliance reports for operational monitoring and transparency.</li>
-                        </ul>
-                    </ContractSection>
                     <ContractSection title="3. Subscription Plans">
                         <ul className="list-disc pl-5 space-y-2">
                             <li><span className="font-semibold">Plan:</span> {summaryTitle}</li>
                             <li><span className="font-semibold">Monthly Liters:</span> {finalPlan.liters} (includes {baseLiters * 0.2}L bonus)</li>
                             <li><span className="font-semibold">Billing Cycle:</span> {billingCycleLabel}</li>
                             <li><span className="font-semibold">Total Amount Due per Cycle:</span> {totalAmountDue}</li>
-                            {(Object.values(selectedAddons).some(v => v) || additionalDispensers > 0 || additionalLiters > 0) && (
+                             {(Object.values(selectedAddons).some(v => v) || additionalDispensers > 0 || additionalLiters > 0) && (
                                 <li className="font-semibold">Add-Ons:
                                     <ul className="list-circle pl-5 font-normal">
                                         {addons.map((addon) => (addon.type === 'checkbox' && selectedAddons[addon.id] && <li key={addon.id}>{addon.name}</li>))}

@@ -116,13 +116,6 @@ export function ContractSection({
 export function ContractText() {
     return (
         <>
-            <div className="space-y-2 text-center">
-                <h2 className="text-xl font-bold">Smart Refill Water Supply Subscription Agreement</h2>
-                <p className="text-sm text-muted-foreground">
-                    Between: River Tech Group, Inc. (“Provider”), operating under the trademark Smart Refill, and the Subscriber (“Client”), a business entity subscribing to automated water delivery services.
-                </p>
-            </div>
-
             <ContractSection title="1. Purpose">
                 <p>
                     This Agreement governs the prepaid water supply subscription service delivered through Smart Refill’s automated system and partner refill stations.
@@ -137,10 +130,6 @@ export function ContractText() {
                     <li>Usage tracking, scheduling, and roll-over management via the Smart Refill platform.</li>
                     <li>Monthly consumption and compliance reports for operational monitoring and transparency.</li>
                 </ul>
-            </ContractSection>
-
-            <ContractSection title="3. Subscription Plans">
-                {/* This section is now dynamically rendered in ContractDetails component */}
             </ContractSection>
 
             <ContractSection title="4. Delivery & Refills">
