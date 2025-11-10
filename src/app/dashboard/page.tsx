@@ -300,8 +300,8 @@ export default function DashboardPage() {
     const proposalsSent = proposals.filter(p => p.status !== 'draft').length;
     const winRate = proposalsSent > 0 ? (acceptedProposals.length / proposalsSent) * 100 : 0;
     
-    const totalCommissionValue = acceptedProposals.reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
-    const avgDealSize = acceptedProposals.length > 0 ? totalCommissionValue / acceptedProposals.length : 0;
+    const totalSalesValue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
+    const avgDealSize = acceptedProposals.length > 0 ? totalSalesValue / acceptedProposals.length : 0;
 
     const recentProposals = proposals.slice(0, 5);
 
@@ -353,7 +353,7 @@ export default function DashboardPage() {
 
     const recurringCommission = recurringCommissionDetails.reduce((sum, client) => sum + client.monthlyPayout, 0);
 
-    const teamRevenue = totalCommissionValue; 
+    const teamRevenue = acceptedProposals.reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
 
     const prepaidContractDetails = acceptedThisMonth
       .map(proposal => {
@@ -728,7 +728,7 @@ export default function DashboardPage() {
                       <RevenueChart data={dashboardData.commissionHistory} />
                   </div>
                    <p className="text-sm text-muted-foreground">
-                      All earnings (commissions & bonuses) are calculated at the end of each month and paid every first week of the month.
+                      All earnings (commissions &amp; bonuses) are calculated at the end of each month and paid every first week of the month.
                   </p>
               </div>
             </ScrollArea>
