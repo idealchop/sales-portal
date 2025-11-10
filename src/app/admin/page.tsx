@@ -189,6 +189,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         file: File | null;
         planName: string;
         planImage: string;
+        amount: number;
     }>({
         clientId: '',
         isUploading: false,
@@ -196,6 +197,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         file: null,
         planName: '',
         planImage: '',
+        amount: 0,
     });
     
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -303,18 +305,8 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     };
 
     const handleUploadPayment = async () => {
-        const { clientId, date, file } = paymentUploadState;
-        const client = clients.find(c => c.id === clientId);
+        const { clientId, date, file, amount } = paymentUploadState;
         
-        let amount = 0;
-        const acceptedProposal = (proposalsByClient[clientId] || []).find(p => p.status === 'accepted');
-        if (acceptedProposal) {
-            amount = acceptedProposal.amount;
-        } else if (client?.subscription) {
-            amount = client.subscription.amount || 0;
-        }
-
-
         if (!clientId || !amount || !date || !file) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide all required details and a file.' });
             return;
@@ -341,7 +333,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
 
             toast({ title: 'Payment Uploaded', description: 'The proof of payment has been added to the client\'s history.' });
             
-            setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '' });
+            setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '', amount: 0 });
 
         } catch (error) {
             console.error('Error uploading payment:', error);
@@ -526,9 +518,9 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                     </TableCell>
                                     <TableCell className="text-right">
                                         {client.status === 'active' && (
-                                            <Dialog onOpenChange={(open) => !open && setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '' })}>
+                                            <Dialog onOpenChange={(open) => !open && setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '', amount: 0 })}>
                                                 <DialogTrigger asChild>
-                                                    <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, planName: subscriptionDetails.planName, planImage: planImage}))}>
+                                                    <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, planName: subscriptionDetails.planName, planImage: planImage, amount: subscriptionDetails.amount}))}>
                                                         <Upload className="mr-2 h-4 w-4" /> Upload
                                                     </Button>
                                                 </DialogTrigger>
@@ -1149,3 +1141,4 @@ export default function AdminPage() {
 
     
 
+    
