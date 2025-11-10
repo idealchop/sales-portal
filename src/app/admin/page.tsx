@@ -837,12 +837,6 @@ export default function AdminPage() {
         enterprise: 'Enterprise'
     };
     
-    const clientStatusChartData = [
-      { name: 'Active', value: activeClients, fill: 'hsl(var(--chart-1))' },
-      { name: 'Pending', value: pendingClients, fill: 'hsl(var(--chart-4))' },
-      { name: 'Rejected', value: rejectedClients, fill: 'hsl(var(--destructive))' },
-    ];
-    
     const now = new Date();
     let filteredProposals = acceptedProposals;
     if (planDistributionPeriod !== 'all') {
@@ -907,6 +901,9 @@ export default function AdminPage() {
           const createdAt = new Date(c.createdAt);
           return c.status === 'pending' && createdAt <= monthEnd;
         }).length;
+        
+        const endOfMonthRejectedClients = Array.from(new Set(rejectedProposals.filter(p => new Date(p.createdAt) <= monthEnd).map(p => p.clientId))).length;
+
 
         const endOfMonthActiveClients = clients.filter(c => {
           const createdAt = new Date(c.createdAt);
@@ -922,10 +919,10 @@ export default function AdminPage() {
         const proposalsAccepted = acceptedProposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd }));
         const monthlyRevenue = proposalsAccepted.reduce((sum, p) => sum + p.amount, 0);
 
-        return { month: monthName, newClients, proposalsCreated, proposalsAccepted: proposalsAccepted.length, pendingClients: endOfMonthPendingClients, revenue: monthlyRevenue, active: endOfMonthActiveClients, inactive: endOfMonthInactiveClients };
+        return { month: monthName, newClients, proposalsCreated, proposalsAccepted: proposalsAccepted.length, pendingClients: endOfMonthPendingClients, rejectedClients: endOfMonthRejectedClients, revenue: monthlyRevenue, active: endOfMonthActiveClients, inactive: endOfMonthInactiveClients };
     });
     
-    const clientGrowthData = monthlyData.map(d => ({ month: d.month, "New Clients": d.newClients, "Pending Clients": d.pendingClients }));
+    const clientGrowthData = monthlyData.map(d => ({ month: d.month, "New Clients": d.newClients, "Pending Clients": d.pendingClients, "Rejected Clients": d.rejectedClients }));
     const proposalsCreatedHistory = monthlyData.map(d => ({ month: d.month, "Proposals Created": d.proposalsCreated }));
     const revenueHistory = monthlyData.map(d => ({ month: d.month, "Revenue": d.revenue }));
     const clientRetentionData = monthlyData.map(d => ({ month: d.month, "Active": d.active, "Inactive": d.inactive }));
@@ -962,7 +959,7 @@ export default function AdminPage() {
     }).sort((a, b) => b.proposals - a.proposals);
 
 
-    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData };
+    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1085,27 +1082,26 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl">
+                     <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
                              <div className="flex items-center gap-2">
                                 <LineChartIcon className="h-6 w-6 text-primary"/>
-                                <DialogTitle>Client Funnel</DialogTitle>
+                                <DialogTitle>Client Funnel Growth</DialogTitle>
                             </div>
-                            <DialogDescription>A breakdown of clients in each stage of the funnel.</DialogDescription>
+                            <DialogDescription>Client status trends over the last 6 months.</DialogDescription>
                         </DialogHeader>
-                        <div className="h-[350px] w-full">
-                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={stats.clientStatusChartData}>
-                                  <CartesianGrid strokeDasharray="3 3" />
-                                  <XAxis dataKey="name" />
-                                  <YAxis allowDecimals={false}/>
-                                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                  <Bar dataKey="value" name="Clients" radius={[4, 4, 0, 0]}>
-                                    {stats.clientStatusChartData.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                  </Bar>
-                                </BarChart>
+                         <div className="h-[350px] w-full">
+                           <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={stats.clientGrowthData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis allowDecimals={false} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} />
+                                    <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} />
+                                    <Line type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} />
+                                </LineChart>
                             </ResponsiveContainer>
                         </div>
                     </DialogContent>
@@ -1190,23 +1186,22 @@ export default function AdminPage() {
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Client Funnel Stage</CardTitle>
-                        <CardDescription>Number of clients in each stage.</CardDescription>
+                         <CardTitle>Client Funnel Growth</CardTitle>
+                         <CardDescription>Client status trends over the last 6 months.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
                        <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={stats.clientStatusChartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis allowDecimals={false} />
-                          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                          <Bar dataKey="value" name="Clients" radius={[4, 4, 0, 0]}>
-                            {stats.clientStatusChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+                            <LineChart data={stats.clientGrowthData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="month" />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                                <Legend />
+                                <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} />
+                                <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} />
+                                <Line type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} />
+                            </LineChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
                 <Card>
