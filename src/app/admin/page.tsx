@@ -752,34 +752,7 @@ export default function AdminPage() {
                   </CardContent>
                 </Card>
             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Client Status</CardTitle>
-                        <CardDescription>Breakdown of clients by their current status.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={stats.clientStatusDistribution}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={renderCustomizedLabel}
-                                    outerRadius={80}
-                                    dataKey="value"
-                                >
-                                    {stats.clientStatusDistribution.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value, name) => [value, name]} />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+             <div className="grid grid-cols-1 gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>Client Pipeline</CardTitle>
