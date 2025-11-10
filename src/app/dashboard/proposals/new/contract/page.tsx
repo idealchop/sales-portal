@@ -452,6 +452,7 @@ function ContractPageContent() {
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
   const [signatureData, setSignatureData] = useState<string | undefined>();
+  const [_, setForceUpdate] = useState(0); // Add a state to force re-render
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -622,7 +623,6 @@ function ContractPageContent() {
     let finalClientId = generatedClientId;
   
     try {
-      // Step 1: Ensure client ID is present
       if (!finalClientId) {
         if (existingClientId) {
           finalClientId = existingClientId;
@@ -635,7 +635,6 @@ function ContractPageContent() {
   
       const clientRef = doc(firestore, 'clients', finalClientId);
   
-      // Step 2: Create or update the client document *first*.
       if (!existingClientId) {
         const newClientData = {
           id: finalClientId,
@@ -652,7 +651,6 @@ function ContractPageContent() {
         await setDoc(clientRef, newClientData);
       }
       
-      // Step 3: Now that client exists, create the proposal.
       const proposalId = generatedProposalId;
       if (!proposalId) {
         toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
@@ -660,7 +658,6 @@ function ContractPageContent() {
         return;
       }
       
-      // THIS IS THE FIX: Ensure the signature is included here.
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
       
       const newProposalData = {
@@ -668,7 +665,7 @@ function ContractPageContent() {
         clientId: finalClientId,
         userId: user.uid,
         title: proposalContentToSave.summaryTitle,
-        content: JSON.stringify(proposalContentToSave), // Save the version with the signature
+        content: JSON.stringify(proposalContentToSave),
         status: status,
         amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
         createdAt: serverTimestamp(),
@@ -712,7 +709,6 @@ function ContractPageContent() {
 
     try {
         await runTransaction(firestore, async (transaction) => {
-            // --- ALL READS FIRST ---
             const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
             const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
             
@@ -722,14 +718,13 @@ function ContractPageContent() {
                 clientCounterSnap = await transaction.get(clientCounterRef);
             }
 
-            // --- ALL CALCULATIONS SECOND ---
             let finalClientId = generatedClientId;
             let newClientNumber;
             if (clientCounterSnap && clientCounterSnap.exists()) {
                 newClientNumber = clientCounterSnap.data().currentId + 1;
                 const year = new Date().getFullYear().toString().slice(-2);
                 finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-            } else if (clientCounterSnap) { // It's a new client, but counter doc doesn't exist
+            } else if (clientCounterSnap) {
                  newClientNumber = 1;
                  const year = new Date().getFullYear().toString().slice(-2);
                  finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
@@ -738,7 +733,6 @@ function ContractPageContent() {
             const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
             const newProposalId = String(newProposalNumber).padStart(10, '0');
 
-            // --- ALL WRITES LAST ---
             if (newClientNumber) {
                 transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
                 setGeneratedClientId(finalClientId);
@@ -760,6 +754,15 @@ function ContractPageContent() {
         setIsGeneratingIds(false);
     }
   };
+  
+    const handleSaveSignature = (data: string) => {
+        setSignatureData(data);
+        toast({
+            title: "Signature Saved",
+            description: "Your signature has been captured and is ready to be included in the final proposal.",
+        });
+        setForceUpdate(v => v + 1); // Force a re-render to update the dialog
+    };
   
   if (!plan || !finalPlanDetails) {
     return (
@@ -831,7 +834,7 @@ function ContractPageContent() {
                 setDialogOpen={setDialogOpen}
                 saveProposal={saveProposal}
                 signatureData={signatureData}
-                onSaveSignature={(data) => setSignatureData(data)}
+                onSaveSignature={handleSaveSignature}
                 onClearSignature={() => setSignatureData(undefined)}
             />
        )}
