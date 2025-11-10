@@ -1115,17 +1115,20 @@ export default function AdminPage() {
                                             <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" />
+                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                     <YAxis 
                                         tickFormatter={(value) => `₱${Number(value) / 1000}k`}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}}
+                                        width={80}
                                     />
                                     <Tooltip 
-                                        contentStyle={{ backgroundColor: 'hsl(var(--background))' }} 
+                                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} 
                                         formatter={(value) => [currencyFormatter.format(Number(value)), "Revenue"]}
+                                        cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }}
                                     />
-                                    <Legend />
-                                    <Area type="monotone" dataKey="Revenue" stroke="hsl(var(--chart-1))" fill="url(#colorRevenue)" />
+                                    <Area type="monotone" dataKey="Revenue" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -1155,14 +1158,13 @@ export default function AdminPage() {
                          <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={stats.clientGrowthData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" />
-                                    <YAxis allowDecimals={false} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-                                    <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} />
-                                    <Line type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} />
+                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                    <Legend wrapperStyle={{paddingTop: '20px'}} />
+                                    <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={false} />
+                                    <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} dot={false} />
+                                    <Line type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>
@@ -1189,13 +1191,12 @@ export default function AdminPage() {
                         <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={stats.clientRetentionData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" />
-                                    <YAxis allowDecimals={false} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="Active" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-                                    <Line type="monotone" dataKey="Inactive" stroke="hsl(var(--destructive))" strokeWidth={2} />
+                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                    <Legend wrapperStyle={{paddingTop: '20px'}} />
+                                    <Line type="monotone" dataKey="Active" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={false} />
+                                    <Line type="monotone" dataKey="Inactive" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>
@@ -1238,13 +1239,12 @@ export default function AdminPage() {
                                                     <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
                                                 </linearGradient>
                                             </defs>
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="month" />
-                                            <YAxis allowDecimals={false} />
-                                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                            <Legend />
-                                            <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fill="url(#colorSent)" />
-                                            <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fill="url(#colorAccepted)" />
+                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                            <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                            <Legend wrapperStyle={{paddingTop: '20px'}} />
+                                            <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fillOpacity={1} fill="url(#colorSent)" />
+                                            <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fillOpacity={1} fill="url(#colorAccepted)" />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </CardContent>
@@ -1296,14 +1296,13 @@ export default function AdminPage() {
                     <CardContent className="h-[300px]">
                        <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={stats.clientGrowthData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                <Legend />
-                                <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-                                <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} />
-                                <Line type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} />
+                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                <Legend wrapperStyle={{paddingTop: '20px'}}/>
+                                <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={false} />
+                                <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} dot={false} />
+                                <Line type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
                             </LineChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -1341,19 +1340,18 @@ export default function AdminPage() {
                                 data={stats.planDistribution}
                                 margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
                             >
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                                <XAxis type="number" allowDecimals={false} />
+                                <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                 <YAxis 
                                     type="category" 
                                     dataKey="name" 
                                     width={200}
-                                    tick={{ fontSize: 12 }}
+                                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                                     axisLine={false}
                                     tickLine={false}
                                 />
                                 <Tooltip 
                                     cursor={{ fill: 'hsl(var(--muted))' }}
-                                    contentStyle={{ backgroundColor: 'hsl(var(--background))' }}
+                                    contentStyle={{ backgroundColor: 'hsl(var(--background))', borderRadius: 'var(--radius)' }}
                                 />
                                 <Bar dataKey="count" name="Subscriptions" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
                             </BarChart>
@@ -1400,13 +1398,12 @@ export default function AdminPage() {
                                         <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                <Legend />
-                                <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fill="url(#colorSent)" />
-                                <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fill="url(#colorAccepted)" />
+                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }}/>
+                                <Legend wrapperStyle={{paddingTop: '20px'}} />
+                                <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fillOpacity={1} fill="url(#colorSent)" />
+                                <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fillOpacity={1} fill="url(#colorAccepted)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -1481,4 +1478,5 @@ export default function AdminPage() {
     
 
     
+
 
