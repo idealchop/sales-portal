@@ -442,7 +442,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             return (
                                 <TableRow key={client.id}>
                                     <TableCell>
-                                        <ClientOverviewDialog client={client} proposal={acceptedProposal} allUsers={users} view="clients">
+                                        <ClientOverviewDialog client={client} proposal={acceptedProposal} allUsers={users} view="clients" isAdmin={isAdmin}>
                                             <div className="font-medium cursor-pointer text-primary hover:underline">{client.companyName}</div>
                                         </ClientOverviewDialog>
                                         <div className="font-mono text-xs text-muted-foreground">ID: {client.id}</div>
@@ -514,7 +514,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                        ) : null}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {client.status === 'active' && (
+                                        {isAdmin && client.status === 'active' && (
                                             <Dialog onOpenChange={(open) => !open && setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '', amount: 0 })}>
                                                 <DialogTrigger asChild>
                                                     <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, planName: subscriptionDetails.planName, planImage: planImage, amount: subscriptionDetails.amount}))}>

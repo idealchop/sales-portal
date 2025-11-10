@@ -281,6 +281,7 @@ export function ClientOverviewDialog({
   allUsers,
   view,
   setActiveView,
+  isAdmin,
 }: {
   children: React.ReactNode;
   client: Client;
@@ -288,6 +289,7 @@ export function ClientOverviewDialog({
   allUsers: UserProfile[];
   view: 'proposals' | 'clients';
   setActiveView?: (view: ActiveView) => void;
+  isAdmin?: boolean;
 }) {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -970,7 +972,7 @@ export function ClientOverviewDialog({
                      <PaymentHistory client={client} proposals={clientProposals} onPaymentConfirm={handleConfirmPayment} />
                  )}
 
-                 {parsedProposalContent && view === 'proposals' && (
+                 {parsedProposalContent && (view === 'proposals' || isAdmin) && (
                     <Dialog>
                         <DialogTrigger asChild>
                              <Card className="cursor-pointer hover:bg-accent transition-colors">
