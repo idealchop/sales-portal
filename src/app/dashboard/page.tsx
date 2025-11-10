@@ -555,7 +555,7 @@ export default function DashboardPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Client</TableHead>
-                                <TableHead>Plan</TableHead>
+                                <TableHead>Plan Type</TableHead>
                                 <TableHead>Monthly Fee</TableHead>
                                 <TableHead>Annual Value</TableHead>
                                 <TableHead>Total Commission (3%)</TableHead>
@@ -563,16 +563,26 @@ export default function DashboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                             {dashboardData.recurringCommissionDetails.length > 0 ? dashboardData.recurringCommissionDetails.map(c => (
+                             {dashboardData.recurringCommissionDetails.length > 0 ? dashboardData.recurringCommissionDetails.map(c => {
+                                const clientTypeMap = {
+                                    household: 'Family Plan',
+                                    sme: 'SME',
+                                    commercial: 'Commercial',
+                                    corporate: 'Corporate',
+                                    enterprise: 'Enterprise'
+                                };
+                                const planCategory = c.clientType ? clientTypeMap[c.clientType] : 'N/A';
+                                return (
                                 <TableRow key={c.id}>
                                     <TableCell>{c.companyName}</TableCell>
-                                    <TableCell>{c.planName}</TableCell>
+                                    <TableCell>{planCategory}</TableCell>
                                     <TableCell>{currencyFormatter.format(c.monthlyFee)}</TableCell>
                                     <TableCell>{currencyFormatter.format(c.annualValue)}</TableCell>
                                     <TableCell>{currencyFormatter.format(c.totalCommission)}</TableCell>
                                     <TableCell className="text-right font-semibold">{currencyFormatter.format(c.monthlyPayout)}</TableCell>
                                 </TableRow>
-                            )) : (
+                                )
+                            }) : (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center">No active recurring subscriptions.</TableCell>
                                 </TableRow>
