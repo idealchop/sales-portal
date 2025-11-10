@@ -9,11 +9,15 @@ import {
   ReactNode,
 } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { useAuth, useFirebase } from '@/firebase'; 
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth, useFirebase, useFirestore } from '@/firebase';
+import type { UserProfile } from '@/lib/definitions';
 
 interface UserContextType {
-  user: User | null;
+  user: (User & Partial<UserProfile>) | null;
   isUserLoading: boolean;
+  isAdmin: boolean;
+  isManager: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -23,25 +27,37 @@ interface UserProviderProps {
 }
 
 export const UserProvider = ({ children }: UserProviderProps) => {
-  // Use the main firebase hook to get both auth and loading state
-  const { auth, isFirebaseLoading } = useFirebase(); 
-  const [user, setUser] = useState<User | null>(null);
-  // User is loading if Firebase is loading OR if we haven't received the first auth state update yet
-  const [isAuthLoading, setIsAuthLoading] = useState(true); 
+  const { auth, isFirebaseLoading } = useFirebase();
+  const firestore = useFirestore();
+  const [user, setUser] = useState<(User & Partial<UserProfile>) | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    // Only subscribe if Firebase is fully loaded and auth is available
     if (!isFirebaseLoading && auth) {
-      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        setUser(firebaseUser);
-        setIsAuthLoading(false); // Auth state has been determined
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+          const userDocRef = doc(firestore, 'sales', firebaseUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            const userProfileData = userDocSnap.data() as UserProfile;
+            setUser({ ...firebaseUser, ...userProfileData });
+          } else {
+            setUser(firebaseUser);
+          }
+        } else {
+          setUser(null);
+        }
+        setIsAuthLoading(false);
       });
       return () => unsubscribe();
     }
-  }, [auth, isFirebaseLoading]); // Rerun when firebase is ready
+  }, [auth, isFirebaseLoading, firestore]);
+
+  const isAdmin = user?.email === 'admin@smartrefill.io';
+  const isManager = user?.role === 'manager';
 
   return (
-    <UserContext.Provider value={{ user, isUserLoading: isFirebaseLoading || isAuthLoading }}>
+    <UserContext.Provider value={{ user, isUserLoading: isFirebaseLoading || isAuthLoading, isAdmin, isManager }}>
       {children}
     </UserContext.Provider>
   );
