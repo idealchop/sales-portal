@@ -3,19 +3,19 @@
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllCommissions } from '@/hooks/use-all-commissions';
 import { useUser } from '@/firebase';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TFooter } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,17 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
@@ -427,7 +438,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                 clientType: client.clientType,
                             };
 
-                            if (acceptedProposal) {
+                           if (acceptedProposal) {
                                 let amount = acceptedProposal.amount || 0;
                                 let planName = acceptedProposal.title || 'Custom Plan';
                                 let billingCycle = 'Monthly';
@@ -710,82 +721,6 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
     );
 };
 
-const CommissionPayoutsTable = ({ commissions, users, clients, proposals }: { commissions: WithId<Commission>[], users: WithId<UserProfile>[], clients: WithId<Client>[], proposals: WithId<Proposal>[] }) => {
-    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-    const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
-    
-    // Create a map from proposalId to its client
-    const proposalClientMap = useMemo(() => {
-        const map = new Map<string, WithId<Client>>();
-        proposals.forEach(proposal => {
-            const client = clients.find(c => c.id === proposal.clientId);
-            if (client) {
-                map.set(proposal.id, client);
-            }
-        });
-        return map;
-    }, [clients, proposals]);
-
-
-    const getClientName = (commission: Commission) => {
-        if (commission.clientName) return commission.clientName;
-        const client = proposalClientMap.get(commission.proposalId);
-        return client ? client.companyName : 'N/A';
-    };
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Commission Payouts</CardTitle>
-                <CardDescription>A log of all commission records across the organization.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Sales Rep</TableHead>
-                            <TableHead>Client</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {commissions.map(commission => {
-                            const salesRep = userMap.get(commission.userId);
-                            const clientName = getClientName(commission);
-                            return (
-                                <TableRow key={commission.id}>
-                                    <TableCell>
-                                        {salesRep ? (
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6">
-                                                    <AvatarImage src={salesRep.photoURL} />
-                                                    <AvatarFallback>{salesRep.displayName?.[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <span className="text-sm">{salesRep.displayName}</span>
-                                            </div>
-                                        ) : 'N/A'}
-                                    </TableCell>
-                                    <TableCell>{clientName}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className={cn("capitalize", commission.status && commissionStatusStyles[commission.status])}>
-                                            {commission.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>{new Date(commission.createdAt).toLocaleDateString()}</TableCell>
-                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    );
-};
-
-
 const CustomBarLabel = (props: any) => {
   const { x, y, width, height, value } = props;
   return (
@@ -814,6 +749,58 @@ const CustomXAxisTick = (props: any) => {
     return null;
 }
 
+type PayoutMonthDetailsDialogProps = {
+  month: string;
+  commissions: WithId<Commission>[];
+  users: WithId<UserProfile>[];
+};
+
+const PayoutMonthDetailsDialog = ({ month, commissions, users }: PayoutMonthDetailsDialogProps) => {
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const totalAmount = commissions.reduce((sum, commission) => sum + commission.amount, 0);
+    const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
+
+    return (
+        <DialogContent className="sm:max-w-3xl">
+            <DialogHeader>
+                <DialogTitle>Payout Details for {month}</DialogTitle>
+                <DialogDescription>Detailed breakdown of commissions and bonuses for this period.</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[50vh] pr-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Sales Rep</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Client</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {commissions.map((commission) => {
+                            const user = userMap.get(commission.userId);
+                            return (
+                                <TableRow key={commission.id}>
+                                    <TableCell>{user?.displayName || 'N/A'}</TableCell>
+                                    <TableCell className="font-semibold">{commission.description || 'Commission'}</TableCell>
+                                    <TableCell>{commission.clientName || 'N/A'}</TableCell>
+                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                    <TFooter>
+                        <TableRow>
+                            <TableCell colSpan={3} className="text-right font-bold text-base">Total Payout</TableCell>
+                            <TableCell className="text-right font-bold text-base">{currencyFormatter.format(totalAmount)}</TableCell>
+                        </TableRow>
+                    </TFooter>
+                </Table>
+            </ScrollArea>
+        </DialogContent>
+    );
+};
+
 
 export default function AdminPage() {
   const { proposals, isLoading: proposalsLoading } = useAllProposals();
@@ -821,8 +808,11 @@ export default function AdminPage() {
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const { commissions, isLoading: commissionsLoading } = useAllCommissions();
   const { isAdmin } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   const [planDistributionPeriod, setPlanDistributionPeriod] = useState('all');
+  const [processingPayouts, setProcessingPayouts] = useState<Record<string, boolean>>({});
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
@@ -1080,6 +1070,74 @@ export default function AdminPage() {
     return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
+  const allPayouts = useMemo(() => {
+    if (isLoading) return [];
+    
+    const commissionsByUserAndMonth: Record<string, Record<string, WithId<Commission>[]>> = {};
+
+    commissions.forEach(commission => {
+        const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
+        const userId = commission.userId;
+        
+        if (!commissionsByUserAndMonth[userId]) {
+            commissionsByUserAndMonth[userId] = {};
+        }
+        if (!commissionsByUserAndMonth[userId][monthKey]) {
+            commissionsByUserAndMonth[userId][monthKey] = [];
+        }
+        commissionsByUserAndMonth[userId][monthKey].push(commission);
+    });
+
+    const processedPayouts: any[] = [];
+    Object.entries(commissionsByUserAndMonth).forEach(([userId, months]) => {
+        Object.entries(months).forEach(([month, monthCommissions]) => {
+            const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
+            const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
+            processedPayouts.push({
+                userId,
+                month,
+                totalAmount,
+                status,
+                commissions: monthCommissions,
+                payoutId: `${userId}-${month}`
+            });
+        });
+    });
+
+    processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+    return processedPayouts;
+}, [commissions, isLoading]);
+
+
+  const handleProcessPayout = async (payoutId: string, commissionsToUpdate: WithId<Commission>[]) => {
+      if (!firestore) return;
+      
+      setProcessingPayouts(prev => ({...prev, [payoutId]: true}));
+      
+      try {
+          const batch = writeBatch(firestore);
+          commissionsToUpdate.forEach(commission => {
+              const commissionRef = doc(firestore, 'commissions', commission.id);
+              batch.update(commissionRef, { status: 'paid' });
+          });
+          await batch.commit();
+
+          toast({
+              title: "Payout Processed",
+              description: "The selected payout has been marked as paid.",
+          });
+      } catch (error) {
+          console.error("Error processing payout:", error);
+          toast({
+              variant: 'destructive',
+              title: "Error",
+              description: "Failed to process payout.",
+          });
+      } finally {
+          setProcessingPayouts(prev => ({...prev, [payoutId]: false}));
+      }
+  };
+
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
 
   if (isLoading) {
@@ -1122,8 +1180,6 @@ export default function AdminPage() {
     );
   };
 
-  const topPlan = stats.planDistribution[0] || null;
-
   return (
     <div className="flex flex-col gap-8">
        <Tabs defaultValue="crm" className="w-full">
@@ -1141,7 +1197,7 @@ export default function AdminPage() {
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                  <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
@@ -1325,6 +1381,19 @@ export default function AdminPage() {
                         </div>
                     </DialogContent>
                 </Dialog>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Sales Team</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.salesReps} Reps</div>
+                        <p className={cn("text-xs text-muted-foreground flex items-center", stats.teamGrowthChange >= 0 ? "text-green-600" : "text-red-600")}>
+                            {stats.teamGrowthChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                            {stats.teamGrowthChange.toFixed(1)}% from last month
+                        </p>
+                    </CardContent>
+                </Card>
             </div>
              <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                 <Card className="lg:col-span-3">
@@ -1485,29 +1554,100 @@ export default function AdminPage() {
             <SalesTeamLeaderboard users={salesUsers} proposals={proposals} />
         </TabsContent>
         <TabsContent value="payroll" className="mt-6 space-y-6">
-             <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                    <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{currencyFormatter.format(stats.totalRevenue)}</div>
-                    <p className="text-xs text-muted-foreground">From all accepted proposals</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-                    <Percent className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.winRate.toFixed(1)}%</div>
-                    <p className="text-xs text-muted-foreground">Based on all sent proposals</p>
-                  </CardContent>
-                </Card>
-            </div>
-            <CommissionPayoutsTable commissions={commissions} users={salesUsers} clients={clients} proposals={proposals} />
+             <Card>
+                <CardHeader>
+                    <CardTitle>Payroll Processing</CardTitle>
+                    <CardDescription>Review and process monthly payouts for the sales team.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Sales Rep</TableHead>
+                                <TableHead>Payout Period</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
+                                <TableHead className="text-center">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center">
+                                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+                                    </TableCell>
+                                </TableRow>
+                            ) : allPayouts.length > 0 ? (
+                                allPayouts.map((payout) => {
+                                    const user = salesUsers.find(u => u.id === payout.userId);
+                                    return (
+                                        <TableRow key={payout.payoutId}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar>
+                                                        <AvatarImage src={user?.photoURL} />
+                                                        <AvatarFallback>{user?.displayName?.[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-medium">{user?.displayName}</p>
+                                                        <p className="text-sm text-muted-foreground">{user?.email}</p>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{payout.month}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={payout.status === 'paid' ? 'success' : 'warning'} className="capitalize">{payout.status}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right font-semibold">
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Button variant="link" className="text-primary p-0 h-auto">{currencyFormatter.format(payout.totalAmount)}</Button>
+                                                    </DialogTrigger>
+                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} users={salesUsers} />
+                                                </Dialog>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                {payout.status === 'pending' ? (
+                                                     <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                          <Button size="sm" disabled={processingPayouts[payout.payoutId]}>
+                                                            {processingPayouts[payout.payoutId] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                                                                Process Payout
+                                                          </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Confirm Payout</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Are you sure you want to mark the {payout.month} payout of <span className="font-bold">{currencyFormatter.format(payout.totalAmount)}</span> for <span className="font-bold">{user?.displayName}</span> as paid? This action cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleProcessPayout(payout.payoutId, payout.commissions)}>
+                                                                    Confirm & Mark as Paid
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                ) : (
+                                                    <span className="text-sm text-muted-foreground italic">Paid</span>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center">
+                                        No payouts to process.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </TabsContent>
       </Tabs>
     </div>
