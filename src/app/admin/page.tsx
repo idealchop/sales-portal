@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -305,7 +305,15 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     const handleUploadPayment = async () => {
         const { clientId, date, file } = paymentUploadState;
         const client = clients.find(c => c.id === clientId);
-        const amount = client?.subscription?.amount || 0;
+        
+        let amount = 0;
+        const acceptedProposal = (proposalsByClient[clientId] || []).find(p => p.status === 'accepted');
+        if (acceptedProposal) {
+            amount = acceptedProposal.amount;
+        } else if (client?.subscription) {
+            amount = client.subscription.amount || 0;
+        }
+
 
         if (!clientId || !amount || !date || !file) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide all required details and a file.' });
@@ -366,8 +374,8 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                         />
                     </div>
                      <Select value={dateFilter} onValueChange={setDateFilter}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by date..." />
+                        <SelectTrigger className="w-auto px-3">
+                           <CalendarDays className="h-4 w-4 text-muted-foreground" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Time</SelectItem>
@@ -375,8 +383,8 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                         </SelectContent>
                     </Select>
                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by status..." />
+                        <SelectTrigger className="w-auto px-3">
+                           <Filter className="h-4 w-4 text-muted-foreground" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Statuses</SelectItem>
