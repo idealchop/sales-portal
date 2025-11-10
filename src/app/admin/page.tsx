@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, LineChart, Line, Sector as RechartsPrimitiveSector } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, LineChart, Line, Sector as RechartsPrimitiveSector, ComposedChart } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub, parseISO } from 'date-fns';
 import Image from 'next/image';
 import {
@@ -818,7 +818,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [] };
+      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
@@ -906,7 +906,7 @@ export default function AdminPage() {
         const monthStart = startOfMonth(date);
         const monthEnd = endOfMonth(date);
         
-        const getValidDate = (timestamp: string | number | undefined) => {
+        const getValidDate = (timestamp: string | number | undefined | Date) => {
             if (!timestamp) return null;
             try {
                 const d = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
@@ -966,6 +966,16 @@ export default function AdminPage() {
         const monthName = format(date, 'MMM');
         const endOfMonthDate = endOfMonth(date);
         
+        const getValidDate = (timestamp: string | number | undefined | Date) => {
+            if (!timestamp) return null;
+            try {
+                const d = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
+                return isNaN(d.getTime()) ? null : d;
+            } catch {
+                return null;
+            }
+        }
+        
         const cumulativeSent = sentProposals.filter(p => {
             const createdAt = getValidDate(p.createdAt);
             return createdAt && createdAt <= endOfMonthDate;
@@ -986,6 +996,13 @@ export default function AdminPage() {
         { name: 'Accepted', value: proposals.filter(p => p.status === 'accepted').length, fill: 'hsl(var(--chart-1))' },
         { name: 'Rejected', value: proposals.filter(p => p.status === 'rejected').length, fill: 'hsl(var(--destructive))' },
     ];
+    
+    const proposalValueByStatus = [
+        { name: 'Draft', value: proposals.filter(p => p.status === 'draft').reduce((sum, p) => sum + p.amount, 0), fill: 'hsl(var(--muted-foreground))' },
+        { name: 'Sent', value: proposals.filter(p => p.status === 'sent').reduce((sum, p) => sum + p.amount, 0), fill: 'hsl(var(--chart-2))' },
+        { name: 'Accepted', value: proposals.filter(p => p.status === 'accepted').reduce((sum, p) => sum + p.amount, 0), fill: 'hsl(var(--chart-1))' },
+        { name: 'Rejected', value: proposals.filter(p => p.status === 'rejected').reduce((sum, p) => sum + p.amount, 0), fill: 'hsl(var(--destructive))' },
+    ];
 
 
     const proposalCountsByRep = proposals.reduce((acc, proposal) => {
@@ -1003,7 +1020,7 @@ export default function AdminPage() {
     }).sort((a, b) => b.proposals - a.proposals);
 
 
-    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData };
+    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1196,33 +1213,106 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                     <DialogContent className="sm:max-w-2xl">
+                     <DialogContent className="sm:max-w-3xl">
                         <DialogHeader>
-                            <DialogTitle>Proposal Funnel Over Time</DialogTitle>
-                            <DialogDescription>Cumulative proposals sent vs. accepted over the last 6 months.</DialogDescription>
+                            <DialogTitle>Proposal Funnel Analysis</DialogTitle>
+                            <DialogDescription>A breakdown of proposal activity, value, and categories.</DialogDescription>
                         </DialogHeader>
-                         <div className="h-[350px] w-full">
-                           <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={stats.proposalFunnelData}>
-                                    <defs>
-                                        <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                        <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" />
-                                    <YAxis allowDecimals={false} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                    <Legend />
-                                    <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fill="url(#colorSent)" />
-                                    <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fill="url(#colorAccepted)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">Proposals Created</CardTitle>
+                                    <CardDescription>New proposals per month.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="h-[250px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={stats.proposalsCreatedHistory}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis dataKey="month" />
+                                            <YAxis allowDecimals={false} />
+                                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                                            <Line type="monotone" dataKey="Proposals Created" stroke="hsl(var(--chart-2))" strokeWidth={2} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">Proposal Value by Status</CardTitle>
+                                    <CardDescription>Total value in each stage.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="h-[250px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={stats.proposalValueByStatus} layout="vertical" margin={{ left: 20 }}>
+                                            <CartesianGrid horizontal={false} />
+                                            <XAxis type="number" tickFormatter={(value) => `₱${Number(value) / 1000}k`} />
+                                            <YAxis type="category" dataKey="name" width={60} axisLine={false} tickLine={false} />
+                                            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} formatter={(value) => [currencyFormatter.format(Number(value)), "Value"]} />
+                                            <Bar dataKey="value" name="Value" radius={[0, 4, 4, 0]} >
+                                                {stats.proposalValueByStatus.map(entry => <Cell key={entry.name} fill={entry.fill} />)}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                            <div className="lg:col-span-2">
+                                <Card>
+                                     <CardHeader>
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <CardTitle className="flex items-center gap-2 text-base">
+                                                    Plan Distribution
+                                                </CardTitle>
+                                                <CardDescription>
+                                                    Popularity in accepted proposals.
+                                                </CardDescription>
+                                            </div>
+                                            <Select value={planDistributionPeriod} onValueChange={setPlanDistributionPeriod}>
+                                                <SelectTrigger className="w-[180px]">
+                                                    <SelectValue placeholder="Select period" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Time</SelectItem>
+                                                    <SelectItem value="12m">Last 12 Months</SelectItem>
+                                                    <SelectItem value="6m">Last 6 Months</SelectItem>
+                                                    <SelectItem value="30d">Last 30 Days</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {stats.planDistribution.length > 0 ? (
+                                            <ResponsiveContainer width="100%" height={300}>
+                                            <BarChart
+                                                layout="vertical"
+                                                data={stats.planDistribution}
+                                                margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                                <XAxis type="number" allowDecimals={false} />
+                                                <YAxis 
+                                                    type="category" 
+                                                    dataKey="name" 
+                                                    width={200}
+                                                    tick={{ fontSize: 12 }}
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                />
+                                                <Tooltip 
+                                                    cursor={{ fill: 'hsl(var(--muted))' }}
+                                                    contentStyle={{ backgroundColor: 'hsl(var(--background))' }}
+                                                />
+                                                <Bar dataKey="count" name="Subscriptions" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
+                                            </BarChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                                                No subscription data available for the selected period.
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
