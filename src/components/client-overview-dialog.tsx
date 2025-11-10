@@ -369,7 +369,7 @@ export function ClientOverviewDialog({
         planName: content.summaryTitle,
         liters: content.totalMonthlyLiters,
         basePrice: content.planBaseCost,
-        totalAmountDue: parseFloat(content.totalAmountDue.replace(/[^0-9.-]+/g, "")),
+        totalAmountDue: parseFloat(String(content.totalAmountDue).replace(/[^0-9.-]+/g, "")),
         billingCycle: content.billingCycleLabel,
         refillFrequency: content.refillFrequency,
         employees: content.employees,
@@ -758,7 +758,7 @@ export function ClientOverviewDialog({
                                             <GlassWater className="h-4 w-4 text-primary" />
                                             <div>
                                                 <p className="text-muted-foreground">Total Liters</p>
-                                                <p className="font-semibold">{subscriptionInfo.liters.toLocaleString()}L / mo</p>
+                                                <p className="font-semibold">{(subscriptionInfo.liters || 0).toLocaleString()}L / mo</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
