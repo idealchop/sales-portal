@@ -52,6 +52,7 @@ export type Client = {
     addons?: string[];
     dateSigned?: string;
   };
+  paymentStatus?: 'Paid' | 'Pending';
 };
 
 export type Proposal = {
@@ -105,4 +106,6 @@ export type Commission = {
   referenceId: string;
   clientName?: string;
 };
+    
+
     

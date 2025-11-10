@@ -33,6 +33,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -217,6 +218,24 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         }
     };
     
+    const handlePaymentStatusChange = async (clientId: string, newStatus: 'Paid' | 'Pending') => {
+        const clientRef = doc(firestore, 'clients', clientId);
+        try {
+            await updateDoc(clientRef, { paymentStatus: newStatus });
+            toast({
+                title: 'Payment Status Updated',
+                description: `Client payment status changed to ${newStatus}.`
+            });
+        } catch (error) {
+            console.error("Error updating payment status:", error);
+            toast({
+                variant: 'destructive',
+                title: "Update Failed",
+                description: "Could not update payment status.",
+            });
+        }
+    };
+    
     return (
         <Card>
             <CardHeader>
@@ -269,7 +288,8 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                     console.warn("Could not parse proposal content for client:", client.id);
                                 }
                             }
-                            const paymentStatus = client.status === 'active' ? 'Paid' : 'Pending';
+                            
+                            const paymentStatus = client.paymentStatus || (client.status === 'active' ? 'Paid' : 'Pending');
 
                             return (
                                 <TableRow key={client.id}>
@@ -285,7 +305,25 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                     </TableCell>
                                     <TableCell>{subscriptionDetails.billingCycle}</TableCell>
                                     <TableCell>
-                                        <Badge variant="outline" className={cn("capitalize", paymentStatusStyles[paymentStatus])}>{paymentStatus}</Badge>
+                                        {isAdmin ? (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Badge variant="outline" className={cn("capitalize cursor-pointer", paymentStatusStyles[paymentStatus])}>
+                                                        {paymentStatus}
+                                                    </Badge>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent>
+                                                    <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Paid')}>
+                                                        Mark as Paid
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Pending')}>
+                                                        Mark as Pending
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        ) : (
+                                            <Badge variant="outline" className={cn("capitalize", paymentStatusStyles[paymentStatus])}>{paymentStatus}</Badge>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className={cn("capitalize", client.status && clientStatusStyles[client.status])}>{client.status || 'N/A'}</Badge>
@@ -898,6 +936,8 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
 

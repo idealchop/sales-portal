@@ -49,40 +49,102 @@
           "description": "Data related to the client's consumption patterns or history (e.g., JSON string)."
         },
         "clientType": {
-            "type": "string",
-            "description": "The type of client, used for bonus calculations.",
-            "enum": ["household", "sme", "commercial", "corporate", "enterprise"]
+          "type": "string",
+          "description": "The type of client, used for bonus calculations.",
+          "enum": [
+            "household",
+            "sme",
+            "commercial",
+            "corporate",
+            "enterprise"
+          ]
         },
         "onboardingStatus": {
-            "type": "array",
-            "description": "An array of objects representing the client's onboarding journey.",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "title": {"type": "string"},
-                    "description": {"type": "string"},
-                    "status": {"type": "string", "enum": ["completed", "pending"]},
-                    "date": {"type": "string", "format": "date-time"},
-                    "providerName": {"type": "string"},
-                    "providerLocation": {"type": "string"}
-                },
-                "required": ["title", "description", "status"]
-            }
+          "type": "array",
+          "description": "An array of objects representing the client's onboarding journey.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "completed",
+                  "pending"
+                ]
+              },
+              "date": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "providerName": {
+                "type": "string"
+              },
+              "providerLocation": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "description",
+              "status"
+            ]
+          }
         },
         "subscription": {
           "type": "object",
           "properties": {
-            "planId": { "type": "string" },
-            "planName": { "type": "string" },
-            "liters": { "type": "number" },
-            "amount": { "type": "number" },
-            "refillFrequency": { "type": "string" },
-            "employees": { "type": "string" },
-            "gallons": { "type": "number" },
-            "inclusions": { "type": "array", "items": { "type": "string" } },
-            "addons": { "type": "array", "items": { "type": "string" } },
-            "dateSigned": { "type": "string", "format": "date-time" }
+            "planId": {
+              "type": "string"
+            },
+            "planName": {
+              "type": "string"
+            },
+            "liters": {
+              "type": "number"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "refillFrequency": {
+              "type": "string"
+            },
+            "employees": {
+              "type": "string"
+            },
+            "gallons": {
+              "type": "number"
+            },
+            "inclusions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "addons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "dateSigned": {
+              "type": "string",
+              "format": "date-time"
+            }
           }
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "The current payment status of the client.",
+          "enum": [
+            "Paid",
+            "Pending"
+          ]
         }
       },
       "required": [
@@ -236,30 +298,30 @@
           "description": "The user's display name."
         },
         "phone": {
-            "type": "string",
-            "description": "The user's mobile phone number."
+          "type": "string",
+          "description": "The user's mobile phone number."
         },
         "role": {
           "type": "string",
           "description": "The user's role (e.g., 'sales', 'admin')."
         },
         "team": {
-            "type": "string",
-            "description": "The sales team the user belongs to."
+          "type": "string",
+          "description": "The sales team the user belongs to."
         },
         "birthday": {
-            "type": "string",
-            "description": "The user's birthday.",
-            "format": "date"
+          "type": "string",
+          "description": "The user's birthday.",
+          "format": "date"
         },
         "photoURL": {
-            "type": "string",
-            "description": "URL of the user's profile picture.",
-            "format": "uri"
+          "type": "string",
+          "description": "URL of the user's profile picture.",
+          "format": "uri"
         },
         "onboardingCompleted": {
-            "type": "boolean",
-            "description": "Flag to indicate if the user has completed the onboarding process."
+          "type": "boolean",
+          "description": "Flag to indicate if the user has completed the onboarding process."
         }
       },
       "required": [
@@ -290,28 +352,42 @@
   },
   "firestore": {
     "/clients/{clientId}": {
-      "schema": { "$ref": "#/entities/Client" },
+      "schema": {
+        "$ref": "#/entities/Client"
+      },
       "description": "Stores client details. Includes client's core information."
     },
     "/clients/{clientId}/proposals/{proposalId}": {
-      "schema": { "$ref": "#/entities/Proposal" },
+      "schema": {
+        "$ref": "#/entities/Proposal"
+      },
       "description": "Stores sales proposals related to a specific client."
     },
     "/sales_materials/{salesMaterialId}": {
-      "schema": { "$ref": "#/entities/SalesMaterial" },
+      "schema": {
+        "$ref": "#/entities/SalesMaterial"
+      },
       "description": "Stores sales material documents and links."
     },
     "/commissions/{commissionId}": {
-      "schema": { "$ref": "#/entities/Commission" },
+      "schema": {
+        "$ref": "#/entities/Commission"
+      },
       "description": "Stores sales commission records."
     },
     "/sales/{userId}": {
-      "schema": { "$ref": "#/entities/UserProfile" },
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
       "description": "Stores sales user profiles. Accessible only to the authenticated user."
     },
     "/counters/{counterId}": {
-      "schema": { "$ref": "#/entities/Counter" },
+      "schema": {
+        "$ref": "#/entities/Counter"
+      },
       "description": "Stores counters for sequential ID generation."
     }
   }
 }
+
+    
