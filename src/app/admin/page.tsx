@@ -475,7 +475,9 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                                      <div className="space-y-4 py-4">
                                                         <Card className="overflow-hidden">
                                                             <div className="relative aspect-video">
-                                                                <Image src={paymentUploadState.planImage} alt={paymentUploadState.planName} fill className="object-cover" />
+                                                                {paymentUploadState.planImage && (
+                                                                    <Image src={paymentUploadState.planImage} alt={paymentUploadState.planName} fill className="object-cover" />
+                                                                )}
                                                             </div>
                                                             <CardHeader>
                                                                 <CardTitle>{paymentUploadState.planName}</CardTitle>
@@ -733,7 +735,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [] };
+      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [] };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
@@ -741,7 +743,6 @@ export default function AdminPage() {
 
     const activeClients = clients.filter(c => c.status === 'active').length;
     const pendingClients = clients.filter(c => c.status === 'pending').length;
-    const inactiveClients = clients.filter(c => c.status === 'inactive').length;
     const totalClients = clients.length;
     const salesReps = salesUsers.length;
 
@@ -760,16 +761,10 @@ export default function AdminPage() {
         enterprise: 'Enterprise'
     };
     
-    const clientStatusDistribution = [
+    const clientStatusChartData = [
       { name: 'Active', value: activeClients, fill: 'hsl(var(--chart-1))' },
       { name: 'Pending', value: pendingClients, fill: 'hsl(var(--chart-4))' },
-      { name: 'Inactive', value: inactiveClients, fill: 'hsl(var(--chart-2))' },
-    ];
-    
-    const clientStatusChartData = [
-      { name: 'Active', value: activeClients },
-      { name: 'Pending', value: pendingClients },
-      { name: 'Inactive', value: inactiveClients },
+      { name: 'Inactive', value: clients.filter(c => c.status === 'inactive').length, fill: 'hsl(var(--chart-2))' },
     ];
 
     const planCounts: { [key: string]: number } = {};
@@ -829,7 +824,7 @@ export default function AdminPage() {
     }).sort((a, b) => b.proposals - a.proposals);
 
 
-    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep };
+    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -911,7 +906,7 @@ export default function AdminPage() {
                   </CardContent>
                 </Card>
             </div>
-             <div className="grid grid-cols-1 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>Client Pipeline</CardTitle>
@@ -925,7 +920,7 @@ export default function AdminPage() {
                           <YAxis allowDecimals={false} />
                           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
                           <Bar dataKey="value" name="Clients" radius={[4, 4, 0, 0]}>
-                            {stats.clientStatusDistribution.map((entry, index) => (
+                            {stats.clientStatusChartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                           </Bar>
@@ -933,10 +928,7 @@ export default function AdminPage() {
                       </ResponsiveContainer>
                     </CardContent>
                 </Card>
-            </div>
-            <div className="flex flex-col gap-6">
-                <ClientDataTable clients={clients} users={salesUsers} proposals={proposals} />
-                 <Card>
+                <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BarChart3 />
@@ -978,6 +970,9 @@ export default function AdminPage() {
                         )}
                     </CardContent>
                 </Card>
+            </div>
+            <div className="flex flex-col gap-6">
+                <ClientDataTable clients={clients} users={salesUsers} proposals={proposals} />
             </div>
         </TabsContent>
         <TabsContent value="sales-team" className="mt-6 space-y-6">
