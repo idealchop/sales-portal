@@ -29,7 +29,20 @@ export function useAllClients() {
       (querySnapshot) => {
         const allClients: WithId<Client>[] = [];
         querySnapshot.forEach(doc => {
-            allClients.push({ id: doc.id, ...doc.data() } as WithId<Client>);
+            const data = doc.data() as Omit<Client, 'id'>;
+            let createdAtString: string | undefined = undefined;
+            if (data.createdAt) {
+                if (typeof (data.createdAt as any).toDate === 'function') {
+                    createdAtString = (data.createdAt as any).toDate().toISOString();
+                } else if (typeof data.createdAt === 'string') {
+                    createdAtString = data.createdAt;
+                }
+            }
+            allClients.push({ 
+                id: doc.id, 
+                ...data,
+                createdAt: createdAtString
+            } as WithId<Client>);
         });
         setClients(allClients);
         setError(null);

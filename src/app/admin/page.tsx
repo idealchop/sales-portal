@@ -22,7 +22,7 @@ import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, LineChart, Line, Sector as RechartsPrimitiveSector } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub, parseISO } from 'date-fns';
 import Image from 'next/image';
 import {
   Dialog,
@@ -215,10 +215,12 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
         const monthSet = new Set<string>();
         clients.forEach(client => {
             if (client.createdAt) {
-                const clientDate = new Date(client.createdAt);
-                if (!isNaN(clientDate.getTime())) { // Check if the date is valid
-                  monthSet.add(format(clientDate, 'MMMM yyyy'));
-                }
+                try {
+                    const clientDate = typeof client.createdAt === 'string' ? parseISO(client.createdAt) : new Date(client.createdAt);
+                    if (!isNaN(clientDate.getTime())) { // Check if the date is valid
+                      monthSet.add(format(clientDate, 'MMMM yyyy'));
+                    }
+                } catch {}
             }
         });
         return Array.from(monthSet).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
@@ -226,7 +228,16 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
 
     const filteredClients = useMemo(() => {
         return clients.filter(client => {
-            const dateMatch = dateFilter === 'all' || (client.createdAt && format(new Date(client.createdAt), 'MMMM yyyy') === dateFilter);
+            let dateMatch = dateFilter === 'all';
+            if (dateFilter !== 'all' && client.createdAt) {
+                try {
+                    const clientDate = typeof client.createdAt === 'string' ? parseISO(client.createdAt) : new Date(client.createdAt);
+                    dateMatch = format(clientDate, 'MMMM yyyy') === dateFilter;
+                } catch {
+                    dateMatch = false;
+                }
+            }
+            
             const statusMatch = statusFilter === 'all' || client.status === statusFilter;
 
             const searchMatch = searchQuery === '' || 
@@ -851,7 +862,7 @@ export default function AdminPage() {
              startDate = new Date(0);
         }
         filteredProposals = acceptedProposals.filter(p => {
-             const createdAt = p.createdAt ? new Date(p.createdAt) : null;
+             const createdAt = p.createdAt ? (typeof p.createdAt === 'string' ? parseISO(p.createdAt) : new Date(p.createdAt)) : null;
              return createdAt && createdAt >= startDate;
         });
     }
@@ -894,32 +905,52 @@ export default function AdminPage() {
         const monthName = format(date, 'MMM');
         const monthStart = startOfMonth(date);
         const monthEnd = endOfMonth(date);
-
-        const newClients = clients.filter(c => c.createdAt && isWithinInterval(new Date(c.createdAt), { start: monthStart, end: monthEnd })).length;
         
-        const endOfMonthPendingClients = clients.filter(c => {
-          if (!c.createdAt) return false;
-          const createdAt = new Date(c.createdAt);
-          return c.status === 'pending' && createdAt <= monthEnd;
+        const getValidDate = (timestamp: string | number | undefined) => {
+            if (!timestamp) return null;
+            try {
+                const d = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
+                return isNaN(d.getTime()) ? null : d;
+            } catch {
+                return null;
+            }
+        }
+
+        const newClients = clients.filter(c => {
+          const createdAt = getValidDate(c.createdAt);
+          return createdAt && isWithinInterval(createdAt, { start: monthStart, end: monthEnd });
         }).length;
         
-        const endOfMonthRejectedClients = Array.from(new Set(rejectedProposals.filter(p => p.createdAt && new Date(p.createdAt) <= monthEnd).map(p => p.clientId))).length;
-
+        const endOfMonthPendingClients = clients.filter(c => {
+          const createdAt = getValidDate(c.createdAt);
+          return c.status === 'pending' && createdAt && createdAt <= monthEnd;
+        }).length;
+        
+        const endOfMonthRejectedProposals = rejectedProposals.filter(p => {
+          const createdAt = getValidDate(p.createdAt);
+          return createdAt && createdAt <= monthEnd;
+        });
+        const endOfMonthRejectedClients = new Set(endOfMonthRejectedProposals.map(p => p.clientId)).size;
 
         const endOfMonthActiveClients = clients.filter(c => {
-          if (!c.createdAt) return false;
-          const createdAt = new Date(c.createdAt);
-          return c.status === 'active' && createdAt <= monthEnd;
+          const createdAt = getValidDate(c.createdAt);
+          return c.status === 'active' && createdAt && createdAt <= monthEnd;
         }).length;
 
         const endOfMonthInactiveClients = clients.filter(c => {
-          if (!c.createdAt) return false;
-          const createdAt = new Date(c.createdAt);
-          return c.status === 'inactive' && createdAt <= monthEnd;
+          const createdAt = getValidDate(c.createdAt);
+          return c.status === 'inactive' && createdAt && createdAt <= monthEnd;
         }).length;
 
-        const proposalsCreated = proposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd })).length;
-        const proposalsAccepted = acceptedProposals.filter(p => p.createdAt && isWithinInterval(new Date(p.createdAt), { start: monthStart, end: monthEnd }));
+        const proposalsCreated = proposals.filter(p => {
+            const createdAt = getValidDate(p.createdAt);
+            return createdAt && isWithinInterval(createdAt, { start: monthStart, end: monthEnd });
+        }).length;
+        
+        const proposalsAccepted = acceptedProposals.filter(p => {
+            const createdAt = getValidDate(p.createdAt);
+            return createdAt && isWithinInterval(createdAt, { start: monthStart, end: monthEnd });
+        });
         const monthlyRevenue = proposalsAccepted.reduce((sum, p) => sum + p.amount, 0);
 
         return { month: monthName, newClients, proposalsCreated, proposalsAccepted: proposalsAccepted.length, pendingClients: endOfMonthPendingClients, rejectedClients: endOfMonthRejectedClients, revenue: monthlyRevenue, active: endOfMonthActiveClients, inactive: endOfMonthInactiveClients };
@@ -933,8 +964,18 @@ export default function AdminPage() {
     const proposalFunnelData = Array.from({ length: 6 }).map((_, i) => {
         const date = subMonths(now, 5 - i);
         const monthName = format(date, 'MMM');
-        const cumulativeSent = sentProposals.filter(p => p.createdAt && new Date(p.createdAt) <= endOfMonth(date)).length;
-        const cumulativeAccepted = acceptedProposals.filter(p => p.createdAt && new Date(p.createdAt) <= endOfMonth(date)).length;
+        const endOfMonthDate = endOfMonth(date);
+        
+        const cumulativeSent = sentProposals.filter(p => {
+            const createdAt = getValidDate(p.createdAt);
+            return createdAt && createdAt <= endOfMonthDate;
+        }).length;
+        
+        const cumulativeAccepted = acceptedProposals.filter(p => {
+            const createdAt = getValidDate(p.createdAt);
+            return createdAt && createdAt <= endOfMonthDate;
+        }).length;
+        
         return { month: monthName, sent: cumulativeSent, accepted: cumulativeAccepted };
     });
 
