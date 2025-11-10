@@ -328,9 +328,14 @@ export function ClientOverviewDialog({
 
 
  const subscriptionInfo = useMemo(() => {
+    let activeProposal = selectedProposal;
+    if (client.status === 'active' && !activeProposal) {
+        activeProposal = clientProposals.find(p => p.status === 'accepted');
+    }
+
     let content;
     try {
-        content = selectedProposal?.content ? JSON.parse(selectedProposal.content) : null;
+        content = activeProposal?.content ? JSON.parse(activeProposal.content) : null;
     } catch {
         content = null;
     }
@@ -398,7 +403,7 @@ export function ClientOverviewDialog({
       };
     }
     return null;
-  }, [selectedProposal, client.subscription, client.clientType]);
+  }, [selectedProposal, client.subscription, client.clientType, client.status, clientProposals]);
 
   useEffect(() => {
     if (open && firestore && client.id) {
@@ -506,11 +511,7 @@ export function ClientOverviewDialog({
         // Set the subscription object on the client
         await updateDoc(clientRef, {
             status: 'active',
-            paymentHistory: arrayUnion({
-              date: new Date().toISOString(),
-              amount: subscriptionInfo.totalAmountDue,
-              proofUrl: downloadURL
-            }),
+            paymentStatus: 'Paid',
             subscription: {
               ...subscriptionInfo.rawContent,
               dateSigned: new Date().toISOString()
@@ -1021,3 +1022,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
