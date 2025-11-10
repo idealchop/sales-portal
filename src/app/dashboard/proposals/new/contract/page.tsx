@@ -705,7 +705,7 @@ function ContractPageContent() {
           status: 'pending',
           createdAt: serverTimestamp(),
         };
-        await setDoc(clientRef, newClientData);
+        await setDoc(clientRef, newClientData, { merge: true });
       }
       
       const proposalId = generatedProposalId;

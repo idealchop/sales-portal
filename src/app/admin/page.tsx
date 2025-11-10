@@ -851,8 +851,8 @@ export default function AdminPage() {
              startDate = new Date(0);
         }
         filteredProposals = acceptedProposals.filter(p => {
-             const createdAt = new Date(p.createdAt);
-             return createdAt >= startDate;
+             const createdAt = p.createdAt ? new Date(p.createdAt) : null;
+             return createdAt && createdAt >= startDate;
         });
     }
 
@@ -898,19 +898,22 @@ export default function AdminPage() {
         const newClients = clients.filter(c => c.createdAt && isWithinInterval(new Date(c.createdAt), { start: monthStart, end: monthEnd })).length;
         
         const endOfMonthPendingClients = clients.filter(c => {
+          if (!c.createdAt) return false;
           const createdAt = new Date(c.createdAt);
           return c.status === 'pending' && createdAt <= monthEnd;
         }).length;
         
-        const endOfMonthRejectedClients = Array.from(new Set(rejectedProposals.filter(p => new Date(p.createdAt) <= monthEnd).map(p => p.clientId))).length;
+        const endOfMonthRejectedClients = Array.from(new Set(rejectedProposals.filter(p => p.createdAt && new Date(p.createdAt) <= monthEnd).map(p => p.clientId))).length;
 
 
         const endOfMonthActiveClients = clients.filter(c => {
+          if (!c.createdAt) return false;
           const createdAt = new Date(c.createdAt);
           return c.status === 'active' && createdAt <= monthEnd;
         }).length;
 
         const endOfMonthInactiveClients = clients.filter(c => {
+          if (!c.createdAt) return false;
           const createdAt = new Date(c.createdAt);
           return c.status === 'inactive' && createdAt <= monthEnd;
         }).length;
@@ -930,8 +933,8 @@ export default function AdminPage() {
     const proposalFunnelData = Array.from({ length: 6 }).map((_, i) => {
         const date = subMonths(now, 5 - i);
         const monthName = format(date, 'MMM');
-        const cumulativeSent = sentProposals.filter(p => new Date(p.createdAt) <= endOfMonth(date)).length;
-        const cumulativeAccepted = acceptedProposals.filter(p => new Date(p.createdAt) <= endOfMonth(date)).length;
+        const cumulativeSent = sentProposals.filter(p => p.createdAt && new Date(p.createdAt) <= endOfMonth(date)).length;
+        const cumulativeAccepted = acceptedProposals.filter(p => p.createdAt && new Date(p.createdAt) <= endOfMonth(date)).length;
         return { month: monthName, sent: cumulativeSent, accepted: cumulativeAccepted };
     });
 
