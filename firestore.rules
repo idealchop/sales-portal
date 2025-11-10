@@ -15,7 +15,7 @@ service cloud.firestore {
       return request.auth.token.email == 'admin@smartrefill.io';
     }
 
-    // Allow sales users to read other sales user profiles for display purposes
+    // Sales users can read other profiles for display purposes. Admin can read all.
     match /sales/{userId} {
       allow read: if isSignedIn();
       allow create, update: if isOwner(userId);
@@ -27,15 +27,16 @@ service cloud.firestore {
 
     match /sales_materials/{materialId} {
       allow get: if true; // Public read for all materials
-      allow list, write: if false; // TBD: admin-only write access
+      allow list, write: if isAdmin(); 
     }
 
-    // Commissions can only be read/written by the user they belong to.
+    // Admin can read all commissions. Users can only read/write their own.
     match /commissions/{commissionId} {
-        allow read, write: if isSignedIn() && resource.data.userId == request.auth.uid;
+        allow read: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+        allow write: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // Any signed-in user can read client documents.
+    // Clients can be read by any signed in user.
     // Writes are restricted to the owner OR an admin.
     match /clients/{clientId} {
       allow read: if isSignedIn();
@@ -43,11 +44,10 @@ service cloud.firestore {
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
       allow delete: if false;
       
-      // Any signed-in user can read proposals, but only the owner can write.
+      // Admin can read all proposals. Users can only read/write their own.
       match /proposals/{proposalId} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn() && isOwner(request.resource.data.userId);
-        allow update: if isSignedIn() && isOwner(resource.data.userId);
+        allow create, update: if isSignedIn() && isOwner(request.resource.data.userId);
         allow delete: if false;
       }
       
@@ -55,6 +55,11 @@ service cloud.firestore {
       match /remarks/{remarkId} {
         allow read, create: if isSignedIn();
       }
+    }
+    
+    // This allows the admin to perform a collectionGroup query on 'proposals'
+    match /{path=**}/proposals/{proposalId} {
+      allow list: if isSignedIn() && isAdmin();
     }
   }
 }
