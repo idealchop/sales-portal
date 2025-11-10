@@ -24,6 +24,7 @@ import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '
 import { WithId } from '@/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,14 @@ const paymentStatusStyles: { [key: string]: string } = {
 const commissionStatusStyles: { [key: string]: string } = {
   paid: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+};
+
+const planImages: { [key: string]: string } = {
+  sme: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_SME.png?alt=media&token=e6beeb7b-3ed1-4e51-87cf-1b65b49041a1",
+  commercial: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_Business.png?alt=media&token=b8536b3c-5199-460a-8612-003c99139d7c",
+  corporate: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_Enterprise.png?alt=media&token=29e0d6a7-41f7-4511-a8b6-0369989421bd",
+  enterprise: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63",
+  household: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FSmartRefill_Individual.png?alt=media&token=090d07c4-848a-4cd6-aab6-f7a5909ea839",
 };
 
 
@@ -179,12 +188,16 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         amount: string;
         date: Date | undefined;
         file: File | null;
+        planName: string;
+        planImage: string;
     }>({
         clientId: '',
         isUploading: false,
         amount: '',
         date: new Date(),
         file: null,
+        planName: '',
+        planImage: '',
     });
     
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -265,7 +278,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     const handleUploadPayment = async () => {
         const { clientId, amount, date, file } = paymentUploadState;
         if (!clientId || !amount || !date || !file) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide amount, date, and a file.' });
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a file.' });
             return;
         }
 
@@ -291,7 +304,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
             toast({ title: 'Payment Uploaded', description: 'The proof of payment has been added to the client\'s history.' });
             
             // Close dialog by resetting state
-            setPaymentUploadState({ clientId: '', isUploading: false, amount: '', date: new Date(), file: null });
+            setPaymentUploadState({ clientId: '', isUploading: false, amount: '', date: new Date(), file: null, planName: '', planImage: '' });
 
         } catch (error) {
             console.error('Error uploading payment:', error);
@@ -361,14 +374,16 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 };
                             } else if (client.subscription) {
                                 subscriptionDetails = {
-                                    planName: client.subscription.planName,
-                                    amount: client.subscription.amount,
+                                    planName: client.subscription.planName || 'N/A',
+                                    amount: client.subscription.amount || 0,
                                     billingCycle: (client.subscription as any).billingCycle || 'Monthly',
                                 };
                             }
                             
                             const paymentStatus = client.paymentStatus || (client.status === 'active' ? 'Paid' : 'Pending');
                             const clientTypeLabel = client.clientType ? clientTypeMap[client.clientType] : '';
+                            const planImage = (client.clientType && planImages[client.clientType]) || planImages.sme;
+
 
                             return (
                                 <TableRow key={client.id}>
@@ -446,9 +461,9 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                     </TableCell>
                                     <TableCell className="text-right">
                                         {client.status === 'active' && (
-                                            <Dialog onOpenChange={(open) => !open && setPaymentUploadState({ clientId: '', isUploading: false, amount: '', date: new Date(), file: null })}>
+                                            <Dialog onOpenChange={(open) => !open && setPaymentUploadState({ clientId: '', isUploading: false, amount: '', date: new Date(), file: null, planName: '', planImage: '' })}>
                                                 <DialogTrigger asChild>
-                                                    <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, amount: String(subscriptionDetails.amount)}))}>
+                                                    <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, amount: String(subscriptionDetails.amount), planName: subscriptionDetails.planName, planImage: planImage}))}>
                                                         <Upload className="mr-2 h-4 w-4" /> Upload
                                                     </Button>
                                                 </DialogTrigger>
@@ -457,7 +472,16 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                                         <DialogTitle>Upload Payment Proof</DialogTitle>
                                                         <DialogDescription>For {client.companyName}'s next billing cycle of {currencyFormatter.format(subscriptionDetails.amount)}.</DialogDescription>
                                                     </DialogHeader>
-                                                    <div className="space-y-4 py-4">
+                                                     <div className="space-y-4 py-4">
+                                                        <Card className="overflow-hidden">
+                                                            <div className="relative aspect-video">
+                                                                <Image src={paymentUploadState.planImage} alt={paymentUploadState.planName} fill className="object-cover" />
+                                                            </div>
+                                                            <CardHeader>
+                                                                <CardTitle>{paymentUploadState.planName}</CardTitle>
+                                                                <CardDescription>{currencyFormatter.format(parseFloat(paymentUploadState.amount))}</CardDescription>
+                                                            </CardHeader>
+                                                        </Card>
                                                         <div className="space-y-2">
                                                             <Label>Payment Date</Label>
                                                             <Popover>
@@ -1063,5 +1087,7 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
