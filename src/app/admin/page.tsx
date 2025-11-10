@@ -293,7 +293,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 }
                                 subscriptionDetails = {
                                     planName: planNameFromContent,
-                                    amount: acceptedProposal.amount, // Use the reliable numeric amount
+                                    amount: acceptedProposal.amount,
                                     billingCycle: billingCycleFromContent
                                 };
                             } else if (client.subscription) {
@@ -351,9 +351,10 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                        {client.status === 'active' || client.status === 'pending' ? (
                                             <Dialog>
                                                 <DialogTrigger asChild>
-                                                    <Button variant="ghost" className="w-full h-auto p-0 flex items-center justify-start gap-2 group">
-                                                         <Progress value={progress} className="w-24 h-2 group-hover:bg-muted-foreground/20" />
-                                                    </Button>
+                                                    <button className="flex flex-col items-start gap-1 w-full text-left">
+                                                         <Progress value={progress} className="w-24 h-2 bg-muted" />
+                                                         <p className="text-xs text-muted-foreground">Click to update</p>
+                                                    </button>
                                                 </DialogTrigger>
                                                 <DialogContent>
                                                     <DialogHeader>
@@ -394,7 +395,7 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     const leaderboardData = useMemo(() => {
-        return users.map(user => {
+        const usersWithData = users.map(user => {
             const userProposals = proposals.filter(p => p.userId === user.id);
             const acceptedProposals = userProposals.filter(p => p.status === 'accepted');
             const sentProposals = userProposals.filter(p => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status));
@@ -407,7 +408,32 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
                 totalRevenue,
                 winRate
             };
-        }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+        });
+
+        // Add admin user if not present
+        const adminUser = users.find(u => u.email === 'admin@smartrefill.io');
+        if (adminUser) {
+            const adminProposals = proposals.filter(p => p.userId === adminUser.id);
+             const acceptedAdminProposals = adminProposals.filter(p => p.status === 'accepted');
+            const sentAdminProposals = adminProposals.filter(p => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status));
+            const totalAdminRevenue = acceptedAdminProposals.reduce((sum, p) => sum + p.amount, 0);
+            const adminWinRate = sentAdminProposals.length > 0 ? (acceptedAdminProposals.length / sentAdminProposals.length) * 100 : 0;
+            
+            const adminIndex = usersWithData.findIndex(u => u.id === adminUser.id);
+            const adminData = {
+                ...adminUser,
+                proposalsWon: acceptedAdminProposals.length,
+                totalRevenue: totalAdminRevenue,
+                winRate: adminWinRate
+            };
+            if (adminIndex > -1) {
+                usersWithData[adminIndex] = adminData;
+            } else {
+                 usersWithData.push(adminData);
+            }
+        }
+
+        return usersWithData.sort((a, b) => b.totalRevenue - a.totalRevenue);
     }, [users, proposals]);
 
     return (
