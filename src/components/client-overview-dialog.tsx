@@ -945,7 +945,7 @@ export function ClientOverviewDialog({
                      <PaymentHistory client={client} proposals={clientProposals} onPaymentConfirm={handleConfirmPayment} />
                  )}
 
-                 {parsedProposalContent && (
+                 {parsedProposalContent && view === 'proposals' && (
                     <Dialog>
                         <DialogTrigger asChild>
                              <Card className="cursor-pointer hover:bg-accent transition-colors">
