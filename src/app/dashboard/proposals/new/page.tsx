@@ -164,9 +164,16 @@ export default function NewProposalPage() {
     return `${baseUrl}?${params.toString()}`;
   }
   
-  const isNextDisabled = clientSelectionType === 'existing' 
-    ? !selectedClientId
-    : (isNewClient && (!companyName || !contactName || !contactEmail || !contactPhone || !address || !!potentialDuplicate));
+  const isNextDisabled = useMemo(() => {
+    if (clientSelectionType === 'existing') {
+        return !selectedClientId;
+    }
+    if (clientSelectionType === 'new') {
+        const requiredFieldsEmpty = !companyName || !contactName || !contactEmail || !contactPhone || !address;
+        return requiredFieldsEmpty || !!potentialDuplicate;
+    }
+    return true; // Disabled if no selection type is chosen
+  }, [clientSelectionType, selectedClientId, companyName, contactName, contactEmail, contactPhone, address, potentialDuplicate]);
     
   const stationMarkers = waterStations.map(station => ({
     position: station.location,
