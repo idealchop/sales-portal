@@ -4,7 +4,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -911,8 +911,7 @@ export default function AdminPage() {
         return { month: monthName, newClients, proposalsCreated, proposalsAccepted, pendingClients: endOfMonthPendingClients };
     });
     
-    const clientGrowthData = monthlyData.map(d => ({ month: d.month, "New Clients": d.newClients }));
-    const pendingClientsHistory = monthlyData.map(d => ({ month: d.month, "Pending Clients": d.pendingClients }));
+    const clientGrowthData = monthlyData.map(d => ({ month: d.month, "New Clients": d.newClients, "Pending Clients": d.pendingClients }));
     const proposalsCreatedHistory = monthlyData.map(d => ({ month: d.month, "Proposals Created": d.proposalsCreated }));
     
     const proposalFunnelData = Array.from({ length: 6 }).map((_, i) => {
@@ -947,7 +946,7 @@ export default function AdminPage() {
     }).sort((a, b) => b.proposals - a.proposals);
 
 
-    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, pendingClientsHistory, proposalsCreatedHistory };
+    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient, planDistribution, clientStatusChartData, proposalFunnelData, proposalsByRep, clientGrowthData, proposalStatusData, proposalsCreatedHistory };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1010,24 +1009,27 @@ export default function AdminPage() {
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:border-primary transition-colors">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
+                                <CardTitle className="text-sm font-medium">Client Pipeline</CardTitle>
                                 <Users className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{stats.activeClients}</div>
-                                <p className="text-xs text-muted-foreground">Currently subscribed clients</p>
+                                <div className="text-2xl font-bold">{stats.activeClients} Active</div>
+                                <p className="text-xs text-muted-foreground">{stats.pendingClients} pending</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>Active Clients Growth</DialogTitle>
-                            <DialogDescription>A detailed look at your new client acquisition over the last 6 months.</DialogDescription>
+                             <div className="flex items-center gap-2">
+                                <LineChartIcon className="h-6 w-6 text-primary"/>
+                                <DialogTitle>Client Pipeline Growth</DialogTitle>
+                            </div>
+                            <DialogDescription>A detailed look at new and pending clients over the last 6 months.</DialogDescription>
                         </DialogHeader>
                         <div className="h-[350px] w-full">
                              <ResponsiveContainer width="100%" height="100%">
@@ -1037,42 +1039,10 @@ export default function AdminPage() {
                                     <YAxis allowDecimals={false} />
                                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
                                     <Legend />
-                                    <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} />
+                                    <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} name="New Active Clients" />
+                                    <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} name="Total Pending Clients" />
                                 </LineChart>
                             </ResponsiveContainer>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-                
-                 <Dialog>
-                    <DialogTrigger asChild>
-                        <Card className="cursor-pointer hover:border-primary transition-colors">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Pending Clients</CardTitle>
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stats.pendingClients}</div>
-                                <p className="text-xs text-muted-foreground">Awaiting activation</p>
-                            </CardContent>
-                        </Card>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl">
-                         <DialogHeader>
-                            <DialogTitle>Pending Clients Over Time</DialogTitle>
-                            <DialogDescription>Number of clients in the 'pending' state at the end of each month.</DialogDescription>
-                        </DialogHeader>
-                         <div className="h-[350px] w-full">
-                           <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={stats.pendingClientsHistory}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="month" />
-                              <YAxis allowDecimals={false} />
-                              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                              <Legend />
-                              <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} />
-                            </LineChart>
-                          </ResponsiveContainer>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1157,7 +1127,7 @@ export default function AdminPage() {
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Client Pipeline</CardTitle>
+                        <CardTitle>Client Funnel Stage</CardTitle>
                         <CardDescription>Number of clients in each stage.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
