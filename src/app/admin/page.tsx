@@ -1246,8 +1246,8 @@ export default function AdminPage() {
                                             <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                             <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
                                             <Legend wrapperStyle={{paddingTop: '20px'}} />
-                                            <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fillOpacity={1} fill="url(#colorSent)" />
-                                            <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fillOpacity={1} fill="url(#colorAccepted)" />
+                                            <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" strokeWidth={2} fillOpacity={1} fill="url(#colorSent)" />
+                                            <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorAccepted)" />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </CardContent>
@@ -1408,8 +1408,8 @@ export default function AdminPage() {
                                 <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }}/>
                                 <Legend wrapperStyle={{paddingTop: '20px'}} />
-                                <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" fillOpacity={1} fill="url(#colorSent)" />
-                                <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" fillOpacity={1} fill="url(#colorAccepted)" />
+                                <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" strokeWidth={2} fillOpacity={1} fill="url(#colorSent)" />
+                                <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorAccepted)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -1488,3 +1488,6 @@ export default function AdminPage() {
 
 
 
+
+
+    
