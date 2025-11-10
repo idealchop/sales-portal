@@ -293,7 +293,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 }
                                 subscriptionDetails = {
                                     planName: planNameFromContent,
-                                    amount: acceptedProposal.amount,
+                                    amount: acceptedProposal.amount, // Use the reliable numeric amount
                                     billingCycle: billingCycleFromContent
                                 };
                             } else if (client.subscription) {
