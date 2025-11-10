@@ -72,19 +72,21 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Organization-wide overview of sales, clients, and team performance.
-        </p>
-      </div>
-
        <Tabs defaultValue="crm">
-        <TabsList>
-          <TabsTrigger value="crm"><UsersRound /> CRM</TabsTrigger>
-          <TabsTrigger value="sales-team"><Users /> Sales Team</TabsTrigger>
-          <TabsTrigger value="payroll"><CreditCard /> Payroll</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+              <TabsList>
+                <TabsTrigger value="crm"><UsersRound /> CRM</TabsTrigger>
+                <TabsTrigger value="sales-team"><Users /> Sales Team</TabsTrigger>
+                <TabsTrigger value="payroll"><CreditCard /> Payroll</TabsTrigger>
+              </TabsList>
+            </div>
+             <p className="text-muted-foreground text-sm">
+                Organization-wide overview
+            </p>
+        </div>
+
         <TabsContent value="crm" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
                 <Card>
