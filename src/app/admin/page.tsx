@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, TrendingUp, Percent, ShieldCheck, CreditCard, UsersRound, Trophy, Award } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, TrendingUp, Percent, ShieldCheck, CreditCard, UsersRound, Trophy, Award, Activity } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -88,7 +88,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     }, [proposals]);
 
     const getOnboardingProgress = (client: Client) => {
-        if (client.status !== 'active' || !client.onboardingStatus) return 0;
+        if (!client.onboardingStatus || client.onboardingStatus.length === 0) return 0;
         const completedSteps = client.onboardingStatus.filter(step => step.status === 'completed').length;
         return (completedSteps / client.onboardingStatus.length) * 100;
     };
@@ -113,7 +113,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                         {clients.map(client => {
                             const clientProposals = proposalsByClient[client.id] || [];
                             const latestProposal = clientProposals[0];
-                            const salesRep = latestProposal ? userMap.get(latestProposal.userId) : null;
+                            const salesRep = latestProposal ? userMap.get(latestProposal.userId) : userMap.get(client.userId);
                             const progress = getOnboardingProgress(client);
                             return (
                                 <ClientOverviewDialog key={client.id} client={client} proposal={latestProposal} allUsers={users} view="clients">
@@ -312,19 +312,23 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0 };
+      return { totalRevenue: 0, activeClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, totalProposals: 0, proposalPerClient: 0 };
     }
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
     const totalRevenue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
 
     const activeClients = clients.filter(c => c.status === 'active').length;
+    const pendingClients = clients.filter(c => c.status === 'pending').length;
+    const totalClients = clients.length;
     const salesReps = salesUsers.length;
 
     const sentProposalsCount = proposals.filter(p => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status)).length;
     const winRate = sentProposalsCount > 0 ? (acceptedProposals.length / sentProposalsCount) * 100 : 0;
+    const totalProposals = proposals.length;
+    const proposalPerClient = totalClients > 0 ? totalProposals / totalClients : 0;
 
-    return { totalRevenue, activeClients, salesReps, winRate };
+    return { totalRevenue, activeClients, salesReps, winRate, pendingClients, totalProposals, proposalPerClient };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -366,6 +370,36 @@ export default function AdminPage() {
                   <CardContent>
                     <div className="text-2xl font-bold">{stats.activeClients}</div>
                     <p className="text-xs text-muted-foreground">Currently subscribed clients</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Pending Clients</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.pendingClients}</div>
+                    <p className="text-xs text-muted-foreground">Awaiting activation</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Proposals</CardTitle>
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalProposals}</div>
+                    <p className="text-xs text-muted-foreground">Proposals created across all clients</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Proposals per Client</CardTitle>
+                    <Activity className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.proposalPerClient.toFixed(2)}</div>
+                    <p className="text-xs text-muted-foreground">Average proposals per client</p>
                   </CardContent>
                 </Card>
             </div>
@@ -415,3 +449,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
