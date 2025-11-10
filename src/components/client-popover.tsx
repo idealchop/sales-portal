@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -45,10 +46,6 @@ export function ClientPopover({
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage
-                src={undefined}
-                alt={client.contactName}
-              />
               <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(client.contactName)}</AvatarFallback>
             </Avatar>
             <div className="grid gap-1">
@@ -99,3 +96,5 @@ export function ClientPopover({
     </Popover>
   );
 }
+
+    

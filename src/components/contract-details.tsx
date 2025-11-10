@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -131,8 +130,8 @@ interface ContractDetailsProps {
     finalPlanDetails: FinalPlanDetails;
     isSigned: boolean;
     signatureData?: string;
-    onSaveSignature: (dataUrl: string) => void;
-    onClearSignature: () => void;
+    onSaveSignature?: (dataUrl: string) => void;
+    onClearSignature?: () => void;
 }
 
 export function ContractDetails({
@@ -486,7 +485,7 @@ export function ContractDetails({
                                 <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
                                     <Image src={source.signature} alt="Client Signature" width={300} height={150} className="object-contain" />
                                 </div>
-                            ) : !isSigned ? (
+                            ) : !isSigned && onSaveSignature && onClearSignature ? (
                                 <SignaturePad 
                                     signatureData={signatureData}
                                     onSave={onSaveSignature}
@@ -504,3 +503,5 @@ export function ContractDetails({
         </div>
     );
 }
+
+    

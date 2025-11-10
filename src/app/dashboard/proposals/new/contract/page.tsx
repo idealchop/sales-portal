@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -602,8 +601,9 @@ function ContractPageContent() {
         contactPhone,
         address,
         clientType,
+        signature: signatureData, // Include signature here
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -617,28 +617,26 @@ function ContractPageContent() {
       });
       return;
     }
-
+  
     setIsSaving(true);
     let finalClientId = generatedClientId;
-
+  
     try {
       // Step 1: Ensure client ID is present
-      if (!finalClientId && existingClientId) {
-        finalClientId = existingClientId;
-      }
-
       if (!finalClientId) {
-        toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
-        setIsSaving(false);
-        return;
+        if (existingClientId) {
+          finalClientId = existingClientId;
+        } else {
+          toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
+          setIsSaving(false);
+          return;
+        }
       }
-
+  
       const clientRef = doc(firestore, 'clients', finalClientId);
-
+  
       // Step 2: Create or update the client document *first*.
-      if (existingClientId) {
-        await updateDoc(clientRef, { userId: user.uid });
-      } else {
+      if (!existingClientId) {
         const newClientData = {
           id: finalClientId,
           userId: user.uid,
@@ -662,7 +660,8 @@ function ContractPageContent() {
         return;
       }
       
-      const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, clientId: finalClientId, proposalId, signature };
+      const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature };
+      
       const newProposalData = {
         id: proposalId,
         clientId: finalClientId,
@@ -677,13 +676,13 @@ function ContractPageContent() {
       
       const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
       await setDoc(proposalRef, newProposalData, { merge: true });
-
+  
       toast({
         title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
         description: `Your proposal for ${companyName} has been successfully saved.`,
       });
       router.push('/dashboard/proposals');
-
+  
     } catch (error) {
       console.error("Error saving proposal:", error);
       const permissionError = new FirestorePermissionError({
@@ -692,7 +691,7 @@ function ContractPageContent() {
         requestResourceData: 'Sensitive data omitted',
       });
       errorEmitter.emit('permission-error', permissionError);
-
+  
       if (!(error instanceof FirestorePermissionError)) {
         toast({
           variant: "destructive",
@@ -1070,4 +1069,4 @@ export default function ContractPage() {
     )
 }
 
-
+    

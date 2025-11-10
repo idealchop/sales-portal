@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Image from 'next/image';
@@ -293,9 +292,13 @@ export function ClientOverviewDialog({
     if (!proposalToParse?.content) return null;
     try {
         const content = JSON.parse(proposalToParse.content);
-        // Find the full proposal from the state to get the paymentProofUrl
+        // Find the full proposal from the state to get the paymentProofUrl and signature
         const fullProposal = clientProposals.find(p => p.id === proposalToParse.id);
-        return { ...content, paymentProofUrl: fullProposal?.paymentProofUrl };
+        return { 
+            ...content, 
+            paymentProofUrl: fullProposal?.paymentProofUrl,
+            signature: content.signature || fullProposal?.content.includes('"signature":') ? JSON.parse(fullProposal.content).signature : undefined
+        };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
         return null;
@@ -574,7 +577,6 @@ export function ClientOverviewDialog({
                  <Card>
                     <CardContent className="p-6 flex items-start gap-6">
                          <Avatar className="h-24 w-24 border">
-                            <AvatarImage src={undefined} alt={contactInfo.name} />
                             <AvatarFallback className="text-3xl bg-primary text-primary-foreground">{getInitials(contactInfo.name)}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-2 flex-1">
@@ -903,3 +905,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
