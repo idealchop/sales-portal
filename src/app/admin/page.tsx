@@ -455,13 +455,9 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                                 <DialogContent className="sm:max-w-md">
                                                     <DialogHeader>
                                                         <DialogTitle>Upload Payment Proof</DialogTitle>
-                                                        <DialogDescription>For {client.companyName}'s next billing cycle.</DialogDescription>
+                                                        <DialogDescription>For {client.companyName}'s next billing cycle of {currencyFormatter.format(subscriptionDetails.amount)}.</DialogDescription>
                                                     </DialogHeader>
                                                     <div className="space-y-4 py-4">
-                                                        <div className="space-y-2">
-                                                            <Label htmlFor="payment-amount">Payment Amount</Label>
-                                                            <Input id="payment-amount" type="number" placeholder="Enter amount" value={paymentUploadState.amount} onChange={(e) => setPaymentUploadState(prev => ({ ...prev, amount: e.target.value }))} />
-                                                        </div>
                                                         <div className="space-y-2">
                                                             <Label>Payment Date</Label>
                                                             <Popover>
@@ -1067,3 +1063,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
