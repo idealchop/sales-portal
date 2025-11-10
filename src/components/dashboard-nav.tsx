@@ -15,21 +15,37 @@ import {
   CircleDollarSign,
   Settings,
   Megaphone,
+  ShieldCheck
 } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/proposals', icon: FileText, label: 'Proposals' },
-  { href: '/dashboard/materials', icon: BookCopy, label: 'Materials' },
-  { href: '/dashboard/content-studio', icon: Megaphone, label: 'Content Studio' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['sales', 'manager', 'admin'] },
+  { href: '/dashboard/proposals', icon: FileText, label: 'Proposals', roles: ['sales', 'manager', 'admin'] },
+  { href: '/dashboard/materials', icon: BookCopy, label: 'Materials', roles: ['sales', 'manager', 'admin'] },
+  { href: '/dashboard/content-studio', icon: Megaphone, label: 'Content Studio', roles: ['sales', 'manager', 'admin'] },
+  { href: '/admin', icon: ShieldCheck, label: 'Admin', roles: ['admin'] },
 ];
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const { user, isUserLoading, isAdmin, isManager } = useUser();
+
+  const userRoles = [
+    'sales',
+    ...(isAdmin ? ['admin'] : []),
+    ...(isManager ? ['manager'] : []),
+  ];
+
+  if (isUserLoading) {
+    return <p>Loading...</p>
+  }
 
   return (
     <SidebarMenu className="p-2">
-      {navItems.map((item) => (
+      {navItems
+        .filter(item => item.roles.some(role => userRoles.includes(role)))
+        .map((item) => (
         <SidebarMenuItem key={item.href}>
           <SidebarMenuButton
             asChild
