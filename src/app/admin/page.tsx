@@ -307,8 +307,8 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
     const handleUploadPayment = async () => {
         const { clientId, date, file, amount } = paymentUploadState;
         
-        if (!clientId || !amount || !date || !file) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide all required details and a file.' });
+        if (!clientId || !file || !date || amount <= 0) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide all required details, a file, and ensure amount is greater than zero.' });
             return;
         }
 
@@ -408,7 +408,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                 ? client.onboardingStatus
                                 : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
                             
-                            let subscriptionDetails = {
+                           let subscriptionDetails = {
                                 planName: 'N/A',
                                 amount: 0,
                                 billingCycle: 'N/A'
@@ -417,22 +417,24 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             if (acceptedProposal) {
                                 let planNameFromContent = 'Custom Plan';
                                 let billingCycleFromContent = 'Monthly';
-                                let amountFromContent = 0;
+                                let amountFromContent = acceptedProposal.amount;
 
                                 if (acceptedProposal.content) {
                                     try {
                                         const content = JSON.parse(acceptedProposal.content);
                                         planNameFromContent = content.summaryTitle || 'Custom Plan';
                                         billingCycleFromContent = content.billingCycleLabel || 'Monthly';
-                                        const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
-                                        if (!isNaN(parsedAmount)) {
-                                          amountFromContent = parsedAmount;
+                                        if (amountFromContent <= 0) {
+                                          const parsedAmount = parseFloat(String(content.totalAmountDue || '0').replace(/[^0-9.-]+/g, ""));
+                                          if (!isNaN(parsedAmount)) {
+                                            amountFromContent = parsedAmount;
+                                          }
                                         }
                                     } catch (e) { console.warn("Could not parse proposal content for client:", client.id); }
                                 }
                                 
                                 subscriptionDetails = {
-                                    amount: acceptedProposal.amount || amountFromContent,
+                                    amount: amountFromContent,
                                     planName: planNameFromContent,
                                     billingCycle: billingCycleFromContent,
                                 };
@@ -459,7 +461,6 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                         <div className="font-mono text-xs text-muted-foreground">ID: {client.id}</div>
                                         <div className="space-y-1 mt-2">
                                              <h4 className="font-semibold text-sm">{clientTypeLabel ? `${clientTypeLabel} - ${subscriptionDetails.planName}` : subscriptionDetails.planName}</h4>
-                                            <p className="font-bold text-lg">{currencyFormatter.format(subscriptionDetails.amount)}</p>
                                             <Badge variant="outline">{subscriptionDetails.billingCycle}</Badge>
                                         </div>
                                     </TableCell>
@@ -1151,6 +1152,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 
