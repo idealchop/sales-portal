@@ -108,97 +108,101 @@ const BonusCard = ({ icon, title, value, progress, goal, description, children }
 )
 
 const DashboardSkeleton = () => (
-    <div className="flex flex-col gap-8">
-      {/* Header */}
-      <div>
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-96 mt-2" />
-      </div>
+  <div className="space-y-6">
+    {/* Header */}
+    <div className="space-y-2">
+      <Skeleton className="h-8 w-64" />
+      <Skeleton className="h-4 w-96" />
+    </div>
 
-      {/* Commission Stats */}
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-40" />
-              <Skeleton className="h-3 w-32 mt-2" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Charts and Materials */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-64 mt-1" />
+    {/* Commission Stats */}
+    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      {[...Array(4)].map((_, i) => (
+        <Card key={i}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <Skeleton className="h-[250px] w-full" />
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-3 w-32 mt-2" />
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-4 w-48 mt-1" />
-          </CardHeader>
-          <Skeleton className="aspect-video w-full" />
-          <CardContent className="pt-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4 mt-1" />
-          </CardContent>
-          <CardFooter>
-            <Skeleton className="h-9 w-full" />
-          </CardFooter>
-        </Card>
-      </div>
+      ))}
+    </div>
+    
+    <div className="w-full flex justify-center items-center py-10">
+      <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+    </div>
 
-      {/* Proposal Snapshot */}
+    {/* Charts and Materials */}
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
       <Card>
-        <CardHeader className='flex flex-row items-center justify-between'>
-          <div>
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-4 w-64 mt-1" />
-          </div>
-          <Skeleton className="h-9 w-32" />
-        </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card><CardContent className="p-6"><Skeleton className="h-32 w-32 mx-auto rounded-full" /></CardContent></Card>
-          <Card className="lg:col-span-2"><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
-          <Card><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
-        </CardContent>
-      </Card>
-
-      {/* Recent Proposals Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-56 mt-1" />
-          </div>
-          <Skeleton className="h-9 w-36" />
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64 mt-1" />
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-2">
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-                <Skeleton className="h-6 w-20 rounded-full" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-            ))}
-          </div>
+          <Skeleton className="h-[250px] w-full" />
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-48 mt-1" />
+        </CardHeader>
+        <Skeleton className="aspect-video w-full" />
+        <CardContent className="pt-4">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4 mt-1" />
+        </CardContent>
+        <CardFooter>
+          <Skeleton className="h-9 w-full" />
+        </CardFooter>
+      </Card>
     </div>
+
+    {/* Proposal Snapshot */}
+    <Card>
+      <CardHeader className='flex flex-row items-center justify-between'>
+        <div>
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-64 mt-1" />
+        </div>
+        <Skeleton className="h-9 w-32" />
+      </CardHeader>
+      <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card><CardContent className="p-6"><Skeleton className="h-32 w-32 mx-auto rounded-full" /></CardContent></Card>
+        <Card className="lg:col-span-2"><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
+        <Card><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
+      </CardContent>
+    </Card>
+
+    {/* Recent Proposals Table */}
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-56 mt-1" />
+        </div>
+        <Skeleton className="h-9 w-36" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-2">
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  </div>
 )
 
 export default function DashboardPage() {
@@ -683,15 +687,12 @@ export default function DashboardPage() {
                             </Table>
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold mb-2">Recurring Commission Explained</h3>
-                        <ul className="space-y-4">
+                        <h3 className="text-lg font-semibold mb-2">Payout Schedule</h3>
+                        <ul className="space-y-3">
                             {payoutTimeline.map((item) => (
-                                <li key={item.term} className="flex items-start gap-3">
-                                    <CalendarDays className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                    <div>
-                                        <p className="font-semibold">{item.term}</p>
-                                        <p className="text-sm text-muted-foreground">{item.schedule}</p>
-                                    </div>
+                                <li key={item.term}>
+                                    <p className="font-semibold text-sm">{item.term}</p>
+                                    <p className="text-xs text-muted-foreground">{item.schedule}</p>
                                 </li>
                             ))}
                         </ul>
@@ -1065,5 +1066,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
