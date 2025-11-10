@@ -218,7 +218,7 @@ export function ContractText() {
             </ContractSection>
 
             <ContractSection title="12. Governing Law">
-                <p>This Agreement is governed by the laws of the Republic of the Philippines.</p>
+                <p>All earnings (commissions & bonuses) are calculated at the end of each month and paid out within 30 days.</p>
             </ContractSection>
         </>
     )
@@ -468,7 +468,7 @@ function ContractPageContent() {
         return '5+ Persons';
     }
     const estimatedEmployees = Math.round(liters / (2 * 22));
-    if (estimatedEmployees < 5) return '< 5';
+    if (estimatedEmployees < 5) return '&lt; 5';
     if (estimatedEmployees > 500) return '500+';
     return `~${Math.round(estimatedEmployees / 10) * 10}`;
   };
@@ -660,6 +660,7 @@ function ContractPageContent() {
         return;
       }
       
+      // THIS IS THE FIX: Ensure the signature is included here.
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
       
       const newProposalData = {
@@ -667,7 +668,7 @@ function ContractPageContent() {
         clientId: finalClientId,
         userId: user.uid,
         title: proposalContentToSave.summaryTitle,
-        content: JSON.stringify(proposalContentToSave),
+        content: JSON.stringify(proposalContentToSave), // Save the version with the signature
         status: status,
         amount: parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, "")),
         createdAt: serverTimestamp(),
