@@ -11,6 +11,10 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return request.auth.token.email == 'admin@smartrefill.io';
+    }
+
     // Allow sales users to read other sales user profiles for display purposes
     match /sales/{userId} {
       allow read: if isSignedIn();
@@ -31,11 +35,12 @@ service cloud.firestore {
         allow read, write: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // Any signed-in user can read client documents, but only the owner can write.
+    // Any signed-in user can read client documents.
+    // Writes are restricted to the owner OR an admin.
     match /clients/{clientId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
-      allow update: if isSignedIn() && isOwner(resource.data.userId);
+      allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
       allow delete: if false;
       
       // Any signed-in user can read proposals, but only the owner can write.
