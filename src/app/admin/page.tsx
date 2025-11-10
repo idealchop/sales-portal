@@ -4,7 +4,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -822,15 +822,34 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [] };
+      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0 };
     }
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const lastMonthStart = startOfMonth(subMonths(now, 1));
+    const lastMonthEnd = endOfMonth(lastMonthStart);
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
     const rejectedProposals = proposals.filter(p => p.status === 'rejected');
     const totalRevenue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
 
+    const revenueThisMonth = acceptedProposals.filter(p => isWithinInterval(parseISO(p.createdAt), { start: currentMonthStart, end: now })).reduce((sum, p) => sum + p.amount, 0);
+    const revenueLastMonth = acceptedProposals.filter(p => isWithinInterval(parseISO(p.createdAt), { start: lastMonthStart, end: lastMonthEnd })).reduce((sum, p) => sum + p.amount, 0);
+    const revenueChange = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : revenueThisMonth > 0 ? 100 : 0;
+
+    const newClientsThisMonth = clients.filter(c => c.createdAt && isWithinInterval(parseISO(c.createdAt), { start: currentMonthStart, end: now })).length;
+    const newClientsLastMonth = clients.filter(c => c.createdAt && isWithinInterval(parseISO(c.createdAt), { start: lastMonthStart, end: lastMonthEnd })).length;
+    const newClientsChange = newClientsLastMonth > 0 ? ((newClientsThisMonth - newClientsLastMonth) / newClientsLastMonth) * 100 : newClientsThisMonth > 0 ? 100 : 0;
+
     const activeClients = clients.filter(c => c.status === 'active').length;
     const inactiveClients = clients.filter(c => c.status === 'inactive').length;
+    const churnedClients = clients.filter(c => c.status === 'inactive' && c.updatedAt && isWithinInterval(parseISO(c.updatedAt), { start: currentMonthStart, end: now })).length;
+
+    const newSalesRepsThisMonth = salesUsers.filter(u => u.createdAt && isWithinInterval(parseISO(u.createdAt), { start: currentMonthStart, end: now })).length;
+    const newSalesRepsLastMonth = salesUsers.filter(u => u.createdAt && isWithinInterval(parseISO(u.createdAt), { start: lastMonthStart, end: lastMonthEnd })).length;
+    const teamGrowthChange = newSalesRepsLastMonth > 0 ? ((newSalesRepsThisMonth - newSalesRepsLastMonth) / newSalesRepsLastMonth) * 100 : newSalesRepsThisMonth > 0 ? 100 : 0;
+
+
     const pendingClients = clients.filter(c => c.status === 'pending').length;
     const rejectedClientIds = new Set(rejectedProposals.map(p => p.clientId));
     const rejectedClients = rejectedClientIds.size;
@@ -852,7 +871,6 @@ export default function AdminPage() {
         enterprise: 'Enterprise'
     };
     
-    const now = new Date();
     let filteredProposals = acceptedProposals;
     if (planDistributionPeriod !== 'all') {
         let startDate: Date;
@@ -1024,7 +1042,7 @@ export default function AdminPage() {
     }).sort((a, b) => b.proposals - a.proposals);
 
 
-    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus };
+    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
 
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1098,7 +1116,10 @@ export default function AdminPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{currencyFormatter.format(stats.totalRevenue)}</div>
-                                <p className="text-xs text-muted-foreground">From all accepted proposals</p>
+                                <p className={cn("text-xs text-muted-foreground flex items-center", stats.revenueChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                    {stats.revenueChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                    {stats.revenueChange.toFixed(1)}% from last month
+                                </p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
@@ -1106,36 +1127,69 @@ export default function AdminPage() {
                         <DialogHeader>
                              <div className="flex items-center gap-2">
                                 <TrendingUp className="h-6 w-6 text-primary"/>
-                                <DialogTitle>Revenue Growth</DialogTitle>
+                                <DialogTitle>Revenue Deep Dive</DialogTitle>
                             </div>
-                            <DialogDescription>A detailed look at revenue generated over the last 6 months.</DialogDescription>
+                            <DialogDescription>A detailed look at key revenue and sales activity metrics.</DialogDescription>
                         </DialogHeader>
-                        <div className="h-[350px] w-full">
-                           <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={stats.revenueHistory}>
-                                    <defs>
-                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                    <YAxis 
-                                        tickFormatter={(value) => `₱${Number(value) / 1000}k`}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}}
-                                        width={80}
-                                    />
-                                    <Tooltip 
-                                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} 
-                                        formatter={(value) => [currencyFormatter.format(Number(value)), "Revenue"]}
-                                        cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }}
-                                    />
-                                    <Area type="monotone" dataKey="Revenue" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                        <div className="grid grid-cols-1 gap-6 py-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">Revenue Growth (6 Months)</CardTitle>
+                                </CardHeader>
+                                <CardContent className="h-[250px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={stats.revenueHistory}>
+                                            <defs>
+                                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                            <YAxis tickFormatter={(value) => `₱${Number(value) / 1000}k`} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} width={80} />
+                                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} formatter={(value) => [currencyFormatter.format(Number(value)), "Revenue"]} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                            <Area type="monotone" dataKey="Revenue" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Proposals Created</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="h-[250px]">
+                                         <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={stats.proposalsCreatedHistory}>
+                                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                                <Line type="monotone" dataKey="Proposals Created" stroke="hsl(var(--chart-2))" strokeWidth={2} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </CardContent>
+                                </Card>
+                                 <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Proposal Funnel</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="h-[250px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={stats.proposalFunnelData}>
+                                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                                <Legend wrapperStyle={{paddingTop: '20px'}} />
+                                                <Line type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" strokeWidth={2} />
+                                                <Line type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" strokeWidth={2} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </CardContent>
+                                </Card>
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1143,12 +1197,15 @@ export default function AdminPage() {
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:border-primary transition-colors">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Client Funnel Stage</CardTitle>
+                                <CardTitle className="text-sm font-medium">New Clients</CardTitle>
                                 <Users className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{stats.activeClients} Active</div>
-                                <p className="text-xs text-muted-foreground">{stats.pendingClients} pending, {stats.rejectedClients} rejected</p>
+                                <p className={cn("text-xs text-muted-foreground flex items-center", stats.newClientsChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                     {stats.newClientsChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                    {stats.newClientsChange.toFixed(1)}% from last month
+                                </p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
@@ -1194,12 +1251,12 @@ export default function AdminPage() {
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Client Retention</CardTitle>
+                                <CardTitle className="text-sm font-medium">Client Churn</CardTitle>
                                 <HeartCrack className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{stats.activeClients} Active</div>
-                                <p className="text-xs text-muted-foreground">{stats.inactiveClients} inactive</p>
+                                <div className="text-2xl font-bold">{stats.churnedClients} This Month</div>
+                                <p className="text-xs text-muted-foreground">{stats.inactiveClients} total inactive clients</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
@@ -1242,7 +1299,10 @@ export default function AdminPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{stats.salesReps} Reps</div>
-                                <p className="text-xs text-muted-foreground">Total sales representatives</p>
+                                <p className={cn("text-xs text-muted-foreground flex items-center", stats.teamGrowthChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                     {stats.teamGrowthChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                    {stats.teamGrowthChange.toFixed(1)}% from last month
+                                </p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
@@ -1523,6 +1583,7 @@ export default function AdminPage() {
 
 
     
+
 
 
 
