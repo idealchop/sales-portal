@@ -41,6 +41,11 @@ const clientStatusStyles: { [key: string]: string } = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 
+const paymentStatusStyles: { [key: string]: string } = {
+    Paid: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+    Pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+};
+
 const commissionStatusStyles: { [key: string]: string } = {
   paid: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
@@ -145,6 +150,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     const { isAdmin } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
     const proposalsByClient = useMemo(() => {
         return proposals.reduce((acc, p) => {
@@ -222,7 +228,9 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                     <TableHeader>
                         <TableRow>
                             <TableHead>Client</TableHead>
-                            <TableHead>Sales Rep</TableHead>
+                            <TableHead>Plan</TableHead>
+                            <TableHead>Payment Schedule</TableHead>
+                            <TableHead>Payment Status</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Onboarding</TableHead>
                         </TableRow>
@@ -230,32 +238,54 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                     <TableBody>
                         {clients.map(client => {
                             const clientProposals = proposalsByClient[client.id] || [];
-                            const latestProposal = clientProposals[0];
-                            const salesRep = latestProposal ? userMap.get(latestProposal.userId) : userMap.get(client.userId);
+                            const acceptedProposal = clientProposals.find(p => p.status === 'accepted');
                             const progress = getOnboardingProgress(client.onboardingStatus);
                             
                             const onboardingStepsToUse = (client.onboardingStatus && client.onboardingStatus.length > 0)
                                 ? client.onboardingStatus
                                 : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
                             
+                            let subscriptionDetails = {
+                                planName: 'N/A',
+                                amount: 0,
+                                billingCycle: 'N/A'
+                            };
+
+                            if (client.subscription) {
+                                subscriptionDetails = {
+                                    planName: client.subscription.planName,
+                                    amount: client.subscription.amount,
+                                    billingCycle: client.subscription.refillFrequency, // This might need adjustment
+                                };
+                            } else if (acceptedProposal?.content) {
+                                try {
+                                    const content = JSON.parse(acceptedProposal.content) as any;
+                                    subscriptionDetails = {
+                                        planName: content.summaryTitle || 'Custom Plan',
+                                        amount: parseFloat(String(content.totalAmountDue).replace(/[^0-9.-]+/g, "")),
+                                        billingCycle: content.billingCycleLabel || 'Monthly'
+                                    };
+                                } catch (e) {
+                                    console.warn("Could not parse proposal content for client:", client.id);
+                                }
+                            }
+                            const paymentStatus = client.status === 'active' ? 'Paid' : 'Pending';
+
                             return (
                                 <TableRow key={client.id}>
                                     <TableCell>
-                                        <ClientOverviewDialog client={client} proposal={latestProposal} allUsers={users} view="clients">
+                                        <ClientOverviewDialog client={client} proposal={acceptedProposal} allUsers={users} view="clients">
                                             <div className="font-medium cursor-pointer text-primary hover:underline">{client.companyName}</div>
                                         </ClientOverviewDialog>
                                         <div className="text-sm text-muted-foreground">{client.contactName}</div>
                                     </TableCell>
                                     <TableCell>
-                                        {salesRep ? (
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6">
-                                                    <AvatarImage src={salesRep.photoURL} />
-                                                    <AvatarFallback>{salesRep.displayName?.[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <span className="text-sm">{salesRep.displayName}</span>
-                                            </div>
-                                        ) : 'N/A'}
+                                        <div className="font-medium">{subscriptionDetails.planName}</div>
+                                        <div className="text-sm text-muted-foreground">{currencyFormatter.format(subscriptionDetails.amount)}</div>
+                                    </TableCell>
+                                    <TableCell>{subscriptionDetails.billingCycle}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className={cn("capitalize", paymentStatusStyles[paymentStatus])}>{paymentStatus}</Badge>
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className={cn("capitalize", client.status && clientStatusStyles[client.status])}>{client.status || 'N/A'}</Badge>
@@ -868,6 +898,8 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
 
