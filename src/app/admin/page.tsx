@@ -1173,7 +1173,6 @@ export default function AdminPage() {
                                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                     <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                    <Legend wrapperStyle={{paddingTop: '20px'}} />
                                     <Area type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorNewClients)" />
                                     <Area type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} fillOpacity={1} fill="url(#colorPending)" />
                                     <Area type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} fillOpacity={1} fill="url(#colorRejected)" />
@@ -1312,40 +1311,6 @@ export default function AdminPage() {
                 </Dialog>
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
-                         <CardTitle>Client Funnel Growth</CardTitle>
-                         <CardDescription>Client status trends over the last 6 months.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                       <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={stats.clientGrowthData}>
-                                 <defs>
-                                    <linearGradient id="colorNewClients" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                    </linearGradient>
-                                    <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
-                                    </linearGradient>
-                                     <linearGradient id="colorRejected" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.1}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                
-                                <Area type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorNewClients)" />
-                                <Area type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} fillOpacity={1} fill="url(#colorPending)" />
-                                <Area type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} fillOpacity={1} fill="url(#colorRejected)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
                 <Card>
                     <CardHeader>
                         <div className="flex justify-between items-start">
@@ -1526,6 +1491,7 @@ export default function AdminPage() {
 
 
     
+
 
 
 
