@@ -1,8 +1,8 @@
+
 "use client"
 
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
-import { motion } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
@@ -15,7 +15,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
+      "inline-flex h-auto items-center justify-center rounded-full bg-muted p-1 text-muted-foreground",
       className
     )}
     {...props}
@@ -26,25 +26,15 @@ TabsList.displayName = TabsPrimitive.List.displayName
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+>(({ className, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "relative inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-primary-foreground",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm",
       className
     )}
     {...props}
-  >
-    {props["data-state"] === "active" && (
-        <motion.span
-            layoutId="bubble"
-            className="absolute inset-0 z-10 bg-primary"
-            style={{ borderRadius: 4 }}
-            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-        />
-    )}
-    <span className="relative z-20 flex items-center gap-2">{children}</span>
-  </TabsPrimitive.Trigger>
+  />
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
@@ -64,3 +54,5 @@ const TabsContent = React.forwardRef<
 TabsContent.displayName = TabsPrimitive.Content.displayName
 
 export { Tabs, TabsList, TabsTrigger, TabsContent }
+
+    

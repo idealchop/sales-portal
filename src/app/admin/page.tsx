@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -73,13 +74,19 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col gap-8">
        <Tabs defaultValue="crm">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-              <TabsList>
-                <TabsTrigger value="crm"><UsersRound /> CRM</TabsTrigger>
-                <TabsTrigger value="sales-team"><Users /> Sales Team</TabsTrigger>
-                <TabsTrigger value="payroll"><CreditCard /> Payroll</TabsTrigger>
+              <TabsList className="bg-muted p-1 rounded-full">
+                <TabsTrigger value="crm" className="rounded-full gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <UsersRound /> CRM
+                </TabsTrigger>
+                <TabsTrigger value="sales-team" className="rounded-full gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Users /> Sales Team
+                </TabsTrigger>
+                <TabsTrigger value="payroll" className="rounded-full gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <CreditCard /> Payroll
+                </TabsTrigger>
               </TabsList>
             </div>
              <p className="text-muted-foreground text-sm">
@@ -176,3 +183,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
