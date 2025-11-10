@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -1011,7 +1010,7 @@ export default function AdminPage() {
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                  <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
@@ -1099,51 +1098,18 @@ export default function AdminPage() {
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Proposals</CardTitle>
-                                <FileText className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stats.totalProposals}</div>
-                                <p className="text-xs text-muted-foreground">Proposals created across all clients</p>
-                            </CardContent>
-                        </Card>
-                    </DialogTrigger>
-                     <DialogContent className="sm:max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Proposals Created Over Time</DialogTitle>
-                            <DialogDescription>Number of new proposals created each month for the last 6 months.</DialogDescription>
-                        </DialogHeader>
-                         <div className="h-[350px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={stats.proposalsCreatedHistory}>
-                                  <CartesianGrid strokeDasharray="3 3" />
-                                  <XAxis dataKey="month" />
-                                  <YAxis allowDecimals={false} />
-                                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-                                  <Legend />
-                                  <Bar dataKey="Proposals Created" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Card className="cursor-pointer hover:border-primary transition-colors">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Proposals per Client</CardTitle>
+                                <CardTitle className="text-sm font-medium">Proposal Funnel</CardTitle>
                                 <Activity className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{stats.proposalPerClient.toFixed(2)}</div>
-                                <p className="text-xs text-muted-foreground">Average proposals per client</p>
+                                <div className="text-2xl font-bold">{stats.winRate.toFixed(1)}%</div>
+                                <p className="text-xs text-muted-foreground">Win rate from {stats.proposalsSent} proposals</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
                      <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>Proposal Conversion Funnel</DialogTitle>
+                            <DialogTitle>Proposal Funnel Over Time</DialogTitle>
                             <DialogDescription>Cumulative proposals sent vs. accepted over the last 6 months.</DialogDescription>
                         </DialogHeader>
                          <div className="h-[350px] w-full">
@@ -1363,3 +1329,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
