@@ -160,11 +160,15 @@ function PaymentHistory({ client, proposals, onPaymentConfirm }: { client: Clien
     
     const getFormattedDate = (dateValue: string | { toDate: () => Date; }) => {
         if (!dateValue) return "Invalid Date";
-        if (typeof dateValue === 'string') {
-            return new Date(dateValue).toLocaleDateString();
-        }
-        if (typeof dateValue.toDate === 'function') {
-            return dateValue.toDate().toLocaleDateString();
+        try {
+          if (typeof dateValue === 'string') {
+              return new Date(dateValue).toLocaleDateString();
+          }
+          if (typeof dateValue.toDate === 'function') {
+              return dateValue.toDate().toLocaleDateString();
+          }
+        } catch (e) {
+          return "Invalid Date";
         }
         return "Invalid Date";
     };
@@ -566,7 +570,12 @@ export function ClientOverviewDialog({
 
   const getFormattedDate = (dateString: string) => {
     if (!dateString) return 'Invalid Date';
-    return new Date(dateString).toLocaleDateString();
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch (e) {
+        return 'Invalid Date';
+    }
   };
 
 
@@ -822,12 +831,12 @@ export function ClientOverviewDialog({
                                         )}
                                     >
                                         <div>
-                                            <p className="font-medium text-sm">{p.title}</p>
+                                            <p className="font-semibold text-sm">{p.title}</p>
                                             <p className={cn("text-xs", selectedProposal?.id === p.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
                                                 {getFormattedDate(p.createdAt)}
                                             </p>
                                         </div>
-                                        <div className="text-xs font-mono rounded bg-muted px-2 py-1">
+                                        <div className={cn("text-xs font-mono rounded px-2 py-1", selectedProposal?.id === p.id ? "bg-primary-foreground/20" : "bg-muted")}>
                                             {p.id}
                                         </div>
                                     </button>
