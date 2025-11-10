@@ -143,7 +143,8 @@
           "description": "The current payment status of the client.",
           "enum": [
             "Paid",
-            "Pending"
+            "Pending",
+            "Unpaid"
           ]
         }
       },
@@ -390,4 +391,5 @@
   }
 }
 
+    
     

@@ -52,7 +52,7 @@ export type Client = {
     addons?: string[];
     dateSigned?: string;
   };
-  paymentStatus?: 'Paid' | 'Pending';
+  paymentStatus?: 'Paid' | 'Pending' | 'Unpaid';
 };
 
 export type Proposal = {
@@ -108,4 +108,5 @@ export type Commission = {
 };
     
 
+    
     

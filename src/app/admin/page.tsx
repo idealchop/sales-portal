@@ -45,6 +45,7 @@ const clientStatusStyles: { [key: string]: string } = {
 const paymentStatusStyles: { [key: string]: string } = {
     Paid: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     Pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+    Unpaid: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
 };
 
 const commissionStatusStyles: { [key: string]: string } = {
@@ -218,7 +219,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
         }
     };
     
-    const handlePaymentStatusChange = async (clientId: string, newStatus: 'Paid' | 'Pending') => {
+    const handlePaymentStatusChange = async (clientId: string, newStatus: 'Paid' | 'Pending' | 'Unpaid') => {
         const clientRef = doc(firestore, 'clients', clientId);
         try {
             await updateDoc(clientRef, { paymentStatus: newStatus });
@@ -319,6 +320,9 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Pending')}>
                                                         Mark as Pending
+                                                    </DropdownMenuItem>
+                                                     <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Unpaid')}>
+                                                        Mark as Unpaid
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -937,3 +941,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
