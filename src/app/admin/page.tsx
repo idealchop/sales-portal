@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -23,13 +23,13 @@ import { WithId } from '@/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
@@ -86,6 +86,56 @@ const AdminDashboardSkeleton = () => (
         </div>
       </CardContent>
     </Card>
+  </div>
+);
+
+const OnboardingStepItem = ({ step, isLast, onClick, isAdmin, isCompleted }: { step: OnboardingStep, isLast: boolean, onClick: () => void, isAdmin: boolean, isCompleted: boolean }) => (
+  <div className="flex gap-x-4">
+    <div className={cn(
+        "relative last:after:hidden after:absolute after:top-11 after:bottom-0 after:w-px after:bg-border after:left-1/2 after:-translate-x-1/2",
+        !isLast && "min-h-[7rem]"
+    )}>
+      <div 
+        className={cn(
+          "relative z-10 flex h-10 w-10 items-center justify-center rounded-full ring-4 ring-background",
+          isCompleted ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700",
+          isAdmin && !isCompleted && "cursor-pointer hover:bg-primary/20"
+        )}
+        onClick={isAdmin && !isCompleted ? onClick : undefined}
+      >
+        {isCompleted ? (
+          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+        ) : (
+          <div className="h-3 w-3 rounded-full bg-gray-400 group-hover:bg-primary" />
+        )}
+      </div>
+    </div>
+
+    <div className="grow pt-1.5 pb-8">
+      <h3 className="font-semibold text-foreground">{step.title}</h3>
+      <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+      {step.providerName && (
+        <Card className="mt-3 bg-muted/50">
+            <CardHeader className="p-3">
+                <CardTitle className="text-sm">Paired Water Provider</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0 text-sm">
+                 <div className="flex items-center gap-3">
+                    <Ship className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                        <p className="font-semibold">{step.providerName}</p>
+                        <p className="text-xs text-muted-foreground">{step.providerLocation}</p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+      )}
+      {step.date && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Completed on: {step.date}
+        </p>
+      )}
+    </div>
   </div>
 );
 
@@ -187,8 +237,6 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 ? client.onboardingStatus
                                 : defaultOnboardingSteps.map(s => ({ ...s, status: 'pending' }));
                             
-                            const isFullyOnboarded = progress === 100;
-                            
                             return (
                                 <TableRow key={client.id}>
                                     <TableCell>
@@ -213,32 +261,36 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                     </TableCell>
                                     <TableCell>
                                        {client.status === 'active' || client.status === 'pending' ? (
-                                           <div className="flex items-center gap-2">
-                                                <span className="text-sm text-muted-foreground">{progress.toFixed(0)}%</span>
-                                                {isAdmin && !isFullyOnboarded && (
-                                                     <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                                <MoreHorizontal className="h-4 w-4"/>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Update Progress</DropdownMenuLabel>
-                                                            <DropdownMenuSeparator />
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="ghost" className="h-auto p-0 flex items-center gap-2">
+                                                        <span className="text-sm font-medium">{progress.toFixed(0)}%</span>
+                                                        <MoreHorizontal className="h-4 w-4 text-muted-foreground"/>
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Onboarding Progress: {client.companyName}</DialogTitle>
+                                                        <DialogDescription>
+                                                           {isAdmin ? 'Click a step to mark it as complete.' : 'Review the client\'s onboarding journey.'}
+                                                        </DialogDescription>
+                                                    </DialogHeader>
+                                                    <div className="py-4">
+                                                        <div className="flex flex-col">
                                                             {onboardingStepsToUse.map((step, index) => (
-                                                                <DropdownMenuItem 
+                                                                <OnboardingStepItem
                                                                     key={index}
-                                                                    disabled={step.status === 'completed'}
+                                                                    step={step}
+                                                                    isLast={index === onboardingStepsToUse.length - 1}
                                                                     onClick={() => handleUpdateOnboarding(client.id, client.onboardingStatus, index)}
-                                                                >
-                                                                    {step.status === 'completed' && <CheckCircle className="mr-2 h-4 w-4 text-green-500"/>}
-                                                                    Mark "{step.title}" as Complete
-                                                                </DropdownMenuItem>
+                                                                    isAdmin={isAdmin}
+                                                                    isCompleted={step.status === 'completed'}
+                                                                />
                                                             ))}
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                )}
-                                           </div>
+                                                        </div>
+                                                    </div>
+                                                </DialogContent>
+                                            </Dialog>
                                        ) : null}
                                     </TableCell>
                                 </TableRow>
@@ -476,17 +528,20 @@ export default function AdminPage() {
 
     const planCounts: { [key: string]: number } = {};
     acceptedProposals.forEach(p => {
-        const client = clientMap.get(p.clientId);
         if (p.content) {
             try {
                 const content = JSON.parse(p.content);
                 const planName = content.summaryTitle?.replace(' Plan', '') || 'Unknown';
                 let clientCategory = 'Other';
-                
-                 if (content.plan?.id?.includes('enterprise')) {
+
+                // Check for custom enterprise plans first
+                if (content.plan?.id?.includes('enterprise')) {
                     clientCategory = 'Enterprise';
-                } else if (client && client.clientType) {
-                    clientCategory = clientTypeMap[client.clientType] || 'Other';
+                } else {
+                    const client = clientMap.get(p.clientId);
+                    if (client && client.clientType) {
+                        clientCategory = clientTypeMap[client.clientType] || 'Other';
+                    }
                 }
                 
                 const fullPlanName = `${clientCategory} - ${planName}`;
