@@ -116,40 +116,52 @@ export function ContractSection({
 export function ContractText() {
     return (
         <>
+            <div className="space-y-2 text-center">
+                <h2 className="text-xl font-bold">Smart Refill Water Supply Subscription Agreement</h2>
+                <p className="text-sm text-muted-foreground">
+                    Between: River Tech Group, Inc. (“Provider”), operating under the trademark Smart Refill, and the Subscriber (“Client”), a business entity subscribing to automated water delivery services.
+                </p>
+            </div>
+
             <ContractSection title="1. Purpose">
                 <p>
-                  This Agreement governs the prepaid water supply subscription service delivered through Smart Refill’s automated system and partner refill stations.
+                    This Agreement governs the prepaid water supply subscription service delivered through Smart Refill’s automated system and partner refill stations.
                 </p>
             </ContractSection>
 
             <ContractSection title="2. Service Overview">
-                <p>
-                    Smart Refill provides a comprehensive water supply solution that includes scheduled and automated water deliveries through verified local partner refill stations. We guarantee that all water supplied is compliant with DOH, DENR, and FDA standards. Our platform enables real-time usage tracking, automated scheduling, and roll-over management for unused liters. Clients receive monthly consumption and compliance reports for operational transparency.
-                </p>
-            </ContractSection>
-
-            <ContractSection title="3. Subscription Plans">
+                <p>Smart Refill provides:</p>
                 <ul className="list-disc pl-5 space-y-1">
-                    <li>Clients may subscribe under any active Smart Refill™ plan (Micro, Starter, Pro, Business, Enterprise+, or Unlimited+).</li>
-                    <li>Each plan includes a defined number of liters per month, optional roll-over (2 months), and a fixed prepaid fee.</li>
-                    <li>Additional liters beyond plan limits are billed at the plan’s add-on rate.</li>
+                    <li>Scheduled and automated water deliveries through verified local partner refill stations.</li>
+                    <li>Water compliant with DOH, DENR, and FDA standards.</li>
+                    <li>Usage tracking, scheduling, and roll-over management via the Smart Refill platform.</li>
+                    <li>Monthly consumption and compliance reports for operational monitoring and transparency.</li>
                 </ul>
             </ContractSection>
 
+            <ContractSection title="3. Subscription Plans">
+                {/* This section is now dynamically rendered in ContractDetails component */}
+            </ContractSection>
+
             <ContractSection title="4. Delivery & Refills">
-                 <p>
-                    Water is delivered automatically based on usage data or a pre-set refill schedule configured in the Smart Refill™ system. All deliveries are performed by accredited local partner refill stations within the Smart Refill™ network. For operational efficiency and to ensure service reliability, delivery schedules may be adjusted by Smart Refill™ , with prior notification to the client.
-                </p>
+                <ul className="list-disc pl-5 space-y-2">
+                    <li>Water is delivered automatically based on usage data or refill schedules set in the Smart Refill system.</li>
+                    <li>Deliveries are performed by accredited local partner refill stations under the Smart Refill network.</li>
+                    <li>Delivery schedules may be adjusted by Smart Refill for operational efficiency and service reliability.</li>
+                </ul>
             </ContractSection>
             
             <ContractSection title="5. Equipment Use">
-                 <p>
-                    Each subscription plan includes the free use of a specified number of water dispensers and refillable gallons, with the quantity determined by the plan tier. All equipment remains the property of River Tech Group, Inc. Should the Client require more equipment than the plan provides, additional units may be rented. The Client is responsible for maintaining all equipment in good condition and must return or cover the replacement cost for any damaged or lost items upon termination of the service.
-                </p>
+                <ul className="list-disc pl-5 space-y-2">
+                    <li>Each plan includes free use of dispensers and bottles (quantity based on plan tier).</li>
+                    <li>Equipment remains the property of River Tech Group, Inc.</li>
+                    <li>If the Client exceeds included equipment limits, additional units may be provided as rentals.</li>
+                    <li>The Client must maintain equipment in good condition and return or replace damaged items.</li>
+                </ul>
             </ContractSection>
 
             <ContractSection title="6. Payment Terms">
-                <ul className="list-disc pl-5 space-y-1">
+                <ul className="list-disc pl-5 space-y-2">
                     <li>Subscriptions are prepaid monthly.</li>
                     <li>Payment covers the included liter allocation and any applicable service fees.</li>
                     <li>Unused liters roll over for up to two (2) consecutive months, after which they expire.</li>
@@ -158,31 +170,40 @@ export function ContractText() {
             </ContractSection>
 
             <ContractSection title="7. Quality & Compliance">
-                <p>
-                    Smart Refill™ ensures all partner stations meet government-approved water safety and sanitation standards.
-                </p>
-                <p>
-                    Periodic sampling and compliance monitoring are conducted to maintain quality assurance.
-                </p>
+                <ul className="list-disc pl-5 space-y-2">
+                    <li>Smart Refill ensures all partner stations meet government-approved water safety and sanitation standards.</li>
+                    <li>Periodic sampling and compliance monitoring are conducted to maintain quality assurance.</li>
+                </ul>
             </ContractSection>
 
-             <ContractSection title="8. Liability & Health Safety">
+            <ContractSection title="8. Liability & Health Safety">
                 <div className="space-y-4">
                     <div>
-                        <h4 className="font-semibold text-foreground">8.1 Water Quality Assurance</h4>
-                        <p>River Tech Group, Inc., through its Smart Refill™ network, ensures that all partner refill stations operate with valid permits and comply with the latest DOH, DENR, and FDA standards for potable water.</p>
+                        <h4 className="font-semibold text-foreground">Water Quality Assurance</h4>
+                        <p>River Tech Group, Inc., through its Smart Refill network, ensures that all partner refill stations operate with valid permits and comply with the latest DOH, DENR, and FDA standards for potable water.</p>
                     </div>
                     <div>
-                        <h4 className="font-semibold text-foreground">8.2 Health-Related Incidents</h4>
-                        <p>In the unlikely event of a verified contamination or water-borne health issue directly attributable to the supplied water, Smart Refill™ shall conduct an immediate quality investigation, replace the affected water volume at no additional cost, and cooperate with local health authorities.</p>
+                        <h4 className="font-semibold text-foreground">Health-Related Incidents</h4>
+                        <p>In the unlikely event of a verified contamination or water-borne health issue directly attributable to the supplied water, Smart Refill shall:</p>
+                        <ul className="list-disc pl-5 space-y-1 mt-2">
+                            <li>Conduct an immediate quality investigation in coordination with the concerned partner refill station.</li>
+                            <li>Replace the affected water volume at no additional cost.</li>
+                            <li>Cooperate with local health authorities in assessing the incident and taking corrective actions.</li>
+                        </ul>
                     </div>
                     <div>
-                        <h4 className="font-semibold text-foreground">8.3 Limitation of Liability</h4>
-                        <p>Smart Refill™ and River Tech Group, Inc. shall not be liable for issues resulting from improper storage, handling, or dispensing by the Client. The Provider’s total liability shall not exceed the total subscription amount paid by the Client within the past three (3) months.</p>
+                        <h4 className="font-semibold text-foreground">Limitation of Liability</h4>
+                        <p>Smart Refill and River Tech Group, Inc. shall not be liable for:</p>
+                         <ul className="list-disc pl-5 space-y-1 mt-2">
+                            <li>Any injury, illness, or loss resulting from improper storage, handling, or dispensing of water after delivery to the Client.</li>
+                            <li>Any contamination occurring due to unsanitary practices, equipment misuse, or third-party handling beyond Smart Refill’s control.</li>
+                            <li>Indirect, consequential, or punitive damages arising from service interruption, delay, or force majeure events.</li>
+                        </ul>
+                        <p className="mt-2">The Provider’s total liability in any claim shall not exceed the total subscription amount paid by the Client within the past three (3) months preceding the incident.</p>
                     </div>
                      <div>
-                        <h4 className="font-semibold text-foreground">8.4 Client Responsibilities</h4>
-                        <p>The Client agrees to maintain clean and safe dispenser locations and promptly report any suspected quality issue.</p>
+                        <h4 className="font-semibold text-foreground">Client Responsibilities</h4>
+                        <p>The Client agrees to maintain clean and safe dispenser locations, use only Smart Refill-approved bottles and dispensers, and promptly report any suspected quality issue to Smart Refill’s support channel for verification and corrective action.</p>
                     </div>
                 </div>
             </ContractSection>
@@ -191,35 +212,63 @@ export function ContractText() {
                 <div className="space-y-4">
                     <div>
                         <h4 className="font-semibold text-foreground">9.1 Auto-Renewal</h4>
-                        <p>Subscriptions automatically renew unless cancelled by the Client at least 30 days prior to renewal.</p>
+                        <p>All Smart Refill subscriptions automatically renew at the end of each billing cycle (monthly, quarterly, semi-annual, or annual) unless cancelled by the Client at least 30 days prior to renewal. Renewal will continue at the same plan tier and payment frequency unless modified in writing or via the Smart Refill platform.</p>
                     </div>
                     <div>
                         <h4 className="font-semibold text-foreground">9.2 Cancellation by Client</h4>
-                        <p>The Client may cancel with 30 days written notice. Prepaid amounts are non-refundable, and equipment must be returned in good condition.</p>
+                         <ul className="list-disc pl-5 space-y-1">
+                            <li>The Client may cancel their subscription by providing written notice at least 30 days before the next billing cycle.</li>
+                            <li>All prepaid amounts are non-refundable, and unused liters expire upon termination unless otherwise agreed in writing.</li>
+                            <li>Any equipment (dispensers, bottles, etc.) provided under the plan must be returned in good working condition within seven (7) days of cancellation. Failure to return equipment may incur corresponding replacement or depreciation charges.</li>
+                        </ul>
                     </div>
                     <div>
-                         <h4 className="font-semibold text-foreground">9.3 Suspension by Smart Refill™</h4>
-                        <p>Services may be suspended for non-payment, misuse, or breach of standards.</p>
+                         <h4 className="font-semibold text-foreground">9.3 Suspension by Smart Refill</h4>
+                        <p>Smart Refill reserves the right to temporarily suspend services in the event of:</p>
+                        <ul className="list-disc pl-5 space-y-1 mt-2">
+                           <li>Non-payment or failed billing,</li>
+                           <li>Misuse of water allocation or system tampering,</li>
+                           <li>Breach of safety or compliance standards,</li>
+                           <li>Verified equipment loss or misuse.</li>
+                        </ul>
+                        <p className="mt-2">Service will resume once the Client resolves the issue and payment or compliance is restored.</p>
                     </div>
                     <div>
-                         <h4 className="font-semibold text-foreground">9.4 Termination by Smart Refill™</h4>
-                        <p>Smart Refill™ may terminate the agreement for cause (e.g., material breach) or without cause with 30 days’ notice.</p>
+                         <h4 className="font-semibold text-foreground">9.4 Termination by Smart Refill</h4>
+                        <p>Smart Refill may terminate this Agreement:</p>
+                        <ul className="list-disc pl-5 space-y-1 mt-2">
+                            <li>For cause, with immediate effect, upon material breach by the Client (including non-payment, damage to equipment, or fraudulent activity); or</li>
+                            <li>Without cause, with thirty (30) days’ written notice, for business or operational reasons.</li>
+                        </ul>
+                         <p className="mt-2">Upon termination, all dispensers, bottles, or devices provided must be returned, and any remaining prepaid liters or balances shall be forfeited.</p>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-foreground">9.5 Data and Account Retention</h4>
+                        <p>After termination, Client account data (including consumption history and reports) will remain accessible for 30 days, after which Smart Refill reserves the right to delete or anonymize such data in accordance with its Privacy Policy.</p>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold text-foreground">9.6 Reactivation</h4>
+                        <p>A Client may reactivate a terminated or cancelled subscription anytime by subscribing to a new plan through the Smart Refill platform. Equipment and service fees may apply depending on previous plan tier and usage history.</p>
                     </div>
                 </div>
             </ContractSection>
             
             <ContractSection title="10. Data and Monitoring">
-                 <p>
-                    Client information and operational data are saved and used for service improvement, compliance reporting, and to ensure the successful delivery and refilling of water. All data is handled in accordance with the Data Privacy Act of 2012.
-                </p>
+                <ul className="list-disc pl-5 space-y-2">
+                    <li>Operational data (usage, deliveries, consumption patterns) may be used solely for service improvement and compliance reporting.</li>
+                    <li>Data is processed in accordance with the Data Privacy Act of 2012.</li>
+                </ul>
             </ContractSection>
 
              <ContractSection title="11. Trademarks & Ownership">
-                <p>Smart Refill™ is a registered trademark of River Tech Group, Inc. All intellectual property remains with the Provider.</p>
+                 <ul className="list-disc pl-5 space-y-2">
+                    <li>Smart Refill is a registered trademark under River Tech Group, Inc.</li>
+                    <li>All materials, systems, and technologies remain the intellectual property of the Provider.</li>
+                 </ul>
             </ContractSection>
 
             <ContractSection title="12. Governing Law">
-                <p>All earnings (commissions & bonuses) are calculated at the end of each month and paid out within 30 days.</p>
+                <p>This Agreement shall be governed by and construed in accordance with the laws of the Republic of the Philippines.</p>
             </ContractSection>
         </>
     )
