@@ -201,6 +201,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
     
     const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
         { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
@@ -225,14 +226,15 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
     const filteredClients = useMemo(() => {
         return clients.filter(client => {
             const dateMatch = dateFilter === 'all' || (client.createdAt && format(new Date(client.createdAt), 'MMMM yyyy') === dateFilter);
+            const statusMatch = statusFilter === 'all' || client.status === statusFilter;
 
             const searchMatch = searchQuery === '' || 
                 client.companyName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 client.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-            return dateMatch && searchMatch;
+            return dateMatch && searchMatch && statusMatch;
         });
-    }, [clients, searchQuery, dateFilter]);
+    }, [clients, searchQuery, dateFilter, statusFilter]);
 
 
     const getOnboardingProgress = (onboardingStatus: OnboardingStep[] | undefined) => {
@@ -370,6 +372,17 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                         <SelectContent>
                             <SelectItem value="all">All Time</SelectItem>
                             {availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                     <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filter by status..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -1127,3 +1140,4 @@ export default function AdminPage() {
 }
 
     
+
