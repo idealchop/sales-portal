@@ -281,7 +281,6 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                             if (acceptedProposal) {
                                 let planNameFromContent = 'Custom Plan';
                                 let billingCycleFromContent = 'Monthly';
-                                let amountFromProposal = acceptedProposal.amount;
                                 
                                 if (acceptedProposal.content) {
                                     try {
@@ -294,7 +293,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                 }
                                 subscriptionDetails = {
                                     planName: planNameFromContent,
-                                    amount: amountFromProposal,
+                                    amount: acceptedProposal.amount,
                                     billingCycle: billingCycleFromContent
                                 };
                             } else if (client.subscription) {
@@ -317,7 +316,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                         <div className="space-y-1 mt-2">
                                             {client.clientType && <Badge variant="secondary" className="capitalize">{clientTypeMap[client.clientType]}</Badge>}
                                             <h4 className="font-semibold text-sm">{subscriptionDetails.planName}</h4>
-                                            <p className="font-bold text-lg">{currencyFormatter.format(subscriptionDetails.amount)} <span className="text-xs font-normal text-muted-foreground">/ mo</span></p>
+                                            <p className="font-bold text-lg">{currencyFormatter.format(subscriptionDetails.amount)}</p>
                                             <Badge variant="outline">{subscriptionDetails.billingCycle}</Badge>
                                         </div>
                                     </TableCell>
@@ -960,4 +959,3 @@ export default function AdminPage() {
     
 
     
-
