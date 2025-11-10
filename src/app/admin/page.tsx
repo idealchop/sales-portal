@@ -1338,7 +1338,7 @@ export default function AdminPage() {
                                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                 <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                <Legend wrapperStyle={{paddingTop: '20px'}}/>
+                                
                                 <Area type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorNewClients)" />
                                 <Area type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} fillOpacity={1} fill="url(#colorPending)" />
                                 <Area type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} fillOpacity={1} fill="url(#colorRejected)" />
@@ -1526,5 +1526,6 @@ export default function AdminPage() {
 
 
     
+
 
 
