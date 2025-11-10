@@ -1,12 +1,11 @@
 
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { collection, getDocs, query, onSnapshot, FirestoreError, collectionGroup } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import type { Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
-import { useAllClients } from './use-all-clients';
 
 interface UseAllProposalsResult {
   proposals: WithId<Proposal>[];
@@ -16,41 +15,26 @@ interface UseAllProposalsResult {
 
 export function useAllProposals(): UseAllProposalsResult {
   const { firestore, isFirebaseLoading } = useFirebase();
-  const { clients, isLoading: areClientsLoading, error: clientsError } = useAllClients();
-
   const [proposals, setProposals] = useState<WithId<Proposal>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    const fetchProposals = async () => {
-      if (isFirebaseLoading || areClientsLoading || !firestore) {
-        return;
-      }
+    if (isFirebaseLoading || !firestore) {
+      return;
+    }
 
-      if (clientsError) {
-        setError(clientsError);
-        setIsLoading(false);
-        return;
-      }
-      
-      setIsLoading(true);
-      setError(null);
+    if (isInitialLoad) {
+        setIsLoading(true);
+    }
+    
+    const proposalsQuery = query(collectionGroup(firestore, 'proposals'));
 
-      try {
-        if (clients.length === 0) {
-            setProposals([]);
-            setIsLoading(false);
-            return;
-        }
-
+    const unsubscribe = onSnapshot(proposalsQuery, 
+      (querySnapshot) => {
         const allProposals: WithId<Proposal>[] = [];
-        for (const client of clients) {
-          const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
-          const proposalsQuery = query(proposalsRef);
-          const querySnapshot = await getDocs(proposalsQuery);
-          
-          querySnapshot.forEach(doc => {
+        querySnapshot.forEach(doc => {
             const proposalData = doc.data() as Omit<Proposal, 'id'>;
             let createdAtString: string;
             if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
@@ -62,12 +46,11 @@ export function useAllProposals(): UseAllProposalsResult {
             allProposals.push({
                 ...(proposalData as Proposal),
                 id: doc.id,
-                clientId: client.id, 
+                clientId: doc.ref.parent.parent?.id || '',
                 createdAt: createdAtString,
             });
-          });
-        }
-        
+        });
+
         allProposals.sort((a, b) => {
             const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
             const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
@@ -75,22 +58,26 @@ export function useAllProposals(): UseAllProposalsResult {
         });
 
         setProposals(allProposals);
-
-      } catch (e: any) {
+        setError(null);
+        if (isInitialLoad) {
+            setIsLoading(false);
+            setIsInitialLoad(false);
+        }
+      },
+      (e: FirestoreError) => {
         console.error("Failed to fetch all proposals:", e);
         setError(e);
-      } finally {
         setIsLoading(false);
       }
-    };
+    );
+    
+    return () => unsubscribe();
 
-    fetchProposals();
-
-  }, [firestore, isFirebaseLoading, areClientsLoading, clients, clientsError]);
+  }, [firestore, isFirebaseLoading, isInitialLoad]);
 
   return { 
     proposals, 
-    isLoading: isLoading || isFirebaseLoading || areClientsLoading, 
+    isLoading,
     error
   };
 }

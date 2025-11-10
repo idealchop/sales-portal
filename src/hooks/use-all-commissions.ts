@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, query, getDocs } from 'firebase/firestore';
+import { collection, query, getDocs, onSnapshot, FirestoreError } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import type { Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -12,18 +12,21 @@ export function useAllCommissions() {
   const [commissions, setCommissions] = useState<WithId<Commission>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    const fetchAllCommissions = async () => {
-      if (isFirebaseLoading || !firestore) {
-        return;
-      }
-      setIsLoading(true);
+    if (isFirebaseLoading || !firestore) {
+      return;
+    }
 
-      try {
-        const commissionsQuery = query(collection(firestore, "commissions"));
-        const querySnapshot = await getDocs(commissionsQuery);
-        
+    if (isInitialLoad) {
+      setIsLoading(true);
+    }
+
+    const commissionsQuery = query(collection(firestore, "commissions"));
+    
+    const unsubscribe = onSnapshot(commissionsQuery, 
+      (querySnapshot) => {
         const allCommissions: WithId<Commission>[] = [];
         querySnapshot.forEach(doc => {
             const data = doc.data() as Omit<Commission, 'id'>;
@@ -42,18 +45,22 @@ export function useAllCommissions() {
 
         allCommissions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setCommissions(allCommissions);
-
-      } catch (e: any) {
+        setError(null);
+        if (isInitialLoad) {
+            setIsLoading(false);
+            setIsInitialLoad(false);
+        }
+      },
+      (e: FirestoreError) => {
         setError(e);
-        console.error("Error fetching all commissions:", e);
-      } finally {
+        console.error("Error fetching all commissions with snapshot:", e);
         setIsLoading(false);
       }
-    };
+    );
 
-    fetchAllCommissions();
+    return () => unsubscribe();
 
-  }, [firestore, isFirebaseLoading]);
+  }, [firestore, isFirebaseLoading, isInitialLoad]);
 
-  return { commissions, isLoading: isLoading || isFirebaseLoading, error };
+  return { commissions, isLoading: isLoading, error };
 }
