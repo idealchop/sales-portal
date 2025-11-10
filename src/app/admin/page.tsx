@@ -352,7 +352,7 @@ const ClientDataTable = ({ clients, users, proposals }: { clients: WithId<Client
                                             <Dialog>
                                                 <DialogTrigger asChild>
                                                     <button className="flex flex-col items-start gap-1 w-full text-left">
-                                                         <Progress value={progress} className="w-24 h-2 bg-muted" />
+                                                         <Progress value={progress} className="w-24 h-2 bg-muted" style={{ backgroundColor: 'grey' }}/>
                                                          <p className="text-xs text-muted-foreground">Click to update</p>
                                                     </button>
                                                 </DialogTrigger>
@@ -956,6 +956,3 @@ export default function AdminPage() {
 }
 
     
-
-    
-
