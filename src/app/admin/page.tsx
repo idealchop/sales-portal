@@ -1157,6 +1157,20 @@ export default function AdminPage() {
                          <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={stats.clientGrowthData}>
+                                     <defs>
+                                        <linearGradient id="colorNewClients" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                        <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                         <linearGradient id="colorRejected" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                    </defs>
                                     <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                     <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
@@ -1191,6 +1205,16 @@ export default function AdminPage() {
                         <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={stats.clientRetentionData}>
+                                     <defs>
+                                        <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                         <linearGradient id="colorInactive" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                    </defs>
                                     <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                     <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
@@ -1298,6 +1322,20 @@ export default function AdminPage() {
                     <CardContent className="h-[300px]">
                        <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={stats.clientGrowthData}>
+                                 <defs>
+                                    <linearGradient id="colorNewClients" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
+                                    </linearGradient>
+                                     <linearGradient id="colorRejected" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.1}/>
+                                    </linearGradient>
+                                </defs>
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
                                 <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
@@ -1490,3 +1528,4 @@ export default function AdminPage() {
 
 
     
+
