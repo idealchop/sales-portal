@@ -292,31 +292,16 @@ export function ClientOverviewDialog({
     if (!proposalToParse?.content) return null;
     try {
         const content = JSON.parse(proposalToParse.content);
-        const fullProposal = clientProposals.find(p => p.id === proposalToParse.id);
-
-        let signature;
-        if (content.signature) {
-            signature = content.signature;
-        } else if (fullProposal && fullProposal.content && typeof fullProposal.content === 'string' && fullProposal.content.includes('"signature":')) {
-            try {
-                // Safely parse the full content to get the signature
-                const fullContentParsed = JSON.parse(fullProposal.content);
-                signature = fullContentParsed.signature;
-            } catch (e) {
-                 // Ignore if parsing fails, signature remains undefined
-            }
-        }
-
         return { 
             ...content, 
-            paymentProofUrl: fullProposal?.paymentProofUrl,
-            signature: signature
+            paymentProofUrl: proposalToParse?.paymentProofUrl,
+            signature: content.signature,
         };
     } catch (e) {
         console.error("Failed to parse proposal content:", e);
         return null;
     }
-  }, [selectedProposal, proposal, clientProposals]);
+  }, [selectedProposal, proposal]);
   
   const contactInfo = useMemo(() => {
     return {
@@ -907,6 +892,7 @@ export function ClientOverviewDialog({
                                 <ContractDetails 
                                     finalPlanDetails={parsedProposalContent}
                                     isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
+                                    signatureData={parsedProposalContent.signature}
                                 />
                             </ScrollArea>
                         </DialogContent>
@@ -918,3 +904,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
