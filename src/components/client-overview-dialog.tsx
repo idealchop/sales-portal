@@ -823,7 +823,7 @@ export function ClientOverviewDialog({
                                             </DialogHeader>
                                             <div className="grid md:grid-cols-2 gap-6 py-4">
                                                 <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                                    {subscriptionInfo && <Image src={planImage} alt={subscriptionInfo.planName} fill className="object-cover" />}
+                                                    {subscriptionInfo && <Image src={planImage} alt={subscriptionInfo.planName || 'Plan image'} fill className="object-cover" />}
                                                 </div>
                                                 <div>
                                                     <div className="flex flex-col">
@@ -985,7 +985,7 @@ export function ClientOverviewDialog({
                      <PaymentHistory client={client} proposals={clientProposals} onPaymentConfirm={handleConfirmPayment} />
                  )}
 
-                 {finalPlanDetails && (view === 'proposals' || isAdmin) && (
+                 {finalPlanDetails && (selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted') && (
                     <Dialog>
                         <DialogTrigger asChild>
                              <Card className="cursor-pointer hover:bg-accent transition-colors">
@@ -1021,5 +1021,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
