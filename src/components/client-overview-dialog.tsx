@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Image from 'next/image';
@@ -613,7 +612,7 @@ export function ClientOverviewDialog({
     return "Invalid Date";
   };
   
-  const contractDetailsForDisplay: FinalPlanDetails | null = useMemo(() => {
+  const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
     if (!subscriptionInfo) return null;
     return {
       ...subscriptionInfo.rawContent,
@@ -744,7 +743,7 @@ export function ClientOverviewDialog({
                             <>
                             <CardContent className="space-y-4">
                                 <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                    <Image src={planImage} alt={subscriptionInfo.planName} fill className="object-cover" />
+                                    <Image src={planImage} alt={subscriptionInfo.planName || 'Plan image'} fill className="object-cover" />
                                 </div>
                                 <div className="space-y-2">
                                     <h4 className="font-semibold text-lg">{subscriptionInfo.clientType ? `${clientTypeMap[subscriptionInfo.clientType] || subscriptionInfo.clientType} - ` : ''}{subscriptionInfo.planName}</h4>
@@ -986,7 +985,7 @@ export function ClientOverviewDialog({
                      <PaymentHistory client={client} proposals={clientProposals} onPaymentConfirm={handleConfirmPayment} />
                  )}
 
-                 {contractDetailsForDisplay && (view === 'proposals' || isAdmin) && (
+                 {finalPlanDetails && (view === 'proposals' || isAdmin) && (
                     <Dialog>
                         <DialogTrigger asChild>
                              <Card className="cursor-pointer hover:bg-accent transition-colors">
@@ -1008,9 +1007,9 @@ export function ClientOverviewDialog({
                             </DialogHeader>
                             <ScrollArea className="h-[85vh] pr-6">
                                 <ContractDetails 
-                                    finalPlanDetails={contractDetailsForDisplay}
+                                    finalPlanDetails={finalPlanDetails}
                                     isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
-                                    signatureData={contractDetailsForDisplay.signature}
+                                    signatureData={finalPlanDetails.signature}
                                 />
                             </ScrollArea>
                         </DialogContent>
@@ -1022,3 +1021,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
