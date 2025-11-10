@@ -709,7 +709,7 @@ export default function DashboardPage() {
                       <RevenueChart data={dashboardData.commissionHistory} />
                   </div>
                    <p className="text-sm text-muted-foreground">
-                      All earnings (commissions & bonuses) are calculated at the end of each month and paid out within 30 days.
+                      All earnings (commissions & bonuses) are calculated at the end of each month and paid every first week of the month.
                   </p>
               </div>
             </ScrollArea>
