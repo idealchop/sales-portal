@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, query, getDocs, onSnapshot, FirestoreError } from 'firebase/firestore';
+import { collection, query, onSnapshot, FirestoreError } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import type { Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
