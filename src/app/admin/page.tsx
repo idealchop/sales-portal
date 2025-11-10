@@ -1069,18 +1069,17 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col gap-8">
        <Tabs defaultValue="crm" className="w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold whitespace-nowrap">Dashboard</h1>
-              <TabsList className="gap-1">
+        <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Organization-wide overview</p>
+        </div>
+        
+        <div className="mt-4">
+            <TabsList className="gap-1">
                 <TabsTrigger value="crm"><UsersRound className="mr-2 h-4 w-4"/>CRM</TabsTrigger>
                 <TabsTrigger value="sales-team"><Users className="mr-2 h-4 w-4"/>Sales Team</TabsTrigger>
                 <TabsTrigger value="payroll"><CreditCard className="mr-2 h-4 w-4"/>Payroll</TabsTrigger>
-              </TabsList>
-            </div>
-             <p className="text-muted-foreground text-sm">
-                Organization-wide overview
-            </p>
+            </TabsList>
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
@@ -1485,6 +1484,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 
