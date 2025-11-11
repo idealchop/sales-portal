@@ -92,8 +92,8 @@ const AdminDashboardSkeleton = () => (
       <Skeleton className="h-8 w-64" />
       <Skeleton className="h-4 w-96 mt-2" />
     </div>
-    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-      {[...Array(4)].map((_, i) => (
+    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+      {[...Array(3)].map((_, i) => (
         <Card key={i}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <Skeleton className="h-4 w-32" />
@@ -629,6 +629,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
 
 const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>[], proposals: WithId<Proposal>[] }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const [searchQuery, setSearchQuery] = useState('');
 
     const leaderboardData = useMemo(() => {
         const usersWithData = users.map(user => {
@@ -646,7 +647,6 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
             };
         });
 
-        // Add admin user if not present
         const adminUser = users.find(u => u.email === 'admin@smartrefill.io');
         if (adminUser) {
             const adminProposals = proposals.filter(p => p.userId === adminUser.id);
@@ -668,15 +668,28 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
                  usersWithData.push(adminData);
             }
         }
+        
+        const filteredData = usersWithData.filter(rep => 
+            rep.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
-        return usersWithData.sort((a, b) => b.totalRevenue - a.totalRevenue);
-    }, [users, proposals]);
+        return filteredData.sort((a, b) => b.totalRevenue - a.totalRevenue);
+    }, [users, proposals, searchQuery]);
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Sales Team Leaderboard</CardTitle>
                 <CardDescription>Performance ranking of all sales representatives.</CardDescription>
+                 <div className="relative pt-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by sales rep name..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -699,16 +712,32 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
                                     {index > 2 && index + 1}
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar>
-                                            <AvatarImage src={rep.photoURL} />
-                                            <AvatarFallback>{rep.displayName?.[0]}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-medium">{rep.displayName}</p>
-                                            <p className="text-sm text-muted-foreground">{rep.email}</p>
-                                        </div>
-                                    </div>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <div className="flex items-center gap-3 cursor-pointer">
+                                                <Avatar>
+                                                    <AvatarImage src={rep.photoURL} />
+                                                    <AvatarFallback>{rep.displayName?.[0]}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-medium hover:underline">{rep.displayName}</p>
+                                                    <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                                </div>
+                                            </div>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80">
+                                             <div className="flex items-center gap-4">
+                                                <Avatar className="h-16 w-16">
+                                                    <AvatarImage src={rep.photoURL} />
+                                                    <AvatarFallback className="text-xl">{rep.displayName?.[0]}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <h3 className="font-semibold text-lg">{rep.displayName}</h3>
+                                                    <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                                </div>
+                                             </div>
+                                        </PopoverContent>
+                                    </Popover>
                                 </TableCell>
                                 <TableCell>{rep.proposalsWon}</TableCell>
                                 <TableCell>{rep.winRate.toFixed(1)}%</TableCell>
@@ -833,7 +862,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [] };
+      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [] };
     }
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
@@ -865,7 +894,6 @@ export default function AdminPage() {
     const rejectedClientIds = new Set(rejectedProposals.map(p => p.clientId));
     const rejectedClients = rejectedClientIds.size;
     const totalClients = clients.length;
-    const salesReps = salesUsers.length;
 
     const sentProposals = proposals.filter(p => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status));
     const sentProposalsCount = sentProposals.length;
@@ -1096,7 +1124,7 @@ export default function AdminPage() {
     });
 
 
-    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth };
+    return { totalRevenue, activeClients, inactiveClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod, proposalsByRepPeriod]);
   
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1521,38 +1549,36 @@ const salesRepPayouts = useMemo(() => {
             </div>
         </TabsContent>
         <TabsContent value="sales-team" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 md:gap-8">
-                <Card className="md:col-span-2">
-                    <CardHeader>
-                        <CardTitle>Team Performance Overview</CardTitle>
-                        <CardDescription>Cumulative proposals sent vs. accepted over the last 6 months.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[250px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={stats.proposalFunnelData}>
-                                <defs>
-                                    <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
-                                    </linearGradient>
-                                    <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }}/>
-                                <Legend wrapperStyle={{paddingTop: '20px'}} />
-                                <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" strokeWidth={2} fillOpacity={1} fill="url(#colorSent)" />
-                                <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorAccepted)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
-            <Card className="md:col-span-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Team Performance Overview</CardTitle>
+                    <CardDescription>Cumulative proposals sent vs. accepted over the last 6 months.</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={stats.proposalFunnelData}>
+                            <defs>
+                                <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
+                                </linearGradient>
+                                <linearGradient id="colorAccepted" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                            <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }}/>
+                            <Legend wrapperStyle={{paddingTop: '20px'}} />
+                            <Area type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" strokeWidth={2} fillOpacity={1} fill="url(#colorSent)" />
+                            <Area type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorAccepted)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+            <Card>
                 <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>
