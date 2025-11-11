@@ -946,7 +946,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [] };
+      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [], teamWinRate: 0, teamTotalRevenue: 0, teamAvgDealSize: 0, teamProposalsSentChange: 0, teamWinRateChange: 0, teamTotalRevenueChange: 0, teamAvgDealSizeChange: 0 };
     }
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
@@ -955,10 +955,27 @@ export default function AdminPage() {
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
     const rejectedProposals = proposals.filter(p => p.status === 'rejected');
+    const sentProposals = proposals.filter(p => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status));
+    
+    // Total Revenue
     const totalRevenue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
 
-    const revenueThisMonth = acceptedProposals.filter(p => isWithinInterval(parseISO(p.createdAt), { start: currentMonthStart, end: now })).reduce((sum, p) => sum + p.amount, 0);
-    const revenueLastMonth = acceptedProposals.filter(p => isWithinInterval(parseISO(p.createdAt), { start: lastMonthStart, end: lastMonthEnd })).reduce((sum, p) => sum + p.amount, 0);
+    const getValidDate = (timestamp: string | number | undefined | Date) => {
+        if (!timestamp) return null;
+        try {
+            const d = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
+            return isNaN(d.getTime()) ? null : d;
+        } catch {
+            return null;
+        }
+    }
+
+    const revenueThisMonth = acceptedProposals
+      .filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: currentMonthStart, end: now }))
+      .reduce((sum, p) => sum + p.amount, 0);
+    const revenueLastMonth = acceptedProposals
+      .filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: lastMonthStart, end: lastMonthEnd }))
+      .reduce((sum, p) => sum + p.amount, 0);
     const revenueChange = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : revenueThisMonth > 0 ? 100 : 0;
 
     const newClientsThisMonth = clients.filter(c => c.createdAt && isWithinInterval(parseISO(c.createdAt), { start: currentMonthStart, end: now })).length;
@@ -973,13 +990,11 @@ export default function AdminPage() {
     const newSalesRepsLastMonth = salesUsers.filter(u => u.createdAt && isWithinInterval(parseISO(u.createdAt), { start: lastMonthStart, end: lastMonthEnd })).length;
     const teamGrowthChange = newSalesRepsLastMonth > 0 ? ((newSalesRepsThisMonth - newSalesRepsLastMonth) / newSalesRepsLastMonth) * 100 : newSalesRepsThisMonth > 0 ? 100 : 0;
 
-
     const pendingClients = clients.filter(c => c.status === 'pending').length;
     const rejectedClientIds = new Set(rejectedProposals.map(p => p.clientId));
     const rejectedClients = rejectedClientIds.size;
     const totalClients = clients.length;
-
-    const sentProposals = proposals.filter(p => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status));
+    
     const sentProposalsCount = sentProposals.length;
     const winRate = sentProposalsCount > 0 ? (acceptedProposals.length / sentProposalsCount) * 100 : 0;
     const totalProposals = proposals.length;
@@ -1020,7 +1035,6 @@ export default function AdminPage() {
                 const planName = content.summaryTitle?.replace(' Plan', '') || 'Unknown';
                 let clientCategory = 'Other';
 
-                // Prioritize clientType from the proposal content itself
                 if (content.clientType && clientTypeMap[content.clientType]) {
                     clientCategory = clientTypeMap[content.clientType];
                 } else {
@@ -1041,61 +1055,21 @@ export default function AdminPage() {
     const planDistribution = Object.entries(planCounts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-
     
-    const sixMonthsAgo = subMonths(now, 5);
-
     const monthlyData = Array.from({ length: 6 }).map((_, i) => {
         const date = subMonths(now, 5 - i);
         const monthName = format(date, 'MMM');
         const monthStart = startOfMonth(date);
         const monthEnd = endOfMonth(date);
         
-        const getValidDate = (timestamp: string | number | undefined | Date) => {
-            if (!timestamp) return null;
-            try {
-                const d = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
-                return isNaN(d.getTime()) ? null : d;
-            } catch {
-                return null;
-            }
-        }
-
-        const newClients = clients.filter(c => {
-          const createdAt = getValidDate(c.createdAt);
-          return createdAt && isWithinInterval(createdAt, { start: monthStart, end: monthEnd });
-        }).length;
-        
-        const endOfMonthPendingClients = clients.filter(c => {
-          const createdAt = getValidDate(c.createdAt);
-          return c.status === 'pending' && createdAt && createdAt <= monthEnd;
-        }).length;
-        
-        const endOfMonthRejectedProposals = rejectedProposals.filter(p => {
-          const createdAt = getValidDate(p.createdAt);
-          return createdAt && createdAt <= monthEnd;
-        });
+        const newClients = clients.filter(c => getValidDate(c.createdAt) && isWithinInterval(getValidDate(c.createdAt)!, { start: monthStart, end: monthEnd })).length;
+        const endOfMonthPendingClients = clients.filter(c => getValidDate(c.createdAt) && c.status === 'pending' && getValidDate(c.createdAt)! <= monthEnd).length;
+        const endOfMonthRejectedProposals = rejectedProposals.filter(p => getValidDate(p.createdAt) && getValidDate(p.createdAt)! <= monthEnd);
         const endOfMonthRejectedClients = new Set(endOfMonthRejectedProposals.map(p => p.clientId)).size;
-
-        const endOfMonthActiveClients = clients.filter(c => {
-          const createdAt = getValidDate(c.createdAt);
-          return c.status === 'active' && createdAt && createdAt <= monthEnd;
-        }).length;
-
-        const endOfMonthInactiveClients = clients.filter(c => {
-          const createdAt = getValidDate(c.createdAt);
-          return c.status === 'inactive' && createdAt && createdAt <= monthEnd;
-        }).length;
-
-        const proposalsCreated = proposals.filter(p => {
-            const createdAt = getValidDate(p.createdAt);
-            return createdAt && isWithinInterval(createdAt, { start: monthStart, end: monthEnd });
-        }).length;
-        
-        const proposalsAccepted = acceptedProposals.filter(p => {
-            const createdAt = getValidDate(p.createdAt);
-            return createdAt && isWithinInterval(createdAt, { start: monthStart, end: monthEnd });
-        });
+        const endOfMonthActiveClients = clients.filter(c => getValidDate(c.createdAt) && c.status === 'active' && getValidDate(c.createdAt)! <= monthEnd).length;
+        const endOfMonthInactiveClients = clients.filter(c => getValidDate(c.createdAt) && c.status === 'inactive' && getValidDate(c.createdAt)! <= monthEnd).length;
+        const proposalsCreated = proposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: monthStart, end: monthEnd })).length;
+        const proposalsAccepted = acceptedProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: monthStart, end: monthEnd }));
         const monthlyRevenue = proposalsAccepted.reduce((sum, p) => sum + p.amount, 0);
 
         return { month: monthName, newClients, proposalsCreated, proposalsAccepted: proposalsAccepted.length, pendingClients: endOfMonthPendingClients, rejectedClients: endOfMonthRejectedClients, revenue: monthlyRevenue, active: endOfMonthActiveClients, inactive: endOfMonthInactiveClients };
@@ -1111,25 +1085,8 @@ export default function AdminPage() {
         const monthName = format(date, 'MMM');
         const endOfMonthDate = endOfMonth(date);
         
-        const getValidDate = (timestamp: string | number | undefined | Date) => {
-            if (!timestamp) return null;
-            try {
-                const d = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
-                return isNaN(d.getTime()) ? null : d;
-            } catch {
-                return null;
-            }
-        }
-        
-        const cumulativeSent = sentProposals.filter(p => {
-            const createdAt = getValidDate(p.createdAt);
-            return createdAt && createdAt <= endOfMonthDate;
-        }).length;
-        
-        const cumulativeAccepted = acceptedProposals.filter(p => {
-            const createdAt = getValidDate(p.createdAt);
-            return createdAt && createdAt <= endOfMonthDate;
-        }).length;
+        const cumulativeSent = sentProposals.filter(p => getValidDate(p.createdAt) && getValidDate(p.createdAt)! <= endOfMonthDate).length;
+        const cumulativeAccepted = acceptedProposals.filter(p => getValidDate(p.createdAt) && getValidDate(p.createdAt)! <= endOfMonthDate).length;
         
         return { month: monthName, sent: cumulativeSent, accepted: cumulativeAccepted };
     });
@@ -1207,12 +1164,31 @@ export default function AdminPage() {
         return { month: monthName, plan: topPlan[0], count: topPlan[1] };
     });
 
+    const sentProposalsThisMonth = sentProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: currentMonthStart, end: now }));
+    const sentProposalsLastMonth = sentProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: lastMonthStart, end: lastMonthEnd }));
+    const teamProposalsSentChange = sentProposalsLastMonth.length > 0 ? ((sentProposalsThisMonth.length - sentProposalsLastMonth.length) / sentProposalsLastMonth.length) * 100 : sentProposalsThisMonth.length > 0 ? 100 : 0;
+    
+    const acceptedThisMonth = acceptedProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: currentMonthStart, end: now }));
+    const acceptedLastMonth = acceptedProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: lastMonthStart, end: lastMonthEnd }));
+
+    const teamWinRateThisMonth = sentProposalsThisMonth.length > 0 ? (acceptedThisMonth.length / sentProposalsThisMonth.length) * 100 : 0;
+    const teamWinRateLastMonth = sentProposalsLastMonth.length > 0 ? (acceptedLastMonth.length / sentProposalsLastMonth.length) * 100 : 0;
+    const teamWinRateChange = teamWinRateLastMonth > 0 ? ((teamWinRateThisMonth - teamWinRateLastMonth) / teamWinRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
+
+    const teamTotalRevenueThisMonth = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
+    const teamTotalRevenueLastMonth = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
+    const teamTotalRevenueChange = teamTotalRevenueLastMonth > 0 ? ((teamTotalRevenueThisMonth - teamTotalRevenueLastMonth) / teamTotalRevenueLastMonth) * 100 : teamTotalRevenueThisMonth > 0 ? 100 : 0;
+
+    const teamAvgDealSizeThisMonth = acceptedThisMonth.length > 0 ? teamTotalRevenueThisMonth / acceptedThisMonth.length : 0;
+    const teamAvgDealSizeLastMonth = acceptedLastMonth.length > 0 ? teamTotalRevenueLastMonth / acceptedLastMonth.length : 0;
+    const teamAvgDealSizeChange = teamAvgDealSizeLastMonth > 0 ? ((teamAvgDealSizeThisMonth - teamAvgDealSizeLastMonth) / teamAvgDealSizeLastMonth) * 100 : teamAvgDealSizeThisMonth > 0 ? 100 : 0;
+
     const teamWinRate = sentProposalsCount > 0 ? (acceptedProposals.length / sentProposalsCount) * 100 : 0;
     const teamTotalRevenue = acceptedProposals.reduce((sum,p) => sum + p.amount, 0);
     const teamAvgDealSize = acceptedProposals.length > 0 ? teamTotalRevenue / acceptedProposals.length : 0;
 
 
-    return { totalRevenue, activeClients, inactiveClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, teamWinRate, teamTotalRevenue, teamAvgDealSize };
+    return { totalRevenue, activeClients, inactiveClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, teamWinRate, teamTotalRevenue, teamAvgDealSize, teamProposalsSentChange, teamWinRateChange, teamTotalRevenueChange, teamAvgDealSizeChange };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod, proposalsByRepPeriod]);
   
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1650,6 +1626,10 @@ const salesRepPayouts = useMemo(() => {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.proposalsSent}</div>
+                             <p className={cn("text-xs text-muted-foreground flex items-center", stats.teamProposalsSentChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                {stats.teamProposalsSentChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                {stats.teamProposalsSentChange.toFixed(1)}% from last month
+                            </p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -1659,6 +1639,10 @@ const salesRepPayouts = useMemo(() => {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.teamWinRate.toFixed(1)}%</div>
+                            <p className={cn("text-xs text-muted-foreground flex items-center", stats.teamWinRateChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                {stats.teamWinRateChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                {stats.teamWinRateChange.toFixed(1)}% from last month
+                            </p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -1668,6 +1652,10 @@ const salesRepPayouts = useMemo(() => {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{currencyFormatter.format(stats.teamTotalRevenue)}</div>
+                             <p className={cn("text-xs text-muted-foreground flex items-center", stats.teamTotalRevenueChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                {stats.teamTotalRevenueChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                {stats.teamTotalRevenueChange.toFixed(1)}% from last month
+                            </p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -1677,6 +1665,10 @@ const salesRepPayouts = useMemo(() => {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{currencyFormatter.format(stats.teamAvgDealSize)}</div>
+                             <p className={cn("text-xs text-muted-foreground flex items-center", stats.teamAvgDealSizeChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                {stats.teamAvgDealSizeChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                {stats.teamAvgDealSizeChange.toFixed(1)}% from last month
+                            </p>
                         </CardContent>
                     </Card>
                 </CardContent>
