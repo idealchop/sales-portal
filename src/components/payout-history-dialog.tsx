@@ -103,7 +103,7 @@ function PaymentTimelineDialog({
     month, 
     status, 
     totalAmount,
-    timelineStatus,
+    timelineStatus: initialTimelineStatus,
     isAdmin,
     onProcessPayout,
 }: { 
@@ -115,6 +115,7 @@ function PaymentTimelineDialog({
     onProcessPayout?: () => void,
  }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const [currentTimelineStatus, setCurrentTimelineStatus] = useState(initialTimelineStatus);
     
     const timelineSteps: { name: TimelineStatus, description: string }[] = [
         { name: 'calculated', description: 'Commissions and bonuses tallied.' },
@@ -123,7 +124,19 @@ function PaymentTimelineDialog({
         { name: 'paid', description: 'Funds deposited to your account.' },
     ];
     
-    const currentStatusIndex = timelineSteps.findIndex(step => step.name === timelineStatus);
+    const currentStatusIndex = timelineSteps.findIndex(step => step.name === currentTimelineStatus);
+
+    const handleStepClick = (stepIndex: number) => {
+        if (!isAdmin || !onProcessPayout) return;
+
+        const newStatus = timelineSteps[stepIndex].name;
+        setCurrentTimelineStatus(newStatus);
+        
+        // Only trigger the actual database update when the 'paid' step is reached
+        if (newStatus === 'paid') {
+            onProcessPayout();
+        }
+    };
 
     return (
         <DialogContent>
@@ -131,20 +144,20 @@ function PaymentTimelineDialog({
                 <DialogTitle>Payout Timeline for {month}</DialogTitle>
                 <DialogDescription>
                     Status for your payout of <span className="font-bold text-primary">{currencyFormatter.format(totalAmount)}</span>.
-                    {isAdmin && <span className="block text-xs mt-1">Click a step to update the status.</span>}
+                    {isAdmin && status === 'pending' && <span className="block text-xs mt-1">Click a step to update the status.</span>}
                 </DialogDescription>
             </DialogHeader>
             <div className="py-6">
                 <ul className="space-y-4">
                     {timelineSteps.map((step, index) => {
                         const isComplete = index <= currentStatusIndex;
-                        const isClickable = isAdmin && onProcessPayout;
+                        const isClickable = isAdmin && status === 'pending';
                         
                         return (
                             <li key={step.name} className="flex items-start gap-4">
                                 <div className="flex flex-col items-center">
                                     <button 
-                                        onClick={isClickable ? () => onProcessPayout() : undefined}
+                                        onClick={() => handleStepClick(index)}
                                         disabled={!isClickable}
                                         className={cn(
                                             "flex h-10 w-10 items-center justify-center rounded-full ring-4 ring-background transition-colors",
@@ -325,7 +338,7 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
             
             const allPaid = uniqueCommissions.every(c => c.status === 'paid');
             const status = isCurrentMonth ? 'pending' : (allPaid ? 'paid' : 'pending');
-            const timelineStatus = allPaid ? 'paid' : 'calculated';
+            const timelineStatus = allPaid ? 'paid' : (isCurrentMonth ? 'calculated' : 'pending');
             
             return { 
                 month, 
