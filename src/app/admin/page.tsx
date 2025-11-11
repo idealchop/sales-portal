@@ -816,9 +816,24 @@ export default function AdminPage() {
   const [proposalsByRepPeriod, setProposalsByRepPeriod] = useState<string>('all');
   const [processingPayouts, setProcessingPayouts] = useState<Record<string, boolean>>({});
 
+  const availableMonthsForRepProposals = useMemo(() => {
+    const monthSet = new Set<string>();
+    proposals.forEach(p => {
+        if (p.createdAt) {
+            try {
+                const proposalDate = typeof p.createdAt === 'string' ? parseISO(p.createdAt) : new Date(p.createdAt);
+                if (!isNaN(proposalDate.getTime())) {
+                    monthSet.add(format(proposalDate, 'MMMM yyyy'));
+                }
+            } catch {}
+        }
+    });
+    return Array.from(monthSet).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+  }, [proposals]);
+
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [], availableMonthsForRepProposals: [] };
+      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [] };
     }
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
@@ -1022,21 +1037,6 @@ export default function AdminPage() {
         { name: 'Rejected', value: proposals.filter(p => p.status === 'rejected').reduce((sum, p) => sum + p.amount, 0), fill: 'hsl(var(--destructive))' },
     ];
 
-    const availableMonthsForRepProposals = useMemo(() => {
-        const monthSet = new Set<string>();
-        proposals.forEach(p => {
-            if (p.createdAt) {
-                try {
-                    const proposalDate = typeof p.createdAt === 'string' ? parseISO(p.createdAt) : new Date(p.createdAt);
-                    if (!isNaN(proposalDate.getTime())) {
-                        monthSet.add(format(proposalDate, 'MMMM yyyy'));
-                    }
-                } catch {}
-            }
-        });
-        return Array.from(monthSet).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
-    }, [proposals]);
-
     const filteredRepProposals = proposalsByRepPeriod === 'all'
         ? proposals
         : proposals.filter(p => {
@@ -1096,7 +1096,7 @@ export default function AdminPage() {
     });
 
 
-    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, availableMonthsForRepProposals };
+    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod, proposalsByRepPeriod]);
   
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
@@ -1565,7 +1565,7 @@ const salesRepPayouts = useMemo(() => {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Time</SelectItem>
-                                {stats.availableMonthsForRepProposals.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
+                                {availableMonthsForRepProposals.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
