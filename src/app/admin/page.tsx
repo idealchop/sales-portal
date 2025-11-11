@@ -4,7 +4,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -772,16 +772,28 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
                                                 </div>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-80">
-                                                 <div className="flex items-center gap-4">
-                                                    <Avatar className="h-16 w-16">
-                                                        <AvatarImage src={rep.photoURL} />
-                                                        <AvatarFallback className="text-xl">{rep.displayName?.[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <h3 className="font-semibold text-lg">{rep.displayName}</h3>
-                                                        <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <Avatar className="h-16 w-16">
+                                                            <AvatarImage src={rep.photoURL} />
+                                                            <AvatarFallback className="text-xl">{rep.displayName?.[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <h3 className="font-semibold text-lg">{rep.displayName}</h3>
+                                                            <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                                        </div>
                                                     </div>
-                                                 </div>
+                                                    <div className="space-y-2 text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <Phone className="h-4 w-4 text-muted-foreground" />
+                                                            <span>{rep.phone || 'N/A'}</span>
+                                                        </div>
+                                                         <div className="flex items-center gap-2">
+                                                            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                                                            <span>{rep.birthday ? format(new Date(rep.birthday), 'PPP') : 'N/A'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </PopoverContent>
                                         </Popover>
                                     </TableCell>
@@ -1650,7 +1662,7 @@ const salesRepPayouts = useMemo(() => {
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="col-span-full">
                 <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>
