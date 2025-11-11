@@ -8,7 +8,7 @@ import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllCommissions } from '@/hooks/use-all-commissions';
-import { useUser } from '@/firebase';
+import { useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, arrayUnion, writeBatch, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -1216,51 +1216,58 @@ export default function AdminPage() {
 }, [commissionsFromHook, salesUsers, commissionsLoading, usersLoading]);
 
 
-  const handleProcessPayout = async (payoutId: string, commissionsToUpdate: WithId<Commission>[], userToNotify: WithId<UserProfile>) => {
+  const handleProcessPayout = (payoutId: string, commissionsToUpdate: WithId<Commission>[], userToNotify: WithId<UserProfile>) => {
       if (!firestore) return;
       
       setProcessingPayouts(prev => ({...prev, [payoutId]: true}));
       
-      try {
-          const batch = writeBatch(firestore);
-          const monthName = payoutId.split('-').slice(1).join('-');
+      const batch = writeBatch(firestore);
+      const monthName = payoutId.split('-').slice(1).join('-');
 
-          commissionsToUpdate.forEach(commission => {
-                const commissionRef = doc(firestore, 'commissions', commission.id);
-                const { id, ...commissionData } = commission;
-                batch.set(commissionRef, {
-                    ...commissionData,
-                    status: 'paid'
-                }, { merge: true });
-          });
+      commissionsToUpdate.forEach(commission => {
+            const commissionRef = doc(firestore, 'commissions', commission.id);
+            const { id, ...commissionData } = commission;
+            batch.set(commissionRef, {
+                ...commissionData,
+                status: 'paid'
+            }, { merge: true });
+      });
 
-          // Create a notification for the user
-          const notificationRef = collection(firestore, `users/${userToNotify.id}/notifications`);
-          const payoutAmount = commissionsToUpdate.reduce((sum, c) => sum + c.amount, 0);
-          await addDoc(notificationRef, {
-              title: "Payout Processed",
-              message: `Your payout for ${monthName} amounting to ${currencyFormatter.format(payoutAmount)} has been successfully processed.`,
-              isRead: false,
-              createdAt: serverTimestamp(),
-              type: 'payout'
-          });
-          
-          await batch.commit();
+      // Create a notification for the user
+      const notificationRef = collection(firestore, `users/${userToNotify.id}/notifications`);
+      const payoutAmount = commissionsToUpdate.reduce((sum, c) => sum + c.amount, 0);
+      const notificationData = {
+          title: "Payout Processed",
+          message: `Your payout for ${monthName} amounting to ${currencyFormatter.format(payoutAmount)} has been successfully processed.`,
+          isRead: false,
+          createdAt: serverTimestamp(),
+          type: 'payout'
+      };
 
+      addDoc(notificationRef, notificationData).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: notificationRef.path,
+          operation: 'create', 
+          requestResourceData: notificationData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+      
+      batch.commit().then(() => {
           toast({
               title: "Payout Processed",
               description: `The ${monthName} payout for ${userToNotify.displayName} has been marked as paid and a notification has been sent.`,
           });
-      } catch (error) {
-          console.error("Error processing payout:", error);
-          toast({
-              variant: 'destructive',
-              title: "Error",
-              description: "Failed to process payout.",
+      }).catch(async (error) => {
+          const permissionError = new FirestorePermissionError({
+            path: 'commissions',
+            operation: 'write', 
+            requestResourceData: commissionsToUpdate.map(c => ({...c, status: 'paid'})),
           });
-      } finally {
+          errorEmitter.emit('permission-error', permissionError);
+      }).finally(() => {
           setProcessingPayouts(prev => ({...prev, [payoutId]: false}));
-      }
+      });
   };
 
 
@@ -1750,8 +1757,8 @@ export default function AdminPage() {
                                              <PayoutHistoryDialog 
                                                 user={payout.user}
                                                 commissions={commissionsFromHook.filter(c => c.userId === payout.user.id)}
-                                                clients={clients.filter(c => proposals.some(p => p.clientId === c.id && p.userId === payout.user.id))}
-                                                proposals={proposals.filter(p => p.userId === payout.user.id)}
+                                                clients={clients}
+                                                proposals={proposals}
                                                 isAdmin={true}
                                                 onProcessPayout={(payoutId, commissions) => handleProcessPayout(payoutId, commissions, payout.user)}
                                                 processingPayouts={processingPayouts}
@@ -1785,3 +1792,6 @@ export default function AdminPage() {
 
 
 
+
+
+    
