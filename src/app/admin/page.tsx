@@ -813,11 +813,12 @@ export default function AdminPage() {
   const { toast } = useToast();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   const [planDistributionPeriod, setPlanDistributionPeriod] = useState('all');
+  const [proposalsByRepPeriod, setProposalsByRepPeriod] = useState<string>('all');
   const [processingPayouts, setProcessingPayouts] = useState<Record<string, boolean>>({});
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [] };
+      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, salesReps: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [], availableMonthsForRepProposals: [] };
     }
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
@@ -1021,11 +1022,38 @@ export default function AdminPage() {
         { name: 'Rejected', value: proposals.filter(p => p.status === 'rejected').reduce((sum, p) => sum + p.amount, 0), fill: 'hsl(var(--destructive))' },
     ];
 
+    const availableMonthsForRepProposals = useMemo(() => {
+        const monthSet = new Set<string>();
+        proposals.forEach(p => {
+            if (p.createdAt) {
+                try {
+                    const proposalDate = typeof p.createdAt === 'string' ? parseISO(p.createdAt) : new Date(p.createdAt);
+                    if (!isNaN(proposalDate.getTime())) {
+                        monthSet.add(format(proposalDate, 'MMMM yyyy'));
+                    }
+                } catch {}
+            }
+        });
+        return Array.from(monthSet).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+    }, [proposals]);
 
-    const proposalCountsByRep = proposals.reduce((acc, proposal) => {
+    const filteredRepProposals = proposalsByRepPeriod === 'all'
+        ? proposals
+        : proposals.filter(p => {
+            if (!p.createdAt) return false;
+            try {
+                const proposalDate = typeof p.createdAt === 'string' ? parseISO(p.createdAt) : new Date(p.createdAt);
+                return format(proposalDate, 'MMMM yyyy') === proposalsByRepPeriod;
+            } catch {
+                return false;
+            }
+        });
+
+    const proposalCountsByRep = filteredRepProposals.reduce((acc, proposal) => {
         acc[proposal.userId] = (acc[proposal.userId] || 0) + 1;
         return acc;
     }, {} as { [key: string]: number });
+
 
     const proposalsByRep = Object.entries(proposalCountsByRep).map(([userId, count]) => {
         const user = salesUsers.find(u => u.id === userId);
@@ -1068,8 +1096,8 @@ export default function AdminPage() {
     });
 
 
-    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth };
-  }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod]);
+    return { totalRevenue, activeClients, inactiveClients, salesReps, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, availableMonthsForRepProposals };
+  }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod, proposalsByRepPeriod]);
   
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
 
@@ -1523,41 +1551,54 @@ const salesRepPayouts = useMemo(() => {
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Proposals By Sales Rep</CardTitle>
-                        <CardDescription>Total proposals created by each team member.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[250px] pr-6">
-                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
-                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                <XAxis 
-                                    dataKey="userId" 
-                                    tickLine={false} 
-                                    axisLine={false} 
-                                    tick={<CustomXAxisTick salesUsers={salesUsers} />}
-                                    interval={0}
-                                />
-                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                                <Tooltip
-                                    cursor={{ fill: 'hsl(var(--muted))' }}
-                                    contentStyle={{ 
-                                        backgroundColor: 'hsl(var(--background))',
-                                        border: '1px solid hsl(var(--border))',
-                                        borderRadius: 'var(--radius)'
-                                    }}
-                                    labelFormatter={(value) => {
-                                        const user = salesUsers.find(u => u.id === value);
-                                        return user ? user.displayName : 'Unknown';
-                                    }}
-                                />
-                                <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
             </div>
+            <Card className="md:col-span-2">
+                <CardHeader>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle>Proposals By Sales Rep</CardTitle>
+                            <CardDescription>Total proposals created by each team member.</CardDescription>
+                        </div>
+                        <Select value={proposalsByRepPeriod} onValueChange={setProposalsByRepPeriod}>
+                            <SelectTrigger className="w-auto px-3">
+                                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Time</SelectItem>
+                                {stats.availableMonthsForRepProposals.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardHeader>
+                <CardContent className="h-[250px] pr-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={stats.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
+                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                            <XAxis 
+                                dataKey="userId" 
+                                tickLine={false} 
+                                axisLine={false} 
+                                tick={<CustomXAxisTick salesUsers={salesUsers} />}
+                                interval={0}
+                            />
+                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                            <Tooltip
+                                cursor={{ fill: 'hsl(var(--muted))' }}
+                                contentStyle={{ 
+                                    backgroundColor: 'hsl(var(--background))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: 'var(--radius)'
+                                }}
+                                labelFormatter={(value) => {
+                                    const user = salesUsers.find(u => u.id === value);
+                                    return user ? user.displayName : 'Unknown';
+                                }}
+                            />
+                            <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
             <SalesTeamLeaderboard users={salesUsers} proposals={proposals} />
         </TabsContent>
         <TabsContent value="payroll" className="mt-6 space-y-6">
