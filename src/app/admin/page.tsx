@@ -931,6 +931,7 @@ export default function AdminPage() {
   const [processingPayouts, setProcessingPayouts] = useState<Record<string, boolean>>({});
 
   const availableMonthsForRepProposals = useMemo(() => {
+    if (!proposals) return [];
     const monthSet = new Set<string>();
     proposals.forEach(p => {
         if (p.createdAt) {
@@ -1733,7 +1734,7 @@ export default function AdminPage() {
                                         <TableCell className="text-center">
                                              <PayoutHistoryDialog 
                                                 user={payout.user}
-                                                commissions={allPayouts.filter(p => p.userId === payout.user.id)}
+                                                commissions={allPayouts?.filter(p => p.commissions.some(c => c.userId === payout.user.id))}
                                                 clients={clients}
                                                 proposals={proposals}
                                                 isAdmin={true}
@@ -1762,5 +1763,6 @@ export default function AdminPage() {
     
 
     
+
 
 
