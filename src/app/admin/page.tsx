@@ -665,6 +665,8 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
 const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>[], proposals: WithId<Proposal>[] }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 15;
 
     const leaderboardData = useMemo(() => {
         const usersWithData = users.map(user => {
@@ -710,6 +712,13 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
 
         return filteredData.sort((a, b) => b.totalRevenue - a.totalRevenue);
     }, [users, proposals, searchQuery]);
+    
+    const totalPages = Math.ceil(leaderboardData.length / ITEMS_PER_PAGE);
+    const paginatedData = leaderboardData.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    );
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
     return (
         <Card>
@@ -738,50 +747,78 @@ const SalesTeamLeaderboard = ({ users, proposals }: { users: WithId<UserProfile>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {leaderboardData.map((rep, index) => (
-                            <TableRow key={rep.id}>
-                                <TableCell className="font-bold text-lg">
-                                    {index === 0 && <Trophy className="w-6 h-6 text-yellow-400" />}
-                                    {index === 1 && <Award className="w-6 h-6 text-gray-400" />}
-                                    {index === 2 && <Award className="w-6 h-6 text-orange-400" />}
-                                    {index > 2 && index + 1}
-                                </TableCell>
-                                <TableCell>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <div className="flex items-center gap-3 cursor-pointer">
-                                                <Avatar>
-                                                    <AvatarImage src={rep.photoURL} />
-                                                    <AvatarFallback>{rep.displayName?.[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="font-medium hover:underline">{rep.displayName}</p>
-                                                    <p className="text-sm text-muted-foreground">{rep.email}</p>
+                        {paginatedData.map((rep, index) => {
+                            const rank = startIndex + index + 1;
+                            return (
+                                <TableRow key={rep.id}>
+                                    <TableCell className="font-bold text-lg">
+                                        {rank === 1 && <Trophy className="w-6 h-6 text-yellow-400" />}
+                                        {rank === 2 && <Award className="w-6 h-6 text-gray-400" />}
+                                        {rank === 3 && <Award className="w-6 h-6 text-orange-400" />}
+                                        {rank > 3 && rank}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <div className="flex items-center gap-3 cursor-pointer">
+                                                    <Avatar>
+                                                        <AvatarImage src={rep.photoURL} />
+                                                        <AvatarFallback>{rep.displayName?.[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-medium hover:underline">{rep.displayName}</p>
+                                                        <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80">
-                                             <div className="flex items-center gap-4">
-                                                <Avatar className="h-16 w-16">
-                                                    <AvatarImage src={rep.photoURL} />
-                                                    <AvatarFallback className="text-xl">{rep.displayName?.[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <h3 className="font-semibold text-lg">{rep.displayName}</h3>
-                                                    <p className="text-sm text-muted-foreground">{rep.email}</p>
-                                                </div>
-                                             </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                </TableCell>
-                                <TableCell>{rep.proposalsWon}</TableCell>
-                                <TableCell>{rep.winRate.toFixed(1)}%</TableCell>
-                                <TableCell className="text-right font-semibold">{currencyFormatter.format(rep.totalRevenue)}</TableCell>
-                            </TableRow>
-                        ))}
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-80">
+                                                 <div className="flex items-center gap-4">
+                                                    <Avatar className="h-16 w-16">
+                                                        <AvatarImage src={rep.photoURL} />
+                                                        <AvatarFallback className="text-xl">{rep.displayName?.[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <h3 className="font-semibold text-lg">{rep.displayName}</h3>
+                                                        <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                                    </div>
+                                                 </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </TableCell>
+                                    <TableCell>{rep.proposalsWon}</TableCell>
+                                    <TableCell>{rep.winRate.toFixed(1)}%</TableCell>
+                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(rep.totalRevenue)}</TableCell>
+                                </TableRow>
+                            )
+                        })}
                     </TableBody>
                 </Table>
             </CardContent>
+            <CardFooter>
+                <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                        Showing {Math.min(paginatedData.length, ITEMS_PER_PAGE)} of {leaderboardData.length} sales reps.
+                    </span>
+                    <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </Button>
+                    </div>
+                </div>
+            </CardFooter>
         </Card>
     );
 };
