@@ -40,8 +40,6 @@ export function useCommissions(userId?: string) {
     setIsLoading(true);
 
     const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', '==', targetUserId));
-    const clientQuery = query(collection(firestore, 'clients'), where('userId', '==', targetUserId));
-
     const unsubCommissions = onSnapshot(commissionsQuery, (snapshot) => {
         const userCommissions: WithId<Commission>[] = [];
         snapshot.forEach(doc => {
@@ -55,77 +53,59 @@ export function useCommissions(userId?: string) {
             userCommissions.push({ ...data as Commission, id: doc.id, createdAt: createdAtString });
         });
         setCommissions(userCommissions);
+        if(!unsubClients && !unsubProposals) setIsLoading(false);
     }, (e) => {
         console.error("Error fetching commissions:", e);
         setError(e);
         setIsLoading(false);
     });
-
+    
+    const clientQuery = query(collection(firestore, 'clients'), where('userId', '==', targetUserId));
     const unsubClients = onSnapshot(clientQuery, (snapshot) => {
         const userClients: WithId<Client>[] = [];
         snapshot.forEach(doc => userClients.push({ id: doc.id, ...doc.data() } as WithId<Client>));
         setClients(userClients);
+        if(!unsubCommissions && !unsubProposals) setIsLoading(false);
     }, (e) => {
         console.error("Error fetching clients:", e);
         setError(e);
         setIsLoading(false);
     });
-    
-    // Fetch all proposals for the user's clients
-    const fetchProposals = async () => {
-        if (clients.length > 0) {
-            const allProposals: WithId<Proposal>[] = [];
-            for (const client of clients) {
-                const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
-                const proposalsQuery = query(proposalsRef, where('userId', '==', targetUserId));
-                
-                const unsub = onSnapshot(proposalsQuery, (snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
-                        const proposalData = change.doc.data() as Omit<Proposal, 'id'>;
-                        let createdAtString: string;
-                        if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
-                            createdAtString = (proposalData.createdAt as any).toDate().toISOString();
-                        } else {
-                            createdAtString = proposalData.createdAt as string;
-                        }
-                        const newProposal = {
-                            ...(proposalData as Proposal),
-                            id: change.doc.id,
-                            clientId: client.id,
-                            createdAt: createdAtString,
-                        };
 
-                        if (change.type === "added") {
-                             setProposals(prev => [...prev, newProposal]);
-                        }
-                        if (change.type === "modified") {
-                             setProposals(prev => prev.map(p => p.id === newProposal.id ? newProposal : p));
-                        }
-                        if (change.type === "removed") {
-                            setProposals(prev => prev.filter(p => p.id !== change.doc.id));
-                        }
-                    });
-                     setIsLoading(false);
-                }, (e) => {
-                    console.error(`Error fetching proposals for client ${client.id}:`, e);
-                    setError(e as Error);
-                    setIsLoading(false);
-                });
-                // In a real app you'd manage these unsubscribes
+    const proposalQuery = query(collection(firestore, 'proposals',), where('userId', '==', targetUserId));
+     const unsubProposals = onSnapshot(proposalQuery, (snapshot) => {
+        const userProposals: WithId<Proposal>[] = [];
+        snapshot.forEach(doc => {
+             const proposalData = doc.data() as Omit<Proposal, 'id'>;
+            let createdAtString: string;
+            if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
+                createdAtString = (proposalData.createdAt as any).toDate().toISOString();
+            } else {
+                createdAtString = proposalData.createdAt as string;
             }
-        } else {
-            setIsLoading(false);
-        }
-    };
-    
-    fetchProposals();
+            userProposals.push({
+                ...(proposalData as Proposal),
+                id: doc.id,
+                clientId: doc.ref.parent.parent?.id || '',
+                createdAt: createdAtString,
+            });
+        });
+        setProposals(userProposals);
+        if(!unsubCommissions && !unsubClients) setIsLoading(false);
+    }, (e) => {
+        console.error("Error fetching proposals:", e);
+        setError(e);
+        setIsLoading(false);
+    });
+
 
     return () => {
         unsubCommissions();
         unsubClients();
+        unsubProposals();
     };
 
-  }, [firestore, targetUserId, isFirebaseLoading, clients.length]); // Added clients.length to re-trigger proposal fetch
+  }, [firestore, targetUserId, isFirebaseLoading]);
   
     const allPayouts = useMemo(() => {
         if (isLoading) return [];

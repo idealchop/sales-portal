@@ -1227,7 +1227,6 @@ export default function AdminPage() {
 
           commissionsToUpdate.forEach(commission => {
                 const commissionRef = doc(firestore, 'commissions', commission.id);
-                // Exclude 'id' and any other non-data properties from the object to be written
                 const { id, ...commissionData } = commission;
                 batch.set(commissionRef, {
                     ...commissionData,
@@ -1750,6 +1749,9 @@ export default function AdminPage() {
                                         <TableCell className="text-center">
                                              <PayoutHistoryDialog 
                                                 user={payout.user}
+                                                commissions={commissionsFromHook.filter(c => c.userId === payout.user.id)}
+                                                clients={clients.filter(c => proposals.some(p => p.clientId === c.id && p.userId === payout.user.id))}
+                                                proposals={proposals.filter(p => p.userId === payout.user.id)}
                                                 isAdmin={true}
                                                 onProcessPayout={(payoutId, commissions) => handleProcessPayout(payoutId, commissions, payout.user)}
                                                 processingPayouts={processingPayouts}
@@ -1776,6 +1778,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 

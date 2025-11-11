@@ -18,16 +18,13 @@ export function useAllProposals(): UseAllProposalsResult {
   const [proposals, setProposals] = useState<WithId<Proposal>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     if (isFirebaseLoading || !firestore) {
       return;
     }
 
-    if (isInitialLoad) {
-        setIsLoading(true);
-    }
+    setIsLoading(true);
     
     const proposalsQuery = query(collectionGroup(firestore, 'proposals'));
 
@@ -60,10 +57,7 @@ export function useAllProposals(): UseAllProposalsResult {
 
         setProposals(allProposals);
         setError(null);
-        if (isInitialLoad) {
-            setIsLoading(false);
-            setIsInitialLoad(false);
-        }
+        setIsLoading(false);
       },
       (e: FirestoreError) => {
         console.error("Failed to fetch all proposals:", e);
@@ -74,7 +68,7 @@ export function useAllProposals(): UseAllProposalsResult {
     
     return () => unsubscribe();
 
-  }, [firestore, isFirebaseLoading, isInitialLoad]);
+  }, [firestore, isFirebaseLoading]);
 
   return { 
     proposals, 

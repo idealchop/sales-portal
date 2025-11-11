@@ -12,16 +12,13 @@ export function useAllClients() {
   const [clients, setClients] = useState<WithId<Client>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     if (isFirebaseLoading || !firestore) {
       return;
     }
     
-    if (isInitialLoad) {
-      setIsLoading(true);
-    }
+    setIsLoading(true);
 
     const clientsQuery = query(collection(firestore, "clients"));
 
@@ -46,10 +43,7 @@ export function useAllClients() {
         });
         setClients(allClients);
         setError(null);
-        if (isInitialLoad) {
-            setIsLoading(false);
-            setIsInitialLoad(false);
-        }
+        setIsLoading(false);
       },
       (e: FirestoreError) => {
         setError(e);
@@ -61,7 +55,7 @@ export function useAllClients() {
     // Cleanup subscription on unmount
     return () => unsubscribe();
 
-  }, [firestore, isFirebaseLoading, isInitialLoad]);
+  }, [firestore, isFirebaseLoading]);
 
   return { clients, isLoading: isLoading, error };
 }
