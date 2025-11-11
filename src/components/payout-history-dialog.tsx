@@ -1,5 +1,3 @@
-
-
 'use client';
 import {
   Dialog,
@@ -25,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { format, startOfMonth, isWithinInterval, addYears, parseISO } from 'date-fns';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Badge } from './ui/badge';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TFooter } from './ui/table';
@@ -39,11 +37,14 @@ import { WithId } from "@/firebase";
 
 type PayoutCommission = Commission & { clientName?: string };
 
+type TimelineStatus = 'calculated' | 'reviewed' | 'processing' | 'paid';
+
 type MonthlyPayout = {
     month: string;
     totalAmount: number;
     status: 'paid' | 'pending';
-    commissions: PayoutCommission[];
+    timelineStatus: TimelineStatus;
+    commissions: WithId<PayoutCommission>[];
     transactionId: string;
 };
 
@@ -98,15 +99,31 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
     );
 }
 
-function PaymentTimelineDialog({ month, status, totalAmount }: { month: string, status: 'paid' | 'pending', totalAmount: number }) {
+function PaymentTimelineDialog({ 
+    month, 
+    status, 
+    totalAmount,
+    timelineStatus,
+    isAdmin,
+    onProcessPayout,
+}: { 
+    month: string, 
+    status: 'paid' | 'pending', 
+    totalAmount: number,
+    timelineStatus: TimelineStatus,
+    isAdmin: boolean,
+    onProcessPayout?: () => void,
+ }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-
-    const timelineSteps = [
-        { name: 'Calculation', description: 'Commissions and bonuses tallied.', isComplete: true },
-        { name: 'Review', description: 'Payouts verified by finance.', isComplete: true },
-        { name: 'Processing', description: 'Sent to payment provider.', isComplete: status === 'paid' },
-        { name: 'Paid', description: 'Funds deposited to your account.', isComplete: status === 'paid' },
+    
+    const timelineSteps: { name: TimelineStatus, description: string }[] = [
+        { name: 'calculated', description: 'Commissions and bonuses tallied.' },
+        { name: 'reviewed', description: 'Payouts verified by finance.' },
+        { name: 'processing', description: 'Sent to payment provider.' },
+        { name: 'paid', description: 'Funds deposited to your account.' },
     ];
+    
+    const currentStatusIndex = timelineSteps.findIndex(step => step.name === timelineStatus);
 
     return (
         <DialogContent>
@@ -114,32 +131,43 @@ function PaymentTimelineDialog({ month, status, totalAmount }: { month: string, 
                 <DialogTitle>Payout Timeline for {month}</DialogTitle>
                 <DialogDescription>
                     Status for your payout of <span className="font-bold text-primary">{currencyFormatter.format(totalAmount)}</span>.
+                    {isAdmin && <span className="block text-xs mt-1">Click a step to update the status.</span>}
                 </DialogDescription>
             </DialogHeader>
             <div className="py-6">
                 <ul className="space-y-4">
-                    {timelineSteps.map((step, index) => (
-                        <li key={step.name} className="flex items-start gap-4">
-                            <div className="flex flex-col items-center">
-                                <div className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-full ring-4 ring-background",
-                                    step.isComplete ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700"
-                                )}>
-                                    {step.isComplete ? <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" /> : <Clock className="h-5 w-5 text-gray-500" />}
+                    {timelineSteps.map((step, index) => {
+                        const isComplete = index <= currentStatusIndex;
+                        const isClickable = isAdmin && onProcessPayout;
+                        
+                        return (
+                            <li key={step.name} className="flex items-start gap-4">
+                                <div className="flex flex-col items-center">
+                                    <button 
+                                        onClick={isClickable ? () => onProcessPayout() : undefined}
+                                        disabled={!isClickable}
+                                        className={cn(
+                                            "flex h-10 w-10 items-center justify-center rounded-full ring-4 ring-background transition-colors",
+                                            isComplete ? "bg-green-100 dark:bg-green-900" : "bg-gray-100 dark:bg-gray-700",
+                                            isClickable && "hover:bg-green-200 dark:hover:bg-green-800"
+                                        )}
+                                    >
+                                        {isComplete ? <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" /> : <Clock className="h-5 w-5 text-gray-500" />}
+                                    </button>
+                                    {index < timelineSteps.length - 1 && (
+                                        <div className={cn(
+                                            "h-12 w-px",
+                                            isComplete ? "bg-green-300" : "bg-border"
+                                        )}></div>
+                                    )}
                                 </div>
-                                {index < timelineSteps.length - 1 && (
-                                    <div className={cn(
-                                        "h-12 w-px",
-                                        step.isComplete ? "bg-green-300" : "bg-border"
-                                    )}></div>
-                                )}
-                            </div>
-                            <div>
-                                <h4 className="font-semibold">{step.name}</h4>
-                                <p className="text-sm text-muted-foreground">{step.description}</p>
-                            </div>
-                        </li>
-                    ))}
+                                <div>
+                                    <h4 className="font-semibold capitalize">{step.name}</h4>
+                                    <p className="text-sm text-muted-foreground">{step.description}</p>
+                                </div>
+                            </li>
+                        )
+                    })}
                 </ul>
             </div>
         </DialogContent>
@@ -173,7 +201,7 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
         };
         const recurringCommissionRate = 0.03;
         
-        const currentMonthCommissions: PayoutCommission[] = [];
+        const currentMonthCommissions: WithId<PayoutCommission>[] = [];
 
         const acceptedThisMonth = proposals.filter(p => {
             if (!p.createdAt) return false;
@@ -260,7 +288,7 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
                 currentMonthCommissions.push({
                     id: `bonus-corp-${tier.target}`, amount: tier.bonus, createdAt: now.toISOString(),
                     description: tier.name, clientName: 'N/A', proposalId: 'N/A',
-                    status: 'pending', type: 'bonus', userId: user?.id || '', referenceId: `bonus-corp-${tier.target}`
+                    status: 'pending', type: 'bonus', userId: authUser?.id || '', referenceId: `bonus-corp-${tier.target}`
                 });
             }
         });
@@ -269,7 +297,7 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
                 currentMonthCommissions.push({
                     id: `bonus-fam-${tier.target}`, amount: tier.bonus, createdAt: now.toISOString(),
                     description: tier.name, clientName: 'N/A', proposalId: 'N/A',
-                    status: 'pending', type: 'bonus', userId: user?.id || '', referenceId: `bonus-fam-${tier.target}`
+                    status: 'pending', type: 'bonus', userId: authUser?.id || '', referenceId: `bonus-fam-${tier.target}`
                 });
             }
         });
@@ -280,7 +308,7 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
             if (!acc[monthKey]) acc[monthKey] = [];
             acc[monthKey].push(commission);
             return acc;
-        }, {} as Record<string, PayoutCommission[]>);
+        }, {} as Record<string, WithId<PayoutCommission>[]>);
 
         if (!commissionsByMonth[currentMonthKey]) {
             commissionsByMonth[currentMonthKey] = [];
@@ -295,12 +323,15 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
             const totalAmount = uniqueCommissions.reduce((sum, c) => sum + c.amount, 0);
             const isCurrentMonth = month === currentMonthKey;
             
-            const status = isCurrentMonth ? 'pending' : (uniqueCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending');
+            const allPaid = uniqueCommissions.every(c => c.status === 'paid');
+            const status = isCurrentMonth ? 'pending' : (allPaid ? 'paid' : 'pending');
+            const timelineStatus = allPaid ? 'paid' : 'calculated';
             
             return { 
                 month, 
                 totalAmount, 
                 status, 
+                timelineStatus,
                 commissions: uniqueCommissions,
                 transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${user?.id.slice(0, 4).toUpperCase()}`
             };
@@ -308,7 +339,7 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, clients, proposals, isLoading, user]);
+    }, [commissions, clients, proposals, isLoading, user, authUser]);
 
 
     const { filteredPayouts, availableYears } = useMemo(() => {
@@ -403,7 +434,14 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
                                                                 {payout.status}
                                                             </Badge>
                                                         </DialogTrigger>
-                                                        <PaymentTimelineDialog month={payout.month} status={payout.status} totalAmount={payout.totalAmount} />
+                                                        <PaymentTimelineDialog 
+                                                            month={payout.month} 
+                                                            status={payout.status} 
+                                                            totalAmount={payout.totalAmount}
+                                                            timelineStatus={payout.timelineStatus}
+                                                            isAdmin={isAdmin}
+                                                            onProcessPayout={isAdmin && payout.status === 'pending' && onProcessPayout ? () => onProcessPayout(`${user?.id}-${payout.month}`, payout.commissions) : undefined}
+                                                        />
                                                     </Dialog>
                                                 </TableCell>
                                                  {isAdmin && (

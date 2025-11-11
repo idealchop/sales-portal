@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -1734,7 +1732,7 @@ export default function AdminPage() {
                                         <TableCell className="text-center">
                                              <PayoutHistoryDialog 
                                                 user={payout.user}
-                                                commissions={allPayouts?.filter(p => p.commissions.some(c => c.userId === payout.user.id))}
+                                                commissions={commissionsFromHook.filter(p => p.userId === payout.user.id)}
                                                 clients={clients}
                                                 proposals={proposals}
                                                 isAdmin={true}
@@ -1763,6 +1761,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 
