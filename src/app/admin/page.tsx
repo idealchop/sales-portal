@@ -1328,7 +1328,7 @@ const salesRepPayouts = useMemo(() => {
                             </div>
                             <DialogDescription>Client status trends over the last 6 months.</DialogDescription>
                         </DialogHeader>
-                         <div className="h-[350px] w-full">
+                        <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={stats.clientGrowthData}>
                                      <defs>
