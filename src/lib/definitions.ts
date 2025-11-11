@@ -117,5 +117,14 @@ export type Commission = {
   clientName?: string;
 };
     
+export type Notification = {
+    id: string;
+    title: string;
+    message: string;
+    isRead: boolean;
+    createdAt: string;
+    type: 'payout' | 'announcement';
+}
     
+
 

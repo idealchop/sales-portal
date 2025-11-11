@@ -42,7 +42,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { doc, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, setDoc, updateDoc, collection, query, where, getDocs, onSnapshot, orderBy, limit } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
@@ -52,7 +52,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card'
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import type { Commission } from '@/lib/definitions';
+import type { Commission, Notification } from '@/lib/definitions';
 import { PayoutHistoryDialog } from './payout-history-dialog';
 
 
@@ -454,6 +454,88 @@ function ProfileDialogContent() {
     );
 }
 
+function NotificationsPopover() {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const notifsQuery = query(
+            collection(firestore, `users/${user.uid}/notifications`),
+            orderBy('createdAt', 'desc'),
+            limit(10)
+        );
+
+        const unsubscribe = onSnapshot(notifsQuery, (snapshot) => {
+            const fetched: Notification[] = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                fetched.push({
+                    id: doc.id,
+                    ...data,
+                    createdAt: (data.createdAt as any)?.toDate()
+                } as Notification);
+            });
+            setNotifications(fetched);
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user, firestore]);
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full relative">
+                    <Bell className="h-5 w-5" />
+                    {notifications.some(n => !n.isRead) && (
+                        <span className="absolute top-1 right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                        </span>
+                    )}
+                    <span className="sr-only">Toggle notifications</span>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-0">
+                <div className="p-4 border-b">
+                    <h3 className="font-semibold">Notifications</h3>
+                </div>
+                <ScrollArea className="h-80">
+                    {isLoading ? (
+                         <div className="flex h-full items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground"/>
+                        </div>
+                    ) : notifications.length > 0 ? (
+                        <div className="divide-y">
+                            {notifications.map(notif => (
+                                <div key={notif.id} className={cn("p-4 flex items-start gap-3", !notif.isRead && "bg-primary/5")}>
+                                     <div className={cn("h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1", notif.type === 'payout' ? 'bg-green-100' : 'bg-blue-100')}>
+                                        <CreditCard className="h-4 w-4 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium">{notif.title}</p>
+                                        <p className="text-xs text-muted-foreground">{notif.message}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">{format(new Date(notif.createdAt), 'PPp')}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                            <Bell className="h-10 w-10 text-muted-foreground" />
+                            <p className="mt-2 text-sm text-muted-foreground">No new notifications.</p>
+                        </div>
+                    )}
+                </ScrollArea>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 export function DashboardHeader() {
   const { user } = useUser();
   const auth = useAuth();
@@ -476,11 +558,9 @@ export function DashboardHeader() {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-8">
       <SidebarTrigger />
       
-      <div className="ml-auto flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Toggle notifications</span>
-        </Button>
+      <div className="ml-auto flex items-center gap-2">
+        <NotificationsPopover />
+
         <Dialog>
           <Popover>
             <PopoverTrigger asChild>

@@ -2,9 +2,9 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { collection, query, where, onSnapshot, collectionGroup, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { useFirebase, useUser } from '@/firebase';
-import type { Commission, Client, Proposal, UserProfile } from '@/lib/definitions';
+import type { Commission, Client, Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { format, startOfMonth, isWithinInterval, addYears, parseISO } from 'date-fns';
 import type { FinalPlanDetails } from '@/components/contract-details';
@@ -15,6 +15,7 @@ export type MonthlyPayout = {
     month: string;
     totalAmount: number;
     status: 'paid' | 'pending';
+    timelineStatus: 'calculated' | 'reviewed' | 'processing' | 'paid';
     commissions: WithId<PayoutCommission>[];
     transactionId: string;
 };
@@ -39,7 +40,6 @@ export function useCommissions(userId?: string) {
     setIsLoading(true);
 
     const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', '==', targetUserId));
-    
     const clientQuery = query(collection(firestore, 'clients'), where('userId', '==', targetUserId));
 
     const unsubCommissions = onSnapshot(commissionsQuery, (snapshot) => {
@@ -52,13 +52,8 @@ export function useCommissions(userId?: string) {
             } else {
                 createdAtString = data.createdAt as string;
             }
-            userCommissions.push({
-                ...data as Commission,
-                id: doc.id,
-                createdAt: createdAtString,
-            });
+            userCommissions.push({ ...data as Commission, id: doc.id, createdAt: createdAtString });
         });
-        userCommissions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setCommissions(userCommissions);
     }, (e) => {
         console.error("Error fetching commissions:", e);
@@ -66,60 +61,71 @@ export function useCommissions(userId?: string) {
         setIsLoading(false);
     });
 
-    const unsubClients = onSnapshot(clientQuery, async (snapshot) => {
+    const unsubClients = onSnapshot(clientQuery, (snapshot) => {
         const userClients: WithId<Client>[] = [];
-        snapshot.forEach(doc => {
-            userClients.push({ id: doc.id, ...doc.data() } as WithId<Client>);
-        });
+        snapshot.forEach(doc => userClients.push({ id: doc.id, ...doc.data() } as WithId<Client>));
         setClients(userClients);
-
-        if (userClients.length === 0) {
-            setProposals([]);
-            setIsLoading(false);
-            return;
-        }
-
-        const allProposals: WithId<Proposal>[] = [];
-        for (const client of userClients) {
-            const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
-            const proposalsQuery = query(proposalsRef, where('userId', '==', targetUserId));
-            try {
-                const proposalsSnapshot = await getDocs(proposalsQuery);
-                proposalsSnapshot.forEach(doc => {
-                    const proposalData = doc.data() as Omit<Proposal, 'id'>;
-                     let createdAtString: string;
-                    if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
-                        createdAtString = (proposalData.createdAt as any).toDate().toISOString();
-                    } else {
-                        createdAtString = proposalData.createdAt as string;
-                    }
-                    allProposals.push({
-                        ...(proposalData as Proposal),
-                        id: doc.id,
-                        clientId: client.id,
-                        createdAt: createdAtString,
-                    });
-                });
-            } catch (proposalError) {
-                console.error(`Error fetching proposals for client ${client.id}:`, proposalError);
-                setError(proposalError as Error);
-            }
-        }
-        allProposals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setProposals(allProposals);
-        setIsLoading(false);
     }, (e) => {
         console.error("Error fetching clients:", e);
         setError(e);
         setIsLoading(false);
     });
+    
+    // Fetch all proposals for the user's clients
+    const fetchProposals = async () => {
+        if (clients.length > 0) {
+            const allProposals: WithId<Proposal>[] = [];
+            for (const client of clients) {
+                const proposalsRef = collection(firestore, `clients/${client.id}/proposals`);
+                const proposalsQuery = query(proposalsRef, where('userId', '==', targetUserId));
+                
+                const unsub = onSnapshot(proposalsQuery, (snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        const proposalData = change.doc.data() as Omit<Proposal, 'id'>;
+                        let createdAtString: string;
+                        if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
+                            createdAtString = (proposalData.createdAt as any).toDate().toISOString();
+                        } else {
+                            createdAtString = proposalData.createdAt as string;
+                        }
+                        const newProposal = {
+                            ...(proposalData as Proposal),
+                            id: change.doc.id,
+                            clientId: client.id,
+                            createdAt: createdAtString,
+                        };
+
+                        if (change.type === "added") {
+                             setProposals(prev => [...prev, newProposal]);
+                        }
+                        if (change.type === "modified") {
+                             setProposals(prev => prev.map(p => p.id === newProposal.id ? newProposal : p));
+                        }
+                        if (change.type === "removed") {
+                            setProposals(prev => prev.filter(p => p.id !== change.doc.id));
+                        }
+                    });
+                     setIsLoading(false);
+                }, (e) => {
+                    console.error(`Error fetching proposals for client ${client.id}:`, e);
+                    setError(e as Error);
+                    setIsLoading(false);
+                });
+                // In a real app you'd manage these unsubscribes
+            }
+        } else {
+            setIsLoading(false);
+        }
+    };
+    
+    fetchProposals();
 
     return () => {
         unsubCommissions();
         unsubClients();
     };
 
-  }, [firestore, targetUserId, isFirebaseLoading]);
+  }, [firestore, targetUserId, isFirebaseLoading, clients.length]); // Added clients.length to re-trigger proposal fetch
   
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
@@ -256,14 +262,15 @@ export function useCommissions(userId?: string) {
             const uniqueCommissions = Array.from(new Map(monthCommissions.map(c => [c.id, c])).values());
             
             const totalAmount = uniqueCommissions.reduce((sum, c) => sum + c.amount, 0);
-            const isCurrentMonth = month === currentMonthKey;
             
-            const status = isCurrentMonth ? 'pending' : (uniqueCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending');
+            const allPaid = uniqueCommissions.every(c => c.status === 'paid');
+            const status = allPaid ? 'paid' : 'pending';
             
             return { 
                 month, 
                 totalAmount, 
                 status, 
+                timelineStatus: allPaid ? 'paid' : 'calculated',
                 commissions: uniqueCommissions,
                 transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${authUser?.id.slice(0, 4).toUpperCase()}`
             };

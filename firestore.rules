@@ -61,5 +61,11 @@ service cloud.firestore {
     match /{path=**}/proposals/{proposalId} {
       allow list: if isSignedIn() && isAdmin();
     }
+
+    // Rules for user-specific notifications
+    match /users/{userId}/notifications/{notificationId} {
+      // Only the owner of the notifications can read or write them.
+      allow read, write: if isSignedIn() && isOwner(userId);
+    }
   }
 }

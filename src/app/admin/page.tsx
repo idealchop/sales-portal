@@ -1,14 +1,15 @@
+
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target, Bell } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllCommissions } from '@/hooks/use-all-commissions';
 import { useUser } from '@/firebase';
-import { doc, updateDoc, arrayUnion, writeBatch, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, writeBatch, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -1215,26 +1216,41 @@ export default function AdminPage() {
 }, [commissionsFromHook, salesUsers, commissionsLoading, usersLoading]);
 
 
-  const handleProcessPayout = async (payoutId: string, commissionsToUpdate: WithId<Commission>[]) => {
+  const handleProcessPayout = async (payoutId: string, commissionsToUpdate: WithId<Commission>[], userToNotify: WithId<UserProfile>) => {
       if (!firestore) return;
       
       setProcessingPayouts(prev => ({...prev, [payoutId]: true}));
       
       try {
           const batch = writeBatch(firestore);
+          const monthName = payoutId.split('-').slice(1).join('-');
+
           commissionsToUpdate.forEach(commission => {
                 const commissionRef = doc(firestore, 'commissions', commission.id);
+                // Exclude 'id' and any other non-data properties from the object to be written
                 const { id, ...commissionData } = commission;
                 batch.set(commissionRef, {
                     ...commissionData,
                     status: 'paid'
                 }, { merge: true });
           });
+
+          // Create a notification for the user
+          const notificationRef = collection(firestore, `users/${userToNotify.id}/notifications`);
+          const payoutAmount = commissionsToUpdate.reduce((sum, c) => sum + c.amount, 0);
+          await addDoc(notificationRef, {
+              title: "Payout Processed",
+              message: `Your payout for ${monthName} amounting to ${currencyFormatter.format(payoutAmount)} has been successfully processed.`,
+              isRead: false,
+              createdAt: serverTimestamp(),
+              type: 'payout'
+          });
+          
           await batch.commit();
 
           toast({
               title: "Payout Processed",
-              description: "The selected payout has been marked as paid.",
+              description: `The ${monthName} payout for ${userToNotify.displayName} has been marked as paid and a notification has been sent.`,
           });
       } catch (error) {
           console.error("Error processing payout:", error);
@@ -1734,11 +1750,8 @@ export default function AdminPage() {
                                         <TableCell className="text-center">
                                              <PayoutHistoryDialog 
                                                 user={payout.user}
-                                                commissions={commissionsFromHook}
-                                                clients={clients}
-                                                proposals={proposals}
                                                 isAdmin={true}
-                                                onProcessPayout={handleProcessPayout}
+                                                onProcessPayout={(payoutId, commissions) => handleProcessPayout(payoutId, commissions, payout.user)}
                                                 processingPayouts={processingPayouts}
                                              >
                                                 <Button variant="outline" size="sm">View Payouts</Button>
@@ -1763,6 +1776,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 
