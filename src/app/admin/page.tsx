@@ -1194,45 +1194,10 @@ export default function AdminPage() {
   
   const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
 
-  const allPayouts = useMemo(() => {
-    if (commissionsLoading) return [];
-    
-    const commissionsByUserAndMonth: Record<string, Record<string, WithId<Commission>[]>> = {};
+  const { allPayouts, availableYears: payoutYears } = useCommissions(undefined);
 
-    commissionsFromHook.forEach(commission => {
-        const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
-        const userId = commission.userId;
-        
-        if (!commissionsByUserAndMonth[userId]) {
-            commissionsByUserAndMonth[userId] = {};
-        }
-        if (!commissionsByUserAndMonth[userId][monthKey]) {
-            commissionsByUserAndMonth[userId][monthKey] = [];
-        }
-        commissionsByUserAndMonth[userId][monthKey].push(commission);
-    });
 
-    const processedPayouts: any[] = [];
-    Object.entries(commissionsByUserAndMonth).forEach(([userId, months]) => {
-        Object.entries(months).forEach(([month, monthCommissions]) => {
-            const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
-            const status = monthCommissions.every(c => c.status === 'paid') ? 'paid' : 'pending';
-            processedPayouts.push({
-                userId,
-                month,
-                totalAmount,
-                status,
-                commissions: monthCommissions,
-                payoutId: `${userId}-${month}`
-            });
-        });
-    });
-
-    processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
-    return processedPayouts;
-}, [commissionsFromHook, commissionsLoading]);
-
-const salesRepPayouts = useMemo(() => {
+  const salesRepPayouts = useMemo(() => {
     if (commissionsLoading || usersLoading) return [];
     
     const userPayouts = salesUsers.map(user => {
@@ -1259,8 +1224,10 @@ const salesRepPayouts = useMemo(() => {
       try {
           const batch = writeBatch(firestore);
           commissionsToUpdate.forEach(commission => {
-              const commissionRef = doc(firestore, 'commissions', commission.id);
-              batch.update(commissionRef, { status: 'paid' });
+              if (commission.type === 'commission') {
+                  const commissionRef = doc(firestore, 'commissions', commission.id);
+                  batch.update(commissionRef, { status: 'paid' });
+              }
           });
           await batch.commit();
 
@@ -1766,7 +1733,7 @@ const salesRepPayouts = useMemo(() => {
                                         <TableCell className="text-center">
                                              <PayoutHistoryDialog 
                                                 user={payout.user}
-                                                commissions={allPayouts.filter(p => p.userId === payout.user.id).flatMap(p => p.commissions)}
+                                                commissions={allPayouts.filter(p => p.userId === payout.user.id)}
                                                 clients={clients}
                                                 proposals={proposals}
                                                 isAdmin={true}
@@ -1795,4 +1762,5 @@ const salesRepPayouts = useMemo(() => {
     
 
     
+
 
