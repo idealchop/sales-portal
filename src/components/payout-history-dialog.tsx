@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { cn } from '@/lib/utils';
-import { format, startOfMonth, isWithinInterval, addMonths, addYears, parseISO } from 'date-fns';
+import { format, startOfMonth, isWithinInterval, addYears, parseISO } from 'date-fns';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Badge } from './ui/badge';
 import { useUser } from '@/firebase';
@@ -139,7 +139,7 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
     const [selectedYear, setSelectedYear] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-    const allPayouts = useMemo(() => {
+     const allPayouts = useMemo(() => {
         if (isLoading) return [];
         
         const clientMap = new Map(clients.map(client => [client.id, client]));
@@ -409,5 +409,3 @@ export function PayoutHistoryDialog({ children }: { children: React.ReactNode })
         </Dialog>
     );
 }
-
-    
