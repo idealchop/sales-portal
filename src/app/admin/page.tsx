@@ -58,6 +58,7 @@ import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCommissions } from '@/hooks/use-commissions';
+import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -1763,18 +1764,17 @@ const salesRepPayouts = useMemo(() => {
                                         <TableCell className="font-semibold">{currencyFormatter.format(payout.pendingAmount)}</TableCell>
                                         <TableCell>{currencyFormatter.format(payout.paidAmount)}</TableCell>
                                         <TableCell className="text-center">
-                                            <Dialog>
-                                                <DialogTrigger asChild>
-                                                    <Button variant="outline" size="sm">View Payouts</Button>
-                                                </DialogTrigger>
-                                                <UserPayoutsDialog 
-                                                    user={payout.user}
-                                                    allPayouts={allPayouts.filter(p => p.userId === payout.user.id)}
-                                                    onProcessPayout={handleProcessPayout}
-                                                    processingPayouts={processingPayouts}
-                                                    salesUsers={salesUsers}
-                                                />
-                                            </Dialog>
+                                             <PayoutHistoryDialog 
+                                                user={payout.user}
+                                                commissions={allPayouts.filter(p => p.userId === payout.user.id).flatMap(p => p.commissions)}
+                                                clients={clients}
+                                                proposals={proposals}
+                                                isAdmin={true}
+                                                onProcessPayout={handleProcessPayout}
+                                                processingPayouts={processingPayouts}
+                                             >
+                                                <Button variant="outline" size="sm">View Payouts</Button>
+                                            </PayoutHistoryDialog>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -1792,86 +1792,7 @@ const salesRepPayouts = useMemo(() => {
     </div>
   );
 }
-
-
-function UserPayoutsDialog({ user, allPayouts, onProcessPayout, processingPayouts, salesUsers }: { user: WithId<UserProfile>, allPayouts: any[], onProcessPayout: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts: Record<string, boolean>, salesUsers: WithId<UserProfile>[] }) {
-    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-    
-    return (
-        <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-                <DialogTitle>Payouts for {user.displayName}</DialogTitle>
-                <DialogDescription>Review and process pending payments for this sales representative.</DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="h-[60vh] pr-4">
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Payout Period</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                            <TableHead className="text-center">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {allPayouts.length > 0 ? (
-                            allPayouts.map((payout) => (
-                                <TableRow key={payout.payoutId}>
-                                    <TableCell>{payout.month}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={payout.status === 'paid' ? 'success' : 'warning'} className="capitalize">{payout.status}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right font-semibold">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="link" className="text-primary p-0 h-auto">{currencyFormatter.format(payout.totalAmount)}</Button>
-                                            </DialogTrigger>
-                                            <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} users={salesUsers} />
-                                        </Dialog>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        {payout.status === 'pending' ? (
-                                                <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button size="sm" disabled={processingPayouts[payout.payoutId]}>
-                                                    {processingPayouts[payout.payoutId] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                                                        Process Payout
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Confirm Payout</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Are you sure you want to mark the {payout.month} payout of <span className="font-bold">{currencyFormatter.format(payout.totalAmount)}</span> for <span className="font-bold">{user?.displayName}</span> as paid? This action cannot be undone.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => onProcessPayout(payout.payoutId, payout.commissions)}>
-                                                            Confirm & Mark as Paid
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground italic">Paid</span>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">
-                                    No payouts to process for this user.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </ScrollArea>
-        </DialogContent>
-    );
-}
     
 
     
+
