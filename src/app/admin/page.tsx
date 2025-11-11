@@ -8,7 +8,7 @@ import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllCommissions } from '@/hooks/use-all-commissions';
 import { useUser } from '@/firebase';
-import { doc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, writeBatch, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -1223,10 +1223,12 @@ export default function AdminPage() {
       try {
           const batch = writeBatch(firestore);
           commissionsToUpdate.forEach(commission => {
-              if (commission.type === 'commission') {
-                  const commissionRef = doc(firestore, 'commissions', commission.id);
-                  batch.update(commissionRef, { status: 'paid' });
-              }
+                const commissionRef = doc(firestore, 'commissions', commission.id);
+                const { id, ...commissionData } = commission;
+                batch.set(commissionRef, {
+                    ...commissionData,
+                    status: 'paid'
+                }, { merge: true });
           });
           await batch.commit();
 
@@ -1732,7 +1734,7 @@ export default function AdminPage() {
                                         <TableCell className="text-center">
                                              <PayoutHistoryDialog 
                                                 user={payout.user}
-                                                commissions={commissionsFromHook.filter(p => p.userId === payout.user.id)}
+                                                commissions={commissionsFromHook}
                                                 clients={clients}
                                                 proposals={proposals}
                                                 isAdmin={true}
@@ -1761,6 +1763,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 
