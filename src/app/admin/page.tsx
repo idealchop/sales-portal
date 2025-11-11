@@ -217,6 +217,8 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
     
     const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
         { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
@@ -261,6 +263,14 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
             return dateMatch && searchMatch && statusMatch;
         });
     }, [clients, searchQuery, dateFilter, statusFilter]);
+
+    const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
+    const paginatedClients = useMemo(() => {
+        return filteredClients.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+        );
+    }, [filteredClients, currentPage]);
 
 
     const getOnboardingProgress = (onboardingStatus: OnboardingStep[] | undefined) => {
@@ -423,7 +433,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredClients.map(client => {
+                        {paginatedClients.map(client => {
                             const clientProposals = proposalsByClient[client.id] || [];
                             const acceptedProposal = clientProposals.find(p => p.status === 'accepted');
                             const progress = getOnboardingProgress(client.onboardingStatus);
@@ -623,6 +633,31 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                     </TableBody>
                 </Table>
             </CardContent>
+            <CardFooter>
+                <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                    Showing {Math.min(paginatedClients.length, ITEMS_PER_PAGE)} of {filteredClients.length} clients.
+                    </span>
+                    <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </Button>
+                    </div>
+                </div>
+            </CardFooter>
         </Card>
     );
 };
