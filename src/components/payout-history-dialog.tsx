@@ -334,25 +334,23 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
             const uniqueCommissions = Array.from(new Map(monthCommissions.map(c => [c.id, c])).values());
             
             const totalAmount = uniqueCommissions.reduce((sum, c) => sum + c.amount, 0);
-            const isCurrentMonth = month === currentMonthKey;
             
             const allPaid = uniqueCommissions.every(c => c.status === 'paid');
-            const status = isCurrentMonth ? 'pending' : (allPaid ? 'paid' : 'pending');
-            const timelineStatus = allPaid ? 'paid' : (isCurrentMonth ? 'calculated' : 'pending');
+            const status = allPaid ? 'paid' : 'pending';
             
             return { 
                 month, 
                 totalAmount, 
                 status, 
-                timelineStatus,
+                timelineStatus: allPaid ? 'paid' : 'calculated',
                 commissions: uniqueCommissions,
-                transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${user?.id.slice(0, 4).toUpperCase()}`
+                transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${authUser?.id.slice(0, 4).toUpperCase()}`
             };
         });
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, clients, proposals, isLoading, user, authUser]);
+    }, [commissions, clients, proposals, isLoading, authUser]);
 
 
     const { filteredPayouts, availableYears } = useMemo(() => {
@@ -412,13 +410,12 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
                                         <TableHead>Payout Reference ID</TableHead>
                                         <TableHead>Total Payout</TableHead>
                                         <TableHead>Status</TableHead>
-                                        {isAdmin && <TableHead className="text-center">Actions</TableHead>}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {isLoading ? (
                                         <TableRow>
-                                            <TableCell colSpan={isAdmin ? 5: 4} className="h-24 text-center">
+                                            <TableCell colSpan={4} className="h-24 text-center">
                                                 <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                             </TableCell>
                                         </TableRow>
@@ -457,41 +454,11 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
                                                         />
                                                     </Dialog>
                                                 </TableCell>
-                                                 {isAdmin && (
-                                                    <TableCell className="text-center">
-                                                        {payout.status === 'pending' && onProcessPayout && processingPayouts ? (
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button size="sm" disabled={processingPayouts[`${user?.id}-${payout.month}`]}>
-                                                                        {processingPayouts[`${user?.id}-${payout.month}`] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                                                                        Process Payout
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Confirm Payout</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            Are you sure you want to mark the {payout.month} payout of <span className="font-bold">{currencyFormatter.format(payout.totalAmount)}</span> for <span className="font-bold">{user?.displayName}</span> as paid? This action cannot be undone.
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <AlertDialogAction onClick={() => onProcessPayout(`${user?.id}-${payout.month}`, payout.commissions)}>
-                                                                            Confirm & Mark as Paid
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        ) : (
-                                                            <span className="text-sm text-muted-foreground italic">{payout.status === 'paid' ? 'Paid' : '-'}</span>
-                                                        )}
-                                                    </TableCell>
-                                                )}
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
+                                            <TableCell colSpan={4} className="h-24 text-center">
                                                 No payout records found for the selected period.
                                             </TableCell>
                                         </TableRow>
