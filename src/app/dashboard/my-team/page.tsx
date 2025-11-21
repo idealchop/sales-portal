@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useClients } from '@/hooks/use-clients';
+import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -452,7 +453,15 @@ export default function MyTeamPage() {
                                         const client = clientMap.get(p.clientId);
                                         return (
                                             <TableRow key={p.id}>
-                                            <TableCell className="font-medium">{client?.companyName || 'N/A'}</TableCell>
+                                            <TableCell className="font-medium">
+                                                {client ? (
+                                                     <ClientOverviewDialog client={client} proposal={p} allUsers={salesUsers} view="clients">
+                                                        <span className="cursor-pointer text-primary hover:underline">{client.companyName}</span>
+                                                    </ClientOverviewDialog>
+                                                ) : (
+                                                    'N/A'
+                                                )}
+                                            </TableCell>
                                             <TableCell>{currencyFormatter.format(p.amount)}</TableCell>
                                             <TableCell>
                                                 <Badge className={cn("capitalize", p.status && proposalStatusStyles[p.status])} variant="outline">{p.status}</Badge>
