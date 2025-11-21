@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -22,10 +23,10 @@ import { useUser } from '@/firebase';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['sales', 'manager', 'admin'] },
+  { href: '/dashboard/my-team', icon: TeamIcon, label: 'My Team', roles: ['manager'] },
   { href: '/dashboard/proposals', icon: FileText, label: 'Proposals', roles: ['sales', 'manager', 'admin'] },
   { href: '/dashboard/materials', icon: BookCopy, label: 'Materials', roles: ['sales', 'manager', 'admin'] },
   { href: '/dashboard/content-studio', icon: Megaphone, label: 'Content Studio', roles: ['sales', 'manager', 'admin'] },
-  { href: '/dashboard/my-team', icon: TeamIcon, label: 'My Team', roles: ['manager'] },
   { href: '/admin', icon: ShieldCheck, label: 'Admin', roles: ['admin'] },
 ];
 
