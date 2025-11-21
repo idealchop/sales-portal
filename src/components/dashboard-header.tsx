@@ -583,6 +583,9 @@ export function DashboardHeader() {
                             <p className="text-sm text-muted-foreground">{user?.email ?? 'No email'}</p>
                              <div className="mt-2 flex items-center gap-2">
                                 <Badge variant="outline" className="capitalize">{user?.role}</Badge>
+                                {user?.role === 'sales' && user.team && (
+                                    <Badge variant="secondary">{user.team}</Badge>
+                                )}
                             </div>
                         </div>
                     </div>
