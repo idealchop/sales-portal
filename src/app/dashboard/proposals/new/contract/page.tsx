@@ -425,7 +425,7 @@ function PreviewDialog({
 
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                             <Button type="button" disabled={isSaving || isDownloading}>
+                             <Button type="button" disabled>
                                 <Send className="mr-2 h-4 w-4" />
                                 Finalize &amp; Send
                             </Button>
