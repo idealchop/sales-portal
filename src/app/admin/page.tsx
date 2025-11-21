@@ -526,8 +526,10 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                         </div>
                                         <div className="space-y-1 mt-2">
                                              <h4 className="font-semibold text-sm">{clientTypeLabel ? `${clientTypeLabel} - ${subscriptionDetails.planName}` : subscriptionDetails.planName}</h4>
-                                            <p className="font-bold text-lg text-primary">{currencyFormatter.format(subscriptionDetails.amount)}</p>
-                                            <Badge variant="outline">{subscriptionDetails.billingCycle}</Badge>
+                                            <div className="flex items-baseline gap-2">
+                                                <p className="font-bold text-lg text-primary">{currencyFormatter.format(subscriptionDetails.amount)}</p>
+                                                <Badge variant="outline">{subscriptionDetails.billingCycle}</Badge>
+                                            </div>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -1783,6 +1785,7 @@ export default function AdminPage() {
 
 
     
+
 
 
 
