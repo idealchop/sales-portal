@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, onSnapshot } from 'firebase/firestore';
 import { useFirebase, useUser } from '@/firebase';
 import type { Client } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -17,36 +17,39 @@ export function useClients(userId?: string) {
   const targetUserId = userId || user?.uid;
 
   useEffect(() => {
-    const fetchClientsForUser = async () => {
-      if (isFirebaseLoading || isUserLoading || !firestore || !targetUserId) {
-        if(!targetUserId) setIsLoading(true);
-        return;
-      }
-      setIsLoading(true);
+    if (isFirebaseLoading || isUserLoading || !firestore || !targetUserId) {
+      if(!targetUserId) setIsLoading(true);
+      return;
+    }
+    
+    setIsLoading(true);
 
-      try {
-        const clientsQuery = query(collection(firestore, "clients"), where('userId', '==', targetUserId));
-        const querySnapshot = await getDocs(clientsQuery);
-        
+    const clientsQuery = query(collection(firestore, "clients"), where('userId', '==', targetUserId));
+    
+    const unsubscribe = onSnapshot(clientsQuery, 
+      (querySnapshot) => {
         const userClients: WithId<Client>[] = [];
         querySnapshot.forEach(doc => {
             userClients.push({ id: doc.id, ...doc.data() } as WithId<Client>);
         });
-
         setClients(userClients);
-
-      } catch (e: any) {
+        setError(null);
+        setIsLoading(false);
+      },
+      (e: any) => {
         setError(e);
         console.error("Error fetching clients for user:", e);
-      } finally {
         setIsLoading(false);
       }
-    };
+    );
 
-    fetchClientsForUser();
+    return () => unsubscribe();
 
   }, [firestore, targetUserId, isUserLoading, isFirebaseLoading]);
 
 
   return { clients, isLoading: isLoading || isFirebaseLoading || isUserLoading, error };
 }
+
+
+    

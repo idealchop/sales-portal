@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye } from 'lucide-react';
-import type { UserProfile, Proposal } from '@/lib/definitions';
+import type { UserProfile, Proposal, Client } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useClients } from '@/hooks/use-clients';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
+import { useAllClients } from '@/hooks/use-all-clients';
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -74,7 +75,7 @@ export default function MyTeamPage() {
   const { user, isManager } = useUser();
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const { proposals, isLoading: proposalsLoading } = useAllProposals();
-  const { clients, isLoading: clientsLoading } = useClients();
+  const { clients, isLoading: clientsLoading } = useAllClients();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   const [proposalsByRepPeriod, setProposalsByRepPeriod] = useState<string>('all');
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
@@ -498,3 +499,6 @@ export default function MyTeamPage() {
     </div>
   );
 }
+
+
+    
