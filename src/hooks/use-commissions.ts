@@ -39,18 +39,24 @@ export function useCommissions(userIds?: string | string[]) {
     if (typeof userIds === 'string') return [userIds];
     
     // If the current user is a manager and no specific ID is passed,
-    // fetch for the manager themselves.
-    if (authUser && isManager) return [authUser.id];
+    // fetch for the manager and all their team members.
+    if (authUser && isManager && salesUsers.length > 0) {
+        const managerTeamName = `${authUser.location} (${authUser.displayName})`;
+        const teamMemberIds = salesUsers
+            .filter(u => u.team === managerTeamName)
+            .map(u => u.id);
+        return [authUser.id, ...teamMemberIds];
+    }
     
     // For a regular sales user, or if nothing else matches, fetch for the logged-in user.
     if (authUser) return [authUser.id];
 
     return [];
-  }, [userIds, authUser, isManager]);
+  }, [userIds, authUser, isManager, salesUsers]);
 
   useEffect(() => {
     if (!firestore || isFirebaseLoading || targetUserIds.length === 0) {
-      if (targetUserIds.length === 0 && !isUserAuthLoading) setIsLoading(false);
+      if (targetUserIds.length === 0 && !isUserAuthLoading && !isSalesUsersLoading) setIsLoading(false);
       return;
     }
 
@@ -118,7 +124,7 @@ export function useCommissions(userIds?: string | string[]) {
         unsubProposals();
     };
 
-  }, [firestore, isFirebaseLoading, isUserAuthLoading, JSON.stringify(targetUserIds)]);
+  }, [firestore, isFirebaseLoading, isUserAuthLoading, isSalesUsersLoading, JSON.stringify(targetUserIds)]);
   
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
@@ -157,7 +163,12 @@ export function useCommissions(userIds?: string | string[]) {
             } catch {}
         });
 
-        const allCommissions = [...commissions, ...liveCommissions];
+        // For a manager, filter commissions to only show their direct commissions and overrides.
+        const managerCommissions = isManager 
+            ? commissions.filter(c => c.userId === authUser?.id) 
+            : commissions;
+
+        const allCommissions = [...managerCommissions, ...liveCommissions];
 
         const commissionsByMonth = allCommissions.reduce((acc, commission) => {
                 const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
@@ -189,7 +200,7 @@ export function useCommissions(userIds?: string | string[]) {
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, clients, proposals, isLoading, targetUserIds]);
+    }, [commissions, clients, proposals, isLoading, targetUserIds, isManager, authUser?.id]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
