@@ -22,7 +22,7 @@ import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, LineChart, Line, Sector as RechartsPrimitiveSector, ComposedChart } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub, parseISO, isAfter, addMonths } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub, parseISO, isAfter, addMonths, addDays } from 'date-fns';
 import Image from 'next/image';
 import {
   Dialog,
@@ -430,7 +430,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                 const cycleMonths = cycleMap[billingCycle] || 1;
                 const nextBillingDate = addMonths(parseISO(dateSignedStr), cycleMonths);
 
-                if (isAfter(new Date(), nextBillingDate)) {
+                if (isAfter(addDays(new Date(), 7), nextBillingDate)) {
                     const clientRef = doc(firestore, "clients", client.id);
                     batch.update(clientRef, { paymentStatus: 'Unpaid' });
                     updatedCount++;
@@ -486,7 +486,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Confirm Billing Cycle Sync</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will check all "Paid" clients and automatically update their status to "Unpaid" if their next billing cycle has started. This action cannot be undone. Are you sure you want to proceed?
+                                        This will check all "Paid" clients and automatically update their status to "Unpaid" if their next billing cycle is within 7 days. This action cannot be undone. Are you sure you want to proceed?
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -611,7 +611,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             const cycleMap: { [key: string]: number } = { 'Monthly': 1, 'Quarterly': 3, 'Semi-Annually': 6, 'Annually': 12 };
                             const cycleMonths = cycleMap[subscriptionDetails.billingCycle] || 1;
                             const nextBillingDate = subscriptionDetails.dateSigned ? addMonths(parseISO(subscriptionDetails.dateSigned), cycleMonths) : null;
-                            const isPaymentDue = nextBillingDate && isAfter(new Date(), nextBillingDate);
+                            const isPaymentDue = nextBillingDate && isAfter(addDays(new Date(), 7), nextBillingDate);
 
                             return (
                                 <TableRow key={client.id}>
@@ -670,8 +670,8 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                                             <AlertTriangle className="h-4 w-4 text-destructive" />
                                                         </TooltipTrigger>
                                                         <TooltipContent>
-                                                            <p>New billing cycle has started. Please update status to "Unpaid".</p>
-                                                            <p className="text-xs text-muted-foreground">Next billing date was: {format(nextBillingDate!, 'PPP')}</p>
+                                                            <p>New billing cycle is due within 7 days.</p>
+                                                            <p className="text-xs text-muted-foreground">Next billing date is: {format(nextBillingDate!, 'PPP')}</p>
                                                         </TooltipContent>
                                                     </UiTooltip>
                                                 </TooltipProvider>
@@ -1499,7 +1499,7 @@ export default function AdminPage() {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                             <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
                                 <TrendingUp className="h-6 w-6 text-primary"/>
                                 <DialogTitle>Revenue Snapshot</DialogTitle>
                             </div>
@@ -1928,4 +1928,5 @@ export default function AdminPage() {
     
 
     
+
 
