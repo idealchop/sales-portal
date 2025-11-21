@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { useUser } from '@/firebase';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Loader2, User, Calendar as CalendarIcon, Phone, Upload, Trash2, Briefcase, MapPin, Users } from 'lucide-react';
+import { Loader2, User, Calendar as CalendarIcon, Phone, Upload, Trash2, Briefcase, MapPin, Users, Building, ChevronsRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -201,6 +202,16 @@ function ProfileSetupContent() {
     return user?.email?.[0].toUpperCase() || 'U';
   }
 
+  const handleRoleSelect = (role: 'manager' | 'sales') => {
+    form.setValue('role', role, { shouldValidate: true });
+    // Reset the other field when role changes
+    if (role === 'manager') {
+      form.setValue('team', undefined);
+    } else {
+      form.setValue('location', undefined);
+    }
+  }
+
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader className="text-center">
@@ -343,97 +354,148 @@ function ProfileSetupContent() {
                         )}
                     />
                 </div>
-                <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Role</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                <SelectTrigger>
-                                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <div className="pl-7">
-                                        <SelectValue placeholder="Select your role" />
+
+                <div className="space-y-4">
+                  <FormLabel>What is your role?</FormLabel>
+                  <AnimatePresence>
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                    >
+                        {!selectedRole && (
+                          <>
+                            <Card className={cn("cursor-pointer hover:border-primary", form.watch('role') === 'manager' && 'border-primary ring-2 ring-primary')} onClick={() => handleRoleSelect('manager')}>
+                                <CardHeader className="flex flex-row items-center gap-4">
+                                    <Briefcase className="h-8 w-8 text-primary"/>
+                                    <div>
+                                        <CardTitle className="text-lg">Sales Manager</CardTitle>
+                                        <CardDescription>I manage a sales team.</CardDescription>
                                     </div>
-                                </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="manager">Sales Manager</SelectItem>
-                                    <SelectItem value="sales">Sales Executive</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                                </CardHeader>
+                            </Card>
+                             <Card className={cn("cursor-pointer hover:border-primary", form.watch('role') === 'sales' && 'border-primary ring-2 ring-primary')} onClick={() => handleRoleSelect('sales')}>
+                                <CardHeader className="flex flex-row items-center gap-4">
+                                    <User className="h-8 w-8 text-primary"/>
+                                    <div>
+                                        <CardTitle className="text-lg">Sales Executive</CardTitle>
+                                        <CardDescription>I am part of a sales team.</CardDescription>
+                                    </div>
+                                </CardHeader>
+                            </Card>
+                          </>
+                        )}
 
-                {selectedRole === 'manager' && (
-                     <FormField
-                        control={form.control}
-                        name="location"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Location</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <div className="pl-7">
-                                                <SelectValue placeholder="Select your location" />
+                        {selectedRole === 'manager' && (
+                           <motion.div
+                                key="manager"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="md:col-span-2"
+                            >
+                                <Card className="border-primary ring-2 ring-primary">
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <Briefcase className="h-8 w-8 text-primary"/>
+                                            <div>
+                                                <CardTitle className="text-lg">Sales Manager</CardTitle>
+                                                <CardDescription>I manage a sales team.</CardDescription>
                                             </div>
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="NCR North">NCR North</SelectItem>
-                                        <SelectItem value="NCR South">NCR South</SelectItem>
-                                        <SelectItem value="Palawan">Palawan</SelectItem>
-                                        <SelectItem value="Cebu">Cebu</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
+                                        </div>
+                                         <Button variant="ghost" size="sm" onClick={() => form.setValue('role', undefined)}>Change Role</Button>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <FormField
+                                            control={form.control}
+                                            name="location"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Location</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                                <div className="pl-7">
+                                                                    <SelectValue placeholder="Select your location" />
+                                                                </div>
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="NCR North">NCR North</SelectItem>
+                                                            <SelectItem value="NCR South">NCR South</SelectItem>
+                                                            <SelectItem value="Palawan">Palawan</SelectItem>
+                                                            <SelectItem value="Cebu">Cebu</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                           </motion.div>
                         )}
-                    />
-                )}
-
-                 {selectedRole === 'sales' && (
-                     <FormField
-                        control={form.control}
-                        name="team"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Team</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                             <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                             <div className="pl-7">
-                                                <SelectValue placeholder="Select your team" />
-                                             </div>
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {managers.length > 0 ? (
-                                            managers.map(manager => (
-                                                <SelectItem key={manager.id} value={`${manager.location} (${manager.displayName})`}>
-                                                    {manager.location} ({manager.displayName})
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="p-4 text-center text-sm text-muted-foreground">No managers found.</div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
+                        {selectedRole === 'sales' && (
+                             <motion.div
+                                key="sales"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="md:col-span-2"
+                            >
+                                <Card className="border-primary ring-2 ring-primary">
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                         <div className="flex items-center gap-4">
+                                            <User className="h-8 w-8 text-primary"/>
+                                            <div>
+                                                <CardTitle className="text-lg">Sales Executive</CardTitle>
+                                                <CardDescription>I am part of a sales team.</CardDescription>
+                                            </div>
+                                        </div>
+                                         <Button variant="ghost" size="sm" onClick={() => form.setValue('role', undefined)}>Change Role</Button>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <FormField
+                                            control={form.control}
+                                            name="team"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Team</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                                <div className="pl-7">
+                                                                    <SelectValue placeholder="Select your team" />
+                                                                </div>
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {managers.length > 0 ? (
+                                                                managers.map(manager => (
+                                                                    <SelectItem key={manager.id} value={`${manager.location} (${manager.displayName})`}>
+                                                                        {manager.location} ({manager.displayName})
+                                                                    </SelectItem>
+                                                                ))
+                                                            ) : (
+                                                                <div className="p-4 text-center text-sm text-muted-foreground">No managers found.</div>
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                           </motion.div>
                         )}
-                    />
-                )}
-
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
             </div>
-            <CardFooter className="px-0 pt-4">
-                <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold transition-all" disabled={isSubmitting}>
+            <CardFooter className="px-0 pt-8">
+                <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold transition-all" disabled={isSubmitting || !selectedRole}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {isSubmitting ? 'Saving...' : 'Save and Proceed'}
                 </Button>
@@ -452,3 +514,5 @@ export default function ProfileSetupPage() {
         </Suspense>
     )
 }
+
+    
