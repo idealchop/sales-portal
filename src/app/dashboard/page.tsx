@@ -223,7 +223,9 @@ export default function DashboardPage() {
     const currentMonthKey = format(startOfMonth(now), 'MMMM yyyy');
 
     const currentMonthPayout = allPayouts.find(p => p.month === currentMonthKey);
-    const oneTimeCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.type === 'commission') || [];
+    
+    // Filter for one-time commissions for the current month.
+    const oneTimeCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.type === 'commission' && c.description !== 'Recurring commission') || [];
     const recurringCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.description === 'Recurring commission') || [];
     
     const monthlyCommission = oneTimeCommissionsThisMonth.reduce((sum, p) => sum + p.amount, 0);
@@ -231,10 +233,10 @@ export default function DashboardPage() {
     
     const lastMonthKey = format(startOfMonth(subMonths(now, 1)), 'MMMM yyyy');
     const lastMonthPayout = allPayouts.find(p => p.month === lastMonthKey);
-    const lastMonthCommission = lastMonthPayout?.commissions.filter(c => c.type === 'commission').reduce((sum, p) => sum + p.amount, 0) || 0;
+    const lastMonthOneTimeCommission = lastMonthPayout?.commissions.filter(c => c.type === 'commission' && c.description !== 'Recurring commission').reduce((sum, p) => sum + p.amount, 0) || 0;
     
-    const commissionChange = lastMonthCommission > 0 
-        ? ((monthlyCommission - lastMonthCommission) / lastMonthCommission) * 100 
+    const commissionChange = lastMonthOneTimeCommission > 0 
+        ? ((monthlyCommission - lastMonthOneTimeCommission) / lastMonthOneTimeCommission) * 100 
         : (monthlyCommission > 0 ? 100 : 0);
     
     const acceptedProposals = rawCommissions.filter(p => p.status === 'accepted');
@@ -970,7 +972,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    
