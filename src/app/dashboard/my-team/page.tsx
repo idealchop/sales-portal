@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -7,9 +8,11 @@ import { useAllProposals } from '@/hooks/use-all-proposals';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown } from 'lucide-react';
 import type { UserProfile, Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase';
+import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export default function MyTeamPage() {
   const { user, isManager } = useUser();
@@ -28,10 +31,28 @@ export default function MyTeamPage() {
   }, [user, isManager, salesUsers, usersLoading]);
 
   const teamPerformance = useMemo(() => {
-    if (proposalsLoading || myTeam.length === 0) return [];
+    if (proposalsLoading || myTeam.length === 0) return { leaderboard: [], kpis: {} };
+    
+    const teamMemberIds = new Set(myTeam.map(m => m.id));
+    const teamProposals = proposals.filter(p => teamMemberIds.has(p.userId));
 
-    const performanceData = myTeam.map((member) => {
-      const userProposals = proposals.filter((p) => p.userId === member.id);
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const lastMonthStart = startOfMonth(subMonths(now, 1));
+    const lastMonthEnd = endOfMonth(lastMonthStart);
+
+    const getValidDate = (timestamp: string | number | undefined | Date) => {
+        if (!timestamp) return null;
+        try {
+            const d = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
+            return isNaN(d.getTime()) ? null : d;
+        } catch {
+            return null;
+        }
+    }
+
+    const leaderboardData = myTeam.map((member) => {
+      const userProposals = teamProposals.filter((p) => p.userId === member.id);
       const acceptedProposals = userProposals.filter((p) => p.status === 'accepted');
       const sentProposals = userProposals.filter((p) => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status));
       const totalRevenue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
@@ -45,7 +66,47 @@ export default function MyTeamPage() {
       };
     });
 
-    return performanceData.sort((a, b) => b.totalRevenue - a.totalRevenue);
+    const sentProposalsAllTime = teamProposals.filter(p => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status));
+    const acceptedProposalsAllTime = teamProposals.filter(p => p.status === 'accepted');
+
+    const totalProposalsSent = sentProposalsAllTime.length;
+    const teamWinRate = totalProposalsSent > 0 ? (acceptedProposalsAllTime.length / totalProposalsSent) * 100 : 0;
+    const totalRevenue = acceptedProposalsAllTime.reduce((sum,p) => sum + p.amount, 0);
+    const avgDealSize = acceptedProposalsAllTime.length > 0 ? totalRevenue / acceptedProposalsAllTime.length : 0;
+    
+    const sentThisMonth = sentProposalsAllTime.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: currentMonthStart, end: now }));
+    const sentLastMonth = sentProposalsAllTime.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: lastMonthStart, end: lastMonthEnd }));
+    const proposalsSentChange = sentLastMonth.length > 0 ? ((sentThisMonth.length - sentLastMonth.length) / sentLastMonth.length) * 100 : sentThisMonth.length > 0 ? 100 : 0;
+    
+    const acceptedThisMonth = acceptedProposalsAllTime.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: currentMonthStart, end: now }));
+    const acceptedLastMonth = acceptedProposalsAllTime.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: lastMonthStart, end: lastMonthEnd }));
+
+    const winRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
+    const winRateLastMonth = sentLastMonth.length > 0 ? (acceptedLastMonth.length / sentLastMonth.length) * 100 : 0;
+    const winRateChange = winRateLastMonth > 0 ? ((winRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : winRateThisMonth > 0 ? 100 : 0;
+    
+    const revenueThisMonth = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
+    const revenueLastMonth = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
+    const totalRevenueChange = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : revenueThisMonth > 0 ? 100 : 0;
+    
+    const avgDealSizeThisMonth = acceptedThisMonth.length > 0 ? revenueThisMonth / acceptedThisMonth.length : 0;
+    const avgDealSizeLastMonth = acceptedLastMonth.length > 0 ? revenueLastMonth / acceptedLastMonth.length : 0;
+    const avgDealSizeChange = avgDealSizeLastMonth > 0 ? ((avgDealSizeThisMonth - avgDealSizeLastMonth) / avgDealSizeLastMonth) * 100 : avgDealSizeThisMonth > 0 ? 100 : 0;
+
+
+    return {
+        leaderboard: leaderboardData.sort((a, b) => b.totalRevenue - a.totalRevenue),
+        kpis: {
+            totalProposalsSent,
+            teamWinRate,
+            totalRevenue,
+            avgDealSize,
+            proposalsSentChange,
+            winRateChange,
+            totalRevenueChange,
+            avgDealSizeChange,
+        }
+    };
   }, [proposals, myTeam, proposalsLoading]);
 
   const isLoading = usersLoading || proposalsLoading;
@@ -75,6 +136,63 @@ export default function MyTeamPage() {
         <h1 className="text-2xl font-bold">My Team</h1>
         <p className="text-muted-foreground">Monitor the performance of your sales executives.</p>
       </div>
+
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Proposals Sent</CardTitle>
+                    <FileSignature className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{teamPerformance.kpis.totalProposalsSent || 0}</div>
+                    <p className={cn("text-xs text-muted-foreground flex items-center", (teamPerformance.kpis.proposalsSentChange || 0) >= 0 ? "text-green-600" : "text-red-600")}>
+                        {(teamPerformance.kpis.proposalsSentChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                        {(teamPerformance.kpis.proposalsSentChange || 0).toFixed(1)}% from last month
+                    </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Team Win Rate</CardTitle>
+                    <Target className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{(teamPerformance.kpis.teamWinRate || 0).toFixed(1)}%</div>
+                     <p className={cn("text-xs text-muted-foreground flex items-center", (teamPerformance.kpis.winRateChange || 0) >= 0 ? "text-green-600" : "text-red-600")}>
+                        {(teamPerformance.kpis.winRateChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                        {(teamPerformance.kpis.winRateChange || 0).toFixed(1)}% from last month
+                    </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Revenue Generated</CardTitle>
+                    <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{currencyFormatter.format(teamPerformance.kpis.totalRevenue || 0)}</div>
+                    <p className={cn("text-xs text-muted-foreground flex items-center", (teamPerformance.kpis.totalRevenueChange || 0) >= 0 ? "text-green-600" : "text-red-600")}>
+                        {(teamPerformance.kpis.totalRevenueChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                        {(teamPerformance.kpis.totalRevenueChange || 0).toFixed(1)}% from last month
+                    </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Average Deal Size</CardTitle>
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{currencyFormatter.format(teamPerformance.kpis.avgDealSize || 0)}</div>
+                     <p className={cn("text-xs text-muted-foreground flex items-center", (teamPerformance.kpis.avgDealSizeChange || 0) >= 0 ? "text-green-600" : "text-red-600")}>
+                        {(teamPerformance.kpis.avgDealSizeChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                        {(teamPerformance.kpis.avgDealSizeChange || 0).toFixed(1)}% from last month
+                    </p>
+                </CardContent>
+            </Card>
+        </div>
+
+
       <Card>
         <CardHeader>
           <CardTitle>Team Leaderboard</CardTitle>
@@ -92,8 +210,8 @@ export default function MyTeamPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teamPerformance.length > 0 ? (
-                teamPerformance.map((rep, index) => {
+              {teamPerformance.leaderboard && teamPerformance.leaderboard.length > 0 ? (
+                teamPerformance.leaderboard.map((rep, index) => {
                   const rank = index + 1;
                   return (
                     <TableRow key={rep.id}>
