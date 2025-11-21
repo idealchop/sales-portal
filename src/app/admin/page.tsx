@@ -4,7 +4,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target, Bell, BadgeCheck } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target, Bell, BadgeCheck, Receipt } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -232,7 +232,6 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
         clients.forEach(client => {
             if (client.createdAt) {
                 try {
-                    // Try parsing as ISO string first, then as a generic date string
                     const clientDate = parseISO(client.createdAt);
                     if (!isNaN(clientDate.getTime())) {
                         monthSet.add(format(clientDate, 'MMMM yyyy'));
@@ -438,6 +437,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             <TableHead>Payment Status</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Onboarding</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -592,6 +592,62 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                                 </DialogContent>
                                             </Dialog>
                                        ) : null}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, planName: subscriptionDetails.planName, planImage, amount: subscriptionDetails.amount }))}>
+                                                    <Receipt className="mr-2 h-4 w-4" />
+                                                    Record Payment
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Record Payment for {client.companyName}</DialogTitle>
+                                                    <DialogDescription>Upload proof of payment for the client's ongoing subscription.</DialogDescription>
+                                                </DialogHeader>
+                                                <div className="space-y-4 py-4">
+                                                    <div className="flex items-center gap-4 p-4 border rounded-lg">
+                                                        <Image src={paymentUploadState.planImage} width={80} height={80} alt={paymentUploadState.planName} className="rounded-md" />
+                                                        <div>
+                                                            <h4 className="font-semibold">{paymentUploadState.planName}</h4>
+                                                            <p className="text-lg font-bold text-primary">{currencyFormatter.format(paymentUploadState.amount)}</p>
+                                                        </div>
+                                                    </div>
+                                                     <div className="space-y-2">
+                                                        <Label htmlFor="payment-amount">Payment Amount</Label>
+                                                        <Input id="payment-amount" type="number" value={paymentUploadState.amount} onChange={(e) => setPaymentUploadState(prev => ({...prev, amount: Number(e.target.value)}))} />
+                                                     </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="payment-date">Payment Date</Label>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !paymentUploadState.date && "text-muted-foreground")}>
+                                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                                    {paymentUploadState.date ? format(paymentUploadState.date, "PPP") : <span>Pick a date</span>}
+                                                                </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-0">
+                                                                <Calendar mode="single" selected={paymentUploadState.date} onSelect={(d) => setPaymentUploadState(prev => ({ ...prev, date: d }))} initialFocus />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="payment-proof">Proof of Payment</Label>
+                                                        <Input id="payment-proof" type="file" ref={fileInputRef} onChange={(e) => setPaymentUploadState(prev => ({ ...prev, file: e.target.files ? e.target.files[0] : null }))} />
+                                                    </div>
+                                                </div>
+                                                <DialogFooter>
+                                                    <DialogClose asChild>
+                                                        <Button variant="outline">Cancel</Button>
+                                                    </DialogClose>
+                                                    <Button onClick={handleUploadPayment} disabled={paymentUploadState.isUploading}>
+                                                        {paymentUploadState.isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                                                        Confirm & Upload
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
                                     </TableCell>
                                 </TableRow>
                             );
@@ -1139,7 +1195,7 @@ export default function AdminPage() {
     const acceptedThisMonth = acceptedProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: currentMonthStart, end: now }));
     const acceptedLastMonth = acceptedProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: lastMonthStart, end: lastMonthEnd }));
 
-    const teamWinRateThisMonth = sentProposalsThisMonth.length > 0 ? (acceptedThisMonth.length / sentProposalsThisMonth.length) * 100 : 0;
+    const teamWinRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
     const teamWinRateLastMonth = sentProposalsLastMonth.length > 0 ? (acceptedLastMonth.length / sentProposalsLastMonth.length) * 100 : 0;
     const teamWinRateChange = teamWinRateLastMonth > 0 ? ((teamWinRateThisMonth - teamWinRateLastMonth) / teamWinRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
 
@@ -1785,6 +1841,7 @@ export default function AdminPage() {
 
 
     
+
 
 
 
