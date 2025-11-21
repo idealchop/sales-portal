@@ -292,7 +292,7 @@ export function ClientOverviewDialog({
 }) {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isManager } = useUser();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   
   const [open, setOpen] = useState(false);
@@ -308,6 +308,10 @@ export function ClientOverviewDialog({
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(null);
   
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
+  const teamMembers = useMemo(() => {
+    if (!user || !isManager) return [];
+    return allUsers.filter(u => u.team === `${user.location} (${user.displayName})`);
+  }, [user, isManager, allUsers]);
 
   const contactInfo = useMemo(() => {
     let parsedContent;
@@ -485,8 +489,9 @@ export function ClientOverviewDialog({
   const handleConfirmPayment = async (proposalIdToConfirm?: string, fileToUpload?: File) => {
     const finalProposalId = proposalIdToConfirm || selectedProposal?.id;
     const finalFile = fileToUpload || paymentProofFile;
+    const proposalCreatorId = selectedProposal?.userId;
 
-    if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo || !user) {
+    if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo || !proposalCreatorId) {
         toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof, proposal details, user, or subscription info.' });
         return;
     }
@@ -508,7 +513,6 @@ export function ClientOverviewDialog({
             paymentProofUrl: downloadURL
         });
 
-        // Set the subscription object on the client
         await updateDoc(clientRef, {
             status: 'active',
             paymentStatus: 'Paid',
@@ -518,17 +522,18 @@ export function ClientOverviewDialog({
             }
         });
 
-        // Calculate and save commission
-        const commissionRates: { [key: string]: number } = {
-            household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08,
-        };
+        const commissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
+        const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
+
         const rate = (subscriptionInfo.clientType && commissionRates[subscriptionInfo.clientType]) || 0;
         const commissionAmount = subscriptionInfo.totalAmountDue * rate;
         
+        const commissionsRef = collection(firestore, 'commissions');
+
+        // Sales Executive Commission
         if (commissionAmount > 0) {
-            const commissionRef = collection(firestore, 'commissions');
-            await addDoc(commissionRef, {
-                userId: user.uid,
+            await addDoc(commissionsRef, {
+                userId: proposalCreatorId,
                 proposalId: finalProposalId,
                 amount: commissionAmount,
                 createdAt: serverTimestamp(),
@@ -539,11 +544,33 @@ export function ClientOverviewDialog({
                 referenceId: finalProposalId
             });
         }
-
+        
+        // Manager Override Commission
+        const proposalCreator = userMap.get(proposalCreatorId);
+        if (proposalCreator && proposalCreator.team && isManager) {
+            const teamManager = allUsers.find(u => `${u.location} (${u.displayName})` === proposalCreator.team);
+            if (teamManager && teamManager.id === user?.id) {
+                const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
+                const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;
+                if(overrideAmount > 0) {
+                    await addDoc(commissionsRef, {
+                        userId: teamManager.id,
+                        proposalId: finalProposalId,
+                        amount: overrideAmount,
+                        createdAt: serverTimestamp(),
+                        status: 'pending',
+                        type: 'commission',
+                        description: `Manager Override for ${proposalCreator.displayName}`,
+                        clientName: client.companyName,
+                        referenceId: `override-${finalProposalId}`
+                    });
+                }
+            }
+        }
 
         toast({
-            title: "Payment Confirmed!",
-            description: `${client.companyName} is now an active client.`,
+            title: "Payment Confirmed & Client Activated!",
+            description: `${client.companyName}'s account is now active and has been passed to the onboarding team.`,
         });
 
         if (view === 'proposals') {
