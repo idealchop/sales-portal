@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -20,33 +21,23 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
-import { format, startOfMonth, isWithinInterval, addYears, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Badge } from './ui/badge';
-import { useUser, useFirestore } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card';
+import { useUser } from '@/firebase';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TFooter } from './ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { CheckCircle, Clock, Loader2, Award, Star, Trophy, CreditCard } from 'lucide-react';
-import type { Commission, Proposal, Client, UserProfile } from '@/lib/definitions';
+import { CheckCircle, Clock, Loader2 } from 'lucide-react';
+import type { Commission, UserProfile } from '@/lib/definitions';
 import { useCommissions } from "@/hooks/use-commissions";
-import type { FinalPlanDetails } from '@/components/contract-details';
 import { Button } from "./ui/button";
 import { WithId } from "@/firebase";
 
 type PayoutCommission = Commission & { clientName?: string };
 
 type TimelineStatus = 'calculated' | 'reviewed' | 'processing' | 'paid';
-
-type MonthlyPayout = {
-    month: string;
-    totalAmount: number;
-    status: 'paid' | 'pending';
-    timelineStatus: TimelineStatus;
-    commissions: WithId<PayoutCommission>[];
-    transactionId: string;
-};
 
 function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: PayoutCommission[] }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -132,7 +123,6 @@ function PaymentTimelineDialog({
         const newStatus = timelineSteps[stepIndex].name;
         setCurrentTimelineStatus(newStatus);
         
-        // Only trigger the actual database update when the 'paid' step is reached
         if (newStatus === 'paid') {
             onProcessPayout();
         }
@@ -187,7 +177,7 @@ function PaymentTimelineDialog({
     )
 }
 
-export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false, onProcessPayout }: { children: React.ReactNode, user?: WithId<UserProfile>, isAdmin?: boolean, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void }) {
+export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false, onProcessPayout, processingPayouts = {} }: { children: React.ReactNode, user?: WithId<UserProfile>, isAdmin?: boolean, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts?: Record<string, boolean> }) {
     const { user: authUser } = useUser();
     const { allPayouts: hookPayouts, isLoading: hookIsLoading, availableYears: hookYears } = useCommissions(propUser?.id || authUser?.uid);
     const [selectedYear, setSelectedYear] = useState<string>('all');
@@ -266,7 +256,9 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                                             </TableCell>
                                         </TableRow>
                                     ) : filteredPayouts.length > 0 ? (
-                                        filteredPayouts.map((payout) => (
+                                        filteredPayouts.map((payout) => {
+                                            const isProcessing = processingPayouts[`${user?.id}-${payout.month}`];
+                                            return (
                                             <TableRow key={payout.month}>
                                                 <TableCell className="font-semibold">{payout.month}</TableCell>
                                                 <TableCell className="font-mono text-xs">{payout.transactionId}</TableCell>
@@ -287,7 +279,8 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                                                                 variant={payout.status === 'paid' ? 'success' : 'warning'}
                                                                 className="capitalize cursor-pointer"
                                                             >
-                                                                {payout.status}
+                                                                {isProcessing ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : null}
+                                                                {isProcessing ? 'Processing' : payout.status}
                                                             </Badge>
                                                         </DialogTrigger>
                                                         <PaymentTimelineDialog 
@@ -301,7 +294,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                                                     </Dialog>
                                                 </TableCell>
                                             </TableRow>
-                                        ))
+                                        )})
                                     ) : (
                                         <TableRow>
                                             <TableCell colSpan={4} className="h-24 text-center">
@@ -318,3 +311,5 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
         </Dialog>
     );
 }
+
+    

@@ -64,12 +64,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 import { RevenueChart } from '@/components/revenue-chart';
 import { ClientPopover } from '@/components/client-popover';
-import type { Client, Proposal } from '@/lib/definitions';
+import type { Client, Proposal, PayoutCommission } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { ActivityChart } from '@/components/activity-chart';
 import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
+import { useCommissions } from '@/hooks/use-commissions';
 import { useMemo } from 'react';
 import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears, parseISO } from 'date-fns';
 import { useUser } from '@/firebase';
@@ -206,96 +207,58 @@ const DashboardSkeleton = () => (
 )
 
 export default function DashboardPage() {
-  const { user, isAdmin } = useUser();
-  const { proposals, isLoading: proposalsLoading } = useProposals(isAdmin ? undefined : user?.uid);
-  const { clients, isLoading: clientsLoading } = useClients(isAdmin ? undefined : user?.uid);
+  const { user, isManager } = useUser();
+  const { proposals, isLoading: proposalsLoading } = useProposals(user?.uid);
+  const { clients, isLoading: clientsLoading } = useClients(user?.uid);
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
+  const { allPayouts, commissions: rawCommissions, isLoading: commissionsLoading } = useCommissions(user?.uid);
+
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-  // Memoize clients map for quick lookup
   const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
   const userMap = useMemo(() => new Map(salesUsers.map(u => [u.id, u])), [salesUsers]);
 
-  // Memoized calculations for dashboard data
   const dashboardData = useMemo(() => {
     const now = new Date();
-    const currentMonthStart = startOfMonth(now);
-    const lastMonthStart = startOfMonth(subMonths(now, 1));
-    const currentMonthEnd = endOfMonth(now);
-    const lastMonthEnd = endOfMonth(lastMonthStart);
+    const currentMonthKey = format(startOfMonth(now), 'MMMM yyyy');
 
-    const commissionRates: { [key: string]: number } = {
-        household: 0.12,
-        sme: 0.12,
-        commercial: 0.10, // Business Tier
-        corporate: 0.10, // Business Tier
-        enterprise: 0.08,
-    };
+    const currentMonthPayout = allPayouts.find(p => p.month === currentMonthKey);
+    const oneTimeCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.type === 'commission') || [];
+    const recurringCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.description === 'Recurring commission') || [];
     
-    const recurringCommissionRate = 0.03;
-
-    const getCommissionDetails = (proposal: Proposal): { commission: number; rate: number } => {
-        const client = clientMap.get(proposal.clientId);
-        if (!client || !client.clientType) {
-            return { commission: 0, rate: 0 };
-        }
-        
-        const rate = commissionRates[client.clientType] || 0;
-        
-        return { commission: proposal.amount * rate, rate: rate * 100 };
-    };
-
-    const acceptedProposals = proposals.filter(p => p.status === 'accepted');
-
-    const acceptedThisMonth = acceptedProposals.filter(p => {
-        const createdAt = new Date(p.createdAt);
-        return isWithinInterval(createdAt, { start: currentMonthStart, end: currentMonthEnd });
-    });
-
-    const acceptedLastMonth = acceptedProposals.filter(p => {
-        const createdAt = new Date(p.createdAt);
-        return isWithinInterval(createdAt, { start: lastMonthStart, end: lastMonthEnd });
-    });
-
-    const monthlyCommission = acceptedThisMonth.reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
-    const lastMonthCommission = acceptedLastMonth.reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
-
-
+    const monthlyCommission = oneTimeCommissionsThisMonth.reduce((sum, p) => sum + p.amount, 0);
+    const recurringCommission = recurringCommissionsThisMonth.reduce((sum, p) => sum + p.amount, 0);
+    
+    const lastMonthKey = format(startOfMonth(subMonths(now, 1)), 'MMMM yyyy');
+    const lastMonthPayout = allPayouts.find(p => p.month === lastMonthKey);
+    const lastMonthCommission = lastMonthPayout?.commissions.filter(c => c.type === 'commission').reduce((sum, p) => sum + p.amount, 0) || 0;
+    
     const commissionChange = lastMonthCommission > 0 
         ? ((monthlyCommission - lastMonthCommission) / lastMonthCommission) * 100 
         : (monthlyCommission > 0 ? 100 : 0);
     
-    const getClientsFromProposals = (proposalsList: Proposal[]) => {
-        const clientIds = new Set(proposalsList.map(p => p.clientId));
-        return clients.filter(c => clientIds.has(c.id));
-    };
+    const acceptedProposals = rawCommissions.filter(p => p.status === 'accepted');
 
-    const newClientsObjectsThisMonth = getClientsFromProposals(acceptedThisMonth);
-    const corporateClientsThisMonth = newClientsObjectsThisMonth.filter(c => ['sme', 'commercial', 'corporate', 'enterprise'].includes(c.clientType || '')).length;
-    const individualClientsThisMonth = newClientsObjectsThisMonth.filter(c => c.clientType === 'household').length;
+    const corporateClientsThisMonth = oneTimeCommissionsThisMonth.filter(c => {
+        const client = clientMap.get(proposals.find(p => p.id === c.proposalId)?.clientId || '');
+        return client && ['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '');
+    }).length;
 
+    const individualClientsThisMonth = oneTimeCommissionsThisMonth.filter(c => {
+        const client = clientMap.get(proposals.find(p => p.id === c.proposalId)?.clientId || '');
+        return client && client.clientType === 'household';
+    }).length;
+    
     const corporateClientsTarget = 3;
     const individualClientsTarget = 10;
     
-    const monthlySalesVolume = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
+    const monthlySalesVolume = oneTimeCommissionsThisMonth.reduce((sum, p) => sum + p.amount, 0);
     const monthlyVolumeTarget = 200000;
 
-
-    const commissionHistory = Array.from({ length: 6 }).map((_, i) => {
-        const monthDate = subMonths(now, i);
-        const monthStart = startOfMonth(monthDate);
-        const monthEnd = endOfMonth(monthDate);
-        const monthName = format(monthDate, 'MMM');
-
-        const revenue = acceptedProposals
-            .filter(p => {
-                const createdAt = new Date(p.createdAt);
-                return isWithinInterval(createdAt, { start: monthStart, end: monthEnd });
-            })
-            .reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
-        
-        return { month: monthName, revenue };
-    }).reverse();
+    const commissionHistory = allPayouts.slice(0, 6).map(payout => ({
+        month: format(new Date(payout.month), 'MMM'),
+        revenue: payout.totalAmount,
+    })).reverse();
 
     const proposalsSent = proposals.filter(p => p.status !== 'draft').length;
     const winRate = proposalsSent > 0 ? (acceptedProposals.length / proposalsSent) * 100 : 0;
@@ -310,52 +273,9 @@ export default function DashboardPage() {
       { name: 'Accepted', value: acceptedProposals.length, fill: 'hsl(var(--chart-1))' },
     ];
     
-    // --- Live Data Calculations for Bonuses ---
-    const oneYearAgo = addYears(now, -1);
-    
-    const activeClients = clients.filter(c => c.status === 'active' && c.clientType !== 'household');
+    const teamRevenue = allPayouts.reduce((sum, payout) => sum + payout.totalAmount, 0);
 
-    const recurringCommissionDetails = activeClients.map(client => {
-        const acceptedProposalForClient = acceptedProposals.find(p => p.clientId === client.id);
-        
-        if (!acceptedProposalForClient || !acceptedProposalForClient.content) {
-            return null;
-        }
-
-        try {
-            const proposalContent = JSON.parse(acceptedProposalForClient.content) as FinalPlanDetails;
-            const dateSigned = proposalContent.date ? parseISO(proposalContent.date) : new Date(0);
-            
-            // Check if the contract was signed within the last year
-            if (dateSigned < oneYearAgo) {
-                return null;
-            }
-
-            const monthlyFee = proposalContent.basePrice || 0;
-            const annualValue = monthlyFee * 12;
-            const totalCommission = annualValue * recurringCommissionRate;
-            const monthlyPayout = totalCommission / 12;
-
-            return {
-                ...client,
-                planName: proposalContent.summaryTitle,
-                monthlyFee: monthlyFee,
-                annualValue,
-                totalCommission,
-                monthlyPayout,
-                commissionRate: recurringCommissionRate * 100,
-            };
-        } catch (e) {
-            console.error("Error parsing proposal content for recurring commission:", e);
-            return null;
-        }
-    }).filter((details): details is NonNullable<typeof details>[0] => details !== null);
-
-    const recurringCommission = recurringCommissionDetails.reduce((sum, client) => sum + client.monthlyPayout, 0);
-
-    const teamRevenue = acceptedProposals.reduce((sum, p) => sum + getCommissionDetails(p).commission, 0);
-
-    const prepaidContractDetails = acceptedThisMonth
+    const prepaidContractsDetails = acceptedProposals
       .map(proposal => {
         try {
           if (!proposal.content) return null;
@@ -374,14 +294,15 @@ export default function DashboardPage() {
       })
       .filter((item): item is { clientName: string; term: string } => item !== null);
 
-    const prepaidContracts = prepaidContractDetails.length;
+    const prepaidContracts = prepaidContractsDetails.length;
     const prepaidContractsTarget = 5;
 
     return {
         monthlyCommission,
         commissionChange,
         recurringCommission,
-        recurringCommissionDetails,
+        oneTimeCommissionsThisMonth,
+        recurringCommissionsThisMonth,
         corporateClientsThisMonth,
         corporateClientsTarget,
         individualClientsThisMonth,
@@ -395,17 +316,21 @@ export default function DashboardPage() {
         recentProposals,
         activityData,
         acceptedProposals,
-        acceptedThisMonth,
-        activeClients,
         teamRevenue,
         prepaidContracts,
         prepaidContractsTarget,
-        prepaidContractDetails,
-        getCommissionDetails
+        prepaidContractsDetails,
     };
-  }, [proposals, clients, clientMap]);
+  }, [allPayouts, rawCommissions, proposals, clients, clientMap]);
 
-  // Static mock data for bonus tiers which are configuration, not dynamic data
+  const commissionTiers = [
+    { clientType: 'Family Plan', commission: '12%', recurring: 'None', managerOverride: '2%' },
+    { clientType: 'SME', commission: '12%', recurring: '3%', managerOverride: '3%' },
+    { clientType: 'Commercial', commission: '10%', recurring: '3%', managerOverride: '3%' },
+    { clientType: 'Corporate', commission: '10%', recurring: '3%', managerOverride: '3%' },
+    { clientType: 'Enterprise', commission: '8%', recurring: '3%', managerOverride: '2%' },
+  ];
+  
   const closerBonusTiers = [
     { target: 3, bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
     { target: 5, bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
@@ -421,15 +346,7 @@ export default function DashboardPage() {
     { target: 100000, bonus: '₱10,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
     { target: 200000, bonus: '₱25,000 + Elite Partner Badge', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
   ]
-  const teamBuilderTiers = [
-    { milestone: 'Recruit & train 3 active sales partners', reward: '₱3,000 one-time' },
-    { milestone: 'Each sub-affiliate’s first 3 clients', reward: '₱500 per client' },
-    { milestone: 'Reach ₱100,000 combined team revenue', reward: '₱5,000 leadership bonus' },
-  ]
-  const prepaymentBonusTiers = [
-    { term: 'Semi-Annual', bonus: '₱1,000', minContract: 50000 },
-    { term: 'Annual', bonus: '₱2,500 + "Cash Flow Champion" Badge', minContract: 100000 },
-  ];
+
   const prepaymentProgressTiers = [
     { target: 3, reward: '₱1,000' },
     { target: 9, reward: '₱4,000' },
@@ -441,14 +358,8 @@ export default function DashboardPage() {
       { term: 'Semi-Annual', schedule: 'Spread monthly for 6 months' },
       { term: 'Annual', schedule: 'Spread monthly for 12 months' },
   ];
-  const commissionTiers = [
-    { clientType: 'Household', commission: '12%', recurring: 'None' },
-    { clientType: 'SME', commission: '12%', recurring: '3%' },
-    { clientType: 'Business', commission: '10%', recurring: '3%' },
-    { clientType: 'Enterprise', commission: '8%', recurring: '3%' },
-  ];
   
-  if (proposalsLoading || clientsLoading || usersLoading) {
+  if (proposalsLoading || clientsLoading || usersLoading || commissionsLoading) {
       return <DashboardSkeleton />;
   }
 
@@ -483,45 +394,27 @@ export default function DashboardPage() {
                     <DialogHeader>
                         <DialogTitle>Monthly Commission Breakdown</DialogTitle>
                         <DialogDescription>
-                            Showing accepted proposals for {format(new Date(), 'MMMM yyyy')}.
+                            Showing one-time commissions for {format(new Date(), 'MMMM yyyy')}.
                         </DialogDescription>
                     </DialogHeader>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Client</TableHead>
-                                <TableHead>Plan</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead className="text-center">Rate</TableHead>
+                                <TableHead>Description</TableHead>
                                 <TableHead className="text-right">Commission</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {dashboardData.acceptedThisMonth.length > 0 ? dashboardData.acceptedThisMonth.map(p => {
-                                const client = clientMap.get(p.clientId);
-                                const { commission, rate } = dashboardData.getCommissionDetails(p);
-
-                                const clientTypeMap = {
-                                    household: 'Family Plan',
-                                    sme: 'SME',
-                                    commercial: 'Commercial',
-                                    corporate: 'Corporate',
-                                    enterprise: 'Enterprise'
-                                };
-                                const planCategory = client?.clientType ? clientTypeMap[client.clientType] : 'N/A';
-                                
-                                return (
-                                    <TableRow key={p.id}>
-                                        <TableCell>{client?.companyName || 'Unknown Client'}</TableCell>
-                                        <TableCell>{planCategory}</TableCell>
-                                        <TableCell>{currencyFormatter.format(p.amount)}</TableCell>
-                                        <TableCell className="text-center">{rate}%</TableCell>
-                                        <TableCell className="text-right font-semibold">{currencyFormatter.format(commission)}</TableCell>
-                                    </TableRow>
-                                )
-                            }) : (
+                            {dashboardData.oneTimeCommissionsThisMonth.length > 0 ? dashboardData.oneTimeCommissionsThisMonth.map(p => (
+                                <TableRow key={p.id}>
+                                    <TableCell>{p.clientName || 'N/A'}</TableCell>
+                                    <TableCell>{p.description}</TableCell>
+                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(p.amount)}</TableCell>
+                                </TableRow>
+                            )) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center">No commissions this month.</TableCell>
+                                    <TableCell colSpan={3} className="text-center">No one-time commissions this month.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -544,61 +437,35 @@ export default function DashboardPage() {
                         </CardContent>
                     </div>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl">
+                 <DialogContent className="max-w-3xl">
                     <DialogHeader>
                         <DialogTitle>Recurring Commission Breakdown</DialogTitle>
                         <DialogDescription>
-                            Your recurring commission is 3% of the annual contract value, paid out monthly over 12 months.
+                            Showing recurring commissions for {format(new Date(), 'MMMM yyyy')}.
                         </DialogDescription>
                     </DialogHeader>
-                    <Table>
+                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Client</TableHead>
-                                <TableHead>Plan Type</TableHead>
-                                <TableHead>Monthly Fee</TableHead>
-                                <TableHead>Annual Value</TableHead>
-                                <TableHead>Total Commission (3%)</TableHead>
-                                <TableHead className="text-right">Monthly Payout</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead className="text-right">Commission</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                             {dashboardData.recurringCommissionDetails.length > 0 ? dashboardData.recurringCommissionDetails.map(c => {
-                                const clientTypeMap = {
-                                    household: 'Family Plan',
-                                    sme: 'SME',
-                                    commercial: 'Commercial',
-                                    corporate: 'Corporate',
-                                    enterprise: 'Enterprise'
-                                };
-                                const planCategory = c.clientType ? clientTypeMap[c.clientType] : 'N/A';
-                                return (
-                                <TableRow key={c.id}>
-                                    <TableCell>{c.companyName}</TableCell>
-                                    <TableCell>{planCategory}</TableCell>
-                                    <TableCell>{currencyFormatter.format(c.monthlyFee)}</TableCell>
-                                    <TableCell>{currencyFormatter.format(c.annualValue)}</TableCell>
-                                    <TableCell>{currencyFormatter.format(c.totalCommission)}</TableCell>
-                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(c.monthlyPayout)}</TableCell>
+                            {dashboardData.recurringCommissionsThisMonth.length > 0 ? dashboardData.recurringCommissionsThisMonth.map(p => (
+                                <TableRow key={p.id}>
+                                    <TableCell>{p.clientName || 'N/A'}</TableCell>
+                                    <TableCell>{p.description}</TableCell>
+                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(p.amount)}</TableCell>
                                 </TableRow>
-                                )
-                            }) : (
+                            )) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center">No active recurring subscriptions.</TableCell>
+                                    <TableCell colSpan={3} className="text-center">No recurring commissions this month.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
                     </Table>
-                    <DialogFooter>
-                         <div className="text-xs text-muted-foreground text-left w-full pt-4 space-y-2">
-                           <p className="font-semibold">Important Notes:</p>
-                           <ul className="list-disc list-inside space-y-1">
-                               <li>Recurring commissions are paid monthly for the first 12 months of a new client contract.</li>
-                               <li>If a client cancels their subscription, recurring commissions for that client will stop.</li>
-                               <li>For contract renewals after 12 months, the standard one-time commission applies, but recurring commissions do not.</li>
-                           </ul>
-                        </div>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </Card>
@@ -691,6 +558,7 @@ export default function DashboardPage() {
                                     <TableHead>Client Tier</TableHead>
                                     <TableHead className="text-center">One-Time</TableHead>
                                     <TableHead className="text-center">Recurring</TableHead>
+                                    {isManager && <TableHead className="text-center">Manager Override</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -699,6 +567,7 @@ export default function DashboardPage() {
                                         <TableCell className="font-medium">{tier.clientType}</TableCell>
                                         <TableCell className="text-center font-bold text-primary">{tier.commission}</TableCell>
                                         <TableCell className="text-center font-bold text-primary">{tier.recurring}</TableCell>
+                                        {isManager && <TableCell className="text-center font-bold text-blue-600">{tier.managerOverride}</TableCell>}
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -1051,11 +920,11 @@ export default function DashboardPage() {
                               </Card>
                            </div>
                            
-                            {dashboardData.prepaidContractDetails.length > 0 && (
+                            {dashboardData.prepaidContractsDetails.length > 0 && (
                               <div>
                                   <h4 className="font-semibold text-sm mb-2">Your Prepaid Contracts This Month:</h4>
                                   <div className="space-y-2">
-                                      {dashboardData.prepaidContractDetails.map((detail, index) => (
+                                      {dashboardData.prepaidContractsDetails.map((detail, index) => (
                                           <div key={index} className="flex justify-between items-center text-sm p-2 bg-muted rounded-md">
                                               <span>{detail.clientName}</span>
                                               <Badge variant="secondary">{detail.term}</Badge>
@@ -1091,3 +960,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

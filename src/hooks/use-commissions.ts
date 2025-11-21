@@ -61,25 +61,26 @@ export function useCommissions(userId?: string) {
         return;
     }
 
-    const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', 'in', userIdsToFetch));
+    // Listener for all commissions (historical)
+    const commissionsQuery = query(collection(firestore, 'commissions'));
     const unsubCommissions = onSnapshot(commissionsQuery, (snapshot) => {
         const userCommissions: WithId<Commission>[] = [];
         snapshot.forEach(doc => {
             const data = doc.data() as Omit<Commission, 'id'>;
-            let createdAtString: string;
-            if (data.createdAt && typeof (data.createdAt as any).toDate === 'function') {
-                createdAtString = (data.createdAt as any).toDate().toISOString();
-            } else {
-                createdAtString = data.createdAt as string;
+            if (userIdsToFetch.includes(data.userId)) {
+              let createdAtString: string;
+              if (data.createdAt && typeof (data.createdAt as any).toDate === 'function') {
+                  createdAtString = (data.createdAt as any).toDate().toISOString();
+              } else {
+                  createdAtString = data.createdAt as string;
+              }
+              userCommissions.push({ ...data as Commission, id: doc.id, createdAt: createdAtString });
             }
-            userCommissions.push({ ...data as Commission, id: doc.id, createdAt: createdAtString });
         });
         setCommissions(userCommissions);
-        if(!unsubClients && !unsubProposals) setIsLoading(false);
     }, (e) => {
         console.error("Error fetching commissions:", e);
         setError(e);
-        setIsLoading(false);
     });
     
     const clientQuery = query(collection(firestore, 'clients'));
@@ -87,11 +88,9 @@ export function useCommissions(userId?: string) {
         const allClients: WithId<Client>[] = [];
         snapshot.forEach(doc => allClients.push({ id: doc.id, ...doc.data() } as WithId<Client>));
         setClients(allClients);
-        if(!unsubCommissions && !unsubProposals) setIsLoading(false);
     }, (e) => {
         console.error("Error fetching clients:", e);
         setError(e);
-        setIsLoading(false);
     });
 
     const proposalQuery = query(collectionGroup(firestore, 'proposals'));
@@ -113,7 +112,7 @@ export function useCommissions(userId?: string) {
             });
         });
         setProposals(allProposals);
-        if(!unsubCommissions && !unsubClients) setIsLoading(false);
+        setIsLoading(false);
     }, (e) => {
         console.error("Error fetching proposals:", e);
         setError(e);
@@ -127,7 +126,7 @@ export function useCommissions(userId?: string) {
         unsubProposals();
     };
 
-  }, [firestore, targetUser, isFirebaseLoading, teamMembers, isManagerView]);
+  }, [firestore, targetUser, isFirebaseLoading, JSON.stringify(teamMembers.map(m => m.id)), isManagerView]);
   
     const allPayouts = useMemo(() => {
         if (isLoading || !targetUser) return [];
@@ -136,54 +135,35 @@ export function useCommissions(userId?: string) {
 
         const now = new Date();
         const currentMonthKey = format(startOfMonth(now), 'MMMM yyyy');
-        const currentMonthStart = startOfMonth(now);
-        const currentMonthEnd = new Date();
 
-        const commissionRates: { [key: string]: number } = {
-            household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08,
-        };
-        const managerOverrideRates: { [key: string]: number } = {
-            household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02
-        };
+        const commissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
+        const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
         const recurringCommissionRate = 0.03;
         
-        const currentMonthCommissions: WithId<PayoutCommission>[] = [];
+        const liveCommissions: WithId<PayoutCommission>[] = [];
         
-        const userIdsToProcess = isManagerView 
-            ? [targetUser.id, ...teamMembers.map(tm => tm.id)]
-            : [targetUser.id];
-
+        const userIdsToProcess = isManagerView ? [targetUser.id, ...teamMembers.map(tm => tm.id)] : [targetUser.id];
         const relevantProposals = proposals.filter(p => userIdsToProcess.includes(p.userId));
         const acceptedProposals = relevantProposals.filter(p => p.status === 'accepted');
 
-        const acceptedThisMonth = acceptedProposals.filter(p => {
-            if (!p.createdAt) return false;
-            const createdAt = new Date(p.createdAt);
-            return isWithinInterval(createdAt, { start: currentMonthStart, end: currentMonthEnd });
-        });
+        // --- Calculate live commissions for the CURRENT month ---
+        acceptedProposals.forEach(proposal => {
+            if (!proposal.createdAt) return;
+            const createdAt = new Date(proposal.createdAt);
+            if (!isWithinInterval(createdAt, { start: startOfMonth(now), end: now })) return;
 
-        acceptedThisMonth.forEach(proposal => {
             const client = clientMap.get(proposal.clientId);
             if (!client || !client.clientType) return;
 
             // Direct commission for the sales executive
-            if (proposal.userId === targetUser.id || !isManagerView) {
-                const rate = commissionRates[client.clientType] || 0;
-                const commissionAmount = proposal.amount * rate;
-                if (commissionAmount > 0) {
-                     currentMonthCommissions.push({
-                        id: `otc-${proposal.id}`,
-                        amount: commissionAmount,
-                        createdAt: proposal.createdAt,
-                        description: `One-time commission`,
-                        clientName: client.companyName,
-                        proposalId: proposal.id,
-                        status: 'pending',
-                        type: 'commission',
-                        userId: proposal.userId,
-                        referenceId: proposal.id,
-                     });
-                }
+            const rate = commissionRates[client.clientType] || 0;
+            const commissionAmount = proposal.amount * rate;
+            if (commissionAmount > 0) {
+                 liveCommissions.push({
+                    id: `otc-${proposal.id}`, amount: commissionAmount, createdAt: proposal.createdAt,
+                    description: `One-time commission`, clientName: client.companyName, proposalId: proposal.id,
+                    status: 'pending', type: 'commission', userId: proposal.userId, referenceId: proposal.id,
+                 });
             }
             
             // Manager override commission
@@ -191,17 +171,10 @@ export function useCommissions(userId?: string) {
                  const overrideRate = managerOverrideRates[client.clientType] || 0;
                  const overrideAmount = proposal.amount * overrideRate;
                  if (overrideAmount > 0) {
-                     currentMonthCommissions.push({
-                         id: `mgr-ovr-${proposal.id}`,
-                         amount: overrideAmount,
-                         createdAt: proposal.createdAt,
-                         description: `Manager Override`,
-                         clientName: client.companyName,
-                         proposalId: proposal.id,
-                         status: 'pending',
-                         type: 'commission',
-                         userId: targetUser.id, 
-                         referenceId: proposal.id,
+                     liveCommissions.push({
+                         id: `mgr-ovr-${proposal.id}`, amount: overrideAmount, createdAt: proposal.createdAt,
+                         description: `Manager Override`, clientName: client.companyName, proposalId: proposal.id,
+                         status: 'pending', type: 'commission', userId: targetUser.id, referenceId: proposal.id,
                      });
                  }
             }
@@ -224,79 +197,24 @@ export function useCommissions(userId?: string) {
                 const totalCommission = annualValue * recurringCommissionRate;
                 const monthlyPayout = totalCommission / 12;
 
-                if (monthlyPayout > 0 && (acceptedProposalForClient.userId === targetUser.id || !isManagerView)) {
-                    currentMonthCommissions.push({
-                        id: `rec-${client.id}`,
-                        amount: monthlyPayout,
-                        createdAt: now.toISOString(),
-                        description: `Recurring commission`,
-                        clientName: client.companyName,
-                        proposalId: acceptedProposalForClient.id,
-                        status: 'pending',
-                        type: 'commission',
-                        userId: acceptedProposalForClient.userId,
-                        referenceId: client.id,
+                if (monthlyPayout > 0) {
+                    liveCommissions.push({
+                        id: `rec-${client.id}`, amount: monthlyPayout, createdAt: now.toISOString(),
+                        description: `Recurring commission`, clientName: client.companyName, proposalId: acceptedProposalForClient.id,
+                        status: 'pending', type: 'commission', userId: acceptedProposalForClient.userId, referenceId: client.id,
                     });
                 }
             } catch {}
         });
 
-        const corporateBonusTiers = [
-            { target: 3, name: 'Corporate Closer I', bonus: 2000 },
-            { target: 5, name: 'Corporate Closer II', bonus: 5000 },
-            { target: 10, name: 'Corporate Closer III', bonus: 12000 },
-        ];
-        const familyBonusTiers = [
-            { target: 10, name: 'Family Plan Closer I', bonus: 2500 },
-            { target: 20, name: 'Family Plan Closer II', bonus: 6000 },
-            { target: 30, name: 'Family Plan Closer III', bonus: 15000 },
-        ];
+        const allCommissions = [...commissions, ...liveCommissions.filter(lc => (isManagerView ? true : lc.userId === targetUser.id))];
 
-        const corpClientsThisMonth = acceptedThisMonth.filter(p => {
-            const client = clientMap.get(p.clientId);
-            return p.userId === targetUser.id && client && ['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '');
-        }).length;
-
-        const householdClientsThisMonth = acceptedThisMonth.filter(p => {
-            const client = clientMap.get(p.clientId);
-            return p.userId === targetUser.id && client && client.clientType === 'household';
-        }).length;
-        
-        corporateBonusTiers.forEach(tier => {
-            if (corpClientsThisMonth >= tier.target) {
-                currentMonthCommissions.push({
-                    id: `bonus-corp-${tier.target}`, amount: tier.bonus, createdAt: now.toISOString(),
-                    description: tier.name, clientName: 'N/A', proposalId: 'N/A',
-                    status: 'pending', type: 'bonus', userId: authUser?.id || '', referenceId: `bonus-corp-${tier.target}`
-                });
-            }
-        });
-         familyBonusTiers.forEach(tier => {
-            if (householdClientsThisMonth >= tier.target) {
-                currentMonthCommissions.push({
-                    id: `bonus-fam-${tier.target}`, amount: tier.bonus, createdAt: now.toISOString(),
-                    description: tier.name, clientName: 'N/A', proposalId: 'N/A',
-                    status: 'pending', type: 'bonus', userId: authUser?.id || '', referenceId: `bonus-fam-${tier.target}`
-                });
-            }
-        });
-
-
-        const commissionsByMonth = commissions
-            .filter(c => isManagerView ? true : c.userId === targetUser.id)
-            .reduce((acc, commission) => {
+        const commissionsByMonth = allCommissions.reduce((acc, commission) => {
                 const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
                 if (!acc[monthKey]) acc[monthKey] = [];
                 acc[monthKey].push(commission);
                 return acc;
             }, {} as Record<string, WithId<PayoutCommission>[]>);
-
-        if (!commissionsByMonth[currentMonthKey]) {
-            commissionsByMonth[currentMonthKey] = [];
-        }
-        
-        const targetCommissions = currentMonthCommissions.filter(c => isManagerView ? true : c.userId === targetUser.id);
-        commissionsByMonth[currentMonthKey].push(...targetCommissions);
 
         const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
             const monthCommissions = commissionsByMonth[month] || [];
@@ -304,7 +222,7 @@ export function useCommissions(userId?: string) {
             
             const totalAmount = uniqueCommissions.reduce((sum, c) => sum + c.amount, 0);
             
-            const allPaid = uniqueCommissions.every(c => c.status === 'paid');
+            const allPaid = !uniqueCommissions.some(c => c.status === 'pending');
             const status = allPaid ? 'paid' : 'pending';
             
             return { 
@@ -334,3 +252,5 @@ export function useCommissions(userId?: string) {
 
     return { allPayouts, commissions, clients, proposals, isLoading: combinedIsLoading, error, availableYears };
 }
+
+    
