@@ -271,7 +271,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
             } else if (statusFilter === 'pending') {
                 statusMatch = client.status === 'pending';
             } else if (statusFilter === 'unpaid') {
-                statusMatch = clientPaymentStatus === 'Unpaid';
+                statusMatch = client.paymentStatus === 'Unpaid';
             }
 
             const searchMatch = searchQuery === '' || 
@@ -1389,16 +1389,13 @@ export default function AdminPage() {
                         <DialogHeader>
                              <div className="flex items-center gap-2">
                                 <TrendingUp className="h-6 w-6 text-primary"/>
-                                <DialogTitle>Revenue Deep Dive</DialogTitle>
+                                <DialogTitle>Revenue Growth (6 Months)</DialogTitle>
                             </div>
-                            <DialogDescription>A detailed look at key revenue and sales activity metrics.</DialogDescription>
+                            <DialogDescription>A detailed look at your revenue growth over the last six months.</DialogDescription>
                         </DialogHeader>
-                        <div className="grid grid-cols-1 gap-6 py-4">
+                        <div className="py-4">
                             <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base">Revenue Growth (6 Months)</CardTitle>
-                                </CardHeader>
-                                <CardContent className="h-[250px]">
+                                <CardContent className="h-[250px] pt-6">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={stats.revenueHistory}>
                                             <defs>
@@ -1416,42 +1413,6 @@ export default function AdminPage() {
                                     </ResponsiveContainer>
                                 </CardContent>
                             </Card>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-base">Proposals Created</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="h-[250px]">
-                                         <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={stats.proposalsCreatedHistory}>
-                                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ fill: 'hsl(var(--muted))' }} />
-                                                <Bar dataKey="Proposals Created" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </CardContent>
-                                </Card>
-                                 <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-base">Proposal Funnel</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="h-[250px]">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={stats.proposalFunnelData}>
-                                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                                <Legend wrapperStyle={{paddingTop: '20px'}} />
-                                                <Line type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-2))" strokeWidth={2} />
-                                                <Line type="monotone" dataKey="accepted" name="Accepted" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-                                            </LineChart>
-                                        </ResponsiveContainer>
-                                    </CardContent>
-                                </Card>
-                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
