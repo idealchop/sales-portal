@@ -136,41 +136,15 @@ export function useCommissions(userIds?: string | string[]) {
         const relevantProposals = proposals.filter(p => targetUserIds.includes(p.userId));
         const acceptedProposals = relevantProposals.filter(p => p.status === 'accepted');
 
-        const liveCommissions: WithId<PayoutCommission>[] = [];
-        
-        // --- Calculate live commissions for the CURRENT month ---
-        acceptedProposals.forEach(proposal => {
-            if (!proposal.createdAt) return;
-            const createdAt = new Date(proposal.createdAt);
-            if (!isWithinInterval(createdAt, { start: startOfMonth(now), end: now })) return;
-
-            const client = clientMap.get(proposal.clientId);
-            if (!client || !client.clientType) return;
-        });
-
         const oneYearAgo = addYears(now, -1);
         const activeClients = clients.filter(c => targetUserIds.includes(c.userId) && c.status === 'active' && c.clientType !== 'household');
         
-        activeClients.forEach(client => {
-             const acceptedProposalForClient = acceptedProposals.find(p => p.clientId === client.id);
-             if (!acceptedProposalForClient || !acceptedProposalForClient.content) return;
-             try {
-                const proposalContent = JSON.parse(acceptedProposalForClient.content) as FinalPlanDetails;
-                if (!proposalContent.date) return;
-                const dateSigned = parseISO(proposalContent.date);
-                if (dateSigned < oneYearAgo) return;
+        // For a manager, we only want to show commissions assigned to them (direct or overrides)
+        const commissionsToShow = isManager
+          ? commissions.filter(c => c.userId === authUser?.id)
+          : commissions;
 
-            } catch {}
-        });
-
-        // For a manager, filter commissions to only show their direct commissions and overrides.
-        const managerCommissions = isManager 
-            ? commissions.filter(c => c.userId === authUser?.id) 
-            : commissions;
-
-        const allCommissions = [...managerCommissions, ...liveCommissions];
-
-        const commissionsByMonth = allCommissions.reduce((acc, commission) => {
+        const commissionsByMonth = commissionsToShow.reduce((acc, commission) => {
                 const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
                 if (!acc[monthKey]) acc[monthKey] = [];
                 acc[monthKey].push(commission);
@@ -215,5 +189,3 @@ export function useCommissions(userIds?: string | string[]) {
 
     return { allPayouts, commissions, clients, proposals, isLoading: combinedIsLoading, error, availableYears };
 }
-
-    
