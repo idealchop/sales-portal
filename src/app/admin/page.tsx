@@ -7,7 +7,6 @@ import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Tro
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
-import { useAllCommissions } from '@/hooks/use-all-commissions';
 import { useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, updateDoc, arrayUnion, writeBatch, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -1196,28 +1195,37 @@ export default function AdminPage() {
     return { totalRevenue, activeClients, inactiveClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, teamWinRate, teamTotalRevenue, teamAvgDealSize, teamProposalsSentChange, teamWinRateChange, teamTotalRevenueChange, teamAvgDealSizeChange };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod, proposalsByRepPeriod]);
   
-  const { allPayouts, commissions: commissionsFromHook, isLoading: commissionsLoading } = useAllCommissions();
+  const userIds = useMemo(() => salesUsers.filter(u => u.role !== 'admin').map(u => u.id), [salesUsers]);
+  const { allPayouts, commissions: commissionsFromHook, isLoading: commissionsLoading } = useCommissions(userIds);
 
   const salesRepPayouts = useMemo(() => {
     if (commissionsLoading || usersLoading) return [];
 
-    const userPayouts = salesUsers.map(user => {
-      if (user.role === 'admin') return null;
+    const payoutsByUser = allPayouts.reduce((acc, payout) => {
+        const userId = payout.commissions[0]?.userId;
+        if (userId) {
+            if (!acc[userId]) {
+                acc[userId] = [];
+            }
+            acc[userId].push(payout);
+        }
+        return acc;
+    }, {} as Record<string, typeof allPayouts>);
 
-      const { allPayouts: userAllPayouts } = useCommissions(user.id);
-      
-      const pendingAmount = userAllPayouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.totalAmount, 0);
-      const paidAmount = userAllPayouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.totalAmount, 0);
-
-      return {
-          user,
-          pendingAmount,
-          paidAmount,
-      };
-    }).filter(Boolean);
-
-    return userPayouts;
-  }, [salesUsers, commissionsLoading, usersLoading]);
+    return salesUsers
+      .filter(user => user.role !== 'admin')
+      .map(user => {
+        const userPayouts = payoutsByUser[user.id] || [];
+        const pendingAmount = userPayouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.totalAmount, 0);
+        const paidAmount = userPayouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.totalAmount, 0);
+        
+        return {
+            user,
+            pendingAmount,
+            paidAmount,
+        };
+      });
+  }, [salesUsers, allPayouts, commissionsLoading, usersLoading]);
 
   const handleProcessPayout = (payoutId: string, commissionsToUpdate: WithId<Commission>[], userToNotify: WithId<UserProfile>) => {
       if (!firestore) return;
