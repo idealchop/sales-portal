@@ -4,7 +4,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target, Bell, BadgeCheck, Receipt } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target, Bell, BadgeCheck, Receipt, AlertTriangle } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -22,7 +22,7 @@ import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, LineChart, Line, Sector as RechartsPrimitiveSector, ComposedChart } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub, parseISO, isAfter } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub, parseISO, isAfter, addMonths } from 'date-fns';
 import Image from 'next/image';
 import {
   Dialog,
@@ -58,6 +58,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCommissions } from '@/hooks/use-commissions';
 import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
+import { TooltipProvider, Tooltip as UiTooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -268,12 +269,12 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
             
             const clientPaymentStatus = client.paymentStatus || 'Pending';
             let statusMatch = statusFilter === 'all';
-             if (statusFilter === 'active') {
+            if (statusFilter === 'active') {
                 statusMatch = client.status === 'active';
             } else if (statusFilter === 'pending') {
                 statusMatch = client.status === 'pending';
             } else if (statusFilter === 'unpaid') {
-                statusMatch = clientPaymentStatus === 'Unpaid';
+                statusMatch = client.paymentStatus === 'Unpaid';
             }
 
             const searchMatch = searchQuery === '' || 
@@ -384,10 +385,10 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                 }),
                 paymentStatus: 'Paid'
             });
-
-            toast({ title: 'Payment Uploaded', description: 'The proof of payment has been added to the client\'s history.' });
             
             setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '', amount: 0, isOpen: false });
+
+            toast({ title: 'Payment Uploaded', description: 'The proof of payment has been added to the client\'s history.' });
 
         } catch (error) {
             console.error('Error uploading payment:', error);
@@ -463,8 +464,9 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             let subscriptionDetails = {
                                 planName: 'N/A',
                                 amount: 0,
-                                billingCycle: 'N/A',
+                                billingCycle: 'Monthly',
                                 clientType: client.clientType,
+                                dateSigned: client.createdAt,
                             };
 
                            if (acceptedProposal) {
@@ -472,14 +474,15 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                 let planName = acceptedProposal.title || 'Custom Plan';
                                 let billingCycle = 'Monthly';
                                 let proposalClientType = client.clientType;
+                                let dateSigned = client.createdAt;
                             
                                 if (acceptedProposal.content) {
                                     try {
                                         const content = JSON.parse(acceptedProposal.content);
                                         planName = content.summaryTitle || planName;
                                         billingCycle = content.billingCycleLabel || 'Monthly';
+                                        dateSigned = content.date || dateSigned;
                                         
-                                        // Prioritize the clientType from the proposal content
                                         if (content.clientType) {
                                             proposalClientType = content.clientType;
                                         }
@@ -500,6 +503,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                     planName: planName,
                                     billingCycle: billingCycle,
                                     clientType: proposalClientType,
+                                    dateSigned: dateSigned,
                                 };
                             } else if (client.subscription) {
                                 subscriptionDetails = {
@@ -507,6 +511,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                     amount: client.subscription.amount || 0,
                                     billingCycle: (client.subscription as any).billingCycle || 'Monthly',
                                     clientType: client.clientType,
+                                    dateSigned: client.subscription.dateSigned || client.createdAt,
                                 };
                             }
                             
@@ -515,6 +520,11 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             const planImage = (subscriptionDetails.clientType && planImages[subscriptionDetails.clientType]) || planImages.sme;
 
                             const isNew = client.createdAt && isAfter(parseISO(client.createdAt), subDays(new Date(), 7));
+
+                            const cycleMap: { [key: string]: number } = { 'Monthly': 1, 'Quarterly': 3, 'Semi-Annually': 6, 'Annually': 12 };
+                            const cycleMonths = cycleMap[subscriptionDetails.billingCycle] || 1;
+                            const nextBillingDate = subscriptionDetails.dateSigned ? addMonths(parseISO(subscriptionDetails.dateSigned), cycleMonths) : null;
+                            const isPaymentDue = nextBillingDate && isAfter(new Date(), nextBillingDate);
 
                             return (
                                 <TableRow key={client.id}>
@@ -536,35 +546,50 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                         </div>
                                         <div className="space-y-1 mt-2">
                                              <h4 className="font-semibold text-sm">{clientTypeLabel ? `${clientTypeLabel} - ${subscriptionDetails.planName}` : subscriptionDetails.planName}</h4>
-                                            <div className="flex items-baseline gap-2">
+                                             <div className="flex items-baseline gap-2">
                                                 <p className="font-bold text-lg text-primary">{currencyFormatter.format(subscriptionDetails.amount)}</p>
                                                 <Badge variant="outline">{subscriptionDetails.billingCycle}</Badge>
                                             </div>
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        {isAdmin ? (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Badge variant="outline" className={cn("capitalize cursor-pointer", paymentStatusStyles[paymentStatus])}>
-                                                        {paymentStatus}
-                                                    </Badge>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent>
-                                                    <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Paid')}>
-                                                        Mark as Paid
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Pending')}>
-                                                        Mark as Pending
-                                                    </DropdownMenuItem>
-                                                     <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Unpaid')}>
-                                                        Mark as Unpaid
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        ) : (
-                                            <Badge variant="outline" className={cn("capitalize", paymentStatusStyles[paymentStatus])}>{paymentStatus}</Badge>
-                                        )}
+                                       <div className="flex items-center gap-2">
+                                            {isAdmin ? (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Badge variant="outline" className={cn("capitalize cursor-pointer", paymentStatusStyles[paymentStatus])}>
+                                                            {paymentStatus}
+                                                        </Badge>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Paid')}>
+                                                            Mark as Paid
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Pending')}>
+                                                            Mark as Pending
+                                                        </DropdownMenuItem>
+                                                         <DropdownMenuItem onClick={() => handlePaymentStatusChange(client.id, 'Unpaid')}>
+                                                            Mark as Unpaid
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            ) : (
+                                                <Badge variant="outline" className={cn("capitalize", paymentStatusStyles[paymentStatus])}>{paymentStatus}</Badge>
+                                            )}
+                                            {isPaymentDue && paymentStatus === 'Paid' && (
+                                                <TooltipProvider>
+                                                    <UiTooltip>
+                                                        <TooltipTrigger>
+                                                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>New billing cycle has started. Please update status to "Unpaid".</p>
+                                                            <p className="text-xs text-muted-foreground">Next billing date was: {format(nextBillingDate!, 'PPP')}</p>
+                                                        </TooltipContent>
+                                                    </UiTooltip>
+                                                </TooltipProvider>
+                                            )}
+                                       </div>
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className={cn("capitalize", client.status && clientStatusStyles[client.status])}>{client.status || 'N/A'}</Badge>
@@ -1816,5 +1841,3 @@ export default function AdminPage() {
     
 
     
-
-
