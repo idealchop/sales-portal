@@ -408,20 +408,17 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             {availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
                         </SelectContent>
                     </Select>
-                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-auto px-3">
-                           <Filter className="h-4 w-4 text-muted-foreground" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                        </SelectContent>
-                    </Select>
                 </div>
             </CardHeader>
             <CardContent>
+                <Tabs defaultValue="all" onValueChange={setStatusFilter} className="w-full">
+                    <TabsList>
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="active">Active</TabsTrigger>
+                        <TabsTrigger value="pending">Pending</TabsTrigger>
+                        <TabsTrigger value="inactive">Inactive</TabsTrigger>
+                    </TabsList>
+                </Tabs>
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -928,7 +925,6 @@ export default function AdminPage() {
   const { proposals, isLoading: proposalsLoading } = useAllProposals();
   const { clients, isLoading: clientsLoading } = useAllClients();
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
-  const { commissions: commissionsFromHook, isLoading: commissionsLoading } = useAllCommissions();
   const { isAdmin } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -1200,59 +1196,28 @@ export default function AdminPage() {
     return { totalRevenue, activeClients, inactiveClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, teamWinRate, teamTotalRevenue, teamAvgDealSize, teamProposalsSentChange, teamWinRateChange, teamTotalRevenueChange, teamAvgDealSizeChange };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod, proposalsByRepPeriod]);
   
-  const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
-
-  const { allPayouts, availableYears: payoutYears } = useCommissions(undefined);
+  const { allPayouts, commissions: commissionsFromHook, isLoading: commissionsLoading } = useAllCommissions();
 
   const salesRepPayouts = useMemo(() => {
     if (commissionsLoading || usersLoading) return [];
-  
-    const payoutsByUser: { [userId: string]: { allPayouts: ReturnType<typeof useCommissions>['allPayouts'] } } = {};
-    
-    // This part is a bit tricky without calling hooks in a loop.
-    // The `useCommissions` hook is designed to fetch per-user.
-    // For an admin page, we'd ideally have a hook that fetches all commissions and then we process them.
-    // Let's assume `commissionsFromHook` has ALL commissions and we filter them here.
-  
+
     const userPayouts = salesUsers.map(user => {
-      const userCommissions = commissionsFromHook.filter(c => c.userId === user.id);
-      
-      const commissionsByMonth = userCommissions.reduce((acc, commission) => {
-        const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
-        if (!acc[monthKey]) acc[monthKey] = [];
-        acc[monthKey].push(commission);
-        return acc;
-      }, {} as Record<string, WithId<Commission>[]>);
+      if (user.role === 'admin') return null;
 
-      const processedPayouts: ReturnType<typeof useCommissions>['allPayouts'] = Object.keys(commissionsByMonth).map(month => {
-        const monthCommissions = commissionsByMonth[month] || [];
-        const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
-        const allPaid = !monthCommissions.some(c => c.status === 'pending');
-
-        return { 
-          month, 
-          totalAmount, 
-          status: allPaid ? 'paid' : 'pending',
-          timelineStatus: allPaid ? 'paid' : 'calculated',
-          commissions: monthCommissions as any,
-          transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${user.id.slice(0, 4).toUpperCase()}`
-        };
-      }).sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+      const { allPayouts: userAllPayouts } = useCommissions(user.id);
       
-      const pendingAmount = processedPayouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.totalAmount, 0);
-      const paidAmount = processedPayouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.totalAmount, 0);
+      const pendingAmount = userAllPayouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.totalAmount, 0);
+      const paidAmount = userAllPayouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.totalAmount, 0);
 
       return {
           user,
           pendingAmount,
           paidAmount,
       };
-    });
+    }).filter(Boolean);
 
     return userPayouts;
-
-}, [salesUsers, commissionsLoading, usersLoading, commissionsFromHook]);
-
+  }, [salesUsers, commissionsLoading, usersLoading]);
 
   const handleProcessPayout = (payoutId: string, commissionsToUpdate: WithId<Commission>[], userToNotify: WithId<UserProfile>) => {
       if (!firestore) return;
@@ -1308,6 +1273,7 @@ export default function AdminPage() {
       });
   };
 
+  const isLoading = proposalsLoading || clientsLoading || usersLoading || commissionsLoading;
 
   if (isLoading) {
     return <AdminDashboardSkeleton />;
@@ -1774,35 +1740,39 @@ export default function AdminPage() {
                                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                     </TableCell>
                                 </TableRow>
-                            ) : salesRepPayouts.filter(p => p.user.role !== 'admin').length > 0 ? (
-                                salesRepPayouts.filter(p => p.user.role !== 'admin').map(({ user, pendingAmount, paidAmount }) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-3">
-                                                <Avatar>
-                                                    <AvatarImage src={user?.photoURL} />
-                                                    <AvatarFallback>{user?.displayName?.[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="font-medium">{user?.displayName}</p>
-                                                    <p className="text-sm text-muted-foreground">{user?.email}</p>
+                            ) : salesRepPayouts.filter(p => p?.user.role !== 'admin').length > 0 ? (
+                                salesRepPayouts.filter(p => p?.user.role !== 'admin').map((payout) => {
+                                    if (!payout) return null;
+                                    const { user, pendingAmount, paidAmount } = payout;
+                                    return (
+                                        <TableRow key={user.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar>
+                                                        <AvatarImage src={user?.photoURL} />
+                                                        <AvatarFallback>{user?.displayName?.[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-medium">{user?.displayName}</p>
+                                                        <p className="text-sm text-muted-foreground">{user?.email}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-semibold">{currencyFormatter.format(pendingAmount)}</TableCell>
-                                        <TableCell>{currencyFormatter.format(paidAmount)}</TableCell>
-                                        <TableCell className="text-center">
-                                             <PayoutHistoryDialog 
-                                                user={user}
-                                                isAdmin={true}
-                                                onProcessPayout={(payoutId, commissions) => handleProcessPayout(payoutId, commissions, user)}
-                                                processingPayouts={processingPayouts}
-                                             >
-                                                <Button variant="outline" size="sm">View Payouts</Button>
-                                            </PayoutHistoryDialog>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                            </TableCell>
+                                            <TableCell className="font-semibold">{currencyFormatter.format(pendingAmount)}</TableCell>
+                                            <TableCell>{currencyFormatter.format(paidAmount)}</TableCell>
+                                            <TableCell className="text-center">
+                                                 <PayoutHistoryDialog 
+                                                    user={user}
+                                                    isAdmin={true}
+                                                    onProcessPayout={(payoutId, commissions) => handleProcessPayout(payoutId, commissions, user)}
+                                                    processingPayouts={processingPayouts}
+                                                 >
+                                                    <Button variant="outline" size="sm">View Payouts</Button>
+                                                </PayoutHistoryDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={4} className="h-24 text-center">No sales representatives found.</TableCell>
@@ -1832,3 +1802,6 @@ export default function AdminPage() {
     
 
 
+
+
+    
