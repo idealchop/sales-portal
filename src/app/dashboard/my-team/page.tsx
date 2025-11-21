@@ -8,7 +8,7 @@ import { useAllProposals } from '@/hooks/use-all-proposals';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail } from 'lucide-react';
 import type { UserProfile, Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -23,6 +23,8 @@ import {
   Tooltip,
 } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 const CustomBarLabel = (props: any) => {
   const { x, y, width, height, value } = props;
@@ -98,12 +100,14 @@ export default function MyTeamPage() {
       const sentProposals = userProposals.filter((p) => ['sent', 'accepted', 'rejected', 'finalized'].includes(p.status));
       const totalRevenue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
       const winRate = sentProposals.length > 0 ? (acceptedProposals.length / sentProposals.length) * 100 : 0;
+      const avgSale = acceptedProposals.length > 0 ? totalRevenue / acceptedProposals.length : 0;
 
       return {
         ...member,
         proposalsWon: acceptedProposals.length,
         totalRevenue,
         winRate,
+        avgSale,
       };
     });
 
@@ -345,16 +349,59 @@ export default function MyTeamPage() {
                         {rank > 3 && rank}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage src={rep.photoURL} />
-                            <AvatarFallback>{rep.displayName?.[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{rep.displayName}</p>
-                            <p className="text-sm text-muted-foreground">{rep.email}</p>
-                          </div>
-                        </div>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <div className="flex items-center gap-3 cursor-pointer">
+                                  <Avatar>
+                                    <AvatarImage src={rep.photoURL} />
+                                    <AvatarFallback>{rep.displayName?.[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium hover:underline">{rep.displayName}</p>
+                                    <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                  </div>
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="h-16 w-16">
+                                            <AvatarImage src={rep.photoURL} />
+                                            <AvatarFallback className="text-xl">{rep.displayName?.[0]}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h3 className="font-semibold text-lg">{rep.displayName}</h3>
+                                            <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2 text-sm border-t pt-4">
+                                        <div className="flex items-center gap-2">
+                                            <Phone className="h-4 w-4 text-muted-foreground" />
+                                            <span>{rep.phone || 'N/A'}</span>
+                                        </div>
+                                         <div className="flex items-center gap-2">
+                                            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                                            <span>{rep.birthday ? format(new Date(rep.birthday), 'PPP') : 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3 border-t pt-4">
+                                         <h4 className="font-semibold text-sm">Performance Summary</h4>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-muted-foreground">Total Revenue</span>
+                                            <span className="font-semibold">{currencyFormatter.format(rep.totalRevenue)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-muted-foreground">Proposals Won</span>
+                                            <span className="font-semibold">{rep.proposalsWon}</span>
+                                        </div>
+                                         <div className="flex justify-between items-center text-sm">
+                                            <span className="text-muted-foreground">Average Sale</span>
+                                            <span className="font-semibold">{currencyFormatter.format(rep.avgSale)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                       </TableCell>
                       <TableCell>{rep.proposalsWon}</TableCell>
                       <TableCell>{rep.winRate.toFixed(1)}%</TableCell>
@@ -376,3 +423,5 @@ export default function MyTeamPage() {
     </div>
   );
 }
+
+    
