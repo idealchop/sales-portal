@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { useUser } from '@/firebase';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Loader2, User, Calendar as CalendarIcon, Phone, Upload, Trash2, Briefcase, MapPin } from 'lucide-react';
+import { Loader2, User, Calendar as CalendarIcon, Phone, Upload, Trash2, Briefcase, MapPin, Users } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
