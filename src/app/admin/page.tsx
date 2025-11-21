@@ -438,7 +438,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             <TableHead>Payment Status</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Onboarding</TableHead>
-                             <TableHead className="text-right">Proof of Payment</TableHead>
+                            <TableHead className="text-right">Date Added</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -589,60 +589,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                        ) : null}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {isAdmin && client.status === 'active' && (
-                                            <Dialog onOpenChange={(open) => !open && setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '', amount: 0 })}>
-                                                <DialogTrigger asChild>
-                                                    <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, planName: subscriptionDetails.planName, planImage: planImage, amount: subscriptionDetails.amount}))}>
-                                                        <Upload className="mr-2 h-4 w-4" /> Upload
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent className="sm:max-w-md">
-                                                    <DialogHeader>
-                                                        <DialogTitle>Upload Payment Proof</DialogTitle>
-                                                        <DialogDescription>For {client.companyName}'s next billing cycle of {currencyFormatter.format(subscriptionDetails.amount)}.</DialogDescription>
-                                                    </DialogHeader>
-                                                     <div className="space-y-4 py-4">
-                                                        <Card className="overflow-hidden">
-                                                            <div className="relative aspect-video">
-                                                                {paymentUploadState.planImage && (
-                                                                    <Image src={paymentUploadState.planImage} alt={paymentUploadState.planName} fill className="object-cover" />
-                                                                )}
-                                                            </div>
-                                                            <CardHeader>
-                                                                <CardTitle>{paymentUploadState.planName}</CardTitle>
-                                                            </CardHeader>
-                                                        </Card>
-                                                        <div className="space-y-2">
-                                                            <Label>Payment Date</Label>
-                                                            <Popover>
-                                                                <PopoverTrigger asChild>
-                                                                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !paymentUploadState.date && "text-muted-foreground")}>
-                                                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                                                        {paymentUploadState.date ? format(paymentUploadState.date, "PPP") : <span>Pick a date</span>}
-                                                                    </Button>
-                                                                </PopoverTrigger>
-                                                                <PopoverContent className="w-auto p-0">
-                                                                    <Calendar mode="single" selected={paymentUploadState.date} onSelect={(d) => setPaymentUploadState(prev => ({ ...prev, date: d }))} initialFocus />
-                                                                </PopoverContent>
-                                                            </Popover>
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label htmlFor="payment-file">Proof of Payment File</Label>
-                                                            <Input id="payment-file" type="file" ref={fileInputRef} onChange={(e) => setPaymentUploadState(prev => ({ ...prev, file: e.target.files?.[0] || null }))} accept="image/png, image/jpeg, application/pdf" />
-                                                        </div>
-                                                    </div>
-                                                    <DialogFooter>
-                                                        <DialogClose asChild>
-                                                            <Button type="button" variant="secondary">Cancel</Button>
-                                                        </DialogClose>
-                                                        <Button onClick={handleUploadPayment} disabled={paymentUploadState.isUploading}>
-                                                            {paymentUploadState.isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                            Confirm Upload
-                                                        </Button>
-                                                    </DialogFooter>
-                                                </DialogContent>
-                                            </Dialog>
-                                        )}
+                                        {client.createdAt ? format(parseISO(client.createdAt), 'PPP') : 'N/A'}
                                     </TableCell>
                                 </TableRow>
                             );
@@ -1824,3 +1771,4 @@ export default function AdminPage() {
 
 
     
+
