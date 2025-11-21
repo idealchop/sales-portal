@@ -1204,25 +1204,54 @@ export default function AdminPage() {
 
   const { allPayouts, availableYears: payoutYears } = useCommissions(undefined);
 
-
   const salesRepPayouts = useMemo(() => {
     if (commissionsLoading || usersLoading) return [];
+  
+    const payoutsByUser: { [userId: string]: { allPayouts: ReturnType<typeof useCommissions>['allPayouts'] } } = {};
     
+    // This part is a bit tricky without calling hooks in a loop.
+    // The `useCommissions` hook is designed to fetch per-user.
+    // For an admin page, we'd ideally have a hook that fetches all commissions and then we process them.
+    // Let's assume `commissionsFromHook` has ALL commissions and we filter them here.
+  
     const userPayouts = salesUsers.map(user => {
-        const { allPayouts: userAllPayouts } = useCommissions(user.id);
-        const pendingAmount = userAllPayouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.totalAmount, 0);
-        const paidAmount = userAllPayouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.totalAmount, 0);
-        
-        return {
-            user,
-            pendingAmount,
-            paidAmount,
+      const userCommissions = commissionsFromHook.filter(c => c.userId === user.id);
+      
+      const commissionsByMonth = userCommissions.reduce((acc, commission) => {
+        const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
+        if (!acc[monthKey]) acc[monthKey] = [];
+        acc[monthKey].push(commission);
+        return acc;
+      }, {} as Record<string, WithId<Commission>[]>);
+
+      const processedPayouts: ReturnType<typeof useCommissions>['allPayouts'] = Object.keys(commissionsByMonth).map(month => {
+        const monthCommissions = commissionsByMonth[month] || [];
+        const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
+        const allPaid = !monthCommissions.some(c => c.status === 'pending');
+
+        return { 
+          month, 
+          totalAmount, 
+          status: allPaid ? 'paid' : 'pending',
+          timelineStatus: allPaid ? 'paid' : 'calculated',
+          commissions: monthCommissions as any,
+          transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${user.id.slice(0, 4).toUpperCase()}`
         };
+      }).sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
+      
+      const pendingAmount = processedPayouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.totalAmount, 0);
+      const paidAmount = processedPayouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.totalAmount, 0);
+
+      return {
+          user,
+          pendingAmount,
+          paidAmount,
+      };
     });
 
     return userPayouts;
 
-}, [salesUsers, commissionsLoading, usersLoading]);
+}, [salesUsers, commissionsLoading, usersLoading, commissionsFromHook]);
 
 
   const handleProcessPayout = (payoutId: string, commissionsToUpdate: WithId<Commission>[], userToNotify: WithId<UserProfile>) => {
@@ -1745,8 +1774,8 @@ export default function AdminPage() {
                                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                     </TableCell>
                                 </TableRow>
-                            ) : salesUsers.filter(u => u.role !== 'admin').length > 0 ? (
-                                salesUsers.filter(u => u.role !== 'admin').map(user => (
+                            ) : salesRepPayouts.filter(p => p.user.role !== 'admin').length > 0 ? (
+                                salesRepPayouts.filter(p => p.user.role !== 'admin').map(({ user, pendingAmount, paidAmount }) => (
                                     <TableRow key={user.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
@@ -1760,8 +1789,8 @@ export default function AdminPage() {
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="font-semibold">{currencyFormatter.format(0)}</TableCell>
-                                        <TableCell>{currencyFormatter.format(0)}</TableCell>
+                                        <TableCell className="font-semibold">{currencyFormatter.format(pendingAmount)}</TableCell>
+                                        <TableCell>{currencyFormatter.format(paidAmount)}</TableCell>
                                         <TableCell className="text-center">
                                              <PayoutHistoryDialog 
                                                 user={user}
@@ -1801,4 +1830,5 @@ export default function AdminPage() {
 
 
     
+
 
