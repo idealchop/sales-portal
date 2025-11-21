@@ -557,7 +557,6 @@ export default function DashboardPage() {
                         <TableRow>
                             <TableHead>Metric</TableHead>
                             <TableHead>Bonus</TableHead>
-                            <TableHead>Description</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -565,7 +564,6 @@ export default function DashboardPage() {
                             <TableRow key={tier.target} className={cn(dashboardData.quarterlySalesVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                 <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
                                 <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
-                                <TableCell>{tier.description}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -929,7 +927,6 @@ export default function DashboardPage() {
                                     <TableRow>
                                         <TableHead>Metric</TableHead>
                                         <TableHead>Bonus</TableHead>
-                                        <TableHead>Description</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -937,7 +934,6 @@ export default function DashboardPage() {
                                         <TableRow key={tier.target} className={cn(dashboardData.quarterlySalesVolume >= tier.target && "bg-green-100 dark:bg-green-900/50")}>
                                             <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
                                             <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
-                                            <TableCell>{tier.description}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

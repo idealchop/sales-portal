@@ -56,7 +56,6 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                     <TableHeader>
                         <TableRow>
                             <TableHead>Type</TableHead>
-                            <TableHead>Description</TableHead>
                             <TableHead>Client</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
@@ -72,7 +71,6 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                                         {commission.type === 'bonus' ? 'Bonus' : (commission.description === 'Manager Override' ? 'Override' : 'Commission')}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="font-semibold">{commission.description}</TableCell>
                                 <TableCell>{commission.clientName || 'N/A'}</TableCell>
                                 <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
                             </TableRow>
@@ -80,7 +78,7 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                     </TableBody>
                     <TFooter>
                         <TableRow>
-                            <TableCell colSpan={3} className="text-right font-bold text-base">Total Amount</TableCell>
+                            <TableCell colSpan={2} className="text-right font-bold text-base">Total Amount</TableCell>
                             <TableCell className="text-right font-bold text-base">{currencyFormatter.format(totalAmount)}</TableCell>
                         </TableRow>
                     </TFooter>
@@ -311,5 +309,3 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
         </Dialog>
     );
 }
-
-    
