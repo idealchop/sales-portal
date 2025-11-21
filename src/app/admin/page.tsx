@@ -62,7 +62,7 @@ import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-  unpaid: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  unpaid: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 
@@ -438,7 +438,6 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             <TableHead>Payment Status</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Onboarding</TableHead>
-                            <TableHead className="text-right">Date Added</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -520,7 +519,11 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                                 </Badge>
                                             )}
                                         </div>
-                                        <div className="font-mono text-xs text-muted-foreground">ID: {client.id}</div>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <span className="font-mono">ID: {client.id}</span>
+                                            <span>&bull;</span>
+                                            <span>Added: {client.createdAt ? format(parseISO(client.createdAt), 'PPP') : 'N/A'}</span>
+                                        </div>
                                         <div className="space-y-1 mt-2">
                                              <h4 className="font-semibold text-sm">{clientTypeLabel ? `${clientTypeLabel} - ${subscriptionDetails.planName}` : subscriptionDetails.planName}</h4>
                                             <p className="font-bold text-lg text-primary">{currencyFormatter.format(subscriptionDetails.amount)}</p>
@@ -587,9 +590,6 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                                 </DialogContent>
                                             </Dialog>
                                        ) : null}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {client.createdAt ? format(parseISO(client.createdAt), 'PPP') : 'N/A'}
                                     </TableCell>
                                 </TableRow>
                             );
@@ -1771,5 +1771,6 @@ export default function AdminPage() {
 
 
     
+
 
 
