@@ -231,11 +231,20 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
         clients.forEach(client => {
             if (client.createdAt) {
                 try {
-                    const clientDate = typeof client.createdAt === 'string' ? parseISO(client.createdAt) : new Date(client.createdAt);
-                    if (!isNaN(clientDate.getTime())) { // Check if the date is valid
-                      monthSet.add(format(clientDate, 'MMMM yyyy'));
+                    // Try parsing as ISO string first, then as a generic date string
+                    const clientDate = parseISO(client.createdAt);
+                    if (!isNaN(clientDate.getTime())) {
+                        monthSet.add(format(clientDate, 'MMMM yyyy'));
                     }
-                } catch {}
+                } catch {
+                    // Fallback for other potential date formats, though less reliable
+                    try {
+                        const clientDate = new Date(client.createdAt);
+                         if (!isNaN(clientDate.getTime())) {
+                            monthSet.add(format(clientDate, 'MMMM yyyy'));
+                        }
+                    } catch {}
+                }
             }
         });
         return Array.from(monthSet).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
@@ -246,8 +255,10 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
             let dateMatch = dateFilter === 'all';
             if (dateFilter !== 'all' && client.createdAt) {
                 try {
-                    const clientDate = typeof client.createdAt === 'string' ? parseISO(client.createdAt) : new Date(client.createdAt);
-                    dateMatch = format(clientDate, 'MMMM yyyy') === dateFilter;
+                    const clientDate = parseISO(client.createdAt);
+                    if (!isNaN(clientDate.getTime())) {
+                      dateMatch = format(clientDate, 'MMMM yyyy') === dateFilter;
+                    }
                 } catch {
                     dateMatch = false;
                 }
@@ -1815,3 +1826,6 @@ export default function AdminPage() {
 
     
 
+
+
+    
