@@ -15,7 +15,8 @@ import {
   CircleDollarSign,
   Settings,
   Megaphone,
-  ShieldCheck
+  ShieldCheck,
+  Users as TeamIcon
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/dashboard/proposals', icon: FileText, label: 'Proposals', roles: ['sales', 'manager', 'admin'] },
   { href: '/dashboard/materials', icon: BookCopy, label: 'Materials', roles: ['sales', 'manager', 'admin'] },
   { href: '/dashboard/content-studio', icon: Megaphone, label: 'Content Studio', roles: ['sales', 'manager', 'admin'] },
+  { href: '/dashboard/my-team', icon: TeamIcon, label: 'My Team', roles: ['manager'] },
   { href: '/admin', icon: ShieldCheck, label: 'Admin', roles: ['admin'] },
 ];
 

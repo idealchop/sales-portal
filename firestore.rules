@@ -12,7 +12,19 @@ service cloud.firestore {
     }
 
     function isAdmin() {
+      // Allow user with this specific email to be admin
       return request.auth.token.email == 'admin@smartrefill.io';
+    }
+
+    function isManager() {
+      return get(/databases/$(database)/documents/sales/$(request.auth.uid)).data.role == 'manager';
+    }
+
+    function isSalesManagerOf(userId) {
+        let managerProfile = get(/databases/$(database)/documents/sales/$(request.auth.uid)).data;
+        let userProfile = get(/databases/$(database)/documents/sales/$(userId)).data;
+        let managerTeamName = managerProfile.location + " (" + managerProfile.displayName + ")";
+        return userProfile.team == managerTeamName;
     }
 
     // Sales users can read other profiles for display purposes. Admin can read all.
@@ -39,14 +51,14 @@ service cloud.firestore {
     // Clients can be read by any signed in user.
     // Writes are restricted to the owner OR an admin.
     match /clients/{clientId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || (isManager() && isSalesManagerOf(resource.data.userId)));
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
       allow delete: if false;
       
-      // Admin can read all proposals. Users can only read/write their own.
+      // Admin/Managers can read all proposals for their team. Users can only read/write their own.
       match /proposals/{proposalId} {
-        allow read: if isSignedIn();
+        allow read: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || (isManager() && isSalesManagerOf(resource.data.userId)));
         allow create, update: if isSignedIn() && isOwner(request.resource.data.userId);
         allow delete: if false;
       }
@@ -59,7 +71,7 @@ service cloud.firestore {
     
     // This allows the admin to perform a collectionGroup query on 'proposals'
     match /{path=**}/proposals/{proposalId} {
-      allow list: if isSignedIn() && isAdmin();
+      allow list: if isSignedIn() && (isAdmin() || isManager());
     }
 
     // Rules for user-specific notifications
