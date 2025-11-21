@@ -461,8 +461,12 @@ export default function DashboardPage() {
                                 if (proposal && proposal.content) {
                                     try {
                                         const content = JSON.parse(proposal.content) as FinalPlanDetails;
-                                        if (content.date) {
-                                            const startDate = parseISO(content.date);
+                                        // Use dateSigned from the subscription object stored in the client document first
+                                        const client = clientMap.get(proposal.clientId);
+                                        const dateSignedStr = client?.subscription?.dateSigned || content.date;
+
+                                        if (dateSignedStr) {
+                                            const startDate = parseISO(dateSignedStr);
                                             if (isValid(startDate)) {
                                                 const monthsDiff = differenceInMonths(new Date(), startDate) + 1;
                                                 if (monthsDiff > 0 && monthsDiff <= 12) {
