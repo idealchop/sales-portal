@@ -587,10 +587,13 @@ export function DashboardHeader() {
                         <div>
                             <p className="text-base font-semibold leading-none">{user?.displayName ?? 'Sales Rep'}</p>
                             <p className="text-sm text-muted-foreground">{user?.email ?? 'No email'}</p>
-                             <div className="mt-2 flex items-center gap-2">
+                             <div className="mt-2 flex flex-col items-start gap-1">
                                 <Badge variant="outline" className="capitalize">
                                     {user?.role ? roleDisplayNames[user.role] : 'Sales'}
                                 </Badge>
+                                {user?.role === 'sales' && user?.team && (
+                                    <p className="text-xs text-muted-foreground">Team: {user.team}</p>
+                                )}
                                 {user?.createdAt && !isNaN(new Date(user.createdAt).getTime()) && (
                                     <p className="text-xs text-muted-foreground">Onboarded: {format(new Date(user.createdAt), 'PPP')}</p>
                                 )}
