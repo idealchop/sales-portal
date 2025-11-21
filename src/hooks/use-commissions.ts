@@ -2,12 +2,13 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, collectionGroup } from 'firebase/firestore';
 import { useFirebase, useUser } from '@/firebase';
-import type { Commission, Client, Proposal } from '@/lib/definitions';
+import type { Commission, Client, Proposal, UserProfile } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { format, startOfMonth, isWithinInterval, addYears, parseISO } from 'date-fns';
 import type { FinalPlanDetails } from '@/components/contract-details';
+import { useSalesUsers } from './use-sales-users';
 
 export type PayoutCommission = Commission & { clientName?: string };
 
@@ -22,7 +23,8 @@ export type MonthlyPayout = {
 
 export function useCommissions(userId?: string) {
   const { firestore, isFirebaseLoading } = useFirebase();
-  const { user: authUser, isUserLoading: isUserAuthLoading } = useUser();
+  const { user: authUser, isUserLoading: isUserAuthLoading, isManager } = useUser();
+  const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
   
   const [commissions, setCommissions] = useState<WithId<Commission>[]>([]);
   const [clients, setClients] = useState<WithId<Client>[]>([]);
@@ -30,16 +32,36 @@ export function useCommissions(userId?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const targetUserId = userId || authUser?.uid;
+  const targetUser = useMemo(() => {
+    if (userId) return salesUsers.find(u => u.id === userId);
+    return authUser;
+  }, [userId, authUser, salesUsers]);
+
+  const teamMembers = useMemo(() => {
+    if (!targetUser || targetUser.role !== 'manager') return [];
+    const managerTeamName = `${targetUser.location} (${targetUser.displayName})`;
+    return salesUsers.filter(u => u.team === managerTeamName);
+  }, [targetUser, salesUsers]);
+  
+  const isManagerView = targetUser?.role === 'manager';
 
   useEffect(() => {
-    if (!targetUserId || !firestore || isFirebaseLoading) {
+    if (!targetUser || !firestore || isFirebaseLoading) {
       return;
     }
 
     setIsLoading(true);
 
-    const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', '==', targetUserId));
+    const userIdsToFetch = isManagerView 
+      ? [targetUser.id, ...teamMembers.map(tm => tm.id)]
+      : [targetUser.id];
+    
+    if (userIdsToFetch.length === 0 && isManagerView) {
+        setIsLoading(false);
+        return;
+    }
+
+    const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', 'in', userIdsToFetch));
     const unsubCommissions = onSnapshot(commissionsQuery, (snapshot) => {
         const userCommissions: WithId<Commission>[] = [];
         snapshot.forEach(doc => {
@@ -60,11 +82,11 @@ export function useCommissions(userId?: string) {
         setIsLoading(false);
     });
     
-    const clientQuery = query(collection(firestore, 'clients'), where('userId', '==', targetUserId));
+    const clientQuery = query(collection(firestore, 'clients'));
     const unsubClients = onSnapshot(clientQuery, (snapshot) => {
-        const userClients: WithId<Client>[] = [];
-        snapshot.forEach(doc => userClients.push({ id: doc.id, ...doc.data() } as WithId<Client>));
-        setClients(userClients);
+        const allClients: WithId<Client>[] = [];
+        snapshot.forEach(doc => allClients.push({ id: doc.id, ...doc.data() } as WithId<Client>));
+        setClients(allClients);
         if(!unsubCommissions && !unsubProposals) setIsLoading(false);
     }, (e) => {
         console.error("Error fetching clients:", e);
@@ -72,9 +94,9 @@ export function useCommissions(userId?: string) {
         setIsLoading(false);
     });
 
-    const proposalQuery = query(collection(firestore, 'proposals',), where('userId', '==', targetUserId));
+    const proposalQuery = query(collectionGroup(firestore, 'proposals'));
      const unsubProposals = onSnapshot(proposalQuery, (snapshot) => {
-        const userProposals: WithId<Proposal>[] = [];
+        const allProposals: WithId<Proposal>[] = [];
         snapshot.forEach(doc => {
              const proposalData = doc.data() as Omit<Proposal, 'id'>;
             let createdAtString: string;
@@ -83,14 +105,14 @@ export function useCommissions(userId?: string) {
             } else {
                 createdAtString = proposalData.createdAt as string;
             }
-            userProposals.push({
+            allProposals.push({
                 ...(proposalData as Proposal),
                 id: doc.id,
                 clientId: doc.ref.parent.parent?.id || '',
                 createdAt: createdAtString,
             });
         });
-        setProposals(userProposals);
+        setProposals(allProposals);
         if(!unsubCommissions && !unsubClients) setIsLoading(false);
     }, (e) => {
         console.error("Error fetching proposals:", e);
@@ -105,10 +127,10 @@ export function useCommissions(userId?: string) {
         unsubProposals();
     };
 
-  }, [firestore, targetUserId, isFirebaseLoading]);
+  }, [firestore, targetUser, isFirebaseLoading, teamMembers, isManagerView]);
   
     const allPayouts = useMemo(() => {
-        if (isLoading) return [];
+        if (isLoading || !targetUser) return [];
         
         const clientMap = new Map(clients.map(client => [client.id, client]));
 
@@ -120,41 +142,76 @@ export function useCommissions(userId?: string) {
         const commissionRates: { [key: string]: number } = {
             household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08,
         };
+        const managerOverrideRates: { [key: string]: number } = {
+            household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03
+        };
         const recurringCommissionRate = 0.03;
         
         const currentMonthCommissions: WithId<PayoutCommission>[] = [];
+        
+        const userIdsToProcess = isManagerView 
+            ? [targetUser.id, ...teamMembers.map(tm => tm.id)]
+            : [targetUser.id];
 
-        const acceptedThisMonth = proposals.filter(p => {
+        const relevantProposals = proposals.filter(p => userIdsToProcess.includes(p.userId));
+        const acceptedProposals = relevantProposals.filter(p => p.status === 'accepted');
+
+        const acceptedThisMonth = acceptedProposals.filter(p => {
             if (!p.createdAt) return false;
             const createdAt = new Date(p.createdAt);
-            return p.status === 'accepted' && isWithinInterval(createdAt, { start: currentMonthStart, end: currentMonthEnd });
+            return isWithinInterval(createdAt, { start: currentMonthStart, end: currentMonthEnd });
         });
 
         acceptedThisMonth.forEach(proposal => {
             const client = clientMap.get(proposal.clientId);
             if (!client || !client.clientType) return;
-            const rate = commissionRates[client.clientType] || 0;
-            const commissionAmount = proposal.amount * rate;
-            if (commissionAmount > 0) {
-                 currentMonthCommissions.push({
-                    id: `otc-${proposal.id}`,
-                    amount: commissionAmount,
-                    createdAt: proposal.createdAt,
-                    description: `One-time commission`,
-                    clientName: client.companyName,
-                    proposalId: proposal.id,
-                    status: 'pending',
-                    type: 'commission',
-                    userId: proposal.userId,
-                    referenceId: proposal.id,
-                 });
+
+            // Direct commission for the sales executive
+            if (proposal.userId === targetUser.id || !isManagerView) {
+                const rate = commissionRates[client.clientType] || 0;
+                const commissionAmount = proposal.amount * rate;
+                if (commissionAmount > 0) {
+                     currentMonthCommissions.push({
+                        id: `otc-${proposal.id}`,
+                        amount: commissionAmount,
+                        createdAt: proposal.createdAt,
+                        description: `One-time commission`,
+                        clientName: client.companyName,
+                        proposalId: proposal.id,
+                        status: 'pending',
+                        type: 'commission',
+                        userId: proposal.userId,
+                        referenceId: proposal.id,
+                     });
+                }
+            }
+            
+            // Manager override commission
+            if (isManagerView && teamMembers.some(tm => tm.id === proposal.userId)) {
+                 const overrideRate = managerOverrideRates[client.clientType] || 0;
+                 const overrideAmount = proposal.amount * overrideRate;
+                 if (overrideAmount > 0) {
+                     currentMonthCommissions.push({
+                         id: `mgr-ovr-${proposal.id}`,
+                         amount: overrideAmount,
+                         createdAt: proposal.createdAt,
+                         description: `Manager Override`,
+                         clientName: client.companyName,
+                         proposalId: proposal.id,
+                         status: 'pending',
+                         type: 'commission',
+                         userId: targetUser.id, 
+                         referenceId: proposal.id,
+                     });
+                 }
             }
         });
 
         const oneYearAgo = addYears(now, -1);
-        const activeClients = clients.filter(c => c.status === 'active' && c.clientType !== 'household');
+        const activeClients = clients.filter(c => userIdsToProcess.includes(c.userId) && c.status === 'active' && c.clientType !== 'household');
+        
         activeClients.forEach(client => {
-             const acceptedProposalForClient = proposals.find(p => p.clientId === client.id && p.status === 'accepted');
+             const acceptedProposalForClient = acceptedProposals.find(p => p.clientId === client.id);
              if (!acceptedProposalForClient || !acceptedProposalForClient.content) return;
              try {
                 const proposalContent = JSON.parse(acceptedProposalForClient.content) as FinalPlanDetails;
@@ -166,7 +223,8 @@ export function useCommissions(userId?: string) {
                 const annualValue = monthlyFee * 12;
                 const totalCommission = annualValue * recurringCommissionRate;
                 const monthlyPayout = totalCommission / 12;
-                 if (monthlyPayout > 0) {
+
+                if (monthlyPayout > 0 && (acceptedProposalForClient.userId === targetUser.id || !isManagerView)) {
                     currentMonthCommissions.push({
                         id: `rec-${client.id}`,
                         amount: monthlyPayout,
@@ -179,7 +237,7 @@ export function useCommissions(userId?: string) {
                         userId: acceptedProposalForClient.userId,
                         referenceId: client.id,
                     });
-                 }
+                }
             } catch {}
         });
 
@@ -196,12 +254,12 @@ export function useCommissions(userId?: string) {
 
         const corpClientsThisMonth = acceptedThisMonth.filter(p => {
             const client = clientMap.get(p.clientId);
-            return client && ['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '');
+            return p.userId === targetUser.id && client && ['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '');
         }).length;
 
         const householdClientsThisMonth = acceptedThisMonth.filter(p => {
             const client = clientMap.get(p.clientId);
-            return client && client.clientType === 'household';
+            return p.userId === targetUser.id && client && client.clientType === 'household';
         }).length;
         
         corporateBonusTiers.forEach(tier => {
@@ -224,18 +282,21 @@ export function useCommissions(userId?: string) {
         });
 
 
-        const commissionsByMonth = commissions.reduce((acc, commission) => {
-            const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
-            if (!acc[monthKey]) acc[monthKey] = [];
-            acc[monthKey].push(commission);
-            return acc;
-        }, {} as Record<string, WithId<PayoutCommission>[]>);
+        const commissionsByMonth = commissions
+            .filter(c => isManagerView ? true : c.userId === targetUser.id)
+            .reduce((acc, commission) => {
+                const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
+                if (!acc[monthKey]) acc[monthKey] = [];
+                acc[monthKey].push(commission);
+                return acc;
+            }, {} as Record<string, WithId<PayoutCommission>[]>);
 
         if (!commissionsByMonth[currentMonthKey]) {
             commissionsByMonth[currentMonthKey] = [];
         }
         
-        commissionsByMonth[currentMonthKey].push(...currentMonthCommissions);
+        const targetCommissions = currentMonthCommissions.filter(c => isManagerView ? true : c.userId === targetUser.id);
+        commissionsByMonth[currentMonthKey].push(...targetCommissions);
 
         const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
             const monthCommissions = commissionsByMonth[month] || [];
@@ -252,13 +313,13 @@ export function useCommissions(userId?: string) {
                 status, 
                 timelineStatus: allPaid ? 'paid' : 'calculated',
                 commissions: uniqueCommissions,
-                transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${authUser?.id.slice(0, 4).toUpperCase()}`
+                transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${targetUser.id.slice(0, 4).toUpperCase()}`
             };
         });
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, clients, proposals, isLoading, authUser]);
+    }, [commissions, clients, proposals, isLoading, targetUser, isManagerView, teamMembers]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
@@ -269,7 +330,7 @@ export function useCommissions(userId?: string) {
         return Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a));
     }, [allPayouts]);
 
-    const combinedIsLoading = isLoading || isFirebaseLoading || isUserAuthLoading;
+    const combinedIsLoading = isLoading || isFirebaseLoading || isUserAuthLoading || isSalesUsersLoading;
 
     return { allPayouts, commissions, clients, proposals, isLoading: combinedIsLoading, error, availableYears };
 }

@@ -1201,9 +1201,10 @@ export default function AdminPage() {
     if (commissionsLoading || usersLoading) return [];
     
     const userPayouts = salesUsers.map(user => {
-        const userCommissions = commissionsFromHook.filter(c => c.userId === user.id);
-        const pendingAmount = userCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.amount, 0);
-        const paidAmount = userCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.amount, 0);
+        const { allPayouts: userAllPayouts } = useCommissions(user.id);
+        const pendingAmount = userAllPayouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.totalAmount, 0);
+        const paidAmount = userAllPayouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.totalAmount, 0);
+        
         return {
             user,
             pendingAmount,
@@ -1213,7 +1214,7 @@ export default function AdminPage() {
 
     return userPayouts;
 
-}, [commissionsFromHook, salesUsers, commissionsLoading, usersLoading]);
+}, [salesUsers, commissionsLoading, usersLoading]);
 
 
   const handleProcessPayout = (payoutId: string, commissionsToUpdate: WithId<Commission>[], userToNotify: WithId<UserProfile>) => {
@@ -1226,9 +1227,9 @@ export default function AdminPage() {
 
       commissionsToUpdate.forEach(commission => {
             const commissionRef = doc(firestore, 'commissions', commission.id);
-            const { id, ...commissionData } = commission;
+            // Use set with merge instead of update to handle new bonus/override commissions
             batch.set(commissionRef, {
-                ...commissionData,
+                ...commission,
                 status: 'paid'
             }, { merge: true });
       });
@@ -1736,31 +1737,28 @@ export default function AdminPage() {
                                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                     </TableCell>
                                 </TableRow>
-                            ) : salesRepPayouts.length > 0 ? (
-                                salesRepPayouts.map(payout => (
-                                    <TableRow key={payout.user.id}>
+                            ) : salesUsers.filter(u => u.role !== 'admin').length > 0 ? (
+                                salesUsers.filter(u => u.role !== 'admin').map(user => (
+                                    <TableRow key={user.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
                                                 <Avatar>
-                                                    <AvatarImage src={payout.user?.photoURL} />
-                                                    <AvatarFallback>{payout.user?.displayName?.[0]}</AvatarFallback>
+                                                    <AvatarImage src={user?.photoURL} />
+                                                    <AvatarFallback>{user?.displayName?.[0]}</AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-medium">{payout.user?.displayName}</p>
-                                                    <p className="text-sm text-muted-foreground">{payout.user?.email}</p>
+                                                    <p className="font-medium">{user?.displayName}</p>
+                                                    <p className="text-sm text-muted-foreground">{user?.email}</p>
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="font-semibold">{currencyFormatter.format(payout.pendingAmount)}</TableCell>
-                                        <TableCell>{currencyFormatter.format(payout.paidAmount)}</TableCell>
+                                        <TableCell className="font-semibold">{currencyFormatter.format(0)}</TableCell>
+                                        <TableCell>{currencyFormatter.format(0)}</TableCell>
                                         <TableCell className="text-center">
                                              <PayoutHistoryDialog 
-                                                user={payout.user}
-                                                commissions={commissionsFromHook.filter(c => c.userId === payout.user.id)}
-                                                clients={clients}
-                                                proposals={proposals}
+                                                user={user}
                                                 isAdmin={true}
-                                                onProcessPayout={(payoutId, commissions) => handleProcessPayout(payoutId, commissions, payout.user)}
+                                                onProcessPayout={(payoutId, commissions) => handleProcessPayout(payoutId, commissions, user)}
                                                 processingPayouts={processingPayouts}
                                              >
                                                 <Button variant="outline" size="sm">View Payouts</Button>
