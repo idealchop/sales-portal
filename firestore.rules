@@ -48,7 +48,7 @@ service cloud.firestore {
         allow write: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
     }
 
-    // Clients can be read by any signed in user.
+    // Clients can be read by their owner, an admin, or the owner's manager.
     // Writes are restricted to the owner OR an admin.
     match /clients/{clientId} {
       allow read: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || (isManager() && isSalesManagerOf(resource.data.userId)));
@@ -56,10 +56,12 @@ service cloud.firestore {
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
       allow delete: if false;
       
-      // Admin/Managers can read all proposals for their team. Users can only read/write their own.
+      // Proposals can be read by their owner, an admin, or the owner's manager.
+      // Writes are restricted to the owner.
       match /proposals/{proposalId} {
         allow read: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || (isManager() && isSalesManagerOf(resource.data.userId)));
-        allow create, update: if isSignedIn() && isOwner(request.resource.data.userId);
+        allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+        allow update: if isSignedIn() && isOwner(resource.data.userId);
         allow delete: if false;
       }
       
@@ -69,7 +71,7 @@ service cloud.firestore {
       }
     }
     
-    // This allows the admin to perform a collectionGroup query on 'proposals'
+    // This allows admin or managers to perform a collectionGroup query on 'proposals'
     match /{path=**}/proposals/{proposalId} {
       allow list: if isSignedIn() && (isAdmin() || isManager());
     }
