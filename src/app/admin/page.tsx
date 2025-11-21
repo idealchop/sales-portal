@@ -4,7 +4,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target, Bell, BadgeCheck, Receipt, AlertTriangle } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target, Bell, BadgeCheck, Receipt, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -221,6 +221,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
     const [dateFilter, setDateFilter] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
+    const [isSyncing, setIsSyncing] = useState(false);
     const ITEMS_PER_PAGE = 10;
     
     const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
@@ -396,6 +397,66 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
             setPaymentUploadState(prev => ({ ...prev, isUploading: false }));
         }
     };
+
+    const handleSyncBillingCycles = async () => {
+        setIsSyncing(true);
+        const batch = writeBatch(firestore);
+        let updatedCount = 0;
+
+        clients.forEach(client => {
+            const clientProposals = proposalsByClient[client.id] || [];
+            const acceptedProposal = clientProposals.find(p => p.status === 'accepted');
+
+            let dateSignedStr: string | undefined | null = client.subscription?.dateSigned;
+            if (acceptedProposal?.content) {
+                try {
+                    const content = JSON.parse(acceptedProposal.content);
+                    dateSignedStr = content.date || dateSignedStr;
+                } catch {}
+            }
+
+            if (client.paymentStatus === 'Paid' && dateSignedStr) {
+                let billingCycle = 'Monthly';
+                if (acceptedProposal?.content) {
+                     try {
+                        const content = JSON.parse(acceptedProposal.content);
+                        billingCycle = content.billingCycleLabel || 'Monthly';
+                    } catch {}
+                } else if ((client.subscription as any)?.billingCycle) {
+                    billingCycle = (client.subscription as any).billingCycle;
+                }
+                
+                const cycleMap: { [key: string]: number } = { 'Monthly': 1, 'Quarterly': 3, 'Semi-Annually': 6, 'Annually': 12 };
+                const cycleMonths = cycleMap[billingCycle] || 1;
+                const nextBillingDate = addMonths(parseISO(dateSignedStr), cycleMonths);
+
+                if (isAfter(new Date(), nextBillingDate)) {
+                    const clientRef = doc(firestore, "clients", client.id);
+                    batch.update(clientRef, { paymentStatus: 'Unpaid' });
+                    updatedCount++;
+                }
+            }
+        });
+
+        if (updatedCount > 0) {
+            try {
+                await batch.commit();
+                toast({
+                    title: 'Billing Cycles Synced',
+                    description: `${updatedCount} client(s) have been updated to "Unpaid" status.`,
+                });
+            } catch (error) {
+                console.error("Error syncing billing cycles:", error);
+                toast({ variant: 'destructive', title: 'Sync Failed', description: 'An error occurred during the sync.' });
+            }
+        } else {
+            toast({
+                title: 'No Updates Needed',
+                description: 'All client billing statuses are up to date.',
+            });
+        }
+        setIsSyncing(false);
+    };
     
     const clientTypeMap: { [key: string]: string } = {
         household: 'Family',
@@ -408,8 +469,34 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
     return (
         <Card>
             <CardHeader>
-                <CardTitle>All Clients</CardTitle>
-                <CardDescription>A complete list of every client in the system.</CardDescription>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle>All Clients</CardTitle>
+                        <CardDescription>A complete list of every client in the system.</CardDescription>
+                    </div>
+                    {isAdmin && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="outline" disabled={isSyncing}>
+                                    {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                                    Sync Billing Cycles
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Billing Cycle Sync</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will check all "Paid" clients and automatically update their status to "Unpaid" if their next billing cycle has started. This action cannot be undone. Are you sure you want to proceed?
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleSyncBillingCycles}>Yes, Sync Now</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                </div>
                 <div className="flex items-center gap-2 pt-4">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1841,3 +1928,4 @@ export default function AdminPage() {
     
 
     
+
