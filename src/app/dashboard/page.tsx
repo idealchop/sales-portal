@@ -72,7 +72,7 @@ import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
 import { useCommissions } from '@/hooks/use-commissions';
 import { useMemo } from 'react';
-import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears, parseISO } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears, parseISO, differenceInMonths } from 'date-fns';
 import { useUser } from '@/firebase';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
@@ -217,6 +217,7 @@ export default function DashboardPage() {
 
   const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
   const userMap = useMemo(() => new Map(salesUsers.map(u => [u.id, u])), [salesUsers]);
+  const proposalMap = useMemo(() => new Map(proposals.map(p => [p.id, p])), [proposals]);
 
   const dashboardData = useMemo(() => {
     const now = new Date();
@@ -224,7 +225,6 @@ export default function DashboardPage() {
 
     const currentMonthPayout = allPayouts.find(p => p.month === currentMonthKey);
     
-    // Filter for one-time commissions for the current month.
     const oneTimeCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.type === 'commission' && c.description !== 'Recurring commission') || [];
     const recurringCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.description === 'Recurring commission') || [];
     
@@ -455,13 +455,33 @@ export default function DashboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {dashboardData.recurringCommissionsThisMonth.length > 0 ? dashboardData.recurringCommissionsThisMonth.map(p => (
-                                <TableRow key={p.id}>
-                                    <TableCell>{p.clientName || 'N/A'}</TableCell>
-                                    <TableCell>{p.description}</TableCell>
-                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(p.amount)}</TableCell>
-                                </TableRow>
-                            )) : (
+                            {dashboardData.recurringCommissionsThisMonth.length > 0 ? dashboardData.recurringCommissionsThisMonth.map(p => {
+                                const proposal = proposalMap.get(p.proposalId);
+                                let progressText = '';
+                                if (proposal && proposal.content) {
+                                    try {
+                                        const content = JSON.parse(proposal.content) as FinalPlanDetails;
+                                        if (content.date) {
+                                            const monthsDiff = differenceInMonths(new Date(), parseISO(content.date)) + 1;
+                                            progressText = `(${monthsDiff}/12)`;
+                                        }
+                                    } catch (e) {
+                                        console.error("Error parsing proposal content for recurring commission:", e);
+                                    }
+                                }
+                                return (
+                                    <TableRow key={p.id}>
+                                        <TableCell>{p.clientName || 'N/A'}</TableCell>
+                                        <TableCell>{p.description}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <span className="font-semibold">{currencyFormatter.format(p.amount)}</span>
+                                                {progressText && <Badge variant="outline" className="font-mono text-xs">{progressText}</Badge>}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            }) : (
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-center">No recurring commissions this month.</TableCell>
                                 </TableRow>
@@ -817,7 +837,7 @@ export default function DashboardPage() {
                             <DialogTitle>Corporate Closer Bonus</DialogTitle>
                             <DialogDescription>Reward for closing corporate clients. Claimed after clients complete their first paid month.</DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4">
+                        <div className="space-y-4 py-4">
                             <p>Your current progress: <span className="font-bold">{dashboardData.corporateClientsThisMonth} clients</span></p>
                             <Table>
                                 <TableHeader>
@@ -972,3 +992,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
