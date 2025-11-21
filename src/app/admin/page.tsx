@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target, Bell } from 'lucide-react';
+import { FileText, Users, CircleDollarSign, Percent, CreditCard, UsersRound, Trophy, Award, Activity, Star, BarChart3, CheckCircle, MoreHorizontal, Clock, Ship, Bot, Upload, Search, Filter, CalendarDays, TrendingUp, LineChart as LineChartIcon, HeartCrack, ArrowUp, ArrowDown, Phone, Mail, FileSignature, Target, Bell, BadgeCheck } from 'lucide-react';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { useSalesUsers } from '@/hooks/use-sales-users';
@@ -22,7 +22,7 @@ import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import type { UserProfile, Client, Proposal, Commission, OnboardingStep } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, LineChart, Line, Sector as RechartsPrimitiveSector, ComposedChart } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub, parseISO } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, getYear, getMonth, parse, isWithinInterval, subDays, sub, parseISO, isAfter } from 'date-fns';
 import Image from 'next/image';
 import {
   Dialog,
@@ -496,13 +496,21 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                             const clientTypeLabel = subscriptionDetails.clientType ? clientTypeMap[subscriptionDetails.clientType] : '';
                             const planImage = (subscriptionDetails.clientType && planImages[subscriptionDetails.clientType]) || planImages.sme;
 
+                            const isNew = client.createdAt && isAfter(parseISO(client.createdAt), subDays(new Date(), 7));
 
                             return (
                                 <TableRow key={client.id}>
                                     <TableCell>
-                                        <ClientOverviewDialog client={client} proposal={acceptedProposal} allUsers={users} view="clients" isAdmin={isAdmin}>
-                                            <div className="font-medium cursor-pointer text-primary hover:underline">{client.companyName}</div>
-                                        </ClientOverviewDialog>
+                                        <div className="flex items-center gap-2">
+                                            <ClientOverviewDialog client={client} proposal={acceptedProposal} allUsers={users} view="clients" isAdmin={isAdmin}>
+                                                <div className="font-medium cursor-pointer text-primary hover:underline">{client.companyName}</div>
+                                            </ClientOverviewDialog>
+                                            {isNew && (
+                                                <Badge variant="success" className="animate-pulse">
+                                                    <BadgeCheck className="mr-1 h-3 w-3"/> New
+                                                </Badge>
+                                            )}
+                                        </div>
                                         <div className="font-mono text-xs text-muted-foreground">ID: {client.id}</div>
                                         <div className="space-y-1 mt-2">
                                              <h4 className="font-semibold text-sm">{clientTypeLabel ? `${clientTypeLabel} - ${subscriptionDetails.planName}` : subscriptionDetails.planName}</h4>
@@ -1793,3 +1801,4 @@ export default function AdminPage() {
 
 
     
+
