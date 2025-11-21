@@ -143,7 +143,7 @@ export function useCommissions(userId?: string) {
             household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08,
         };
         const managerOverrideRates: { [key: string]: number } = {
-            household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03
+            household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02
         };
         const recurringCommissionRate = 0.03;
         
