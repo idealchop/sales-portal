@@ -286,23 +286,33 @@ export default function MyTeamPage() {
         },
         availableMonths,
         proposalsByRep,
+        teamProposals,
     };
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
-  const managerOverrideCommission = useMemo(() => {
-    if (commissionsLoading || !isManager) return 0;
+ const managerOverrideCommission = useMemo(() => {
+    if (proposalsLoading || clientsLoading || !isManager || !teamPerformance.teamProposals) return 0;
     
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
 
-    return commissions
-      .filter(c => 
-        c.description === 'Manager Override' &&
-        isWithinInterval(new Date(c.createdAt), { start: currentMonthStart, end: now })
-      )
-      .reduce((sum, c) => sum + c.amount, 0);
+    const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
 
-  }, [commissions, commissionsLoading, isManager]);
+    const acceptedProposalsThisMonth = teamPerformance.teamProposals.filter(p => {
+        const createdAt = p.createdAt ? new Date(p.createdAt) : null;
+        return p.status === 'accepted' && createdAt && isWithinInterval(createdAt, { start: currentMonthStart, end: now });
+    });
+
+    return acceptedProposalsThisMonth.reduce((totalOverride, proposal) => {
+        const client = clientMap.get(proposal.clientId);
+        if (client && client.clientType) {
+            const overrideRate = managerOverrideRates[client.clientType] || 0;
+            return totalOverride + (proposal.amount * overrideRate);
+        }
+        return totalOverride;
+    }, 0);
+
+  }, [proposalsLoading, clientsLoading, isManager, teamPerformance.teamProposals, clientMap]);
 
   const isLoading = usersLoading || proposalsLoading || clientsLoading || commissionsLoading;
 
@@ -582,3 +592,5 @@ export default function MyTeamPage() {
     </div>
   );
 }
+
+    
