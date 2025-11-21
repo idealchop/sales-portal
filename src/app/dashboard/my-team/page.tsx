@@ -8,7 +8,7 @@ import { useAllProposals } from '@/hooks/use-all-proposals';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye } from 'lucide-react';
 import type { UserProfile, Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -25,6 +25,20 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { useClients } from '@/hooks/use-clients';
+
+const proposalStatusStyles: { [key: string]: string } = {
+  accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+  sent: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+  draft: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  finalized: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300',
+  rejected: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+};
+
 
 const CustomBarLabel = (props: any) => {
   const { x, y, width, height, value } = props;
@@ -59,8 +73,10 @@ export default function MyTeamPage() {
   const { user, isManager } = useUser();
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const { proposals, isLoading: proposalsLoading } = useAllProposals();
+  const { clients, isLoading: clientsLoading } = useClients();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   const [proposalsByRepPeriod, setProposalsByRepPeriod] = useState<string>('all');
+  const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
 
 
   const myTeam = useMemo(() => {
@@ -108,6 +124,7 @@ export default function MyTeamPage() {
         totalRevenue,
         winRate,
         avgSale,
+        proposals: userProposals,
       };
     });
 
@@ -185,7 +202,7 @@ export default function MyTeamPage() {
     };
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod]);
 
-  const isLoading = usersLoading || proposalsLoading;
+  const isLoading = usersLoading || proposalsLoading || clientsLoading;
 
   if (isLoading) {
     return (
@@ -334,6 +351,7 @@ export default function MyTeamPage() {
                 <TableHead>Proposals Won</TableHead>
                 <TableHead>Win Rate</TableHead>
                 <TableHead className="text-right">Total Revenue</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -406,12 +424,60 @@ export default function MyTeamPage() {
                       <TableCell>{rep.proposalsWon}</TableCell>
                       <TableCell>{rep.winRate.toFixed(1)}%</TableCell>
                       <TableCell className="text-right font-semibold">{currencyFormatter.format(rep.totalRevenue)}</TableCell>
+                       <TableCell className="text-center">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                    <Eye className="mr-2 h-4 w-4" /> View
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-3xl">
+                                <DialogHeader>
+                                    <DialogTitle>Proposals by {rep.displayName}</DialogTitle>
+                                    <DialogDescription>A list of all proposals created by this sales executive.</DialogDescription>
+                                </DialogHeader>
+                                <ScrollArea className="h-[60vh]">
+                                <Table>
+                                    <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Client</TableHead>
+                                        <TableHead>Amount</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Date</TableHead>
+                                    </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                    {rep.proposals.length > 0 ? (
+                                        rep.proposals.map(p => {
+                                        const client = clientMap.get(p.clientId);
+                                        return (
+                                            <TableRow key={p.id}>
+                                            <TableCell className="font-medium">{client?.companyName || 'N/A'}</TableCell>
+                                            <TableCell>{currencyFormatter.format(p.amount)}</TableCell>
+                                            <TableCell>
+                                                <Badge className={cn("capitalize", p.status && proposalStatusStyles[p.status])} variant="outline">{p.status}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">{format(new Date(p.createdAt), 'PPP')}</TableCell>
+                                            </TableRow>
+                                        )
+                                        })
+                                    ) : (
+                                        <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24">No proposals found.</TableCell>
+                                        </TableRow>
+                                    )}
+                                    </TableBody>
+                                </Table>
+                                </ScrollArea>
+                            </DialogContent>
+                        </Dialog>
+                       </TableCell>
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No sales executives found on your team yet.
                   </TableCell>
                 </TableRow>
@@ -423,5 +489,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
-    
