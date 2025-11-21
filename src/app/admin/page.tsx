@@ -203,6 +203,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
         planName: string;
         planImage: string;
         amount: number;
+        isOpen: boolean;
     }>({
         clientId: '',
         isUploading: false,
@@ -211,6 +212,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
         planName: '',
         planImage: '',
         amount: 0,
+        isOpen: false,
     });
     
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -266,7 +268,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
             
             const clientPaymentStatus = client.paymentStatus || 'Pending';
             let statusMatch = statusFilter === 'all';
-            if (statusFilter === 'active') {
+             if (statusFilter === 'active') {
                 statusMatch = client.status === 'active';
             } else if (statusFilter === 'pending') {
                 statusMatch = client.status === 'pending';
@@ -385,7 +387,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
 
             toast({ title: 'Payment Uploaded', description: 'The proof of payment has been added to the client\'s history.' });
             
-            setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '', amount: 0 });
+            setPaymentUploadState({ clientId: '', isUploading: false, date: new Date(), file: null, planName: '', planImage: '', amount: 0, isOpen: false });
 
         } catch (error) {
             console.error('Error uploading payment:', error);
@@ -602,9 +604,9 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                        ) : null}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Dialog>
+                                        <Dialog open={paymentUploadState.isOpen && paymentUploadState.clientId === client.id} onOpenChange={(open) => setPaymentUploadState(prev => ({...prev, isOpen: open}))}>
                                             <DialogTrigger asChild>
-                                                <Button variant="outline" size="sm" onClick={() => setPaymentUploadState(prev => ({...prev, clientId: client.id, planName: subscriptionDetails.planName, planImage, amount: subscriptionDetails.amount }))}>
+                                                <Button variant="outline" size="sm" onClick={() => setPaymentUploadState({ clientId: client.id, planName: subscriptionDetails.planName, planImage, amount: subscriptionDetails.amount, date: new Date(), file: null, isUploading: false, isOpen: true })}>
                                                     <Receipt className="mr-2 h-4 w-4" />
                                                     Record Payment
                                                 </Button>
@@ -646,9 +648,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                                     </div>
                                                 </div>
                                                 <DialogFooter>
-                                                    <DialogClose asChild>
-                                                        <Button variant="outline">Cancel</Button>
-                                                    </DialogClose>
+                                                    <Button variant="outline" onClick={() => setPaymentUploadState(prev => ({...prev, isOpen: false}))}>Cancel</Button>
                                                     <Button onClick={handleUploadPayment} disabled={paymentUploadState.isUploading}>
                                                         {paymentUploadState.isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                                                         Confirm & Upload
@@ -1816,8 +1816,5 @@ export default function AdminPage() {
     
 
     
-
-
-
 
 
