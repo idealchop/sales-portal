@@ -445,7 +445,8 @@ export default function MyTeamPage() {
                                         <TableHead>Client</TableHead>
                                         <TableHead>Amount</TableHead>
                                         <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Date</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -455,25 +456,26 @@ export default function MyTeamPage() {
                                         return (
                                             <TableRow key={p.id}>
                                             <TableCell className="font-medium">
-                                                {client ? (
-                                                     <ClientOverviewDialog client={client} proposal={p} allUsers={salesUsers} view="clients">
-                                                        <span className="cursor-pointer text-primary hover:underline">{client.companyName}</span>
-                                                    </ClientOverviewDialog>
-                                                ) : (
-                                                    'N/A'
-                                                )}
+                                                {client ? client.companyName : 'N/A'}
                                             </TableCell>
                                             <TableCell>{currencyFormatter.format(p.amount)}</TableCell>
                                             <TableCell>
                                                 <Badge className={cn("capitalize", p.status && proposalStatusStyles[p.status])} variant="outline">{p.status}</Badge>
                                             </TableCell>
-                                            <TableCell className="text-right">{format(new Date(p.createdAt), 'PPP')}</TableCell>
+                                            <TableCell>{format(new Date(p.createdAt), 'PPP')}</TableCell>
+                                            <TableCell className="text-right">
+                                                {client && (
+                                                    <ClientOverviewDialog client={client} proposal={p} allUsers={salesUsers} view="clients">
+                                                        <Button variant="ghost" size="sm">View Client</Button>
+                                                    </ClientOverviewDialog>
+                                                )}
+                                            </TableCell>
                                             </TableRow>
                                         )
                                         })
                                     ) : (
                                         <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24">No proposals found.</TableCell>
+                                        <TableCell colSpan={5} className="text-center h-24">No proposals found.</TableCell>
                                         </TableRow>
                                     )}
                                     </TableBody>
