@@ -591,8 +591,8 @@ export function DashboardHeader() {
                                 <Badge variant="outline" className="capitalize">
                                     {user?.role ? roleDisplayNames[user.role] : 'Sales'}
                                 </Badge>
-                                {user?.role === 'sales' && user.team && (
-                                    <Badge variant="secondary">{user.team}</Badge>
+                                {user?.createdAt && (
+                                    <p className="text-xs text-muted-foreground">Onboarded: {format(new Date(user.createdAt), 'PPP')}</p>
                                 )}
                             </div>
                         </div>
