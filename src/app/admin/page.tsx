@@ -271,7 +271,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
             } else if (statusFilter === 'pending') {
                 statusMatch = client.status === 'pending';
             } else if (statusFilter === 'unpaid') {
-                statusMatch = client.paymentStatus === 'Unpaid';
+                statusMatch = clientPaymentStatus === 'Unpaid';
             }
 
             const searchMatch = searchQuery === '' || 
@@ -1220,7 +1220,7 @@ export default function AdminPage() {
     const teamAvgDealSize = acceptedProposals.length > 0 ? teamTotalRevenue / acceptedProposals.length : 0;
 
 
-    return { totalRevenue, activeClients, newClientsThisMonth, unpaidClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, teamWinRate, teamTotalRevenue, teamAvgDealSize, teamProposalsSentChange, teamWinRateChange, teamTotalRevenueChange, teamAvgDealSizeChange };
+    return { totalRevenue, activeClients, newClientsThisMonth, unpaidClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, teamWinRate, teamTotalRevenue, teamAvgDealSize, teamProposalsSentChange, teamWinRateChange, teamTotalRevenueChange, teamAvgDealSizeChange, revenueThisMonth, revenueLastMonth };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod, proposalsByRepPeriod]);
   
   const userIds = useMemo(() => salesUsers.filter(u => u.role !== 'admin').map(u => u.id), [salesUsers]);
@@ -1385,30 +1385,30 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-xl">
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                              <div className="flex items-center gap-2">
                                 <TrendingUp className="h-6 w-6 text-primary"/>
-                                <DialogTitle>Revenue Growth</DialogTitle>
+                                <DialogTitle>Revenue Snapshot</DialogTitle>
                             </div>
-                            <DialogDescription>A detailed look at your revenue growth.</DialogDescription>
+                            <DialogDescription>A quick look at your revenue performance.</DialogDescription>
                         </DialogHeader>
-                        <div className="py-4 h-[250px]">
-                           <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={stats.revenueHistory}>
-                                    <defs>
-                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                    <YAxis tickFormatter={(value) => `₱${Number(value) / 1000}k`} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} width={80} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} formatter={(value) => [currencyFormatter.format(Number(value)), "Revenue"]} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                    <Area type="monotone" dataKey="Revenue" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                        <div className="grid gap-4 py-4">
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Total Revenue (All Time)</p>
+                                <p className="text-lg font-bold">{currencyFormatter.format(stats.totalRevenue)}</p>
+                            </div>
+                             <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Revenue This Month</p>
+                                <p className="text-lg font-bold">{currencyFormatter.format(stats.revenueThisMonth)}</p>
+                            </div>
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Change from Last Month</p>
+                                <p className={cn("text-lg font-bold flex items-center", stats.revenueChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                    {stats.revenueChange >= 0 ? <ArrowUp className="h-5 w-5 mr-1" /> : <ArrowDown className="h-5 w-5 mr-1" />}
+                                    {stats.revenueChange.toFixed(1)}%
+                                </p>
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1844,5 +1844,6 @@ export default function AdminPage() {
     
 
     
+
 
 
