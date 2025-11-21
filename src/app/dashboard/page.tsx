@@ -113,7 +113,7 @@ const DashboardSkeleton = () => (
     {/* Header */}
     <div className="space-y-2">
       <Skeleton className="h-8 w-64" />
-      <Skeleton className="h-4 w-96" />
+      <Skeleton className="h-4 w-96 mt-2" />
     </div>
 
     {/* Commission Stats */}
@@ -466,6 +466,16 @@ export default function DashboardPage() {
                             )}
                         </TableBody>
                     </Table>
+                    <DialogFooter className="border-t pt-4">
+                        <div className="space-y-2 text-sm text-muted-foreground">
+                            <h4 className="font-semibold text-foreground">Important Notes:</h4>
+                            <ul className="list-disc pl-5 space-y-1">
+                                <li>Recurring commissions are paid monthly for the first 12 months of a new client contract.</li>
+                                <li>If a client cancels their subscription, recurring commissions for that client will stop.</li>
+                                <li>For contract renewals after 12 months, the standard one-time commission applies, but recurring commissions do not.</li>
+                            </ul>
+                        </div>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </Card>
@@ -960,5 +970,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
