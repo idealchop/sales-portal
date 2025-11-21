@@ -616,7 +616,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                                 </DialogHeader>
                                                 <div className="space-y-4 py-4">
                                                     <div className="flex items-center gap-4 p-4 border rounded-lg">
-                                                        <Image src={paymentUploadState.planImage} width={80} height={80} alt={paymentUploadState.planName} className="rounded-md" />
+                                                        <Image src={paymentUploadState.planImage || 'https://placehold.co/80x80'} width={80} height={80} alt={paymentUploadState.planName} className="rounded-md" />
                                                         <div>
                                                             <h4 className="font-semibold">{paymentUploadState.planName}</h4>
                                                             <p className="text-lg font-bold text-primary">{currencyFormatter.format(paymentUploadState.amount)}</p>
@@ -976,7 +976,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, newClientsThisMonth: 0, unpaidClients: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [], teamWinRate: 0, teamTotalRevenue: 0, teamAvgDealSize: 0, teamProposalsSentChange: 0, teamWinRateChange: 0, teamTotalRevenueChange: 0, teamAvgDealSizeChange: 0 };
+      return { totalRevenue: 0, activeClients: 0, newClientsThisMonth: 0, unpaidClients: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [], teamWinRate: 0, teamTotalRevenue: 0, teamAvgDealSize: 0, teamProposalsSentChange: 0, teamWinRateChange: 0, teamTotalRevenueChange: 0, teamAvgDealSizeChange: 0, revenueThisMonth: 0, revenueLastMonth: 0 };
     }
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
@@ -1816,6 +1816,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 
