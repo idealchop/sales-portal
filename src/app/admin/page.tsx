@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -1027,7 +1026,6 @@ const PayoutMonthDetailsDialog = ({ month, commissions, users }: PayoutMonthDeta
                     <TableHeader>
                         <TableRow>
                             <TableHead>Sales Rep</TableHead>
-                            <TableHead>Description</TableHead>
                             <TableHead>Client</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
@@ -1038,7 +1036,6 @@ const PayoutMonthDetailsDialog = ({ month, commissions, users }: PayoutMonthDeta
                             return (
                                 <TableRow key={commission.id}>
                                     <TableCell>{user?.displayName || 'N/A'}</TableCell>
-                                    <TableCell className="font-semibold">{commission.description || 'Commission'}</TableCell>
                                     <TableCell>{commission.clientName || 'N/A'}</TableCell>
                                     <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
                                 </TableRow>
@@ -1047,7 +1044,7 @@ const PayoutMonthDetailsDialog = ({ month, commissions, users }: PayoutMonthDeta
                     </TableBody>
                     <TFooter>
                         <TableRow>
-                            <TableCell colSpan={3} className="text-right font-bold text-base">Total Payout</TableCell>
+                            <TableCell colSpan={2} className="text-right font-bold text-base">Total Payout</TableCell>
                             <TableCell className="text-right font-bold text-base">{currencyFormatter.format(totalAmount)}</TableCell>
                         </TableRow>
                     </TFooter>
@@ -1928,5 +1925,6 @@ export default function AdminPage() {
     
 
     
+
 
 
