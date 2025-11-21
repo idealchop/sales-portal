@@ -1195,7 +1195,7 @@ export default function AdminPage() {
     const acceptedThisMonth = acceptedProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: currentMonthStart, end: now }));
     const acceptedLastMonth = acceptedProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: lastMonthStart, end: lastMonthEnd }));
 
-    const teamWinRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
+    const teamWinRateThisMonth = sentProposalsThisMonth.length > 0 ? (acceptedThisMonth.length / sentProposalsThisMonth.length) * 100 : 0;
     const teamWinRateLastMonth = sentProposalsLastMonth.length > 0 ? (acceptedLastMonth.length / sentProposalsLastMonth.length) * 100 : 0;
     const teamWinRateChange = teamWinRateLastMonth > 0 ? ((teamWinRateThisMonth - teamWinRateLastMonth) / teamWinRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
 
@@ -1841,6 +1841,7 @@ export default function AdminPage() {
 
 
     
+
 
 
 
