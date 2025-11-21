@@ -340,11 +340,17 @@
         },
         "role": {
           "type": "string",
-          "description": "The user's role (e.g., 'sales', 'admin')."
+          "description": "The user's role.",
+          "enum": ["sales", "manager", "admin"]
+        },
+        "location": {
+            "type": "string",
+            "description": "The primary location for a sales manager.",
+            "enum": ["NCR North", "NCR South", "Palawan", "Cebu"]
         },
         "team": {
           "type": "string",
-          "description": "The sales team the user belongs to."
+          "description": "The sales team the user belongs to, tied to a manager's location."
         },
         "birthday": {
           "type": "string",

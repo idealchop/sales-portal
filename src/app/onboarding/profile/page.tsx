@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,8 +13,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/firebase';
+import { useSalesUsers } from '@/hooks/use-sales-users';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Loader2, User, Calendar as CalendarIcon, Phone, Upload, Trash2 } from 'lucide-react';
+import { Loader2, User, Calendar as CalendarIcon, Phone, Upload, Trash2, Briefcase, MapPin } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Suspense } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters.'),
@@ -30,6 +32,23 @@ const formSchema = z.object({
   birthday: z.date({
     required_error: "Your date of birth is required.",
   }),
+  role: z.enum(['sales', 'manager'], {
+    required_error: "You must select a role."
+  }),
+  location: z.string().optional(),
+  team: z.string().optional(),
+}).refine(data => {
+    if (data.role === 'manager') return !!data.location;
+    return true;
+}, {
+    message: "Location is required for managers.",
+    path: ["location"],
+}).refine(data => {
+    if (data.role === 'sales') return !!data.team;
+    return true;
+}, {
+    message: "Team is required for sales executives.",
+    path: ["team"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -38,6 +57,7 @@ function ProfileSetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isUserLoading } = useUser();
+  const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
   const { toast } = useToast();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,9 +74,14 @@ function ProfileSetupContent() {
       birthday: searchParams.get('birthday') ? new Date(searchParams.get('birthday')!) : undefined,
     },
   });
-  
+
+  const selectedRole = form.watch('role');
+
+  const managers = useMemo(() => {
+    return salesUsers.filter(u => u.role === 'manager' && u.location);
+  }, [salesUsers]);
+
   useEffect(() => {
-    // Populate form with existing data from searchParams or user profile
     const displayName = searchParams.get('displayName') || user?.displayName;
     if (displayName) {
         const nameParts = displayName.split(' ');
@@ -86,7 +111,7 @@ function ProfileSetupContent() {
   };
   
   const handleRemovePhoto = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the file input
+    e.stopPropagation();
     setPhotoFile(null);
     setPhotoPreview(null);
     if(fileInputRef.current) {
@@ -97,7 +122,7 @@ function ProfileSetupContent() {
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
 
-    if (isUserLoading || !user || !user.uid) { // CRITICAL: Check for user and user.uid
+    if (isUserLoading || !user || !user.uid) {
         toast({
             variant: 'destructive',
             title: 'Authentication Incomplete',
@@ -112,28 +137,34 @@ function ProfileSetupContent() {
     params.set('displayName', displayName);
     params.set('phone', values.phone);
     params.set('birthday', values.birthday.toISOString());
+    params.set('role', values.role);
+    if (values.role === 'manager' && values.location) {
+        params.set('location', values.location);
+        params.delete('team');
+    }
+    if (values.role === 'sales' && values.team) {
+        params.set('team', values.team);
+        params.delete('location');
+    }
+
     params.delete('photoURL');
 
     try {
       if (photoFile) {
         const storage = getStorage();
-        // Use the now-guaranteed user.uid for the path
         const filePath = `user-avatars/${user.uid}/${photoFile.name}`;
         const storageRef = ref(storage, filePath);
         const snapshot = await uploadBytes(storageRef, photoFile);
         const downloadURL = await getDownloadURL(snapshot.ref);
         params.set('photoURL', downloadURL);
       } else if (photoPreview) {
-        // Photo was pre-existing and not removed
         params.set('photoURL', photoPreview);
       } else if (!photoPreview && user?.photoURL) {
-        // Photo was removed
         const storage = getStorage();
         const photoRef = ref(storage, user.photoURL);
         try {
             await deleteObject(photoRef);
         } catch (error: any) {
-            // Ignore if file doesn't exist, as it might have been deleted already.
             if (error.code !== 'storage/object-not-found') {
                 console.warn("Could not delete old photo:", error);
             }
@@ -153,7 +184,9 @@ function ProfileSetupContent() {
     }
   };
 
-  if (isUserLoading) {
+  const isLoading = isUserLoading || isSalesUsersLoading;
+
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
@@ -310,6 +343,94 @@ function ProfileSetupContent() {
                         )}
                     />
                 </div>
+                <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Role</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <div className="pl-7">
+                                        <SelectValue placeholder="Select your role" />
+                                    </div>
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="manager">Sales Manager</SelectItem>
+                                    <SelectItem value="sales">Sales Executive</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                {selectedRole === 'manager' && (
+                     <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Location</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <div className="pl-7">
+                                                <SelectValue placeholder="Select your location" />
+                                            </div>
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="NCR North">NCR North</SelectItem>
+                                        <SelectItem value="NCR South">NCR South</SelectItem>
+                                        <SelectItem value="Palawan">Palawan</SelectItem>
+                                        <SelectItem value="Cebu">Cebu</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+
+                 {selectedRole === 'sales' && (
+                     <FormField
+                        control={form.control}
+                        name="team"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Team</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                             <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                             <div className="pl-7">
+                                                <SelectValue placeholder="Select your team" />
+                                             </div>
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {managers.length > 0 ? (
+                                            managers.map(manager => (
+                                                <SelectItem key={manager.id} value={`${manager.location} (${manager.displayName})`}>
+                                                    {manager.location} ({manager.displayName})
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-4 text-center text-sm text-muted-foreground">No managers found.</div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+
             </div>
             <CardFooter className="px-0 pt-4">
                 <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#3ab7b1] hover:from-primary/90 hover:to-[#36a6a0] text-primary-foreground font-bold transition-all" disabled={isSubmitting}>

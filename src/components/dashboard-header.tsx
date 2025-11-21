@@ -519,7 +519,7 @@ function NotificationsPopover() {
                                     <div>
                                         <p className="text-sm font-medium">{notif.title}</p>
                                         <p className="text-xs text-muted-foreground">{notif.message}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">{format(new Date(notif.createdAt), 'PPp')}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">{notif.createdAt ? format(new Date(notif.createdAt), 'PPp') : ''}</p>
                                     </div>
                                 </div>
                             ))}
@@ -582,10 +582,7 @@ export function DashboardHeader() {
                             <p className="text-base font-semibold leading-none">{user?.displayName ?? 'Sales Rep'}</p>
                             <p className="text-sm text-muted-foreground">{user?.email ?? 'No email'}</p>
                              <div className="mt-2 flex items-center gap-2">
-                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                                    <Star className="mr-1 h-3 w-3" />
-                                    Top Performer
-                                </Badge>
+                                <Badge variant="outline" className="capitalize">{user?.role}</Badge>
                             </div>
                         </div>
                     </div>

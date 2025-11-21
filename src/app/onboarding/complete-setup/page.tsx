@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2, User, Calendar, Briefcase, CheckCircle, Phone } from 'lucide-react';
+import { Loader2, User, Calendar, Briefcase, CheckCircle, Phone, MapPin, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FirebaseError } from 'firebase/app';
 import { format } from 'date-fns';
@@ -29,6 +29,8 @@ function CompleteSetupContent() {
 
   const displayName = searchParams.get('displayName');
   const team = searchParams.get('team');
+  const location = searchParams.get('location');
+  const role = searchParams.get('role');
   const birthdayStr = searchParams.get('birthday');
   const phone = searchParams.get('phone');
   const photoURL = searchParams.get('photoURL');
@@ -38,7 +40,7 @@ function CompleteSetupContent() {
   const birthday = birthdayStr ? new Date(birthdayStr) : null;
 
   useEffect(() => {
-    if (!isUserLoading && (!displayName || !currentPassword || !newPassword || !phone)) {
+    if (!isUserLoading && (!displayName || !currentPassword || !newPassword || !phone || !role)) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
@@ -46,10 +48,10 @@ function CompleteSetupContent() {
       });
       router.push('/onboarding/profile');
     }
-  }, [isUserLoading, displayName, currentPassword, newPassword, phone, router, toast]);
+  }, [isUserLoading, displayName, currentPassword, newPassword, phone, role, router, toast]);
 
   const handleFinalize = async () => {
-    if (!auth.currentUser || !displayName || !birthday || !phone || !currentPassword || !newPassword) {
+    if (!auth.currentUser || !displayName || !birthday || !phone || !currentPassword || !newPassword || !role) {
       toast({
         variant: 'destructive',
         title: 'Incomplete Information',
@@ -71,15 +73,24 @@ function CompleteSetupContent() {
       await updateProfile(liveUser, { displayName, photoURL: photoURL || null });
 
       const userDocRef = doc(firestore, 'sales', liveUser.uid);
-      await setDoc(userDocRef, {
+      
+      const userData: any = {
         displayName: displayName,
         phone: phone,
-        team: team || 'Default Team', // Add a default team if not provided
         birthday: birthday.toISOString(),
         photoURL: photoURL || null,
-        role: 'sales',
+        role: role,
         onboardingCompleted: true,
-      }, { merge: true });
+      };
+
+      if (role === 'manager' && location) {
+        userData.location = location;
+      }
+      if (role === 'sales' && team) {
+        userData.team = team;
+      }
+
+      await setDoc(userDocRef, userData, { merge: true });
       
       setStatus('success');
       
@@ -175,6 +186,7 @@ function CompleteSetupContent() {
                 </AvatarFallback>
             </Avatar>
             <h2 className="text-2xl font-bold">{displayName}</h2>
+            <span className="text-sm font-medium text-primary capitalize">{role}</span>
         </div>
          <div className="space-y-4 text-sm text-center">
              <div className="flex items-center justify-center gap-2">
@@ -187,6 +199,20 @@ function CompleteSetupContent() {
                 <span className="text-muted-foreground">Birthday:</span>
                 <span className="font-semibold">{birthday ? format(birthday, "PPP") : 'N/A'}</span>
             </div>
+            {role === 'manager' && location && (
+                <div className="flex items-center justify-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Location:</span>
+                    <span className="font-semibold">{location}</span>
+                </div>
+            )}
+            {role === 'sales' && team && (
+                 <div className="flex items-center justify-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Team:</span>
+                    <span className="font-semibold">{team}</span>
+                </div>
+            )}
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
