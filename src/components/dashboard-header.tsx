@@ -554,6 +554,12 @@ export function DashboardHeader() {
       .join('');
   };
 
+  const roleDisplayNames: { [key: string]: string } = {
+    sales: 'Sales Executive',
+    manager: 'Sales Manager',
+    admin: 'Administrator',
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-8">
       <SidebarTrigger />
@@ -582,7 +588,9 @@ export function DashboardHeader() {
                             <p className="text-base font-semibold leading-none">{user?.displayName ?? 'Sales Rep'}</p>
                             <p className="text-sm text-muted-foreground">{user?.email ?? 'No email'}</p>
                              <div className="mt-2 flex items-center gap-2">
-                                <Badge variant="outline" className="capitalize">{user?.role}</Badge>
+                                <Badge variant="outline" className="capitalize">
+                                    {user?.role ? roleDisplayNames[user.role] : 'Sales'}
+                                </Badge>
                                 {user?.role === 'sales' && user.team && (
                                     <Badge variant="secondary">{user.team}</Badge>
                                 )}
