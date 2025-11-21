@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -188,24 +187,23 @@ function PaymentTimelineDialog({
     )
 }
 
-export function PayoutHistoryDialog({ children, user: propUser, commissions: propCommissions, clients: propClients, proposals: propProposals, isAdmin = false, onProcessPayout, processingPayouts }: { children: React.ReactNode, user?: WithId<UserProfile>, commissions?: WithId<Commission>[], clients?: WithId<Client>[], proposals?: WithId<Proposal>[], isAdmin?: boolean, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts?: Record<string, boolean> }) {
+export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false, onProcessPayout }: { children: React.ReactNode, user?: WithId<UserProfile>, isAdmin?: boolean, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void }) {
     const { user: authUser } = useUser();
     const { allPayouts: hookPayouts, isLoading: hookIsLoading, availableYears: hookYears } = useCommissions(propUser?.id || authUser?.uid);
     const [selectedYear, setSelectedYear] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
-    const isLoading = propCommissions ? false : hookIsLoading;
     const user = propUser || authUser;
 
      const { filteredPayouts, availableYears } = useMemo(() => {
-        const payouts = propCommissions ? [] : hookPayouts; // Simplified, main logic in hook now
+        const payouts = hookPayouts;
         const yearSet = new Set<string>();
         payouts.forEach(payout => {
             const date = new Date(payout.month);
             yearSet.add(date.getFullYear().toString());
         });
         
-        const years = propCommissions ? [] : hookYears;
+        const years = hookYears;
         
         const filtered = payouts.filter(payout => {
             if (payout.totalAmount === 0) return false;
@@ -218,7 +216,7 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
             availableYears: years,
         }
 
-    }, [propCommissions, hookPayouts, selectedYear, hookYears]);
+    }, [hookPayouts, selectedYear, hookYears]);
 
 
     return (
@@ -261,7 +259,7 @@ export function PayoutHistoryDialog({ children, user: propUser, commissions: pro
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {isLoading ? (
+                                    {hookIsLoading ? (
                                         <TableRow>
                                             <TableCell colSpan={4} className="h-24 text-center">
                                                 <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
