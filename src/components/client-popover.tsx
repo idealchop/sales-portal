@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -21,7 +22,7 @@ import { Badge } from './ui/badge';
 
 const statusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-  inactive: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  unpaid: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 

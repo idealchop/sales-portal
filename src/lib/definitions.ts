@@ -40,7 +40,7 @@ export type Client = {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'unpaid' | 'pending';
   address: string;
   clientType?: 'household' | 'sme' | 'commercial' | 'corporate' | 'enterprise';
   remarks?: Remark[];
@@ -126,5 +126,6 @@ export type Notification = {
     type: 'payout' | 'announcement';
 }
     
+
 
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 import Link from "next/link";
 import { useState, useMemo, useEffect } from 'react';
@@ -62,12 +63,12 @@ const proposalStatusStyles: { [key: string]: string } = {
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-  inactive: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  unpaid: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 
 export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'finalized';
-export type ClientStatus = 'active' | 'inactive' | 'pending';
+export type ClientStatus = 'active' | 'unpaid' | 'pending';
 export type ActiveView = 'proposals' | 'clients';
 
 const planImages: { [key: string]: string } = {
@@ -139,8 +140,8 @@ export default function ProposalsPage() {
   const [activeView, setActiveView] = useState<ActiveView>('proposals');
   const [searchQuery, setSearchQuery] = useState('');
   const proposalStatuses: (ProposalStatus | 'all')[] = ['all', 'draft', 'finalized', 'rejected'];
-  const clientStatuses: ('all' | 'active' | 'inactive')[] = ['all', 'active', 'inactive'];
-  const [clientStatusFilter, setClientStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const clientStatuses: ('all' | 'active' | 'unpaid')[] = ['all', 'active', 'unpaid'];
+  const [clientStatusFilter, setClientStatusFilter] = useState<'all' | 'active' | 'unpaid'>('all');
   const [proposalStatusFilter, setProposalStatusFilter] = useState<ProposalStatus | 'all'>('all');
 
   const [proposalsCurrentPage, setProposalsCurrentPage] = useState(1);
@@ -521,7 +522,7 @@ export default function ProposalsPage() {
                                 />
                                 </div>
                             </div>
-                            <Select value={clientStatusFilter} onValueChange={(value) => setClientStatusFilter(value as 'all' | 'active' | 'inactive')}>
+                            <Select value={clientStatusFilter} onValueChange={(value) => setClientStatusFilter(value as 'all' | 'active' | 'unpaid')}>
                             <SelectTrigger className="w-full sm:w-[180px]">
                                 <div className="flex items-center gap-2">
                                 <Filter className="h-4 w-4" />

@@ -62,7 +62,7 @@ import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
 
 const clientStatusStyles: { [key: string]: string } = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-  inactive: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  unpaid: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
 };
 
@@ -428,7 +428,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                         <TabsTrigger value="all">All</TabsTrigger>
                         <TabsTrigger value="active">Active</TabsTrigger>
                         <TabsTrigger value="pending">Pending</TabsTrigger>
-                        <TabsTrigger value="inactive">Inactive</TabsTrigger>
+                        <TabsTrigger value="unpaid">Unpaid</TabsTrigger>
                     </TabsList>
                 </Tabs>
                 <Table>
@@ -947,8 +947,8 @@ export default function AdminPage() {
     const newClientsChange = newClientsLastMonth > 0 ? ((newClientsThisMonth - newClientsLastMonth) / newClientsLastMonth) * 100 : newClientsThisMonth > 0 ? 100 : 0;
 
     const activeClients = clients.filter(c => c.status === 'active').length;
-    const inactiveClients = clients.filter(c => c.status === 'inactive').length;
-    const churnedClients = clients.filter(c => c.status === 'inactive' && c.updatedAt && isWithinInterval(parseISO(c.updatedAt), { start: currentMonthStart, end: now })).length;
+    const inactiveClients = clients.filter(c => c.status === 'unpaid').length;
+    const churnedClients = clients.filter(c => c.status === 'unpaid' && c.updatedAt && isWithinInterval(parseISO(c.updatedAt), { start: currentMonthStart, end: now })).length;
 
     const newSalesRepsThisMonth = salesUsers.filter(u => u.createdAt && isWithinInterval(parseISO(u.createdAt), { start: currentMonthStart, end: now })).length;
     const newSalesRepsLastMonth = salesUsers.filter(u => u.createdAt && isWithinInterval(parseISO(u.createdAt), { start: lastMonthStart, end: lastMonthEnd })).length;
@@ -1031,7 +1031,7 @@ export default function AdminPage() {
         const endOfMonthRejectedProposals = rejectedProposals.filter(p => getValidDate(p.createdAt) && getValidDate(p.createdAt)! <= monthEnd);
         const endOfMonthRejectedClients = new Set(endOfMonthRejectedProposals.map(p => p.clientId)).size;
         const endOfMonthActiveClients = clients.filter(c => getValidDate(c.createdAt) && c.status === 'active' && getValidDate(c.createdAt)! <= monthEnd).length;
-        const endOfMonthInactiveClients = clients.filter(c => getValidDate(c.createdAt) && c.status === 'inactive' && getValidDate(c.createdAt)! <= monthEnd).length;
+        const endOfMonthInactiveClients = clients.filter(c => getValidDate(c.createdAt) && c.status === 'unpaid' && getValidDate(c.createdAt)! <= monthEnd).length;
         const proposalsCreated = proposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: monthStart, end: monthEnd })).length;
         const proposalsAccepted = acceptedProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: monthStart, end: monthEnd }));
         const monthlyRevenue = proposalsAccepted.reduce((sum, p) => sum + p.amount, 0);
@@ -1452,14 +1452,14 @@ export default function AdminPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{stats.churnedClients} This Month</div>
-                                <p className="text-xs text-muted-foreground">{stats.inactiveClients} total inactive clients</p>
+                                <p className="text-xs text-muted-foreground">{stats.inactiveClients} total unpaid clients</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
                      <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
                             <DialogTitle>Client Retention & Churn</DialogTitle>
-                            <DialogDescription>Active vs. Inactive clients over the last 6 months.</DialogDescription>
+                            <DialogDescription>Active vs. Unpaid clients over the last 6 months.</DialogDescription>
                         </DialogHeader>
                         <div className="h-[350px] w-full">
                            <ResponsiveContainer width="100%" height="100%">
@@ -1480,7 +1480,7 @@ export default function AdminPage() {
                                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
                                     <Legend wrapperStyle={{paddingTop: '20px'}} />
                                     <Area type="monotone" dataKey="Active" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorActive)" />
-                                    <Area type="monotone" dataKey="Inactive" stroke="hsl(var(--destructive))" strokeWidth={2} fillOpacity={1} fill="url(#colorInactive)" />
+                                    <Area type="monotone" dataKey="Inactive" name="Unpaid" stroke="hsl(var(--destructive))" strokeWidth={2} fillOpacity={1} fill="url(#colorInactive)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -1771,4 +1771,5 @@ export default function AdminPage() {
 
 
     
+
 
