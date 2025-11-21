@@ -33,15 +33,23 @@ export function useCommissions(userIds?: string | string[]) {
   const [error, setError] = useState<Error | null>(null);
 
   const targetUserIds = useMemo(() => {
-    if (Array.isArray(userIds)) return userIds;
+    // If a specific user ID (or IDs) is passed, use it.
+    if (Array.isArray(userIds) && userIds.length > 0) return userIds;
     if (typeof userIds === 'string') return [userIds];
+    
+    // If the current user is a manager and no specific ID is passed,
+    // fetch for the manager themselves.
+    if (authUser && isManager) return [authUser.id];
+    
+    // For a regular sales user, or if nothing else matches, fetch for the logged-in user.
     if (authUser) return [authUser.id];
+
     return [];
-  }, [userIds, authUser]);
+  }, [userIds, authUser, isManager]);
 
   useEffect(() => {
     if (!firestore || isFirebaseLoading || targetUserIds.length === 0) {
-      if (targetUserIds.length === 0) setIsLoading(false);
+      if (targetUserIds.length === 0 && !isUserAuthLoading) setIsLoading(false);
       return;
     }
 
@@ -109,7 +117,7 @@ export function useCommissions(userIds?: string | string[]) {
         unsubProposals();
     };
 
-  }, [firestore, isFirebaseLoading, JSON.stringify(targetUserIds)]);
+  }, [firestore, isFirebaseLoading, isUserAuthLoading, JSON.stringify(targetUserIds)]);
   
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
