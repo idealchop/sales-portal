@@ -8,7 +8,7 @@ import { useAllProposals } from '@/hooks/use-all-proposals';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search } from 'lucide-react';
 import type { UserProfile, Proposal, Client } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { useClients } from '@/hooks/use-clients';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import { useAllClients } from '@/hooks/use-all-clients';
+import { Input } from '@/components/ui/input';
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -69,6 +70,84 @@ const CustomXAxisTick = (props: any) => {
     }
     return null;
 }
+
+const ProposalsDialog = ({ rep, proposals, clientMap, salesUsers, currencyFormatter }: { rep: any, proposals: any[], clientMap: Map<string, Client>, salesUsers: any[], currencyFormatter: Intl.NumberFormat }) => {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredProposals = useMemo(() => {
+        return proposals.filter(p => {
+            const client = clientMap.get(p.clientId);
+            if (!client) return false;
+
+            const searchTerm = searchQuery.toLowerCase();
+            const clientNameMatch = client.companyName.toLowerCase().includes(searchTerm);
+            const clientIdMatch = client.id.toLowerCase().includes(searchTerm);
+
+            return clientNameMatch || clientIdMatch;
+        });
+    }, [proposals, searchQuery, clientMap]);
+
+    return (
+        <DialogContent className="sm:max-w-3xl">
+            <DialogHeader>
+                <DialogTitle>Proposals by {rep.displayName}</DialogTitle>
+                <DialogDescription>A list of all proposals created by this sales executive.</DialogDescription>
+                <div className="relative pt-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by client name or ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+            </DialogHeader>
+            <ScrollArea className="h-[60vh]">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Client</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredProposals.length > 0 ? (
+                            filteredProposals.map(p => {
+                                const client = clientMap.get(p.clientId);
+                                return (
+                                    <TableRow key={p.id}>
+                                        <TableCell className="font-medium">
+                                            {client ? client.companyName : 'N/A'}
+                                        </TableCell>
+                                        <TableCell>{currencyFormatter.format(p.amount)}</TableCell>
+                                        <TableCell>
+                                            <Badge className={cn("capitalize", p.status && proposalStatusStyles[p.status])} variant="outline">{p.status}</Badge>
+                                        </TableCell>
+                                        <TableCell>{format(new Date(p.createdAt), 'PPP')}</TableCell>
+                                        <TableCell className="text-right">
+                                            {client && (
+                                                <ClientOverviewDialog client={client} proposal={p} allUsers={salesUsers} view="clients">
+                                                    <Button variant="ghost" size="sm">View Client</Button>
+                                                </ClientOverviewDialog>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center h-24">No proposals found.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </ScrollArea>
+        </DialogContent>
+    );
+};
 
 
 export default function MyTeamPage() {
@@ -433,55 +512,7 @@ export default function MyTeamPage() {
                                     <Eye className="mr-2 h-4 w-4" /> View
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-3xl">
-                                <DialogHeader>
-                                    <DialogTitle>Proposals by {rep.displayName}</DialogTitle>
-                                    <DialogDescription>A list of all proposals created by this sales executive.</DialogDescription>
-                                </DialogHeader>
-                                <ScrollArea className="h-[60vh]">
-                                <Table>
-                                    <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Client</TableHead>
-                                        <TableHead>Amount</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                    {rep.proposals.length > 0 ? (
-                                        rep.proposals.map(p => {
-                                        const client = clientMap.get(p.clientId);
-                                        return (
-                                            <TableRow key={p.id}>
-                                            <TableCell className="font-medium">
-                                                {client ? client.companyName : 'N/A'}
-                                            </TableCell>
-                                            <TableCell>{currencyFormatter.format(p.amount)}</TableCell>
-                                            <TableCell>
-                                                <Badge className={cn("capitalize", p.status && proposalStatusStyles[p.status])} variant="outline">{p.status}</Badge>
-                                            </TableCell>
-                                            <TableCell>{format(new Date(p.createdAt), 'PPP')}</TableCell>
-                                            <TableCell className="text-right">
-                                                {client && (
-                                                    <ClientOverviewDialog client={client} proposal={p} allUsers={salesUsers} view="clients">
-                                                        <Button variant="ghost" size="sm">View Client</Button>
-                                                    </ClientOverviewDialog>
-                                                )}
-                                            </TableCell>
-                                            </TableRow>
-                                        )
-                                        })
-                                    ) : (
-                                        <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">No proposals found.</TableCell>
-                                        </TableRow>
-                                    )}
-                                    </TableBody>
-                                </Table>
-                                </ScrollArea>
-                            </DialogContent>
+                            <ProposalsDialog rep={rep} proposals={rep.proposals} clientMap={clientMap} salesUsers={salesUsers} currencyFormatter={currencyFormatter} />
                         </Dialog>
                        </TableCell>
                     </TableRow>
@@ -501,6 +532,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
-
-    
