@@ -157,6 +157,7 @@ export default function MyTeamPage() {
   const { clients, isLoading: clientsLoading } = useAllClients();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   const [proposalsByRepPeriod, setProposalsByRepPeriod] = useState<string>('all');
+  const [leaderboardSearch, setLeaderboardSearch] = useState('');
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
 
 
@@ -264,10 +265,12 @@ export default function MyTeamPage() {
             proposals: count
         };
     }).sort((a, b) => b.proposals - a.proposals);
+    
+    const filteredLeaderboard = leaderboardData.filter(rep => rep.displayName.toLowerCase().includes(leaderboardSearch.toLowerCase()));
 
 
     return {
-        leaderboard: leaderboardData.sort((a, b) => b.totalRevenue - a.totalRevenue),
+        leaderboard: filteredLeaderboard.sort((a, b) => b.totalRevenue - a.totalRevenue),
         kpis: {
             totalProposalsSent,
             teamWinRate,
@@ -281,7 +284,7 @@ export default function MyTeamPage() {
         availableMonths,
         proposalsByRep,
     };
-  }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod]);
+  }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
   const isLoading = usersLoading || proposalsLoading || clientsLoading;
 
@@ -420,8 +423,21 @@ export default function MyTeamPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Team Leaderboard</CardTitle>
-          <CardDescription>Performance ranking of your team members.</CardDescription>
+            <div className="flex justify-between items-start">
+              <div>
+                  <CardTitle>Team Leaderboard</CardTitle>
+                  <CardDescription>Performance ranking of your team members.</CardDescription>
+              </div>
+              <div className="relative w-full max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                      placeholder="Search by name..."
+                      value={leaderboardSearch}
+                      onChange={(e) => setLeaderboardSearch(e.target.value)}
+                      className="pl-9"
+                  />
+              </div>
+            </div>
         </CardHeader>
         <CardContent>
           <Table>
