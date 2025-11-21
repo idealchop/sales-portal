@@ -1474,41 +1474,23 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                     <DialogContent className="sm:max-w-2xl">
+                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                              <div className="flex items-center gap-2">
-                                <LineChartIcon className="h-6 w-6 text-primary"/>
-                                <DialogTitle>Client Funnel Growth</DialogTitle>
+                                <UsersRound className="h-6 w-6 text-primary"/>
+                                <DialogTitle>Active Client Snapshot</DialogTitle>
                             </div>
-                            <DialogDescription>Client status trends over the last 6 months.</DialogDescription>
+                            <DialogDescription>A summary of your active client base.</DialogDescription>
                         </DialogHeader>
-                        <div className="h-[350px] w-full">
-                           <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={stats.clientGrowthData}>
-                                     <defs>
-                                        <linearGradient id="colorNewClients" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                        <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                         <linearGradient id="colorRejected" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                    <Legend wrapperStyle={{paddingTop: '20px'}} />
-                                    <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-                                    <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} />
-                                    <Line type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} />
-                                </LineChart>
-                            </ResponsiveContainer>
+                        <div className="grid gap-4 py-4">
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Total Active Clients</p>
+                                <p className="text-lg font-bold">{stats.activeClients}</p>
+                            </div>
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Clients Pending Onboarding</p>
+                                <p className="text-lg font-bold">{stats.pendingClients}</p>
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1525,33 +1507,23 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                     <DialogContent className="sm:max-w-2xl">
+                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                            <DialogTitle>Client Retention & Churn</DialogTitle>
-                            <DialogDescription>Active vs. Unpaid clients over the last 6 months.</DialogDescription>
+                            <div className="flex items-center gap-2">
+                                <HeartCrack className="h-6 w-6 text-destructive" />
+                                <DialogTitle>Client Churn Snapshot</DialogTitle>
+                            </div>
+                            <DialogDescription>A summary of clients with payment issues.</DialogDescription>
                         </DialogHeader>
-                        <div className="h-[350px] w-full">
-                           <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={stats.clientRetentionData}>
-                                     <defs>
-                                        <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                         <linearGradient id="colorInactive" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                    <Legend wrapperStyle={{paddingTop: '20px'}} />
-                                    <Area type="monotone" dataKey="Active" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorActive)" />
-                                    <Area type="monotone" dataKey="Unpaid" name="Unpaid" stroke="hsl(var(--destructive))" strokeWidth={2} fillOpacity={1} fill="url(#colorInactive)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                        <div className="grid gap-4 py-4">
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Total Unpaid Clients</p>
+                                <p className="text-lg font-bold text-destructive">{stats.unpaidClients}</p>
+                            </div>
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Clients Churned This Month</p>
+                                <p className="text-lg font-bold">{stats.churnedClients}</p>
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1844,6 +1816,7 @@ export default function AdminPage() {
     
 
     
+
 
 
 
