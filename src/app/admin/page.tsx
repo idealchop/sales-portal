@@ -1385,34 +1385,30 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-3xl">
+                    <DialogContent className="sm:max-w-xl">
                         <DialogHeader>
                              <div className="flex items-center gap-2">
                                 <TrendingUp className="h-6 w-6 text-primary"/>
-                                <DialogTitle>Revenue Growth (6 Months)</DialogTitle>
+                                <DialogTitle>Revenue Growth</DialogTitle>
                             </div>
-                            <DialogDescription>A detailed look at your revenue growth over the last six months.</DialogDescription>
+                            <DialogDescription>A detailed look at your revenue growth.</DialogDescription>
                         </DialogHeader>
-                        <div className="py-4">
-                            <Card>
-                                <CardContent className="h-[250px] pt-6">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={stats.revenueHistory}>
-                                            <defs>
-                                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                            <YAxis tickFormatter={(value) => `₱${Number(value) / 1000}k`} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} width={80} />
-                                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} formatter={(value) => [currencyFormatter.format(Number(value)), "Revenue"]} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                            <Area type="monotone" dataKey="Revenue" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </CardContent>
-                            </Card>
+                        <div className="py-4 h-[250px]">
+                           <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={stats.revenueHistory}>
+                                    <defs>
+                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                    <YAxis tickFormatter={(value) => `₱${Number(value) / 1000}k`} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} width={80} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} formatter={(value) => [currencyFormatter.format(Number(value)), "Revenue"]} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                    <Area type="monotone" dataKey="Revenue" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1432,41 +1428,34 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                     <DialogContent className="sm:max-w-2xl">
+                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                              <div className="flex items-center gap-2">
-                                <LineChartIcon className="h-6 w-6 text-primary"/>
-                                <DialogTitle>Client Funnel Growth</DialogTitle>
+                                <UsersRound className="h-6 w-6 text-primary"/>
+                                <DialogTitle>New Client Acquisition</DialogTitle>
                             </div>
-                            <DialogDescription>Client status trends over the last 6 months.</DialogDescription>
+                            <DialogDescription>Your key performance indicators for acquiring new clients.</DialogDescription>
                         </DialogHeader>
-                        <div className="h-[350px] w-full">
-                           <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={stats.clientGrowthData}>
-                                     <defs>
-                                        <linearGradient id="colorNewClients" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                        <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                         <linearGradient id="colorRejected" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
-                                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                    <Legend wrapperStyle={{paddingTop: '20px'}} />
-                                    <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-                                    <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} />
-                                    <Line type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} />
-                                </LineChart>
-                            </ResponsiveContainer>
+                        <div className="grid gap-4 py-4">
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">New Clients This Month</p>
+                                <p className="text-lg font-bold">+{stats.newClientsThisMonth}</p>
+                            </div>
+                            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Change from Last Month</p>
+                                <p className={cn("text-lg font-bold flex items-center", stats.newClientsChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                    {stats.newClientsChange >= 0 ? <ArrowUp className="h-5 w-5 mr-1" /> : <ArrowDown className="h-5 w-5 mr-1" />}
+                                    {stats.newClientsChange.toFixed(1)}%
+                                </p>
+                            </div>
+                             <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Pending Clients</p>
+                                <p className="text-lg font-bold">{stats.pendingClients}</p>
+                            </div>
+                             <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                                <p className="text-sm font-medium">Rejected/Lost This Month</p>
+                                <p className="text-lg font-bold">{stats.rejectedClients}</p>
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1855,4 +1844,5 @@ export default function AdminPage() {
     
 
     
+
 
