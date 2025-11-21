@@ -1416,19 +1416,60 @@ export default function AdminPage() {
                         </div>
                     </DialogContent>
                 </Dialog>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">New Clients</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">+{stats.newClientsThisMonth} This Month</div>
-                        <p className={cn("text-xs text-muted-foreground flex items-center", stats.newClientsChange >= 0 ? "text-green-600" : "text-red-600")}>
-                                {stats.newClientsChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                            {stats.newClientsChange.toFixed(1)}% from last month
-                        </p>
-                    </CardContent>
-                </Card>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="cursor-pointer hover:border-primary transition-colors">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">New Clients</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">+{stats.newClientsThisMonth} This Month</div>
+                                <p className={cn("text-xs text-muted-foreground flex items-center", stats.newClientsChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                        {stats.newClientsChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                    {stats.newClientsChange.toFixed(1)}% from last month
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </DialogTrigger>
+                     <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                             <div className="flex items-center gap-2">
+                                <LineChartIcon className="h-6 w-6 text-primary"/>
+                                <DialogTitle>Client Funnel Growth</DialogTitle>
+                            </div>
+                            <DialogDescription>Client status trends over the last 6 months.</DialogDescription>
+                        </DialogHeader>
+                        <div className="h-[350px] w-full">
+                           <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={stats.clientGrowthData}>
+                                     <defs>
+                                        <linearGradient id="colorNewClients" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                        <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                         <linearGradient id="colorRejected" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} dy={10} />
+                                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                    <Legend wrapperStyle={{paddingTop: '20px'}} />
+                                    <Line type="monotone" dataKey="New Clients" stroke="hsl(var(--chart-1))" strokeWidth={2} />
+                                    <Line type="monotone" dataKey="Pending Clients" stroke="hsl(var(--chart-4))" strokeWidth={2} />
+                                    <Line type="monotone" dataKey="Rejected Clients" stroke="hsl(var(--destructive))" strokeWidth={2} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </DialogContent>
+                </Dialog>
                  <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:border-primary transition-colors">
@@ -1814,3 +1855,4 @@ export default function AdminPage() {
     
 
     
+
