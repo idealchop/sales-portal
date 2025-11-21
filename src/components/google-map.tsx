@@ -4,6 +4,8 @@
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
+import { MapPin, AlertTriangle } from "lucide-react";
 
 export type MapMarker = {
     position: google.maps.LatLngLiteral;
@@ -294,9 +296,16 @@ export function GoogleMap({
     
     if (!apiKey) {
         return (
-            <div className="h-full w-full flex flex-col items-center justify-center bg-muted text-muted-foreground text-sm text-center p-4">
-                <p className="font-semibold">Google Maps API Key is missing.</p>
-                <p>Please add your key to the .env file to enable map functionality.</p>
+            <div className="h-full w-full flex items-center justify-center bg-muted p-4">
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Google Maps API Key is Missing</AlertTitle>
+                    <AlertDescription>
+                        To enable map functionality, please obtain a Google Maps API key and add it to your project's 
+                        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">.env</code> 
+                        file as <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_KEY</code>.
+                    </AlertDescription>
+                </Alert>
             </div>
         );
     }
