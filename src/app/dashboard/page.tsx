@@ -72,7 +72,7 @@ import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
 import { useCommissions } from '@/hooks/use-commissions';
 import { useMemo } from 'react';
-import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears, parseISO, differenceInMonths } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears, parseISO, differenceInMonths, isValid } from 'date-fns';
 import { useUser } from '@/firebase';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
@@ -462,8 +462,13 @@ export default function DashboardPage() {
                                     try {
                                         const content = JSON.parse(proposal.content) as FinalPlanDetails;
                                         if (content.date) {
-                                            const monthsDiff = differenceInMonths(new Date(), parseISO(content.date)) + 1;
-                                            progressText = `(${monthsDiff}/12)`;
+                                            const startDate = parseISO(content.date);
+                                            if (isValid(startDate)) {
+                                                const monthsDiff = differenceInMonths(new Date(), startDate) + 1;
+                                                if (monthsDiff > 0 && monthsDiff <= 12) {
+                                                    progressText = `(${monthsDiff}/12)`;
+                                                }
+                                            }
                                         }
                                     } catch (e) {
                                         console.error("Error parsing proposal content for recurring commission:", e);
