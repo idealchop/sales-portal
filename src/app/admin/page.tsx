@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -1142,10 +1143,12 @@ export default function AdminPage() {
 
     const proposalsByRep = Object.entries(proposalCountsByRep).map(([userId, count]) => {
         const user = salesUsers.find(u => u.id === userId);
+        const userProposals = filteredRepProposals.filter(p => p.userId === userId);
         return {
             userId: userId,
             name: user?.displayName || 'Unknown',
-            proposals: count
+            proposals: count,
+            createdAt: userProposals[0]?.createdAt // Example of how you might add it
         };
     }).sort((a, b) => b.proposals - a.proposals);
     
@@ -1706,33 +1709,25 @@ export default function AdminPage() {
                         </Select>
                     </div>
                 </CardHeader>
-                <CardContent className="h-[250px] pr-6">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={stats.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
-                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                            <XAxis 
-                                dataKey="userId" 
-                                tickLine={false} 
-                                axisLine={false} 
-                                tick={<CustomXAxisTick salesUsers={salesUsers} />}
-                                interval={0}
-                            />
-                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                            <Tooltip
-                                cursor={{ fill: 'hsl(var(--muted))' }}
-                                contentStyle={{ 
-                                    backgroundColor: 'hsl(var(--background))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: 'var(--radius)'
-                                }}
-                                labelFormatter={(value) => {
-                                    const user = salesUsers.find(u => u.id === value);
-                                    return user ? user.displayName : 'Unknown';
-                                }}
-                            />
-                            <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Sales Rep</TableHead>
+                                <TableHead>Proposals</TableHead>
+                                <TableHead>Created</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {stats.proposalsByRep.map(rep => (
+                                <TableRow key={rep.userId}>
+                                    <TableCell>{rep.name}</TableCell>
+                                    <TableCell>{rep.proposals}</TableCell>
+                                    <TableCell>{rep.createdAt ? format(new Date(rep.createdAt), 'PPP') : 'N/A'}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
             <SalesTeamLeaderboard users={salesUsers} proposals={proposals} />
