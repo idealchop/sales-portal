@@ -399,8 +399,9 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                         />
                     </div>
                      <Select value={dateFilter} onValueChange={setDateFilter}>
-                        <SelectTrigger className="w-auto px-3">
-                           <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                        <SelectTrigger className="w-auto">
+                            <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" />
+                           <SelectValue placeholder="Filter by date" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Time</SelectItem>
@@ -1813,3 +1814,4 @@ export default function AdminPage() {
 
 
     
+
