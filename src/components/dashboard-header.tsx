@@ -591,7 +591,7 @@ export function DashboardHeader() {
                                 <Badge variant="outline" className="capitalize">
                                     {user?.role ? roleDisplayNames[user.role] : 'Sales'}
                                 </Badge>
-                                {user?.createdAt && (
+                                {user?.createdAt && !isNaN(new Date(user.createdAt).getTime()) && (
                                     <p className="text-xs text-muted-foreground">Onboarded: {format(new Date(user.createdAt), 'PPP')}</p>
                                 )}
                             </div>
@@ -656,5 +656,3 @@ export function DashboardHeader() {
     </header>
   );
 }
-
-    
