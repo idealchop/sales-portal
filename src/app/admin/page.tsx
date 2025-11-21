@@ -910,7 +910,7 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     if (proposalsLoading || clientsLoading || usersLoading) {
-      return { totalRevenue: 0, activeClients: 0, inactiveClients: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [], teamWinRate: 0, teamTotalRevenue: 0, teamAvgDealSize: 0, teamProposalsSentChange: 0, teamWinRateChange: 0, teamTotalRevenueChange: 0, teamAvgDealSizeChange: 0 };
+      return { totalRevenue: 0, activeClients: 0, newClientsThisMonth: 0, unpaidClients: 0, winRate: 0, pendingClients: 0, rejectedClients: 0, proposalsSent: 0, totalProposals: 0, proposalPerClient: 0, planDistribution: [], clientStatusChartData: [], proposalFunnelData: [], proposalsByRep: [], clientGrowthData: [], proposalStatusData: [], pendingClientsHistory: [], proposalsCreatedHistory: [], revenueHistory: [], clientRetentionData: [], proposalValueByStatus: [], revenueChange: 0, newClientsChange: 0, teamGrowthChange: 0, churnedClients: 0, topSellingPlansByMonth: [], teamWinRate: 0, teamTotalRevenue: 0, teamAvgDealSize: 0, teamProposalsSentChange: 0, teamWinRateChange: 0, teamTotalRevenueChange: 0, teamAvgDealSizeChange: 0 };
     }
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
@@ -947,7 +947,7 @@ export default function AdminPage() {
     const newClientsChange = newClientsLastMonth > 0 ? ((newClientsThisMonth - newClientsLastMonth) / newClientsLastMonth) * 100 : newClientsThisMonth > 0 ? 100 : 0;
 
     const activeClients = clients.filter(c => c.status === 'active').length;
-    const inactiveClients = clients.filter(c => c.status === 'unpaid').length;
+    const unpaidClients = clients.filter(c => c.status === 'unpaid').length;
     const churnedClients = clients.filter(c => c.status === 'unpaid' && c.updatedAt && isWithinInterval(parseISO(c.updatedAt), { start: currentMonthStart, end: now })).length;
 
     const newSalesRepsThisMonth = salesUsers.filter(u => u.createdAt && isWithinInterval(parseISO(u.createdAt), { start: currentMonthStart, end: now })).length;
@@ -1042,7 +1042,7 @@ export default function AdminPage() {
     const clientGrowthData = monthlyData.map(d => ({ month: d.month, "New Clients": d.newClients, "Pending Clients": d.pendingClients, "Rejected Clients": d.rejectedClients }));
     const proposalsCreatedHistory = monthlyData.map(d => ({ month: d.month, "Proposals Created": d.proposalsCreated }));
     const revenueHistory = monthlyData.map(d => ({ month: d.month, "Revenue": d.revenue }));
-    const clientRetentionData = monthlyData.map(d => ({ month: d.month, "Active": d.active, "Inactive": d.inactive }));
+    const clientRetentionData = monthlyData.map(d => ({ month: d.month, "Active": d.active, "Unpaid": d.inactive }));
     
     const proposalFunnelData = Array.from({ length: 6 }).map((_, i) => {
         const date = subMonths(now, 5 - i);
@@ -1154,7 +1154,7 @@ export default function AdminPage() {
     const teamAvgDealSize = acceptedProposals.length > 0 ? teamTotalRevenue / acceptedProposals.length : 0;
 
 
-    return { totalRevenue, activeClients, inactiveClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, teamWinRate, teamTotalRevenue, teamAvgDealSize, teamProposalsSentChange, teamWinRateChange, teamTotalRevenueChange, teamAvgDealSizeChange };
+    return { totalRevenue, activeClients, newClientsThisMonth, unpaidClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, teamWinRate, teamTotalRevenue, teamAvgDealSize, teamProposalsSentChange, teamWinRateChange, teamTotalRevenueChange, teamAvgDealSizeChange };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod, proposalsByRepPeriod]);
   
   const userIds = useMemo(() => salesUsers.filter(u => u.role !== 'admin').map(u => u.id), [salesUsers]);
@@ -1302,7 +1302,7 @@ export default function AdminPage() {
         </div>
 
         <TabsContent value="crm" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                  <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
@@ -1389,18 +1389,30 @@ export default function AdminPage() {
                         </div>
                     </DialogContent>
                 </Dialog>
-                <Dialog>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">New Clients</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">+{stats.newClientsThisMonth} This Month</div>
+                        <p className={cn("text-xs text-muted-foreground flex items-center", stats.newClientsChange >= 0 ? "text-green-600" : "text-red-600")}>
+                                {stats.newClientsChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                            {stats.newClientsChange.toFixed(1)}% from last month
+                        </p>
+                    </CardContent>
+                </Card>
+                 <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer hover:border-primary transition-colors">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">New Clients</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
+                                <UsersRound className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{stats.activeClients} Active</div>
-                                <p className={cn("text-xs text-muted-foreground flex items-center", stats.newClientsChange >= 0 ? "text-green-600" : "text-red-600")}>
-                                     {stats.newClientsChange >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                                    {stats.newClientsChange.toFixed(1)}% from last month
+                                <p className="text-xs text-muted-foreground">
+                                    {stats.pendingClients} pending clients
                                 </p>
                             </CardContent>
                         </Card>
@@ -1447,12 +1459,12 @@ export default function AdminPage() {
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Client Churn</CardTitle>
+                                <CardTitle className="text-sm font-medium">Unpaid Clients</CardTitle>
                                 <HeartCrack className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{stats.churnedClients} This Month</div>
-                                <p className="text-xs text-muted-foreground">{stats.inactiveClients} total unpaid clients</p>
+                                <div className="text-2xl font-bold">{stats.unpaidClients} Total</div>
+                                <p className="text-xs text-muted-foreground">{stats.churnedClients} churned this month</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
@@ -1480,7 +1492,7 @@ export default function AdminPage() {
                                     <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }} />
                                     <Legend wrapperStyle={{paddingTop: '20px'}} />
                                     <Area type="monotone" dataKey="Active" stroke="hsl(var(--chart-1))" strokeWidth={2} fillOpacity={1} fill="url(#colorActive)" />
-                                    <Area type="monotone" dataKey="Inactive" name="Unpaid" stroke="hsl(var(--destructive))" strokeWidth={2} fillOpacity={1} fill="url(#colorInactive)" />
+                                    <Area type="monotone" dataKey="Unpaid" name="Unpaid" stroke="hsl(var(--destructive))" strokeWidth={2} fillOpacity={1} fill="url(#colorInactive)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -1771,6 +1783,7 @@ export default function AdminPage() {
 
 
     
+
 
 
 
