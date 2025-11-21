@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -263,7 +264,15 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                 }
             }
             
-            const statusMatch = statusFilter === 'all' || client.status === statusFilter;
+            const clientPaymentStatus = client.paymentStatus || 'Pending';
+            let statusMatch = statusFilter === 'all';
+            if (statusFilter === 'active') {
+                statusMatch = client.status === 'active';
+            } else if (statusFilter === 'pending') {
+                statusMatch = client.status === 'pending';
+            } else if (statusFilter === 'unpaid') {
+                statusMatch = clientPaymentStatus === 'Unpaid';
+            }
 
             const searchMatch = searchQuery === '' || 
                 client.companyName.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -1004,8 +1013,8 @@ export default function AdminPage() {
     const newClientsChange = newClientsLastMonth > 0 ? ((newClientsThisMonth - newClientsLastMonth) / newClientsLastMonth) * 100 : newClientsThisMonth > 0 ? 100 : 0;
 
     const activeClients = clients.filter(c => c.status === 'active').length;
-    const unpaidClients = clients.filter(c => c.status === 'unpaid').length;
-    const churnedClients = clients.filter(c => c.status === 'unpaid' && c.updatedAt && isWithinInterval(parseISO(c.updatedAt), { start: currentMonthStart, end: now })).length;
+    const unpaidClients = clients.filter(c => c.paymentStatus === 'Unpaid').length;
+    const churnedClients = clients.filter(c => c.paymentStatus === 'Unpaid' && c.updatedAt && isWithinInterval(parseISO(c.updatedAt), { start: currentMonthStart, end: now })).length;
 
     const newSalesRepsThisMonth = salesUsers.filter(u => u.createdAt && isWithinInterval(parseISO(u.createdAt), { start: currentMonthStart, end: now })).length;
     const newSalesRepsLastMonth = salesUsers.filter(u => u.createdAt && isWithinInterval(parseISO(u.createdAt), { start: lastMonthStart, end: lastMonthEnd })).length;
@@ -1088,7 +1097,7 @@ export default function AdminPage() {
         const endOfMonthRejectedProposals = rejectedProposals.filter(p => getValidDate(p.createdAt) && getValidDate(p.createdAt)! <= monthEnd);
         const endOfMonthRejectedClients = new Set(endOfMonthRejectedProposals.map(p => p.clientId)).size;
         const endOfMonthActiveClients = clients.filter(c => getValidDate(c.createdAt) && c.status === 'active' && getValidDate(c.createdAt)! <= monthEnd).length;
-        const endOfMonthInactiveClients = clients.filter(c => getValidDate(c.createdAt) && c.status === 'unpaid' && getValidDate(c.createdAt)! <= monthEnd).length;
+        const endOfMonthInactiveClients = clients.filter(c => getValidDate(c.createdAt) && c.paymentStatus === 'Unpaid' && getValidDate(c.createdAt)! <= monthEnd).length;
         const proposalsCreated = proposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: monthStart, end: monthEnd })).length;
         const proposalsAccepted = acceptedProposals.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: monthStart, end: monthEnd }));
         const monthlyRevenue = proposalsAccepted.reduce((sum, p) => sum + p.amount, 0);
@@ -1838,6 +1847,8 @@ export default function AdminPage() {
     
 
 
+
+    
 
     
 
