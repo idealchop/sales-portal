@@ -1,15 +1,17 @@
 
+
 'use client';
 
 import { useMemo, useState } from 'react';
 import { useUser } from '@/firebase';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllProposals } from '@/hooks/use-all-proposals';
+import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search } from 'lucide-react';
-import type { UserProfile, Proposal, Client } from '@/lib/definitions';
+import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -155,6 +157,7 @@ export default function MyTeamPage() {
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const { proposals, isLoading: proposalsLoading } = useAllProposals();
   const { clients, isLoading: clientsLoading } = useAllClients();
+  const { commissions, isLoading: commissionsLoading } = useCommissions(user?.id);
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   const [proposalsByRepPeriod, setProposalsByRepPeriod] = useState<string>('all');
   const [leaderboardSearch, setLeaderboardSearch] = useState('');
@@ -286,7 +289,22 @@ export default function MyTeamPage() {
     };
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
-  const isLoading = usersLoading || proposalsLoading || clientsLoading;
+  const managerOverrideCommission = useMemo(() => {
+    if (commissionsLoading || !isManager) return 0;
+    
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+
+    return commissions
+      .filter(c => 
+        c.description === 'Manager Override' &&
+        isWithinInterval(new Date(c.createdAt), { start: currentMonthStart, end: now })
+      )
+      .reduce((sum, c) => sum + c.amount, 0);
+
+  }, [commissions, commissionsLoading, isManager]);
+
+  const isLoading = usersLoading || proposalsLoading || clientsLoading || commissionsLoading;
 
   if (isLoading) {
     return (
@@ -369,56 +387,72 @@ export default function MyTeamPage() {
             </Card>
         </div>
 
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="flex items-center gap-2">
-                            <BarChartIcon className="h-5 w-5" />
-                            Proposals by Team Member
-                        </CardTitle>
-                        <CardDescription>Total proposals created by each executive.</CardDescription>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2">
+                <CardHeader>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <BarChartIcon className="h-5 w-5" />
+                                Proposals by Team Member
+                            </CardTitle>
+                            <CardDescription>Total proposals created by each executive.</CardDescription>
+                        </div>
+                        <Select value={proposalsByRepPeriod} onValueChange={setProposalsByRepPeriod}>
+                            <SelectTrigger className="w-auto px-3">
+                                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Time</SelectItem>
+                                {teamPerformance.availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <Select value={proposalsByRepPeriod} onValueChange={setProposalsByRepPeriod}>
-                        <SelectTrigger className="w-auto px-3">
-                            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Time</SelectItem>
-                            {teamPerformance.availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </CardHeader>
-            <CardContent className="h-[250px] pr-6">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={teamPerformance.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
-                        <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                        <XAxis 
-                            dataKey="userId" 
-                            tickLine={false} 
-                            axisLine={false} 
-                            tick={<CustomXAxisTick salesUsers={myTeam} />}
-                            interval={0}
-                        />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                        <Tooltip
-                            cursor={{ fill: 'hsl(var(--muted))' }}
-                            contentStyle={{ 
-                                backgroundColor: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: 'var(--radius)'
-                            }}
-                            labelFormatter={(value) => {
-                                const user = myTeam.find(u => u.id === value);
-                                return user ? user.displayName : 'Unknown';
-                            }}
-                        />
-                        <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </CardContent>
-        </Card>
+                </CardHeader>
+                <CardContent className="h-[250px] pr-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={teamPerformance.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
+                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                            <XAxis 
+                                dataKey="userId" 
+                                tickLine={false} 
+                                axisLine={false} 
+                                tick={<CustomXAxisTick salesUsers={myTeam} />}
+                                interval={0}
+                            />
+                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                            <Tooltip
+                                cursor={{ fill: 'hsl(var(--muted))' }}
+                                contentStyle={{ 
+                                    backgroundColor: 'hsl(var(--background))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: 'var(--radius)'
+                                }}
+                                labelFormatter={(value) => {
+                                    const user = myTeam.find(u => u.id === value);
+                                    return user ? user.displayName : 'Unknown';
+                                }}
+                            />
+                            <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Manager Override</CardTitle>
+                    <CardDescription>Your commission from your team's sales this month.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center justify-center text-center h-[250px]">
+                    <div className='flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4'>
+                        <CircleDollarSign className='h-12 w-12 text-primary'/>
+                    </div>
+                    <p className="text-4xl font-bold">{currencyFormatter.format(managerOverrideCommission)}</p>
+                    <p className="text-sm text-muted-foreground">This Month</p>
+                </CardContent>
+            </Card>
+        </div>
 
 
       <Card>
