@@ -255,11 +255,21 @@ function MapComponent({
       if (address) {
         geocodeAddress(geocoder, newMap, newMainMarker);
       }
-    } else if (map && mainMarker && address) {
-      const geocoder = new google.maps.Geocoder();
-      geocodeAddress(geocoder, map, mainMarker);
     }
-  }, [address, zoom, map, mainMarker, onAddressChange]);
+  }, [ref, map, onAddressChange, zoom, address]);
+  
+  // Re-geocode when address changes from outside (e.g., input field)
+  useEffect(() => {
+    if (map && mainMarker && address) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address }, (results, status) => {
+            if (status === 'OK' && results && results[0]) {
+                map.setCenter(results[0].geometry.location);
+                mainMarker.setPosition(results[0].geometry.location);
+            }
+        });
+    }
+  }, [address, map, mainMarker]);
 
   // Handle additional markers
   useEffect(() => {
@@ -277,7 +287,8 @@ function MapComponent({
       });
       setOtherMarkers(newMarkers);
     }
-  }, [map, additionalMarkers]); // Rerun when additionalMarkers change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, additionalMarkers]);
 
   return <div ref={ref} style={{ width: "100%", height: "100%" }} />;
 }
