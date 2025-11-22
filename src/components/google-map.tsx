@@ -161,14 +161,16 @@ const render = (status: Status, error?: Error) => {
     if (error && error.message.includes("InvalidKeyMapError")) {
         return (
             <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
+                <AlertTriangle className="h-8 w-8 mb-2" />
                 <p className="font-bold">Map Error: Invalid API Key</p>
-                <p className="text-xs mt-1">The Google Maps API key is invalid or not configured for the Maps JavaScript API. Please check the key in the Google Cloud Console.</p>
+                <p className="text-xs mt-1">The Google Maps API key is invalid, expired, or not configured for the Maps JavaScript API. Please check the key in the Google Cloud Console.</p>
             </div>
         );
     }
     if (status === Status.FAILURE) {
         return (
             <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
+                 <AlertTriangle className="h-8 w-8 mb-2" />
                 <p className="font-bold">Could not load map.</p>
                 <p className="text-xs mt-1">Please check the API key and network connection.</p>
             </div>
@@ -294,6 +296,22 @@ export function GoogleMap({
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const [wrapperError, setWrapperError] = useState<Error | undefined>(undefined);
     
+    useEffect(() => {
+        const handleGoogleMapsError = (event: ErrorEvent) => {
+            if (event.filename && event.filename.includes('maps.googleapis.com')) {
+                if (event.message.includes("InvalidKeyMapError")) {
+                    setWrapperError(new Error("InvalidKeyMapError"));
+                } else {
+                    setWrapperError(new Error(event.message));
+                }
+                event.preventDefault(); // Prevent the default browser error logging
+            }
+        };
+
+        window.addEventListener('error', handleGoogleMapsError);
+        return () => window.removeEventListener('error', handleGoogleMapsError);
+    }, []);
+    
     if (!apiKey) {
         return (
             <div className="h-full w-full flex items-center justify-center bg-muted p-4">
@@ -309,22 +327,6 @@ export function GoogleMap({
             </div>
         );
     }
-    
-    const handleWrapperStatusChange = (status: Status) => {
-        if (status === Status.FAILURE) {
-            const errorListener = (event: ErrorEvent) => {
-                if (event.filename && event.filename.includes('maps.googleapis.com')) {
-                    if (event.message.includes("InvalidKeyMapError")) {
-                        setWrapperError(new Error("InvalidKeyMapError"));
-                    } else {
-                        setWrapperError(new Error(event.message));
-                    }
-                    window.removeEventListener('error', errorListener);
-                }
-            };
-            window.addEventListener('error', errorListener);
-        }
-    };
 
     return (
         <Wrapper apiKey={apiKey} render={(status) => render(status, wrapperError)} libraries={['geocoding', 'marker']}>
