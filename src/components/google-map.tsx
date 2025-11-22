@@ -1,11 +1,11 @@
 
 'use client';
 
-import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import { useEffect, useRef, useState, memo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { MapPin, AlertTriangle } from "lucide-react";
+import { useGoogleMaps } from "@/hooks/use-google-maps";
 
 export type MapMarker = {
     position: google.maps.LatLngLiteral;
@@ -157,19 +157,6 @@ const mapStyles = [
     }
 ];
 
-const render = (status: Status) => {
-    if (status === Status.FAILURE) {
-        return (
-            <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
-                 <AlertTriangle className="h-8 w-8 mb-2" />
-                <p className="font-bold">Could not load map.</p>
-                <p className="text-xs mt-1">This may be due to an invalid API key or network issues. Check the console for more details.</p>
-            </div>
-        );
-    }
-    return <Skeleton className="h-full w-full" />;
-};
-
 const MapComponent = memo(function MapComponent({
   address,
   zoom,
@@ -186,10 +173,10 @@ const MapComponent = memo(function MapComponent({
   const [mainMarker, setMainMarker] = useState<google.maps.Marker>();
   const [otherMarkers, setOtherMarkers] = useState<google.maps.Marker[]>([]);
   const geocoderRef = useRef<google.maps.Geocoder>();
+  const { isLoaded, loadError } = useGoogleMaps();
 
-  // Initialize Map and Geocoder
   useEffect(() => {
-    if (ref.current && !map) {
+    if (isLoaded && ref.current && !map) {
       const initialCenter = { lat: 14.5995, lng: 120.9842 }; // Default to Manila
       const newMap = new window.google.maps.Map(ref.current, {
         center: initialCenter,
@@ -200,9 +187,8 @@ const MapComponent = memo(function MapComponent({
       setMap(newMap);
       geocoderRef.current = new google.maps.Geocoder();
     }
-  }, [ref, map, zoom]);
+  }, [isLoaded, ref, map, zoom]);
 
-  // Initialize Main Marker
   useEffect(() => {
     if (map && !mainMarker) {
         const newMainMarker = new google.maps.Marker({
@@ -226,7 +212,7 @@ const MapComponent = memo(function MapComponent({
                     if (status === "OK" && results && results[0]) {
                         onAddressChange(results[0].formatted_address);
                     } else {
-                        console.error(`Reverse geocode failed: ${status}`);
+                        console.error(`Reverse geocode failed: ${''+status}`);
                     }
                 });
             }
@@ -235,8 +221,6 @@ const MapComponent = memo(function MapComponent({
     }
   }, [map, mainMarker, onAddressChange]);
 
-
-  // Sync Address to Map
   useEffect(() => {
     if (map && mainMarker && address && geocoderRef.current) {
         geocoderRef.current.geocode({ address }, (results, status) => {
@@ -251,10 +235,8 @@ const MapComponent = memo(function MapComponent({
     }
   }, [address, map, mainMarker]);
 
-  // Handle additional markers
   useEffect(() => {
     if (map) {
-      // Clear old markers
       otherMarkers.forEach(marker => marker.setMap(null));
 
       const newMarkers = additionalMarkers.map(markerInfo => {
@@ -269,6 +251,20 @@ const MapComponent = memo(function MapComponent({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, additionalMarkers]);
+
+  if (loadError) {
+      return (
+        <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
+             <AlertTriangle className="h-8 w-8 mb-2" />
+            <p className="font-bold">Could not load map.</p>
+            <p className="text-xs mt-1">This may be due to an invalid API key or network issues. Please check the browser console for more details.</p>
+        </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return <Skeleton className="h-full w-full" />;
+  }
 
   return <div ref={ref} style={{ width: "100%", height: "100%" }} />;
 });
@@ -303,13 +299,11 @@ export function GoogleMap({
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={render} libraries={['geocoding', 'marker']}>
-            <MapComponent 
-                address={address} 
-                zoom={zoom} 
-                onAddressChange={onAddressChange}
-                additionalMarkers={additionalMarkers}
-            />
-        </Wrapper>
+        <MapComponent
+            address={address} 
+            zoom={zoom} 
+            onAddressChange={onAddressChange}
+            additionalMarkers={additionalMarkers}
+        />
     );
 }
