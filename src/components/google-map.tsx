@@ -163,7 +163,7 @@ const render = (status: Status, error?: Error) => {
             <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
                 <AlertTriangle className="h-8 w-8 mb-2" />
                 <p className="font-bold">Map Error: Invalid API Key</p>
-                <p className="text-xs mt-1">The Google Maps API key is invalid, expired, or not configured for the Maps JavaScript API. Please check the key in the Google Cloud Console.</p>
+                <p className="text-xs mt-1">The Google Maps API key is invalid or not correctly configured for the Maps JavaScript API. Please check the key in the Google Cloud Console.</p>
             </div>
         );
     }
@@ -172,7 +172,7 @@ const render = (status: Status, error?: Error) => {
             <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
                  <AlertTriangle className="h-8 w-8 mb-2" />
                 <p className="font-bold">Could not load map.</p>
-                <p className="text-xs mt-1">Please check the API key and network connection.</p>
+                <p className="text-xs mt-1">This may be due to an invalid API key or network issues. Check the console for more details.</p>
             </div>
         );
     }
@@ -319,7 +319,7 @@ export function GoogleMap({
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Google Maps API Key is Missing</AlertTitle>
                     <AlertDescription>
-                        To enable map functionality, please obtain a Google Maps API key and add it to your project's 
+                        To enable map functionality, please add your Google Maps API key to the 
                         <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">.env</code> 
                         file as <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_KEY</code>.
                     </AlertDescription>
