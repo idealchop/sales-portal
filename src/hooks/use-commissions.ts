@@ -34,7 +34,9 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
   const [error, setError] = useState<Error | null>(null);
 
   const targetUserIds = useMemo(() => {
-    // If we're specifically viewing a team (e.g., for My Team page), get all team member IDs.
+    // Admin page case: userIds will be an array of all sales user IDs
+    if (Array.isArray(userIds) && userIds.length > 0) return userIds;
+    // My Team page case
     if (isManagerTeamView && authUser && isManager && salesUsers.length > 0) {
         const managerTeamName = `${authUser.location} (${authUser.displayName})`;
         const teamMemberIds = salesUsers
@@ -42,12 +44,10 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
             .map(u => u.id);
         return [authUser.id, ...teamMemberIds];
     }
-    
-    // If a specific user ID (or IDs) is passed, use it. This handles viewing single users in the dialog.
-    if (Array.isArray(userIds) && userIds.length > 0) return userIds;
+    // Single user case (string)
     if (typeof userIds === 'string') return [userIds];
     
-    // For a regular sales user, or if nothing else matches, fetch for the logged-in user.
+    // Default/fallback for a regular user viewing their own commissions
     if (authUser) return [authUser.id];
 
     return [];
@@ -134,47 +134,47 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
         
-        const clientMap = new Map(clients.map(client => [client.id, client]));
+        const commissionsByMonthAndUser: Record<string, Record<string, WithId<PayoutCommission>[]>> = {};
 
-        const now = new Date();
-        
-        const relevantProposals = proposals.filter(p => targetUserIds.includes(p.userId));
-        const acceptedProposals = relevantProposals.filter(p => p.status === 'accepted');
-
-        const oneYearAgo = addYears(now, -1);
-        const activeClients = clients.filter(c => targetUserIds.includes(c.userId) && c.status === 'active' && c.clientType !== 'household');
-        
-        const commissionsByMonth = commissions.reduce((acc, commission) => {
-                const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
-                if (!acc[monthKey]) acc[monthKey] = [];
-                acc[monthKey].push(commission);
-                return acc;
-            }, {} as Record<string, WithId<PayoutCommission>[]>);
-
-        const processedPayouts: MonthlyPayout[] = Object.keys(commissionsByMonth).map(month => {
-            const monthCommissions = commissionsByMonth[month] || [];
-            const uniqueCommissions = Array.from(new Map(monthCommissions.map(c => [c.id, c])).values());
+        commissions.forEach(commission => {
+            const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
+            const userId = commission.userId;
             
-            const totalAmount = uniqueCommissions.reduce((sum, c) => sum + c.amount, 0);
-            
-            const allPaid = !uniqueCommissions.some(c => c.status === 'pending');
-            const status = allPaid ? 'paid' : 'pending';
-            
-            const userIdForTx = uniqueCommissions[0]?.userId.slice(0,4).toUpperCase() || 'NA';
+            if (!commissionsByMonthAndUser[monthKey]) {
+                commissionsByMonthAndUser[monthKey] = {};
+            }
+            if (!commissionsByMonthAndUser[monthKey][userId]) {
+                commissionsByMonthAndUser[monthKey][userId] = [];
+            }
+            commissionsByMonthAndUser[monthKey][userId].push(commission);
+        });
 
-            return { 
-                month, 
-                totalAmount, 
-                status, 
-                timelineStatus: allPaid ? 'paid' : 'calculated',
-                commissions: uniqueCommissions,
-                transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${userIdForTx}`
-            };
+        const processedPayouts: MonthlyPayout[] = [];
+
+        Object.keys(commissionsByMonthAndUser).forEach(month => {
+            Object.keys(commissionsByMonthAndUser[month]).forEach(userId => {
+                const userCommissions = commissionsByMonthAndUser[month][userId];
+                const totalAmount = userCommissions.reduce((sum, c) => sum + c.amount, 0);
+                if (totalAmount === 0) return;
+                
+                const allPaid = !userCommissions.some(c => c.status === 'pending');
+                const status = allPaid ? 'paid' : 'pending';
+                const userIdForTx = userId.slice(0, 4).toUpperCase();
+                
+                processedPayouts.push({
+                    month,
+                    totalAmount,
+                    status,
+                    timelineStatus: allPaid ? 'paid' : 'calculated',
+                    commissions: userCommissions,
+                    transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${userIdForTx}`
+                });
+            });
         });
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, clients, proposals, isLoading, targetUserIds, isManager, authUser?.id]);
+    }, [commissions, isLoading]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
