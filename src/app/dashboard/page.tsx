@@ -261,7 +261,7 @@ export default function DashboardPage() {
         return isWithinInterval(proposalDate, { start: quarterStart, end: quarterEnd });
     }).reduce((sum, p) => sum + p.amount, 0);
 
-    const quarterlyVolumeTarget = 300000;
+    const quarterlyVolumeTarget = 600000;
 
     const commissionHistory = allPayouts.slice(0, 6).map(payout => ({
         month: format(new Date(payout.month), 'MMM'),
@@ -350,9 +350,9 @@ export default function DashboardPage() {
     { target: 30, bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
   ]
   const growthBonusTiers = [
-    { target: 100000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 200000, bonus: '₱10,000', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-    { target: 300000, bonus: '₱20,000 + Elite Partner Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
+    { target: 200000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 400000, bonus: '₱10,000', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 600000, bonus: '₱20,000 + Elite Partner Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
   ];
 
   const prepaymentProgressTiers = [
@@ -913,7 +913,7 @@ export default function DashboardPage() {
                     title="Quarterly Growth Bonus"
                     value={`${currencyFormatter.format(dashboardData.quarterlySalesVolume)}`}
                     progress={(dashboardData.quarterlySalesVolume / dashboardData.quarterlyVolumeTarget) * 100}
-                    goal={`Goal: ${currencyFormatter.format(100000)} volume for ₱5,000`}
+                    goal={`Goal: ${currencyFormatter.format(200000)} volume for ₱5,000`}
                     description="Rewards expansion of your client base.">
                      <DialogContent>
                         <DialogHeader>

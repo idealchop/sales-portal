@@ -164,9 +164,9 @@ const TeamGoalsDialog = () => {
     { target: 30, bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
   ];
   const growthBonusTiers = [
-    { target: 100000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 200000, bonus: '₱10,000', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-    { target: 300000, bonus: '₱20,000 + Elite Partner Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
+    { target: 200000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 400000, bonus: '₱10,000', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 600000, bonus: '₱20,000 + Elite Partner Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
   ];
   const prepaymentProgressTiers = [
     { target: 3, reward: '₱1,000' },
