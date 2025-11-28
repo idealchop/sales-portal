@@ -22,7 +22,7 @@ export type MonthlyPayout = {
     transactionId: string;
 };
 
-export function useCommissions(userIds?: string | string[]) {
+export function useCommissions(userIds?: string | string[], isManagerTeamView = false) {
   const { firestore, isFirebaseLoading } = useFirebase();
   const { user: authUser, isUserLoading: isUserAuthLoading, isManager } = useUser();
   const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
@@ -34,13 +34,8 @@ export function useCommissions(userIds?: string | string[]) {
   const [error, setError] = useState<Error | null>(null);
 
   const targetUserIds = useMemo(() => {
-    // If a specific user ID (or IDs) is passed, use it.
-    if (Array.isArray(userIds) && userIds.length > 0) return userIds;
-    if (typeof userIds === 'string') return [userIds];
-    
-    // If the current user is a manager and no specific ID is passed,
-    // fetch for the manager and all their team members.
-    if (authUser && isManager && salesUsers.length > 0) {
+    // If we're specifically viewing a team (e.g., for My Team page), get all team member IDs.
+    if (isManagerTeamView && authUser && isManager && salesUsers.length > 0) {
         const managerTeamName = `${authUser.location} (${authUser.displayName})`;
         const teamMemberIds = salesUsers
             .filter(u => u.team === managerTeamName)
@@ -48,11 +43,15 @@ export function useCommissions(userIds?: string | string[]) {
         return [authUser.id, ...teamMemberIds];
     }
     
+    // If a specific user ID (or IDs) is passed, use it. This handles viewing single users in the dialog.
+    if (Array.isArray(userIds) && userIds.length > 0) return userIds;
+    if (typeof userIds === 'string') return [userIds];
+    
     // For a regular sales user, or if nothing else matches, fetch for the logged-in user.
     if (authUser) return [authUser.id];
 
     return [];
-  }, [userIds, authUser, isManager, salesUsers]);
+  }, [userIds, isManagerTeamView, authUser, isManager, salesUsers]);
 
   useEffect(() => {
     if (!firestore || isFirebaseLoading || targetUserIds.length === 0) {
@@ -139,10 +138,9 @@ export function useCommissions(userIds?: string | string[]) {
         const oneYearAgo = addYears(now, -1);
         const activeClients = clients.filter(c => targetUserIds.includes(c.userId) && c.status === 'active' && c.clientType !== 'household');
         
-        // For a manager, we only want to show commissions assigned to them (direct or overrides)
-        const commissionsToShow = isManager
-          ? commissions.filter(c => c.userId === authUser?.id)
-          : commissions;
+        // When viewing the payout history dialog, we only want to see commissions for the *selected* user.
+        // The targetUserIds in this context will be a single user.
+        const commissionsToShow = commissions.filter(c => targetUserIds.includes(c.userId));
 
         const commissionsByMonth = commissionsToShow.reduce((acc, commission) => {
                 const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');

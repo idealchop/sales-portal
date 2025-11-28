@@ -1,4 +1,5 @@
 
+
 'use client';
 import {
   Dialog,
@@ -183,6 +184,7 @@ function PayoutHistoryView({ userId, userDisplayName, onProcessPayout, processin
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     const filteredPayouts = useMemo(() => {
+        if (!allPayouts) return [];
         return allPayouts.filter(payout => {
             if (payout.totalAmount === 0) return false;
             const date = new Date(payout.month);
@@ -311,8 +313,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
     const { user: authUser, isManager } = useUser();
     const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
     
-    const initialUserId = propUser ? propUser.id : authUser?.id;
-    const [selectedUserId, setSelectedUserId] = useState<string | undefined>(initialUserId);
+    const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
 
     const teamMembers = useMemo(() => {
         if (!isManager || !authUser || isSalesUsersLoading) return [];
@@ -329,6 +330,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
     }, [propUser, authUser]);
 
     const selectedUserDisplayName = useMemo(() => {
+        if (!selectedUserId) return 'Loading...';
         if (selectedUserId === authUser?.id) return 'My Payouts';
         const member = [...salesUsers, propUser, authUser].find(u => u?.id === selectedUserId);
         return member?.displayName || 'Select...';
@@ -343,7 +345,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                  <DialogHeader>
                     <div className="flex items-start justify-between">
                         <div>
-                            <DialogTitle>{isAdmin ? `Payouts for ${propUser?.displayName}`: 'My Payout History'}</DialogTitle>
+                            <DialogTitle>{isAdmin && propUser ? `Payouts for ${propUser?.displayName}`: 'My Payout History'}</DialogTitle>
                             <DialogDescription>
                                 A monthly summary of commissions and their status.
                             </DialogDescription>
