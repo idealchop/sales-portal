@@ -52,7 +52,7 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
         if (commission.description?.toLowerCase().includes('override')) {
             return { label: 'Override', variant: 'info' as const };
         }
-        return { label: 'Commission', variant: 'default' as const };
+        return { label: 'Commission', variant: 'outline' as const };
     };
 
     return (
@@ -395,3 +395,5 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
         </Dialog>
     );
 }
+
+    
