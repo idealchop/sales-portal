@@ -388,7 +388,7 @@ export default function ProposalsPage() {
                                 </DialogHeader>
                                 <div className="grid md:grid-cols-2 gap-6 py-4">
                                     <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                        {subscriptionInfo && <Image src={planImages[client.clientType || 'sme']} alt={subscriptionInfo.planName} fill className="object-cover" />}
+                                        {subscriptionInfo && <Image src={planImages[client.clientType || 'sme']} alt={subscriptionInfo.planName || 'Plan image'} fill className="object-cover" />}
                                     </div>
                                     <div>
                                         <div className="flex flex-col">
