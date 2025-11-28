@@ -31,7 +31,7 @@ import type { ActiveView } from '@/app/dashboard/proposals/page';
 import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
@@ -309,10 +309,6 @@ export function ClientOverviewDialog({
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(null);
   
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
-  const teamMembers = useMemo(() => {
-    if (!user || !isManager) return [];
-    return allUsers.filter(u => u.team === `${user.location} (${user.displayName})`);
-  }, [user, isManager, allUsers]);
 
   const contactInfo = useMemo(() => {
     let parsedContent;
@@ -561,7 +557,7 @@ export function ClientOverviewDialog({
                         createdAt: serverTimestamp(),
                         status: 'pending',
                         type: 'commission',
-                        description: `Manager Override for ${proposalCreator.displayName}`,
+                        description: `Manager Override for ${proposalCreator.displayName}'s sale`,
                         clientName: client.companyName,
                         referenceId: `override-${finalProposalId}`
                     });
