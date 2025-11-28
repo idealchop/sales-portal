@@ -3,8 +3,8 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { collection, query, where, onSnapshot, getDocs, collectionGroup } from 'firebase/firestore';
-import { useFirebase, useUser } from '@/firebase';
+import { collection, query, where, onSnapshot, getDocs, collectionGroup, FirestoreError } from 'firebase/firestore';
+import { useFirebase, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { Commission, Client, Proposal, UserProfile } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { format, startOfMonth, isWithinInterval, addYears, parseISO } from 'date-fns';
@@ -75,9 +75,11 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
             userCommissions.push({ ...data as Commission, id: doc.id, createdAt: createdAtString });
         });
         setCommissions(userCommissions);
-    }, (e) => {
+    }, (e: FirestoreError) => {
+        const permissionError = new FirestorePermissionError({ path: 'commissions', operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
         console.error("Error fetching commissions:", e);
-        setError(e);
+        setError(permissionError);
     });
     
     const clientQuery = query(collection(firestore, 'clients'));
@@ -85,9 +87,11 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
         const allClients: WithId<Client>[] = [];
         snapshot.forEach(doc => allClients.push({ id: doc.id, ...doc.data() } as WithId<Client>));
         setClients(allClients);
-    }, (e) => {
+    }, (e: FirestoreError) => {
+        const permissionError = new FirestorePermissionError({ path: 'clients', operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
         console.error("Error fetching clients:", e);
-        setError(e);
+        setError(permissionError);
     });
 
     const proposalQuery = query(collectionGroup(firestore, 'proposals'));
@@ -110,9 +114,11 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
         });
         setProposals(allProposals);
         setIsLoading(false);
-    }, (e) => {
+    }, (e: FirestoreError) => {
+        const permissionError = new FirestorePermissionError({ path: 'proposals', operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
         console.error("Error fetching proposals:", e);
-        setError(e);
+        setError(permissionError);
         setIsLoading(false);
     });
 

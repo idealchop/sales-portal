@@ -2,8 +2,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, DocumentData, onSnapshot } from 'firebase/firestore';
-import { useFirebase, useUser } from '@/firebase';
+import { collection, query, where, getDocs, DocumentData, onSnapshot, FirestoreError } from 'firebase/firestore';
+import { useFirebase, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { Client } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 
@@ -36,8 +36,13 @@ export function useClients(userId?: string) {
         setError(null);
         setIsLoading(false);
       },
-      (e: any) => {
-        setError(e);
+      (e: FirestoreError) => {
+        const permissionError = new FirestorePermissionError({
+          path: `clients`,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         console.error("Error fetching clients for user:", e);
         setIsLoading(false);
       }
