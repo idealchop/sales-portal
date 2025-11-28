@@ -340,17 +340,12 @@
         },
         "role": {
           "type": "string",
-          "description": "The user's role.",
-          "enum": ["sales", "manager", "admin"]
-        },
-        "location": {
-            "type": "string",
-            "description": "The primary location for a sales manager.",
-            "enum": ["NCR North", "NCR South", "Palawan", "Cebu"]
+          "description": "The user's role (e.g., 'sales', 'admin').",
+           "enum": ["sales", "manager", "admin"]
         },
         "team": {
           "type": "string",
-          "description": "The sales team the user belongs to, tied to a manager's location."
+          "description": "The sales team the user belongs to."
         },
         "birthday": {
           "type": "string",
@@ -365,6 +360,11 @@
         "onboardingCompleted": {
           "type": "boolean",
           "description": "Flag to indicate if the user has completed the onboarding process."
+        },
+        "location": {
+            "type": "string",
+            "description": "The primary location for a sales manager.",
+            "enum": ["NCR North", "NCR South", "Palawan", "Cebu"]
         }
       },
       "required": [
@@ -386,35 +386,6 @@
       "required": [
         "currentId"
       ]
-    },
-    "Notification": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Notification",
-        "type": "object",
-        "description": "Represents an in-app notification for a user.",
-        "properties": {
-            "id": {
-                "type": "string"
-            },
-            "title": {
-                "type": "string"
-            },
-            "message": {
-                "type": "string"
-            },
-            "isRead": {
-                "type": "boolean"
-            },
-            "createdAt": {
-                "type": "string",
-                "format": "date-time"
-            },
-            "type": {
-                "type": "string",
-                "enum": ["payout", "announcement"]
-            }
-        },
-        "required": ["id", "title", "message", "isRead", "createdAt", "type"]
     }
   },
   "auth": {
@@ -458,12 +429,6 @@
         "$ref": "#/entities/Counter"
       },
       "description": "Stores counters for sequential ID generation."
-    },
-    "/users/{userId}/notifications/{notificationId}": {
-      "schema": {
-        "$ref": "#/entities/Notification"
-      },
-      "description": "Stores in-app notifications for a specific user."
     }
   }
 }

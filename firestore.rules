@@ -45,7 +45,7 @@ service cloud.firestore {
     // Admin can read all commissions. Users can only read/write their own.
     match /commissions/{commissionId} {
         allow read: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-        allow write: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+        allow write: if isSignedIn() && (isAdmin() || request.resource.data.userId == request.auth.uid);
     }
 
     // Any signed-in user can read client and proposal data.
