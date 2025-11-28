@@ -27,7 +27,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -164,9 +164,9 @@ const TeamGoalsDialog = () => {
     { target: 30, bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
   ];
   const growthBonusTiers = [
-    { target: 200000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 400000, bonus: '₱10,000', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-    { target: 600000, bonus: '₱20,000 + Elite Partner Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
+    { target: 400000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 800000, bonus: '₱10,000', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 1200000, bonus: '₱20,000 + Elite Partner Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
   ];
   const prepaymentProgressTiers = [
     { target: 3, reward: '₱1,000' },
@@ -791,4 +791,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
