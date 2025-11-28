@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -35,6 +35,9 @@ import { useClients } from '@/hooks/use-clients';
 import { ClientOverviewDialog } from '@/components/client-overview-dialog';
 import { useAllClients } from '@/hooks/use-all-clients';
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -324,6 +327,39 @@ const ManagerOverrideDialog = ({ details, total }: { details: OverrideCommission
     )
 }
 
+function QrCodeDialog({ managerId }: { managerId: string }) {
+    const { toast } = useToast();
+    const proposalUrl = `${window.location.origin}/dashboard/proposals/new?managerId=${managerId}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(proposalUrl)}`;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(proposalUrl);
+        toast({ title: "Link Copied!", description: "The proposal link has been copied to your clipboard." });
+    };
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Your Personal QR Link</DialogTitle>
+                <DialogDescription>Share this QR code or link to have new proposals automatically attributed to you.</DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-6 py-4">
+                <div className="p-4 bg-white rounded-lg border">
+                    <Image src={qrCodeUrl} width={250} height={250} alt="Manager Proposal QR Code" />
+                </div>
+                <div className="w-full space-y-2">
+                    <Label htmlFor="qr-link">Shareable Link</Label>
+                    <div className="flex gap-2">
+                        <Input id="qr-link" value={proposalUrl} readOnly />
+                        <Button onClick={handleCopy}>Copy</Button>
+                    </div>
+                </div>
+            </div>
+        </DialogContent>
+    )
+}
+
+
 export default function MyTeamPage() {
   const { user, isManager } = useUser();
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
@@ -524,10 +560,23 @@ export default function MyTeamPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">My Team</h1>
-        <p className="text-muted-foreground">Monitor the performance of your sales executives.</p>
-      </div>
+       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 className="text-2xl font-bold">My Team</h1>
+                <p className="text-muted-foreground">Monitor the performance of your sales executives.</p>
+            </div>
+            <div className="flex items-center gap-2">
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <Button>
+                            <QrCode className="mr-2 h-4 w-4" />
+                            Generate QR Link
+                        </Button>
+                    </DialogTrigger>
+                    {user && <QrCodeDialog managerId={user.id} />}
+                </Dialog>
+            </div>
+        </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -797,3 +846,5 @@ export default function MyTeamPage() {
     </div>
   );
 }
+
+    
