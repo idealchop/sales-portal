@@ -1,5 +1,4 @@
 
-
 'use client';
 import {
   Dialog,
@@ -46,6 +45,16 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const totalAmount = commissions.reduce((sum, commission) => sum + commission.amount, 0);
     
+    const getCommissionType = (commission: PayoutCommission) => {
+        if (commission.type === 'bonus') {
+            return { label: 'Bonus', variant: 'special' as const };
+        }
+        if (commission.description?.toLowerCase().includes('override')) {
+            return { label: 'Override', variant: 'info' as const };
+        }
+        return { label: 'Commission', variant: 'default' as const };
+    };
+
     return (
         <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
@@ -64,20 +73,23 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {commissions.map((commission, index) => (
-                            <TableRow key={`${commission.id}-${index}`}>
-                                <TableCell>
-                                    <Badge
-                                        variant={commission.type === 'bonus' ? 'special' : (commission.description.includes('Override') ? 'info' : 'default')}
-                                        className="capitalize"
-                                    >
-                                        {commission.type === 'bonus' ? 'Bonus' : (commission.description.includes('Override') ? 'Override' : 'Commission')}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>{commission.clientName || 'N/A'}</TableCell>
-                                <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
-                            </TableRow>
-                        ))}
+                        {commissions.map((commission, index) => {
+                            const { label, variant } = getCommissionType(commission);
+                            return (
+                                <TableRow key={`${commission.id}-${index}`}>
+                                    <TableCell>
+                                        <Badge
+                                            variant={variant}
+                                            className="capitalize"
+                                        >
+                                            {label}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{commission.clientName || 'N/A'}</TableCell>
+                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
+                                </TableRow>
+                            );
+                        })}
                     </TableBody>
                     <TFooter>
                         <TableRow>
