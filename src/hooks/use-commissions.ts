@@ -137,6 +137,7 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
         const commissionsByMonthAndUser: Record<string, Record<string, WithId<PayoutCommission>[]>> = {};
 
         commissions.forEach(commission => {
+            if(!commission.createdAt) return;
             const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
             const userId = commission.userId;
             
