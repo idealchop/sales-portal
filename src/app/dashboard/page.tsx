@@ -378,6 +378,120 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Welcome back, {user?.displayName || 'Sandra'}! Here's your earnings and goals snapshot.</p>
       </div>
 
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
+              <CardHeader>
+                <CardTitle>Monthly Commission History</CardTitle>
+                <CardDescription>
+                  A summary of your commission earnings over the last 6 months. Click to learn more.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RevenueChart data={dashboardData.commissionHistory} />
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+                <DialogTitle>Commission &amp; Payouts Guide</DialogTitle>
+                <DialogDescription>
+                    This guide explains how your commissions are calculated and paid out.
+                </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[60vh] pr-4">
+              <div className="space-y-8 py-6">
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Commission Structure</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Client Tier</TableHead>
+                                    <TableHead className="text-center">One-Time</TableHead>
+                                    <TableHead className="text-center">Recurring</TableHead>
+                                    {isManager && <TableHead className="text-center">Manager Override</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {commissionTiers.map((tier) => (
+                                    <TableRow key={tier.clientType}>
+                                        <TableCell className="font-medium">{tier.clientType}</TableCell>
+                                        <TableCell className="text-center font-bold text-primary">{tier.commission}</TableCell>
+                                        <TableCell className="text-center font-bold text-primary">{tier.recurring}</TableCell>
+                                        {isManager && <TableCell className="text-center font-bold text-blue-600">{tier.managerOverride}</TableCell>}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Recurring Commission Payout Schedule</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Contract Term</TableHead>
+                                    <TableHead>Payout Schedule</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {payoutTimeline.map((item) => (
+                                    <TableRow key={item.term}>
+                                        <TableCell className="font-semibold">{item.term}</TableCell>
+                                        <TableCell>{item.schedule}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                   <div className="md:col-span-2">
+                      <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
+                      <RevenueChart data={dashboardData.commissionHistory} />
+                  </div>
+                   <p className="text-sm text-muted-foreground">
+                      All earnings (commissions &amp; bonuses) are calculated at the end of each month and paid every first week of the month.
+                  </p>
+              </div>
+            </ScrollArea>
+             <DialogFooter>
+                <PayoutHistoryDialog>
+                  <Button variant="outline">
+                    <Receipt className="mr-2 h-4 w-4" />
+                    View Full Payout History
+                  </Button>
+                </PayoutHistoryDialog>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Sales Materials</CardTitle>
+            <CardDescription>Your toolkit for success.</CardDescription>
+          </CardHeader>
+          <div className="relative aspect-video w-full">
+            <Image
+                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                alt="Sales Materials Preview"
+                fill
+                className="object-cover"
+              />
+          </div>
+          <CardContent className="pt-4">
+             <p className="text-sm text-muted-foreground">
+              Access presentations, brochures, and case studies. Use these powerful tools to engage clients and close deals faster.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button asChild size="sm" className="gap-1 w-full">
+              <Link href="/dashboard/materials">
+                View All Materials
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+
       {/* Commission Stats */}
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
@@ -573,120 +687,6 @@ export default function DashboardPage() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
-              <CardHeader>
-                <CardTitle>Monthly Commission History</CardTitle>
-                <CardDescription>
-                  A summary of your commission earnings over the last 6 months. Click to learn more.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RevenueChart data={dashboardData.commissionHistory} />
-              </CardContent>
-            </Card>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-                <DialogTitle>Commission &amp; Payouts Guide</DialogTitle>
-                <DialogDescription>
-                    This guide explains how your commissions are calculated and paid out.
-                </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="h-[60vh] pr-4">
-              <div className="space-y-8 py-6">
-                    <div>
-                        <h3 className="text-lg font-semibold mb-2">Commission Structure</h3>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Client Tier</TableHead>
-                                    <TableHead className="text-center">One-Time</TableHead>
-                                    <TableHead className="text-center">Recurring</TableHead>
-                                    {isManager && <TableHead className="text-center">Manager Override</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {commissionTiers.map((tier) => (
-                                    <TableRow key={tier.clientType}>
-                                        <TableCell className="font-medium">{tier.clientType}</TableCell>
-                                        <TableCell className="text-center font-bold text-primary">{tier.commission}</TableCell>
-                                        <TableCell className="text-center font-bold text-primary">{tier.recurring}</TableCell>
-                                        {isManager && <TableCell className="text-center font-bold text-blue-600">{tier.managerOverride}</TableCell>}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-semibold mb-2">Recurring Commission Payout Schedule</h3>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Contract Term</TableHead>
-                                    <TableHead>Payout Schedule</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {payoutTimeline.map((item) => (
-                                    <TableRow key={item.term}>
-                                        <TableCell className="font-semibold">{item.term}</TableCell>
-                                        <TableCell>{item.schedule}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                   <div className="md:col-span-2">
-                      <h3 className="text-lg font-semibold mb-2">6-Month Commission History</h3>
-                      <RevenueChart data={dashboardData.commissionHistory} />
-                  </div>
-                   <p className="text-sm text-muted-foreground">
-                      All earnings (commissions &amp; bonuses) are calculated at the end of each month and paid every first week of the month.
-                  </p>
-              </div>
-            </ScrollArea>
-             <DialogFooter>
-                <PayoutHistoryDialog>
-                  <Button variant="outline">
-                    <Receipt className="mr-2 h-4 w-4" />
-                    View Full Payout History
-                  </Button>
-                </PayoutHistoryDialog>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Card className="overflow-hidden">
-          <CardHeader>
-            <CardTitle>Sales Materials</CardTitle>
-            <CardDescription>Your toolkit for success.</CardDescription>
-          </CardHeader>
-          <div className="relative aspect-video w-full">
-            <Image
-                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
-                alt="Sales Materials Preview"
-                fill
-                className="object-cover"
-              />
-          </div>
-          <CardContent className="pt-4">
-             <p className="text-sm text-muted-foreground">
-              Access presentations, brochures, and case studies. Use these powerful tools to engage clients and close deals faster.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Button asChild size="sm" className="gap-1 w-full">
-              <Link href="/dashboard/materials">
-                View All Materials
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-      
        <Card>
           <CardHeader className='flex flex-row items-center justify-between'>
             <div>
