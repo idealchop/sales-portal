@@ -28,8 +28,10 @@ service cloud.firestore {
     }
 
     // Sales users can read their own profile for display purposes. Admin can read all.
+    // Any signed-in user can list all sales profiles.
     match /sales/{userId} {
       allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn();
       allow create, update: if isOwner(userId);
     }
     
