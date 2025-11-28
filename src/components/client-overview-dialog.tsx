@@ -545,7 +545,8 @@ export function ClientOverviewDialog({
         // Manager Override Commission
         const proposalCreator = userMap.get(proposalCreatorId);
         if (proposalCreator && proposalCreator.team) {
-            const teamManager = allUsers.find(u => `${u.location} (${u.displayName})` === proposalCreator.team);
+            // Correctly find the manager by constructing their team name identifier
+            const teamManager = allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team);
             if (teamManager) {
                 const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
                 const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;
@@ -1046,5 +1047,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
