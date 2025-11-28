@@ -266,6 +266,58 @@ const TeamGoalsDialog = () => {
   );
 };
 
+interface OverrideCommissionDetail {
+    salesRepName: string;
+    clientName: string;
+    saleAmount: number;
+    overrideAmount: number;
+}
+
+const ManagerOverrideDialog = ({ details, total }: { details: OverrideCommissionDetail[], total: number }) => {
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    return (
+        <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+                <DialogTitle>Manager Override Breakdown</DialogTitle>
+                <DialogDescription>
+                    Your override commission from your team's sales this month.
+                </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[60vh]">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Sales Rep</TableHead>
+                            <TableHead>Client</TableHead>
+                            <TableHead className="text-right">Override</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {details.length > 0 ? (
+                            details.map((detail, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{detail.salesRepName}</TableCell>
+                                    <TableCell>{detail.clientName}</TableCell>
+                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center h-24">No override commissions this month.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </ScrollArea>
+            <DialogFooter className="border-t pt-4">
+                <div className="w-full flex justify-between items-center text-lg font-bold">
+                    <span>Total Override</span>
+                    <span>{currencyFormatter.format(total)}</span>
+                </div>
+            </DialogFooter>
+        </DialogContent>
+    )
+}
 
 export default function MyTeamPage() {
   const { user, isManager } = useUser();
@@ -405,8 +457,8 @@ export default function MyTeamPage() {
     };
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
- const managerOverrideCommission = useMemo(() => {
-    if (proposalsLoading || clientsLoading || !isManager || !teamPerformance.teamProposals) return 0;
+ const managerOverrideDetails = useMemo(() => {
+    if (proposalsLoading || clientsLoading || !isManager || !teamPerformance.teamProposals) return { total: 0, details: [] };
     
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
@@ -417,17 +469,31 @@ export default function MyTeamPage() {
         const createdAt = p.createdAt ? new Date(p.createdAt) : null;
         return p.status === 'accepted' && createdAt && isWithinInterval(createdAt, { start: currentMonthStart, end: now });
     });
+    
+    const salesRepMap = new Map(salesUsers.map(u => [u.id, u]));
 
-    return acceptedProposalsThisMonth.reduce((totalOverride, proposal) => {
+    const details: OverrideCommissionDetail[] = [];
+    const total = acceptedProposalsThisMonth.reduce((totalOverride, proposal) => {
         const client = clientMap.get(proposal.clientId);
-        if (client && client.clientType) {
+        const salesRep = salesRepMap.get(proposal.userId);
+        if (client && client.clientType && salesRep) {
             const overrideRate = managerOverrideRates[client.clientType] || 0;
-            return totalOverride + (proposal.amount * overrideRate);
+            const overrideAmount = proposal.amount * overrideRate;
+            if (overrideAmount > 0) {
+                details.push({
+                    salesRepName: salesRep.displayName,
+                    clientName: client.companyName,
+                    saleAmount: proposal.amount,
+                    overrideAmount,
+                });
+            }
+            return totalOverride + overrideAmount;
         }
         return totalOverride;
     }, 0);
 
-  }, [proposalsLoading, clientsLoading, isManager, teamPerformance.teamProposals, clientMap]);
+    return { total, details };
+  }, [proposalsLoading, clientsLoading, isManager, teamPerformance.teamProposals, clientMap, salesUsers]);
 
   const isLoading = usersLoading || proposalsLoading || clientsLoading || commissionsLoading;
 
@@ -565,19 +631,24 @@ export default function MyTeamPage() {
             </Card>
 
             <div className="flex flex-col gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Manager Override</CardTitle>
-                        <CardDescription>Your commission from your team's sales this month.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-center justify-center text-center">
-                        <div className='flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4'>
-                            <CircleDollarSign className='h-12 w-12 text-primary'/>
-                        </div>
-                        <p className="text-4xl font-bold">{currencyFormatter.format(managerOverrideCommission)}</p>
-                        <p className="text-sm text-muted-foreground">This Month</p>
-                    </CardContent>
-                </Card>
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="cursor-pointer hover:border-primary transition-colors">
+                            <CardHeader>
+                                <CardTitle>Manager Override</CardTitle>
+                                <CardDescription>Your commission from your team's sales this month.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-col items-center justify-center text-center">
+                                <div className='flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4'>
+                                    <CircleDollarSign className='h-12 w-12 text-primary'/>
+                                </div>
+                                <p className="text-4xl font-bold">{currencyFormatter.format(managerOverrideDetails.total)}</p>
+                                <p className="text-sm text-muted-foreground">This Month</p>
+                            </CardContent>
+                        </Card>
+                    </DialogTrigger>
+                    <ManagerOverrideDialog details={managerOverrideDetails.details} total={managerOverrideDetails.total} />
+                </Dialog>
                 <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
@@ -720,3 +791,4 @@ export default function MyTeamPage() {
     </div>
   );
 }
+
