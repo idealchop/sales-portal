@@ -34,6 +34,8 @@ import type { Commission, UserProfile } from '@/lib/definitions';
 import { useCommissions } from "@/hooks/use-commissions";
 import { Button } from "./ui/button";
 import { WithId } from "@/firebase";
+import { useSalesUsers } from "@/hooks/use-sales-users";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 type PayoutCommission = Commission & { clientName?: string };
 
@@ -175,37 +177,131 @@ function PaymentTimelineDialog({
     )
 }
 
-export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false, onProcessPayout, processingPayouts = {} }: { children: React.ReactNode, user?: WithId<UserProfile>, isAdmin?: boolean, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts?: Record<string, boolean> }) {
-    const { user: authUser } = useUser();
-    const { allPayouts: hookPayouts, isLoading: hookIsLoading, availableYears: hookYears } = useCommissions(propUser?.id || authUser?.uid);
+function PayoutHistoryView({ userId, userDisplayName }: { userId?: string, userDisplayName: string }) {
+    const { allPayouts, isLoading, availableYears } = useCommissions(userId);
     const [selectedYear, setSelectedYear] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-    
-    const user = propUser || authUser;
 
-     const { filteredPayouts, availableYears } = useMemo(() => {
-        const payouts = hookPayouts;
-        const yearSet = new Set<string>();
-        payouts.forEach(payout => {
-            const date = new Date(payout.month);
-            yearSet.add(date.getFullYear().toString());
-        });
-        
-        const years = hookYears;
-        
-        const filtered = payouts.filter(payout => {
+    const filteredPayouts = useMemo(() => {
+        return allPayouts.filter(payout => {
             if (payout.totalAmount === 0) return false;
             const date = new Date(payout.month);
             return selectedYear === 'all' || date.getFullYear().toString() === selectedYear;
         });
+    }, [allPayouts, selectedYear]);
 
-        return {
-            filteredPayouts: filtered,
-            availableYears: years,
-        }
+    return (
+        <div>
+            <div className="flex items-start justify-between mb-4">
+                <div>
+                    <h3 className="font-semibold">Payouts for {userDisplayName}</h3>
+                </div>
+                <div className="flex items-center gap-2 pt-1.5">
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filter by year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Years</SelectItem>
+                            {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            <Card>
+                <CardContent className="pt-6">
+                    <ScrollArea className="h-[50vh] pr-4">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Month</TableHead>
+                                    <TableHead>Payout Reference ID</TableHead>
+                                    <TableHead>Total Payout</TableHead>
+                                    <TableHead>Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredPayouts.length > 0 ? (
+                                    filteredPayouts.map((payout) => (
+                                        <TableRow key={payout.month}>
+                                            <TableCell className="font-semibold">{payout.month}</TableCell>
+                                            <TableCell className="font-mono text-xs">{payout.transactionId}</TableCell>
+                                            <TableCell>
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <button className="font-semibold text-primary hover:underline">
+                                                            {currencyFormatter.format(payout.totalAmount)}
+                                                        </button>
+                                                    </DialogTrigger>
+                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} />
+                                                </Dialog>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Badge
+                                                            variant={payout.status === 'paid' ? 'success' : 'warning'}
+                                                            className="capitalize cursor-pointer"
+                                                        >
+                                                            {payout.status}
+                                                        </Badge>
+                                                    </DialogTrigger>
+                                                    <PaymentTimelineDialog 
+                                                        month={payout.month} 
+                                                        status={payout.status} 
+                                                        totalAmount={payout.totalAmount}
+                                                        timelineStatus={payout.timelineStatus}
+                                                        isAdmin={false} // This view is read-only
+                                                    />
+                                                </Dialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            No payout records found for the selected period.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
 
-    }, [hookPayouts, selectedYear, hookYears]);
+export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false, onProcessPayout, processingPayouts = {} }: { children: React.ReactNode, user?: WithId<UserProfile>, isAdmin?: boolean, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts?: Record<string, boolean> }) {
+    const { user: authUser, isManager } = useUser();
+    const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
+    
+    const currentUser = propUser || authUser;
+    
+    const [selectedUserId, setSelectedUserId] = useState<string | undefined>(currentUser?.id);
 
+    const teamMembers = useMemo(() => {
+        if (!isManager || !authUser || isSalesUsersLoading) return [];
+        const managerTeamName = `${authUser.location} (${authUser.displayName})`;
+        return salesUsers.filter(u => u.team === managerTeamName);
+    }, [isManager, authUser, salesUsers, isSalesUsersLoading]);
+    
+    useEffect(() => {
+        setSelectedUserId(currentUser?.id);
+    }, [currentUser]);
+
+    const selectedUserDisplayName = useMemo(() => {
+        if (selectedUserId === authUser?.id) return 'My Payouts';
+        const member = teamMembers.find(m => m.id === selectedUserId);
+        return member?.displayName || 'Select a Team Member';
+    }, [selectedUserId, teamMembers, authUser]);
 
     return (
         <Dialog>
@@ -216,95 +312,37 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                  <DialogHeader>
                     <div className="flex items-start justify-between">
                         <div>
-                            <DialogTitle>{isAdmin ? `Payouts for ${user?.displayName}`: 'My Payout History'}</DialogTitle>
+                            <DialogTitle>{isAdmin ? `Payouts for ${currentUser?.displayName}`: 'My Payout History'}</DialogTitle>
                             <DialogDescription>
                                 A monthly summary of commissions and their status.
                             </DialogDescription>
                         </div>
-                        <div className="flex items-center gap-2 pt-1.5">
-                            <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Filter by year" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Years</SelectItem>
-                                    {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {isManager && teamMembers.length > 0 && (
+                            <div className="w-[250px]">
+                                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select team member..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={authUser?.id}>My Payouts</SelectItem>
+                                        {teamMembers.map(member => (
+                                            <SelectItem key={member.id} value={member.id}>
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="h-6 w-6">
+                                                        <AvatarImage src={member.photoURL ?? undefined} />
+                                                        <AvatarFallback className="text-xs">{member.displayName[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span>{member.displayName}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                     </div>
                 </DialogHeader>
-                <Card>
-                    <CardContent className="pt-6">
-                        <ScrollArea className="h-[60vh] pr-4">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Month</TableHead>
-                                        <TableHead>Payout Reference ID</TableHead>
-                                        <TableHead>Total Payout</TableHead>
-                                        <TableHead>Status</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {hookIsLoading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center">
-                                                <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : filteredPayouts.length > 0 ? (
-                                        filteredPayouts.map((payout) => {
-                                            const isProcessing = processingPayouts[`${user?.id}-${payout.month}`];
-                                            return (
-                                            <TableRow key={payout.month}>
-                                                <TableCell className="font-semibold">{payout.month}</TableCell>
-                                                <TableCell className="font-mono text-xs">{payout.transactionId}</TableCell>
-                                                <TableCell>
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <button className="font-semibold text-primary hover:underline">
-                                                                {currencyFormatter.format(payout.totalAmount)}
-                                                            </button>
-                                                        </DialogTrigger>
-                                                        <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} />
-                                                    </Dialog>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Badge
-                                                                variant={payout.status === 'paid' ? 'success' : 'warning'}
-                                                                className="capitalize cursor-pointer"
-                                                            >
-                                                                {isProcessing ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : null}
-                                                                {isProcessing ? 'Processing' : payout.status}
-                                                            </Badge>
-                                                        </DialogTrigger>
-                                                        <PaymentTimelineDialog 
-                                                            month={payout.month} 
-                                                            status={payout.status} 
-                                                            totalAmount={payout.totalAmount}
-                                                            timelineStatus={payout.timelineStatus}
-                                                            isAdmin={isAdmin}
-                                                            onProcessPayout={isAdmin && payout.status === 'pending' && onProcessPayout ? () => onProcessPayout(`${user?.id}-${payout.month}`, payout.commissions) : undefined}
-                                                        />
-                                                    </Dialog>
-                                                </TableCell>
-                                            </TableRow>
-                                        )})
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center">
-                                                No payout records found for the selected period.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
+                {selectedUserId && <PayoutHistoryView userId={selectedUserId} userDisplayName={selectedUserDisplayName} />}
             </DialogContent>
         </Dialog>
     );
