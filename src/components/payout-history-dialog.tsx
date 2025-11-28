@@ -68,10 +68,10 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                             <TableRow key={`${commission.id}-${index}`}>
                                 <TableCell>
                                     <Badge
-                                        variant={commission.type === 'bonus' ? 'special' : (commission.description === 'Manager Override' ? 'info' : 'default')}
+                                        variant={commission.type === 'bonus' ? 'special' : (commission.description.includes('Override') ? 'info' : 'default')}
                                         className="capitalize"
                                     >
-                                        {commission.type === 'bonus' ? 'Bonus' : (commission.description === 'Manager Override' ? 'Override' : 'Commission')}
+                                        {commission.type === 'bonus' ? 'Bonus' : (commission.description.includes('Override') ? 'Override' : 'Commission')}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>{commission.clientName || 'N/A'}</TableCell>
