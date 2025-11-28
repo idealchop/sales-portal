@@ -1322,7 +1322,7 @@ export default function AdminPage() {
 
     const teamAvgDealSizeThisMonth = acceptedThisMonth.length > 0 ? teamTotalRevenueThisMonth / acceptedThisMonth.length : 0;
     const teamAvgDealSizeLastMonth = acceptedLastMonth.length > 0 ? teamTotalRevenueLastMonth / acceptedLastMonth.length : 0;
-    const teamAvgDealSizeChange = avgDealSizeLastMonth > 0 ? ((teamAvgDealSizeThisMonth - teamAvgDealSizeLastMonth) / teamAvgDealSizeLastMonth) * 100 : teamAvgDealSizeThisMonth > 0 ? 100 : 0;
+    const teamAvgDealSizeChange = teamAvgDealSizeLastMonth > 0 ? ((teamAvgDealSizeThisMonth - teamAvgDealSizeLastMonth) / teamAvgDealSizeLastMonth) * 100 : teamAvgDealSizeThisMonth > 0 ? 100 : 0;
 
     const teamWinRate = sentProposalsCount > 0 ? (acceptedProposals.length / sentProposalsCount) * 100 : 0;
     const teamTotalRevenue = acceptedProposals.reduce((sum,p) => sum + p.amount, 0);
@@ -1929,5 +1929,7 @@ export default function AdminPage() {
 
 
 
+
+    
 
     
