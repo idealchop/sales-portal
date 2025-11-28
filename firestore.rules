@@ -71,7 +71,7 @@ service cloud.firestore {
     
     // This allows admin or managers to perform a collectionGroup query on 'proposals'
     match /{path=**}/proposals/{proposalId} {
-      allow list: if isSignedIn() && (isAdmin() || isManager());
+      allow list: if isSignedIn();
     }
     
     // This allows admin or managers to perform a collectionGroup query on 'clients'
