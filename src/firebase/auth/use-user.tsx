@@ -33,24 +33,34 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    if (!isFirebaseLoading && auth) {
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          const userDocRef = doc(firestore, 'sales', firebaseUser.uid);
+    if (isFirebaseLoading || !auth || !firestore) {
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userDocRef = doc(firestore, 'sales', firebaseUser.uid);
+        try {
           const userDocSnap = await getDoc(userDocRef);
           if (userDocSnap.exists()) {
             const userProfileData = userDocSnap.data() as UserProfile;
             setUser({ ...firebaseUser, ...userProfileData });
           } else {
-            setUser(firebaseUser);
+            // User is authenticated but profile document doesn't exist yet.
+            // This can happen during the first moments of onboarding.
+            setUser(firebaseUser); 
           }
-        } else {
-          setUser(null);
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          setUser(firebaseUser); // Fallback to just auth user data
         }
-        setIsAuthLoading(false);
-      });
-      return () => unsubscribe();
-    }
+      } else {
+        setUser(null);
+      }
+      setIsAuthLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [auth, isFirebaseLoading, firestore]);
 
   const isAdmin = user?.email === 'admin@smartrefill.io';

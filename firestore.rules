@@ -27,9 +27,9 @@ service cloud.firestore {
         return userProfile.team == managerTeamName;
     }
 
-    // Sales users can read other profiles for display purposes. Admin can read all.
+    // Sales users can read their own profile for display purposes. Admin can read all.
     match /sales/{userId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
       allow create, update: if isOwner(userId);
     }
     
