@@ -271,12 +271,13 @@ interface OverrideCommissionDetail {
     clientName: string;
     saleAmount: number;
     overrideAmount: number;
+    overrideRate: number;
 }
 
 const ManagerOverrideDialog = ({ details, total }: { details: OverrideCommissionDetail[], total: number }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     return (
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>Manager Override Breakdown</DialogTitle>
                 <DialogDescription>
@@ -289,6 +290,7 @@ const ManagerOverrideDialog = ({ details, total }: { details: OverrideCommission
                         <TableRow>
                             <TableHead>Sales Rep</TableHead>
                             <TableHead>Client</TableHead>
+                            <TableHead className="text-right">Rate</TableHead>
                             <TableHead className="text-right">Override</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -298,12 +300,15 @@ const ManagerOverrideDialog = ({ details, total }: { details: OverrideCommission
                                 <TableRow key={index}>
                                     <TableCell>{detail.salesRepName}</TableCell>
                                     <TableCell>{detail.clientName}</TableCell>
+                                    <TableCell className="text-right text-muted-foreground font-mono">
+                                        {`${(detail.overrideRate * 100).toFixed(0)}%`}
+                                    </TableCell>
                                     <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={3} className="text-center h-24">No override commissions this month.</TableCell>
+                                <TableCell colSpan={4} className="text-center h-24">No override commissions this month.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
@@ -485,6 +490,7 @@ export default function MyTeamPage() {
                     clientName: client.companyName,
                     saleAmount: proposal.amount,
                     overrideAmount,
+                    overrideRate,
                 });
             }
             return totalOverride + overrideAmount;
