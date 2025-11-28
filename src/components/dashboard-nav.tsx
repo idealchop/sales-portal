@@ -20,25 +20,35 @@ import {
   Users as TeamIcon
 } from 'lucide-react';
 import { useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['sales', 'manager', 'admin'] },
   { href: '/dashboard/my-team', icon: TeamIcon, label: 'My Team', roles: ['manager'] },
   { href: '/dashboard/proposals', icon: FileText, label: 'Proposals', roles: ['sales', 'manager', 'admin'] },
   { href: '/dashboard/materials', icon: BookCopy, label: 'Materials', roles: ['sales', 'manager', 'admin'] },
-  { href: '/dashboard/content-studio', icon: Megaphone, label: 'Content Studio', roles: ['sales', 'manager', 'admin'] },
+  { href: '#', 'data-under-construction': true, icon: Megaphone, label: 'Content Studio', roles: ['sales', 'manager', 'admin'] },
   { href: '/admin', icon: ShieldCheck, label: 'Admin', roles: ['admin'] },
 ];
 
 export function DashboardNav() {
   const pathname = usePathname();
   const { user, isUserLoading, isAdmin, isManager } = useUser();
+  const { toast } = useToast();
 
   const userRoles = [
     'sales',
     ...(isAdmin ? ['admin'] : []),
     ...(isManager ? ['manager'] : []),
   ];
+
+  const handleUnderConstructionClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    toast({
+      title: "Under Construction",
+      description: "This feature is currently under development and will be available soon!",
+    });
+  };
 
   if (isUserLoading) {
     return <p>Loading...</p>
@@ -48,22 +58,27 @@ export function DashboardNav() {
     <SidebarMenu className="p-2">
       {navItems
         .filter(item => item.roles.some(role => userRoles.includes(role)))
-        .map((item) => (
-        <SidebarMenuItem key={item.href}>
-          <SidebarMenuButton
-            asChild
-            isActive={pathname.startsWith(item.href) && (item.href === '/dashboard' ? pathname === item.href : true)}
-            tooltip={{ children: item.label }}
-            variant="default"
-            className="text-sidebar-foreground/70 hover:text-sidebar-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
-          >
-            <Link href={item.href}>
-              <item.icon />
-              <span>{item.label}</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      ))}
+        .map((item) => {
+          const isUnderConstruction = 'data-under-construction' in item;
+
+          return (
+            <SidebarMenuItem key={item.href + item.label}>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname.startsWith(item.href) && (item.href === '/dashboard' ? pathname === item.href : true) && !isUnderConstruction}
+                tooltip={{ children: item.label }}
+                variant="default"
+                className="text-sidebar-foreground/70 hover:text-sidebar-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
+                onClick={isUnderConstruction ? handleUnderConstructionClick : undefined}
+              >
+                <Link href={item.href}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
     </SidebarMenu>
   );
 }
