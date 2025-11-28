@@ -177,7 +177,7 @@ function PaymentTimelineDialog({
     )
 }
 
-function PayoutHistoryView({ userId, userDisplayName }: { userId?: string, userDisplayName: string }) {
+function PayoutHistoryView({ userId, userDisplayName, onProcessPayout, processingPayouts }: { userId?: string, userDisplayName: string, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts?: Record<string, boolean> }) {
     const { allPayouts, isLoading, availableYears } = useCommissions(userId);
     const [selectedYear, setSelectedYear] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -215,15 +215,15 @@ function PayoutHistoryView({ userId, userDisplayName }: { userId?: string, userD
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Month</TableHead>
-                                    <TableHead>Payout Reference ID</TableHead>
                                     <TableHead>Total Payout</TableHead>
                                     <TableHead>Status</TableHead>
+                                    {onProcessPayout && <TableHead className="text-right">Actions</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
+                                        <TableCell colSpan={onProcessPayout ? 4 : 3} className="h-24 text-center">
                                             <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                         </TableCell>
                                     </TableRow>
@@ -231,7 +231,6 @@ function PayoutHistoryView({ userId, userDisplayName }: { userId?: string, userD
                                     filteredPayouts.map((payout) => (
                                         <TableRow key={payout.month}>
                                             <TableCell className="font-semibold">{payout.month}</TableCell>
-                                            <TableCell className="font-mono text-xs">{payout.transactionId}</TableCell>
                                             <TableCell>
                                                 <Dialog>
                                                     <DialogTrigger asChild>
@@ -257,15 +256,44 @@ function PayoutHistoryView({ userId, userDisplayName }: { userId?: string, userD
                                                         status={payout.status} 
                                                         totalAmount={payout.totalAmount}
                                                         timelineStatus={payout.timelineStatus}
-                                                        isAdmin={false} // This view is read-only
+                                                        isAdmin={!!onProcessPayout}
+                                                        onProcessPayout={onProcessPayout ? () => onProcessPayout(`${payout.transactionId}-${payout.month}`, payout.commissions) : undefined}
                                                     />
                                                 </Dialog>
                                             </TableCell>
+                                            {onProcessPayout && (
+                                                <TableCell className="text-right">
+                                                    {payout.status === 'pending' && (
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button size="sm" disabled={processingPayouts && processingPayouts[`${payout.transactionId}-${payout.month}`]}>
+                                                                    {processingPayouts && processingPayouts[`${payout.transactionId}-${payout.month}`] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                                                    Process Payout
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Confirm Payout?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This will mark the {payout.month} payout of {currencyFormatter.format(payout.totalAmount)} as paid and notify the sales representative. This action cannot be undone.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => onProcessPayout(`${payout.transactionId}-${payout.month}`, payout.commissions)}>
+                                                                        Yes, Confirm Payout
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    )}
+                                                </TableCell>
+                                            )}
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
+                                        <TableCell colSpan={onProcessPayout ? 4 : 3} className="h-24 text-center">
                                             No payout records found for the selected period.
                                         </TableCell>
                                     </TableRow>
@@ -283,9 +311,8 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
     const { user: authUser, isManager } = useUser();
     const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
     
-    const currentUser = propUser || authUser;
-    
-    const [selectedUserId, setSelectedUserId] = useState<string | undefined>(currentUser?.id);
+    const initialUserId = propUser ? propUser.id : authUser?.id;
+    const [selectedUserId, setSelectedUserId] = useState<string | undefined>(initialUserId);
 
     const teamMembers = useMemo(() => {
         if (!isManager || !authUser || isSalesUsersLoading) return [];
@@ -294,14 +321,18 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
     }, [isManager, authUser, salesUsers, isSalesUsersLoading]);
     
     useEffect(() => {
-        setSelectedUserId(currentUser?.id);
-    }, [currentUser]);
+        if (propUser) {
+            setSelectedUserId(propUser.id);
+        } else {
+            setSelectedUserId(authUser?.id);
+        }
+    }, [propUser, authUser]);
 
     const selectedUserDisplayName = useMemo(() => {
         if (selectedUserId === authUser?.id) return 'My Payouts';
-        const member = teamMembers.find(m => m.id === selectedUserId);
-        return member?.displayName || 'Select a Team Member';
-    }, [selectedUserId, teamMembers, authUser]);
+        const member = [...salesUsers, propUser, authUser].find(u => u?.id === selectedUserId);
+        return member?.displayName || 'Select...';
+    }, [selectedUserId, salesUsers, propUser, authUser]);
 
     return (
         <Dialog>
@@ -312,7 +343,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                  <DialogHeader>
                     <div className="flex items-start justify-between">
                         <div>
-                            <DialogTitle>{isAdmin ? `Payouts for ${currentUser?.displayName}`: 'My Payout History'}</DialogTitle>
+                            <DialogTitle>{isAdmin ? `Payouts for ${propUser?.displayName}`: 'My Payout History'}</DialogTitle>
                             <DialogDescription>
                                 A monthly summary of commissions and their status.
                             </DialogDescription>
@@ -330,7 +361,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                                                 <div className="flex items-center gap-2">
                                                     <Avatar className="h-6 w-6">
                                                         <AvatarImage src={member.photoURL ?? undefined} />
-                                                        <AvatarFallback className="text-xs">{member.displayName[0]}</AvatarFallback>
+                                                        <AvatarFallback className="text-xs">{member.displayName?.[0]}</AvatarFallback>
                                                     </Avatar>
                                                     <span>{member.displayName}</span>
                                                 </div>
@@ -342,7 +373,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                         )}
                     </div>
                 </DialogHeader>
-                {selectedUserId && <PayoutHistoryView userId={selectedUserId} userDisplayName={selectedUserDisplayName} />}
+                {selectedUserId && <PayoutHistoryView userId={selectedUserId} userDisplayName={selectedUserDisplayName} onProcessPayout={isAdmin ? onProcessPayout : undefined} processingPayouts={isAdmin ? processingPayouts : undefined} />}
             </DialogContent>
         </Dialog>
     );
