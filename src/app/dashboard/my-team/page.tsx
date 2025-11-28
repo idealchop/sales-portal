@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -149,6 +149,121 @@ const ProposalsDialog = ({ rep, proposals, clientMap, salesUsers, currencyFormat
             </ScrollArea>
         </DialogContent>
     );
+};
+
+const TeamGoalsDialog = () => {
+  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+  const closerBonusTiers = [
+    { target: 3, bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 5, bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 10, bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+  ];
+  const individualCloserBonusTiers = [
+    { target: 10, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 20, bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 30, bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
+  ];
+  const growthBonusTiers = [
+    { target: 100000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 200000, bonus: '₱10,000', icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 300000, bonus: '₱20,000 + Elite Partner Badge', icon: <Award className="h-5 w-5 text-violet-500" /> },
+  ];
+  const prepaymentProgressTiers = [
+    { target: 3, reward: '₱1,000' },
+    { target: 9, reward: '₱4,000' },
+    { target: 15, reward: '₱10,000 Milestone Bonus' },
+  ];
+
+  return (
+    <DialogContent className="sm:max-w-3xl">
+      <DialogHeader>
+        <DialogTitle>Team Goals & Bonuses</DialogTitle>
+        <DialogDescription>
+          An overview of the current incentives available for your sales team.
+        </DialogDescription>
+      </DialogHeader>
+      <ScrollArea className="h-[70vh] pr-4">
+        <div className="space-y-6 py-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Corporate Closer Bonus</CardTitle>
+              <CardDescription>Reward for closing corporate clients (SME, Commercial, Corporate, Enterprise). Claimed after clients complete their first paid month.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader><TableRow><TableHead>Target</TableHead><TableHead>Bonus</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {closerBonusTiers.map(tier => (
+                    <TableRow key={tier.target}>
+                      <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new clients</TableCell>
+                      <TableCell className="font-bold text-primary">{currencyFormatter.format(tier.bonus)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Family Plan Closer Bonus</CardTitle>
+              <CardDescription>Reward for bringing in household clients. Claimed after clients complete their first paid month.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader><TableRow><TableHead>Target</TableHead><TableHead>Bonus</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {individualCloserBonusTiers.map(tier => (
+                    <TableRow key={tier.target}>
+                      <TableCell className="font-medium flex items-center gap-2">{tier.icon} Close {tier.target} new household clients</TableCell>
+                      <TableCell className="font-bold text-primary">{typeof tier.bonus === 'number' ? currencyFormatter.format(tier.bonus) : tier.bonus}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Quarterly Growth Bonus</CardTitle>
+              <CardDescription>To reward expansion and total client base impact based on new recurring volume per quarter.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader><TableRow><TableHead>Metric</TableHead><TableHead>Bonus</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {growthBonusTiers.map(tier => (
+                    <TableRow key={tier.target}>
+                      <TableCell className="font-medium flex items-center gap-2">{tier.icon} Achieve {currencyFormatter.format(tier.target)}</TableCell>
+                      <TableCell className="font-bold text-primary">{tier.bonus}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader>
+              <CardTitle>Prepayment Power-Up Bonus</CardTitle>
+              <CardDescription>Rewards for securing long-term financial commitments from clients.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                  <TableHeader><TableRow><TableHead>Milestone</TableHead><TableHead>Reward</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                      {prepaymentProgressTiers.map(tier => (
+                          <TableRow key={tier.target}>
+                              <TableCell className="font-medium">Close {tier.target} prepaid contracts</TableCell>
+                              <TableCell className="font-bold text-primary">{tier.reward}</TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </ScrollArea>
+    </DialogContent>
+  );
 };
 
 
@@ -449,19 +564,32 @@ export default function MyTeamPage() {
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Manager Override</CardTitle>
-                    <CardDescription>Your commission from your team's sales this month.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center justify-center text-center h-[250px]">
-                    <div className='flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4'>
-                        <CircleDollarSign className='h-12 w-12 text-primary'/>
-                    </div>
-                    <p className="text-4xl font-bold">{currencyFormatter.format(managerOverrideCommission)}</p>
-                    <p className="text-sm text-muted-foreground">This Month</p>
-                </CardContent>
-            </Card>
+            <div className="flex flex-col gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Manager Override</CardTitle>
+                        <CardDescription>Your commission from your team's sales this month.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center justify-center text-center">
+                        <div className='flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4'>
+                            <CircleDollarSign className='h-12 w-12 text-primary'/>
+                        </div>
+                        <p className="text-4xl font-bold">{currencyFormatter.format(managerOverrideCommission)}</p>
+                        <p className="text-sm text-muted-foreground">This Month</p>
+                    </CardContent>
+                </Card>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="cursor-pointer hover:border-primary transition-colors">
+                            <CardHeader>
+                                <CardTitle>Team Goals &amp; Bonuses</CardTitle>
+                                <CardDescription>Click to view current team incentives.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </DialogTrigger>
+                    <TeamGoalsDialog />
+                </Dialog>
+            </div>
         </div>
 
 
@@ -592,5 +720,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
-    
