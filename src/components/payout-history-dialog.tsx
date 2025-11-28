@@ -322,9 +322,12 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
     }, [isManager, authUser, salesUsers, isSalesUsersLoading]);
     
     useEffect(() => {
+        // If a specific user is passed (e.g., from admin page), use that.
         if (propUser) {
             setSelectedUserId(propUser.id);
-        } else {
+        } 
+        // Otherwise (e.g., from header dropdown), default to the logged-in user.
+        else {
             setSelectedUserId(authUser?.id);
         }
     }, [propUser, authUser]);
@@ -345,7 +348,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                  <DialogHeader>
                     <div className="flex items-start justify-between">
                         <div>
-                            <DialogTitle>{isAdmin && propUser ? `Payouts for ${propUser?.displayName}`: 'My Payout History'}</DialogTitle>
+                            <DialogTitle>{isAdmin && propUser ? `Payouts for ${propUser?.displayName}`: 'Payout History'}</DialogTitle>
                             <DialogDescription>
                                 A monthly summary of commissions and their status.
                             </DialogDescription>

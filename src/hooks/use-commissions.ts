@@ -138,11 +138,7 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
         const oneYearAgo = addYears(now, -1);
         const activeClients = clients.filter(c => targetUserIds.includes(c.userId) && c.status === 'active' && c.clientType !== 'household');
         
-        // When viewing the payout history dialog, we only want to see commissions for the *selected* user.
-        // The targetUserIds in this context will be a single user.
-        const commissionsToShow = commissions.filter(c => targetUserIds.includes(c.userId));
-
-        const commissionsByMonth = commissionsToShow.reduce((acc, commission) => {
+        const commissionsByMonth = commissions.reduce((acc, commission) => {
                 const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
                 if (!acc[monthKey]) acc[monthKey] = [];
                 acc[monthKey].push(commission);
