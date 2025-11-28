@@ -239,7 +239,7 @@ export default function DashboardPage() {
         ? ((monthlyCommission - lastMonthOneTimeCommission) / lastMonthOneTimeCommission) * 100 
         : (monthlyCommission > 0 ? 100 : 0);
     
-    const acceptedProposals = rawCommissions.filter(p => p.status === 'accepted');
+    const acceptedProposals = proposals.filter(p => p.status === 'accepted');
 
     const corporateClientsThisMonth = oneTimeCommissionsThisMonth.filter(c => {
         const client = clientMap.get(proposals.find(p => p.id === c.proposalId)?.clientId || '');
