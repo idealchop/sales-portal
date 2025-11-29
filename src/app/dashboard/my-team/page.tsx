@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -409,7 +409,7 @@ export default function MyTeamPage() {
   }, [user, isManager, salesUsers, usersLoading]);
 
   const teamPerformance = useMemo(() => {
-    if (proposalsLoading || myTeam.length === 0) return { leaderboard: [], kpis: {}, availableMonths: [], proposalsByRep: [] };
+    if (proposalsLoading || myTeam.length === 0) return { leaderboard: [], kpis: {}, availableMonths: [], proposalsByRep: [], teamProposals: [] };
     
     const teamMemberIds = new Set(myTeam.map(m => m.id));
     const teamProposals = proposals.filter(p => teamMemberIds.has(p.userId));
@@ -505,6 +505,11 @@ export default function MyTeamPage() {
     
     const filteredLeaderboard = leaderboardData.filter(rep => rep.displayName.toLowerCase().includes(leaderboardSearch.toLowerCase()));
 
+    const proposalStatusCounts = teamProposals.reduce((acc, p) => {
+        acc[p.status] = (acc[p.status] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
 
     return {
         leaderboard: filteredLeaderboard.sort((a, b) => b.totalRevenue - a.totalRevenue),
@@ -517,6 +522,7 @@ export default function MyTeamPage() {
             winRateChange,
             totalRevenueChange,
             avgDealSizeChange,
+            proposalStatusCounts,
         },
         availableMonths,
         proposalsByRep,
@@ -604,7 +610,7 @@ export default function MyTeamPage() {
             </div>
         </div>
 
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Proposals Sent</CardTitle>
@@ -655,6 +661,20 @@ export default function MyTeamPage() {
                         {(teamPerformance.kpis.avgDealSizeChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                         {(teamPerformance.kpis.avgDealSizeChange || 0).toFixed(1)}% from last month
                     </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Team Proposal Funnel</CardTitle>
+                    <BarChartIcon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2 text-xs">
+                        <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><FileText className="text-muted-foreground"/>Drafts</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.draft || 0}</span></div>
+                        <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><Send className="text-blue-500"/>Sent</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.sent || 0}</span></div>
+                        <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><Check className="text-green-500"/>Accepted</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.accepted || 0}</span></div>
+                        <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><X className="text-red-500"/>Rejected</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.rejected || 0}</span></div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
