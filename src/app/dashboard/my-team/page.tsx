@@ -611,53 +611,53 @@ export default function MyTeamPage() {
         </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+            <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Proposals Sent</CardTitle>
-                    <FileSignature className="h-4 w-4 text-muted-foreground" />
+                    <FileSignature className="h-4 w-4 text-primary-foreground/70" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{teamPerformance.kpis.totalProposalsSent || 0}</div>
-                    <p className={cn("text-xs text-muted-foreground flex items-center", (teamPerformance.kpis.proposalsSentChange || 0) >= 0 ? "text-green-600" : "text-red-600")}>
+                    <p className={cn("text-xs text-primary-foreground/80 flex items-center", (teamPerformance.kpis.proposalsSentChange || 0) >= 0 ? "" : "text-red-300")}>
                         {(teamPerformance.kpis.proposalsSentChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                         {(teamPerformance.kpis.proposalsSentChange || 0).toFixed(1)}% from last month
                     </p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Team Win Rate</CardTitle>
-                    <Target className="h-4 w-4 text-muted-foreground" />
+                    <Target className="h-4 w-4 text-primary-foreground/70" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{(teamPerformance.kpis.teamWinRate || 0).toFixed(1)}%</div>
-                     <p className={cn("text-xs text-muted-foreground flex items-center", (teamPerformance.kpis.winRateChange || 0) >= 0 ? "text-green-600" : "text-red-600")}>
+                     <p className={cn("text-xs text-primary-foreground/80 flex items-center", (teamPerformance.kpis.winRateChange || 0) >= 0 ? "" : "text-red-300")}>
                         {(teamPerformance.kpis.winRateChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                         {(teamPerformance.kpis.winRateChange || 0).toFixed(1)}% from last month
                     </p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Revenue Generated</CardTitle>
-                    <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+                    <CircleDollarSign className="h-4 w-4 text-primary-foreground/70" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{currencyFormatter.format(teamPerformance.kpis.totalRevenue || 0)}</div>
-                    <p className={cn("text-xs text-muted-foreground flex items-center", (teamPerformance.kpis.totalRevenueChange || 0) >= 0 ? "text-green-600" : "text-red-600")}>
+                    <p className={cn("text-xs text-primary-foreground/80 flex items-center", (teamPerformance.kpis.totalRevenueChange || 0) >= 0 ? "" : "text-red-300")}>
                         {(teamPerformance.kpis.totalRevenueChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                         {(teamPerformance.kpis.totalRevenueChange || 0).toFixed(1)}% from last month
                     </p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Average Deal Size</CardTitle>
-                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    <BarChart3 className="h-4 w-4 text-primary-foreground/70" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{currencyFormatter.format(teamPerformance.kpis.avgDealSize || 0)}</div>
-                     <p className={cn("text-xs text-muted-foreground flex items-center", (teamPerformance.kpis.avgDealSizeChange || 0) >= 0 ? "text-green-600" : "text-red-600")}>
+                     <p className={cn("text-xs text-primary-foreground/80 flex items-center", (teamPerformance.kpis.avgDealSizeChange || 0) >= 0 ? "" : "text-red-300")}>
                         {(teamPerformance.kpis.avgDealSizeChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                         {(teamPerformance.kpis.avgDealSizeChange || 0).toFixed(1)}% from last month
                     </p>
