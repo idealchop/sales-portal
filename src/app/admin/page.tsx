@@ -1356,13 +1356,13 @@ export default function AdminPage() {
 
   const { salesExecPayouts, salesManagerPayouts } = useMemo(() => {
     if (commissionsLoading || usersLoading) return { salesExecPayouts: [], salesManagerPayouts: [] };
-  
+
     const payoutsByUser: { [userId: string]: { pendingAmount: number, paidAmount: number, pendingCommissions: WithId<Commission>[] } } = {};
-  
+
     salesUsers.forEach(user => {
       payoutsByUser[user.id] = { pendingAmount: 0, paidAmount: 0, pendingCommissions: [] };
     });
-  
+
     allCommissions.forEach(commission => {
       if (payoutsByUser[commission.userId]) {
         if (commission.status === 'pending') {
@@ -1373,16 +1373,16 @@ export default function AdminPage() {
         }
       }
     });
-  
+
     const salesReps = salesUsers.map(user => ({
       user,
       ...payoutsByUser[user.id]
     }));
-  
-    const salesExecPayouts = salesReps.filter(p => p.user.role === 'sales');
-    const salesManagerPayouts = salesReps.filter(p => p.user.role === 'manager');
-  
-    return { salesExecPayouts, salesManagerPayouts };
+
+    const salesExecs = salesReps.filter(p => p.user.role === 'sales');
+    const managers = salesReps.filter(p => p.user.role === 'manager');
+
+    return { salesExecPayouts: salesExecs, salesManagerPayouts: managers };
   }, [salesUsers, allCommissions, commissionsLoading, usersLoading]);
 
   const handleProcessPayout = (payoutId: string, commissionsToUpdate: WithId<Commission>[], userToNotify: WithId<UserProfile>) => {
@@ -1395,11 +1395,7 @@ export default function AdminPage() {
 
       commissionsToUpdate.forEach(commission => {
             const commissionRef = doc(firestore, 'commissions', commission.id);
-            // Use set with merge instead of update to handle new bonus/override commissions
-            batch.set(commissionRef, {
-                ...commission,
-                status: 'paid'
-            }, { merge: true });
+            batch.update(commissionRef, { status: 'paid' });
       });
 
       // Create a notification for the user
@@ -1935,3 +1931,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
