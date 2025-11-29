@@ -896,6 +896,13 @@ export default function PlansPage() {
     const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
     const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
     
+    useEffect(() => {
+        const clientType = searchParams.get('clientType');
+        if (clientType) {
+            setSelectedSize(clientType as BusinessSize);
+        }
+    }, [searchParams]);
+
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
         setSelectedEnterpriseType(null); 

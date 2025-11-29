@@ -39,6 +39,7 @@ import { GoogleMap } from '@/components/google-map';
 import { waterStations } from '@/lib/water-stations';
 import { useDebounce } from 'use-debounce';
 import { useToast } from '@/hooks/use-toast';
+import { useSearchParams } from 'next/navigation';
 
 
 function InputField({
@@ -67,6 +68,7 @@ function InputField({
 
 export default function NewProposalPage() {
   const { clients, isLoading: clientsLoading } = useClients();
+  const searchParams = useSearchParams();
   const [selectedClientId, setSelectedClientId] = useState('');
   const [clientSelectionType, setClientSelectionType] = useState<'new' | 'existing' | null>(null);
   
@@ -125,6 +127,14 @@ export default function NewProposalPage() {
     }
     return client;
   }, [clients, selectedClientId]);
+
+  useEffect(() => {
+    const clientIdFromQuery = searchParams.get('clientId');
+    if (clientIdFromQuery) {
+        setClientSelectionType('existing');
+        setSelectedClientId(clientIdFromQuery);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (clientSelectionType === 'existing' && selectedClient) {

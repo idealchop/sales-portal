@@ -39,6 +39,7 @@ import { GoogleMap } from '@/components/google-map';
 import { waterStations } from '@/lib/water-stations';
 import { useDebounce } from 'use-debounce';
 import { useToast } from '@/hooks/use-toast';
+import { useSearchParams } from 'next/navigation';
 
 
 function InputField({
@@ -67,6 +68,7 @@ function InputField({
 
 export default function NewProposalPage() {
   const { clients, isLoading: clientsLoading } = useClients();
+  const searchParams = useSearchParams();
   const [selectedClientId, setSelectedClientId] = useState('');
   const [clientSelectionType, setClientSelectionType] = useState<'new' | 'existing' | null>('new');
   
@@ -145,7 +147,7 @@ export default function NewProposalPage() {
   }, [clientSelectionType, selectedClient]);
 
   const getNextStepLink = () => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     
     if (clientSelectionType === 'existing' && selectedClientId) {
         params.set('clientId', selectedClientId);
@@ -161,9 +163,7 @@ export default function NewProposalPage() {
         params.set('clientType', selectedClient.clientType);
     }
     
-    const baseUrl = clientSelectionType === 'existing'
-      ? '/proposal/new/plans'
-      : '/proposal/new/about';
+    const baseUrl = '/proposal/new/plans';
 
     return `${baseUrl}?${params.toString()}`;
   }
@@ -190,14 +190,9 @@ export default function NewProposalPage() {
         <div className="flex items-center justify-between">
             <div>
                 <div className="flex items-center gap-2">
-                    {clientSelectionType && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setClientSelectionType(null)}>
-                            <ChevronLeft className="h-5 w-5" />
-                        </Button>
-                    )}
                     <h1 className="text-3xl font-bold">Create a New Proposal</h1>
                 </div>
-                <p className="text-muted-foreground ml-10">
+                <p className="text-muted-foreground">
                     Step 1: Client Information
                 </p>
             </div>
@@ -210,31 +205,6 @@ export default function NewProposalPage() {
 
       <div className="relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm">
           <div className="p-6 md:p-8">
-            {!clientSelectionType && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <motion.div whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}>
-                        <Card 
-                            className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 h-full bg-gradient-to-br from-primary to-[#3ab7b1] text-primary-foreground"
-                            onClick={() => setClientSelectionType('new')}
-                        >
-                            <PlusCircle className="h-12 w-12 text-primary-foreground mb-4" />
-                            <CardTitle>Create New Client</CardTitle>
-                            <CardDescription className="text-primary-foreground/80">Start a proposal for a brand new client.</CardDescription>
-                        </Card>
-                    </motion.div>
-                     <motion.div whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}>
-                        <Card 
-                            className="flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 h-full bg-gradient-to-br from-primary to-[#3ab7b1] text-primary-foreground"
-                            onClick={() => setClientSelectionType('existing')}
-                        >
-                            <Users className="h-12 w-12 text-primary-foreground mb-4" />
-                            <CardTitle>Use Existing Client</CardTitle>
-                            <CardDescription className="text-primary-foreground/80">Select from your current list of clients.</CardDescription>
-                        </Card>
-                    </motion.div>
-                </div>
-            )}
-            
             {clientSelectionType === 'existing' && (
                 <div className="space-y-4">
                     <div className="space-y-2">
