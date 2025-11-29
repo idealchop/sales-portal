@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -38,6 +38,7 @@ import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -740,6 +741,14 @@ export default function MyTeamPage() {
                     </DialogTrigger>
                     <TeamGoalsDialog />
                 </Dialog>
+                 <Link href="/dashboard/materials">
+                    <Card className="cursor-pointer hover:border-primary transition-colors">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><BookCopy/> Sales Materials</CardTitle>
+                            <CardDescription>Your toolkit for success. Find presentations, brochures, and other assets.</CardDescription>
+                        </CardHeader>
+                    </Card>
+                </Link>
             </div>
         </div>
 
