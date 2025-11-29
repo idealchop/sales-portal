@@ -33,24 +33,39 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
   const [error, setError] = useState<Error | null>(null);
 
   const targetUserIds = useMemo(() => {
-    // Admin page case: userIds will be an array of all sales user IDs
-    if (Array.isArray(userIds) && userIds.length > 0) return userIds;
-    // My Team page case
-    if (isManagerTeamView && authUser && isManager && salesUsers.length > 0) {
-        const managerTeamName = `${authUser.location} (${authUser.displayName})`;
-        const teamMemberIds = salesUsers
-            .filter(u => u.team === managerTeamName)
-            .map(u => u.id);
-        return [authUser.id, ...teamMemberIds];
+    // If a specific array of user IDs is provided, use it (e.g., for admin views).
+    if (Array.isArray(userIds) && userIds.length > 0) {
+      return userIds;
     }
-    // Single user case (string)
-    if (typeof userIds === 'string') return [userIds];
+
+    // If a single user ID is provided, check if they are a manager.
+    // If so, fetch their own commissions and their team's commissions.
+    if (typeof userIds === 'string') {
+        const targetUser = salesUsers.find(u => u.id === userIds);
+        if (targetUser?.role === 'manager') {
+             const managerTeamName = `${targetUser.location} (${targetUser.displayName})`;
+             const teamMemberIds = salesUsers
+                .filter(u => u.team === managerTeamName)
+                .map(u => u.id);
+            return [userIds, ...teamMemberIds];
+        }
+        return [userIds]; // It's a regular sales executive
+    }
     
-    // Default/fallback for a regular user viewing their own commissions
-    if (authUser) return [authUser.id];
+    // Default/fallback for a regular user viewing their own commissions.
+    if (authUser) {
+        if (isManager) {
+            const managerTeamName = `${authUser.location} (${authUser.displayName})`;
+            const teamMemberIds = salesUsers
+                .filter(u => u.team === managerTeamName)
+                .map(u => u.id);
+            return [authUser.id, ...teamMemberIds];
+        }
+        return [authUser.id];
+    }
 
     return [];
-  }, [userIds, isManagerTeamView, authUser, isManager, salesUsers]);
+  }, [userIds, authUser, isManager, salesUsers]);
 
   useEffect(() => {
     if (!firestore || isFirebaseLoading || targetUserIds.length === 0) {
