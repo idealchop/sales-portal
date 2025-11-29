@@ -687,8 +687,8 @@ export default function MyTeamPage() {
                         </Select>
                     </div>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 h-[250px] pr-6">
+                <CardContent className="space-y-6">
+                    <div className="h-[250px] pr-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={teamPerformance.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -716,13 +716,13 @@ export default function MyTeamPage() {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
-                     <div className="md:col-span-1">
+                     <div className="border-t pt-4">
                         <h3 className="font-semibold text-sm mb-2">Team Proposal Funnel</h3>
-                        <div className="space-y-3 text-sm">
-                            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><FileText className="text-muted-foreground"/>Drafts</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.draft || 0}</span></div>
-                            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><Send className="text-blue-500"/>Sent</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.sent || 0}</span></div>
-                            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><Check className="text-green-500"/>Accepted</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.accepted || 0}</span></div>
-                            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><X className="text-red-500"/>Rejected</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.rejected || 0}</span></div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><FileText className="text-muted-foreground"/>Drafts</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.draft || 0}</span></div>
+                            <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><Send className="text-blue-500"/>Sent</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.sent || 0}</span></div>
+                            <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><Check className="text-green-500"/>Accepted</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.accepted || 0}</span></div>
+                            <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><X className="text-red-500"/>Rejected</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.rejected || 0}</span></div>
                         </div>
                     </div>
                 </CardContent>
