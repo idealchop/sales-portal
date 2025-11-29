@@ -1054,5 +1054,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
