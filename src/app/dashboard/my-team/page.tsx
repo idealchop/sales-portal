@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -607,6 +607,12 @@ export default function MyTeamPage() {
                     </DialogTrigger>
                     {user && <QrCodeDialog managerId={user.id} />}
                 </Dialog>
+                <Button asChild>
+                    <Link href="/dashboard/proposals/new">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create Proposal
+                    </Link>
+                </Button>
             </div>
         </div>
 
