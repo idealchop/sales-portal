@@ -666,7 +666,7 @@ export default function MyTeamPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 flex flex-col">
                 <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>
@@ -687,8 +687,8 @@ export default function MyTeamPage() {
                         </Select>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="h-[250px] pr-6">
+                <CardContent className="flex-1 flex flex-col space-y-6">
+                    <div className="flex-1 pr-6 min-h-[250px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={teamPerformance.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -758,8 +758,8 @@ export default function MyTeamPage() {
                     </DialogTrigger>
                     <TeamGoalsDialog />
                 </Dialog>
-                 <Link href="/dashboard/materials">
-                    <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                  <Link href="/dashboard/materials">
                       <div className="relative aspect-video w-full">
                         <Image
                             src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
@@ -772,8 +772,8 @@ export default function MyTeamPage() {
                         <CardTitle className="flex items-center gap-2"><BookCopy/> Sales Materials</CardTitle>
                         <CardDescription>Your toolkit for success. Find presentations, brochures, and other assets.</CardDescription>
                       </CardHeader>
-                    </Card>
-                </Link>
+                  </Link>
+                </Card>
             </div>
         </div>
 
