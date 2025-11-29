@@ -7,7 +7,7 @@ import { useUser } from '@/firebase';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useCommissions } from '@/hooks/use-commissions';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy } from 'lucide-react';
@@ -742,11 +742,19 @@ export default function MyTeamPage() {
                     <TeamGoalsDialog />
                 </Dialog>
                  <Link href="/dashboard/materials">
-                    <Card className="cursor-pointer hover:border-primary transition-colors">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><BookCopy/> Sales Materials</CardTitle>
-                            <CardDescription>Your toolkit for success. Find presentations, brochures, and other assets.</CardDescription>
-                        </CardHeader>
+                    <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                      <div className="relative aspect-video w-full">
+                        <Image
+                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                            alt="Sales Materials Preview"
+                            fill
+                            className="object-cover"
+                          />
+                      </div>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><BookCopy/> Sales Materials</CardTitle>
+                        <CardDescription>Your toolkit for success. Find presentations, brochures, and other assets.</CardDescription>
+                      </CardHeader>
                     </Card>
                 </Link>
             </div>
