@@ -1357,25 +1357,26 @@ export default function AdminPage() {
   const { salesExecPayouts, salesManagerPayouts } = useMemo(() => {
     if (commissionsLoading || usersLoading) return { salesExecPayouts: [], salesManagerPayouts: [] };
   
-    const payoutsByUser: { [userId: string]: { pendingAmount: number, paidAmount: number } } = {};
-
+    const payoutsByUser: { [userId: string]: { pendingAmount: number, paidAmount: number, pendingCommissions: WithId<Commission>[] } } = {};
+  
     salesUsers.forEach(user => {
-        payoutsByUser[user.id] = { pendingAmount: 0, paidAmount: 0 };
+      payoutsByUser[user.id] = { pendingAmount: 0, paidAmount: 0, pendingCommissions: [] };
     });
-
+  
     allCommissions.forEach(commission => {
-        if (payoutsByUser[commission.userId]) {
-            if (commission.status === 'pending') {
-                payoutsByUser[commission.userId].pendingAmount += commission.amount;
-            } else if (commission.status === 'paid') {
-                payoutsByUser[commission.userId].paidAmount += commission.amount;
-            }
+      if (payoutsByUser[commission.userId]) {
+        if (commission.status === 'pending') {
+          payoutsByUser[commission.userId].pendingAmount += commission.amount;
+          payoutsByUser[commission.userId].pendingCommissions.push(commission);
+        } else if (commission.status === 'paid') {
+          payoutsByUser[commission.userId].paidAmount += commission.amount;
         }
+      }
     });
-
+  
     const salesReps = salesUsers.map(user => ({
-        user,
-        ...payoutsByUser[user.id]
+      user,
+      ...payoutsByUser[user.id]
     }));
   
     const salesExecPayouts = salesReps.filter(p => p.user.role === 'sales');
@@ -1500,7 +1501,7 @@ export default function AdminPage() {
             ) : payouts.length > 0 ? (
                 payouts.map((payout) => {
                     if (!payout) return null;
-                    const { user, pendingAmount, paidAmount } = payout;
+                    const { user, pendingAmount, paidAmount, pendingCommissions } = payout;
                     return (
                         <TableRow key={user.id}>
                             <TableCell>
@@ -1934,4 +1935,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
