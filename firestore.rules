@@ -36,7 +36,8 @@ service cloud.firestore {
     }
     
     match /counters/{counterId} {
-      allow read, write: if isSignedIn();
+      // Anyone can write to counters to generate new IDs for public proposals
+      allow read, write;
     }
 
     match /sales_materials/{materialId} {
@@ -50,17 +51,18 @@ service cloud.firestore {
         allow write: if isSignedIn() && (isAdmin() || request.resource.data.userId == request.auth.uid);
     }
 
-    // Any signed-in user can read client and proposal data.
-    // Writes are more restricted.
+    // Unauthenticated users can create clients and proposals.
+    // Authenticated users can read all client/proposal data.
+    // Updates are restricted.
     match /clients/{clientId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow create; // Allow public client creation
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
       allow delete: if false;
       
       match /proposals/{proposalId} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+        allow create; // Allow public proposal creation
         allow update: if isSignedIn() && isOwner(resource.data.userId);
         allow delete: if false;
       }
