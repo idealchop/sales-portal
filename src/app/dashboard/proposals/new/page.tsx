@@ -171,7 +171,7 @@ export default function NewProposalPage() {
         params.set('clientType', selectedClient.clientType);
     }
     
-    const baseUrl = '/dashboard/proposals/new/plans';
+    const baseUrl = '/dashboard/proposals/new/about';
 
     return `${baseUrl}?${params.toString()}`;
   }

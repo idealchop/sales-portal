@@ -1037,15 +1037,15 @@ export default function PlansPage() {
         return `/dashboard/proposals/new/contract?${params.toString()}`;
     };
 
-    const prevLink = `/dashboard/proposals/new?${searchParams.toString()}`;
+    const prevLink = `/dashboard/proposals/new/comparison?${searchParams.toString()}`;
 
     return (
         <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
             <div>
-            <h1 className="text-2xl font-bold">Choose a Plan</h1>
+            <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
             <p className="text-muted-foreground">
-                Step 2: Select a Client Type & Choose a Plan
+                Step 4: Select a Client Type, Choose a Plan & Review Inclusions
             </p>
             </div>
             <div className="flex gap-2">
