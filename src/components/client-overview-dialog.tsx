@@ -31,7 +31,7 @@ import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   Select,
@@ -494,22 +494,25 @@ export function ClientOverviewDialog({
 
     setIsConfirmingPayment(true);
     try {
+        const batch = writeBatch(firestore);
+
+        // 1. Upload payment proof
         const storage = getStorage();
         const filePath = `payment_proofs/${client.id}/${finalProposalId}/${finalFile.name}`;
         const storageRef = ref(storage, filePath);
-
         const snapshot = await uploadBytes(storageRef, finalFile);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
+        // 2. Update Proposal
         const proposalRef = doc(firestore, `clients/${client.id}/proposals`, finalProposalId);
-        const clientRef = doc(firestore, 'clients', client.id);
-
-        await updateDoc(proposalRef, {
+        batch.update(proposalRef, {
             status: 'accepted',
             paymentProofUrl: downloadURL
         });
 
-        await updateDoc(clientRef, {
+        // 3. Update Client
+        const clientRef = doc(firestore, 'clients', client.id);
+        batch.update(clientRef, {
             status: 'active',
             paymentStatus: 'Paid',
             subscription: {
@@ -518,6 +521,7 @@ export function ClientOverviewDialog({
             }
         });
 
+        // 4. Create Commissions
         const commissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
         const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
 
@@ -528,7 +532,8 @@ export function ClientOverviewDialog({
 
         // Sales Executive Commission
         if (commissionAmount > 0) {
-            addDoc(commissionsRef, {
+            const execCommissionRef = doc(commissionsRef);
+            batch.set(execCommissionRef, {
                 userId: proposalCreatorId,
                 proposalId: finalProposalId,
                 amount: commissionAmount,
@@ -538,13 +543,6 @@ export function ClientOverviewDialog({
                 description: `Commission for ${subscriptionInfo.planName}`,
                 clientName: client.companyName,
                 referenceId: finalProposalId
-            }).catch(async (error) => {
-              const permissionError = new FirestorePermissionError({
-                path: 'commissions',
-                operation: 'create',
-                requestResourceData: { userId: proposalCreatorId }
-              });
-              errorEmitter.emit('permission-error', permissionError);
             });
         }
         
@@ -556,7 +554,8 @@ export function ClientOverviewDialog({
                 const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
                 const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;
                 if(overrideAmount > 0) {
-                    addDoc(commissionsRef, {
+                    const managerCommissionRef = doc(commissionsRef);
+                    batch.set(managerCommissionRef, {
                         userId: teamManager.id,
                         proposalId: finalProposalId,
                         amount: overrideAmount,
@@ -566,17 +565,13 @@ export function ClientOverviewDialog({
                         description: `Manager Override for ${proposalCreator.displayName}'s sale`,
                         clientName: client.companyName,
                         referenceId: `override-${finalProposalId}`
-                    }).catch(async (error) => {
-                      const permissionError = new FirestorePermissionError({
-                        path: 'commissions',
-                        operation: 'create',
-                        requestResourceData: { userId: teamManager.id }
-                      });
-                      errorEmitter.emit('permission-error', permissionError);
                     });
                 }
             }
         }
+        
+        // Commit all writes at once
+        await batch.commit();
 
         toast({
             title: "Payment Confirmed & Client Activated!",
@@ -1059,3 +1054,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
