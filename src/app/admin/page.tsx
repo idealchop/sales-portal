@@ -55,7 +55,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useCommissions } from '@/hooks/use-commissions';
+import { useAllCommissions } from '@/hooks/use-all-commissions';
 import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
 import { TooltipProvider, Tooltip as UiTooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -1352,40 +1352,37 @@ export default function AdminPage() {
     return { totalRevenue, activeClients, newClientsThisMonth, unpaidClients, winRate, pendingClients, rejectedClients, proposalsSent: sentProposalsCount, totalProposals, proposalPerClient, planDistribution, clientGrowthData, proposalFunnelData, proposalsByRep, proposalStatusData, proposalsCreatedHistory, revenueHistory, clientRetentionData, proposalValueByStatus, revenueChange, newClientsChange, teamGrowthChange, churnedClients, topSellingPlansByMonth, teamWinRate, teamTotalRevenue, teamAvgDealSize, teamProposalsSentChange, teamWinRateChange, teamTotalRevenueChange, teamAvgDealSizeChange, revenueThisMonth, revenueLastMonth };
   }, [proposals, clients, salesUsers, proposalsLoading, clientsLoading, usersLoading, planDistributionPeriod, proposalsByRepPeriod]);
   
-  const userIds = useMemo(() => salesUsers.map(u => u.id), [salesUsers]);
-  const { allPayouts, commissions: commissionsFromHook, isLoading: commissionsLoading } = useCommissions(userIds);
+  const { commissions: allCommissions, isLoading: commissionsLoading } = useAllCommissions();
 
   const { salesExecPayouts, salesManagerPayouts } = useMemo(() => {
     if (commissionsLoading || usersLoading) return { salesExecPayouts: [], salesManagerPayouts: [] };
   
-    const payoutsByUser = allPayouts.reduce((acc, payout) => {
-      const userId = payout.commissions[0]?.userId;
-      if (userId) {
-        if (!acc[userId]) {
-          acc[userId] = [];
-        }
-        acc[userId].push(payout);
-      }
-      return acc;
-    }, {} as Record<string, typeof allPayouts>);
-  
-    const salesReps = salesUsers.map(user => {
-      const userPayouts = payoutsByUser[user.id] || [];
-      const pendingAmount = userPayouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.totalAmount, 0);
-      const paidAmount = userPayouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.totalAmount, 0);
-      
-      return {
-        user,
-        pendingAmount,
-        paidAmount,
-      };
+    const payoutsByUser: { [userId: string]: { pendingAmount: number, paidAmount: number } } = {};
+
+    salesUsers.forEach(user => {
+        payoutsByUser[user.id] = { pendingAmount: 0, paidAmount: 0 };
     });
+
+    allCommissions.forEach(commission => {
+        if (payoutsByUser[commission.userId]) {
+            if (commission.status === 'pending') {
+                payoutsByUser[commission.userId].pendingAmount += commission.amount;
+            } else if (commission.status === 'paid') {
+                payoutsByUser[commission.userId].paidAmount += commission.amount;
+            }
+        }
+    });
+
+    const salesReps = salesUsers.map(user => ({
+        user,
+        ...payoutsByUser[user.id]
+    }));
   
     const salesExecPayouts = salesReps.filter(p => p.user.role === 'sales');
     const salesManagerPayouts = salesReps.filter(p => p.user.role === 'manager');
   
     return { salesExecPayouts, salesManagerPayouts };
-  }, [salesUsers, allPayouts, commissionsLoading, usersLoading]);
+  }, [salesUsers, allCommissions, commissionsLoading, usersLoading]);
 
   const handleProcessPayout = (payoutId: string, commissionsToUpdate: WithId<Commission>[], userToNotify: WithId<UserProfile>) => {
       if (!firestore) return;
@@ -1937,39 +1934,3 @@ export default function AdminPage() {
     </div>
   );
 }
-    
-
-    
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-    
-
-
-
-    
-
-    
-
-    
-
-
-
-
-
-    
-
-    
-
-    

@@ -37,7 +37,7 @@ export function useAllCommissions() {
                 createdAtString = data.createdAt as string;
             }
             allCommissions.push({
-                ...data as Commission,
+                ...(data as Commission),
                 id: doc.id,
                 createdAt: createdAtString,
             });
@@ -62,5 +62,5 @@ export function useAllCommissions() {
 
   }, [firestore, isFirebaseLoading, isInitialLoad]);
 
-  return { commissions, isLoading: isLoading, error };
+  return { commissions, isLoading: isLoading || isFirebaseLoading, error };
 }

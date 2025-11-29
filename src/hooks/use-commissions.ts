@@ -21,7 +21,7 @@ export type MonthlyPayout = {
     transactionId: string;
 };
 
-export function useCommissions(userId?: string) {
+export function useCommissions(userId?: string | string[]) {
   const { firestore, isFirebaseLoading } = useFirebase();
   const { user: authUser, isUserLoading: isUserAuthLoading, isManager } = useUser();
   const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
@@ -29,8 +29,6 @@ export function useCommissions(userId?: string) {
   const [commissions, setCommissions] = useState<WithId<Commission>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-
-  const targetUserId = userId || authUser?.id;
 
   const teamMemberIds = useMemo(() => {
     if (!isManager || !authUser || isSalesUsersLoading) return [];
@@ -41,19 +39,29 @@ export function useCommissions(userId?: string) {
   }, [isManager, authUser, salesUsers, isSalesUsersLoading]);
 
   useEffect(() => {
-    if (!firestore || isFirebaseLoading || !targetUserId) {
-      if (!targetUserId && !isUserAuthLoading) setIsLoading(false);
+    if (!firestore || isFirebaseLoading || isUserAuthLoading) {
       return;
     }
 
     setIsLoading(true);
 
-    // Determine the list of user IDs to query for.
-    // If the target is a manager viewing their own payouts, we need their ID plus their team's IDs.
-    // Otherwise, we just need the target user's ID.
-    const userIdsToQuery = (isManager && targetUserId === authUser?.id)
-      ? [targetUserId, ...teamMemberIds]
-      : [targetUserId];
+    let userIdsToQuery: string[] = [];
+
+    if (Array.isArray(userId)) {
+        userIdsToQuery = userId;
+    } else if (userId) {
+        if (isManager && userId === authUser?.id) {
+            userIdsToQuery = [userId, ...teamMemberIds];
+        } else {
+            userIdsToQuery = [userId];
+        }
+    } else if (authUser) {
+        if (isManager) {
+            userIdsToQuery = [authUser.id, ...teamMemberIds];
+        } else {
+            userIdsToQuery = [authUser.id];
+        }
+    }
 
     if (userIdsToQuery.length === 0) {
         setCommissions([]);
@@ -61,7 +69,7 @@ export function useCommissions(userId?: string) {
         return;
     }
     
-    // Firestore 'in' queries are limited to 30 items. If a team is larger, we need to batch.
+    // Firestore 'in' queries are limited to 30 items.
     const MAX_IN_QUERIES = 30;
     const queryBatches: string[][] = [];
     for (let i = 0; i < userIdsToQuery.length; i += MAX_IN_QUERIES) {
@@ -85,8 +93,9 @@ export function useCommissions(userId?: string) {
             });
 
             setCommissions(prevCommissions => {
-                const newCommissions = [...prevCommissions.filter(p => !batch.includes(p.userId)), ...fetchedCommissions];
-                return newCommissions;
+                 const newCommissionIds = new Set(fetchedCommissions.map(c => c.id));
+                 const otherCommissions = prevCommissions.filter(p => !newCommissionIds.has(p.id));
+                 return [...otherCommissions, ...fetchedCommissions];
             });
             setIsLoading(false); 
         }, (e: FirestoreError) => {
@@ -102,13 +111,13 @@ export function useCommissions(userId?: string) {
         unsubscribers.forEach(unsub => unsub());
     };
 
-  }, [firestore, isFirebaseLoading, targetUserId, isManager, teamMemberIds, authUser?.id, isUserAuthLoading]);
+  }, [firestore, isFirebaseLoading, userId, isManager, teamMemberIds, authUser, isUserAuthLoading]);
   
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
         
-        // Filter commissions specifically for the target user (manager or sales rep)
-        const relevantCommissions = commissions.filter(c => c.userId === targetUserId);
+        const targetIds = new Set(Array.isArray(userId) ? userId : (userId ? [userId] : (authUser ? [authUser.id] : [])));
+        const relevantCommissions = commissions.filter(c => targetIds.has(c.userId));
         
         const commissionsByMonth: Record<string, WithId<PayoutCommission>[]> = {};
 
@@ -130,7 +139,7 @@ export function useCommissions(userId?: string) {
             
             const allPaid = !userCommissions.some(c => c.status === 'pending');
             const status = allPaid ? 'paid' : 'pending';
-            const userIdForTx = targetUserId ? targetUserId.slice(0, 4).toUpperCase() : 'USER';
+            const userIdForTx = (Array.isArray(userId) ? userId[0] : userId)?.slice(0, 4).toUpperCase() || 'USER';
             
             processedPayouts.push({
                 month,
@@ -144,21 +153,20 @@ export function useCommissions(userId?: string) {
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, isLoading, targetUserId]);
+    }, [commissions, isLoading, userId, authUser]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
-        allPayouts.forEach(payout => {
-            const date = new Date(payout.month);
-            yearSet.add(date.getFullYear().toString());
+        commissions.forEach(commission => {
+            if(commission.createdAt) {
+                const date = new Date(commission.createdAt);
+                yearSet.add(date.getFullYear().toString());
+            }
         });
         return Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a));
-    }, [allPayouts]);
+    }, [commissions]);
 
     const combinedIsLoading = isLoading || isFirebaseLoading || isUserAuthLoading || isSalesUsersLoading;
 
-    // This now returns all commissions for the manager's view, which can be filtered downstream
-    const managerViewCommissions = isManager && targetUserId === authUser?.id ? commissions : commissions.filter(c => c.userId === targetUserId);
-
-    return { allPayouts, commissions: managerViewCommissions, isLoading: combinedIsLoading, error, availableYears };
+    return { allPayouts, commissions, isLoading: combinedIsLoading, error, availableYears };
 }
