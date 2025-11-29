@@ -329,7 +329,7 @@ const ManagerOverrideDialog = ({ details, total }: { details: OverrideCommission
 
 function QrCodeDialog({ managerId }: { managerId: string }) {
     const { toast } = useToast();
-    const proposalUrl = `${window.location.origin}/dashboard/proposals/new?managerId=${managerId}`;
+    const proposalUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(proposalUrl)}`;
 
     const handleCopy = () => {
@@ -819,7 +819,7 @@ export default function MyTeamPage() {
                                         </div>
                                          <div className="flex items-center gap-2">
                                             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                            <span>{rep.birthday ? format(new Date(rep.birthday), 'PPP') : 'N/A'}</span>
+                                            <span>{rep.birthday ? format(new Date(rep.birthday), 'PPP') : 'N A'}</span>
                                         </div>
                                     </div>
                                     <div className="space-y-3 border-t pt-4">
