@@ -21,7 +21,7 @@ export type MonthlyPayout = {
     transactionId: string;
 };
 
-export function useCommissions(userIds?: string | string[], isManagerTeamView = false) {
+export function useCommissions(userId?: string) {
   const { firestore, isFirebaseLoading } = useFirebase();
   const { user: authUser, isUserLoading: isUserAuthLoading, isManager } = useUser();
   const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
@@ -32,50 +32,18 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const targetUserIds = useMemo(() => {
-    // If a specific array of user IDs is provided, use it (e.g., for admin views).
-    if (Array.isArray(userIds) && userIds.length > 0) {
-      return userIds;
-    }
-
-    // If a single user ID is provided, check if they are a manager.
-    // If so, fetch their own commissions and their team's commissions.
-    if (typeof userIds === 'string') {
-        const targetUser = salesUsers.find(u => u.id === userIds);
-        if (targetUser?.role === 'manager') {
-             const managerTeamName = `${targetUser.location} (${targetUser.displayName})`;
-             const teamMemberIds = salesUsers
-                .filter(u => u.team === managerTeamName)
-                .map(u => u.id);
-            return [userIds, ...teamMemberIds];
-        }
-        return [userIds]; // It's a regular sales executive
-    }
-    
-    // Default/fallback for a regular user viewing their own commissions.
-    if (authUser) {
-        if (isManager) {
-            const managerTeamName = `${authUser.location} (${authUser.displayName})`;
-            const teamMemberIds = salesUsers
-                .filter(u => u.team === managerTeamName)
-                .map(u => u.id);
-            return [authUser.id, ...teamMemberIds];
-        }
-        return [authUser.id];
-    }
-
-    return [];
-  }, [userIds, authUser, isManager, salesUsers]);
+  const targetUserId = userId || authUser?.id;
 
   useEffect(() => {
-    if (!firestore || isFirebaseLoading || targetUserIds.length === 0) {
-      if (targetUserIds.length === 0 && !isUserAuthLoading && !isSalesUsersLoading) setIsLoading(false);
+    if (!firestore || isFirebaseLoading || !targetUserId) {
+      if (!targetUserId && !isUserAuthLoading && !isSalesUsersLoading) setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
 
-    const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', 'in', targetUserIds));
+    const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', '==', targetUserId));
+    
     const unsubCommissions = onSnapshot(commissionsQuery, (snapshot) => {
         const userCommissions: WithId<Commission>[] = [];
         snapshot.forEach(doc => {
@@ -89,107 +57,59 @@ export function useCommissions(userIds?: string | string[], isManagerTeamView = 
             userCommissions.push({ ...data as Commission, id: doc.id, createdAt: createdAtString });
         });
         setCommissions(userCommissions);
+        setIsLoading(false); 
     }, (e: FirestoreError) => {
         const permissionError = new FirestorePermissionError({ path: 'commissions', operation: 'list' });
         errorEmitter.emit('permission-error', permissionError);
         console.error("Error fetching commissions:", e);
         setError(permissionError);
-    });
-    
-    const clientQuery = query(collection(firestore, 'clients'));
-    const unsubClients = onSnapshot(clientQuery, (snapshot) => {
-        const allClients: WithId<Client>[] = [];
-        snapshot.forEach(doc => allClients.push({ id: doc.id, ...doc.data() } as WithId<Client>));
-        setClients(allClients);
-    }, (e: FirestoreError) => {
-        const permissionError = new FirestorePermissionError({ path: 'clients', operation: 'list' });
-        errorEmitter.emit('permission-error', permissionError);
-        console.error("Error fetching clients:", e);
-        setError(permissionError);
-    });
-
-    const proposalQuery = query(collectionGroup(firestore, 'proposals'));
-     const unsubProposals = onSnapshot(proposalQuery, (snapshot) => {
-        const allProposals: WithId<Proposal>[] = [];
-        snapshot.forEach(doc => {
-             const proposalData = doc.data() as Omit<Proposal, 'id'>;
-            let createdAtString: string;
-            if (proposalData.createdAt && typeof (proposalData.createdAt as any).toDate === 'function') {
-                createdAtString = (proposalData.createdAt as any).toDate().toISOString();
-            } else {
-                createdAtString = proposalData.createdAt as string;
-            }
-            allProposals.push({
-                ...(proposalData as Proposal),
-                id: doc.id,
-                clientId: doc.ref.parent.parent?.id || '',
-                createdAt: createdAtString,
-            });
-        });
-        setProposals(allProposals);
-        setIsLoading(false);
-    }, (e: FirestoreError) => {
-        const permissionError = new FirestorePermissionError({ path: 'proposals', operation: 'list' });
-        errorEmitter.emit('permission-error', permissionError);
-        console.error("Error fetching proposals:", e);
-        setError(permissionError);
         setIsLoading(false);
     });
-
 
     return () => {
         unsubCommissions();
-        unsubClients();
-        unsubProposals();
     };
 
-  }, [firestore, isFirebaseLoading, isUserAuthLoading, isSalesUsersLoading, JSON.stringify(targetUserIds)]);
+  }, [firestore, isFirebaseLoading, isUserAuthLoading, isSalesUsersLoading, targetUserId]);
   
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
         
-        const commissionsByMonthAndUser: Record<string, Record<string, WithId<PayoutCommission>[]>> = {};
+        const commissionsByMonth: Record<string, WithId<PayoutCommission>[]> = {};
 
         commissions.forEach(commission => {
             if(!commission.createdAt) return;
             const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
-            const userId = commission.userId;
-            
-            if (!commissionsByMonthAndUser[monthKey]) {
-                commissionsByMonthAndUser[monthKey] = {};
+            if (!commissionsByMonth[monthKey]) {
+                commissionsByMonth[monthKey] = [];
             }
-            if (!commissionsByMonthAndUser[monthKey][userId]) {
-                commissionsByMonthAndUser[monthKey][userId] = [];
-            }
-            commissionsByMonthAndUser[monthKey][userId].push(commission);
+            commissionsByMonth[monthKey].push(commission);
         });
 
         const processedPayouts: MonthlyPayout[] = [];
 
-        Object.keys(commissionsByMonthAndUser).forEach(month => {
-            Object.keys(commissionsByMonthAndUser[month]).forEach(userId => {
-                const userCommissions = commissionsByMonthAndUser[month][userId];
-                const totalAmount = userCommissions.reduce((sum, c) => sum + c.amount, 0);
-                if (totalAmount === 0) return;
-                
-                const allPaid = !userCommissions.some(c => c.status === 'pending');
-                const status = allPaid ? 'paid' : 'pending';
-                const userIdForTx = userId.slice(0, 4).toUpperCase();
-                
-                processedPayouts.push({
-                    month,
-                    totalAmount,
-                    status,
-                    timelineStatus: allPaid ? 'paid' : 'calculated',
-                    commissions: userCommissions,
-                    transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${userIdForTx}`
-                });
+        Object.keys(commissionsByMonth).forEach(month => {
+            const userCommissions = commissionsByMonth[month];
+            const totalAmount = userCommissions.reduce((sum, c) => sum + c.amount, 0);
+            if (totalAmount === 0) return;
+            
+            const allPaid = !userCommissions.some(c => c.status === 'pending');
+            const status = allPaid ? 'paid' : 'pending';
+            const userIdForTx = targetUserId ? targetUserId.slice(0, 4).toUpperCase() : 'USER';
+            
+            processedPayouts.push({
+                month,
+                totalAmount,
+                status,
+                timelineStatus: allPaid ? 'paid' : 'calculated',
+                commissions: userCommissions,
+                transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${userIdForTx}`
             });
         });
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, isLoading]);
+    }, [commissions, isLoading, targetUserId]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
