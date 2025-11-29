@@ -31,7 +31,7 @@ import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from './ui/table';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, where, getDocs, doc, updateDoc, arrayUnion, writeBatch, runTransaction } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   Select,
@@ -486,103 +486,98 @@ export function ClientOverviewDialog({
     const finalProposalId = proposalIdToConfirm || selectedProposal?.id;
     const finalFile = fileToUpload || paymentProofFile;
     const proposalCreatorId = selectedProposal?.userId;
-
+  
     if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo || !proposalCreatorId) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof, proposal details, user, or subscription info.' });
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof, proposal details, user, or subscription info.' });
+      return;
     }
-
+  
     setIsConfirmingPayment(true);
     try {
-        const batch = writeBatch(firestore);
-
+      await runTransaction(firestore, async (transaction) => {
         const storage = getStorage();
         const filePath = `payment_proofs/${client.id}/${finalProposalId}/${finalFile.name}`;
         const storageRef = ref(storage, filePath);
         const snapshot = await uploadBytes(storageRef, finalFile);
         const downloadURL = await getDownloadURL(snapshot.ref);
-
+  
         const proposalRef = doc(firestore, `clients/${client.id}/proposals`, finalProposalId);
-        batch.update(proposalRef, {
-            status: 'accepted',
-            paymentProofUrl: downloadURL
+        transaction.update(proposalRef, {
+          status: 'accepted',
+          paymentProofUrl: downloadURL
         });
-
+  
         const clientRef = doc(firestore, 'clients', client.id);
-        batch.update(clientRef, {
-            status: 'active',
-            paymentStatus: 'Paid',
-            subscription: {
-              ...subscriptionInfo.rawContent,
-              dateSigned: new Date().toISOString()
-            }
+        transaction.update(clientRef, {
+          status: 'active',
+          paymentStatus: 'Paid',
+          subscription: {
+            ...subscriptionInfo.rawContent,
+            dateSigned: new Date().toISOString()
+          }
         });
-
+  
         const commissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
         const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
-
+  
         const rate = (subscriptionInfo.clientType && commissionRates[subscriptionInfo.clientType]) || 0;
         const commissionAmount = subscriptionInfo.totalAmountDue * rate;
         
-        const commissionsRef = collection(firestore, 'commissions');
-
         if (commissionAmount > 0) {
-            const execCommissionRef = doc(commissionsRef);
-            batch.set(execCommissionRef, {
-                userId: proposalCreatorId,
-                proposalId: finalProposalId,
-                amount: commissionAmount,
-                createdAt: serverTimestamp(),
-                status: 'pending',
-                type: 'commission',
-                description: `Commission for ${subscriptionInfo.planName}`,
-                clientName: client.companyName,
-                referenceId: finalProposalId
-            });
+          const execCommissionRef = doc(collection(firestore, 'commissions'));
+          transaction.set(execCommissionRef, {
+            userId: proposalCreatorId,
+            proposalId: finalProposalId,
+            amount: commissionAmount,
+            createdAt: serverTimestamp(),
+            status: 'pending',
+            type: 'commission',
+            description: `Commission for ${subscriptionInfo.planName}`,
+            clientName: client.companyName,
+            referenceId: finalProposalId
+          });
         }
         
         const proposalCreator = userMap.get(proposalCreatorId);
         if (proposalCreator && proposalCreator.team) {
-            const teamManager = allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team);
-            if (teamManager) {
-                const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
-                const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;
-                if(overrideAmount > 0) {
-                    const managerCommissionRef = doc(commissionsRef);
-                    batch.set(managerCommissionRef, {
-                        userId: teamManager.id,
-                        proposalId: finalProposalId,
-                        amount: overrideAmount,
-                        createdAt: serverTimestamp(),
-                        status: 'pending',
-                        type: 'commission',
-                        description: `Manager Override for ${proposalCreator.displayName}'s sale`,
-                        clientName: client.companyName,
-                        referenceId: `override-${finalProposalId}`
-                    });
-                }
+          const teamManager = allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team);
+          if (teamManager) {
+            const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
+            const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;
+            if (overrideAmount > 0) {
+              const managerCommissionRef = doc(collection(firestore, 'commissions'));
+              transaction.set(managerCommissionRef, {
+                userId: teamManager.id,
+                proposalId: finalProposalId,
+                amount: overrideAmount,
+                createdAt: serverTimestamp(),
+                status: 'pending',
+                type: 'commission',
+                description: `Manager Override for ${proposalCreator.displayName}'s sale`,
+                clientName: client.companyName,
+                referenceId: `override-${finalProposalId}`
+              });
             }
+          }
         }
-        
-        await batch.commit();
-
-        toast({
-            title: "Payment Confirmed & Client Activated!",
-            description: `${client.companyName}'s account is now active and has been passed to the onboarding team.`,
-        });
-
-        if (view === 'proposals') {
-             setOpen(false);
-             if (setActiveView) {
-                setActiveView('clients');
-             }
+      });
+  
+      toast({
+        title: "Payment Confirmed & Client Activated!",
+        description: `${client.companyName}'s account is now active and has been passed to the onboarding team.`,
+      });
+  
+      if (view === 'proposals') {
+        setOpen(false);
+        if (setActiveView) {
+          setActiveView('clients');
         }
-       
+      }
     } catch (error) {
-        console.error("Payment confirmation failed:", error);
-        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not confirm payment. Please try again.' });
+      console.error("Payment confirmation failed:", error);
+      toast({ variant: 'destructive', title: 'Transaction Failed', description: 'Could not confirm payment. Please try again.' });
     } finally {
-        setIsConfirmingPayment(false);
+      setIsConfirmingPayment(false);
     }
   }
 
