@@ -109,15 +109,26 @@ export function useCommissions(userId?: string) {
         unsubscribers.forEach(unsub => unsub());
     };
 
-  }, [firestore, isFirebaseLoading, userId, isManager, teamMemberIds, authUser, isUserAuthLoading]);
+  }, [firestore, isFirebaseLoading, userId, isManager, teamMemberIds.length, authUser, isUserAuthLoading]); // Added teamMemberIds.length to re-run when team members are loaded
   
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
         
-        const targetId = userId || authUser?.id;
-        const commissionsToProcess = isManager && !userId 
-            ? commissions // A manager viewing their own payouts needs to see everything
-            : commissions.filter(c => c.userId === targetId);
+        let targetId = userId;
+        if (!targetId && authUser) { // If no specific userId is passed, use the authenticated user
+            targetId = authUser.id;
+        }
+        if (!targetId) return [];
+
+        let commissionsToProcess = commissions;
+
+        // If the user is a manager viewing their OWN payouts, we need their direct commissions + overrides
+        if (isManager && targetId === authUser?.id) {
+            commissionsToProcess = commissions.filter(c => c.userId === targetId || (c.userId === authUser?.id && c.description?.toLowerCase().includes('override')));
+        } else {
+            // For a specific user (or a non-manager), just show their commissions
+             commissionsToProcess = commissions.filter(c => c.userId === targetId);
+        }
 
         const commissionsByMonth: Record<string, WithId<PayoutCommission>[]> = {};
 
@@ -134,15 +145,6 @@ export function useCommissions(userId?: string) {
 
         Object.keys(commissionsByMonth).forEach(month => {
             let monthCommissions = commissionsByMonth[month];
-            
-            // If the user is a manager looking at their own payouts, we need to filter for their direct commissions and overrides
-            if (isManager && !userId) {
-                monthCommissions = monthCommissions.filter(c => {
-                    return c.userId === authUser?.id || c.description?.toLowerCase().includes('override')
-                });
-            }
-
-
             const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
             if (totalAmount === 0) return;
             
