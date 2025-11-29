@@ -1,5 +1,4 @@
 
-
 'use client';
 import Link from "next/link";
 import { useState, useMemo, useEffect } from 'react';
@@ -450,14 +449,6 @@ export default function ProposalsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Proposals &amp; Clients</h1>
-        <Button asChild size="sm" className="h-8 gap-1 hidden sm:inline-flex">
-          <Link href="/dashboard/proposals/new">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="whitespace-nowrap">
-              Create Proposal
-            </span>
-          </Link>
-        </Button>
       </div>
 
       <Button asChild size="icon" className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50">
@@ -545,5 +536,3 @@ export default function ProposalsPage() {
     </div>
   );
 }
-
-    
