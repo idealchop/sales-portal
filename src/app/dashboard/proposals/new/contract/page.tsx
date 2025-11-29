@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -495,6 +494,7 @@ function ContractPageContent() {
   const address = searchParams.get('address') || '';
   const clientType = searchParams.get('clientType') as Client['clientType'];
   const existingClientId = searchParams.get('clientId'); 
+  const managerId = searchParams.get('managerId');
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -667,11 +667,21 @@ function ContractPageContent() {
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
   const saveProposal = async (status: 'draft' | 'finalized') => {
-    if (!finalPlanDetails || !firestore || !user) {
+    if (!finalPlanDetails || !firestore) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Cannot save proposal without complete plan details, user session, or Firestore instance.",
+        description: "Cannot save proposal without complete plan details or Firestore instance.",
+      });
+      return;
+    }
+
+    const proposalOwnerId = managerId || user?.uid;
+    if (!proposalOwnerId) {
+       toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "Could not determine the proposal owner. Please ensure you are logged in.",
       });
       return;
     }
@@ -695,7 +705,7 @@ function ContractPageContent() {
       if (!existingClientId) {
         const newClientData = {
           id: finalClientId,
-          userId: user.uid,
+          userId: proposalOwnerId,
           companyName: companyName,
           contactName: contactName,
           contactEmail: contactEmail,
@@ -721,7 +731,7 @@ function ContractPageContent() {
       const newProposalData = {
         id: proposalId,
         clientId: finalClientId,
-        userId: user.uid,
+        userId: proposalOwnerId,
         title: proposalContentToSave.summaryTitle,
         content: JSON.stringify(proposalContentToSave),
         status: status,
@@ -1130,3 +1140,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
