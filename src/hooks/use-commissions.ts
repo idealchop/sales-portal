@@ -46,12 +46,7 @@ export function useCommissions(userId?: string) {
 
     setIsLoading(true);
 
-    const isManagerViewingSelf = isManager && targetUserId === authUser?.id;
-    
-    // For managers viewing their own payouts, we need their direct commissions
-    // AND override commissions. The override commissions are already assigned to their userId,
-    // so a single query for their userId is sufficient and correct.
-    const userIdsToQuery = isManagerViewingSelf ? [targetUserId] : [targetUserId];
+    const userIdsToQuery = [targetUserId];
 
     if (userIdsToQuery.length === 0) {
         setCommissions([]);
@@ -87,7 +82,7 @@ export function useCommissions(userId?: string) {
         unsubscribe();
     };
 
-  }, [firestore, isFirebaseLoading, isUserAuthLoading, isSalesUsersLoading, targetUserId, isManager, authUser?.id]);
+  }, [firestore, isFirebaseLoading, isUserAuthLoading, isSalesUsersLoading, targetUserId]);
   
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
