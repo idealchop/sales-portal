@@ -155,7 +155,7 @@ export default function NewProposalPage() {
   }, [clientSelectionType, selectedClient]);
 
   const getNextStepLink = () => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     
     if (clientSelectionType === 'existing' && selectedClientId) {
         params.set('clientId', selectedClientId);
@@ -171,9 +171,7 @@ export default function NewProposalPage() {
         params.set('clientType', selectedClient.clientType);
     }
     
-    const baseUrl = clientSelectionType === 'existing'
-      ? '/dashboard/proposals/new/plans'
-      : '/dashboard/proposals/new/about';
+    const baseUrl = '/dashboard/proposals/new/plans';
 
     return `${baseUrl}?${params.toString()}`;
   }
