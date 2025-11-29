@@ -379,7 +379,7 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">Welcome back, {user?.displayName || 'Sandra'}! Here's your earnings and goals snapshot.</p>
         </div>
         <Button asChild size="sm">
-            <Link href="/proposal/new">Create Proposal</Link>
+            <Link href="/dashboard/proposals/new">Create Proposal</Link>
         </Button>
       </div>
 
@@ -699,7 +699,7 @@ export default function DashboardPage() {
               <CardDescription>Your key performance indicators for this month.</CardDescription>
             </div>
             <Button asChild size="sm">
-                <Link href="/proposal/new">Create Proposal</Link>
+                <Link href="/dashboard/proposals/new">Create Proposal</Link>
             </Button>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
