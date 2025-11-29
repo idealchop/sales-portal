@@ -45,10 +45,10 @@ service cloud.firestore {
       allow list, write: if isAdmin(); 
     }
 
-    // Admin can read all commissions. Users can only read/write their own.
+    // Admin can read all commissions. Users can only read/write their own. Managers can read their team's commissions.
     match /commissions/{commissionId} {
-        allow read: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-        allow write: if isSignedIn() && (isAdmin() || request.resource.data.userId == request.auth.uid);
+        allow read: if isSignedIn() && (isAdmin() || isOwner(resource.data.userId) || (isManager() && isSalesManagerOf(resource.data.userId)));
+        allow write: if isSignedIn() && (isAdmin() || isOwner(request.resource.data.userId));
     }
 
     // Unauthenticated users can create clients and proposals.
