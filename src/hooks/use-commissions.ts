@@ -27,12 +27,16 @@ export function useCommissions(userId?: string) {
   const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
   
   const [commissions, setCommissions] = useState<WithId<Commission>[]>([]);
-  const [clients, setClients] = useState<WithId<Client>[]>([]);
-  const [proposals, setProposals] = useState<WithId<Proposal>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const targetUserId = userId || authUser?.id;
+
+  const teamMemberIds = useMemo(() => {
+    if (!isManager || !authUser || isSalesUsersLoading) return [];
+    const managerTeamName = `${authUser.location} (${authUser.displayName})`;
+    return salesUsers.filter(u => u.team === managerTeamName).map(u => u.id);
+  }, [isManager, authUser, salesUsers, isSalesUsersLoading]);
 
   useEffect(() => {
     if (!firestore || isFirebaseLoading || !targetUserId) {
@@ -42,9 +46,22 @@ export function useCommissions(userId?: string) {
 
     setIsLoading(true);
 
-    const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', '==', targetUserId));
+    const isManagerViewingSelf = isManager && targetUserId === authUser?.id;
     
-    const unsubCommissions = onSnapshot(commissionsQuery, (snapshot) => {
+    // For managers viewing their own payouts, we need their direct commissions
+    // AND override commissions. The override commissions are already assigned to their userId,
+    // so a single query for their userId is sufficient and correct.
+    const userIdsToQuery = isManagerViewingSelf ? [targetUserId] : [targetUserId];
+
+    if (userIdsToQuery.length === 0) {
+        setCommissions([]);
+        setIsLoading(false);
+        return;
+    }
+
+    const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', 'in', userIdsToQuery));
+    
+    const unsubscribe = onSnapshot(commissionsQuery, (snapshot) => {
         const userCommissions: WithId<Commission>[] = [];
         snapshot.forEach(doc => {
             const data = doc.data() as Omit<Commission, 'id'>;
@@ -67,10 +84,10 @@ export function useCommissions(userId?: string) {
     });
 
     return () => {
-        unsubCommissions();
+        unsubscribe();
     };
 
-  }, [firestore, isFirebaseLoading, isUserAuthLoading, isSalesUsersLoading, targetUserId]);
+  }, [firestore, isFirebaseLoading, isUserAuthLoading, isSalesUsersLoading, targetUserId, isManager, authUser?.id]);
   
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
@@ -122,5 +139,5 @@ export function useCommissions(userId?: string) {
 
     const combinedIsLoading = isLoading || isFirebaseLoading || isUserAuthLoading || isSalesUsersLoading;
 
-    return { allPayouts, commissions, clients, proposals, isLoading: combinedIsLoading, error, availableYears };
+    return { allPayouts, commissions, isLoading: combinedIsLoading, error, availableYears };
 }
