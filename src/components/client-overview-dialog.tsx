@@ -528,7 +528,7 @@ export function ClientOverviewDialog({
 
         // Sales Executive Commission
         if (commissionAmount > 0) {
-            await addDoc(commissionsRef, {
+            addDoc(commissionsRef, {
                 userId: proposalCreatorId,
                 proposalId: finalProposalId,
                 amount: commissionAmount,
@@ -538,6 +538,13 @@ export function ClientOverviewDialog({
                 description: `Commission for ${subscriptionInfo.planName}`,
                 clientName: client.companyName,
                 referenceId: finalProposalId
+            }).catch(async (error) => {
+              const permissionError = new FirestorePermissionError({
+                path: 'commissions',
+                operation: 'create',
+                requestResourceData: { userId: proposalCreatorId }
+              });
+              errorEmitter.emit('permission-error', permissionError);
             });
         }
         
@@ -549,7 +556,7 @@ export function ClientOverviewDialog({
                 const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
                 const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;
                 if(overrideAmount > 0) {
-                    await addDoc(commissionsRef, {
+                    addDoc(commissionsRef, {
                         userId: teamManager.id,
                         proposalId: finalProposalId,
                         amount: overrideAmount,
@@ -559,6 +566,13 @@ export function ClientOverviewDialog({
                         description: `Manager Override for ${proposalCreator.displayName}'s sale`,
                         clientName: client.companyName,
                         referenceId: `override-${finalProposalId}`
+                    }).catch(async (error) => {
+                      const permissionError = new FirestorePermissionError({
+                        path: 'commissions',
+                        operation: 'create',
+                        requestResourceData: { userId: teamManager.id }
+                      });
+                      errorEmitter.emit('permission-error', permissionError);
                     });
                 }
             }
