@@ -192,9 +192,8 @@ function PaymentTimelineDialog({
     )
 }
 
-function PayoutHistoryView({ userId, userDisplayName, onProcessPayout, processingPayouts }: { userId?: string, userDisplayName: string, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts?: Record<string, boolean> }) {
+function PayoutHistoryView({ userId, userDisplayName, onProcessPayout, processingPayouts, yearFilter, onYearChange }: { userId?: string, userDisplayName: string, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts?: Record<string, boolean>, yearFilter: string, onYearChange: (year: string) => void }) {
     const { allPayouts, isLoading, availableYears } = useCommissions(userId);
-    const [selectedYear, setSelectedYear] = useState<string>('all');
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     const filteredPayouts = useMemo(() => {
@@ -202,28 +201,12 @@ function PayoutHistoryView({ userId, userDisplayName, onProcessPayout, processin
         return allPayouts.filter(payout => {
             if (payout.totalAmount === 0) return false;
             const date = new Date(payout.month);
-            return selectedYear === 'all' || date.getFullYear().toString() === selectedYear;
+            return yearFilter === 'all' || date.getFullYear().toString() === yearFilter;
         });
-    }, [allPayouts, selectedYear]);
+    }, [allPayouts, yearFilter]);
 
     return (
         <div>
-            <div className="flex items-start justify-between mb-4">
-                <div>
-                    <h3 className="font-semibold">Payouts for {userDisplayName}</h3>
-                </div>
-                <div className="flex items-center gap-2 pt-1.5">
-                    <Select value={selectedYear} onValueChange={setSelectedYear}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Years</SelectItem>
-                            {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
             <Card>
                 <CardContent className="pt-6">
                     <ScrollArea className="h-[50vh] pr-4">
@@ -328,6 +311,10 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
     const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
     
     const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
+    const [selectedYear, setSelectedYear] = useState<string>('all');
+    
+    const { availableYears } = useCommissions(selectedUserId);
+
 
     const teamMembers = useMemo(() => {
         if (!isManager || !authUser || isSalesUsersLoading) return [];
@@ -336,11 +323,9 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
     }, [isManager, authUser, salesUsers, isSalesUsersLoading]);
     
     useEffect(() => {
-        // If a specific user is passed (e.g., from admin page), use that.
         if (propUser) {
             setSelectedUserId(propUser.id);
         } 
-        // Otherwise (e.g., from header dropdown), default to the logged-in user.
         else {
             setSelectedUserId(authUser?.id);
         }
@@ -360,40 +345,62 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
             </DialogTrigger>
             <DialogContent className="sm:max-w-4xl">
                  <DialogHeader>
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div>
                             <DialogTitle>{isAdmin && propUser ? `Payouts for ${propUser?.displayName}`: 'Payout History'}</DialogTitle>
                             <DialogDescription>
                                 A monthly summary of commissions and their status.
                             </DialogDescription>
                         </div>
-                        {isManager && teamMembers.length > 0 && (
-                            <div className="w-[250px]">
-                                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                        <div className="flex items-center gap-2">
+                             {isManager && teamMembers.length > 0 && (
+                                <div className="w-full sm:w-[250px]">
+                                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select team member..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={authUser?.id}>My Payouts</SelectItem>
+                                            {teamMembers.map(member => (
+                                                <SelectItem key={member.id} value={member.id}>
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarImage src={member.photoURL ?? undefined} />
+                                                            <AvatarFallback className="text-xs">{member.displayName?.[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span>{member.displayName}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                             <div className="w-full sm:w-[180px]">
+                                <Select value={selectedYear} onValueChange={setSelectedYear}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select team member..." />
+                                        <SelectValue placeholder="Filter by year" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value={authUser?.id}>My Payouts</SelectItem>
-                                        {teamMembers.map(member => (
-                                            <SelectItem key={member.id} value={member.id}>
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={member.photoURL ?? undefined} />
-                                                        <AvatarFallback className="text-xs">{member.displayName?.[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                    <span>{member.displayName}</span>
-                                                </div>
-                                            </SelectItem>
-                                        ))}
+                                        <SelectItem value="all">All Years</SelectItem>
+                                        {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
-                        )}
+                        </div>
                     </div>
                 </DialogHeader>
-                {selectedUserId && <PayoutHistoryView userId={selectedUserId} userDisplayName={selectedUserDisplayName} onProcessPayout={isAdmin ? onProcessPayout : undefined} processingPayouts={isAdmin ? processingPayouts : undefined} />}
+                {selectedUserId && <PayoutHistoryView 
+                    userId={selectedUserId} 
+                    userDisplayName={selectedUserDisplayName} 
+                    onProcessPayout={isAdmin ? onProcessPayout : undefined} 
+                    processingPayouts={isAdmin ? processingPayouts : undefined}
+                    yearFilter={selectedYear}
+                    onYearChange={setSelectedYear}
+                />}
             </DialogContent>
         </Dialog>
     );
 }
+
+    
