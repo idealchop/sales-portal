@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2 } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -55,6 +55,7 @@ import { ContractDetails, type FinalPlanDetails } from '@/components/contract-de
 import type { Client } from '@/lib/definitions';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -288,7 +289,9 @@ function PreviewDialog({
     saveProposal,
     signatureData,
     onSaveSignature,
-    onClearSignature
+    onClearSignature,
+    paymentProofFile,
+    setPaymentProofFile,
 }: { 
     finalPlanDetails: FinalPlanDetails,
     isSaving: boolean;
@@ -298,10 +301,13 @@ function PreviewDialog({
     signatureData?: string;
     onSaveSignature: (dataUrl: string) => void;
     onClearSignature: () => void;
+    paymentProofFile: File | null;
+    setPaymentProofFile: (file: File | null) => void;
 }) {
     const contractRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSaveDraft = async () => {
       await saveProposal('draft');
@@ -316,11 +322,22 @@ function PreviewDialog({
             });
             return;
         }
+        if (!paymentProofFile) {
+            toast({
+                variant: "destructive",
+                title: "Payment Proof Required",
+                description: "Please upload your proof of payment to finalize.",
+            });
+            return;
+        }
         await saveProposal('finalized');
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPaymentProofFile(e.target.files ? e.target.files[0] : null);
+    };
+
     const handleDownloadPdf = async () => {
-        // The element to capture is the div inside the ScrollArea that holds all the content.
         const contentToCapture = contractRef.current;
         if (!contentToCapture) {
             toast({ variant: "destructive", title: "Download Failed", description: "Contract content container not found." });
@@ -330,24 +347,20 @@ function PreviewDialog({
         setIsDownloading(true);
         
         try {
-            // Use html2canvas to capture the content.
-            // We are capturing the direct content div, not its scrollable parent.
             const canvas = await html2canvas(contentToCapture, {
-                scale: 2, // Higher scale for better quality
-                useCORS: true, // Important for external images
-                allowTaint: true, // Also necessary for some cross-origin images
+                scale: 2, 
+                useCORS: true, 
+                allowTaint: true, 
                 onclone: (document) => {
-                    // This function runs on the cloned document right before rendering.
-                    // It's the perfect place to ensure all images are fully loaded.
                     const imagePromises: Promise<void>[] = [];
                     const images = document.getElementsByTagName('img');
                     for (let i = 0; i < images.length; i++) {
                         const img = images[i];
-                        if (img.complete) continue; // Skip already loaded images
+                        if (img.complete) continue; 
                         
                         imagePromises.push(new Promise((resolve) => {
                             img.onload = () => resolve();
-                            img.onerror = () => resolve(); // Resolve even on error to not block PDF generation
+                            img.onerror = () => resolve();
                         }));
                     }
                     return Promise.all(imagePromises);
@@ -355,7 +368,7 @@ function PreviewDialog({
             });
 
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4'); // Portrait, millimeters, A4 size
+            const pdf = new jsPDF('p', 'mm', 'a4');
 
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -363,18 +376,15 @@ function PreviewDialog({
             const contentWidth = canvas.width;
             const contentHeight = canvas.height;
             
-            // Calculate the ratio to fit the image width to the PDF width
             const ratio = contentWidth / pdfWidth;
             const imgHeight = contentHeight / ratio;
             
             let heightLeft = imgHeight;
             let position = 0;
 
-            // Add the first page
             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
             heightLeft -= pdfHeight;
 
-            // Add new pages if content is taller than one page
             while (heightLeft > 0) {
                 position = -pdfHeight + position;
                 pdf.addPage();
@@ -396,12 +406,12 @@ function PreviewDialog({
     return (
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
              <DialogContent className="sm:max-w-5xl">
-                <DialogHeader className="sr-only">
-                    <DialogTitle>Proposal Preview</DialogTitle>
-                    <DialogDescription>A preview of the sales proposal for the client to review and sign.</DialogDescription>
+                <DialogHeader>
+                    <DialogTitle>Proposal Preview &amp; Finalization</DialogTitle>
+                    <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="h-[85vh] pr-6">
-                    <div ref={contractRef}>
+                <ScrollArea className="h-[75vh] pr-6">
+                    <div ref={contractRef} className="space-y-6">
                         <ContractDetails
                             finalPlanDetails={finalPlanDetails}
                             isSigned={false}
@@ -409,43 +419,66 @@ function PreviewDialog({
                             onSaveSignature={onSaveSignature}
                             onClearSignature={onClearSignature}
                         />
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Final Step: Upload Proof of Payment</CardTitle>
+                                <CardDescription>
+                                    Please upload a screenshot or document of your payment confirmation.
+                                </CardDescription>
+                            </CardHeader>
+                             <CardContent className="space-y-4">
+                                <PaymentMethods />
+                                <div className="pt-4 space-y-2">
+                                     <Label htmlFor="payment-proof">Payment Confirmation File</Label>
+                                     <Input 
+                                        id="payment-proof"
+                                        type="file" 
+                                        ref={fileInputRef} 
+                                        onChange={handleFileChange} 
+                                        accept="image/png, image/jpeg, application/pdf"
+                                     />
+                                     {paymentProofFile && (
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md">
+                                            <FileCheck className="h-4 w-4 text-green-500" />
+                                            <span>{paymentProofFile.name}</span>
+                                        </div>
+                                     )}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 </ScrollArea>
                 <DialogFooter className="gap-2 sm:justify-end border-t pt-4">
-                    <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={isSaving || isDownloading}>
-                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Save as Draft
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                         Close
                     </Button>
                     
-                    <Button type="button" onClick={handleDownloadPdf} disabled={isSaving || isDownloading}>
+                    <Button type="button" onClick={handleDownloadPdf} variant="outline" disabled={isSaving || isDownloading}>
                         {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                         Download PDF
                     </Button>
 
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                             <Button type="button" disabled>
+                             <Button type="button" disabled={isSaving}>
                                 <Send className="mr-2 h-4 w-4" />
-                                Finalize &amp; Send
+                                Finalize &amp; Submit
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Finalize and Send Proposal?</AlertDialogTitle>
+                                <AlertDialogTitle>Finalize and Submit Proposal?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This will finalize the proposal and mark it as sent to the client.
-                                    The proposal will be sent to the following email:
-                                    <br />
-                                    <strong className="font-mono">{finalPlanDetails.contactEmail}</strong>
+                                    This will submit your signed contract and proof of payment. The proposal will be sent to the sales team for final confirmation.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
                                     {isSaving ? (
-                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
                                     ) : (
-                                        'Yes, Send Proposal'
+                                        'Yes, Submit Now'
                                     )}
                                 </AlertDialogAction>
                             </AlertDialogFooter>
@@ -509,6 +542,7 @@ function ContractPageContent() {
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
   const [signatureData, setSignatureData] = useState<string | undefined>();
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [_, setForceUpdate] = useState(0);
 
   const getStations = (liters: number) => {
@@ -667,11 +701,11 @@ function ContractPageContent() {
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
   const saveProposal = async (status: 'draft' | 'finalized') => {
-    if (!finalPlanDetails || !firestore) {
+    if (!finalPlanDetails || !firestore || !paymentProofFile) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Cannot save proposal without complete plan details or Firestore instance.",
+        description: "Cannot save proposal without complete plan details, payment proof, or Firestore instance.",
       });
       return;
     }
@@ -699,7 +733,20 @@ function ContractPageContent() {
           return;
         }
       }
-  
+      
+      const proposalId = generatedProposalId;
+      if (!proposalId) {
+        toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
+        setIsSaving(false);
+        return;
+      }
+      
+      const storage = getStorage();
+      const filePath = `payment_proofs/${finalClientId}/${proposalId}/${paymentProofFile.name}`;
+      const storageRef = ref(storage, filePath);
+      const snapshot = await uploadBytes(storageRef, paymentProofFile);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
       const clientRef = doc(firestore, 'clients', finalClientId);
   
       if (!existingClientId) {
@@ -718,13 +765,6 @@ function ContractPageContent() {
         await setDoc(clientRef, newClientData, { merge: true });
       }
       
-      const proposalId = generatedProposalId;
-      if (!proposalId) {
-        toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
-        setIsSaving(false);
-        return;
-      }
-      
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
       const amountToSave = parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, ""));
       
@@ -738,6 +778,7 @@ function ContractPageContent() {
         amount: amountToSave,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        paymentProofUrl: downloadURL,
       };
       
       const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
@@ -751,8 +792,8 @@ function ContractPageContent() {
       });
   
       toast({
-        title: status === 'draft' ? "Proposal Saved!" : "Proposal Finalized!",
-        description: `Your proposal for ${companyName} has been successfully saved.`,
+        title: status === 'draft' ? "Proposal Saved!" : "Proposal Submitted!",
+        description: `Your proposal for ${companyName} has been successfully submitted for review.`,
       });
       router.push('/dashboard/proposals');
   
@@ -904,6 +945,8 @@ function ContractPageContent() {
                 signatureData={signatureData}
                 onSaveSignature={handleSaveSignature}
                 onClearSignature={() => setSignatureData(undefined)}
+                paymentProofFile={paymentProofFile}
+                setPaymentProofFile={setPaymentProofFile}
             />
        )}
 
