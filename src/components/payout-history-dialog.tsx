@@ -192,9 +192,10 @@ function PaymentTimelineDialog({
     )
 }
 
-function PayoutHistoryView({ userId, userDisplayName, onProcessPayout, processingPayouts, yearFilter, onYearChange }: { userId?: string, userDisplayName: string, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts?: Record<string, boolean>, yearFilter: string, onYearChange: (year: string) => void }) {
+function PayoutHistoryView({ userId, onProcessPayout, processingPayouts }: { userId?: string, onProcessPayout?: (payoutId: string, commissions: WithId<Commission>[]) => void, processingPayouts?: Record<string, boolean> }) {
     const { allPayouts, isLoading, availableYears } = useCommissions(userId);
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const [yearFilter, setYearFilter] = useState<string>('all');
 
     const filteredPayouts = useMemo(() => {
         if (!allPayouts) return [];
@@ -207,6 +208,17 @@ function PayoutHistoryView({ userId, userDisplayName, onProcessPayout, processin
 
     return (
         <div>
+            <div className="flex justify-end mb-4">
+                <Select value={yearFilter} onValueChange={setYearFilter}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Years</SelectItem>
+                        {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
             <Card>
                 <CardContent className="pt-6">
                     <ScrollArea className="h-[50vh] pr-4">
@@ -311,11 +323,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
     const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
     
     const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
-    const [selectedYear, setSelectedYear] = useState<string>('all');
     
-    const { availableYears } = useCommissions(selectedUserId);
-
-
     const teamMembers = useMemo(() => {
         if (!isManager || !authUser || isSalesUsersLoading) return [];
         const managerTeamName = `${authUser.location} (${authUser.displayName})`;
@@ -326,17 +334,10 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
         if (propUser) {
             setSelectedUserId(propUser.id);
         } 
-        else {
-            setSelectedUserId(authUser?.id);
+        else if (authUser) {
+            setSelectedUserId(authUser.id);
         }
     }, [propUser, authUser]);
-
-    const selectedUserDisplayName = useMemo(() => {
-        if (!selectedUserId) return 'Loading...';
-        if (selectedUserId === authUser?.id) return 'My Payouts';
-        const member = [...salesUsers, propUser, authUser].find(u => u?.id === selectedUserId);
-        return member?.displayName || 'Select...';
-    }, [selectedUserId, salesUsers, propUser, authUser]);
 
     return (
         <Dialog>
@@ -353,7 +354,7 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                             </DialogDescription>
                         </div>
                         <div className="flex items-center gap-2">
-                             {isManager && teamMembers.length > 0 && (
+                             {isManager && teamMembers.length > 0 && !isAdmin && (
                                 <div className="w-full sm:w-[250px]">
                                     <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                                         <SelectTrigger>
@@ -376,31 +377,15 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
                                     </Select>
                                 </div>
                             )}
-                             <div className="w-full sm:w-[180px]">
-                                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Filter by year" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Years</SelectItem>
-                                        {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
                         </div>
                     </div>
                 </DialogHeader>
                 {selectedUserId && <PayoutHistoryView 
                     userId={selectedUserId} 
-                    userDisplayName={selectedUserDisplayName} 
                     onProcessPayout={isAdmin ? onProcessPayout : undefined} 
                     processingPayouts={isAdmin ? processingPayouts : undefined}
-                    yearFilter={selectedYear}
-                    onYearChange={setSelectedYear}
                 />}
             </DialogContent>
         </Dialog>
     );
 }
-
-    
