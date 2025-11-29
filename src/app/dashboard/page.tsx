@@ -373,9 +373,14 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex-1">
-        <h1 className="text-2xl font-bold">My Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, {user?.displayName || 'Sandra'}! Here's your earnings and goals snapshot.</p>
+      <div className="flex items-center justify-between">
+        <div>
+            <h1 className="text-2xl font-bold">My Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, {user?.displayName || 'Sandra'}! Here's your earnings and goals snapshot.</p>
+        </div>
+        <Button asChild>
+            <Link href="/dashboard/proposals/new">Create Proposal</Link>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -645,7 +650,7 @@ export default function DashboardPage() {
         </Card>
         <Dialog>
           <DialogTrigger asChild>
-            <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground cursor-pointer">
+            <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground cursor-pointer" >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Quarterly Sales Volume</CardTitle>
                 <TrendingUp className="h-4 w-4 text-primary-foreground/80" />
