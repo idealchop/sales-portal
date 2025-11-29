@@ -610,7 +610,7 @@ export default function MyTeamPage() {
             </div>
         </div>
 
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Proposals Sent</CardTitle>
@@ -663,20 +663,6 @@ export default function MyTeamPage() {
                     </p>
                 </CardContent>
             </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Team Proposal Funnel</CardTitle>
-                    <BarChartIcon className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2 text-xs">
-                        <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><FileText className="text-muted-foreground"/>Drafts</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.draft || 0}</span></div>
-                        <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><Send className="text-blue-500"/>Sent</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.sent || 0}</span></div>
-                        <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><Check className="text-green-500"/>Accepted</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.accepted || 0}</span></div>
-                        <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><X className="text-red-500"/>Rejected</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.rejected || 0}</span></div>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -701,33 +687,44 @@ export default function MyTeamPage() {
                         </Select>
                     </div>
                 </CardHeader>
-                <CardContent className="h-[250px] pr-6">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={teamPerformance.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
-                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                            <XAxis 
-                                dataKey="userId" 
-                                tickLine={false} 
-                                axisLine={false} 
-                                tick={<CustomXAxisTick salesUsers={myTeam} />}
-                                interval={0}
-                            />
-                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                            <Tooltip
-                                cursor={{ fill: 'hsl(var(--muted))' }}
-                                contentStyle={{ 
-                                    backgroundColor: 'hsl(var(--background))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: 'var(--radius)'
-                                }}
-                                labelFormatter={(value) => {
-                                    const user = myTeam.find(u => u.id === value);
-                                    return user ? user.displayName : 'Unknown';
-                                }}
-                            />
-                            <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 h-[250px] pr-6">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={teamPerformance.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
+                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                <XAxis 
+                                    dataKey="userId" 
+                                    tickLine={false} 
+                                    axisLine={false} 
+                                    tick={<CustomXAxisTick salesUsers={myTeam} />}
+                                    interval={0}
+                                />
+                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                                <Tooltip
+                                    cursor={{ fill: 'hsl(var(--muted))' }}
+                                    contentStyle={{ 
+                                        backgroundColor: 'hsl(var(--background))',
+                                        border: '1px solid hsl(var(--border))',
+                                        borderRadius: 'var(--radius)'
+                                    }}
+                                    labelFormatter={(value) => {
+                                        const user = myTeam.find(u => u.id === value);
+                                        return user ? user.displayName : 'Unknown';
+                                    }}
+                                />
+                                <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                     <div className="md:col-span-1">
+                        <h3 className="font-semibold text-sm mb-2">Team Proposal Funnel</h3>
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><FileText className="text-muted-foreground"/>Drafts</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.draft || 0}</span></div>
+                            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><Send className="text-blue-500"/>Sent</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.sent || 0}</span></div>
+                            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><Check className="text-green-500"/>Accepted</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.accepted || 0}</span></div>
+                            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><X className="text-red-500"/>Rejected</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.rejected || 0}</span></div>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
