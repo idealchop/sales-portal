@@ -23,7 +23,7 @@ service firebase.storage {
     }
     
     // Allow public read for brand logos
-    match /Brand Logo/{allPaths=**} {
+    match /'Brand Logo'/{allPaths=**} {
         allow read;
     }
 
