@@ -47,18 +47,17 @@ export function useCommissions(userId?: string | string[]) {
 
     let userIdsToQuery: string[] = [];
 
+    // Determine which user IDs to query for
     if (Array.isArray(userId)) {
         userIdsToQuery = userId;
-    } else if (userId) {
-        if (isManager && userId === authUser?.id) {
-            userIdsToQuery = [userId, ...teamMemberIds];
-        } else {
-            userIdsToQuery = [userId];
-        }
-    } else if (authUser) {
+    } else if (userId) { // A specific user is requested (e.g., from admin page)
+        userIdsToQuery = [userId];
+    } else if (authUser) { // Logged-in user's own view
         if (isManager) {
+             // Manager sees their own commissions and their team's for override calculation
             userIdsToQuery = [authUser.id, ...teamMemberIds];
         } else {
+            // Regular sales rep sees only their own
             userIdsToQuery = [authUser.id];
         }
     }
@@ -91,7 +90,8 @@ export function useCommissions(userId?: string | string[]) {
                 }
                 fetchedCommissions.push({ ...data as Commission, id: doc.id, createdAt: createdAtString });
             });
-
+            
+            // This logic correctly merges updates from multiple batches
             setCommissions(prevCommissions => {
                  const newCommissionIds = new Set(fetchedCommissions.map(c => c.id));
                  const otherCommissions = prevCommissions.filter(p => !newCommissionIds.has(p.id));
@@ -117,7 +117,7 @@ export function useCommissions(userId?: string | string[]) {
         if (isLoading) return [];
         
         const targetIds = new Set(Array.isArray(userId) ? userId : (userId ? [userId] : (authUser ? [authUser.id] : [])));
-        const relevantCommissions = commissions.filter(c => targetIds.has(c.userId));
+        const relevantCommissions = userId ? commissions.filter(c => targetIds.has(c.userId)) : commissions;
         
         const commissionsByMonth: Record<string, WithId<PayoutCommission>[]> = {};
 
@@ -139,7 +139,7 @@ export function useCommissions(userId?: string | string[]) {
             
             const allPaid = !userCommissions.some(c => c.status === 'pending');
             const status = allPaid ? 'paid' : 'pending';
-            const userIdForTx = (Array.isArray(userId) ? userId[0] : userId)?.slice(0, 4).toUpperCase() || 'USER';
+            const userIdForTx = (Array.isArray(userId) ? userId[0] : userId)?.slice(0, 4).toUpperCase() || authUser?.id.slice(0,4).toUpperCase() || 'USER';
             
             processedPayouts.push({
                 month,
