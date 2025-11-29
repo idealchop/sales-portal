@@ -16,7 +16,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore } from '@/firebase';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 
 function DashboardSidebar() {
@@ -56,9 +56,10 @@ function DashboardSidebar() {
 }
 
 function ProtectedLayout({ children }: { children: ReactNode }) {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, isManager } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (isUserLoading) {
@@ -74,12 +75,10 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
           const userData = docSnap.data();
           if (!userData.onboardingCompleted) {
             router.push('/onboarding/profile');
+          } else if (isManager && pathname === '/dashboard') {
+            router.replace('/dashboard/my-team');
           }
         } else {
-          // This case can happen if the doc creation is still pending after login.
-          // A short delay and retry could help, but the user will likely see a loader
-          // from the dashboard page which will re-trigger this check anyway.
-          // For now, redirecting to login is a safe fallback.
           console.error("User document not found, redirecting to login.");
           router.push('/login');
         }
@@ -88,10 +87,10 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
     } else {
       router.push('/login');
     }
-  }, [user, isUserLoading, firestore, router]);
+  }, [user, isUserLoading, firestore, router, isManager, pathname]);
 
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || (isManager && pathname === '/dashboard')) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
