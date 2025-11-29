@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -337,6 +337,25 @@ function QrCodeDialog({ managerId }: { managerId: string }) {
         toast({ title: "Link Copied!", description: "The proposal link has been copied to your clipboard." });
     };
 
+    const handleDownload = async () => {
+        try {
+            const response = await fetch(qrCodeUrl);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `smart-refill-qr-${managerId}.png`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            toast({ title: "Download Started", description: "Your QR code is downloading." });
+        } catch (error) {
+            console.error("Failed to download QR code:", error);
+            toast({ variant: "destructive", title: "Download Failed", description: "Could not download the QR code." });
+        }
+    };
+
     return (
         <DialogContent>
             <DialogHeader>
@@ -355,6 +374,12 @@ function QrCodeDialog({ managerId }: { managerId: string }) {
                     </div>
                 </div>
             </div>
+            <DialogFooter>
+                <Button onClick={handleDownload} variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download QR
+                </Button>
+            </DialogFooter>
         </DialogContent>
     )
 }
@@ -846,5 +871,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
-    
