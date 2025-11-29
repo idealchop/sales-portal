@@ -21,7 +21,7 @@ export type MonthlyPayout = {
     transactionId: string;
 };
 
-export function useCommissions(userId?: string | string[]) {
+export function useCommissions(userId?: string) {
   const { firestore, isFirebaseLoading } = useFirebase();
   const { user: authUser, isUserLoading: isUserAuthLoading, isManager } = useUser();
   const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
@@ -48,9 +48,7 @@ export function useCommissions(userId?: string | string[]) {
     let userIdsToQuery: string[] = [];
 
     // Determine which user IDs to query for
-    if (Array.isArray(userId)) {
-        userIdsToQuery = userId;
-    } else if (userId) { // A specific user is requested (e.g., from admin page)
+    if (userId) { // A specific user is requested (e.g., from admin page)
         userIdsToQuery = [userId];
     } else if (authUser) { // Logged-in user's own view
         if (isManager) {
@@ -93,8 +91,8 @@ export function useCommissions(userId?: string | string[]) {
             
             // This logic correctly merges updates from multiple batches
             setCommissions(prevCommissions => {
-                 const newCommissionIds = new Set(fetchedCommissions.map(c => c.id));
-                 const otherCommissions = prevCommissions.filter(p => !newCommissionIds.has(p.id));
+                const existingCommissionIdsInBatch = new Set(batch);
+                 const otherCommissions = prevCommissions.filter(c => !existingCommissionIdsInBatch.has(c.userId));
                  return [...otherCommissions, ...fetchedCommissions];
             });
             setIsLoading(false); 
@@ -116,12 +114,14 @@ export function useCommissions(userId?: string | string[]) {
     const allPayouts = useMemo(() => {
         if (isLoading) return [];
         
-        const targetIds = new Set(Array.isArray(userId) ? userId : (userId ? [userId] : (authUser ? [authUser.id] : [])));
-        const relevantCommissions = userId ? commissions.filter(c => targetIds.has(c.userId)) : commissions;
-        
+        const targetId = userId || authUser?.id;
+        const commissionsToProcess = isManager && !userId 
+            ? commissions // A manager viewing their own payouts needs to see everything
+            : commissions.filter(c => c.userId === targetId);
+
         const commissionsByMonth: Record<string, WithId<PayoutCommission>[]> = {};
 
-        relevantCommissions.forEach(commission => {
+        commissionsToProcess.forEach(commission => {
             if(!commission.createdAt) return;
             const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
             if (!commissionsByMonth[monthKey]) {
@@ -133,27 +133,36 @@ export function useCommissions(userId?: string | string[]) {
         const processedPayouts: MonthlyPayout[] = [];
 
         Object.keys(commissionsByMonth).forEach(month => {
-            const userCommissions = commissionsByMonth[month];
-            const totalAmount = userCommissions.reduce((sum, c) => sum + c.amount, 0);
+            let monthCommissions = commissionsByMonth[month];
+            
+            // If the user is a manager looking at their own payouts, we need to filter for their direct commissions and overrides
+            if (isManager && !userId) {
+                monthCommissions = monthCommissions.filter(c => {
+                    return c.userId === authUser?.id || c.description?.toLowerCase().includes('override')
+                });
+            }
+
+
+            const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
             if (totalAmount === 0) return;
             
-            const allPaid = !userCommissions.some(c => c.status === 'pending');
+            const allPaid = !monthCommissions.some(c => c.status === 'pending');
             const status = allPaid ? 'paid' : 'pending';
-            const userIdForTx = (Array.isArray(userId) ? userId[0] : userId)?.slice(0, 4).toUpperCase() || authUser?.id.slice(0,4).toUpperCase() || 'USER';
+            const userIdForTx = targetId?.slice(0, 4).toUpperCase() || 'USER';
             
             processedPayouts.push({
                 month,
                 totalAmount,
                 status,
                 timelineStatus: allPaid ? 'paid' : 'calculated',
-                commissions: userCommissions,
+                commissions: monthCommissions,
                 transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${userIdForTx}`
             });
         });
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, isLoading, userId, authUser]);
+    }, [commissions, isLoading, userId, authUser, isManager]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
