@@ -496,21 +496,18 @@ export function ClientOverviewDialog({
     try {
         const batch = writeBatch(firestore);
 
-        // 1. Upload payment proof
         const storage = getStorage();
         const filePath = `payment_proofs/${client.id}/${finalProposalId}/${finalFile.name}`;
         const storageRef = ref(storage, filePath);
         const snapshot = await uploadBytes(storageRef, finalFile);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
-        // 2. Update Proposal
         const proposalRef = doc(firestore, `clients/${client.id}/proposals`, finalProposalId);
         batch.update(proposalRef, {
             status: 'accepted',
             paymentProofUrl: downloadURL
         });
 
-        // 3. Update Client
         const clientRef = doc(firestore, 'clients', client.id);
         batch.update(clientRef, {
             status: 'active',
@@ -521,7 +518,6 @@ export function ClientOverviewDialog({
             }
         });
 
-        // 4. Create Commissions
         const commissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
         const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
 
@@ -530,7 +526,6 @@ export function ClientOverviewDialog({
         
         const commissionsRef = collection(firestore, 'commissions');
 
-        // Sales Executive Commission
         if (commissionAmount > 0) {
             const execCommissionRef = doc(commissionsRef);
             batch.set(execCommissionRef, {
@@ -546,7 +541,6 @@ export function ClientOverviewDialog({
             });
         }
         
-        // Manager Override Commission
         const proposalCreator = userMap.get(proposalCreatorId);
         if (proposalCreator && proposalCreator.team) {
             const teamManager = allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team);
@@ -570,7 +564,6 @@ export function ClientOverviewDialog({
             }
         }
         
-        // Commit all writes at once
         await batch.commit();
 
         toast({
@@ -1054,5 +1047,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
