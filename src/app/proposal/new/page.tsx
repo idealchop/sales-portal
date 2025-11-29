@@ -163,7 +163,7 @@ export default function NewProposalPage() {
         params.set('clientType', selectedClient.clientType);
     }
     
-    const baseUrl = '/proposal/new/plans';
+    const baseUrl = '/proposal/new/about';
 
     return `${baseUrl}?${params.toString()}`;
   }
