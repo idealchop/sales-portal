@@ -68,7 +68,7 @@ function InputField({
 export default function NewProposalPage() {
   const { clients, isLoading: clientsLoading } = useClients();
   const [selectedClientId, setSelectedClientId] = useState('');
-  const [clientSelectionType, setClientSelectionType] = useState<'new' | 'existing' | null>(null);
+  const [clientSelectionType, setClientSelectionType] = useState<'new' | 'existing' | null>('new');
   
   // States for new client form
   const [companyName, setCompanyName] = useState('');

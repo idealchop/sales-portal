@@ -1027,10 +1027,10 @@ export default function PlansPage() {
             params.set('freq', smeCommercialCustomValues.deliveries.toString());
             params.set('type', selectedSize || '');
         }
-        return `/dashboard/proposals/new/contract?${params.toString()}`;
+        return `/proposal/new/contract?${params.toString()}`;
     };
 
-    const prevLink = `/dashboard/proposals/new/comparison?${searchParams.toString()}`;
+    const prevLink = `/proposal/new/comparison?${searchParams.toString()}`;
 
     return (
         <div className="flex flex-col gap-6">
@@ -1135,16 +1135,16 @@ export default function PlansPage() {
                   </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-8 sm:grid-cols-2">
-                  {perks.map((perk) => (
-                      <div key={perk.partner} className="flex items-start gap-4">
-                          {perk.icon}
-                          <div className="space-y-1">
-                              <h3 className="font-semibold">{perk.partner}</h3>
-                              <p className="text-sm text-muted-foreground">{perk.description}</p>
-                              <p className="text-sm font-medium text-primary">{perk.benefit}</p>
-                          </div>
-                      </div>
-                  ))}
+                   {perks.map((perk) => (
+                        <div key={perk.partner} className="flex items-start gap-4">
+                            {perk.icon}
+                            <div className="space-y-1">
+                                <h3 className="font-semibold">{perk.partner}</h3>
+                                <p className="text-sm text-muted-foreground">{perk.description}</p>
+                                <p className="text-sm font-medium text-primary">{perk.benefit}</p>
+                            </div>
+                        </div>
+                    ))}
               </CardContent>
               <CardFooter>
                   <div className="text-sm text-muted-foreground space-y-2">
@@ -1162,5 +1162,3 @@ export default function PlansPage() {
         </div>
     );
 }
-
-    

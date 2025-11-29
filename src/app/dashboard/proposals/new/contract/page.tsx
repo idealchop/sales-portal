@@ -844,7 +844,7 @@ function ContractPageContent() {
                 </CardHeader>
                 <CardFooter>
                     <Button asChild className="w-full">
-                        <Link href="/dashboard/proposals/new/plans">Go to Plans</Link>
+                        <Link href="/proposal/new/plans">Go to Plans</Link>
                     </Button>
                 </CardFooter>
             </Card>
@@ -856,7 +856,7 @@ function ContractPageContent() {
   
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
 
-  const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
+  const prevLink = `/proposal/new/plans?${searchParams.toString()}`;
   
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
 
@@ -1121,7 +1121,7 @@ function ContractPageContent() {
 
                     <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
                         <span>Total Due</span>
-                        <span>{finalPlanDetails.totalAmountDue}</span>
+                        <span>{totalAmountDue}</span>
                     </div>
                 </CardContent>
             </Card>
@@ -1140,5 +1140,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
