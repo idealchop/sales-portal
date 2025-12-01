@@ -241,7 +241,7 @@ function PreviewDialog({
                             <CardHeader>
                                 <CardTitle>Final Step: Upload Proof of Payment</CardTitle>
                                 <CardDescription>
-                                    Please upload a screenshot or document of your payment confirmation.
+                                    Please upload a screenshot or document of your payment confirmation. This is required to finalize the proposal.
                                 </CardDescription>
                             </CardHeader>
                              <CardContent className="space-y-4">
@@ -266,42 +266,48 @@ function PreviewDialog({
                         </Card>
                     </div>
                 </ScrollArea>
-                <DialogFooter className="gap-2 sm:justify-end border-t pt-4">
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                         Close
+                <DialogFooter className="gap-2 sm:justify-between items-center border-t pt-4">
+                    <Button type="button" onClick={handleSaveDraft} variant="outline" disabled={isSaving}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        Save as Draft
                     </Button>
-                    
-                    <Button type="button" onClick={handleDownloadPdf} variant="outline" disabled={isSaving || isDownloading}>
-                        {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                        Download PDF
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                             Close
+                        </Button>
+                        
+                        <Button type="button" onClick={handleDownloadPdf} variant="outline" disabled={isSaving || isDownloading}>
+                            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                            Download PDF
+                        </Button>
 
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                             <Button type="button" disabled={isSaving}>
-                                <Send className="mr-2 h-4 w-4" />
-                                Finalize &amp; Submit
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Finalize and Submit Proposal?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will submit your signed contract and proof of payment. The proposal will be sent to the sales team for final confirmation.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
-                                    {isSaving ? (
-                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
-                                    ) : (
-                                        'Yes, Submit Now'
-                                    )}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                 <Button type="button" disabled={isSaving}>
+                                    <Send className="mr-2 h-4 w-4" />
+                                    Finalize &amp; Submit
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Finalize and Submit Proposal?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will submit your signed contract and proof of payment. The proposal will be sent to the sales team for final confirmation.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
+                                        {isSaving ? (
+                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
+                                        ) : (
+                                            'Yes, Submit Now'
+                                        )}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -519,13 +525,22 @@ function ContractPageContent() {
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
   const saveProposal = async (status: 'draft' | 'finalized') => {
-    if (!finalPlanDetails || !firestore || !paymentProofFile) {
+    if (!finalPlanDetails || !firestore) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Cannot save proposal without complete plan details, payment proof, or Firestore instance.",
+        description: "Cannot save proposal without complete plan details or Firestore instance.",
       });
       return;
+    }
+
+    if (status === 'finalized' && !paymentProofFile) {
+        toast({
+            variant: "destructive",
+            title: "Payment Proof Required",
+            description: "Please upload your proof of payment to finalize.",
+        });
+        return;
     }
 
     const proposalOwnerId = managerId || user?.uid;
@@ -559,11 +574,15 @@ function ContractPageContent() {
         return;
       }
       
-      const storage = getStorage();
-      const filePath = `payment_proofs/${finalClientId}/${proposalId}/${paymentProofFile.name}`;
-      const storageRef = ref(storage, filePath);
-      const snapshot = await uploadBytes(storageRef, paymentProofFile);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      let downloadURL = '';
+      if (paymentProofFile) {
+        const storage = getStorage();
+        const filePath = `payment_proofs/${finalClientId}/${proposalId}/${paymentProofFile.name}`;
+        const storageRef = ref(storage, filePath);
+        const snapshot = await uploadBytes(storageRef, paymentProofFile);
+        downloadURL = await getDownloadURL(snapshot.ref);
+      }
+      
 
       const clientRef = doc(firestore, 'clients', finalClientId);
   
@@ -586,7 +605,7 @@ function ContractPageContent() {
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
       const amountToSave = parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, ""));
       
-      const newProposalData = {
+      const newProposalData: any = {
         id: proposalId,
         clientId: finalClientId,
         userId: proposalOwnerId,
@@ -596,9 +615,12 @@ function ContractPageContent() {
         amount: amountToSave,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        paymentProofUrl: downloadURL,
       };
       
+      if(downloadURL) {
+        newProposalData.paymentProofUrl = downloadURL;
+      }
+
       const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
       setDoc(proposalRef, newProposalData, { merge: true }).catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -739,7 +761,7 @@ function ContractPageContent() {
         <div>
           <h1 className="text-2xl font-bold">Finalize Proposal</h1>
           <p className="text-muted-foreground">
-            Step 3: Review inclusions, add-ons, and sign the agreement.
+            Step 5: Review inclusions, add-ons, and sign the agreement.
           </p>
         </div>
          <div className="flex gap-2">
