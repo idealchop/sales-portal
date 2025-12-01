@@ -9,17 +9,13 @@ export function useIsMobile() {
 
   React.useEffect(() => {
     const checkIsMobile = () => {
-        setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     }
-    
-    // Initial check
-    checkIsMobile();
-    
-    // Listen for resize events
-    window.addEventListener("resize", checkIsMobile);
-    
-    // Cleanup
-    return () => window.removeEventListener("resize", checkIsMobile);
+
+    checkIsMobile()
+    window.addEventListener("resize", checkIsMobile)
+
+    return () => window.removeEventListener("resize", checkIsMobile)
   }, [])
 
   return isMobile
