@@ -22,7 +22,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { GoogleMap } from '@/components/google-map';
-import { waterStations } from '@/lib/water-stations';
+import { stationMarkers } from '@/lib/water-stations';
 import {
   Tooltip,
   TooltipContent,
@@ -35,12 +35,6 @@ function SmartRefillIntro() {
   const searchParams = useSearchParams();
   const address = searchParams.get('address') || '';
 
-  const stationMarkers = waterStations.map(station => ({
-    position: station.location,
-    title: station.name,
-    icon: '/water-drop.png'
-  }));
-  
   return (
     <Card className="flex-1">
       <CardHeader>

@@ -252,13 +252,15 @@ function Map({
 
   useEffect(() => {
     if (map) {
+      // Clear existing markers before adding new ones
       otherMarkers.forEach(marker => marker.setMap(null));
+      
       const newMarkers = additionalMarkers.map(markerInfo => 
         new google.maps.Marker({ ...markerInfo, map })
       );
       setOtherMarkers(newMarkers);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, additionalMarkers]);
 
   return <div ref={ref} style={{ width: '100%', height: '100%' }} />;

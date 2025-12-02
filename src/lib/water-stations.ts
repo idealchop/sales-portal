@@ -7,7 +7,6 @@ export type WaterStation = {
     };
 };
 
-// Mock data for partner water stations
 export const waterStations: WaterStation[] = [
     {
         name: 'Aqua Pure Refill Station',
@@ -38,3 +37,9 @@ export const waterStations: WaterStation[] = [
         location: { lat: 14.5764, lng: 121.0851 } // Pasig
     }
 ];
+
+export const stationMarkers = waterStations.map(station => ({
+    position: station.location,
+    title: station.name,
+    icon: '/water-drop.png'
+}));
