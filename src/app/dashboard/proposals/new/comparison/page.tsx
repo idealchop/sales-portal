@@ -88,8 +88,8 @@ export default function ComparisonPage() {
         <div className="grid md:grid-cols-2 gap-6 items-start rounded-lg border bg-card text-card-foreground shadow-sm p-6">
             <div className="relative aspect-video rounded-lg overflow-hidden">
                 <Image 
-                    src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_06.png?alt=media&token=7fa3a2b5-5173-4508-bf0c-8324c5d704e2"
-                    alt="Smart Refill Advantage"
+                    src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&q=80"
+                    alt="Business professionals in a meeting"
                     fill
                     className="object-cover"
                     data-ai-hint="business meeting"
