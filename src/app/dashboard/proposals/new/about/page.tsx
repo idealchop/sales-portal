@@ -23,6 +23,13 @@ import {
 } from "@/components/ui/dialog";
 import { GoogleMap } from '@/components/google-map';
 import { waterStations } from '@/lib/water-stations';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 
 function SmartRefillIntro() {
   const searchParams = useSearchParams();
@@ -44,24 +51,37 @@ function SmartRefillIntro() {
                   An overview of the value proposition.
                 </CardDescription>
             </div>
-             <Dialog>
-                <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={!address}>
-                        <Map className="mr-2 h-4 w-4" /> See Partner Stations
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col">
-                    <DialogHeader>
-                        <DialogTitle>Nearby Partner Water Stations</DialogTitle>
-                        <DialogDescription>
-                            Showing stations near {address}.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="h-full w-full rounded-md overflow-hidden flex-1">
-                        <GoogleMap address={address} onAddressChange={() => {}} additionalMarkers={stationMarkers} />
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div>
+                             <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm" disabled={!address}>
+                                        <Map className="mr-2 h-4 w-4" /> See Partner Stations
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col">
+                                    <DialogHeader>
+                                        <DialogTitle>Nearby Partner Water Stations</DialogTitle>
+                                        <DialogDescription>
+                                            Showing stations near {address}.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="h-full w-full rounded-md overflow-hidden flex-1">
+                                        <GoogleMap address={address} onAddressChange={() => {}} additionalMarkers={stationMarkers} />
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    </TooltipTrigger>
+                    {!address && (
+                        <TooltipContent>
+                            <p>Please enter a client address to see nearby stations.</p>
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+            </TooltipProvider>
         </div>
       </CardHeader>
       <CardContent className="space-y-8">
