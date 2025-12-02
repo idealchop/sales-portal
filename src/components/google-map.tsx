@@ -188,8 +188,8 @@ function Map({
   const ref = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map>();
   const [mainMarker, setMainMarker] = useState<google.maps.Marker>();
-  const geocoderRef = useRef<google.maps.Geocoder>();
   const [otherMarkers, setOtherMarkers] = useState<google.maps.Marker[]>([]);
+  const geocoderRef = useRef<google.maps.Geocoder>();
 
   useEffect(() => {
     if (ref.current && !map) {
@@ -296,6 +296,15 @@ export function GoogleMap({
 
     return (
         <Wrapper apiKey={apiKey} render={(status) => render(status, apiKey)} libraries={['geocoding', 'marker', 'places']} onError={(error) => {
+            if (error.message.includes("InvalidKeyMapError")) {
+                 return (
+                    <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
+                        <AlertTriangle className="h-8 w-8 mb-2" />
+                        <p className="font-bold">Invalid Google Maps API Key</p>
+                        <p className="text-xs mt-1">The provided API key is invalid or has incorrect restrictions. Please verify your key in the Google Cloud Console.</p>
+                    </div>
+                );
+            }
             return <p>{error.message}</p>
         }}>
             <Map
