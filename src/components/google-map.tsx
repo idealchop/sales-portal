@@ -189,6 +189,7 @@ function Map({
   const [map, setMap] = useState<google.maps.Map>();
   const [mainMarker, setMainMarker] = useState<google.maps.Marker>();
   const geocoderRef = useRef<google.maps.Geocoder>();
+  const [otherMarkers, setOtherMarkers] = useState<google.maps.Marker[]>([]);
 
   useEffect(() => {
     if (ref.current && !map) {
