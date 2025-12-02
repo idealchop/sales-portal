@@ -13,7 +13,7 @@ export type MapMarker = {
     icon?: string;
 };
 
-const render = (status: Status) => {
+const render = (status: Status, apiKey: string) => {
     switch (status) {
         case Status.LOADING:
             return <Skeleton className="h-full w-full" />;
@@ -22,7 +22,7 @@ const render = (status: Status) => {
                 <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
                     <AlertTriangle className="h-8 w-8 mb-2" />
                     <p className="font-bold">Could not load map.</p>
-                    <p className="text-xs mt-1">This may be due to an invalid API key or network issues. Please check the browser console for more details.</p>
+                    <p className="text-xs mt-1">This may be due to an invalid API key or network issues. Please check your Google Cloud Console configuration and ensure the key is correct.</p>
                 </div>
             );
         case Status.SUCCESS:
@@ -188,7 +188,6 @@ function Map({
   const ref = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map>();
   const [mainMarker, setMainMarker] = useState<google.maps.Marker>();
-  const [otherMarkers, setOtherMarkers] = useState<google.maps.Marker[]>([]);
   const geocoderRef = useRef<google.maps.Geocoder>();
 
   useEffect(() => {
@@ -295,7 +294,7 @@ export function GoogleMap({
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={render} libraries={['geocoding', 'marker', 'places']}>
+        <Wrapper apiKey={apiKey} render={(status) => render(status, apiKey)} libraries={['geocoding', 'marker', 'places']}>
             <Map
                 address={address} 
                 zoom={zoom} 
