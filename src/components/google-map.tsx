@@ -295,7 +295,9 @@ export function GoogleMap({
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={(status) => render(status, apiKey)} libraries={['geocoding', 'marker', 'places']}>
+        <Wrapper apiKey={apiKey} render={(status) => render(status, apiKey)} libraries={['geocoding', 'marker', 'places']} onError={(error) => {
+            return <p>{error.message}</p>
+        }}>
             <Map
                 address={address} 
                 zoom={zoom} 
