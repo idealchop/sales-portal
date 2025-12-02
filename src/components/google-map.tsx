@@ -13,7 +13,7 @@ export type MapMarker = {
     icon?: string;
 };
 
-const render = (status: Status, apiKey: string) => {
+const render = (status: Status) => {
     switch (status) {
         case Status.LOADING:
             return <Skeleton className="h-full w-full" />;
@@ -267,7 +267,7 @@ function Map({
 }
 
 
-export function GoogleMap({
+const GoogleMapComponent = memo(function GoogleMap({
   address,
   onAddressChange,
   zoom = 15,
@@ -297,18 +297,7 @@ export function GoogleMap({
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={(status) => render(status, apiKey)} libraries={['geocoding', 'marker', 'places']} onError={(error) => {
-            if (error.message.includes("InvalidKeyMapError")) {
-                 return (
-                    <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
-                        <AlertTriangle className="h-8 w-8 mb-2" />
-                        <p className="font-bold">Invalid Google Maps API Key</p>
-                        <p className="text-xs mt-1">The provided API key is invalid or has incorrect restrictions. Please verify your key in the Google Cloud Console.</p>
-                    </div>
-                );
-            }
-            return <p>{error.message}</p>
-        }}>
+        <Wrapper apiKey={apiKey} render={(status) => render(status)} libraries={['geocoding', 'marker', 'places']}>
             <Map
                 address={address} 
                 zoom={zoom} 
@@ -317,4 +306,6 @@ export function GoogleMap({
             />
         </Wrapper>
     );
-}
+});
+GoogleMapComponent.displayName = 'GoogleMap';
+export { GoogleMapComponent as GoogleMap };
