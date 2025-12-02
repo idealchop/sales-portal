@@ -13,21 +13,22 @@ export type MapMarker = {
     icon?: string;
 };
 
-const render = (status: Status) => {
-    switch (status) {
-        case Status.LOADING:
-            return <Skeleton className="h-full w-full" />;
-        case Status.FAILURE:
-            return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
-                    <AlertTriangle className="h-8 w-8 mb-2" />
-                    <p className="font-bold">Could not load map.</p>
-                    <p className="text-xs mt-1">This may be due to an invalid API key or network issues. Please check your Google Cloud Console configuration and ensure the key is correct.</p>
-                </div>
-            );
-        case Status.SUCCESS:
-            return null;
+const render = (status: Status, error?: any) => {
+    if (status === Status.LOADING) {
+        return <Skeleton className="h-full w-full" />;
     }
+    if (status === Status.FAILURE || error?.name === 'InvalidKeyMapError') {
+        return (
+            <div className="h-full w-full flex flex-col items-center justify-center bg-destructive/10 text-destructive text-sm text-center p-4">
+                <AlertTriangle className="h-8 w-8 mb-2" />
+                <p className="font-bold">Google Maps API Key Error</p>
+                <p className="text-xs mt-1">
+                    The API key is invalid or missing restrictions. Please check your Google Cloud Console configuration and ensure the key is correct and your website is an allowed referrer.
+                </p>
+            </div>
+        );
+    }
+    return null;
 };
 
 const mapStyles = [
@@ -252,9 +253,7 @@ function Map({
 
   useEffect(() => {
     if (map) {
-      // Clear existing markers before adding new ones
       otherMarkers.forEach(marker => marker.setMap(null));
-      
       const newMarkers = additionalMarkers.map(markerInfo => 
         new google.maps.Marker({ ...markerInfo, map })
       );
@@ -287,7 +286,7 @@ const GoogleMapComponent = memo(function GoogleMap({
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Google Maps API Key is Missing</AlertTitle>
                     <AlertDescription>
-                        To enable map functionality, please add your Google Maps API key to the 
+                        Please add your Google Maps API key to the 
                         <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">.env</code> 
                         file as <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_KEY</code>.
                     </AlertDescription>
@@ -297,7 +296,7 @@ const GoogleMapComponent = memo(function GoogleMap({
     }
 
     return (
-        <Wrapper apiKey={apiKey} render={(status) => render(status)} libraries={['geocoding', 'marker', 'places']}>
+        <Wrapper apiKey={apiKey} render={render} libraries={['geocoding', 'marker', 'places']}>
             <Map
                 address={address} 
                 zoom={zoom} 
