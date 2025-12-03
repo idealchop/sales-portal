@@ -227,13 +227,13 @@ export default function DashboardPage() {
   const dashboardData = useMemo(() => {
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
+    const currentMonthEnd = endOfMonth(now);
 
     const getValidDate = (timestamp: string | number | undefined | Date): Date | null => {
         if (!timestamp) return null;
         try {
             const date = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
-            // Check if the parsed date is valid
-            return isNaN(date.getTime()) ? null : date;
+            return isValid(date) ? date : null;
         } catch {
             return null;
         }
@@ -287,7 +287,7 @@ export default function DashboardPage() {
 
     const acceptedThisMonth = acceptedProposals.filter(p => {
         const createdAt = getValidDate(p.createdAt);
-        return createdAt && isWithinInterval(createdAt, { start: currentMonthStart, end: endOfMonth(now) });
+        return createdAt && isWithinInterval(createdAt, { start: currentMonthStart, end: currentMonthEnd });
     });
 
     const corporateClientsThisMonth = acceptedThisMonth.filter(p => {
@@ -1100,3 +1100,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
