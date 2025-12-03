@@ -51,8 +51,6 @@ export default function MaterialsPage() {
   const categoryOrder = [
     'Business Profile',
     'Creative Assets',
-    'Explainer Videos',
-    'Testimonials / Clients / Social Proof',
   ];
   
   const hasResults = filteredMaterials.length > 0;
@@ -207,7 +205,11 @@ export default function MaterialsPage() {
                   <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 z-10" onClick={handlePrev}><ChevronLeft/></Button>
                   {currentMaterial.type === 'pdf' ? (
                        <div className="w-full h-full flex items-center justify-center">
-                          <iframe src={currentMaterial.imageUrl} className="w-full h-full border-0" title={currentMaterial.title}></iframe>
+                          <iframe 
+                            src={`https://docs.google.com/gview?url=${encodeURIComponent(currentMaterial.imageUrl)}&embedded=true`} 
+                            className="w-full h-full border-0" 
+                            title={currentMaterial.title}
+                          ></iframe>
                        </div>
                   ) : (
                       <Image
