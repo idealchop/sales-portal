@@ -226,10 +226,8 @@ export default function DashboardPage() {
     const currentMonthPayout = allPayouts.find(p => p.month === currentMonthKey);
     
     const oneTimeCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.type === 'commission' && c.description !== 'Recurring commission') || [];
-    const recurringCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.description === 'Recurring commission') || [];
     
     const monthlyCommission = oneTimeCommissionsThisMonth.reduce((sum, p) => sum + p.amount, 0);
-    const recurringCommission = recurringCommissionsThisMonth.reduce((sum, p) => sum + p.amount, 0);
     
     const lastMonthKey = format(startOfMonth(subMonths(now, 1)), 'MMMM yyyy');
     const lastMonthPayout = allPayouts.find(p => p.month === lastMonthKey);
@@ -240,6 +238,32 @@ export default function DashboardPage() {
         : (monthlyCommission > 0 ? 100 : 0);
     
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
+
+    const recurringCommissionsAll = allPayouts
+        .flatMap(p => p.commissions)
+        .filter(c => c.description === 'Recurring commission');
+
+    const activeRecurringCommissions = recurringCommissionsAll.filter(c => {
+        const proposal = proposalMap.get(c.proposalId);
+        if (!proposal?.content) return false;
+
+        try {
+            const content = JSON.parse(proposal.content) as FinalPlanDetails;
+            const client = clientMap.get(proposal.clientId);
+            const dateSignedStr = client?.subscription?.dateSigned || content.date;
+            if (!dateSignedStr) return false;
+            
+            const startDate = parseISO(dateSignedStr);
+            if (!isValid(startDate)) return false;
+
+            const endDate = addYears(startDate, 1);
+            return isWithinInterval(now, { start: startDate, end: endDate });
+        } catch {
+            return false;
+        }
+    });
+    
+    const recurringCommission = activeRecurringCommissions.reduce((sum, c) => sum + c.amount, 0);
 
     const corporateClientsThisMonth = oneTimeCommissionsThisMonth.filter(c => {
         const client = clientMap.get(proposals.find(p => p.id === c.proposalId)?.clientId || '');
@@ -309,8 +333,8 @@ export default function DashboardPage() {
         monthlyCommission,
         commissionChange,
         recurringCommission,
+        activeRecurringCommissions,
         oneTimeCommissionsThisMonth,
-        recurringCommissionsThisMonth,
         corporateClientsThisMonth,
         corporateClientsTarget,
         individualClientsThisMonth,
@@ -329,7 +353,7 @@ export default function DashboardPage() {
         prepaidContractsTarget,
         prepaidContractsDetails,
     };
-  }, [allPayouts, rawCommissions, proposals, clients, clientMap]);
+  }, [allPayouts, rawCommissions, proposals, clients, clientMap, proposalMap]);
 
   const commissionTiers = [
     { clientType: 'Family Plan', commission: '12%', recurring: 'None', managerOverride: '2%' },
@@ -568,7 +592,7 @@ export default function DashboardPage() {
                     <DialogHeader>
                         <DialogTitle>Recurring Commission Breakdown</DialogTitle>
                         <DialogDescription>
-                            Showing recurring commissions for {format(new Date(), 'MMMM yyyy')}.
+                            Showing all active recurring commissions.
                         </DialogDescription>
                     </DialogHeader>
                      <Table>
@@ -580,13 +604,12 @@ export default function DashboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {dashboardData.recurringCommissionsThisMonth.length > 0 ? dashboardData.recurringCommissionsThisMonth.map(p => {
+                            {dashboardData.activeRecurringCommissions.length > 0 ? dashboardData.activeRecurringCommissions.map(p => {
                                 const proposal = proposalMap.get(p.proposalId);
                                 let progressText = '';
                                 if (proposal && proposal.content) {
                                     try {
                                         const content = JSON.parse(proposal.content) as FinalPlanDetails;
-                                        // Use dateSigned from the subscription object stored in the client document first
                                         const client = clientMap.get(proposal.clientId);
                                         const dateSignedStr = client?.subscription?.dateSigned || content.date;
 
@@ -617,7 +640,7 @@ export default function DashboardPage() {
                                 )
                             }) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center">No recurring commissions this month.</TableCell>
+                                    <TableCell colSpan={3} className="text-center">No active recurring commissions.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -1012,3 +1035,6 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+    

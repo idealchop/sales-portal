@@ -245,7 +245,7 @@ function Map({
           map.setCenter(location);
           mainMarker.setPosition(location);
         } else {
-          console.error(`Geocode was not successful for "${address}" for the following reason: ${status}`);
+          console.error(`Geocode was not successful for \"${address}\" for the following reason: ${status}`);
         }
       });
     }
@@ -262,7 +262,7 @@ function Map({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, additionalMarkers]);
 
-  return <div ref={ref} style={{ width: '100%', height: '100%' }} />;
+  return <div ref={ref} style={{ width: '100%', height: '100%' }} data-testid="map-container" />;
 }
 
 
