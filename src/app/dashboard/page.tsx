@@ -309,7 +309,7 @@ export default function DashboardPage() {
         return proposalDate && isWithinInterval(proposalDate, { start: quarterStart, end: quarterEnd });
     }).reduce((sum, p) => sum + p.amount, 0);
 
-    const quarterlyVolumeTarget = 600000;
+    const quarterlyVolumeTarget = 200000;
 
     const commissionHistory = allPayouts.slice(0, 6).map(payout => ({
         month: format(new Date(payout.month), 'MMM'),
