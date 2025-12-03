@@ -273,13 +273,21 @@ export default function DashboardPage() {
     
     const recurringCommission = activeRecurringCommissions.reduce((sum, c) => sum + c.amount, 0);
 
-    const corporateClientsThisMonth = oneTimeCommissionsThisMonth.filter(c => {
-        const client = clientMap.get(proposals.find(p => p.id === c.proposalId)?.clientId || '');
+    const corporateClientsThisMonth = acceptedProposals.filter(p => {
+        const createdAt = p.createdAt ? parseISO(p.createdAt) : null;
+        if (!createdAt || !isWithinInterval(createdAt, { start: startOfMonth(now), end: endOfMonth(now) })) {
+            return false;
+        }
+        const client = clientMap.get(p.clientId);
         return client && ['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '');
     }).length;
 
-    const individualClientsThisMonth = oneTimeCommissionsThisMonth.filter(c => {
-        const client = clientMap.get(proposals.find(p => p.id === c.proposalId)?.clientId || '');
+    const individualClientsThisMonth = acceptedProposals.filter(p => {
+        const createdAt = p.createdAt ? parseISO(p.createdAt) : null;
+        if (!createdAt || !isWithinInterval(createdAt, { start: startOfMonth(now), end: endOfMonth(now) })) {
+            return false;
+        }
+        const client = clientMap.get(p.clientId);
         return client && client.clientType === 'household';
     }).length;
     
@@ -922,7 +930,7 @@ export default function DashboardPage() {
                     title="Corporate Closer Bonus"
                     value={`${dashboardData.corporateClientsThisMonth} / 3`}
                     progress={(dashboardData.corporateClientsThisMonth / 3) * 100}
-                    goal={`Goal: 3 clients for ₱2,000`}
+                    goal={`This Month's Goal: 3 clients`}
                     description="For SME, Commercial & Business clients.">
                      <DialogContent>
                         <DialogHeader>
@@ -930,11 +938,11 @@ export default function DashboardPage() {
                             <DialogDescription>Reward for closing corporate clients. Claimed after clients complete their first paid month.</DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
-                            <p>Your current progress: <span className="font-bold">{dashboardData.corporateClientsThisMonth} clients</span></p>
+                            <p>Your current progress this month: <span className="font-bold">{dashboardData.corporateClientsThisMonth} clients</span></p>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Target</TableHead>
+                                        <TableHead>Monthly Target</TableHead>
                                         <TableHead>Bonus</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -956,7 +964,7 @@ export default function DashboardPage() {
                     title="Family Plan Closer Bonus"
                     value={`${dashboardData.individualClientsThisMonth} / ${dashboardData.individualClientsTarget}`}
                     progress={(dashboardData.individualClientsThisMonth / dashboardData.individualClientsTarget) * 100}
-                    goal={`Goal: ${dashboardData.individualClientsTarget} clients for ₱2,500`}
+                    goal={`This Month's Goal: ${dashboardData.individualClientsTarget} clients`}
                     description="For Family Plan clients.">
                      <DialogContent>
                         <DialogHeader>
@@ -964,11 +972,11 @@ export default function DashboardPage() {
                             <DialogDescription>Reward for bringing in household clients. Claimed after clients complete their first paid month.</DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
-                            <p>Your current progress: <span className="font-bold">{dashboardData.individualClientsThisMonth} clients</span></p>
+                            <p>Your current progress this month: <span className="font-bold">{dashboardData.individualClientsThisMonth} clients</span></p>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Target</TableHead>
+                                        <TableHead>Monthly Target</TableHead>
                                         <TableHead>Bonus</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -990,7 +998,7 @@ export default function DashboardPage() {
                     title="Quarterly Growth Bonus"
                     value={`${currencyFormatter.format(dashboardData.quarterlySalesVolume)}`}
                     progress={(dashboardData.quarterlySalesVolume / dashboardData.quarterlyVolumeTarget) * 100}
-                    goal={`Goal: ${currencyFormatter.format(200000)} for a ₱5,000 bonus`}
+                    goal={`Quarterly Goal: ${currencyFormatter.format(200000)}`}
                     description="Rewards expansion of your client base.">
                      <DialogContent>
                         <DialogHeader>
@@ -998,11 +1006,11 @@ export default function DashboardPage() {
                             <DialogDescription>To reward expansion and total client base impact.</DialogDescription>
                         </DialogHeader>
                          <div className="space-y-4 py-4">
-                            <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlySalesVolume)}</span> in new recurring volume this quarter.</p>
+                            <p>Your current progress this quarter: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlySalesVolume)}</span> in new recurring volume.</p>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Metric</TableHead>
+                                        <TableHead>Quarterly Metric</TableHead>
                                         <TableHead>Bonus</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -1084,5 +1092,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
