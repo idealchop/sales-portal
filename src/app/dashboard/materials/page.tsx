@@ -252,13 +252,25 @@ export default function MaterialsPage() {
 
                   {currentMaterial.type === 'video' && currentImageUrl && (
                       <div className="w-full h-full flex items-center justify-center">
-                           <video
-                                controls
-                                className="w-full h-full object-contain"
-                                src={currentImageUrl}
-                            >
-                                Your browser does not support the video tag.
-                            </video>
+                           {currentImageUrl.includes('youtube.com') ? (
+                                <iframe
+                                    className="w-full h-full aspect-video"
+                                    src={currentImageUrl}
+                                    title="YouTube video player"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                ></iframe>
+                           ) : (
+                                <video
+                                    controls
+                                    muted
+                                    className="w-full h-full object-contain"
+                                    src={currentImageUrl}
+                                >
+                                    Your browser does not support the video tag.
+                                </video>
+                           )}
                        </div>
                   )}
                   
