@@ -35,6 +35,78 @@
       "imageHint": "infographic details",
       "category": "Creative Assets",
       "type": "image"
+    },
+    {
+      "id": "explainer-mats-pdf",
+      "title": "Explainer Mats (PDF)",
+      "description": "A detailed explanation of the Smart Refill system.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FSmartRefill_AutomateWaterRefill.pdf?alt=media&token=18cf7159-9c70-4bd9-aadb-3e8a37a0c8a3",
+      "imageHint": "explainer document",
+      "category": "Explainer Materials",
+      "type": "pdf"
+    },
+    {
+      "id": "explainer-img-1",
+      "title": "Automate Your Water Refill",
+      "description": "Infographic about automating water refills.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FImages%2FSmart-refill01.png?alt=media&token=7048d3bc-ccaa-4a47-99dc-959b19de5414",
+      "imageHint": "infographic automation",
+      "category": "Explainer Materials",
+      "type": "image"
+    },
+    {
+      "id": "explainer-img-2",
+      "title": "Nationwide Network of Partners",
+      "description": "Illustration of our wide network of water refilling stations.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FImages%2FSmart-refill02.png?alt=media&token=26d9b1f2-5fe7-4999-8b01-b2480c3272b6",
+      "imageHint": "map network",
+      "category": "Explainer Materials",
+      "type": "image"
+    },
+    {
+      "id": "explainer-img-3",
+      "title": "Client Portal Dashboard",
+      "description": "A preview of the client portal for monitoring.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FImages%2FSmart-refill03.png?alt=media&token=aa4eff5b-ffd1-452c-8ef9-c3f99468b362",
+      "imageHint": "dashboard interface",
+      "category": "Explainer Materials",
+      "type": "image"
+    },
+    {
+      "id": "explainer-img-4",
+      "title": "Sanitation and Compliance",
+      "description": "Showcasing our commitment to safety and standards.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FImages%2FSmart-refill04.png?alt=media&token=fe209117-38e7-4de5-ac29-bfe6ab919e32",
+      "imageHint": "safety compliance",
+      "category": "Explainer Materials",
+      "type": "image"
+    },
+    {
+      "id": "explainer-img-5",
+      "title": "Pay Per Liter Model",
+      "description": "Explaining the cost-effective pay-per-liter subscription.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FImages%2FSmart-refill05.png?alt=media&token=d68f8880-006f-4af2-bcd6-cb70e47d08cc",
+      "imageHint": "pricing model",
+      "category": "Explainer Materials",
+      "type": "image"
+    },
+    {
+      "id": "explainer-img-6",
+      "title": "Happy and Productive Teams",
+      "description": "The result of a seamless water supply.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FImages%2FSmart-refill06.png?alt=media&token=f2aa3a34-3ef8-4f2d-b68b-8ae9e46637a1",
+      "imageHint": "happy employees",
+      "category": "Explainer Materials",
+      "type": "image"
+    },
+    {
+      "id": "explainer-img-7",
+      "title": "Smart Refill vs Traditional",
+      "description": "A comparison showing the advantages of Smart Refill.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FImages%2FSmart-refill07.png?alt=media&token=97e835f7-36ca-42c4-b362-82508efdef1e",
+      "imageHint": "comparison chart",
+      "category": "Explainer Materials",
+      "type": "image"
     }
   ]
 }
