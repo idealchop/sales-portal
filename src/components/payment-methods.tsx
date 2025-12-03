@@ -101,7 +101,7 @@ export function PaymentMethods() {
                     />
                   </div>
                   {method.accountDetails && (
-                    <div className="space-y-4 rounded-md border bg-muted/50 p-4">
+                    <div className="space-y-4 rounded-md border bg-muted/50 p-4 font-body">
                         <h4 className="font-semibold">Account Details</h4>
                         <Separator />
                         <div className="space-y-2 text-sm">
