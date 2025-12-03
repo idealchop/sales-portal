@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -7,6 +8,9 @@ import { FirebaseClientProvider } from '@/firebase';
 export const metadata: Metadata = {
   title: 'Smart Refill Sales Portal',
   description: 'Your intelligent sales partner.',
+  icons: {
+    icon: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2Ffavicon_200x200.png?alt=media&token=d502924c-8360-4523-972d-a80720f9d966',
+  },
 };
 
 export default function RootLayout({
