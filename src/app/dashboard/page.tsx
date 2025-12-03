@@ -251,17 +251,8 @@ export default function DashboardPage() {
         const rate = recurringCommissionRates[client.clientType] || 0;
         if (rate === 0) return null;
 
-        let dateSignedStr: string | undefined;
-        if (proposal.content) {
-            try {
-                const content = JSON.parse(proposal.content) as FinalPlanDetails;
-                dateSignedStr = content.date;
-            } catch {}
-        }
-        if (!dateSignedStr) return null;
-        
-        const startDate = parseISO(dateSignedStr);
-        if (!isValid(startDate)) return null;
+        const startDate = proposal.createdAt ? parseISO(proposal.createdAt) : null;
+        if (!startDate || !isValid(startDate)) return null;
 
         const monthsDiff = differenceInMonths(now, startDate);
         if (monthsDiff < 0 || monthsDiff >= 12) return null; // Not active yet or already expired
