@@ -71,7 +71,7 @@ import { ActivityChart } from '@/components/activity-chart';
 import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
 import { useCommissions } from '@/hooks/use-commissions';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears, parseISO, differenceInMonths, isValid } from 'date-fns';
 import { useUser } from '@/firebase';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -212,6 +212,9 @@ export default function DashboardPage() {
   const { clients, isLoading: clientsLoading } = useClients(user?.uid);
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const { allPayouts, commissions: rawCommissions, isLoading: commissionsLoading } = useCommissions(user?.uid);
+  
+  const [proposalsPage, setProposalsPage] = useState(1);
+  const PROPOSALS_PER_PAGE = 8;
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
@@ -248,8 +251,8 @@ export default function DashboardPage() {
         const rate = recurringCommissionRates[client.clientType] || 0;
         if (rate === 0) return null;
 
-        let dateSignedStr = client.subscription?.dateSigned;
-        if (!dateSignedStr && proposal.content) {
+        let dateSignedStr: string | undefined;
+        if (proposal.content) {
             try {
                 const content = JSON.parse(proposal.content) as FinalPlanDetails;
                 dateSignedStr = content.date;
@@ -309,8 +312,6 @@ export default function DashboardPage() {
     const totalSalesValue = acceptedProposals.reduce((sum, p) => sum + p.amount, 0);
     const avgDealSize = acceptedProposals.length > 0 ? totalSalesValue / acceptedProposals.length : 0;
 
-    const recentProposals = proposals.slice(0, 5);
-
     const activityData = [
       { name: 'Sent', value: proposalsSent, fill: 'hsl(var(--chart-2))' },
       { name: 'Accepted', value: acceptedProposals.length, fill: 'hsl(var(--chart-1))' },
@@ -356,7 +357,6 @@ export default function DashboardPage() {
         proposalsSent,
         winRate,
         avgDealSize,
-        recentProposals,
         activityData,
         acceptedProposals,
         teamRevenue,
@@ -365,6 +365,14 @@ export default function DashboardPage() {
         prepaidContractsDetails,
     };
   }, [allPayouts, rawCommissions, proposals, clients, clientMap, proposalMap]);
+  
+  const paginatedProposals = useMemo(() => {
+    const startIndex = (proposalsPage - 1) * PROPOSALS_PER_PAGE;
+    return proposals.slice(startIndex, startIndex + PROPOSALS_PER_PAGE);
+  }, [proposals, proposalsPage]);
+
+  const totalProposalPages = Math.ceil(proposals.length / PROPOSALS_PER_PAGE);
+
 
   const commissionTiers = [
     { clientType: 'Family Plan', commission: '12%', recurring: 'None', managerOverride: '2%' },
@@ -670,7 +678,7 @@ export default function DashboardPage() {
                 <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.quarterlySalesVolume)}</div>
                  <div className="mt-2 space-y-1">
                   <Progress value={(dashboardData.quarterlySalesVolume / dashboardData.quarterlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-                  <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(dashboardData.quarterlyVolumeTarget)} for a ₱20k bonus</p>
+                  <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(200000)} for a ₱5k bonus</p>
                 </div>
               </CardContent>
             </Card>
@@ -799,7 +807,7 @@ export default function DashboardPage() {
                   </TableCell>
                 </TableRow>
               )}
-              {!(proposalsLoading || clientsLoading || usersLoading) && dashboardData.recentProposals.map((proposal) => {
+              {!(proposalsLoading || clientsLoading || usersLoading) && paginatedProposals.map((proposal) => {
                 const client = clientMap.get(proposal.clientId);
                 const owner = userMap.get(proposal.userId);
                 if (!client) return null;
@@ -838,6 +846,33 @@ export default function DashboardPage() {
             </TableBody>
           </Table>
         </CardContent>
+         {totalProposalPages > 1 && (
+            <CardFooter>
+                <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                        Page {proposalsPage} of {totalProposalPages}
+                    </span>
+                    <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setProposalsPage(prev => Math.max(1, prev - 1))}
+                        disabled={proposalsPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setProposalsPage(prev => Math.min(totalProposalPages, prev + 1))}
+                        disabled={proposalsPage === totalProposalPages}
+                    >
+                        Next
+                    </Button>
+                    </div>
+                </div>
+            </CardFooter>
+         )}
       </Card>
 
       {/* Bonus Tracker Section */}
@@ -929,7 +964,7 @@ export default function DashboardPage() {
                     title="Quarterly Growth Bonus"
                     value={`${currencyFormatter.format(dashboardData.quarterlySalesVolume)}`}
                     progress={(dashboardData.quarterlySalesVolume / dashboardData.quarterlyVolumeTarget) * 100}
-                    goal={`Goal: ${currencyFormatter.format(200000)} volume for ₱5,000`}
+                    goal={`Goal: ${currencyFormatter.format(200000)} for a ₱5,000 bonus`}
                     description="Rewards expansion of your client base.">
                      <DialogContent>
                         <DialogHeader>
