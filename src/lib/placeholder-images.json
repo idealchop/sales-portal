@@ -1,13 +1,13 @@
 {
   "placeholderImages": [
     {
-      "id": "create-proposal-video",
-      "title": "Create Proposal Video Tutorial",
-      "description": "A step-by-step guide on how to create a new proposal.",
-      "imageUrl": "https://www.youtube.com/embed/yw1kM-e-6wk?autoplay=1&mute=1",
-      "imageHint": "video tutorial proposal",
-      "category": "Explainer Materials",
-      "type": "video"
+      "id": "brochure-pdf",
+      "title": "Product brochure 2025",
+      "description": "The latest product brochure for 2025 in PDF format.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FBrochure%2FBrochure_1.pdf?alt=media&token=1c05c3a7-c0ed-4eac-9d3b-b8c31a369601",
+      "imageHint": "brochure document",
+      "category": "Business Profile",
+      "type": "pdf"
     },
     {
       "id": "company-profile-2024-pdf",
@@ -19,13 +19,13 @@
       "type": "pdf"
     },
     {
-      "id": "product-brochure-2025-pdf",
-      "title": "Product brochure 2025",
-      "description": "The latest product brochure for 2025 in PDF format.",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FBrochure%2FBrochure_1.pdf?alt=media&token=1c05c3a7-c0ed-4eac-9d3b-b8c31a369601",
-      "imageHint": "brochure document",
-      "category": "Business Profile",
-      "type": "pdf"
+      "id": "create-proposal-video",
+      "title": "Create Proposal Video Tutorial",
+      "description": "A step-by-step guide on how to create a new proposal.",
+      "imageUrl": "https://www.youtube.com/embed/yw1kM-e-6wk?autoplay=1&mute=1",
+      "imageHint": "video tutorial proposal",
+      "category": "Explainer Materials",
+      "type": "video"
     },
     {
       "id": "explainer-mats-pdf",
