@@ -642,7 +642,7 @@ export default function DashboardPage() {
                             )}
                         </TableBody>
                     </Table>
-                    <DialogFooter className="border-t pt-4">
+                    <DialogFooter className="!justify-between items-center border-t pt-4 mt-4">
                         {totalRecurringPages > 1 && (
                             <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
                                 <span>
