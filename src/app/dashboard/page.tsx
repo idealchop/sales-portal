@@ -243,25 +243,31 @@ export default function DashboardPage() {
         .flatMap(p => p.commissions)
         .filter(c => c.description === 'Recurring commission');
 
-    const activeRecurringCommissions = recurringCommissionsAll.filter(c => {
+    const activeRecurringCommissions = recurringCommissionsAll.map(c => {
         const proposal = proposalMap.get(c.proposalId);
-        if (!proposal?.content) return false;
+        if (!proposal?.content) return null;
 
         try {
             const content = JSON.parse(proposal.content) as FinalPlanDetails;
             const client = clientMap.get(proposal.clientId);
             const dateSignedStr = client?.subscription?.dateSigned || content.date;
-            if (!dateSignedStr) return false;
+            if (!dateSignedStr) return null;
             
             const startDate = parseISO(dateSignedStr);
-            if (!isValid(startDate)) return false;
+            if (!isValid(startDate)) return null;
 
-            const endDate = addYears(startDate, 1);
-            return isWithinInterval(now, { start: startDate, end: endDate });
+            const monthsDiff = differenceInMonths(now, startDate);
+            if (monthsDiff < 0 || monthsDiff >= 12) return null; // Not active yet or already expired
+            
+            return {
+                ...c,
+                progress: `${monthsDiff + 1}/12`
+            };
+
         } catch {
-            return false;
+            return null;
         }
-    });
+    }).filter((c): c is (typeof recurringCommissionsAll[0] & { progress: string }) => c !== null);
     
     const recurringCommission = activeRecurringCommissions.reduce((sum, c) => sum + c.amount, 0);
 
@@ -604,41 +610,18 @@ export default function DashboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {dashboardData.activeRecurringCommissions.length > 0 ? dashboardData.activeRecurringCommissions.map(p => {
-                                const proposal = proposalMap.get(p.proposalId);
-                                let progressText = '';
-                                if (proposal && proposal.content) {
-                                    try {
-                                        const content = JSON.parse(proposal.content) as FinalPlanDetails;
-                                        const client = clientMap.get(proposal.clientId);
-                                        const dateSignedStr = client?.subscription?.dateSigned || content.date;
-
-                                        if (dateSignedStr) {
-                                            const startDate = parseISO(dateSignedStr);
-                                            if (isValid(startDate)) {
-                                                const monthsDiff = differenceInMonths(new Date(), startDate) + 1;
-                                                if (monthsDiff > 0 && monthsDiff <= 12) {
-                                                    progressText = `(${monthsDiff}/12)`;
-                                                }
-                                            }
-                                        }
-                                    } catch (e) {
-                                        console.error("Error parsing proposal content for recurring commission:", e);
-                                    }
-                                }
-                                return (
-                                    <TableRow key={p.id}>
-                                        <TableCell>{p.clientName || 'N/A'}</TableCell>
-                                        <TableCell>{p.description}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <span className="font-semibold">{currencyFormatter.format(p.amount)}</span>
-                                                {progressText && <Badge variant="outline" className="font-mono text-xs">{progressText}</Badge>}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                )
-                            }) : (
+                            {dashboardData.activeRecurringCommissions.length > 0 ? dashboardData.activeRecurringCommissions.map(p => (
+                                <TableRow key={p.id}>
+                                    <TableCell>{p.clientName || 'N/A'}</TableCell>
+                                    <TableCell>{p.description}</TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <span className="font-semibold">{currencyFormatter.format(p.amount)}</span>
+                                            {p.progress && <Badge variant="outline" className="font-mono text-xs">{p.progress}</Badge>}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            )) : (
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-center">No active recurring commissions.</TableCell>
                                 </TableRow>
@@ -1035,6 +1018,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-
-    
