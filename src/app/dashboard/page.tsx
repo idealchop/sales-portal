@@ -226,19 +226,20 @@ export default function DashboardPage() {
 
   const dashboardData = useMemo(() => {
     const now = new Date();
-    const currentMonthKey = format(startOfMonth(now), 'MMMM yyyy');
     const currentMonthStart = startOfMonth(now);
 
-    const getValidDate = (timestamp: string | number | undefined | Date) => {
+    const getValidDate = (timestamp: string | number | undefined | Date): Date | null => {
         if (!timestamp) return null;
         try {
-            const d = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
-            return isNaN(d.getTime()) ? null : d;
+            const date = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
+            // Check if the parsed date is valid
+            return isNaN(date.getTime()) ? null : date;
         } catch {
             return null;
         }
     };
 
+    const currentMonthKey = format(startOfMonth(now), 'MMMM yyyy');
     const currentMonthPayout = allPayouts.find(p => p.month === currentMonthKey);
     
     const oneTimeCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.type === 'commission' && c.description !== 'Recurring commission') || [];
@@ -267,7 +268,7 @@ export default function DashboardPage() {
         const startDate = getValidDate(proposal.createdAt);
         if (!startDate) return null;
         
-        const elapsedMonths = (getYear(now) - getYear(startDate)) * 12 + (getMonth(now) - getMonth(startDate)) + 1;
+        const elapsedMonths = differenceInMonths(now, startDate) + 1;
         
         if (elapsedMonths <= 0 || elapsedMonths > 12) return null;
         
