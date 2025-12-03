@@ -9,6 +9,8 @@ import { WithId } from '@/firebase/firestore/use-collection';
 import { format, startOfMonth, isWithinInterval, addYears, parseISO } from 'date-fns';
 import type { FinalPlanDetails } from '@/components/contract-details';
 import { useSalesUsers } from './use-sales-users';
+import { useAllProposals } from './use-all-proposals';
+import { useAllClients } from './use-all-clients';
 
 export type PayoutCommission = Commission & { clientName?: string };
 
@@ -25,6 +27,8 @@ export function useCommissions(userId?: string) {
   const { firestore, isFirebaseLoading } = useFirebase();
   const { user: authUser, isUserLoading: isUserAuthLoading, isManager } = useUser();
   const { salesUsers, isLoading: isSalesUsersLoading } = useSalesUsers();
+  const { proposals: allProposals, isLoading: proposalsLoading } = useAllProposals();
+  const { clients: allClients, isLoading: clientsLoading } = useAllClients();
   
   const [commissions, setCommissions] = useState<WithId<Commission>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,15 +51,12 @@ export function useCommissions(userId?: string) {
 
     let userIdsToQuery: string[] = [];
 
-    // Determine which user IDs to query for
-    if (userId) { // A specific user is requested (e.g., from admin page)
+    if (userId) { 
         userIdsToQuery = [userId];
-    } else if (authUser) { // Logged-in user's own view
+    } else if (authUser) { 
         if (isManager) {
-             // Manager sees their own commissions and their team's for override calculation
             userIdsToQuery = [authUser.id, ...teamMemberIds];
         } else {
-            // Regular sales rep sees only their own
             userIdsToQuery = [authUser.id];
         }
     }
@@ -66,7 +67,6 @@ export function useCommissions(userId?: string) {
         return;
     }
     
-    // Firestore 'in' queries are limited to 30 items.
     const MAX_IN_QUERIES = 30;
     const queryBatches: string[][] = [];
     for (let i = 0; i < userIdsToQuery.length; i += MAX_IN_QUERIES) {
@@ -89,7 +89,6 @@ export function useCommissions(userId?: string) {
                 fetchedCommissions.push({ ...data as Commission, id: doc.id, createdAt: createdAtString });
             });
             
-            // This logic correctly merges updates from multiple batches
             setCommissions(prevCommissions => {
                 const existingCommissionIdsInBatch = new Set(batch);
                  const otherCommissions = prevCommissions.filter(c => !existingCommissionIdsInBatch.has(c.userId));
@@ -109,30 +108,22 @@ export function useCommissions(userId?: string) {
         unsubscribers.forEach(unsub => unsub());
     };
 
-  }, [firestore, isFirebaseLoading, userId, isManager, teamMemberIds.length, authUser, isUserAuthLoading]); // Added teamMemberIds.length to re-run when team members are loaded
+  }, [firestore, isFirebaseLoading, userId, isManager, teamMemberIds.length, authUser, isUserAuthLoading]);
   
     const allPayouts = useMemo(() => {
-        if (isLoading) return [];
+        if (isLoading || proposalsLoading || clientsLoading) return [];
         
         let targetId = userId;
-        if (!targetId && authUser) { // If no specific userId is passed, use the authenticated user
+        if (!targetId && authUser) {
             targetId = authUser.id;
         }
         if (!targetId) return [];
 
-        let commissionsToProcess = commissions;
-
-        // If the user is a manager viewing their OWN payouts, we need their direct commissions + overrides
-        if (isManager && targetId === authUser?.id) {
-            commissionsToProcess = commissions.filter(c => c.userId === targetId || (c.userId === authUser?.id && c.description?.toLowerCase().includes('override')));
-        } else {
-            // For a specific user (or a non-manager), just show their commissions
-             commissionsToProcess = commissions.filter(c => c.userId === targetId);
-        }
-
         const commissionsByMonth: Record<string, WithId<PayoutCommission>[]> = {};
-
-        commissionsToProcess.forEach(commission => {
+        
+        // 1. Process stored commissions
+        const userCommissions = commissions.filter(c => c.userId === targetId);
+        userCommissions.forEach(commission => {
             if(!commission.createdAt) return;
             const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
             if (!commissionsByMonth[monthKey]) {
@@ -140,6 +131,47 @@ export function useCommissions(userId?: string) {
             }
             commissionsByMonth[monthKey].push(commission);
         });
+
+        // 2. If manager, calculate and add override commissions
+        if (isManager && targetId === authUser?.id) {
+            const clientMap = new Map(allClients.map(c => [c.id, c]));
+            const salesRepMap = new Map(salesUsers.map(u => [u.id, u]));
+            const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
+
+            const teamProposals = allProposals.filter(p => teamMemberIds.includes(p.userId));
+            const acceptedTeamProposals = teamProposals.filter(p => p.status === 'accepted' && p.createdAt);
+
+            for (const proposal of acceptedTeamProposals) {
+                const proposalDate = new Date(proposal.createdAt);
+                const monthYear = format(proposalDate, 'MMMM yyyy');
+                
+                if (!commissionsByMonth[monthYear]) {
+                    commissionsByMonth[monthYear] = [];
+                }
+
+                const client = clientMap.get(proposal.clientId);
+                const salesRep = salesRepMap.get(proposal.userId);
+
+                if (client && client.clientType && salesRep) {
+                    const overrideRate = managerOverrideRates[client.clientType] || 0;
+                    const overrideAmount = proposal.amount * overrideRate;
+                    if (overrideAmount > 0) {
+                        commissionsByMonth[monthYear].push({
+                            id: `override-${proposal.id}`,
+                            proposalId: proposal.id,
+                            userId: authUser.id,
+                            amount: overrideAmount,
+                            status: 'pending', // Overrides are calculated, assumed pending until batch processed
+                            createdAt: proposal.createdAt,
+                            type: 'commission',
+                            description: `Manager Override for ${salesRep.displayName}'s sale`,
+                            clientName: client.companyName,
+                            referenceId: `override-${proposal.id}`
+                        });
+                    }
+                }
+            }
+        }
 
         const processedPayouts: MonthlyPayout[] = [];
 
@@ -164,7 +196,7 @@ export function useCommissions(userId?: string) {
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, isLoading, userId, authUser, isManager]);
+    }, [commissions, isLoading, userId, authUser, isManager, allProposals, allClients, salesUsers, teamMemberIds, proposalsLoading, clientsLoading]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
@@ -177,7 +209,7 @@ export function useCommissions(userId?: string) {
         return Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a));
     }, [commissions]);
 
-    const combinedIsLoading = isLoading || isFirebaseLoading || isUserAuthLoading || isSalesUsersLoading;
+    const combinedIsLoading = isLoading || isFirebaseLoading || isUserAuthLoading || isSalesUsersLoading || proposalsLoading || clientsLoading;
 
     return { allPayouts, commissions, isLoading: combinedIsLoading, error, availableYears };
 }
