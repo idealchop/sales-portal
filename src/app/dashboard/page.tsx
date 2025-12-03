@@ -227,7 +227,6 @@ export default function DashboardPage() {
   const dashboardData = useMemo(() => {
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
-    const currentMonthEnd = endOfMonth(now);
 
     const getValidDate = (timestamp: string | number | undefined | Date): Date | null => {
         if (!timestamp) return null;
@@ -268,9 +267,9 @@ export default function DashboardPage() {
         const startDate = getValidDate(proposal.createdAt);
         if (!startDate) return null;
         
-        const elapsedMonths = differenceInMonths(now, startDate) + 1;
+        const elapsedMonths = differenceInMonths(now, startDate);
         
-        if (elapsedMonths <= 0 || elapsedMonths > 12) return null;
+        if (elapsedMonths < 0 || elapsedMonths >= 12) return null;
         
         const commissionAmount = proposal.amount * rate;
         
@@ -279,7 +278,7 @@ export default function DashboardPage() {
             clientName: client.companyName,
             description: 'Recurring commission',
             amount: commissionAmount,
-            progress: `${elapsedMonths}/12`
+            progress: `${elapsedMonths + 1}/12`
         };
     }).filter((c): c is NonNullable<typeof c> => c !== null);
     
@@ -287,18 +286,18 @@ export default function DashboardPage() {
 
     const acceptedThisMonth = acceptedProposals.filter(p => {
         const createdAt = getValidDate(p.createdAt);
-        return createdAt && isWithinInterval(createdAt, { start: currentMonthStart, end: currentMonthEnd });
+        return createdAt && isWithinInterval(createdAt, { start: currentMonthStart, end: now });
     });
 
     const corporateClientsThisMonth = acceptedThisMonth.filter(p => {
         const client = clientMap.get(p.clientId);
         return client && ['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '');
-    }).length;
+    });
 
     const individualClientsThisMonth = acceptedThisMonth.filter(p => {
         const client = clientMap.get(p.clientId);
         return client && client.clientType === 'household';
-    }).length;
+    });
     
     const corporateClientsTarget = 3;
     const individualClientsTarget = 10;
@@ -358,9 +357,11 @@ export default function DashboardPage() {
         recurringCommission,
         activeRecurringCommissions,
         oneTimeCommissionsThisMonth,
-        corporateClientsThisMonth,
+        corporateClientsThisMonth: corporateClientsThisMonth.length,
+        corporateClientsThisMonthDetails: corporateClientsThisMonth,
         corporateClientsTarget,
-        individualClientsThisMonth,
+        individualClientsThisMonth: individualClientsThisMonth.length,
+        individualClientsThisMonthDetails: individualClientsThisMonth,
         individualClientsTarget,
         quarterlySalesVolume,
         quarterlyVolumeTarget,
@@ -697,17 +698,57 @@ export default function DashboardPage() {
             </Dialog>
         </Card>
         <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Corp. Clients Bonus</CardTitle>
-            <Target className="h-4 w-4 text-primary-foreground/80" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{dashboardData.corporateClientsThisMonth} / {dashboardData.corporateClientsTarget}</div>
-            <div className="mt-2 space-y-1">
-              <Progress value={(dashboardData.corporateClientsThisMonth / dashboardData.corporateClientsTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-              <p className="text-xs text-primary-foreground/80">This Month's Goal: {dashboardData.corporateClientsTarget} clients</p>
-            </div>
-          </CardContent>
+          <Dialog>
+              <DialogTrigger asChild>
+                  <div className="cursor-pointer p-6">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
+                        <CardTitle className="text-sm font-medium">New Corp. Clients Bonus</CardTitle>
+                        <Target className="h-4 w-4 text-primary-foreground/80" />
+                      </CardHeader>
+                      <CardContent className="p-0 pt-2">
+                        <div className="text-3xl font-bold">{dashboardData.corporateClientsThisMonth} / {dashboardData.corporateClientsTarget}</div>
+                        <div className="mt-2 space-y-1">
+                          <Progress value={(dashboardData.corporateClientsThisMonth / dashboardData.corporateClientsTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
+                          <p className="text-xs text-primary-foreground/80">This Month's Goal: {dashboardData.corporateClientsTarget} clients</p>
+                          <p className="text-xs text-primary-foreground/80 mt-2 underline">Click to see breakdown</p>
+                        </div>
+                      </CardContent>
+                  </div>
+              </DialogTrigger>
+              <DialogContent>
+                  <DialogHeader>
+                      <DialogTitle>Corporate Clients This Month</DialogTitle>
+                      <DialogDescription>
+                          Clients signed this month that count towards your Corporate Closer Bonus.
+                      </DialogDescription>
+                  </DialogHeader>
+                  <Table>
+                      <TableHeader>
+                          <TableRow>
+                              <TableHead>Client</TableHead>
+                              <TableHead>Date Signed</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {dashboardData.corporateClientsThisMonthDetails.length > 0 ? (
+                              dashboardData.corporateClientsThisMonthDetails.map(p => {
+                                  const client = clientMap.get(p.clientId);
+                                  return (
+                                      <TableRow key={p.id}>
+                                          <TableCell>{client?.companyName || 'N/A'}</TableCell>
+                                          <TableCell>{p.createdAt ? format(parseISO(p.createdAt), 'PPP') : 'N/A'}</TableCell>
+                                      </TableRow>
+                                  )
+                              })
+                          ) : (
+                              <TableRow>
+                                  <TableCell colSpan={2} className="text-center h-24">No corporate clients signed this month.</TableCell>
+                              </TableRow>
+                          )}
+                      </TableBody>
+                  </Table>
+              </DialogContent>
+          </Dialog>
         </Card>
         <Dialog>
           <DialogTrigger asChild>
@@ -1100,5 +1141,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
