@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { CreditCard, Banknote } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from './ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 const paymentOptions = [
   {
@@ -61,6 +62,16 @@ const paymentOptions = [
 ];
 
 export function PaymentMethods() {
+  const { toast } = useToast();
+
+  const handleCardPaymentClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast({
+        title: "Under Construction",
+        description: "Credit/debit card payments are not yet available. Please use another payment method.",
+    });
+  };
+  
   return (
     <Card>
       <CardHeader>
@@ -125,16 +136,14 @@ export function PaymentMethods() {
           }
           if (method.type === 'link') {
             return (
-              <Link key={method.name} href={method.href!} target="_blank">
-                <div className="relative h-20 w-full cursor-pointer rounded-lg bg-card p-4 transition-all hover:bg-muted">
-                  <Image
-                    src={method.logo}
-                    alt={`${method.name} logo`}
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-              </Link>
+              <div key={method.name} onClick={handleCardPaymentClick} className="relative h-20 w-full cursor-pointer rounded-lg bg-card p-4 transition-all hover:bg-muted">
+                <Image
+                  src={method.logo}
+                  alt={`${method.name} logo`}
+                  fill
+                  className="object-contain"
+                />
+              </div>
             );
           }
           return null;
