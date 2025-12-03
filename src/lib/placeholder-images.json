@@ -1,6 +1,15 @@
 {
   "placeholderImages": [
     {
+      "id": "company-profile-2024-pdf",
+      "title": "Company Profile (PDF)",
+      "description": "The official company profile for Smart Refill.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FCompany%20Profile%2FSmartRefill_Profile.pdf?alt=media&token=2145619b-61fb-426c-ab93-358733bb34df",
+      "imageHint": "company profile document",
+      "category": "Business Profile",
+      "type": "pdf"
+    },
+    {
       "id": "product-brochure-2024-pdf",
       "title": "Product Brochure 2024 (PDF)",
       "description": "The latest product brochure for 2024 in PDF format.",
