@@ -10,13 +10,31 @@
       "type": "pdf"
     },
     {
-      "id": "product-brochure-2024",
-      "title": "Product Brochure 2024",
-      "description": "The latest product brochure for 2024.",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSmartRefill_Product_Brochure.pdf?alt=media&token=6a9d1645-a48a-442b-9860-20150937c4d5",
-      "imageHint": "brochure design",
+      "id": "product-brochure-2024-pdf",
+      "title": "Product Brochure 2024 (PDF)",
+      "description": "The latest product brochure for 2024 in PDF format.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FBrochure%2FBrochure_1.pdf?alt=media&token=1c05c3a7-c0ed-4eac-9d3b-b8c31a369601",
+      "imageHint": "brochure document",
       "category": "Business Profile",
       "type": "pdf"
+    },
+    {
+      "id": "product-brochure-2024-img1",
+      "title": "Product Brochure 2024 (Page 1)",
+      "description": "Page 1 of the latest product brochure.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FBrochure%2Fbrochure_01.png?alt=media&token=a5946022-8e43-4cdc-8ba5-efc7e605cd18",
+      "imageHint": "brochure design",
+      "category": "Creative Assets",
+      "type": "image"
+    },
+    {
+      "id": "product-brochure-2024-img2",
+      "title": "Product Brochure 2024 (Page 2)",
+      "description": "Page 2 of the latest product brochure.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FBrochure%2Fbrochure_2.png?alt=media&token=8cf672d9-c98a-41ea-923f-4f48c7caf6de",
+      "imageHint": "infographic details",
+      "category": "Creative Assets",
+      "type": "image"
     },
     {
       "id": "competitor-analysis-q2",
