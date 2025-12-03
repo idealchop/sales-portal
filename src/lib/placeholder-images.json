@@ -1,15 +1,6 @@
 {
   "placeholderImages": [
     {
-      "id": "sales-presentation-template",
-      "title": "Sales Presentation Template",
-      "description": "A template for sales presentations.",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPresentation_Sales.pdf?alt=media&token=c19b2512-a720-43e8-bd1d-d24b611e9f16",
-      "imageHint": "presentation chart",
-      "category": "Business Profile",
-      "type": "pdf"
-    },
-    {
       "id": "product-brochure-2024-pdf",
       "title": "Product Brochure 2024 (PDF)",
       "description": "The latest product brochure for 2024 in PDF format.",
@@ -33,51 +24,6 @@
       "description": "Page 2 of the latest product brochure.",
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FBrochure%2Fbrochure_2.png?alt=media&token=8cf672d9-c98a-41ea-923f-4f48c7caf6de",
       "imageHint": "infographic details",
-      "category": "Creative Assets",
-      "type": "image"
-    },
-    {
-      "id": "small-business-plan",
-      "title": "Small Business",
-      "description": "A small business storefront.",
-      "imageUrl": "https://images.unsplash.com/photo-1594402919317-9e67dca0a305?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzbWFsbCUyMGJ1c2luZXNzfGVufDB8fHx8MTc2MTk0NDQ3Mnww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "small business",
-      "category": "Creative Assets",
-      "type": "image"
-    },
-    {
-      "id": "medium-business-plan",
-      "title": "Medium Business",
-      "description": "A medium-sized office building.",
-      "imageUrl": "https://images.unsplash.com/photo-1582061575118-93cc82eca33b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxvZmZpY2UlMjBidWlsZGluZ3xlbnwwfHx8fDE3NjE4NTg2ODR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "office building",
-      "category": "Creative Assets",
-      "type": "image"
-    },
-    {
-      "id": "large-business-plan",
-      "title": "Large Business",
-      "description": "A large corporate building.",
-      "imageUrl": "https://images.unsplash.com/photo-1501324682324-0d8d7c4b9706?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjb3Jwb3JhdGUlMjBidWlsZGluZ3xlbnwwfHx8fDE3NjE4OTM5NDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "corporate building",
-      "category": "Creative Assets",
-      "type": "image"
-    },
-    {
-      "id": "flow-plan",
-      "title": "Flow Plan",
-      "description": "An abstract representation of a data flow.",
-      "imageUrl": "https://images.unsplash.com/photo-1501526029524-a8ea952b15be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkYXRhJTIwZmxvd3xlbnwwfHx8fDE3NjE5NzYyNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "data flow",
-      "category": "Creative Assets",
-      "type": "image"
-    },
-    {
-      "id": "household-plan",
-      "title": "Household Plan",
-      "description": "A modern kitchen with a water dispenser.",
-      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FSmartRefill_Individual.png?alt=media&token=090d07c4-848a-4cd6-aab6-f7a5909ea839",
-      "imageHint": "kitchen water",
       "category": "Creative Assets",
       "type": "image"
     }
