@@ -267,18 +267,18 @@ export default function DashboardPage() {
         const startDate = getValidDate(proposal.createdAt);
         if (!startDate) return null;
         
-        const elapsedMonths = differenceInMonths(now, startDate);
+        const monthDiff = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
         
-        if (elapsedMonths < 0 || elapsedMonths >= 12) return null;
+        if (monthDiff < 0 || monthDiff >= 12) return null;
         
         const commissionAmount = proposal.amount * rate;
         
         return {
-            id: `${proposal.id}-recurring-${elapsedMonths}`,
+            id: `${proposal.id}-recurring-${monthDiff}`,
             clientName: client.companyName,
             description: 'Recurring commission',
             amount: commissionAmount,
-            progress: `${elapsedMonths + 1}/12`
+            progress: `${monthDiff + 1}/12`
         };
     }).filter((c): c is NonNullable<typeof c> => c !== null);
     
