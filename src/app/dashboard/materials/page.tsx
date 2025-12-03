@@ -63,20 +63,29 @@ export default function MaterialsPage() {
     });
   };
 
-  const handleDownload = (imageUrl: string, title: string) => {
-    fetch(imageUrl)
-      .then(response => response.blob())
-      .then(blob => {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        const fileExtension = imageUrl.split('.').pop()?.split('?')[0] || 'jpg';
-        link.download = `${title.replace(/ /g, '_')}.${fileExtension}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast({ title: 'Download Started', description: `Downloading ${title}.` });
-      })
-      .catch(() => toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not download the image.' }));
+  const handleDownload = async (imageUrl: string, title: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error('Network response was not ok.');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const fileExtension = imageUrl.split('.').pop()?.split('?')[0] || 'download';
+      link.setAttribute('download', `${title.replace(/ /g, '_')}.${fileExtension}`);
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({ title: 'Download Started', description: `Downloading ${title}.` });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not download the file.' });
+    }
   };
 
   const handleNext = () => {
