@@ -50,7 +50,7 @@ export default function MaterialsPage() {
 
   const categoryOrder = [
     'Business Profile',
-    'Explainer Materials',
+    'Client Explainer',
     'Video Tutorials',
     'Creative Assets',
   ];

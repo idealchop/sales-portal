@@ -19,21 +19,12 @@
       "type": "pdf"
     },
     {
-      "id": "create-proposal-video",
-      "title": "Create Proposal Video Tutorial",
-      "description": "A step-by-step guide on how to create a new proposal.",
-      "imageUrl": "https://www.youtube.com/embed/yw1kM-e-6wk?autoplay=1&mute=1",
-      "imageHint": "video tutorial proposal",
-      "category": "Video Tutorials",
-      "type": "video"
-    },
-    {
       "id": "explainer-mats-pdf",
       "title": "Explainer Mats (PDF)",
       "description": "A detailed explanation of the Smart Refill system.",
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FSmartRefill_AutomateWaterRefill.pdf?alt=media&token=18cf7159-9c70-4bd9-aadb-3e8a37a0c8a3",
       "imageHint": "explainer document",
-      "category": "Explainer Materials",
+      "category": "Client Explainer",
       "type": "pdf"
     },
     {
@@ -42,7 +33,7 @@
       "description": "A gallery of infographics explaining the Smart Refill system.",
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FImages%2FSmart-refill01.png?alt=media&token=7048d3bc-ccaa-4a47-99dc-959b19de5414",
       "imageHint": "infographics gallery",
-      "category": "Explainer Materials",
+      "category": "Client Explainer",
       "type": "gallery",
       "imageUrls": [
         "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FImages%2FSmart-refill01.png?alt=media&token=7048d3bc-ccaa-4a47-99dc-959b19de5414",
@@ -66,6 +57,15 @@
         "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FBrochure%2Fbrochure_01.png?alt=media&token=a5946022-8e43-4cdc-8ba5-efc7e605cd18",
         "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FBrochure%2Fbrochure_2.png?alt=media&token=8cf672d9-c98a-41ea-923f-4f48c7caf6de"
       ]
+    },
+    {
+      "id": "create-proposal-video",
+      "title": "Create Proposal Video Tutorial",
+      "description": "A step-by-step guide on how to create a new proposal.",
+      "imageUrl": "https://www.youtube.com/embed/yw1kM-e-6wk?autoplay=1&mute=1",
+      "imageHint": "video tutorial proposal",
+      "category": "Video Tutorials",
+      "type": "video"
     }
   ]
 }
