@@ -257,20 +257,18 @@ export default function DashboardPage() {
         const startDate = proposal.createdAt ? parseISO(proposal.createdAt) : null;
         if (!startDate || !isValid(startDate)) return null;
         
-        const monthsDiff = differenceInMonths(now, startDate);
-
-        if (monthsDiff < 0 || monthsDiff >= 12) return null;
+        const elapsedMonths = (getYear(now) - getYear(startDate)) * 12 + (getMonth(now) - getMonth(startDate)) + 1;
+        
+        if (elapsedMonths <= 0 || elapsedMonths > 12) return null;
         
         const commissionAmount = proposal.amount * rate;
         
-        const currentProgress = monthsDiff + 1;
-
         return {
-            id: `${proposal.id}-recurring-${monthsDiff}`,
+            id: `${proposal.id}-recurring-${elapsedMonths}`,
             clientName: client.companyName,
             description: 'Recurring commission',
             amount: commissionAmount,
-            progress: `${currentProgress}/12`
+            progress: `${elapsedMonths}/12`
         };
     }).filter((c): c is NonNullable<typeof c> => c !== null);
     
@@ -652,39 +650,39 @@ export default function DashboardPage() {
                     </Table>
                     <DialogFooter className="flex-col items-stretch gap-4 border-t pt-4 mt-4">
                       <div className="flex flex-col gap-4">
-                        {totalRecurringPages > 1 && (
-                        <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
-                            <span>Page {recurringPage} of {totalRecurringPages}</span>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setRecurringPage(prev => Math.max(1, prev - 1))}
-                                    disabled={recurringPage === 1}
-                                >
-                                    Previous
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setRecurringPage(prev => Math.min(totalRecurringPages, prev + 1))}
-                                    disabled={recurringPage === totalRecurringPages}
-                                >
-                                    Next
-                                </Button>
+                          {totalRecurringPages > 1 && (
+                            <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                                <span>Page {recurringPage} of {totalRecurringPages}</span>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setRecurringPage(prev => Math.max(1, prev - 1))}
+                                        disabled={recurringPage === 1}
+                                    >
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setRecurringPage(prev => Math.min(totalRecurringPages, prev + 1))}
+                                        disabled={recurringPage === totalRecurringPages}
+                                    >
+                                        Next
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                        )}
-                        <div className="space-y-2 text-sm text-muted-foreground w-full pt-4 border-t">
-                            <h4 className="font-semibold text-foreground">Important Notes:</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                                <li>Recurring commissions are paid monthly for the first 12 months of a new client contract.</li>
-                                <li>If a client cancels their subscription, recurring commissions for that client will stop.</li>
-                                <li>For contract renewals after 12 months, the standard one-time commission applies, but recurring commissions do not.</li>
-                            </ul>
-                        </div>
+                          )}
+                          <div className="space-y-2 text-sm text-muted-foreground w-full pt-4 border-t">
+                              <h4 className="font-semibold text-foreground">Important Notes:</h4>
+                              <ul className="list-disc pl-5 space-y-1">
+                                  <li>Recurring commissions are paid monthly for the first 12 months of a new client contract.</li>
+                                  <li>If a client cancels their subscription, recurring commissions for that client will stop.</li>
+                                  <li>For contract renewals after 12 months, the standard one-time commission applies, but recurring commissions do not.</li>
+                              </ul>
+                          </div>
                       </div>
-                  </DialogFooter>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </Card>
@@ -928,9 +926,9 @@ export default function DashboardPage() {
                  <BonusCard 
                     icon={<Target className="h-6 w-6 text-primary" />}
                     title="Corporate Closer Bonus"
-                    value={`${dashboardData.corporateClientsThisMonth} / 3`}
-                    progress={(dashboardData.corporateClientsThisMonth / 3) * 100}
-                    goal={`This Month's Goal: 3 clients`}
+                    value={`${dashboardData.corporateClientsThisMonth} / ${dashboardData.corporateClientsTarget}`}
+                    progress={(dashboardData.corporateClientsThisMonth / dashboardData.corporateClientsTarget) * 100}
+                    goal={`This Month's Goal: ${dashboardData.corporateClientsTarget} clients`}
                     description="For SME, Commercial & Business clients.">
                      <DialogContent>
                         <DialogHeader>
@@ -1029,9 +1027,9 @@ export default function DashboardPage() {
                 <BonusCard 
                     icon={<Power className="h-6 w-6 text-primary" />}
                     title="Prepayment Power-Up"
-                    value={`${dashboardData.prepaidContracts} / 5`}
-                    progress={(dashboardData.prepaidContracts / 5) * 100}
-                    goal={`Goal: 5 prepaid contracts`}
+                    value={`${dashboardData.prepaidContracts} / ${dashboardData.prepaidContractsTarget}`}
+                    progress={(dashboardData.prepaidContracts / dashboardData.prepaidContractsTarget) * 100}
+                    goal={`Goal: ${dashboardData.prepaidContractsTarget} prepaid contracts`}
                     description="Reward for closing long-term prepaid contracts.">
                      <DialogContent>
                         <DialogHeader>
@@ -1092,5 +1090,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
