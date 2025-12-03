@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Download, Search, Eye, Share2, ChevronLeft, ChevronRight, Image as ImageIcon, File as FileIcon } from 'lucide-react';
+import { Download, Search, Eye, Share2, ChevronLeft, ChevronRight, Image as ImageIcon, File as FileIcon, Video } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
@@ -142,6 +142,12 @@ export default function MaterialsPage() {
                                   <p className="text-xs font-semibold text-muted-foreground mt-2">PDF Document</p>
                                 </div>
                             )}
+                             {material.type === 'video' && (
+                                <div className="text-center p-4">
+                                  <Video className="h-16 w-16 text-primary mx-auto" />
+                                  <p className="text-xs font-semibold text-muted-foreground mt-2">Video Tutorial</p>
+                                </div>
+                            )}
                             {material.type === 'gallery' && (
                                 <>
                                  <Image
@@ -241,6 +247,18 @@ export default function MaterialsPage() {
                             className="w-full h-full border-0" 
                             title={currentMaterial.title}
                           ></iframe>
+                       </div>
+                  )}
+
+                  {currentMaterial.type === 'video' && currentImageUrl && (
+                      <div className="w-full h-full flex items-center justify-center">
+                           <video
+                                controls
+                                className="w-full h-full object-contain"
+                                src={currentImageUrl}
+                            >
+                                Your browser does not support the video tag.
+                            </video>
                        </div>
                   )}
                   

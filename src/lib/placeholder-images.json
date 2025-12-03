@@ -1,6 +1,15 @@
 {
   "placeholderImages": [
     {
+      "id": "create-proposal-video",
+      "title": "Create Proposal Video Tutorial",
+      "description": "A step-by-step guide on how to create a new proposal.",
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FVideo%20Mats%2FCreate%20Proposal.mov?alt=media&token=d3a8627b-232a-4375-80a9-22a36a798539",
+      "imageHint": "video tutorial proposal",
+      "category": "Explainer Materials",
+      "type": "video"
+    },
+    {
       "id": "company-profile-2024-pdf",
       "title": "Company Profile (PDF)",
       "description": "The official company profile for Smart Refill.",
@@ -10,7 +19,7 @@
       "type": "pdf"
     },
     {
-      "id": "product-brochure-2024-pdf",
+      "id": "product-brochure-2025-pdf",
       "title": "Product brochure 2025",
       "description": "The latest product brochure for 2024 in PDF format.",
       "imageUrl": "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales%20Mats%2FBrochure%2FBrochure_1.pdf?alt=media&token=1c05c3a7-c0ed-4eac-9d3b-b8c31a369601",

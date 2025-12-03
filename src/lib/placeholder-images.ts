@@ -9,7 +9,7 @@ export type ImagePlaceholder = {
   imageUrls?: string[];
   imageHint: string;
   category: string;
-  type: 'image' | 'pdf' | 'gallery';
+  type: 'image' | 'pdf' | 'gallery' | 'video';
 };
 
 export const PlaceHolderImages: ImagePlaceholder[] = data.placeholderImages;

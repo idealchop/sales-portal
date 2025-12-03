@@ -81,7 +81,7 @@ export type SalesMaterial = {
   id: string;
   title: string;
   description: string;
-  type: 'pdf' | 'image' | 'link';
+  type: 'pdf' | 'image' | 'link' | 'video';
   url: string;
   imageId: string;
 };
@@ -126,6 +126,7 @@ export type Notification = {
     type: 'payout' | 'announcement';
 }
     
+
 
 
 
