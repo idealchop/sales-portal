@@ -215,6 +215,8 @@ export default function DashboardPage() {
   
   const [proposalsPage, setProposalsPage] = useState(1);
   const PROPOSALS_PER_PAGE = 8;
+  const [recurringPage, setRecurringPage] = useState(1);
+  const RECURRING_PER_PAGE = 5;
 
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
@@ -287,8 +289,9 @@ export default function DashboardPage() {
     const quarterStart = startOfQuarter(now);
     const quarterEnd = endOfQuarter(now);
     const quarterlySalesVolume = acceptedProposals.filter(p => {
-        const proposalDate = new Date(p.createdAt);
-        return isWithinInterval(proposalDate, { start: quarterStart, end: quarterEnd });
+        if (!p.createdAt) return false;
+        const proposalDate = parseISO(p.createdAt);
+        return isValid(proposalDate) && isWithinInterval(proposalDate, { start: quarterStart, end: quarterEnd });
     }).reduce((sum, p) => sum + p.amount, 0);
 
     const quarterlyVolumeTarget = 600000;
@@ -364,7 +367,13 @@ export default function DashboardPage() {
   }, [proposals, proposalsPage]);
 
   const totalProposalPages = Math.ceil(proposals.length / PROPOSALS_PER_PAGE);
+  
+  const paginatedRecurring = useMemo(() => {
+    const startIndex = (recurringPage - 1) * RECURRING_PER_PAGE;
+    return dashboardData.activeRecurringCommissions.slice(startIndex, startIndex + RECURRING_PER_PAGE);
+  }, [dashboardData.activeRecurringCommissions, recurringPage]);
 
+  const totalRecurringPages = Math.ceil(dashboardData.activeRecurringCommissions.length / RECURRING_PER_PAGE);
 
   const commissionTiers = [
     { clientType: 'Family Plan', commission: '12%', recurring: 'None', managerOverride: '2%' },
@@ -615,7 +624,7 @@ export default function DashboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {dashboardData.activeRecurringCommissions.length > 0 ? dashboardData.activeRecurringCommissions.map(p => (
+                            {paginatedRecurring.length > 0 ? paginatedRecurring.map(p => (
                                 <TableRow key={p.id}>
                                     <TableCell>{p.clientName || 'N/A'}</TableCell>
                                     <TableCell>{p.description}</TableCell>
@@ -634,7 +643,32 @@ export default function DashboardPage() {
                         </TableBody>
                     </Table>
                     <DialogFooter className="border-t pt-4">
-                        <div className="space-y-2 text-sm text-muted-foreground">
+                        {totalRecurringPages > 1 && (
+                            <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                                <span>
+                                    Page {recurringPage} of {totalRecurringPages}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setRecurringPage(prev => Math.max(1, prev - 1))}
+                                    disabled={recurringPage === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setRecurringPage(prev => Math.min(totalRecurringPages, prev + 1))}
+                                    disabled={recurringPage === totalRecurringPages}
+                                >
+                                    Next
+                                </Button>
+                                </div>
+                            </div>
+                        )}
+                        <div className="space-y-2 text-sm text-muted-foreground w-full">
                             <h4 className="font-semibold text-foreground">Important Notes:</h4>
                             <ul className="list-disc pl-5 space-y-1">
                                 <li>Recurring commissions are paid monthly for the first 12 months of a new client contract.</li>
@@ -1050,3 +1084,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
