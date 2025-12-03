@@ -245,7 +245,7 @@ export default function DashboardPage() {
     const acceptedProposals = proposals.filter(p => p.status === 'accepted');
 
     const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
-
+    
     const activeRecurringCommissions = acceptedProposals.map(proposal => {
         const client = clientMap.get(proposal.clientId);
         if (!client || !client.clientType) return null;
@@ -258,7 +258,7 @@ export default function DashboardPage() {
 
         const monthsDiff = (getYear(now) - getYear(startDate)) * 12 + (getMonth(now) - getMonth(startDate));
 
-        if (monthsDiff < 0 || monthsDiff >= 12) return null; // Not active yet or already expired
+        if (monthsDiff < 0 || monthsDiff >= 12) return null; 
         
         const commissionAmount = proposal.amount * rate;
 
@@ -1084,5 +1084,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
