@@ -229,6 +229,16 @@ export default function DashboardPage() {
     const currentMonthKey = format(startOfMonth(now), 'MMMM yyyy');
     const currentMonthStart = startOfMonth(now);
 
+    const getValidDate = (timestamp: string | number | undefined | Date) => {
+        if (!timestamp) return null;
+        try {
+            const d = typeof timestamp === 'string' ? parseISO(timestamp) : new Date(timestamp);
+            return isNaN(d.getTime()) ? null : d;
+        } catch {
+            return null;
+        }
+    };
+
     const currentMonthPayout = allPayouts.find(p => p.month === currentMonthKey);
     
     const oneTimeCommissionsThisMonth = currentMonthPayout?.commissions.filter(c => c.type === 'commission' && c.description !== 'Recurring commission') || [];
@@ -254,8 +264,8 @@ export default function DashboardPage() {
         const rate = recurringCommissionRates[client.clientType] || 0;
         if (rate === 0) return null;
 
-        const startDate = proposal.createdAt ? parseISO(proposal.createdAt) : null;
-        if (!startDate || !isValid(startDate)) return null;
+        const startDate = getValidDate(proposal.createdAt);
+        if (!startDate) return null;
         
         const elapsedMonths = (getYear(now) - getYear(startDate)) * 12 + (getMonth(now) - getMonth(startDate)) + 1;
         
@@ -275,7 +285,7 @@ export default function DashboardPage() {
     const recurringCommission = activeRecurringCommissions.reduce((sum, c) => sum + c.amount, 0);
 
     const acceptedThisMonth = acceptedProposals.filter(p => {
-        const createdAt = p.createdAt ? parseISO(p.createdAt) : null;
+        const createdAt = getValidDate(p.createdAt);
         return createdAt && isWithinInterval(createdAt, { start: currentMonthStart, end: endOfMonth(now) });
     });
 
@@ -295,9 +305,8 @@ export default function DashboardPage() {
     const quarterStart = startOfQuarter(now);
     const quarterEnd = endOfQuarter(now);
     const quarterlySalesVolume = acceptedProposals.filter(p => {
-        if (!p.createdAt) return false;
-        const proposalDate = parseISO(p.createdAt);
-        return isValid(proposalDate) && isWithinInterval(proposalDate, { start: quarterStart, end: quarterEnd });
+        const proposalDate = getValidDate(p.createdAt);
+        return proposalDate && isWithinInterval(proposalDate, { start: quarterStart, end: quarterEnd });
     }).reduce((sum, p) => sum + p.amount, 0);
 
     const quarterlyVolumeTarget = 600000;
@@ -695,7 +704,7 @@ export default function DashboardPage() {
             <div className="text-3xl font-bold">{dashboardData.corporateClientsThisMonth} / {dashboardData.corporateClientsTarget}</div>
             <div className="mt-2 space-y-1">
               <Progress value={(dashboardData.corporateClientsThisMonth / dashboardData.corporateClientsTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-              <p className="text-xs text-primary-foreground/80">You're {Math.max(0, dashboardData.corporateClientsTarget - dashboardData.corporateClientsThisMonth)} client(s) away from your ₱2,000 bonus!</p>
+              <p className="text-xs text-primary-foreground/80">This Month's Goal: {dashboardData.corporateClientsTarget} clients</p>
             </div>
           </CardContent>
         </Card>
@@ -710,7 +719,7 @@ export default function DashboardPage() {
                 <div className="text-3xl font-bold">{currencyFormatter.format(dashboardData.quarterlySalesVolume)}</div>
                  <div className="mt-2 space-y-1">
                   <Progress value={(dashboardData.quarterlySalesVolume / dashboardData.quarterlyVolumeTarget) * 100} className="h-3 bg-primary-foreground/30" indicatorClassName="bg-primary-foreground" />
-                  <p className="text-xs text-primary-foreground/80">Target: {currencyFormatter.format(200000)} for a ₱5k bonus</p>
+                  <p className="text-xs text-primary-foreground/80">Quarterly Goal: {currencyFormatter.format(200000)}</p>
                 </div>
               </CardContent>
             </Card>
