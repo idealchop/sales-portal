@@ -221,7 +221,7 @@ export default function DashboardPage() {
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
   const clientMap = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
-  const userMap = useMemo(() => new Map(salesUsers.map(u => [u.id, u])), [salesUsers]);
+  const userMap = useMemo(() => new Map(salesUsers.map(u => [u.id, u] )), [salesUsers]);
   const proposalMap = useMemo(() => new Map(proposals.map(p => [p.id, p])), [proposals]);
 
   const dashboardData = useMemo(() => {
@@ -642,40 +642,40 @@ export default function DashboardPage() {
                             )}
                         </TableBody>
                     </Table>
-                    <DialogFooter className="!justify-between items-center border-t pt-4 mt-4">
-                        {totalRecurringPages > 1 && (
-                            <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
-                                <span>
-                                    Page {recurringPage} of {totalRecurringPages}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setRecurringPage(prev => Math.max(1, prev - 1))}
-                                    disabled={recurringPage === 1}
-                                >
-                                    Previous
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setRecurringPage(prev => Math.min(totalRecurringPages, prev + 1))}
-                                    disabled={recurringPage === totalRecurringPages}
-                                >
-                                    Next
-                                </Button>
-                                </div>
-                            </div>
-                        )}
-                        <div className="space-y-2 text-sm text-muted-foreground w-full">
-                            <h4 className="font-semibold text-foreground">Important Notes:</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                                <li>Recurring commissions are paid monthly for the first 12 months of a new client contract.</li>
-                                <li>If a client cancels their subscription, recurring commissions for that client will stop.</li>
-                                <li>For contract renewals after 12 months, the standard one-time commission applies, but recurring commissions do not.</li>
-                            </ul>
-                        </div>
+                    <DialogFooter className="flex-col items-start gap-4 border-t pt-4 mt-4">
+                      {totalRecurringPages > 1 && (
+                          <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                              <span>
+                                  Page {recurringPage} of {totalRecurringPages}
+                              </span>
+                              <div className="flex items-center gap-2">
+                              <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setRecurringPage(prev => Math.max(1, prev - 1))}
+                                  disabled={recurringPage === 1}
+                              >
+                                  Previous
+                              </Button>
+                              <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setRecurringPage(prev => Math.min(totalRecurringPages, prev + 1))}
+                                  disabled={recurringPage === totalRecurringPages}
+                              >
+                                  Next
+                              </Button>
+                              </div>
+                          </div>
+                      )}
+                      <div className="space-y-2 text-sm text-muted-foreground w-full">
+                          <h4 className="font-semibold text-foreground">Important Notes:</h4>
+                          <ul className="list-disc pl-5 space-y-1">
+                              <li>Recurring commissions are paid monthly for the first 12 months of a new client contract.</li>
+                              <li>If a client cancels their subscription, recurring commissions for that client will stop.</li>
+                              <li>For contract renewals after 12 months, the standard one-time commission applies, but recurring commissions do not.</li>
+                          </ul>
+                      </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -1084,3 +1084,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
