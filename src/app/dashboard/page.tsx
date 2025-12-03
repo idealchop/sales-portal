@@ -227,6 +227,7 @@ export default function DashboardPage() {
   const dashboardData = useMemo(() => {
     const now = new Date();
     const currentMonthKey = format(startOfMonth(now), 'MMMM yyyy');
+    const currentMonthStart = startOfMonth(now);
 
     const currentMonthPayout = allPayouts.find(p => p.month === currentMonthKey);
     
@@ -255,38 +256,37 @@ export default function DashboardPage() {
 
         const startDate = proposal.createdAt ? parseISO(proposal.createdAt) : null;
         if (!startDate || !isValid(startDate)) return null;
+        
+        const monthsDiff = differenceInMonths(now, startDate);
 
-        const monthsDiff = (getYear(now) - getYear(startDate)) * 12 + (getMonth(now) - getMonth(startDate));
-
-        if (monthsDiff < 0 || monthsDiff >= 12) return null; 
+        if (monthsDiff < 0 || monthsDiff >= 12) return null;
         
         const commissionAmount = proposal.amount * rate;
+        
+        const currentProgress = monthsDiff + 1;
 
         return {
             id: `${proposal.id}-recurring-${monthsDiff}`,
             clientName: client.companyName,
             description: 'Recurring commission',
             amount: commissionAmount,
-            progress: `${monthsDiff + 1}/12`
+            progress: `${currentProgress}/12`
         };
     }).filter((c): c is NonNullable<typeof c> => c !== null);
     
     const recurringCommission = activeRecurringCommissions.reduce((sum, c) => sum + c.amount, 0);
 
-    const corporateClientsThisMonth = acceptedProposals.filter(p => {
+    const acceptedThisMonth = acceptedProposals.filter(p => {
         const createdAt = p.createdAt ? parseISO(p.createdAt) : null;
-        if (!createdAt || !isWithinInterval(createdAt, { start: startOfMonth(now), end: endOfMonth(now) })) {
-            return false;
-        }
+        return createdAt && isWithinInterval(createdAt, { start: currentMonthStart, end: endOfMonth(now) });
+    });
+
+    const corporateClientsThisMonth = acceptedThisMonth.filter(p => {
         const client = clientMap.get(p.clientId);
         return client && ['sme', 'commercial', 'corporate', 'enterprise'].includes(client.clientType || '');
     }).length;
 
-    const individualClientsThisMonth = acceptedProposals.filter(p => {
-        const createdAt = p.createdAt ? parseISO(p.createdAt) : null;
-        if (!createdAt || !isWithinInterval(createdAt, { start: startOfMonth(now), end: endOfMonth(now) })) {
-            return false;
-        }
+    const individualClientsThisMonth = acceptedThisMonth.filter(p => {
         const client = clientMap.get(p.clientId);
         return client && client.clientType === 'household';
     }).length;
@@ -723,11 +723,11 @@ export default function DashboardPage() {
                 <DialogDescription>To reward expansion and total client base impact.</DialogDescription>
             </DialogHeader>
              <div className="space-y-4 py-4">
-                <p>Your current progress: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlySalesVolume)}</span> in new recurring volume this quarter.</p>
+                <p>Your current progress this quarter: <span className="font-bold">{currencyFormatter.format(dashboardData.quarterlySalesVolume)}</span> in new recurring volume.</p>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Metric</TableHead>
+                            <TableHead>Quarterly Metric</TableHead>
                             <TableHead>Bonus</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -1092,3 +1092,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
