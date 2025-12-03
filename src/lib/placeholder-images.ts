@@ -6,9 +6,10 @@ export type ImagePlaceholder = {
   title: string;
   description: string;
   imageUrl: string;
+  imageUrls?: string[];
   imageHint: string;
   category: string;
-  type: 'image' | 'pdf';
+  type: 'image' | 'pdf' | 'gallery';
 };
 
 export const PlaceHolderImages: ImagePlaceholder[] = data.placeholderImages;
