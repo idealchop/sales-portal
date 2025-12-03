@@ -72,7 +72,7 @@ import { useProposals } from '@/hooks/use-proposals';
 import { useClients } from '@/hooks/use-clients';
 import { useCommissions } from '@/hooks/use-commissions';
 import { useMemo, useState } from 'react';
-import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears, parseISO, differenceInMonths, isValid } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, format, getQuarter, startOfQuarter, endOfQuarter, isWithinInterval, addMonths, addYears, parseISO, differenceInMonths, isValid, getMonth, getYear } from 'date-fns';
 import { useUser } from '@/firebase';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PayoutHistoryDialog } from '@/components/payout-history-dialog';
@@ -254,7 +254,8 @@ export default function DashboardPage() {
         const startDate = proposal.createdAt ? parseISO(proposal.createdAt) : null;
         if (!startDate || !isValid(startDate)) return null;
 
-        const monthsDiff = differenceInMonths(now, startDate);
+        const monthsDiff = (getYear(now) - getYear(startDate)) * 12 + (getMonth(now) - getMonth(startDate));
+
         if (monthsDiff < 0 || monthsDiff >= 12) return null; // Not active yet or already expired
         
         const commissionAmount = proposal.amount * rate;
