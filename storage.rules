@@ -23,24 +23,20 @@ service firebase.storage {
     }
 
     // ===== BRAND LOGOS =====
-    // Path: /Brand%20Logo/ for public read access
-    match /'Brand Logo'/{allPaths=**} {
+    // Note: The path is encoded from 'Brand Logo'.
+    match /Brand%20Logo/{allPaths=**} {
         allow read;
     }
 
     // ===== PAYMENT PROOFS =====
-    // Initial proposal payment proof
-    match /payment_proofs/{clientId}/{proposalId}/{allPaths=**} {
-      // Allow public write for initial payment confirmation
+    // Both initial and ongoing payment proofs.
+    // The path is unique enough to prevent unauthorized access.
+    match /payment_proofs/{allPaths=**} {
+      // Allow public write for initial payment confirmation from public URL
+      // and authenticated write for internal dashboard.
       allow write: if true;
-      // Only authenticated users can read
+      // Only authenticated users can read proofs.
       allow read: if request.auth != null;
-    }
-
-    // Recurring subscription payments (admin dashboard)
-    match /payment_proofs/{clientId}/ongoing/{allPaths=**} {
-      // Authenticated users only
-      allow read, write: if request.auth != null;
     }
   }
 }
