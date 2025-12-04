@@ -68,15 +68,26 @@ export default function MaterialsPage() {
   const handleDownload = async (imageUrl: string, title: string) => {
     try {
       const response = await fetch(imageUrl);
-      if (!response.ok) throw new Error('Network response was not ok.');
+      if (!response.ok) {
+        // For CORS issues or other fetch errors, try opening in a new tab as a fallback.
+        // This won't force a download but allows the user to save it from their browser.
+        console.warn(`Direct fetch failed for ${imageUrl}. Opening in a new tab as a fallback. Error: ${response.statusText}`);
+        window.open(imageUrl, '_blank');
+        toast({ title: 'Opening file in new tab', description: 'Your browser may be blocking direct downloads. Please save the file from the new tab.' });
+        return;
+      }
+      
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       
-      const fileExtension = imageUrl.split('.').pop()?.split('?')[0] || 'download';
-      link.setAttribute('download', `${title.replace(/ /g, '_')}.${fileExtension}`);
+      // Extract file extension more robustly
+      const urlPath = new URL(imageUrl).pathname;
+      const fileExtension = urlPath.split('.').pop() || 'download';
+      const fileName = `${title.replace(/ /g, '_')}.${fileExtension}`;
       
+      link.setAttribute('download', fileName);
       document.body.appendChild(link);
       link.click();
       
@@ -86,7 +97,9 @@ export default function MaterialsPage() {
       toast({ title: 'Download Started', description: `Downloading ${title}.` });
     } catch (error) {
       console.error('Download error:', error);
-      toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not download the file.' });
+      // Fallback for network errors (like CORS)
+      window.open(imageUrl, '_blank');
+      toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not download directly. Opening file in a new tab for you to save.' });
     }
   };
   
