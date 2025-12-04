@@ -67,33 +67,33 @@ export default function MaterialsPage() {
 
   const handleDownload = async (imageUrl: string, title: string) => {
     try {
-        // Fetching the blob directly via fetch can cause CORS issues
-        // if the storage bucket isn't configured for it.
-        // A more reliable method is to use an anchor tag with the download attribute.
-        const link = document.createElement('a');
-        link.href = imageUrl;
-
         // To suggest a filename, we can try to extract it from the URL
         const urlPath = new URL(imageUrl).pathname;
         const defaultFileName = urlPath.substring(urlPath.lastIndexOf('/') + 1);
         const fileExtension = defaultFileName.split('.').pop() || 'download';
         const suggestedFilename = `${title.replace(/ /g, '_')}.${fileExtension}`;
         
-        // The 'download' attribute suggests a filename to the browser.
+        // As a fallback for browsers that might not support the download attribute well with cross-origin URLs,
+        // we can try fetching if it's a simple image. For PDFs and other types, direct linking is better.
+        // However, the most robust method that avoids CORS is creating a link and clicking it.
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        
+        // This tells the browser to download the file instead of navigating to it
         link.setAttribute('download', suggestedFilename);
         
-        // For some security policies, the link must be in the document to be "clicked".
+        // This is necessary for Firefox
         document.body.appendChild(link);
+        
         link.click();
         
-        // Clean up by removing the link.
+        // Clean up
         document.body.removeChild(link);
 
         toast({ title: 'Download Started', description: `Downloading ${title}.` });
     } catch (error) {
         console.error('Download error:', error);
-        // As a fallback, open the URL in a new tab.
-        // This is useful if the browser blocks the programmatic click.
+        // If the above fails, open the URL in a new tab as a last resort.
         window.open(imageUrl, '_blank');
         toast({
             variant: 'destructive',
