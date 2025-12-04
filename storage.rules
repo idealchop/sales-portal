@@ -16,23 +16,31 @@ service firebase.storage {
     // ===== SALES & MARKETING MATERIALS =====
     // This path matches the URL encoding for "Sales Portal/Marketing Mats"
     match /sales_portal/marketing_mats/{allPaths=**} {
-      // Public read access for all sales and marketing materials.
+      // Public read access
       allow read;
-      // Only authenticated users (e.g. sales team) can upload or modify.
+      // Only authenticated users (sales team) can upload or modify
       allow write: if request.auth != null;
     }
-    
-    // Allow public read for brand logos
+
+    // ===== BRAND LOGOS =====
+    // Path: /Brand%20Logo/ for public read access
     match /'Brand Logo'/{allPaths=**} {
         allow read;
     }
 
     // ===== PAYMENT PROOFS =====
-    // Allow anyone to write payment proofs. Read access is restricted.
-    // This supports unauthenticated users finalizing a proposal.
-    match /payment_proofs/{allPaths=**} {
+    // Initial proposal payment proof
+    match /payment_proofs/{clientId}/{proposalId}/{allPaths=**} {
+      // Allow public write for initial payment confirmation
       allow write: if true;
+      // Only authenticated users can read
       allow read: if request.auth != null;
+    }
+
+    // Recurring subscription payments (admin dashboard)
+    match /payment_proofs/{clientId}/ongoing/{allPaths=**} {
+      // Authenticated users only
+      allow read, write: if request.auth != null;
     }
   }
 }
