@@ -1,10 +1,9 @@
 
-
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
-import { collection, query, getDocs } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { collection, query, getDocs, onSnapshot, FirestoreError } from 'firebase/firestore';
+import { useFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { UserProfile } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 
@@ -19,14 +18,15 @@ export function useSalesUsers() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      if (isFirebaseLoading || !firestore) {
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const usersQuery = query(collection(firestore, 'sales'));
-        const querySnapshot = await getDocs(usersQuery);
+    if (isFirebaseLoading || !firestore) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    const usersQuery = query(collection(firestore, 'sales'));
+
+    const unsubscribe = onSnapshot(usersQuery, (querySnapshot) => {
         const users: WithId<UserProfile>[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data() as Omit<UserProfile, 'id'>;
@@ -48,18 +48,22 @@ export function useSalesUsers() {
             } as WithId<UserProfile>);
         });
         setSalesUsers(users);
-      } catch (e: any) {
-        setError(e);
-        console.error("Error fetching sales users:", e);
-      } finally {
+        setError(null);
         setIsLoading(false);
-      }
-    };
-
-    fetchUsers();
+    }, (e: FirestoreError) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'sales',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
+        console.error("Error fetching sales users:", e);
+        setIsLoading(false);
+    });
+    
+    return () => unsubscribe();
 
   }, [firestore, isFirebaseLoading]);
 
   return { salesUsers, isLoading: isLoading || isFirebaseLoading, error };
 }
-

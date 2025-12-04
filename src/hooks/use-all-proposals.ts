@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query, onSnapshot, FirestoreError, collectionGroup } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { useFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 
@@ -61,7 +61,12 @@ export function useAllProposals(): UseAllProposalsResult {
       },
       (e: FirestoreError) => {
         console.error("Failed to fetch all proposals:", e);
-        setError(e);
+        const permissionError = new FirestorePermissionError({
+          path: 'proposals',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         setIsLoading(false);
       }
     );

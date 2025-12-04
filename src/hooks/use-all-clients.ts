@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { collection, query, onSnapshot, DocumentData, FirestoreError } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { useFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { Client } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 
@@ -46,8 +46,13 @@ export function useAllClients() {
         setIsLoading(false);
       },
       (e: FirestoreError) => {
-        setError(e);
         console.error("Error fetching all clients with snapshot:", e);
+        const permissionError = new FirestorePermissionError({
+          path: 'clients',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         setIsLoading(false);
       }
     );

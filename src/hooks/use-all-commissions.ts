@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { collection, query, onSnapshot, FirestoreError } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { useFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
 
@@ -52,8 +52,13 @@ export function useAllCommissions() {
         }
       },
       (e: FirestoreError) => {
-        setError(e);
         console.error("Error fetching all commissions with snapshot:", e);
+        const permissionError = new FirestorePermissionError({
+          path: 'commissions',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         setIsLoading(false);
       }
     );
