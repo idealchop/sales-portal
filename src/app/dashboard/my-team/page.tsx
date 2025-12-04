@@ -841,7 +841,78 @@ export default function MyTeamPage() {
             </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+           <div className="md:hidden space-y-4">
+             {teamPerformance.leaderboard && teamPerformance.leaderboard.length > 0 ? (
+                teamPerformance.leaderboard.map((rep, index) => {
+                    const rank = index + 1;
+                    return (
+                        <Card key={rep.id} className="p-4">
+                            <div className="flex items-start gap-4">
+                                <div className="font-bold text-lg w-8 text-center">
+                                    {rank === 1 && <Trophy className="w-6 h-6 text-yellow-400 mx-auto" />}
+                                    {rank === 2 && <Award className="w-6 h-6 text-gray-400 mx-auto" />}
+                                    {rank === 3 && <Award className="w-6 h-6 text-orange-400 mx-auto" />}
+                                    {rank > 3 && rank}
+                                </div>
+                                <div className="flex-1 space-y-2">
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <div className="cursor-pointer">
+                                                <p className="font-semibold hover:underline">{rep.displayName}</p>
+                                                <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                            </div>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80">
+                                            <div className="flex flex-col gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <Avatar className="h-16 w-16">
+                                                        <AvatarImage src={rep.photoURL} />
+                                                        <AvatarFallback className="text-xl">{rep.displayName?.[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <h3 className="font-semibold text-lg">{rep.displayName}</h3>
+                                                        <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2 text-sm border-t pt-4">
+                                                    <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /><span>{rep.phone || 'N/A'}</span></div>
+                                                    <div className="flex items-center gap-2"><CalendarIcon className="h-4 w-4 text-muted-foreground" /><span>{rep.birthday ? format(new Date(rep.birthday), 'PPP') : 'N/A'}</span></div>
+                                                </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                    <div className="border-t pt-2 space-y-1 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Proposals Won:</span>
+                                            <span className="font-semibold">{rep.proposalsWon}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Win Rate:</span>
+                                            <span className="font-semibold">{rep.winRate.toFixed(1)}%</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Total Revenue:</span>
+                                            <span className="font-bold text-primary">{currencyFormatter.format(rep.totalRevenue)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                 <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="self-start">
+                                            <Eye className="mr-2 h-4 w-4" /> View
+                                        </Button>
+                                    </DialogTrigger>
+                                    <ProposalsDialog rep={rep} proposals={rep.proposals} clientMap={clientMap} salesUsers={salesUsers} currencyFormatter={currencyFormatter} />
+                                </Dialog>
+                            </div>
+                        </Card>
+                    )
+                })
+             ) : (
+                <div className="text-center py-10 text-muted-foreground">No sales executives found on your team yet.</div>
+             )}
+          </div>
+          <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -898,7 +969,7 @@ export default function MyTeamPage() {
                                           </div>
                                            <div className="flex items-center gap-2">
                                               <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                              <span>{rep.birthday ? format(new Date(rep.birthday), 'PPP') : 'N A'}</span>
+                                              <span>{rep.birthday ? format(new Date(rep.birthday), 'PPP') : 'N/A'}</span>
                                           </div>
                                       </div>
                                       <div className="space-y-3 border-t pt-4">
