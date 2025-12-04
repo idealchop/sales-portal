@@ -67,39 +67,39 @@ export default function MaterialsPage() {
 
   const handleDownload = async (imageUrl: string, title: string) => {
     try {
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        // For CORS issues or other fetch errors, try opening in a new tab as a fallback.
-        // This won't force a download but allows the user to save it from their browser.
-        console.warn(`Direct fetch failed for ${imageUrl}. Opening in a new tab as a fallback. Error: ${response.statusText}`);
-        window.open(imageUrl, '_blank');
-        toast({ title: 'Opening file in new tab', description: 'Your browser may be blocking direct downloads. Please save the file from the new tab.' });
-        return;
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      
-      // Extract file extension more robustly
-      const urlPath = new URL(imageUrl).pathname;
-      const fileExtension = urlPath.split('.').pop() || 'download';
-      const fileName = `${title.replace(/ /g, '_')}.${fileExtension}`;
-      
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
+        // Fetching the blob directly via fetch can cause CORS issues
+        // if the storage bucket isn't configured for it.
+        // A more reliable method is to use an anchor tag with the download attribute.
+        const link = document.createElement('a');
+        link.href = imageUrl;
 
-      toast({ title: 'Download Started', description: `Downloading ${title}.` });
+        // To suggest a filename, we can try to extract it from the URL
+        const urlPath = new URL(imageUrl).pathname;
+        const defaultFileName = urlPath.substring(urlPath.lastIndexOf('/') + 1);
+        const fileExtension = defaultFileName.split('.').pop() || 'download';
+        const suggestedFilename = `${title.replace(/ /g, '_')}.${fileExtension}`;
+        
+        // The 'download' attribute suggests a filename to the browser.
+        link.setAttribute('download', suggestedFilename);
+        
+        // For some security policies, the link must be in the document to be "clicked".
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up by removing the link.
+        document.body.removeChild(link);
+
+        toast({ title: 'Download Started', description: `Downloading ${title}.` });
     } catch (error) {
-      console.error('Download error:', error);
-      // Fallback for network errors (like CORS)
-      window.open(imageUrl, '_blank');
-      toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not download directly. Opening file in a new tab for you to save.' });
+        console.error('Download error:', error);
+        // As a fallback, open the URL in a new tab.
+        // This is useful if the browser blocks the programmatic click.
+        window.open(imageUrl, '_blank');
+        toast({
+            variant: 'destructive',
+            title: 'Download Failed',
+            description: 'Could not download directly. Opening file in a new tab for you to save.'
+        });
     }
   };
   
