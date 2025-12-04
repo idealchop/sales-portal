@@ -27,65 +27,54 @@ service cloud.firestore {
         return userProfile.team == managerTeamName;
     }
 
-    // Sales users can read their own profile for display purposes. Admin can read all.
-    // Any signed-in user can list all sales profiles.
     match /sales/{userId} {
       allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
       allow list: if isSignedIn();
-      allow create, update: if isOwner(userId);
+      allow create, update: if isOwner(userId) || isAdmin();
     }
     
     match /counters/{counterId} {
-      // Anyone can write to counters to generate new IDs for public proposals
       allow read, write;
     }
 
     match /sales_materials/{materialId} {
-      allow get: if true; // Public read for all materials
+      allow get: if true; 
       allow list, write: if isAdmin(); 
     }
 
-    // Admin can read all commissions. Users can only read/write their own. Managers can read their team's commissions.
     match /commissions/{commissionId} {
         allow read: if isSignedIn() && (isAdmin() || isOwner(resource.data.userId) || (isManager() && isSalesManagerOf(resource.data.userId)));
-        allow write: if isSignedIn() && (isAdmin() || isOwner(request.resource.data.userId));
+        allow create: if isSignedIn();
+        allow update, delete: if isAdmin() || (isOwner(resource.data.userId));
     }
 
-    // Unauthenticated users can create clients and proposals.
-    // Authenticated users can read all client/proposal data.
-    // Updates are restricted.
     match /clients/{clientId} {
       allow read: if isSignedIn();
-      allow create; // Allow public client creation
-      allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
+      allow create;
+      allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
       allow delete: if false;
       
       match /proposals/{proposalId} {
         allow read: if isSignedIn();
-        allow create; // Allow public proposal creation
-        allow update: if isSignedIn() && isOwner(resource.data.userId);
+        allow create;
+        allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
         allow delete: if false;
       }
       
-      // Remarks can be read and created by any signed-in user for any client.
       match /remarks/{remarkId} {
         allow read, create: if isSignedIn();
       }
     }
     
-    // This allows admin or managers to perform a collectionGroup query on 'proposals'
     match /{path=**}/proposals/{proposalId} {
       allow list: if isSignedIn();
     }
     
-    // This allows admin or managers to perform a collectionGroup query on 'clients'
     match /{path=**}/clients/{clientId} {
-      allow list: if isSignedIn() && (isAdmin() || isManager());
+      allow list: if isSignedIn();
     }
 
-    // Rules for user-specific notifications
     match /users/{userId}/notifications/{notificationId} {
-      // Only the owner of the notifications can read or write them.
       allow read, write: if isSignedIn() && isOwner(userId);
     }
   }
