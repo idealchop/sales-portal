@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -713,8 +712,8 @@ export default function MyTeamPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 flex flex-col">
                 <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                        <div className="flex-1">
                             <CardTitle className="flex items-center gap-2">
                                 <BarChartIcon className="h-5 w-5" />
                                 Proposals by Team Member
@@ -722,8 +721,8 @@ export default function MyTeamPage() {
                             <CardDescription>Total proposals created by each executive.</CardDescription>
                         </div>
                         <Select value={proposalsByRepPeriod} onValueChange={setProposalsByRepPeriod}>
-                            <SelectTrigger className="w-auto px-3">
-                                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                            <SelectTrigger className="w-full sm:w-auto sm:max-w-xs">
+                                <SelectValue placeholder="Select a period" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Time</SelectItem>
@@ -825,12 +824,12 @@ export default function MyTeamPage() {
 
       <Card>
         <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className='flex-1'>
                   <CardTitle>Team Leaderboard</CardTitle>
                   <CardDescription>Performance ranking of your team members.</CardDescription>
               </div>
-              <div className="relative w-full max-w-sm">
+              <div className="relative w-full sm:w-auto sm:max-w-xs">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                       placeholder="Search by name..."
@@ -842,109 +841,111 @@ export default function MyTeamPage() {
             </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rank</TableHead>
-                <TableHead>Sales Executive</TableHead>
-                <TableHead>Proposals Won</TableHead>
-                <TableHead>Win Rate</TableHead>
-                <TableHead className="text-right">Total Revenue</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {teamPerformance.leaderboard && teamPerformance.leaderboard.length > 0 ? (
-                teamPerformance.leaderboard.map((rep, index) => {
-                  const rank = index + 1;
-                  return (
-                    <TableRow key={rep.id}>
-                      <TableCell className="font-bold text-lg">
-                        {rank === 1 && <Trophy className="w-6 h-6 text-yellow-400" />}
-                        {rank === 2 && <Award className="w-6 h-6 text-gray-400" />}
-                        {rank === 3 && <Award className="w-6 h-6 text-orange-400" />}
-                        {rank > 3 && rank}
-                      </TableCell>
-                      <TableCell>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <div className="flex items-center gap-3 cursor-pointer">
-                                  <Avatar>
-                                    <AvatarImage src={rep.photoURL} />
-                                    <AvatarFallback>{rep.displayName?.[0]}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-medium hover:underline">{rep.displayName}</p>
-                                    <p className="text-sm text-muted-foreground">{rep.email}</p>
-                                  </div>
-                                </div>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80">
-                                <div className="flex flex-col gap-4">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar className="h-16 w-16">
-                                            <AvatarImage src={rep.photoURL} />
-                                            <AvatarFallback className="text-xl">{rep.displayName?.[0]}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <h3 className="font-semibold text-lg">{rep.displayName}</h3>
-                                            <p className="text-sm text-muted-foreground">{rep.email}</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2 text-sm border-t pt-4">
-                                        <div className="flex items-center gap-2">
-                                            <Phone className="h-4 w-4 text-muted-foreground" />
-                                            <span>{rep.phone || 'N/A'}</span>
-                                        </div>
-                                         <div className="flex items-center gap-2">
-                                            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                            <span>{rep.birthday ? format(new Date(rep.birthday), 'PPP') : 'N A'}</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3 border-t pt-4">
-                                         <h4 className="font-semibold text-sm">Performance Summary</h4>
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-muted-foreground">Total Revenue</span>
-                                            <span className="font-semibold">{currencyFormatter.format(rep.totalRevenue)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-muted-foreground">Proposals Won</span>
-                                            <span className="font-semibold">{rep.proposalsWon}</span>
-                                        </div>
-                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-muted-foreground">Average Sale</span>
-                                            <span className="font-semibold">{currencyFormatter.format(rep.avgSale)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                      </TableCell>
-                      <TableCell>{rep.proposalsWon}</TableCell>
-                      <TableCell>{rep.winRate.toFixed(1)}%</TableCell>
-                      <TableCell className="text-right font-semibold">{currencyFormatter.format(rep.totalRevenue)}</TableCell>
-                       <TableCell className="text-center">
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    <Eye className="mr-2 h-4 w-4" /> View
-                                </Button>
-                            </DialogTrigger>
-                            <ProposalsDialog rep={rep} proposals={rep.proposals} clientMap={clientMap} salesUsers={salesUsers} currencyFormatter={currencyFormatter} />
-                        </Dialog>
-                       </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No sales executives found on your team yet.
-                  </TableCell>
+                  <TableHead>Rank</TableHead>
+                  <TableHead>Sales Executive</TableHead>
+                  <TableHead>Proposals Won</TableHead>
+                  <TableHead>Win Rate</TableHead>
+                  <TableHead className="text-right">Total Revenue</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {teamPerformance.leaderboard && teamPerformance.leaderboard.length > 0 ? (
+                  teamPerformance.leaderboard.map((rep, index) => {
+                    const rank = index + 1;
+                    return (
+                      <TableRow key={rep.id}>
+                        <TableCell className="font-bold text-lg">
+                          {rank === 1 && <Trophy className="w-6 h-6 text-yellow-400" />}
+                          {rank === 2 && <Award className="w-6 h-6 text-gray-400" />}
+                          {rank === 3 && <Award className="w-6 h-6 text-orange-400" />}
+                          {rank > 3 && rank}
+                        </TableCell>
+                        <TableCell>
+                          <Popover>
+                              <PopoverTrigger asChild>
+                                  <div className="flex items-center gap-3 cursor-pointer">
+                                    <Avatar>
+                                      <AvatarImage src={rep.photoURL} />
+                                      <AvatarFallback>{rep.displayName?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-medium hover:underline">{rep.displayName}</p>
+                                      <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                    </div>
+                                  </div>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80">
+                                  <div className="flex flex-col gap-4">
+                                      <div className="flex items-center gap-4">
+                                          <Avatar className="h-16 w-16">
+                                              <AvatarImage src={rep.photoURL} />
+                                              <AvatarFallback className="text-xl">{rep.displayName?.[0]}</AvatarFallback>
+                                          </Avatar>
+                                          <div>
+                                              <h3 className="font-semibold text-lg">{rep.displayName}</h3>
+                                              <p className="text-sm text-muted-foreground">{rep.email}</p>
+                                          </div>
+                                      </div>
+                                      <div className="space-y-2 text-sm border-t pt-4">
+                                          <div className="flex items-center gap-2">
+                                              <Phone className="h-4 w-4 text-muted-foreground" />
+                                              <span>{rep.phone || 'N/A'}</span>
+                                          </div>
+                                           <div className="flex items-center gap-2">
+                                              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                                              <span>{rep.birthday ? format(new Date(rep.birthday), 'PPP') : 'N A'}</span>
+                                          </div>
+                                      </div>
+                                      <div className="space-y-3 border-t pt-4">
+                                           <h4 className="font-semibold text-sm">Performance Summary</h4>
+                                          <div className="flex justify-between items-center text-sm">
+                                              <span className="text-muted-foreground">Total Revenue</span>
+                                              <span className="font-semibold">{currencyFormatter.format(rep.totalRevenue)}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center text-sm">
+                                              <span className="text-muted-foreground">Proposals Won</span>
+                                              <span className="font-semibold">{rep.proposalsWon}</span>
+                                          </div>
+                                           <div className="flex justify-between items-center text-sm">
+                                              <span className="text-muted-foreground">Average Sale</span>
+                                              <span className="font-semibold">{currencyFormatter.format(rep.avgSale)}</span>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </PopoverContent>
+                          </Popover>
+                        </TableCell>
+                        <TableCell>{rep.proposalsWon}</TableCell>
+                        <TableCell>{rep.winRate.toFixed(1)}%</TableCell>
+                        <TableCell className="text-right font-semibold">{currencyFormatter.format(rep.totalRevenue)}</TableCell>
+                         <TableCell className="text-center">
+                          <Dialog>
+                              <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                      <Eye className="mr-2 h-4 w-4" /> View
+                                  </Button>
+                              </DialogTrigger>
+                              <ProposalsDialog rep={rep} proposals={rep.proposals} clientMap={clientMap} salesUsers={salesUsers} currencyFormatter={currencyFormatter} />
+                          </Dialog>
+                         </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      No sales executives found on your team yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
