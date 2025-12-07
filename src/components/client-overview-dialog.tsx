@@ -523,6 +523,9 @@ export function ClientOverviewDialog({
         const rate = (subscriptionInfo.clientType && commissionRates[subscriptionInfo.clientType]) || 0;
         const commissionAmount = subscriptionInfo.totalAmountDue * rate;
         
+        const proposalCreator = userMap.get(proposalCreatorId);
+
+        // Standard commission for the seller (can be a sales exec or a manager)
         if (commissionAmount > 0) {
           const execCommissionRef = doc(collection(firestore, 'commissions'));
           transaction.set(execCommissionRef, {
@@ -538,8 +541,8 @@ export function ClientOverviewDialog({
           });
         }
         
-        const proposalCreator = userMap.get(proposalCreatorId);
-        if (proposalCreator && proposalCreator.team) {
+        // Override commission for the manager, if the seller is a sales exec with a team
+        if (proposalCreator && proposalCreator.role === 'sales' && proposalCreator.team) {
           const teamManager = allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team);
           if (teamManager) {
             const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
