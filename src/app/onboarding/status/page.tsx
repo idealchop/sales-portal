@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Client, OnboardingStep } from '@/lib/definitions';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Loader2, CheckCircle, Clock, Ship, Copy, AlertTriangle } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
@@ -65,7 +66,7 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
 
 const defaultOnboardingSteps: OnboardingStep[] = [
     { title: 'Payment Confirmed', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
-    { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery.', status: 'pending' },
+    { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery within 24 hours.', status: 'pending' },
     { title: 'Onboarding Call', description: 'Initial setup and account walkthrough call completed.', status: 'pending' },
     { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
 ];
