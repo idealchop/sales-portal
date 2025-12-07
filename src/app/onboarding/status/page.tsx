@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
@@ -67,7 +66,7 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
 
 const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
     { title: 'Confirmation and verification of payment', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
-    { title: 'Onboarding & Account Creation', description: 'Your account is being set up in our system.', status: 'pending' },
+    { title: 'Onboarding & Account Creation', description: 'Your account is being set up in our system. An email has been sent to access your Client Portal Account.', status: 'pending' },
     { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery within 24 hours.', status: 'pending' },
     { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
 ];

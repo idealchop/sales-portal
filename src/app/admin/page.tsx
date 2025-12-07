@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -225,7 +224,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
     
     const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
         { title: 'Confirmation and verification of payment', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
-        { title: 'Onboarding & Account Creation', description: 'Your account is being set up in our system.', status: 'pending' },
+        { title: 'Onboarding & Account Creation', description: 'Your account is being set up in our system. An email has been sent to access your Client Portal Account.', status: 'pending' },
         { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery within 24 hours.', status: 'pending' },
         { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
     ];
@@ -762,7 +761,7 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
                                                     <Button variant="outline" onClick={() => setPaymentUploadState(prev => ({...prev, isOpen: false}))}>Cancel</Button>
                                                     <Button onClick={handleUploadPayment} disabled={paymentUploadState.isUploading}>
                                                         {paymentUploadState.isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                                                        Confirm & Upload
+                                                        Confirm &amp; Upload
                                                     </Button>
                                                 </DialogFooter>
                                             </DialogContent>
