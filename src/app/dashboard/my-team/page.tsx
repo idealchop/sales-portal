@@ -330,7 +330,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Client</TableHead>
-                                        <TableHead>Source</TableHead>
+                                        <TableHead>Campaign</TableHead>
                                         <TableHead className="text-right">Commission</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -362,7 +362,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                     <TableRow>
                                         <TableHead>Sales Rep</TableHead>
                                         <TableHead>Client</TableHead>
-                                        <TableHead>Source</TableHead>
+                                        <TableHead>Campaign</TableHead>
                                         <TableHead className="text-right">Override</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -399,33 +399,57 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
     );
 };
 
-function QrCodeDialog({ managerId }: { managerId: string }) {
+type QRCampaign = {
+    name: string;
+    location: string;
+    url: string;
+    qrUrl: string;
+}
+
+function QrCodeDialog({ managerId, managerLocation }: { managerId: string; managerLocation: string }) {
     const { toast } = useToast();
-    const [selectedLocation, setSelectedLocation] = useState('NCR North');
+    const [campaigns, setCampaigns] = useState<QRCampaign[]>([]);
+    const [newCampaignName, setNewCampaignName] = useState('');
+    const [selectedLocation, setSelectedLocation] = useState(managerLocation);
     
     const locations = ['NCR North', 'NCR South', 'Palawan', 'Cebu'];
 
-    const { proposalUrl, qrCodeUrl } = useMemo(() => {
-        const baseUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
-        const urlWithLocation = `${baseUrl}&location=${encodeURIComponent(selectedLocation)}`;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlWithLocation)}`;
-        return { proposalUrl: urlWithLocation, qrCodeUrl: qrUrl };
-    }, [managerId, selectedLocation]);
+    const handleCreateCampaign = () => {
+        if (!newCampaignName) {
+            toast({ variant: "destructive", title: "Campaign Name Required", description: "Please enter a name for your campaign." });
+            return;
+        }
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(proposalUrl);
-        toast({ title: "Link Copied!", description: "The proposal link has been copied to your clipboard." });
+        const baseUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
+        const urlWithParams = `${baseUrl}&location=${encodeURIComponent(selectedLocation)}&campaignName=${encodeURIComponent(newCampaignName)}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlWithParams)}`;
+        
+        const newCampaign: QRCampaign = {
+            name: newCampaignName,
+            location: selectedLocation,
+            url: urlWithParams,
+            qrUrl: qrUrl,
+        };
+        
+        setCampaigns(prev => [...prev, newCampaign]);
+        setNewCampaignName('');
+        toast({ title: "Campaign Created!", description: `The QR code for "${newCampaignName}" is ready.` });
     };
 
-    const handleDownload = async () => {
+    const handleCopy = (url: string) => {
+        navigator.clipboard.writeText(url);
+        toast({ title: "Link Copied!", description: "The shareable link has been copied." });
+    };
+
+    const handleDownload = async (qrUrl: string, name: string) => {
         try {
-            const response = await fetch(qrCodeUrl);
+            const response = await fetch(qrUrl);
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = `smart-refill-qr-${managerId}-${selectedLocation.replace(' ', '_')}.png`;
+            a.download = `smart-refill-qr-${name.replace(/\s+/g, '-')}.png`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -437,42 +461,69 @@ function QrCodeDialog({ managerId }: { managerId: string }) {
     };
 
     return (
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-                <DialogTitle>Generate Location-Specific QR Link</DialogTitle>
-                <DialogDescription>Create a unique QR code for each location. Sales from this link will be attributed to you.</DialogDescription>
+                <DialogTitle>QR Link Campaign Manager</DialogTitle>
+                <DialogDescription>Create and manage unique QR codes for different locations and events. Sales from these links will be attributed to you.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                    <Label htmlFor="location-select">Select Location</Label>
-                    <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                        <SelectTrigger id="location-select">
-                            <SelectValue placeholder="Select a location" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="flex flex-col items-center gap-6">
-                    <div className="p-4 bg-white rounded-lg border">
-                        <Image src={qrCodeUrl} width={250} height={250} alt={`Manager Proposal QR Code for ${selectedLocation}`} />
-                    </div>
-                    <div className="w-full space-y-2">
-                        <Label htmlFor="qr-link">Shareable Link for {selectedLocation}</Label>
-                        <div className="flex gap-2">
-                            <Input id="qr-link" value={proposalUrl} readOnly />
-                            <Button onClick={handleCopy}>Copy</Button>
+            <div className="space-y-6 py-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">Create New Campaign</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="campaign-name">Campaign Name</Label>
+                                <Input id="campaign-name" value={newCampaignName} onChange={e => setNewCampaignName(e.target.value)} placeholder="e.g., SM Megamall Event" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="location-select">Location</Label>
+                                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                                    <SelectTrigger id="location-select">
+                                        <SelectValue placeholder="Select a location" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
+                        <Button onClick={handleCreateCampaign} className="w-full">Create Campaign</Button>
+                    </CardContent>
+                </Card>
+
+                {campaigns.length > 0 && (
+                    <div className="space-y-4">
+                        <h3 className="font-semibold">My Campaigns</h3>
+                        <ScrollArea className="h-[40vh] pr-4">
+                            <div className="space-y-4">
+                            {campaigns.map((campaign, index) => (
+                                <Card key={index}>
+                                    <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
+                                        <div className="p-2 bg-white rounded-md border">
+                                            <Image src={campaign.qrUrl} width={100} height={100} alt={`QR Code for ${campaign.name}`} />
+                                        </div>
+                                        <div className="flex-1 space-y-2">
+                                            <h4 className="font-semibold">{campaign.name}</h4>
+                                            <p className="text-xs text-muted-foreground">{campaign.location}</p>
+                                            <div className="flex gap-2">
+                                                <Input value={campaign.url} readOnly className="h-8 text-xs" />
+                                                <Button size="sm" onClick={() => handleCopy(campaign.url)}>Copy</Button>
+                                            </div>
+                                        </div>
+                                         <Button size="sm" variant="outline" onClick={() => handleDownload(campaign.qrUrl, campaign.name)}>
+                                            <Download className="mr-2 h-4 w-4"/>
+                                            Download
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                            </div>
+                        </ScrollArea>
                     </div>
-                </div>
+                )}
             </div>
-            <DialogFooter>
-                <Button onClick={handleDownload} variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download QR
-                </Button>
-            </DialogFooter>
         </DialogContent>
     )
 }
@@ -730,10 +781,10 @@ export default function MyTeamPage() {
                     <DialogTrigger asChild>
                         <Button>
                             <QrCode className="mr-2 h-4 w-4" />
-                            Generate QR Link
+                            Manage QR Campaigns
                         </Button>
                     </DialogTrigger>
-                    {user && <QrCodeDialog managerId={user.id} />}
+                    {user && <QrCodeDialog managerId={user.id} managerLocation={user.location || 'NCR North'} />}
                 </Dialog>
                 <Button asChild>
                     <Link href="/dashboard/proposals/new">
@@ -1096,3 +1147,4 @@ export default function MyTeamPage() {
     </div>
   );
 }
+

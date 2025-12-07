@@ -353,6 +353,7 @@ function ContractPageContent() {
   const existingClientId = searchParams.get('clientId'); 
   const managerId = searchParams.get('managerId');
   const location = searchParams.get('location');
+  const campaignName = searchParams.get('campaignName');
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -618,7 +619,9 @@ function ContractPageContent() {
         updatedAt: serverTimestamp(),
       };
 
-      if (location) {
+      if (campaignName) {
+        newProposalData.sourceLocation = campaignName;
+      } else if (location) {
         newProposalData.sourceLocation = location;
       }
       

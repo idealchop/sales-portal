@@ -229,7 +229,7 @@
         },
         "sourceLocation": {
             "type": "string",
-            "description": "The location source from where the proposal was initiated, used for tracking QR code campaigns."
+            "description": "The custom campaign name set by the manager for tracking QR code campaigns."
         }
       },
       "required": [
