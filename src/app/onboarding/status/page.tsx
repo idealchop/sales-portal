@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: boolean }) => (
   <div className="flex gap-x-4">
@@ -174,10 +175,13 @@ function OnboardingStatusContent() {
 
 export default function OnboardingStatusPage() {
     return (
-        <main className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
+        <main className="flex min-h-screen w-full flex-col items-center justify-center bg-muted/40 p-4">
              <Suspense fallback={<Loader2 className="h-12 w-12 animate-spin text-primary" />}>
                 <OnboardingStatusContent />
             </Suspense>
+            <footer className="mt-8 text-center text-sm text-muted-foreground">
+                © {new Date().getFullYear()} <Link href="https://smartrefill.io" target="_blank" className="hover:text-primary hover:underline">smartrefill.io</Link>
+            </footer>
         </main>
     )
 }
