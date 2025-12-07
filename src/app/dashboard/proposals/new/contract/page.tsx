@@ -853,7 +853,7 @@ function ContractPageContent() {
                         <TimelineItem 
                             icon={<CheckCircle className="h-5 w-5" />}
                             title="Account Activation"
-                            description="Client portal is set up within 24 hours of signing and making payment."
+                            description="Client portal is set up within 12 hours of signing and making payment."
                         />
                         <TimelineItem 
                             icon={<CalendarCheck className="h-5 w-5" />}
@@ -863,7 +863,7 @@ function ContractPageContent() {
                         <TimelineItem 
                             icon={<Ship className="h-5 w-5" />}
                             title="First Delivery"
-                            description="Equipment and first water batch arrive in 3-5 business days."
+                            description="Equipment and first water batch arrive within 12 hours after activation."
                         />
                         <TimelineItem 
                             icon={<Bot className="h-5 w-5" />}
