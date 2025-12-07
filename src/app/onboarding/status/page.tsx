@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
@@ -132,9 +133,9 @@ function OnboardingStatusContent() {
         <Card className="w-full">
         <CardHeader className="text-center space-y-4">
             <Logo className="mx-auto h-12 w-12" />
-            <CardTitle>Welcome to Smart Refill, {client.companyName}!</CardTitle>
+            <CardTitle>Your Automated Water Service is Being Activated!</CardTitle>
             <CardDescription>
-                Your subscription is being activated. You can bookmark this page to track your progress.
+                Thank you, {client.companyName}. Copy your unique status link to track your progress anytime.
             </CardDescription>
         </CardHeader>
         <CardContent>
