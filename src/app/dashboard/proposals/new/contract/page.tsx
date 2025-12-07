@@ -384,7 +384,7 @@ function ContractPageContent() {
         return '5+ Persons';
     }
     const estimatedEmployees = Math.round(liters / (2 * 22));
-    if (estimatedEmployees < 5) return '< 5';
+    if (estimatedEmployees < 5) return '&lt; 5';
     if (estimatedEmployees > 500) return '500+';
     return `~${Math.round(estimatedEmployees / 10) * 10}`;
   };
@@ -858,12 +858,12 @@ function ContractPageContent() {
                         <TimelineItem 
                             icon={<CalendarCheck className="h-5 w-5" />}
                             title="Onboarding"
-                            description="Initial delivery schedule set within 48 hours."
+                            description="Delivery schedule confirmed within 12 hours."
                         />
                         <TimelineItem 
                             icon={<Ship className="h-5 w-5" />}
                             title="First Delivery"
-                            description="Equipment and first water batch arrive within 12 hours after activation."
+                            description="Equipment and first water batch delivered within 24 hours of signing."
                         />
                         <TimelineItem 
                             icon={<Bot className="h-5 w-5" />}
