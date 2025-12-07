@@ -134,9 +134,9 @@ function OnboardingStatusContent() {
         <Card className="w-full">
         <CardHeader className="text-center space-y-4">
             <Logo className="mx-auto h-12 w-12" />
-            <CardTitle>Your Automated Water Service is Being Activated!</CardTitle>
+            <CardTitle>Welcome, {client.companyName}!</CardTitle>
             <CardDescription>
-                Thank you, {client.companyName}. Copy your unique status link to track your progress anytime.
+                Your automated water service is being activated. Copy your unique status link to track progress anytime.
             </CardDescription>
         </CardHeader>
         <CardContent>
@@ -180,7 +180,7 @@ export default function OnboardingStatusPage() {
                 <OnboardingStatusContent />
             </Suspense>
             <footer className="mt-8 text-center text-sm text-muted-foreground">
-                © {new Date().getFullYear()} <Link href="https://smartrefill.io" target="_blank" className="hover:text-primary hover:underline">smartrefill.io</Link>
+                To learn more about Smart Refill, visit <Link href="https://smartrefill.io" target="_blank" className="font-semibold text-primary hover:underline">smartrefill.io</Link>
             </footer>
         </main>
     )
