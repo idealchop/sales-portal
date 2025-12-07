@@ -12,6 +12,7 @@ import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: boolean }) => (
   <div className="flex gap-x-4">
@@ -75,6 +76,7 @@ const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'pr
 function OnboardingStatusContent() {
   const searchParams = useSearchParams();
   const clientId = searchParams.get('client_id');
+  const proposalId = searchParams.get('proposal_id');
   const firestore = useFirestore();
   const { toast } = useToast();
   
@@ -119,40 +121,54 @@ function OnboardingStatusContent() {
   const isComplete = onboardingStepsToDisplay.every(step => step.status === 'completed');
 
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader className="text-center space-y-4">
-        <Logo className="mx-auto h-12 w-12" />
-        <CardTitle>Onboarding Status for {client.companyName}</CardTitle>
-        <CardDescription>
-            You can bookmark this page to track your progress.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col">
-            {onboardingStepsToDisplay.map((step, index) => (
-                <OnboardingStepItem 
-                    key={index} 
-                    step={step} 
-                    isLast={index === onboardingStepsToDisplay.length - 1} 
-                />
-            ))}
+    <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div className="relative aspect-[4/5] w-full hidden md:block">
+            <Image 
+                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Flanding%20page%20image.png?alt=media&token=4b8d98bc-e6e8-4710-b10e-e84e75839c7a"
+                alt="Welcome to Smart Refill"
+                fill
+                className="object-cover rounded-lg"
+            />
         </div>
-        {isComplete && (
-            <div className="mt-4 p-4 text-center bg-green-100 text-green-800 rounded-lg">
-                <h3 className="font-bold">Onboarding Complete!</h3>
-                <p className="text-sm">Welcome to Smart Refill! Your account is fully active. You can now log in to your client portal.</p>
+        <Card className="w-full">
+        <CardHeader className="text-center space-y-4">
+            <Logo className="mx-auto h-12 w-12" />
+            <CardTitle>Welcome to Smart Refill, {client.companyName}!</CardTitle>
+            <CardDescription>
+                Your subscription is being activated. You can bookmark this page to track your progress.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="space-y-2 text-center text-xs font-mono text-muted-foreground mb-6">
+                {clientId && <p>Client ID: {clientId}</p>}
+                {proposalId && <p>Proposal ID: {proposalId}</p>}
             </div>
-        )}
-      </CardContent>
-      <CardFooter className="flex-col gap-4 text-center">
-        <Button onClick={handleCopyLink} variant="outline" className="w-full">
-            <Copy className="mr-2 h-4 w-4" /> Copy Status Link
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          If you have any questions, please contact your sales representative or email us at <a href="mailto:customer@smartrefill.io" className="font-semibold text-primary hover:underline">customer@smartrefill.io</a>.
-        </p>
-      </CardFooter>
-    </Card>
+            <div className="flex flex-col">
+                {onboardingStepsToDisplay.map((step, index) => (
+                    <OnboardingStepItem 
+                        key={index} 
+                        step={step} 
+                        isLast={index === onboardingStepsToDisplay.length - 1} 
+                    />
+                ))}
+            </div>
+            {isComplete && (
+                <div className="mt-4 p-4 text-center bg-green-100 text-green-800 rounded-lg">
+                    <h3 className="font-bold">Onboarding Complete!</h3>
+                    <p className="text-sm">Welcome to Smart Refill! Your account is fully active. You can now log in to your client portal.</p>
+                </div>
+            )}
+        </CardContent>
+        <CardFooter className="flex-col gap-4 text-center">
+            <Button onClick={handleCopyLink} variant="outline" className="w-full">
+                <Copy className="mr-2 h-4 w-4" /> Copy Status Link
+            </Button>
+            <p className="text-xs text-muted-foreground">
+            If you have any questions, please contact your sales representative or email us at <a href="mailto:customer@smartrefill.io" className="font-semibold text-primary hover:underline">customer@smartrefill.io</a>.
+            </p>
+        </CardFooter>
+        </Card>
+    </div>
   );
 }
 
@@ -165,3 +181,5 @@ export default function OnboardingStatusPage() {
         </main>
     )
 }
+
+    

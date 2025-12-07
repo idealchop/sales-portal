@@ -201,38 +201,36 @@ function PreviewDialog({
                     </div>
                 </ScrollArea>
                 <DialogFooter className="gap-2 sm:justify-between items-center border-t pt-4">
-                    <Button type="button" onClick={handleSaveDraft} variant="outline" disabled={isSaving}>
+                     <Button type="button" onClick={handleSaveDraft} variant="outline" disabled={isSaving}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save as Draft
                     </Button>
-                    <div className="flex gap-2">
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                 <Button type="button" disabled={isSaving}>
-                                    <Send className="mr-2 h-4 w-4" />
-                                    Subscribe to Smart Refill
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Finalize and Subscribe?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will submit your signed contract and proof of payment. This action marks your subscription as active.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
-                                        {isSaving ? (
-                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
-                                        ) : (
-                                            'Yes, Subscribe Now'
-                                        )}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                                <Button type="button" disabled={isSaving}>
+                                <Send className="mr-2 h-4 w-4" />
+                                Subscribe to Smart Refill
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Finalize and Subscribe?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will submit your signed contract and proof of payment. This action marks your subscription as active.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
+                                    {isSaving ? (
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
+                                    ) : (
+                                        'Yes, Subscribe Now'
+                                    )}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -573,7 +571,7 @@ function ContractPageContent() {
       });
       
       if (isSubscribing) {
-          router.push(`/onboarding/status?client_id=${finalClientId}`);
+          router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${proposalId}`);
       } else {
           router.push('/dashboard/proposals');
       }
@@ -786,7 +784,7 @@ function ContractPageContent() {
         <div className="w-full flex flex-col gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
+                    <CardTitle>Distribution & Operation Timeline</CardTitle>
                     <CardDescription>Key milestones for service activation.</CardDescription>
                 </CardHeader>
                  <CardContent className="pt-8">
@@ -799,12 +797,12 @@ function ContractPageContent() {
                         <TimelineItem 
                             icon={<CalendarCheck className="h-5 w-5" />}
                             title="Onboarding"
-                            description="Delivery schedule confirmed within 12 hours."
+                            description="Initial delivery schedule set within 12 hours."
                         />
                         <TimelineItem 
                             icon={<Ship className="h-5 w-5" />}
                             title="First Delivery"
-                            description="Equipment and first water batch delivered within 24 hours of signing."
+                            description="Equipment and first water batch arrive within 24 hours of signing."
                         />
                         <TimelineItem 
                             icon={<Bot className="h-5 w-5" />}
@@ -964,3 +962,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
