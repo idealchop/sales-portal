@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
-import { allPlans, gallonRotationData } from '@/app/proposal/new/plans/page';
+import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
 import { Logo } from '@/components/logo';
 import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
@@ -67,7 +67,7 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                 </ul>
             </ContractSection>
 
-            <ContractSection title="4. Delivery & Refills">
+            <ContractSection title="4. Delivery &amp; Refills">
                 <ul className="list-disc pl-5 space-y-2">
                     <li>Water is delivered automatically based on usage data or refill schedules set in the Smart Refill system.</li>
                     <li>Deliveries are performed by accredited local partner refill stations under the Smart Refill network.</li>
@@ -93,14 +93,14 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                 </ul>
             </ContractSection>
 
-            <ContractSection title="7. Quality & Compliance">
+            <ContractSection title="7. Quality &amp; Compliance">
                 <ul className="list-disc pl-5 space-y-2">
                     <li>Smart Refill ensures all partner stations meet government-approved water safety and sanitation standards.</li>
                     <li>Periodic sampling and compliance monitoring are conducted to maintain quality assurance.</li>
                 </ul>
             </ContractSection>
 
-            <ContractSection title="8. Liability & Health Safety">
+            <ContractSection title="8. Liability &amp; Health Safety">
                 <div className="space-y-4">
                     <div>
                         <h4 className="font-semibold text-foreground">Water Quality Assurance</h4>
@@ -167,10 +167,6 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                          <p className="mt-2">Upon termination, all dispensers, bottles, or devices provided must be returned, and any remaining prepaid liters or balances shall be forfeited.</p>
                     </div>
                      <div>
-                        <h4 className="font-semibold text-foreground">9.5 Data and Account Retention</h4>
-                        <p>After termination, Client account data (including consumption history and reports) will remain accessible for 30 days, after which Smart Refill reserves the right to delete or anonymize such data in accordance with its Privacy Policy.</p>
-                    </div>
-                    <div>
                         <h4 className="font-semibold text-foreground">9.6 Reactivation</h4>
                         <p>A Client may reactivate a terminated or cancelled subscription anytime by subscribing to a new plan through the Smart Refill platform. Equipment and service fees may apply depending on previous plan tier and usage history.</p>
                     </div>
@@ -184,7 +180,7 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                 </ul>
             </ContractSection>
 
-             <ContractSection title="11. Trademarks & Ownership">
+             <ContractSection title="11. Trademarks &amp; Ownership">
                  <ul className="list-disc pl-5 space-y-2">
                     <li>Smart Refill is a registered trademark under River Tech Group, Inc.</li>
                     <li>All materials, systems, and technologies remain the intellectual property of the Provider.</li>
@@ -233,7 +229,7 @@ const inclusions = [
     },
     {
         icon: <CalendarClock className="h-5 w-5 text-primary" />,
-        title: 'Automated Scheduling & Delivery',
+        title: 'Automated Scheduling &amp; Delivery',
         description: 'No manual ordering; Smart Refill handles refills automatically.',
     },
     {
@@ -243,7 +239,7 @@ const inclusions = [
     },
     {
         icon: <Thermometer className="h-5 w-5 text-primary" />,
-        title: 'Free Dispensers, Gallons & Sanitary Items',
+        title: 'Free Dispensers, Gallons &amp; Sanitary Items',
         description: 'Included based on your plan.',
     },
     {
@@ -263,7 +259,7 @@ const inclusions = [
     },
     {
         icon: <Rocket className="h-5 w-5 text-primary" />,
-        title: 'Custom & Scalable Plans',
+        title: 'Custom &amp; Scalable Plans',
         description: 'Adjust liters, branches, and schedules as your business grows.',
     },
 ];
@@ -316,6 +312,7 @@ interface ContractDetailsProps {
     signatureData?: string;
     onSaveSignature?: (dataUrl: string) => void;
     onClearSignature?: () => void;
+    isProposalIllustration?: boolean;
 }
 
 export function ContractDetails({
@@ -324,6 +321,7 @@ export function ContractDetails({
     signatureData,
     onSaveSignature,
     onClearSignature,
+    isProposalIllustration = false,
 }: ContractDetailsProps) {
 
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -487,7 +485,7 @@ export function ContractDetails({
 
              <Card>
                 <CardHeader>
-                    <CardTitle>Subscription Summary & Cost Breakdown</CardTitle>
+                    <CardTitle>Subscription Summary &amp; Cost Breakdown</CardTitle>
                     <CardDescription>This section outlines the specific services and costs for this agreement, based on a {billingCycleLabel.toLowerCase()} payment schedule.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -507,13 +505,13 @@ export function ContractDetails({
                         </div>
                          <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4 text-green-500" /> Automated Delivery & Logistics
+                                <CheckCircle className="h-4 w-4 text-green-500" /> Automated Delivery &amp; Logistics
                             </span>
                             <span className="font-semibold">Included</span>
                         </div>
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4 text-green-500" /> Monthly Sanitation & Clean-up
+                                <CheckCircle className="h-4 w-4 text-green-500" /> Monthly Sanitation &amp; Clean-up
                             </span>
                             <span className="font-semibold">Included</span>
                         </div>
@@ -628,71 +626,74 @@ export function ContractDetails({
                 </CardFooter>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Smart Refill Water Supply Subscription Agreement</CardTitle>
-                     <CardDescription>
-                        Between: River Tech Group, Inc. (“Provider”) and the Subscriber (“Client”).
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <ContractText 
-                        summaryTitle={summaryTitle}
-                        finalPlan={finalPlan}
-                        baseLiters={baseLiters}
-                        billingCycleLabel={billingCycleLabel}
-                        totalAmountDue={totalAmountDue}
-                        selectedAddons={selectedAddons}
-                        additionalDispensers={additionalDispensers}
-                        additionalLiters={additionalLiters}
-                        addons={addons}
-                    />
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Signatures</CardTitle>
-                    <CardDescription>Please sign below to finalize the agreement.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 pt-4">
-                    <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name-preview">Name</Label>
-                                <Input id="name-preview" placeholder="Full Name" value={client.contactName} readOnly />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="company-preview">Company</Label>
-                                <Input id="company-preview" placeholder="Company Name" value={client.companyName} readOnly />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Date</Label>
-                                <Input placeholder="Date" value={date} readOnly />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Signature</Label>
-                             {isSigned && source.signature ? (
-                                <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
-                                    <Image src={source.signature} alt="Client Signature" width={300} height={150} className="object-contain" />
+            {!isProposalIllustration && (
+                <>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Smart Refill Water Supply Subscription Agreement</CardTitle>
+                            <CardDescription>
+                                Between: River Tech Group, Inc. (“Provider”) and the Subscriber (“Client”).
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <ContractText 
+                                summaryTitle={summaryTitle}
+                                finalPlan={finalPlan}
+                                baseLiters={baseLiters}
+                                billingCycleLabel={billingCycleLabel}
+                                totalAmountDue={totalAmountDue}
+                                selectedAddons={selectedAddons}
+                                additionalDispensers={additionalDispensers}
+                                additionalLiters={additionalLiters}
+                                addons={addons}
+                            />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Signatures</CardTitle>
+                            <CardDescription>Please sign below to finalize the agreement.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4 pt-4">
+                            <p className="font-semibold text-foreground">Client Representative (Subscriber)</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name-preview">Name</Label>
+                                        <Input id="name-preview" placeholder="Full Name" value={client.contactName} readOnly />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="company-preview">Company</Label>
+                                        <Input id="company-preview" placeholder="Company Name" value={client.companyName} readOnly />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Date</Label>
+                                        <Input placeholder="Date" value={date} readOnly />
+                                    </div>
                                 </div>
-                            ) : !isSigned && onSaveSignature && onClearSignature ? (
-                                <SignaturePad 
-                                    signatureData={signatureData}
-                                    onSave={onSaveSignature}
-                                    onClear={onClearSignature}
-                                />
-                            ) : (
-                                <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
-                                     <p className="text-muted-foreground">No signature on file.</p>
+                                <div className="space-y-2">
+                                    <Label>Signature</Label>
+                                    {isSigned && source.signature ? (
+                                        <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
+                                            <Image src={source.signature} alt="Client Signature" width={300} height={150} className="object-contain" />
+                                        </div>
+                                    ) : !isSigned && onSaveSignature && onClearSignature ? (
+                                        <SignaturePad 
+                                            signatureData={signatureData}
+                                            onSave={onSaveSignature}
+                                            onClear={onClearSignature}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-[200px] border rounded-md bg-gray-50 flex items-center justify-center">
+                                            <p className="text-muted-foreground">No signature on file.</p>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
         </div>
     );
 }

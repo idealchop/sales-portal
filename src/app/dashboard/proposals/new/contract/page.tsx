@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -144,7 +145,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                     <div ref={proposalRef} className="bg-white p-8">
                        <ContractDetails
                            finalPlanDetails={finalPlanDetails}
-                           isSigned={false} // This is just a proposal, not the signed contract
+                           isSigned={false}
+                           isProposalIllustration={true}
                        />
                     </div>
                 </ScrollArea>
@@ -228,7 +230,7 @@ function PreviewDialog({
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
              <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
-                    <DialogTitle>Proposal Preview & Finalization</DialogTitle>
+                    <DialogTitle>Proposal Preview &amp; Finalization</DialogTitle>
                     <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
@@ -797,7 +799,7 @@ function ContractPageContent() {
             </GenerateProposalDialog>
             <Button onClick={() => { handleActionClick().then(() => setReviewDialogOpen(true)) }} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Review & Sign
+                Review &amp; Sign
             </Button>
         </div>
       </div>
@@ -1050,5 +1052,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
