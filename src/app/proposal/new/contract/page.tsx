@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -57,6 +57,7 @@ import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@
 import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Progress } from '@/components/ui/progress';
 
 
 const billingCycles = [
@@ -123,6 +124,7 @@ function PreviewDialog({
     const contractRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
 
     const handleSaveDraft = async () => {
       await saveProposal('draft');
@@ -149,7 +151,13 @@ function PreviewDialog({
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPaymentProofFile(e.target.files ? e.target.files[0] : null);
+        const file = e.target.files?.[0] || null;
+        setPaymentProofFile(file);
+        if (file && file.type.startsWith("image/")) {
+            setPaymentProofPreview(URL.createObjectURL(file));
+        } else {
+            setPaymentProofPreview(null);
+        }
     };
 
     return (
@@ -186,10 +194,34 @@ function PreviewDialog({
                                         onChange={handleFileChange} 
                                         accept="image/png, image/jpeg, application/pdf"
                                      />
+                                     {isSaving && <Progress value={isSaving ? 50 : 0} className="w-full h-2 mt-2" />}
                                      {paymentProofFile && (
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md">
-                                            <FileCheck className="h-4 w-4 text-green-500" />
-                                            <span>{paymentProofFile.name}</span>
+                                        <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md border">
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                {paymentProofPreview ? (
+                                                    <div className="relative h-10 w-10 flex-shrink-0">
+                                                        <Image src={paymentProofPreview} alt="Preview" fill className="object-cover rounded-sm" />
+                                                    </div>
+                                                ) : (
+                                                    <FileCheck className="h-6 w-6 text-green-500 flex-shrink-0" />
+                                                )}
+                                                <span className="truncate">{paymentProofFile.name}</span>
+                                            </div>
+                                             {paymentProofPreview && (
+                                                 <Dialog>
+                                                    <DialogTrigger asChild>
+                                                         <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4"/> View</Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent>
+                                                        <DialogHeader>
+                                                            <DialogTitle>Payment Proof Preview</DialogTitle>
+                                                        </DialogHeader>
+                                                        <div className="relative mt-4 aspect-auto max-h-[70vh] w-full">
+                                                            <Image src={paymentProofPreview} alt="Payment proof full preview" width={500} height={700} className="object-contain w-full h-full" />
+                                                        </div>
+                                                    </DialogContent>
+                                                </Dialog>
+                                             )}
                                         </div>
                                      )}
                                 </div>
@@ -783,7 +815,7 @@ function ContractPageContent() {
         <div className="w-full flex flex-col gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Distribution & Operation Timeline</CardTitle>
+                    <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
                     <CardDescription>Key milestones for service activation.</CardDescription>
                 </CardHeader>
                  <CardContent className="pt-8">
@@ -961,3 +993,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
