@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -41,7 +40,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -57,7 +56,9 @@ import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@
 import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-
+import { Progress } from '@/components/ui/progress';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0, multiplier: 1 },
@@ -97,6 +98,70 @@ const additionalDispenserCost = 250;
 const additionalLiterCost = 3;
 
 
+function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode }) {
+    const proposalRef = useRef<HTMLDivElement>(null);
+    const { toast } = useToast();
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownloadPdf = async () => {
+        const element = proposalRef.current;
+        if (!element) return;
+        setIsDownloading(true);
+        try {
+            const canvas = await html2canvas(element, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.companyName}.pdf`);
+            toast({ title: "Download Started", description: "Your proposal PDF is being generated." });
+        } catch (error) {
+            console.error("PDF generation failed:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not generate PDF.' });
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const handleSendEmail = () => {
+        toast({ title: "Coming Soon!", description: "This feature will be available in a future update." });
+    }
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent className="sm:max-w-5xl">
+                <DialogHeader>
+                    <DialogTitle>Generate Proposal</DialogTitle>
+                    <DialogDescription>Review the sales illustration below. You can download it as a PDF or send it via email.</DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-[75vh] pr-6">
+                    <div ref={proposalRef} className="bg-white p-8">
+                       <ContractDetails
+                           finalPlanDetails={finalPlanDetails}
+                           isSigned={false} // This is just a proposal, not the signed contract
+                       />
+                    </div>
+                </ScrollArea>
+                <DialogFooter>
+                    <Button variant="outline" onClick={handleSendEmail} disabled>
+                        <Send className="mr-2 h-4 w-4" /> Send Email (Soon)
+                    </Button>
+                    <Button onClick={handleDownloadPdf} disabled={isDownloading}>
+                        {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        Download PDF
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function PreviewDialog({ 
     finalPlanDetails,
     isSaving,
@@ -123,6 +188,7 @@ function PreviewDialog({
     const contractRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
 
     const handleSaveDraft = async () => {
       await saveProposal('draft');
@@ -149,9 +215,14 @@ function PreviewDialog({
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPaymentProofFile(e.target.files ? e.target.files[0] : null);
+        const file = e.target.files?.[0] || null;
+        setPaymentProofFile(file);
+        if (file && file.type.startsWith("image/")) {
+            setPaymentProofPreview(URL.createObjectURL(file));
+        } else {
+            setPaymentProofPreview(null);
+        }
     };
-
 
     return (
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
@@ -187,10 +258,34 @@ function PreviewDialog({
                                         onChange={handleFileChange} 
                                         accept="image/png, image/jpeg, application/pdf"
                                      />
+                                     {isSaving && <Progress value={isSaving ? 50 : 0} className="w-full h-2 mt-2" />}
                                      {paymentProofFile && (
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md">
-                                            <FileCheck className="h-4 w-4 text-green-500" />
-                                            <span>{paymentProofFile.name}</span>
+                                        <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md border">
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                {paymentProofPreview ? (
+                                                    <div className="relative h-10 w-10 flex-shrink-0">
+                                                        <Image src={paymentProofPreview} alt="Preview" fill className="object-cover rounded-sm" />
+                                                    </div>
+                                                ) : (
+                                                    <FileCheck className="h-6 w-6 text-green-500 flex-shrink-0" />
+                                                )}
+                                                <span className="truncate">{paymentProofFile.name}</span>
+                                            </div>
+                                             {paymentProofPreview && (
+                                                 <Dialog>
+                                                    <DialogTrigger asChild>
+                                                         <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4"/> View</Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent>
+                                                        <DialogHeader>
+                                                            <DialogTitle>Payment Proof Preview</DialogTitle>
+                                                        </DialogHeader>
+                                                        <div className="relative mt-4 aspect-auto max-h-[70vh] w-full">
+                                                            <Image src={paymentProofPreview} alt="Payment proof full preview" width={500} height={700} className="object-contain w-full h-full" />
+                                                        </div>
+                                                    </DialogContent>
+                                                </Dialog>
+                                             )}
                                         </div>
                                      )}
                                 </div>
@@ -199,7 +294,7 @@ function PreviewDialog({
                     </div>
                 </ScrollArea>
                 <DialogFooter className="gap-2 sm:justify-between items-center border-t pt-4">
-                    <Button type="button" onClick={handleSaveDraft} variant="outline" disabled={isSaving}>
+                     <Button type="button" onClick={handleSaveDraft} variant="outline" disabled={isSaving}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save as Draft
                     </Button>
@@ -284,7 +379,7 @@ function ContractPageContent() {
   });
   const [additionalDispensers, setAdditionalDispensers] = useState(0);
   const [additionalLiters, setAdditionalLiters] = useState(0);
-  const [isDialogOpen, setDialogOpen] = useState(false);
+  const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
   const [signatureData, setSignatureData] = useState<string | undefined>();
@@ -591,45 +686,32 @@ function ContractPageContent() {
   };
 
 
-  const handleReviewAndSignClick = async () => {
+  const handleActionClick = async () => {
     if (!firestore) return;
     setIsGeneratingIds(true);
 
     try {
         await runTransaction(firestore, async (transaction) => {
             const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+            let newProposalNumber;
+            if(!generatedProposalId) {
+                const proposalCounterSnap = await transaction.get(proposalCounterRef);
+                newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+                const newProposalId = String(newProposalNumber).padStart(10, '0');
+                setGeneratedProposalId(newProposalId);
+                transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+            }
             
-            const proposalCounterSnap = await transaction.get(proposalCounterRef);
-            let clientCounterSnap;
             if (!existingClientId && !generatedClientId) {
-                clientCounterSnap = await transaction.get(clientCounterRef);
-            }
-
-            let finalClientId = generatedClientId;
-            let newClientNumber;
-            if (clientCounterSnap && clientCounterSnap.exists()) {
-                newClientNumber = clientCounterSnap.data().currentId + 1;
+                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                const clientCounterSnap = await transaction.get(clientCounterRef);
+                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
                 const year = new Date().getFullYear().toString().slice(-2);
-                finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-            } else if (clientCounterSnap) {
-                 newClientNumber = 1;
-                 const year = new Date().getFullYear().toString().slice(-2);
-                 finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-            }
-            
-            const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-            const newProposalId = String(newProposalNumber).padStart(10, '0');
-
-            if (newClientNumber) {
-                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                const finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
                 setGeneratedClientId(finalClientId);
+                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
             }
-            transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-            setGeneratedProposalId(newProposalId);
         });
-
-        setDialogOpen(true);
 
     } catch (error: any) {
         console.error("Error generating IDs:", error);
@@ -707,7 +789,13 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-            <Button onClick={handleReviewAndSignClick} disabled={isSaving || isGeneratingIds}>
+             <GenerateProposalDialog finalPlanDetails={finalPlanDetails}>
+                <Button variant="outline" onClick={handleActionClick} disabled={isGeneratingIds}>
+                    {isGeneratingIds && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Generate Proposal
+                </Button>
+            </GenerateProposalDialog>
+            <Button onClick={() => { handleActionClick().then(() => setReviewDialogOpen(true)) }} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review & Sign
             </Button>
@@ -718,8 +806,8 @@ function ContractPageContent() {
             <PreviewDialog 
                 finalPlanDetails={finalPlanDetails}
                 isSaving={isSaving}
-                isDialogOpen={isDialogOpen}
-                setDialogOpen={setDialogOpen}
+                isDialogOpen={isReviewDialogOpen}
+                setDialogOpen={setReviewDialogOpen}
                 saveProposal={saveProposal}
                 signatureData={signatureData}
                 onSaveSignature={handleSaveSignature}
@@ -784,7 +872,7 @@ function ContractPageContent() {
         <div className="w-full flex flex-col gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Distribution & Operation Timeline</CardTitle>
+                    <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
                     <CardDescription>Key milestones for service activation.</CardDescription>
                 </CardHeader>
                  <CardContent className="pt-8">
@@ -962,3 +1050,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
