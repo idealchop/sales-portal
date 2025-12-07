@@ -157,7 +157,7 @@ function PreviewDialog({
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
              <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
-                    <DialogTitle>Proposal Preview &amp; Finalization</DialogTitle>
+                    <DialogTitle>Proposal Preview & Finalization</DialogTitle>
                     <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
@@ -479,6 +479,7 @@ function ContractPageContent() {
   
     setIsSaving(true);
     let finalClientId = generatedClientId;
+    const onboardingToken = crypto.randomUUID();
   
     try {
       if (!finalClientId) {
@@ -517,6 +518,7 @@ function ContractPageContent() {
         contactPhone: contactPhone,
         address: address,
         clientType: clientType || 'sme',
+        onboardingToken: onboardingToken,
       };
 
       if (isSubscribing) {
@@ -569,7 +571,7 @@ function ContractPageContent() {
       });
       
       if (isSubscribing) {
-          router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${proposalId}`);
+          router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${proposalId}&token=${onboardingToken}`);
       } else {
           router.push('/dashboard/proposals');
       }

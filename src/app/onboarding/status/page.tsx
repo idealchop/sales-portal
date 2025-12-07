@@ -4,7 +4,7 @@
 import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import type { Client, OnboardingStep } from '@/lib/definitions';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Loader2, CheckCircle, Clock, Ship, Copy, AlertTriangle } from 'lucide-react';
@@ -65,7 +65,6 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
   </div>
 );
 
-
 const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
     { title: 'Confirmation and verification of payment', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
     { title: 'Onboarding & Account Creation', description: 'Your account is being set up in our system. An email has been sent to access your Client Portal Account.', status: 'pending' },
@@ -77,16 +76,49 @@ const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'pr
 function OnboardingStatusContent() {
   const searchParams = useSearchParams();
   const clientId = searchParams.get('client_id');
+  const token = searchParams.get('token');
   const proposalId = searchParams.get('proposal_id');
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const clientDocRef = useMemoFirebase(
-    () => (firestore && clientId ? doc(firestore, 'clients', clientId) : null),
-    [firestore, clientId]
-  );
-  
-  const { data: client, isLoading, error } = useDoc<Client>(clientDocRef);
+  const [client, setClient] = useState<Client | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!firestore || !clientId || !token) {
+        setError("Invalid link. Client ID or security token is missing.");
+        setIsLoading(false);
+        return;
+    }
+
+    const fetchAndVerifyClient = async () => {
+        setIsLoading(true);
+        try {
+            const clientDocRef = doc(firestore, 'clients', clientId);
+            const clientDocSnap = await getDoc(clientDocRef);
+
+            if (clientDocSnap.exists()) {
+                const clientData = clientDocSnap.data() as Client;
+                if (clientData.onboardingToken === token) {
+                    setClient(clientData);
+                    setError(null);
+                } else {
+                    setError("Access denied. The provided token is invalid.");
+                }
+            } else {
+                setError("Could not find an account with the provided Client ID.");
+            }
+        } catch (e) {
+            console.error("Error fetching client status:", e);
+            setError("An error occurred while trying to fetch your status.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    fetchAndVerifyClient();
+  }, [firestore, clientId, token]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -111,8 +143,8 @@ function OnboardingStatusContent() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
                     <AlertTriangle className="h-6 w-6 text-red-600" />
                 </div>
-                <CardTitle className="mt-4">Could Not Load Status</CardTitle>
-                <CardDescription>We couldn't find the onboarding status for the provided Client ID. Please check the link and try again.</CardDescription>
+                <CardTitle className="mt-4">Access Denied</CardTitle>
+                <CardDescription>{error || "We couldn't find the onboarding status. Please check the link and try again."}</CardDescription>
             </CardHeader>
         </Card>
     );
@@ -160,12 +192,12 @@ function OnboardingStatusContent() {
                 </div>
             )}
         </CardContent>
-        <CardFooter className="flex-col gap-4 text-center">
+        <CardFooter className="flex-col gap-4">
             <Button onClick={handleCopyLink} variant="outline" className="w-full">
                 <Copy className="mr-2 h-4 w-4" /> Copy Status Link
             </Button>
-            <p className="text-xs text-muted-foreground">
-            If you have any questions, please contact your sales representative or email us at <a href="mailto:customer@smartrefill.io" className="font-semibold text-primary hover:underline">customer@smartrefill.io</a>.
+            <p className="text-xs text-muted-foreground text-center">
+                If you have any questions, please contact your sales representative or email us at <a href="mailto:customer@smartrefill.io" className="font-semibold text-primary hover:underline">customer@smartrefill.io</a>.
             </p>
         </CardFooter>
         </Card>

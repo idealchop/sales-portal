@@ -171,6 +171,10 @@
               "proofUrl"
             ]
           }
+        },
+        "onboardingToken": {
+            "type": "string",
+            "description": "A unique, secure token to authenticate access to the public onboarding status page."
         }
       },
       "required": [
@@ -370,6 +374,38 @@
         "email"
       ]
     },
+    "QrCampaign": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "QrCampaign",
+      "type": "object",
+      "description": "Represents a QR code marketing campaign created by a manager.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the QR campaign."
+        },
+        "name": {
+          "type": "string",
+          "description": "The custom name of the campaign (e.g., 'SM Megamall Kiosk')."
+        },
+        "url": {
+          "type": "string",
+          "description": "The full URL encoded in the QR code.",
+          "format": "uri"
+        },
+        "qrUrl": {
+          "type": "string",
+          "description": "The URL of the generated QR code image.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp indicating when the campaign was created.",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "name", "url", "qrUrl", "createdAt"]
+    },
     "Counter": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Counter",
@@ -421,6 +457,12 @@
         "$ref": "#/entities/UserProfile"
       },
       "description": "Stores sales user profiles. Accessible only to the authenticated user."
+    },
+    "/sales/{userId}/qr_campaigns/{campaignId}": {
+      "schema": {
+        "$ref": "#/entities/QrCampaign"
+      },
+      "description": "Stores QR marketing campaigns created by a sales manager."
     },
     "/counters/{counterId}": {
       "schema": {

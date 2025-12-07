@@ -478,6 +478,7 @@ function ContractPageContent() {
   
     setIsSaving(true);
     let finalClientId = generatedClientId;
+    const onboardingToken = crypto.randomUUID();
   
     try {
       if (!finalClientId) {
@@ -516,6 +517,7 @@ function ContractPageContent() {
         contactPhone: contactPhone,
         address: address,
         clientType: clientType || 'sme',
+        onboardingToken: onboardingToken,
       };
 
       if (isSubscribing) {
@@ -568,7 +570,7 @@ function ContractPageContent() {
       });
       
       if (isSubscribing) {
-          router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${proposalId}`);
+          router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${proposalId}&token=${onboardingToken}`);
       } else {
           router.push('/dashboard/proposals');
       }
@@ -799,7 +801,7 @@ function ContractPageContent() {
                         <TimelineItem 
                             icon={<Ship className="h-5 w-5" />}
                             title="First Delivery"
-                            description="Equipment and first water batch arrive within 24 hours of signing."
+                            description="Equipment and first water batch delivered within 24 hours of signing."
                         />
                         <TimelineItem 
                             icon={<Bot className="h-5 w-5" />}
