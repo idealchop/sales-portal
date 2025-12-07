@@ -144,11 +144,13 @@ function OnboardingStatusContent() {
             </div>
         )}
       </CardContent>
-      <CardFooter className="flex-col gap-4">
+      <CardFooter className="flex-col gap-4 text-center">
         <Button onClick={handleCopyLink} variant="outline" className="w-full">
             <Copy className="mr-2 h-4 w-4" /> Copy Status Link
         </Button>
-        <p className="text-xs text-muted-foreground">If you have any questions, please contact your sales representative.</p>
+        <p className="text-xs text-muted-foreground">
+          If you have any questions, please contact your sales representative or email us at <a href="mailto:sales@smartrefill.io" className="font-semibold text-primary hover:underline">sales@smartrefill.io</a>.
+        </p>
       </CardFooter>
     </Card>
   );
