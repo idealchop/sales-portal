@@ -401,19 +401,15 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
 
 type QRCampaign = {
     name: string;
-    location: string;
     url: string;
     qrUrl: string;
 }
 
-function QrCodeDialog({ managerId, managerLocation }: { managerId: string; managerLocation: string }) {
+function QrCodeDialog({ managerId }: { managerId: string; }) {
     const { toast } = useToast();
     const [campaigns, setCampaigns] = useState<QRCampaign[]>([]);
     const [newCampaignName, setNewCampaignName] = useState('');
-    const [selectedLocation, setSelectedLocation] = useState(managerLocation);
     
-    const locations = ['NCR North', 'NCR South', 'Palawan', 'Cebu'];
-
     const handleCreateCampaign = () => {
         if (!newCampaignName) {
             toast({ variant: "destructive", title: "Campaign Name Required", description: "Please enter a name for your campaign." });
@@ -421,12 +417,11 @@ function QrCodeDialog({ managerId, managerLocation }: { managerId: string; manag
         }
 
         const baseUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
-        const urlWithParams = `${baseUrl}&location=${encodeURIComponent(selectedLocation)}&campaignName=${encodeURIComponent(newCampaignName)}`;
+        const urlWithParams = `${baseUrl}&campaignName=${encodeURIComponent(newCampaignName)}`;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlWithParams)}`;
         
         const newCampaign: QRCampaign = {
             name: newCampaignName,
-            location: selectedLocation,
             url: urlWithParams,
             qrUrl: qrUrl,
         };
@@ -464,7 +459,7 @@ function QrCodeDialog({ managerId, managerLocation }: { managerId: string; manag
         <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>QR Link Campaign Manager</DialogTitle>
-                <DialogDescription>Create and manage unique QR codes for different locations and events. Sales from these links will be attributed to you.</DialogDescription>
+                <DialogDescription>Create and manage unique QR codes for different events or materials. Sales from these links will be attributed to you.</DialogDescription>
             </DialogHeader>
             <div className="space-y-6 py-4">
                 <Card>
@@ -472,24 +467,13 @@ function QrCodeDialog({ managerId, managerLocation }: { managerId: string; manag
                         <CardTitle className="text-lg">Create New Campaign</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="campaign-name">Campaign Name</Label>
-                                <Input id="campaign-name" value={newCampaignName} onChange={e => setNewCampaignName(e.target.value)} placeholder="e.g., SM Megamall Event" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="location-select">Location</Label>
-                                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                                    <SelectTrigger id="location-select">
-                                        <SelectValue placeholder="Select a location" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                         <div className="space-y-2">
+                            <Label htmlFor="campaign-name">Campaign Name</Label>
+                            <div className="flex gap-2">
+                                <Input id="campaign-name" value={newCampaignName} onChange={e => setNewCampaignName(e.target.value)} placeholder="e.g., SM Megamall Kiosk, Nov. Brochure" />
+                                <Button onClick={handleCreateCampaign}>Create</Button>
                             </div>
                         </div>
-                        <Button onClick={handleCreateCampaign} className="w-full">Create Campaign</Button>
                     </CardContent>
                 </Card>
 
@@ -506,7 +490,6 @@ function QrCodeDialog({ managerId, managerLocation }: { managerId: string; manag
                                         </div>
                                         <div className="flex-1 space-y-2">
                                             <h4 className="font-semibold">{campaign.name}</h4>
-                                            <p className="text-xs text-muted-foreground">{campaign.location}</p>
                                             <div className="flex gap-2">
                                                 <Input value={campaign.url} readOnly className="h-8 text-xs" />
                                                 <Button size="sm" onClick={() => handleCopy(campaign.url)}>Copy</Button>
@@ -784,7 +767,7 @@ export default function MyTeamPage() {
                             Manage QR Campaigns
                         </Button>
                     </DialogTrigger>
-                    {user && <QrCodeDialog managerId={user.id} managerLocation={user.location || 'NCR North'} />}
+                    {user && <QrCodeDialog managerId={user.id} />}
                 </Dialog>
                 <Button asChild>
                     <Link href="/dashboard/proposals/new">

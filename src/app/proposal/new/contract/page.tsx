@@ -352,7 +352,6 @@ function ContractPageContent() {
   const clientType = searchParams.get('clientType') as Client['clientType'];
   const existingClientId = searchParams.get('clientId'); 
   const managerId = searchParams.get('managerId');
-  const location = searchParams.get('location');
   const campaignName = searchParams.get('campaignName');
 
   const { toast } = useToast();
@@ -621,8 +620,6 @@ function ContractPageContent() {
 
       if (campaignName) {
         newProposalData.sourceLocation = campaignName;
-      } else if (location) {
-        newProposalData.sourceLocation = location;
       }
       
       if(downloadURL) {
