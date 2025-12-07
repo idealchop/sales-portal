@@ -115,7 +115,7 @@ function PreviewDialog({
     isSaving: boolean;
     isDialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
-    saveProposal: (status: 'draft' | 'finalized') => Promise<void>;
+    saveProposal: (status: 'draft' | 'accepted') => Promise<void>;
     signatureData?: string;
     onSaveSignature: (dataUrl: string) => void;
     onClearSignature: () => void;
@@ -148,84 +148,18 @@ function PreviewDialog({
             });
             return;
         }
-        await saveProposal('finalized');
+        await saveProposal('accepted');
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPaymentProofFile(e.target.files ? e.target.files[0] : null);
     };
 
-    const handleDownloadPdf = async () => {
-        const contentToCapture = contractRef.current;
-        if (!contentToCapture) {
-            toast({ variant: "destructive", title: "Download Failed", description: "Contract content container not found." });
-            return;
-        }
-        
-        setIsDownloading(true);
-        
-        try {
-            const canvas = await html2canvas(contentToCapture, {
-                scale: 2, 
-                useCORS: true, 
-                allowTaint: true, 
-                onclone: (document) => {
-                    const imagePromises: Promise<void>[] = [];
-                    const images = document.getElementsByTagName('img');
-                    for (let i = 0; i < images.length; i++) {
-                        const img = images[i];
-                        if (img.complete) continue; 
-                        
-                        imagePromises.push(new Promise((resolve) => {
-                            img.onload = () => resolve();
-                            img.onerror = () => resolve();
-                        }));
-                    }
-                    return Promise.all(imagePromises);
-                }
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            
-            const contentWidth = canvas.width;
-            const contentHeight = canvas.height;
-            
-            const ratio = contentWidth / pdfWidth;
-            const imgHeight = contentHeight / ratio;
-            
-            let heightLeft = imgHeight;
-            let position = 0;
-
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdfHeight;
-
-            while (heightLeft > 0) {
-                position = -pdfHeight + position;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdfHeight;
-            }
-            
-            pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.proposalId}.pdf`);
-
-        } catch (error) {
-            console.error("PDF Download Error:", error);
-            toast({ variant: "destructive", title: "Download Failed", description: "An error occurred while generating the PDF." });
-        } finally {
-            setIsDownloading(false);
-        }
-    };
-
-
     return (
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
              <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
-                    <DialogTitle>Proposal Preview &amp; Finalization</DialogTitle>
+                    <DialogTitle>Proposal Preview & Finalization</DialogTitle>
                     <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
@@ -272,15 +206,6 @@ function PreviewDialog({
                         Save as Draft
                     </Button>
                     <div className="flex gap-2">
-                        <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                             Close
-                        </Button>
-                        
-                        <Button type="button" onClick={handleDownloadPdf} variant="outline" disabled={isSaving || isDownloading}>
-                            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            Download PDF
-                        </Button>
-
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                  <Button type="button" disabled={isSaving}>
@@ -525,7 +450,7 @@ function ContractPageContent() {
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
-  const saveProposal = async (status: 'draft' | 'finalized') => {
+  const saveProposal = async (status: 'draft' | 'accepted') => {
     if (!finalPlanDetails || !firestore) {
       toast({
         variant: "destructive",
@@ -535,11 +460,13 @@ function ContractPageContent() {
       return;
     }
 
-    if (status === 'finalized' && !paymentProofFile) {
+    const isSubscribing = status === 'accepted';
+
+    if (isSubscribing && !paymentProofFile) {
         toast({
             variant: "destructive",
             title: "Payment Proof Required",
-            description: "Please upload your proof of payment to finalize.",
+            description: "Please upload your proof of payment to subscribe.",
         });
         return;
     }
@@ -584,23 +511,34 @@ function ContractPageContent() {
         downloadURL = await getDownloadURL(snapshot.ref);
       }
       
-
       const clientRef = doc(firestore, 'clients', finalClientId);
-  
+      const clientData: any = {
+        id: finalClientId,
+        userId: proposalOwnerId,
+        companyName: companyName,
+        contactName: contactName,
+        contactEmail: contactEmail,
+        contactPhone: contactPhone,
+        address: address,
+        clientType: clientType || 'sme',
+      };
+
+      if (isSubscribing) {
+          clientData.status = 'active';
+          clientData.paymentStatus = 'Paid';
+          clientData.subscription = {
+            ...finalPlanDetails.plan,
+            dateSigned: new Date().toISOString()
+          }
+      } else {
+          clientData.status = 'pending';
+      }
+
       if (!existingClientId) {
-        const newClientData = {
-          id: finalClientId,
-          userId: proposalOwnerId,
-          companyName: companyName,
-          contactName: contactName,
-          contactEmail: contactEmail,
-          contactPhone: contactPhone,
-          address: address,
-          clientType: clientType || 'sme',
-          status: 'pending',
-          createdAt: serverTimestamp(),
-        };
-        await setDoc(clientRef, newClientData, { merge: true });
+        clientData.createdAt = serverTimestamp();
+        await setDoc(clientRef, clientData, { merge: true });
+      } else {
+        await updateDoc(clientRef, clientData);
       }
       
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
@@ -627,21 +565,14 @@ function ContractPageContent() {
       }
 
       const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
-      setDoc(proposalRef, newProposalData, { merge: true }).catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: proposalRef.path,
-          operation: 'write', 
-          requestResourceData: newProposalData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+      await setDoc(proposalRef, newProposalData, { merge: true });
   
       toast({
-        title: status === 'draft' ? "Proposal Saved!" : "Proposal Submitted!",
-        description: `Your proposal for ${companyName} has been successfully submitted for review.`,
+        title: status === 'draft' ? "Proposal Saved!" : "Subscription Successful!",
+        description: `Your proposal for ${companyName} has been saved.`,
       });
       
-      if (status === 'finalized') {
+      if (isSubscribing) {
           router.push(`/onboarding/status?client_id=${finalClientId}`);
       } else {
           router.push('/dashboard/proposals');
@@ -649,7 +580,7 @@ function ContractPageContent() {
   
     } catch (error) {
         console.error("Error saving proposal:", error);
-        if (!(error instanceof FirestorePermissionError)) { // Avoid double-toasting
+        if (!(error instanceof FirestorePermissionError)) {
           toast({
             variant: "destructive",
             title: "Save Failed",
@@ -780,7 +711,7 @@ function ContractPageContent() {
             </Button>
             <Button onClick={handleReviewAndSignClick} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Review &amp; Sign
+                Review & Sign
             </Button>
         </div>
       </div>
@@ -858,7 +789,7 @@ function ContractPageContent() {
                     <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
                     <CardDescription>Key milestones for service activation.</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-8">
+                 <CardContent className="pt-8">
                      <div className="relative flex justify-between">
                         <TimelineItem 
                             icon={<CheckCircle className="h-5 w-5" />}

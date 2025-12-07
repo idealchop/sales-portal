@@ -115,7 +115,7 @@ function PreviewDialog({
     isSaving: boolean;
     isDialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
-    saveProposal: (status: 'draft' | 'finalized') => Promise<void>;
+    saveProposal: (status: 'draft' | 'accepted') => Promise<void>;
     signatureData?: string;
     onSaveSignature: (dataUrl: string) => void;
     onClearSignature: () => void;
@@ -148,7 +148,7 @@ function PreviewDialog({
             });
             return;
         }
-        await saveProposal('finalized');
+        await saveProposal('accepted');
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -272,27 +272,18 @@ function PreviewDialog({
                         Save as Draft
                     </Button>
                     <div className="flex gap-2">
-                        <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                             Close
-                        </Button>
-                        
-                        <Button type="button" onClick={handleDownloadPdf} variant="outline" disabled={isSaving || isDownloading}>
-                            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            Download PDF
-                        </Button>
-
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                  <Button type="button" disabled={isSaving}>
                                     <Send className="mr-2 h-4 w-4" />
-                                    Finalize &amp; Submit
+                                    Subscribe to Smart Refill
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>Finalize and Submit Proposal?</AlertDialogTitle>
+                                    <AlertDialogTitle>Finalize and Subscribe?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will submit your signed contract and proof of payment. The proposal will be sent to the sales team for final confirmation.
+                                        This will submit your signed contract and proof of payment. This action marks your subscription as active.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -301,7 +292,7 @@ function PreviewDialog({
                                         {isSaving ? (
                                             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
                                         ) : (
-                                            'Yes, Submit Now'
+                                            'Yes, Subscribe Now'
                                         )}
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -352,6 +343,7 @@ function ContractPageContent() {
   const clientType = searchParams.get('clientType') as Client['clientType'];
   const existingClientId = searchParams.get('clientId'); 
   const managerId = searchParams.get('managerId');
+  const campaignName = searchParams.get('campaignName');
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -524,7 +516,7 @@ function ContractPageContent() {
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
-  const saveProposal = async (status: 'draft' | 'finalized') => {
+  const saveProposal = async (status: 'draft' | 'accepted') => {
     if (!finalPlanDetails || !firestore) {
       toast({
         variant: "destructive",
@@ -534,11 +526,13 @@ function ContractPageContent() {
       return;
     }
 
-    if (status === 'finalized' && !paymentProofFile) {
+    const isSubscribing = status === 'accepted';
+
+    if (isSubscribing && !paymentProofFile) {
         toast({
             variant: "destructive",
             title: "Payment Proof Required",
-            description: "Please upload your proof of payment to finalize.",
+            description: "Please upload your proof of payment to subscribe.",
         });
         return;
     }
@@ -583,23 +577,34 @@ function ContractPageContent() {
         downloadURL = await getDownloadURL(snapshot.ref);
       }
       
-
       const clientRef = doc(firestore, 'clients', finalClientId);
-  
+      const clientData: any = {
+        id: finalClientId,
+        userId: proposalOwnerId,
+        companyName: companyName,
+        contactName: contactName,
+        contactEmail: contactEmail,
+        contactPhone: contactPhone,
+        address: address,
+        clientType: clientType || 'sme',
+      };
+
+      if (isSubscribing) {
+          clientData.status = 'active';
+          clientData.paymentStatus = 'Paid';
+          clientData.subscription = {
+            ...finalPlanDetails.plan,
+            dateSigned: new Date().toISOString()
+          }
+      } else {
+          clientData.status = 'pending';
+      }
+
       if (!existingClientId) {
-        const newClientData = {
-          id: finalClientId,
-          userId: proposalOwnerId,
-          companyName: companyName,
-          contactName: contactName,
-          contactEmail: contactEmail,
-          contactPhone: contactPhone,
-          address: address,
-          clientType: clientType || 'sme',
-          status: 'pending',
-          createdAt: serverTimestamp(),
-        };
-        await setDoc(clientRef, newClientData, { merge: true });
+        clientData.createdAt = serverTimestamp();
+        await setDoc(clientRef, clientData, { merge: true });
+      } else {
+        await updateDoc(clientRef, clientData);
       }
       
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
@@ -616,30 +621,32 @@ function ContractPageContent() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
+
+      if (campaignName) {
+        newProposalData.sourceLocation = campaignName;
+      }
       
       if(downloadURL) {
         newProposalData.paymentProofUrl = downloadURL;
       }
 
       const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
-      setDoc(proposalRef, newProposalData, { merge: true }).catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: proposalRef.path,
-          operation: 'write', 
-          requestResourceData: newProposalData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+      await setDoc(proposalRef, newProposalData, { merge: true });
   
       toast({
-        title: status === 'draft' ? "Proposal Saved!" : "Proposal Submitted!",
-        description: `Your proposal for ${companyName} has been successfully submitted for review.`,
+        title: status === 'draft' ? "Proposal Saved!" : "Subscription Successful!",
+        description: `Your proposal for ${companyName} has been saved.`,
       });
-      router.push('/dashboard/proposals');
+      
+      if (isSubscribing) {
+          router.push(`/onboarding/status?client_id=${finalClientId}`);
+      } else {
+          router.push('/dashboard/proposals');
+      }
   
     } catch (error) {
         console.error("Error saving proposal:", error);
-        if (!(error instanceof FirestorePermissionError)) { // Avoid double-toasting
+        if (!(error instanceof FirestorePermissionError)) {
           toast({
             variant: "destructive",
             title: "Save Failed",
@@ -770,7 +777,7 @@ function ContractPageContent() {
             </Button>
             <Button onClick={handleReviewAndSignClick} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Review &amp; Sign
+                Review & Sign
             </Button>
         </div>
       </div>
@@ -848,7 +855,7 @@ function ContractPageContent() {
                     <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
                     <CardDescription>Key milestones for service activation.</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-8">
+                 <CardContent className="pt-8">
                      <div className="relative flex justify-between">
                         <TimelineItem 
                             icon={<CheckCircle className="h-5 w-5" />}
