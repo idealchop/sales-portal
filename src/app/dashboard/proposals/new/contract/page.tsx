@@ -103,14 +103,50 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
     const proposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
+    
+    // State for the dialog's payment schedule
+    const [dialogBillingCycle, setDialogBillingCycle] = useState(billingCycles[0].value);
+    
+    // Recalculate costs based on the dialog's state
+    const dialogCosts = useMemo(() => {
+        if (!finalPlanDetails) return null;
+        
+        const isFlowPlan = finalPlanDetails.plan.id === 'enterprise-overflow';
+        const planBaseCost = isFlowPlan ? 50000 : finalPlanDetails.planBaseCost;
+
+        const addonsCost = addons.reduce((total, addon) => (addon.type === 'checkbox' && finalPlanDetails.selectedAddons[addon.id] ? total + addon.feeValue : total), 0);
+        const dispensersCost = finalPlanDetails.additionalDispensers * additionalDispenserCost;
+        const litersCost = finalPlanDetails.additionalLiters * additionalLiterCost;
+
+        const subtotal = planBaseCost + addonsCost + dispensersCost + litersCost;
+        
+        const selectedCycle = billingCycles.find(c => c.value === dialogBillingCycle) || billingCycles[0];
+        
+        const discount = isFlowPlan ? 0 : selectedCycle.discount;
+        const totalBeforeDiscount = isFlowPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
+        const discountValue = totalBeforeDiscount * discount;
+        const finalAmount = totalBeforeDiscount - discountValue;
+
+        return {
+            subtotal: isFlowPlan ? planBaseCost : subtotal,
+            discountPercentage: discount * 100,
+            discountValue,
+            totalAmountDue: finalAmount,
+            billingCycleLabel: selectedCycle.label
+        };
+    }, [finalPlanDetails, dialogBillingCycle]);
+
 
     const handleDownloadPdf = async () => {
         const element = proposalRef.current;
         if (!element) return;
         setIsDownloading(true);
         try {
-            const canvas = await html2canvas(element, { scale: 2 });
-            const imgData = canvas.toDataURL('image/png');
+            const canvas = await html2canvas(element, { 
+                scale: 2,
+                useCORS: true,
+             });
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
             
             const pdf = new jsPDF({
                 orientation: 'portrait',
@@ -118,7 +154,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                 format: [canvas.width, canvas.height]
             });
             
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
             pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.companyName}.pdf`);
             toast({ title: "Download Started", description: "Your proposal PDF is being generated." });
         } catch (error) {
@@ -133,6 +169,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         toast({ title: "Coming Soon!", description: "This feature will be available in a future update." });
     }
 
+    if (!finalPlanDetails || !dialogCosts) return null;
+
     return (
         <Dialog>
             <DialogTrigger asChild>{children}</DialogTrigger>
@@ -141,15 +179,64 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                     <DialogTitle>Generate Proposal</DialogTitle>
                     <DialogDescription>Review the sales illustration below. You can download it as a PDF or send it via email.</DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="h-[75vh] pr-6">
-                    <div ref={proposalRef} className="bg-white p-8">
-                       <ContractDetails
-                           finalPlanDetails={finalPlanDetails}
-                           isSigned={false}
-                           isProposalIllustration={true}
-                       />
+                <div className="md:grid md:grid-cols-4 gap-6 items-start">
+                    <div className="md:col-span-1 space-y-4">
+                         <Card>
+                             <CardHeader>
+                                 <CardTitle className="text-base">Payment Schedule</CardTitle>
+                             </CardHeader>
+                             <CardContent>
+                                <RadioGroup value={dialogBillingCycle} onValueChange={setDialogBillingCycle} className="space-y-1">
+                                    {billingCycles.map((cycle) => (
+                                        <div key={`dialog-${cycle.value}`} className="flex items-center space-x-2">
+                                            <RadioGroupItem value={cycle.value} id={`dialog-${cycle.value}`} />
+                                            <Label htmlFor={`dialog-${cycle.value}`} className="font-normal flex justify-between w-full">
+                                                <span>{cycle.label}</span>
+                                                {cycle.discount > 0 && <span className="font-semibold text-green-600">-{cycle.discount * 100}%</span>}
+                                            </Label>
+                                        </div>
+                                    ))}
+                                </RadioGroup>
+                             </CardContent>
+                         </Card>
+                         <Card>
+                             <CardHeader>
+                                 <CardTitle className="text-base">Cost Summary</CardTitle>
+                             </CardHeader>
+                             <CardContent className="space-y-2 text-sm">
+                                 <div className="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span>{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.subtotal)}</span>
+                                 </div>
+                                 <div className="flex justify-between text-green-600">
+                                    <span>Discount ({dialogCosts.discountPercentage}%)</span>
+                                    <span>- {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.discountValue)}</span>
+                                 </div>
+                                 <Separator />
+                                 <div className="flex justify-between font-bold text-base">
+                                     <span>Total Due</span>
+                                     <span>{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.totalAmountDue)}</span>
+                                 </div>
+                             </CardContent>
+                         </Card>
                     </div>
-                </ScrollArea>
+                    <div className="md:col-span-3 mt-6 md:mt-0">
+                        <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
+                             <div ref={proposalRef} className="bg-white p-8" id="pdf-content">
+                                <ContractDetails
+                                    finalPlanDetails={{
+                                        ...finalPlanDetails,
+                                        billingCycleLabel: dialogCosts.billingCycleLabel,
+                                        totalAmountDue: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.totalAmountDue),
+                                        discount: dialogCosts.discountPercentage / 100,
+                                    }}
+                                    isSigned={false}
+                                    isProposalIllustration={true}
+                                />
+                            </div>
+                        </ScrollArea>
+                    </div>
+                </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={handleSendEmail} disabled>
                         <Send className="mr-2 h-4 w-4" /> Send Email (Soon)
@@ -476,11 +563,9 @@ function ContractPageContent() {
   const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
     if (!plan || !finalPlan) return null;
     
-    const planBaseCost = parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,""));
-    if (isNaN(planBaseCost)) {
-      return null;
-    }
-    
+    const isFlowPlan = plan.id === 'enterprise-overflow';
+    const planBaseCost = isFlowPlan ? 50000 : (parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) || 0);
+
     const addonsCost = addons.reduce((total, addon) => {
         if (addon.type === 'checkbox') {
             return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
@@ -493,10 +578,11 @@ function ContractPageContent() {
     const subtotal = planBaseCost + addonsCost + dispensersCost + litersCost;
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
     
-    const totalBeforeDiscount = subtotal * selectedCycle.multiplier;
-    const discountValue = totalBeforeDiscount * selectedCycle.discount;
+    const discount = isFlowPlan ? 0 : selectedCycle.discount;
+    const totalBeforeDiscount = isFlowPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
+    const discountValue = totalBeforeDiscount * discount;
     const finalAmount = totalBeforeDiscount - discountValue;
-    
+
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const totalMonthlyLiters = baseLiters + freeLiters + additionalLiters;
@@ -515,7 +601,7 @@ function ContractPageContent() {
         refillFrequency: finalPlan.refillFrequency,
         totalAmountDue: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
         billingCycleLabel: selectedCycle.label,
-        discount: selectedCycle.discount,
+        discount: discount,
         basePrice: subtotal,
         selectedAddons,
         additionalDispensers,
@@ -756,12 +842,10 @@ function ContractPageContent() {
     )
   }
 
+  const isFlowPlan = plan.id === 'enterprise-overflow';
   const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
-  
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
-
   const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
-  
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
 
   const clientTypeMap: { [key: string]: string } = {
@@ -819,60 +903,131 @@ function ContractPageContent() {
             />
        )}
 
-      <div className="flex flex-col gap-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
-                <CardDescription>
-                    A summary of the selected subscription plan details for the upcoming {finalPlanDetails.billingCycleLabel} period. (Includes +20% free liters every month)
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card className="bg-primary text-primary-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Liters</CardTitle>
-                            <Waves className="h-4 w-4 text-primary-foreground/70" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{finalPlan.liters} / mo</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary text-primary-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Water Stations</CardTitle>
-                            <Building className="h-4 w-4 text-primary-foreground/70" />
-                        </CardHeader>
-                        <CardContent>
-                             <div className="text-2xl font-bold">{finalPlan.stations}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary text-primary-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Free Refillable Gallons</CardTitle>
-                            <Package className="h-4 w-4 text-primary-foreground/70" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic'}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary text-primary-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Avg. Refill Frequency</CardTitle>
-                            <RefreshCcw className="h-4 w-4 text-primary-foreground/70" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{finalPlan.refillFrequency}</div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </CardContent>
-        </Card>
-        
-        <div className="w-full flex flex-col gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 flex flex-col gap-6">
             <Card>
+                <CardHeader>
+                    <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
+                    <CardDescription>
+                        A summary of the selected subscription plan details.
+                        {!isFlowPlan && " (Includes +20% free liters every month)"}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <Card className="bg-primary text-primary-foreground">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">{isFlowPlan ? 'Usage-Based' : 'Total Liters'}</CardTitle>
+                                <Waves className="h-4 w-4 text-primary-foreground/70" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{finalPlan.liters}{isFlowPlan ? '' : ' / mo'}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-primary text-primary-foreground">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Water Stations</CardTitle>
+                                <Building className="h-4 w-4 text-primary-foreground/70" />
+                            </CardHeader>
+                            <CardContent>
+                                 <div className="text-2xl font-bold">{finalPlan.stations}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-primary text-primary-foreground">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Free Refillable Gallons</CardTitle>
+                                <Package className="h-4 w-4 text-primary-foreground/70" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic'}
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-primary text-primary-foreground">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Avg. Refill Frequency</CardTitle>
+                                <RefreshCcw className="h-4 w-4 text-primary-foreground/70" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{finalPlan.refillFrequency}</div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {!isFlowPlan && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Optional Add-Ons</CardTitle>
+                        <CardDescription>
+                        Enhance your Smart Refill experience with premium service options.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead className="w-[50px]"></TableHead>
+                            <TableHead>Add-On</TableHead>
+                            <TableHead className="w-[200px]">Quantity</TableHead>
+                            <TableHead className="text-right">Monthly Fee</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {addons.map((addon) => (
+                            <TableRow key={addon.id}>
+                                <TableCell>
+                                    {addon.type === 'checkbox' && (
+                                        <Checkbox 
+                                            id={addon.id} 
+                                            onCheckedChange={() => handleAddonToggle(addon.id)}
+                                            checked={selectedAddons[addon.id]}
+                                        />
+
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                                    <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
+                                </TableCell>
+                                <TableCell>
+                                    {addon.type === 'quantity' && (
+                                        <Input 
+                                            id={addon.id}
+                                            type="number"
+                                            min="0"
+                                            value={additionalDispensers}
+                                            onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
+                                            className="w-24"
+                                        />
+                                    )}
+                                    {addon.type === 'slider' && (
+                                        <div className="flex items-center gap-4">
+                                            <Slider
+                                                id={addon.id}
+                                                min={0}
+                                                max={1000}
+                                                step={50}
+                                                value={[additionalLiters]}
+                                                onValueChange={(value) => setAdditionalLiters(value[0])}
+                                                className="w-[120px]"
+                                            />
+                                            <span className="text-sm font-medium w-[60px] text-right">{additionalLiters} L</span>
+                                        </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">{addon.fee}</TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
+
+             <Card>
                 <CardHeader>
                     <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
                     <CardDescription>Key milestones for service activation.</CardDescription>
@@ -903,143 +1058,80 @@ function ContractPageContent() {
                     </div>
                 </CardContent>
             </Card>
+
+            <PaymentMethods />
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle>Optional Add-Ons</CardTitle>
-                    <CardDescription>
-                    Enhance your Smart Refill experience with premium service options designed to make water operations even faster, safer, and more efficient.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead className="w-[50px]"></TableHead>
-                        <TableHead>Add-On</TableHead>
-                        <TableHead className="w-[200px]">Quantity</TableHead>
-                        <TableHead className="text-right">Monthly Fee</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {addons.map((addon) => (
-                        <TableRow key={addon.id}>
-                            <TableCell>
-                                {addon.type === 'checkbox' && (
-                                    <Checkbox 
-                                        id={addon.id} 
-                                        onCheckedChange={() => handleAddonToggle(addon.id)}
-                                        checked={selectedAddons[addon.id]}
-                                    />
-
-                                )}
-                            </TableCell>
-                            <TableCell>
-                                <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                                <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
-                            </TableCell>
-                            <TableCell>
-                                {addon.type === 'quantity' && (
-                                    <Input 
-                                        id={addon.id}
-                                        type="number"
-                                        min="0"
-                                        value={additionalDispensers}
-                                        onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
-                                        className="w-24"
-                                    />
-                                )}
-                                {addon.type === 'slider' && (
-                                    <div className="flex items-center gap-4">
-                                        <Slider
-                                            id={addon.id}
-                                            min={0}
-                                            max={1000}
-                                            step={50}
-                                            value={[additionalLiters]}
-                                            onValueChange={(value) => setAdditionalLiters(value[0])}
-                                            className="w-[120px]"
-                                        />
-                                        <span className="text-sm font-medium w-[60px] text-right">{additionalLiters} L</span>
-                                    </div>
-                                )}
-                            </TableCell>
-                            <TableCell className="text-right">{addon.fee}</TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Summary &amp; Final Amount</CardTitle>
-                    <CardDescription>Review the final costs before proceeding.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <div>
-                            <p className="font-semibold">{summaryTitle} ({finalPlanDetails.billingCycleLabel})</p>
-                            <p className="text-2xl font-bold">{currencyFormatter.format(finalPlanDetails.basePrice)}<span className="text-sm font-normal text-muted-foreground"> / mo</span></p>
-                        </div>
-                        <ul className="text-xs text-muted-foreground list-disc pl-5">
-                            <li>Total Liters: {finalPlan.liters} / mo (includes 20% bonus)</li>
-                             {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
-                            <li>Refill Frequency: {finalPlan.refillFrequency}</li>
-                        </ul>
+        <Card className="lg:col-span-1">
+            <CardHeader>
+                <CardTitle>Summary &amp; Final Amount</CardTitle>
+                <CardDescription>Review the final costs before proceeding.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <div>
+                        <p className="font-semibold">{summaryTitle}{!isFlowPlan && ` (${finalPlanDetails.billingCycleLabel})`}</p>
+                        <p className="text-2xl font-bold">{isFlowPlan ? currencyFormatter.format(50000) : currencyFormatter.format(finalPlanDetails.basePrice)}
+                          {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : <span className="text-sm font-normal text-muted-foreground"> / mo</span>}
+                        </p>
                     </div>
+                    <ul className="text-xs text-muted-foreground list-disc pl-5">
+                        <li>Total Liters: {finalPlan.liters} {isFlowPlan ? '' : '/ mo (includes 20% bonus)'}</li>
+                        {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
+                        <li>Refill Frequency: {finalPlan.refillFrequency}</li>
+                    </ul>
+                </div>
 
-                    <div className="space-y-2">
-                        {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
-                            <div key={addon.id} className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">{addon.name}</span>
-                                <span className="font-medium">{currencyFormatter.format(addon.feeValue)}</span>
-                            </div>
-                        ))}
-                        {additionalDispensers > 0 && (
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
-                                <span className="font-medium">{currencyFormatter.format(additionalDispensers * additionalDispenserCost)}</span>
-                            </div>
-                        )}
-                        {additionalLiters > 0 && (
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Additional Liters ({additionalLiters} L)</span>
-                                <span className="font-medium">{currencyFormatter.format(additionalLiters * additionalLiterCost)}</span>
-                            </div>
-                        )}
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className='space-y-2'>
-                        <Label>Payment Schedule</Label>
-                        <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1">
-                            {billingCycles.map((cycle) => (
-                                <div key={cycle.value} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={cycle.value} id={cycle.value} />
-                                    <Label htmlFor={cycle.value} className="font-normal">
-                                        {cycle.label} ({cycle.discount * 100}% discount)
-                                    </Label>
+                {!isFlowPlan && (
+                    <>
+                        <div className="space-y-2">
+                            {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
+                                <div key={addon.id} className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">{addon.name}</span>
+                                    <span className="font-medium">{currencyFormatter.format(addon.feeValue)}</span>
                                 </div>
                             ))}
-                        </RadioGroup>
-                    </div>
+                            {additionalDispensers > 0 && (
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
+                                    <span className="font-medium">{currencyFormatter.format(additionalDispensers * additionalDispenserCost)}</span>
+                                </div>
+                            )}
+                            {additionalLiters > 0 && (
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Additional Liters ({additionalLiters} L)</span>
+                                    <span className="font-medium">{currencyFormatter.format(additionalLiters * additionalLiterCost)}</span>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div className='space-y-2'>
+                            <Label>Payment Schedule</Label>
+                            <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1">
+                                {billingCycles.map((cycle) => (
+                                    <div key={cycle.value} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
+                                        <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
+                                            <span>{cycle.label}</span>
+                                            {cycle.discount > 0 && <span className="font-semibold text-green-600">-{cycle.discount * 100}%</span>}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        </div>
+                    </>
+                )}
 
-                    <Separator />
+                <Separator />
 
-                    <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
-                        <span>Total Due</span>
-                        <span>{finalPlanDetails.totalAmountDue}</span>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-
-        <PaymentMethods />
+                <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
+                    <span>Total Due</span>
+                    <span>{finalPlanDetails.totalAmountDue}</span>
+                </div>
+            </CardContent>
+        </Card>
       </div>
     </div>
   );
