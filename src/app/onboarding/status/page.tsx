@@ -122,7 +122,7 @@ function OnboardingStatusContent() {
 
   return (
     <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        <div className="relative aspect-[4/5] w-full hidden md:block">
+        <div className="relative aspect-[4/5] w-full">
             <Image 
                 src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Flanding%20page%20image.png?alt=media&token=4b8d98bc-e6e8-4710-b10e-e84e75839c7a"
                 alt="Welcome to Smart Refill"
@@ -181,5 +181,3 @@ export default function OnboardingStatusPage() {
         </main>
     )
 }
-
-    
