@@ -285,14 +285,14 @@ function PreviewDialog({
                             <AlertDialogTrigger asChild>
                                  <Button type="button" disabled={isSaving}>
                                     <Send className="mr-2 h-4 w-4" />
-                                    Finalize &amp; Submit
+                                    Subscribe to Smart Refill
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>Finalize and Submit Proposal?</AlertDialogTitle>
+                                    <AlertDialogTitle>Finalize and Subscribe?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will submit your signed contract and proof of payment. The proposal will be sent to the sales team for final confirmation.
+                                        This will submit your signed contract and proof of payment. This action marks your subscription as active.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -301,7 +301,7 @@ function PreviewDialog({
                                         {isSaving ? (
                                             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
                                         ) : (
-                                            'Yes, Submit Now'
+                                            'Yes, Subscribe Now'
                                         )}
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
