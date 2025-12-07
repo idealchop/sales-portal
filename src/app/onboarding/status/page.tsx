@@ -140,12 +140,15 @@ function OnboardingStatusContent() {
     return (
         <Card className="w-full max-w-lg">
             <CardHeader className="text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-                    <AlertTriangle className="h-6 w-6 text-red-600" />
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+                    <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
                 </div>
                 <CardTitle className="mt-4">Access Denied</CardTitle>
                 <CardDescription>{error || "We couldn't find the onboarding status. Please check the link and try again."}</CardDescription>
             </CardHeader>
+             <CardFooter>
+                <p className="w-full text-center text-xs text-muted-foreground">If you believe this is an error, please contact <a href="mailto:customer@smartrefill.io" className="font-semibold text-primary hover:underline">customer@smartrefill.io</a></p>
+            </CardFooter>
         </Card>
     );
   }
