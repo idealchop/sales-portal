@@ -128,7 +128,7 @@ function OnboardingStatusContent() {
                 src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Flanding%20page%20image.png?alt=media&token=4b8d98bc-e6e8-4710-b10e-e84e75839c7a"
                 alt="Welcome to Smart Refill"
                 fill
-                className="object-cover rounded-lg"
+                className="object-contain rounded-lg"
             />
         </div>
         <Card className="w-full">
