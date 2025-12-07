@@ -342,7 +342,7 @@ function CustomPlanCalculator({
     pricePerLiter = 3,
     onCalculated,
     title = 'Custom Plan Calculator',
-    description = 'Calculate a custom plan based on your client\'s needs.',
+    description = "Calculate a custom plan based on your client's needs.",
     minimumCost = 0,
     isFixedPrice = false,
     fixedPrice = 0,
@@ -520,7 +520,7 @@ function FlowPlanConfigurator({
                                 value={location.name}
                                 onChange={(e) => handleUpdateLocation(index, 'name', e.target.value)}
                                 placeholder="Branch Name/Location"
-                                className="text-base font-semibold bg-transparent border-0 border-b-2 border-primary-foreground/20 rounded-none focus-visible:ring-0 focus:border-primary-foreground/80"
+                                className="text-base font-semibold bg-transparent border-0 border-b-2 border-primary-foreground/20 rounded-none focus-visible:ring-0 focus:border-primary-foreground/80 text-primary-foreground"
                             />
                             {locations.length > 1 && (
                                 <Button variant="ghost" size="icon" onClick={() => handleRemoveLocation(index)} className="text-primary-foreground/60 hover:text-destructive hover:bg-destructive/20 h-8 w-8">
@@ -577,7 +577,7 @@ function PlansGrid({
     businessSize: BusinessSize | null,
     customCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number } | null,
     onCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
-    overflowCalculatedValues: { totalLiters: number; totalCost: number; deliveries: number; locations: { name: string; dispensers: number; containers: number; }[]; } | null;
+    overflowCalculatedValues: { locations: { name: string; dispensers: number; containers: number; }[] } | null;
     onOverflowCalculated: (values: any) => void;
     smeCommercialCustomValues: { totalLiters: number, totalCost: number, deliveries: number } | null;
     onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
