@@ -807,7 +807,7 @@ function BusinessSizeSelector({
     hiddenSizes?: BusinessSize[];
 }) {
     const isItemSelected = selectedSize !== null;
-    const gridCols = isItemSelected ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+    const gridCols = isItemSelected ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2';
 
     return (
         <div className={cn("grid gap-4", gridCols)}>
@@ -1076,31 +1076,27 @@ export default function PlansPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-3")}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-2")}>
                         <BusinessSizeSelector 
                             selectedSize={selectedSize} 
                             onSelectSize={handleSizeSelect}
-                            hiddenSizes={selectedSize ? businessSizes.map(s => s.id).filter(id => id !== selectedSize) : []}
+                            hiddenSizes={['commercial', 'corporate', 'enterprise']}
                         />
                     </div>
                     {selectedSize && (
-                        <div className="lg:col-span-2">
+                        <div className="lg:col-span-1">
                              <Card>
                                 <CardHeader>
                                     <CardTitle>
-                                        {selectedSize === 'enterprise' ? '2. Select Enterprise Type' : '2. Choose a Plan'}
+                                        2. Choose a Plan
                                     </CardTitle>
                                      <CardDescription>
-                                        {selectedSize === 'enterprise' ? 'Select the type of enterprise plan needed.' : 'Select the best plan for your client from the options below.'}
+                                        Select the best plan for your client from the options below.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {selectedSize === 'enterprise' && !selectedEnterpriseType ? (
-                                        <EnterpriseTypeSelector selectedType={selectedEnterpriseType} onSelectType={handleEnterpriseTypeSelect} />
-                                    ) : (
-                                        renderPlans()
-                                    )}
+                                    {renderPlans()}
                                 </CardContent>
                             </Card>
                         </div>
