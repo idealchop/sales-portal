@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
@@ -223,11 +224,11 @@ const ClientDataTable = ({ clients, users, proposals, isAdmin }: { clients: With
     const ITEMS_PER_PAGE = 10;
     
     const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
-        { title: 'Confirmation and verification of payment', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
-        { title: 'Onboarding & Account Creation', description: 'Your account is being set up in our system. An email has been sent to access your Client Portal Account.', status: 'pending' },
-        { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery within 24 hours.', status: 'pending' },
-        { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
-    ];
+      { title: 'Confirmation and verification of payment', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
+      { title: 'Onboarding & Account Creation', description: 'Your account is being set up in our system. An email has been sent to access your Client Portal Account.', status: 'pending' },
+      { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery within 24 hours.', status: 'pending' },
+      { title: 'Automated Refills Enabled', description: 'The smart refill system is now active.', status: 'pending' },
+  ];
     
     const availableMonths = useMemo(() => {
         const monthSet = new Set<string>();
@@ -1341,7 +1342,7 @@ export default function AdminPage() {
 
     const teamAvgDealSizeThisMonth = acceptedThisMonth.length > 0 ? teamTotalRevenueThisMonth / acceptedThisMonth.length : 0;
     const teamAvgDealSizeLastMonth = acceptedLastMonth.length > 0 ? teamTotalRevenueLastMonth / acceptedLastMonth.length : 0;
-    const teamAvgDealSizeChange = teamAvgDealSizeLastMonth > 0 ? ((teamAvgDealSizeThisMonth - teamAvgDealSizeLastMonth) / teamAvgDealSizeLastMonth) * 100 : teamAvgDealSizeThisMonth > 0 ? 100 : 0;
+    const teamAvgDealSizeChange = avgDealSizeLastMonth > 0 ? ((teamAvgDealSizeThisMonth - teamAvgDealSizeLastMonth) / teamAvgDealSizeLastMonth) * 100 : teamAvgDealSizeThisMonth > 0 ? 100 : 0;
 
     const teamWinRate = sentProposalsCount > 0 ? (acceptedProposals.length / sentProposalsCount) * 100 : 0;
     const teamTotalRevenue = acceptedProposals.reduce((sum,p) => sum + p.amount, 0);

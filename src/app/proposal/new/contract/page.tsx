@@ -57,8 +57,6 @@ import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@
 import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 
 const billingCycles = [
@@ -124,7 +122,6 @@ function PreviewDialog({
 }) {
     const contractRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
-    const [isDownloading, setIsDownloading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSaveDraft = async () => {
@@ -797,7 +794,7 @@ function ContractPageContent() {
                         <TimelineItem 
                             icon={<CalendarCheck className="h-5 w-5" />}
                             title="Onboarding"
-                            description="Initial delivery schedule set within 12 hours."
+                            description="Initial delivery schedule confirmed within 12 hours."
                         />
                         <TimelineItem 
                             icon={<Ship className="h-5 w-5" />}
@@ -962,5 +959,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    

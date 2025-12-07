@@ -57,8 +57,6 @@ import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@
 import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 
 const billingCycles = [
@@ -124,7 +122,6 @@ function PreviewDialog({
 }) {
     const contractRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
-    const [isDownloading, setIsDownloading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSaveDraft = async () => {
@@ -153,71 +150,6 @@ function PreviewDialog({
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPaymentProofFile(e.target.files ? e.target.files[0] : null);
-    };
-
-    const handleDownloadPdf = async () => {
-        const contentToCapture = contractRef.current;
-        if (!contentToCapture) {
-            toast({ variant: "destructive", title: "Download Failed", description: "Contract content container not found." });
-            return;
-        }
-        
-        setIsDownloading(true);
-        
-        try {
-            const canvas = await html2canvas(contentToCapture, {
-                scale: 2, 
-                useCORS: true, 
-                allowTaint: true, 
-                onclone: (document) => {
-                    const imagePromises: Promise<void>[] = [];
-                    const images = document.getElementsByTagName('img');
-                    for (let i = 0; i < images.length; i++) {
-                        const img = images[i];
-                        if (img.complete) continue; 
-                        
-                        imagePromises.push(new Promise((resolve) => {
-                            img.onload = () => resolve();
-                            img.onerror = () => resolve();
-                        }));
-                    }
-                    return Promise.all(imagePromises);
-                }
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            
-            const contentWidth = canvas.width;
-            const contentHeight = canvas.height;
-            
-            const ratio = contentWidth / pdfWidth;
-            const imgHeight = contentHeight / ratio;
-            
-            let heightLeft = imgHeight;
-            let position = 0;
-
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdfHeight;
-
-            while (heightLeft > 0) {
-                position = -pdfHeight + position;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdfHeight;
-            }
-            
-            pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.proposalId}.pdf`);
-
-        } catch (error) {
-            console.error("PDF Download Error:", error);
-            toast({ variant: "destructive", title: "Download Failed", description: "An error occurred while generating the PDF." });
-        } finally {
-            setIsDownloading(false);
-        }
     };
 
 
@@ -271,34 +203,32 @@ function PreviewDialog({
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save as Draft
                     </Button>
-                    <div className="flex gap-2">
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                 <Button type="button" disabled={isSaving}>
-                                    <Send className="mr-2 h-4 w-4" />
-                                    Subscribe to Smart Refill
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Finalize and Subscribe?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will submit your signed contract and proof of payment. This action marks your subscription as active.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
-                                        {isSaving ? (
-                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
-                                        ) : (
-                                            'Yes, Subscribe Now'
-                                        )}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                                <Button type="button" disabled={isSaving}>
+                                <Send className="mr-2 h-4 w-4" />
+                                Subscribe to Smart Refill
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Finalize and Subscribe?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will submit your signed contract and proof of payment. This action marks your subscription as active.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
+                                    {isSaving ? (
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
+                                    ) : (
+                                        'Yes, Subscribe Now'
+                                    )}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -639,7 +569,7 @@ function ContractPageContent() {
       });
       
       if (isSubscribing) {
-          router.push(`/onboarding/status?client_id=${finalClientId}`);
+          router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${proposalId}`);
       } else {
           router.push('/dashboard/proposals');
       }
@@ -852,7 +782,7 @@ function ContractPageContent() {
         <div className="w-full flex flex-col gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
+                    <CardTitle>Distribution & Operation Timeline</CardTitle>
                     <CardDescription>Key milestones for service activation.</CardDescription>
                 </CardHeader>
                  <CardContent className="pt-8">
@@ -865,7 +795,7 @@ function ContractPageContent() {
                         <TimelineItem 
                             icon={<CalendarCheck className="h-5 w-5" />}
                             title="Onboarding"
-                            description="Delivery schedule confirmed within 12 hours."
+                            description="Initial delivery schedule confirmed within 12 hours."
                         />
                         <TimelineItem 
                             icon={<Ship className="h-5 w-5" />}
