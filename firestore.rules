@@ -31,6 +31,10 @@ service cloud.firestore {
       allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
       allow list: if isSignedIn();
       allow create, update: if isOwner(userId) || isAdmin();
+
+      match /qr_campaigns/{campaignId} {
+        allow read, write: if isSignedIn() && isOwner(userId) && isManager();
+      }
     }
     
     match /counters/{counterId} {

@@ -1,15 +1,15 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useUser } from '@/firebase';
+import { useMemo, useState, useEffect } from 'react';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2 } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
@@ -38,6 +38,8 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+
 
 const proposalStatusStyles: { [key: string]: string } = {
   accepted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -400,41 +402,74 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
 };
 
 type QRCampaign = {
+    id: string;
     name: string;
     url: string;
     qrUrl: string;
+    createdAt: string;
 }
 
 function QrCodeDialog({ managerId }: { managerId: string; }) {
     const { toast } = useToast();
-    const [campaigns, setCampaigns] = useState<QRCampaign[]>([]);
+    const firestore = useFirestore();
     const [newCampaignName, setNewCampaignName] = useState('');
-    
-    const handleCreateCampaign = () => {
+    const [isCreating, setIsCreating] = useState(false);
+
+    const campaignsCollectionRef = useMemoFirebase(
+      () => collection(firestore, 'sales', managerId, 'qr_campaigns'),
+      [firestore, managerId]
+    );
+    const { data: campaigns, isLoading: campaignsLoading } = useCollection<QRCampaign>(campaignsCollectionRef);
+
+
+    const handleCreateCampaign = async () => {
         if (!newCampaignName) {
             toast({ variant: "destructive", title: "Campaign Name Required", description: "Please enter a name for your campaign." });
             return;
         }
 
-        const baseUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
-        const urlWithParams = `${baseUrl}&campaignName=${encodeURIComponent(newCampaignName)}`;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlWithParams)}`;
-        
-        const newCampaign: QRCampaign = {
-            name: newCampaignName,
-            url: urlWithParams,
-            qrUrl: qrUrl,
-        };
-        
-        setCampaigns(prev => [...prev, newCampaign]);
-        setNewCampaignName('');
-        toast({ title: "Campaign Created!", description: `The QR code for "${newCampaignName}" is ready.` });
+        setIsCreating(true);
+        try {
+            const baseUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
+            const urlWithParams = `${baseUrl}&campaignName=${encodeURIComponent(newCampaignName)}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlWithParams)}`;
+            
+            const newCampaign: Omit<QRCampaign, 'id' | 'createdAt'> = {
+                name: newCampaignName,
+                url: urlWithParams,
+                qrUrl: qrUrl,
+            };
+
+            await addDoc(campaignsCollectionRef, {
+                ...newCampaign,
+                createdAt: serverTimestamp()
+            });
+            
+            setNewCampaignName('');
+            toast({ title: "Campaign Created!", description: `The QR code for "${newCampaignName}" is ready.` });
+        } catch(error) {
+            console.error("Failed to create campaign:", error);
+            toast({ variant: "destructive", title: "Creation Failed", description: "Could not save the new campaign." });
+        } finally {
+            setIsCreating(false);
+        }
     };
 
     const handleCopy = (url: string) => {
         navigator.clipboard.writeText(url);
         toast({ title: "Link Copied!", description: "The shareable link has been copied." });
     };
+    
+    const handleDelete = async (campaignId: string) => {
+        const campaignDocRef = doc(firestore, 'sales', managerId, 'qr_campaigns', campaignId);
+        try {
+            await deleteDoc(campaignDocRef);
+            toast({ title: "Campaign Deleted", description: "The campaign has been removed." });
+        } catch (error) {
+            console.error("Failed to delete campaign:", error);
+            toast({ variant: "destructive", title: "Delete Failed", description: "Could not delete the campaign." });
+        }
+    }
 
     const handleDownload = async (qrUrl: string, name: string) => {
         try {
@@ -470,42 +505,61 @@ function QrCodeDialog({ managerId }: { managerId: string; }) {
                          <div className="space-y-2">
                             <Label htmlFor="campaign-name">Campaign Name</Label>
                             <div className="flex gap-2">
-                                <Input id="campaign-name" value={newCampaignName} onChange={e => setNewCampaignName(e.target.value)} placeholder="e.g., SM Megamall Kiosk, Nov. Brochure" />
-                                <Button onClick={handleCreateCampaign}>Create</Button>
+                                <Input id="campaign-name" value={newCampaignName} onChange={e => setNewCampaignName(e.target.value)} placeholder="e.g., SM Megamall Kiosk" />
+                                <Button onClick={handleCreateCampaign} disabled={isCreating}>
+                                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Create
+                                </Button>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                {campaigns.length > 0 && (
-                    <div className="space-y-4">
-                        <h3 className="font-semibold">My Campaigns</h3>
+                <div className="space-y-4">
+                    <h3 className="font-semibold">My Campaigns</h3>
+                     {campaignsLoading ? (
+                        <div className="flex justify-center items-center h-40">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                     ) : (
                         <ScrollArea className="h-[40vh] pr-4">
-                            <div className="space-y-4">
-                            {campaigns.map((campaign, index) => (
-                                <Card key={index}>
-                                    <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
-                                        <div className="p-2 bg-white rounded-md border">
-                                            <Image src={campaign.qrUrl} width={100} height={100} alt={`QR Code for ${campaign.name}`} />
-                                        </div>
-                                        <div className="flex-1 space-y-2">
-                                            <h4 className="font-semibold">{campaign.name}</h4>
-                                            <div className="flex gap-2">
-                                                <Input value={campaign.url} readOnly className="h-8 text-xs" />
-                                                <Button size="sm" onClick={() => handleCopy(campaign.url)}>Copy</Button>
+                            {campaigns && campaigns.length > 0 ? (
+                                <div className="space-y-4">
+                                {campaigns.map((campaign) => (
+                                    <Card key={campaign.id}>
+                                        <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
+                                            <div className="p-2 bg-white rounded-md border">
+                                                <Image src={campaign.qrUrl} width={100} height={100} alt={`QR Code for ${campaign.name}`} />
                                             </div>
-                                        </div>
-                                         <Button size="sm" variant="outline" onClick={() => handleDownload(campaign.qrUrl, campaign.name)}>
-                                            <Download className="mr-2 h-4 w-4"/>
-                                            Download
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                            </div>
+                                            <div className="flex-1 space-y-2">
+                                                <h4 className="font-semibold">{campaign.name}</h4>
+                                                <div className="flex gap-2">
+                                                    <Input value={campaign.url} readOnly className="h-8 text-xs" />
+                                                    <Button size="sm" onClick={() => handleCopy(campaign.url)}>Copy</Button>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <Button size="sm" variant="outline" onClick={() => handleDownload(campaign.qrUrl, campaign.name)}>
+                                                    <Download className="mr-2 h-4 w-4"/>
+                                                    Download
+                                                </Button>
+                                                 <Button size="sm" variant="destructive" onClick={() => handleDelete(campaign.id)}>
+                                                    <Trash2 className="mr-2 h-4 w-4"/>
+                                                    Delete
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                                </div>
+                            ) : (
+                                <div className="text-center text-sm text-muted-foreground py-10">
+                                    You haven't created any campaigns yet.
+                                </div>
+                            )}
                         </ScrollArea>
-                    </div>
-                )}
+                     )}
+                </div>
             </div>
         </DialogContent>
     )
@@ -672,8 +726,10 @@ export default function MyTeamPage() {
         
         if (!client) continue;
 
+        const proposalCreatorId = proposal.userId;
+
         // Case 1: Manager's direct sale
-        if (proposal.userId === user.id) {
+        if (proposalCreatorId === user.id) {
             if (!directSalesByMonth[monthYear]) {
                 directSalesByMonth[monthYear] = { month: monthYear, total: 0, details: [] };
             }
@@ -688,17 +744,17 @@ export default function MyTeamPage() {
                     saleAmount: proposal.amount,
                     overrideAmount: commissionAmount,
                     overrideRate: rate,
-                    sourceLocation: proposal.sourceLocation
+                    sourceLocation: (proposal as any).sourceLocation
                 });
                 directSalesByMonth[monthYear].total += commissionAmount;
             }
         }
         // Case 2: Team member's sale (for override)
-        else if (myTeam.some(m => m.id === proposal.userId)) {
+        else if (myTeam.some(m => m.id === proposalCreatorId)) {
              if (!overridesByMonth[monthYear]) {
                 overridesByMonth[monthYear] = { month: monthYear, total: 0, details: [] };
             }
-            const salesRep = salesRepMap.get(proposal.userId);
+            const salesRep = salesRepMap.get(proposalCreatorId);
             if (salesRep) {
                 const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
                 const overrideRate = (client.clientType && managerOverrideRates[client.clientType]) || 0;
@@ -711,7 +767,7 @@ export default function MyTeamPage() {
                         saleAmount: proposal.amount,
                         overrideAmount,
                         overrideRate,
-                        sourceLocation: proposal.sourceLocation
+                        sourceLocation: (proposal as any).sourceLocation
                     });
                     overridesByMonth[monthYear].total += overrideAmount;
                 }
@@ -1131,3 +1187,4 @@ export default function MyTeamPage() {
   );
 }
 
+    
