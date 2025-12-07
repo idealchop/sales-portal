@@ -283,78 +283,110 @@ type MonthlyOverride = {
     details: OverrideCommissionDetail[];
 };
 
-const ManagerOverrideDialog = ({ monthlyOverrides }: { monthlyOverrides: MonthlyOverride[] }) => {
+const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissions }: { directSalesCommissions: MonthlyOverride[]; teamOverrideCommissions: MonthlyOverride[] }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-    const [selectedMonth, setSelectedMonth] = useState<MonthlyOverride | null>(monthlyOverrides[0] || null);
+    const allMonths = useMemo(() => {
+        const months = new Set([...directSalesCommissions.map(c => c.month), ...teamOverrideCommissions.map(c => c.month)]);
+        return Array.from(months).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
+    }, [directSalesCommissions, teamOverrideCommissions]);
+    
+    const [selectedMonth, setSelectedMonth] = useState<string>(allMonths[0] || '');
 
-    const handleMonthChange = (month: string) => {
-        const found = monthlyOverrides.find(mo => mo.month === month);
-        setSelectedMonth(found || null);
-    };
+    const selectedDirectSales = useMemo(() => directSalesCommissions.find(c => c.month === selectedMonth) || { total: 0, details: [] }, [directSalesCommissions, selectedMonth]);
+    const selectedOverrides = useMemo(() => teamOverrideCommissions.find(c => c.month === selectedMonth) || { total: 0, details: [] }, [teamOverrideCommissions, selectedMonth]);
+    const totalForMonth = selectedDirectSales.total + selectedOverrides.total;
 
     return (
         <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
-                <DialogTitle>Manager Override History</DialogTitle>
+                <DialogTitle>My Commissions History</DialogTitle>
                 <DialogDescription>
-                    Your override commission from your team's sales.
+                    Your direct sales commissions and team override commissions.
                 </DialogDescription>
                  <div className="pt-4">
-                    <Select onValueChange={handleMonthChange} defaultValue={selectedMonth?.month}>
+                    <Select onValueChange={setSelectedMonth} defaultValue={selectedMonth}>
                         <SelectTrigger className="w-full sm:w-[280px]">
                             <SelectValue placeholder="Select a month to view details" />
                         </SelectTrigger>
                         <SelectContent>
-                            {monthlyOverrides.map(mo => (
-                                <SelectItem key={mo.month} value={mo.month}>
-                                    {mo.month} - {currencyFormatter.format(mo.total)}
+                            {allMonths.map(month => (
+                                <SelectItem key={month} value={month}>
+                                    {month}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 </div>
             </DialogHeader>
-            {selectedMonth ? (
-                 <ScrollArea className="h-[60vh]">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Sales Rep</TableHead>
-                                <TableHead>Client</TableHead>
-                                <TableHead className="text-right">Rate</TableHead>
-                                <TableHead className="text-right">Override</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {selectedMonth.details.length > 0 ? (
-                                selectedMonth.details.map((detail, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell>{detail.salesRepName}</TableCell>
-                                        <TableCell>{detail.clientName}</TableCell>
-                                        <TableCell className="text-right text-muted-foreground font-mono">
-                                            {`${(detail.overrideRate * 100).toFixed(0)}%`}
-                                        </TableCell>
-                                        <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
+            <ScrollArea className="h-[60vh]">
+                <div className="space-y-6 pr-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Direct Sales Commissions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Client</TableHead>
+                                        <TableHead className="text-right">Commission</TableHead>
                                     </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="text-center h-24">No override commissions for this month.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </ScrollArea>
-            ) : (
-                <div className="flex items-center justify-center h-64 text-muted-foreground">
-                    <p>Select a month to view the breakdown.</p>
+                                </TableHeader>
+                                <TableBody>
+                                    {selectedDirectSales.details.length > 0 ? (
+                                        selectedDirectSales.details.map((detail, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>{detail.clientName}</TableCell>
+                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="text-center h-24">No direct sales for this month.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Team Override Commissions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Sales Rep</TableHead>
+                                        <TableHead>Client</TableHead>
+                                        <TableHead className="text-right">Override</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {selectedOverrides.details.length > 0 ? (
+                                        selectedOverrides.details.map((detail, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>{detail.salesRepName}</TableCell>
+                                                <TableCell>{detail.clientName}</TableCell>
+                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center h-24">No team override commissions for this month.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 </div>
-            )}
+            </ScrollArea>
             {selectedMonth && (
                  <DialogFooter className="border-t pt-4">
                     <div className="w-full flex justify-between items-center text-lg font-bold">
-                        <span>Total for {selectedMonth.month}</span>
-                        <span>{currencyFormatter.format(selectedMonth.total)}</span>
+                        <span>Total for {selectedMonth}</span>
+                        <span>{currencyFormatter.format(totalForMonth)}</span>
                     </div>
                 </DialogFooter>
             )}
@@ -564,45 +596,72 @@ export default function MyTeamPage() {
     };
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
- const monthlyOverrideDetails = useMemo(() => {
-    if (proposalsLoading || clientsLoading || !isManager || !teamPerformance.teamProposals) return [];
+ const commissionDetails = useMemo(() => {
+    if (proposalsLoading || clientsLoading || !isManager || !user) return { directSales: [], teamOverrides: [] };
     
-    const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
     const salesRepMap = new Map(salesUsers.map(u => [u.id, u]));
-
+    const directSalesByMonth: { [month: string]: MonthlyOverride } = {};
     const overridesByMonth: { [month: string]: MonthlyOverride } = {};
 
-    const acceptedProposals = teamPerformance.teamProposals.filter(p => p.status === 'accepted' && p.createdAt);
+    const acceptedProposals = proposals.filter(p => p.status === 'accepted' && p.createdAt);
 
     for (const proposal of acceptedProposals) {
         const proposalDate = new Date(proposal.createdAt);
         const monthYear = format(proposalDate, 'MMMM yyyy');
-        
-        if (!overridesByMonth[monthYear]) {
-            overridesByMonth[monthYear] = { month: monthYear, total: 0, details: [] };
-        }
-
         const client = clientMap.get(proposal.clientId);
-        const salesRep = salesRepMap.get(proposal.userId);
+        
+        if (!client) continue;
 
-        if (client && client.clientType && salesRep) {
-            const overrideRate = managerOverrideRates[client.clientType] || 0;
-            const overrideAmount = proposal.amount * overrideRate;
-            if (overrideAmount > 0) {
-                overridesByMonth[monthYear].details.push({
-                    salesRepName: salesRep.displayName,
+        // Case 1: Manager's direct sale
+        if (proposal.userId === user.id) {
+            if (!directSalesByMonth[monthYear]) {
+                directSalesByMonth[monthYear] = { month: monthYear, total: 0, details: [] };
+            }
+            const directCommissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
+            const rate = (client.clientType && directCommissionRates[client.clientType]) || 0;
+            const commissionAmount = proposal.amount * rate;
+            
+            if (commissionAmount > 0) {
+                directSalesByMonth[monthYear].details.push({
+                    salesRepName: user.displayName,
                     clientName: client.companyName,
                     saleAmount: proposal.amount,
-                    overrideAmount,
-                    overrideRate,
+                    overrideAmount: commissionAmount, // Using overrideAmount field for simplicity
+                    overrideRate: rate,
                 });
-                overridesByMonth[monthYear].total += overrideAmount;
+                directSalesByMonth[monthYear].total += commissionAmount;
+            }
+        }
+        // Case 2: Team member's sale (for override)
+        else if (myTeam.some(m => m.id === proposal.userId)) {
+             if (!overridesByMonth[monthYear]) {
+                overridesByMonth[monthYear] = { month: monthYear, total: 0, details: [] };
+            }
+            const salesRep = salesRepMap.get(proposal.userId);
+            if (salesRep) {
+                const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
+                const overrideRate = (client.clientType && managerOverrideRates[client.clientType]) || 0;
+                const overrideAmount = proposal.amount * overrideRate;
+
+                if (overrideAmount > 0) {
+                    overridesByMonth[monthYear].details.push({
+                        salesRepName: salesRep.displayName,
+                        clientName: client.companyName,
+                        saleAmount: proposal.amount,
+                        overrideAmount,
+                        overrideRate,
+                    });
+                    overridesByMonth[monthYear].total += overrideAmount;
+                }
             }
         }
     }
 
-    return Object.values(overridesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime());
-}, [proposalsLoading, clientsLoading, isManager, teamPerformance.teamProposals, clientMap, salesUsers]);
+    return { 
+        directSales: Object.values(directSalesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
+        teamOverrides: Object.values(overridesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
+    };
+}, [proposalsLoading, clientsLoading, isManager, proposals, clientMap, salesUsers, myTeam, user]);
 
   const isLoading = usersLoading || proposalsLoading || clientsLoading || commissionsLoading;
 
@@ -625,7 +684,10 @@ export default function MyTeamPage() {
     );
   }
 
-  const currentMonthOverride = monthlyOverrideDetails.find(mo => mo.month === format(new Date(), 'MMMM yyyy'))?.total || 0;
+  const currentMonth = format(new Date(), 'MMMM yyyy');
+  const currentMonthDirectSales = commissionDetails.directSales.find(mo => mo.month === currentMonth)?.total || 0;
+  const currentMonthOverrides = commissionDetails.teamOverrides.find(mo => mo.month === currentMonth)?.total || 0;
+  const totalCurrentMonthCommission = currentMonthDirectSales + currentMonthOverrides;
 
 
   return (
@@ -777,19 +839,19 @@ export default function MyTeamPage() {
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
                             <CardHeader>
-                                <CardTitle>Manager Override</CardTitle>
-                                <CardDescription>Your commission from your team's sales this month.</CardDescription>
+                                <CardTitle>My Commissions</CardTitle>
+                                <CardDescription>Your direct sales and team override commissions.</CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-col items-center justify-center text-center">
                                 <div className='flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4'>
                                     <CircleDollarSign className='h-12 w-12 text-primary'/>
                                 </div>
-                                <p className="text-4xl font-bold">{currencyFormatter.format(currentMonthOverride)}</p>
+                                <p className="text-4xl font-bold">{currencyFormatter.format(totalCurrentMonthCommission)}</p>
                                 <p className="text-sm text-muted-foreground">This Month</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                    <ManagerOverrideDialog monthlyOverrides={monthlyOverrideDetails} />
+                    <ManagerCommissionsDialog directSalesCommissions={commissionDetails.directSales} teamOverrideCommissions={commissionDetails.teamOverrides} />
                 </Dialog>
                 <Dialog>
                     <DialogTrigger asChild>
