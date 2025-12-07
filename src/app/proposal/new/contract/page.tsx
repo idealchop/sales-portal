@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -640,7 +639,12 @@ function ContractPageContent() {
         title: status === 'draft' ? "Proposal Saved!" : "Proposal Submitted!",
         description: `Your proposal for ${companyName} has been successfully submitted for review.`,
       });
-      router.push('/dashboard/proposals');
+      
+      if (status === 'finalized') {
+          router.push(`/onboarding/status?client_id=${finalClientId}`);
+      } else {
+          router.push('/dashboard/proposals');
+      }
   
     } catch (error) {
         console.error("Error saving proposal:", error);
