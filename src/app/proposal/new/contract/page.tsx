@@ -352,6 +352,7 @@ function ContractPageContent() {
   const clientType = searchParams.get('clientType') as Client['clientType'];
   const existingClientId = searchParams.get('clientId'); 
   const managerId = searchParams.get('managerId');
+  const location = searchParams.get('location');
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -616,6 +617,10 @@ function ContractPageContent() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
+
+      if (location) {
+        newProposalData.sourceLocation = location;
+      }
       
       if(downloadURL) {
         newProposalData.paymentProofUrl = downloadURL;

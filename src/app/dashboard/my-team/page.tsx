@@ -275,6 +275,7 @@ interface OverrideCommissionDetail {
     saleAmount: number;
     overrideAmount: number;
     overrideRate: number;
+    sourceLocation?: string;
 }
 
 type MonthlyOverride = {
@@ -329,6 +330,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Client</TableHead>
+                                        <TableHead>Source</TableHead>
                                         <TableHead className="text-right">Commission</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -337,12 +339,13 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                         selectedDirectSales.details.map((detail, index) => (
                                             <TableRow key={index}>
                                                 <TableCell>{detail.clientName}</TableCell>
+                                                <TableCell>{detail.sourceLocation || 'Direct'}</TableCell>
                                                 <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={2} className="text-center h-24">No direct sales for this month.</TableCell>
+                                            <TableCell colSpan={3} className="text-center h-24">No direct sales for this month.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -359,6 +362,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                     <TableRow>
                                         <TableHead>Sales Rep</TableHead>
                                         <TableHead>Client</TableHead>
+                                        <TableHead>Source</TableHead>
                                         <TableHead className="text-right">Override</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -368,12 +372,13 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                             <TableRow key={index}>
                                                 <TableCell>{detail.salesRepName}</TableCell>
                                                 <TableCell>{detail.clientName}</TableCell>
+                                                <TableCell>{detail.sourceLocation || 'Direct'}</TableCell>
                                                 <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={3} className="text-center h-24">No team override commissions for this month.</TableCell>
+                                            <TableCell colSpan={4} className="text-center h-24">No team override commissions for this month.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -396,8 +401,16 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
 
 function QrCodeDialog({ managerId }: { managerId: string }) {
     const { toast } = useToast();
-    const proposalUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(proposalUrl)}`;
+    const [selectedLocation, setSelectedLocation] = useState('NCR North');
+    
+    const locations = ['NCR North', 'NCR South', 'Palawan', 'Cebu'];
+
+    const { proposalUrl, qrCodeUrl } = useMemo(() => {
+        const baseUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
+        const urlWithLocation = `${baseUrl}&location=${encodeURIComponent(selectedLocation)}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlWithLocation)}`;
+        return { proposalUrl: urlWithLocation, qrCodeUrl: qrUrl };
+    }, [managerId, selectedLocation]);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(proposalUrl);
@@ -412,7 +425,7 @@ function QrCodeDialog({ managerId }: { managerId: string }) {
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = `smart-refill-qr-${managerId}.png`;
+            a.download = `smart-refill-qr-${managerId}-${selectedLocation.replace(' ', '_')}.png`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -426,18 +439,31 @@ function QrCodeDialog({ managerId }: { managerId: string }) {
     return (
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Your Personal QR Link</DialogTitle>
-                <DialogDescription>Share this QR code or link to have new proposals automatically attributed to you.</DialogDescription>
+                <DialogTitle>Generate Location-Specific QR Link</DialogTitle>
+                <DialogDescription>Create a unique QR code for each location. Sales from this link will be attributed to you.</DialogDescription>
             </DialogHeader>
-            <div className="flex flex-col items-center gap-6 py-4">
-                <div className="p-4 bg-white rounded-lg border">
-                    <Image src={qrCodeUrl} width={250} height={250} alt="Manager Proposal QR Code" />
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="location-select">Select Location</Label>
+                    <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                        <SelectTrigger id="location-select">
+                            <SelectValue placeholder="Select a location" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
-                <div className="w-full space-y-2">
-                    <Label htmlFor="qr-link">Shareable Link</Label>
-                    <div className="flex gap-2">
-                        <Input id="qr-link" value={proposalUrl} readOnly />
-                        <Button onClick={handleCopy}>Copy</Button>
+                <div className="flex flex-col items-center gap-6">
+                    <div className="p-4 bg-white rounded-lg border">
+                        <Image src={qrCodeUrl} width={250} height={250} alt={`Manager Proposal QR Code for ${selectedLocation}`} />
+                    </div>
+                    <div className="w-full space-y-2">
+                        <Label htmlFor="qr-link">Shareable Link for {selectedLocation}</Label>
+                        <div className="flex gap-2">
+                            <Input id="qr-link" value={proposalUrl} readOnly />
+                            <Button onClick={handleCopy}>Copy</Button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -626,8 +652,9 @@ export default function MyTeamPage() {
                     salesRepName: user.displayName,
                     clientName: client.companyName,
                     saleAmount: proposal.amount,
-                    overrideAmount: commissionAmount, // Using overrideAmount field for simplicity
+                    overrideAmount: commissionAmount,
                     overrideRate: rate,
+                    sourceLocation: proposal.sourceLocation
                 });
                 directSalesByMonth[monthYear].total += commissionAmount;
             }
@@ -650,6 +677,7 @@ export default function MyTeamPage() {
                         saleAmount: proposal.amount,
                         overrideAmount,
                         overrideRate,
+                        sourceLocation: proposal.sourceLocation
                     });
                     overridesByMonth[monthYear].total += overrideAmount;
                 }

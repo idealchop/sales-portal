@@ -226,6 +226,10 @@
           "type": "string",
           "description": "The timestamp indicating when the proposal was last updated.",
           "format": "date-time"
+        },
+        "sourceLocation": {
+            "type": "string",
+            "description": "The location source from where the proposal was initiated, used for tracking QR code campaigns."
         }
       },
       "required": [
@@ -340,8 +344,7 @@
         },
         "role": {
           "type": "string",
-          "description": "The user's role (e.g., 'sales', 'admin').",
-           "enum": ["sales", "manager", "admin"]
+          "description": "The user's role (e.g., 'sales', 'admin')."
         },
         "team": {
           "type": "string",
@@ -360,11 +363,6 @@
         "onboardingCompleted": {
           "type": "boolean",
           "description": "Flag to indicate if the user has completed the onboarding process."
-        },
-        "location": {
-            "type": "string",
-            "description": "The primary location for a sales manager.",
-            "enum": ["NCR North", "NCR South", "Palawan", "Cebu"]
         }
       },
       "required": [
@@ -432,5 +430,3 @@
     }
   }
 }
-
-    
