@@ -64,7 +64,7 @@ const OnboardingStepItem = ({ step, isLast }: { step: OnboardingStep; isLast: bo
 );
 
 
-const defaultOnboardingSteps: OnboardingStep[] = [
+const defaultOnboardingSteps: Omit<OnboardingStep, 'date' | 'providerName' | 'providerLocation'>[] = [
     { title: 'Confirmation and verification of payment', description: 'Initial subscription payment has been successfully processed.', status: 'pending' },
     { title: 'Onboarding & Account Creation', description: 'Your account is being set up in our system.', status: 'pending' },
     { title: 'First Delivery Scheduled', description: 'The first batch of water and equipment is scheduled for delivery within 24 hours.', status: 'pending' },
@@ -115,7 +115,7 @@ function OnboardingStatusContent() {
     );
   }
 
-  const onboardingStepsToDisplay = client.onboardingStatus || defaultOnboardingSteps;
+  const onboardingStepsToDisplay = client.onboardingStatus || defaultOnboardingSteps.map(s => ({...s, status: 'pending'} as OnboardingStep));
   const isComplete = onboardingStepsToDisplay.every(step => step.status === 'completed');
 
   return (
@@ -149,7 +149,7 @@ function OnboardingStatusContent() {
             <Copy className="mr-2 h-4 w-4" /> Copy Status Link
         </Button>
         <p className="text-xs text-muted-foreground">
-          If you have any questions, please contact your sales representative or email us at <a href="mailto:sales@smartrefill.io" className="font-semibold text-primary hover:underline">sales@smartrefill.io</a>.
+          If you have any questions, please contact your sales representative or email us at <a href="mailto:customer@smartrefill.io" className="font-semibold text-primary hover:underline">customer@smartrefill.io</a>.
         </p>
       </CardFooter>
     </Card>
