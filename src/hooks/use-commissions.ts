@@ -121,7 +121,10 @@ export function useCommissions(userId?: string) {
             if (!commissionsByMonth[monthKey]) {
                 commissionsByMonth[monthKey] = [];
             }
-            commissionsByMonth[monthKey].push(commission);
+            const proposal = allProposals.find(p => p.id === commission.proposalId);
+            const clientName = allClients.find(c => c.id === proposal?.clientId)?.companyName;
+
+            commissionsByMonth[monthKey].push({...commission, clientName});
         });
 
         const processedPayouts: MonthlyPayout[] = [];
@@ -147,7 +150,7 @@ export function useCommissions(userId?: string) {
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, isLoading, userId, authUser]);
+    }, [commissions, isLoading, userId, authUser, allProposals, allClients]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
