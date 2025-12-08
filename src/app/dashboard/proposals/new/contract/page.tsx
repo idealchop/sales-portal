@@ -100,7 +100,6 @@ const additionalLiterCost = 3;
 
 
 function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode }) {
-    const proposalRef = useRef<HTMLDivElement>(null);
     const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
@@ -230,7 +229,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                     </div>
                     <div className="md:col-span-3 mt-6 md:mt-0">
                         <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
-                             <div ref={proposalRef} className="bg-white p-8" id="pdf-content-preview">
+                             <div className="bg-white p-8" id="pdf-content-preview">
                                 <ContractDetails
                                     finalPlanDetails={{
                                         ...finalPlanDetails,
@@ -907,14 +906,14 @@ function ContractPageContent() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Finalize Proposal</h1>
           <p className="text-muted-foreground">
             Step 5: Review inclusions, add-ons, and sign the agreement.
           </p>
         </div>
-         <div className="flex gap-2">
+         <div className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
@@ -1158,7 +1157,7 @@ function ContractPageContent() {
                                         <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
                                         <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
                                             <span>{cycle.label}</span>
-                                            {cycle.discount > 0 && <span className="font-semibold text-green-600">-{cycle.discount * 100}%</span>}
+                                            {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
                                         </Label>
                                     </div>
                                 ))}
@@ -1170,7 +1169,7 @@ function ContractPageContent() {
                 <Separator />
                 
                 {discountValue > 0 && !isFlowPlan && (
-                    <div className="flex justify-between items-center text-sm text-green-600">
+                     <div className="flex justify-between items-center text-sm text-green-600">
                         <span>Discount ({selectedCycle.discount * 100}%)</span>
                         <span>- {currencyFormatter.format(discountValue)}</span>
                     </div>
