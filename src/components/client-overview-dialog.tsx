@@ -499,13 +499,14 @@ export function ClientOverviewDialog({
     }
     const proposalCreator = userMap.get(proposalCreatorId);
 
-    // The manager of the team, if the creator is a sales exec
     const teamManager = (proposalCreator?.role === 'sales' && proposalCreator.team) 
-      ? allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team)
-      : null;
-
-    // The user to whom the commission should be attributed
-    const commissionRecipientId = (selectedProposal?.sourceLocation && teamManager) ? teamManager.id : proposalCreatorId;
+        ? allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team)
+        : null;
+    
+    // If it's a QR campaign, the commission goes to the manager who owns it.
+    // The proposal's userId is already set to the manager in this case.
+    const isQrCampaign = !!selectedProposal?.sourceLocation;
+    const commissionRecipientId = isQrCampaign ? proposalCreatorId : proposalCreatorId;
   
     setIsConfirmingPayment(true);
     try {
@@ -555,7 +556,7 @@ export function ClientOverviewDialog({
         }
         
         // Override commission for the manager, if the original seller was a sales exec (and not a QR campaign sale by the manager)
-        if (proposalCreator && proposalCreator.role === 'sales' && teamManager && commissionRecipientId !== teamManager.id) {
+        if (proposalCreator && proposalCreator.role === 'sales' && teamManager && !isQrCampaign) {
             const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
             const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;
             if (overrideAmount > 0) {
