@@ -6,7 +6,7 @@ import { collection, query, where, onSnapshot, getDocs, collectionGroup, Firesto
 import { useFirebase, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { Commission, Client, Proposal, UserProfile } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
-import { format, startOfMonth, isWithinInterval, addYears, parseISO, differenceInMonths } from 'date-fns';
+import { format, startOfMonth, isWithinInterval, addYears, parseISO, differenceInMonths, addMonths } from 'date-fns';
 import type { FinalPlanDetails } from '@/components/contract-details';
 import { useSalesUsers } from './use-sales-users';
 import { useAllProposals } from './use-all-proposals';
@@ -91,9 +91,9 @@ export function useCommissions(userId?: string) {
             });
             
             setCommissions(prevCommissions => {
-                const newCommissionIds = new Set(fetchedCommissions.map(c => c.id));
-                const otherCommissions = prevCommissions.filter(c => !newCommissionIds.has(c.id));
-                return [...otherCommissions, ...fetchedCommissions];
+                const existingIds = new Set(prevCommissions.map(c => c.id));
+                const newCommissions = fetchedCommissions.filter(c => !existingIds.has(c.id));
+                return [...prevCommissions, ...newCommissions];
             });
             setIsLoading(false); 
         }, (e: FirestoreError) => {
@@ -117,7 +117,7 @@ export function useCommissions(userId?: string) {
         const commissionsByMonth: Record<string, WithId<PayoutCommission>[]> = {};
         const clientMap = new Map(allClients.map(c => [c.id, c]));
         
-        // Process existing commissions
+        // Process existing commissions from Firestore
         commissions.forEach(commission => {
             if(!commission.createdAt) return;
             const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
@@ -127,14 +127,17 @@ export function useCommissions(userId?: string) {
             const proposal = allProposals.find(p => p.id === commission.proposalId);
             const clientName = clientMap.get(proposal?.clientId)?.companyName;
 
-            commissionsByMonth[monthKey].push({...commission, clientName});
+            // Avoid duplicating commissions
+            if (!commissionsByMonth[monthKey].some(c => c.id === commission.id)) {
+                commissionsByMonth[monthKey].push({...commission, clientName});
+            }
         });
 
-        // Dynamically calculate and add recurring commissions for managers' direct sales
+        // Dynamically calculate and add recurring commissions
         const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
-        const managerDirectProposals = allProposals.filter(p => p.status === 'accepted' && p.userId === authUser?.id && p.createdAt);
+        const relevantProposals = allProposals.filter(p => p.status === 'accepted' && p.createdAt && (p.userId === authUser?.id || teamMemberIds.includes(p.userId)));
 
-        managerDirectProposals.forEach(proposal => {
+        relevantProposals.forEach(proposal => {
             const client = clientMap.get(proposal.clientId);
             if (!client || !client.clientType) return;
             
@@ -143,29 +146,31 @@ export function useCommissions(userId?: string) {
 
             const startDate = parseISO(proposal.createdAt);
             const today = new Date();
-            const monthDiff = differenceInMonths(today, startDate);
 
-            // Calculate recurring commissions for each month up to 12 months or until today
-            for (let i = 0; i <= Math.min(monthDiff, 11); i++) {
-                const commissionDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-                const monthKey = format(commissionDate, 'MMMM yyyy');
-                
-                const recurringCommissionAmount = proposal.amount * rate;
-                
+            for (let i = 0; i < 12; i++) {
+                const commissionMonthDate = addMonths(startDate, i);
+
+                if (commissionMonthDate > today) {
+                    break; // Stop if the commission month is in the future
+                }
+
+                const monthKey = format(commissionMonthDate, 'MMMM yyyy');
                 if (!commissionsByMonth[monthKey]) {
                     commissionsByMonth[monthKey] = [];
                 }
 
-                // Add a unique identifier for recurring commissions to prevent duplicates if logic runs multiple times
                 const recurringCommissionId = `recurring-${proposal.id}-${i}`;
+                
+                // Check if this recurring commission has already been added
                 if (!commissionsByMonth[monthKey].some(c => c.id === recurringCommissionId)) {
+                    const recurringCommissionAmount = proposal.amount * rate;
                     commissionsByMonth[monthKey].push({
                         id: recurringCommissionId,
                         userId: proposal.userId,
                         proposalId: proposal.id,
                         amount: recurringCommissionAmount,
-                        createdAt: commissionDate.toISOString(),
-                        status: 'pending', // Will be updated if a payout transaction covers it
+                        createdAt: commissionMonthDate.toISOString(),
+                        status: 'pending', // Assume pending; will be reconciled with paid status later if needed
                         type: 'commission',
                         description: `Recurring (${i + 1}/12)`,
                         clientName: client.companyName,
@@ -175,6 +180,7 @@ export function useCommissions(userId?: string) {
             }
         });
 
+
         const processedPayouts: MonthlyPayout[] = [];
         const targetUserId = userId || authUser?.id;
 
@@ -183,9 +189,9 @@ export function useCommissions(userId?: string) {
             
             const userSpecificCommissions = monthCommissions.filter(c => c.userId === targetUserId);
             
+            if (userSpecificCommissions.length === 0) return;
+            
             const totalAmount = userSpecificCommissions.reduce((sum, c) => sum + c.amount, 0);
-
-            if (totalAmount === 0 && !isManager) return;
 
             const allPaid = !userSpecificCommissions.some(c => c.status === 'pending');
             const status = allPaid ? 'paid' : 'pending';
@@ -204,7 +210,7 @@ export function useCommissions(userId?: string) {
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, isLoading, proposalsLoading, clientsLoading, userId, authUser, isManager, allProposals, allClients]);
+    }, [commissions, isLoading, proposalsLoading, clientsLoading, userId, authUser, allProposals, allClients, teamMemberIds]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
