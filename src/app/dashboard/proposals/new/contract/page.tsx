@@ -207,24 +207,26 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                              </CardContent>
                          </Card>
                          <Card>
-                             <CardHeader>
-                                 <CardTitle className="text-base">Cost Summary</CardTitle>
-                             </CardHeader>
-                             <CardContent className="space-y-2 text-sm">
-                                 <div className="flex justify-between">
-                                    <span>Subtotal</span>
-                                    <span>{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.subtotal)}</span>
-                                 </div>
-                                 <div className="flex justify-between text-green-600">
-                                    <span>Discount ({dialogCosts.discountPercentage}%)</span>
+                            <CardHeader>
+                                <CardTitle className="text-base">Cost Summary</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                <span className="text-muted-foreground">Subtotal ({dialogCosts.billingCycleLabel})</span>
+                                <span>{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.subtotal * (billingCycles.find(c=>c.value === dialogBillingCycle)?.multiplier || 1))}</span>
+                                </div>
+                                {dialogCosts.discountValue > 0 && (
+                                <div className="flex justify-between text-green-600">
+                                    <span className="text-muted-foreground">Discount ({dialogCosts.discountPercentage}%)</span>
                                     <span>- {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.discountValue)}</span>
-                                 </div>
-                                 <Separator />
-                                 <div className="flex justify-between font-bold text-base">
-                                     <span>Total Due</span>
-                                     <span>{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.totalAmountDue)}</span>
-                                 </div>
-                             </CardContent>
+                                </div>
+                                )}
+                                <Separator />
+                                <div className="flex justify-between font-bold text-base">
+                                    <span>Total Due</span>
+                                    <span>{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.totalAmountDue)}</span>
+                                </div>
+                            </CardContent>
                          </Card>
                     </div>
                     <div className="md:col-span-3 mt-6 md:mt-0">
