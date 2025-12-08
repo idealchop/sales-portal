@@ -136,7 +136,8 @@ export function useCommissions(userId?: string) {
             
             const allPaid = !monthCommissions.some(c => c.status === 'pending');
             const status = allPaid ? 'paid' : 'pending';
-            const userIdForTx = (userId || authUser?.id)?.slice(0, 4).toUpperCase() || 'USER';
+            const targetUserId = userId || authUser?.id;
+            const userIdForTx = targetUserId?.slice(0, 4).toUpperCase() || 'USER';
             
             processedPayouts.push({
                 month,

@@ -485,12 +485,27 @@ export function ClientOverviewDialog({
   const handleConfirmPayment = async (proposalIdToConfirm?: string, fileToUpload?: File) => {
     const finalProposalId = proposalIdToConfirm || selectedProposal?.id;
     const finalFile = fileToUpload || paymentProofFile;
-    const proposalCreatorId = selectedProposal?.userId;
   
-    if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo || !proposalCreatorId) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof, proposal details, user, or subscription info.' });
+    if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof, proposal details, or subscription info.' });
       return;
     }
+    
+    // The user who created the proposal
+    const proposalCreatorId = selectedProposal?.userId;
+    if (!proposalCreatorId) {
+       toast({ variant: 'destructive', title: 'Error', description: 'Could not identify the sales representative for this proposal.' });
+       return;
+    }
+    const proposalCreator = userMap.get(proposalCreatorId);
+
+    // The manager of the team, if the creator is a sales exec
+    const teamManager = (proposalCreator?.role === 'sales' && proposalCreator.team) 
+      ? allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team)
+      : null;
+
+    // The user to whom the commission should be attributed
+    const commissionRecipientId = (selectedProposal?.sourceLocation && teamManager) ? teamManager.id : proposalCreatorId;
   
     setIsConfirmingPayment(true);
     try {
@@ -523,28 +538,24 @@ export function ClientOverviewDialog({
         const rate = (subscriptionInfo.clientType && commissionRates[subscriptionInfo.clientType]) || 0;
         const commissionAmount = subscriptionInfo.totalAmountDue * rate;
         
-        const proposalCreator = userMap.get(proposalCreatorId);
-
-        // Standard commission for the seller (can be a sales exec or a manager)
+        // Standard or QR campaign commission
         if (commissionAmount > 0) {
           const execCommissionRef = doc(collection(firestore, 'commissions'));
           transaction.set(execCommissionRef, {
-            userId: proposalCreatorId,
+            userId: commissionRecipientId,
             proposalId: finalProposalId,
             amount: commissionAmount,
             createdAt: serverTimestamp(),
             status: 'pending',
             type: 'commission',
-            description: `Commission for ${subscriptionInfo.planName}`,
+            description: `${selectedProposal?.sourceLocation ? 'QR Campaign' : 'Commission'} for ${subscriptionInfo.planName}`,
             clientName: client.companyName,
             referenceId: finalProposalId
           });
         }
         
-        // Override commission for the manager, if the seller is a sales exec with a team
-        if (proposalCreator && proposalCreator.role === 'sales' && proposalCreator.team) {
-          const teamManager = allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team);
-          if (teamManager) {
+        // Override commission for the manager, if the original seller was a sales exec (and not a QR campaign sale by the manager)
+        if (proposalCreator && proposalCreator.role === 'sales' && teamManager && commissionRecipientId !== teamManager.id) {
             const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
             const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;
             if (overrideAmount > 0) {
@@ -561,7 +572,6 @@ export function ClientOverviewDialog({
                 referenceId: `override-${finalProposalId}`
               });
             }
-          }
         }
       });
   
