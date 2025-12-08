@@ -12,7 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2 } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
-import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval, differenceInMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
   ResponsiveContainer,
@@ -278,6 +278,7 @@ interface OverrideCommissionDetail {
     overrideAmount: number;
     overrideRate: number;
     sourceLocation?: string;
+    description?: string;
 }
 
 type MonthlyOverride = {
@@ -333,6 +334,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                     <TableRow>
                                         <TableHead>Client</TableHead>
                                         <TableHead>Campaign</TableHead>
+                                        <TableHead>Description</TableHead>
                                         <TableHead className="text-right">Commission</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -342,12 +344,13 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                             <TableRow key={index}>
                                                 <TableCell>{detail.clientName}</TableCell>
                                                 <TableCell>{detail.sourceLocation || 'Direct'}</TableCell>
+                                                <TableCell>{detail.description || 'N/A'}</TableCell>
                                                 <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={3} className="text-center h-24">No direct sales for this month.</TableCell>
+                                            <TableCell colSpan={4} className="text-center h-24">No direct sales for this month.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -721,38 +724,58 @@ export default function MyTeamPage() {
 
     for (const proposal of acceptedProposals) {
         const proposalDate = new Date(proposal.createdAt);
-        const monthYear = format(proposalDate, 'MMMM yyyy');
         const client = clientMap.get(proposal.clientId);
-        
         if (!client) continue;
 
         const proposalCreatorId = proposal.userId;
 
-        // Case 1: Manager's direct sale
+        // Case 1: Manager's direct sale (one-time and recurring)
         if (proposalCreatorId === user.id) {
-            if (!directSalesByMonth[monthYear]) {
-                directSalesByMonth[monthYear] = { month: monthYear, total: 0, details: [] };
-            }
             const directCommissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
-            const rate = (client.clientType && directCommissionRates[client.clientType]) || 0;
-            const commissionAmount = proposal.amount * rate;
+            const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
+
+            // One-time commission
+            const oneTimeRate = (client.clientType && directCommissionRates[client.clientType]) || 0;
+            const oneTimeCommission = proposal.amount * oneTimeRate;
+            const oneTimeMonthYear = format(proposalDate, 'MMMM yyyy');
             
-            if (commissionAmount > 0) {
-                directSalesByMonth[monthYear].details.push({
-                    salesRepName: user.displayName,
-                    clientName: client.companyName,
-                    saleAmount: proposal.amount,
-                    overrideAmount: commissionAmount,
-                    overrideRate: rate,
-                    sourceLocation: (proposal as any).sourceLocation
+            if (oneTimeCommission > 0) {
+                if (!directSalesByMonth[oneTimeMonthYear]) directSalesByMonth[oneTimeMonthYear] = { month: oneTimeMonthYear, total: 0, details: [] };
+                directSalesByMonth[oneTimeMonthYear].details.push({
+                    salesRepName: user.displayName, clientName: client.companyName, saleAmount: proposal.amount,
+                    overrideAmount: oneTimeCommission, overrideRate: oneTimeRate, sourceLocation: (proposal as any).sourceLocation,
+                    description: 'Direct Sale Commission'
                 });
-                directSalesByMonth[monthYear].total += commissionAmount;
+                directSalesByMonth[oneTimeMonthYear].total += oneTimeCommission;
             }
+            
+            // Recurring commission
+            const recurringRate = (client.clientType && recurringCommissionRates[client.clientType]) || 0;
+            const monthDiff = differenceInMonths(new Date(), proposalDate);
+            
+            if (recurringRate > 0 && monthDiff < 12) {
+                const recurringCommissionAmount = proposal.amount * recurringRate;
+                for (let i = 0; i <= monthDiff; i++) {
+                    const recurringMonth = subMonths(new Date(), i);
+                    const recurringMonthKey = format(recurringMonth, 'MMMM yyyy');
+                    if (differenceInMonths(recurringMonth, proposalDate) < 12 && differenceInMonths(recurringMonth, proposalDate) >= 0) {
+                        if (!directSalesByMonth[recurringMonthKey]) directSalesByMonth[recurringMonthKey] = { month: recurringMonthKey, total: 0, details: [] };
+                        directSalesByMonth[recurringMonthKey].details.push({
+                            salesRepName: user.displayName, clientName: client.companyName, saleAmount: proposal.amount,
+                            overrideAmount: recurringCommissionAmount, overrideRate: recurringRate, sourceLocation: (proposal as any).sourceLocation,
+                            description: `Recurring (${differenceInMonths(recurringMonth, proposalDate) + 1}/12)`
+                        });
+                        directSalesByMonth[recurringMonthKey].total += recurringCommissionAmount;
+                    }
+                }
+            }
+
         }
         // Case 2: Team member's sale (for override)
         else if (myTeam.some(m => m.id === proposalCreatorId)) {
-             if (!overridesByMonth[monthYear]) {
-                overridesByMonth[monthYear] = { month: monthYear, total: 0, details: [] };
+             const overrideMonthYear = format(proposalDate, 'MMMM yyyy');
+             if (!overridesByMonth[overrideMonthYear]) {
+                overridesByMonth[overrideMonthYear] = { month: overrideMonthYear, total: 0, details: [] };
             }
             const salesRep = salesRepMap.get(proposalCreatorId);
             if (salesRep) {
@@ -761,7 +784,7 @@ export default function MyTeamPage() {
                 const overrideAmount = proposal.amount * overrideRate;
 
                 if (overrideAmount > 0) {
-                    overridesByMonth[monthYear].details.push({
+                    overridesByMonth[overrideMonthYear].details.push({
                         salesRepName: salesRep.displayName,
                         clientName: client.companyName,
                         saleAmount: proposal.amount,
@@ -769,7 +792,7 @@ export default function MyTeamPage() {
                         overrideRate,
                         sourceLocation: (proposal as any).sourceLocation
                     });
-                    overridesByMonth[monthYear].total += overrideAmount;
+                    overridesByMonth[overrideMonthYear].total += overrideAmount;
                 }
             }
         }
