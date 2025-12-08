@@ -43,17 +43,42 @@ type TimelineStatus = 'calculated' | 'reviewed' | 'processing' | 'paid';
 
 function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: PayoutCommission[] }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
+    const directSales = useMemo(() => commissions.filter(c => c.type === 'commission' && !c.description?.includes('Override') && !c.description?.includes('QR') && !c.description?.includes('Recurring')), [commissions]);
+    const qrCampaigns = useMemo(() => commissions.filter(c => c.description?.includes('QR')), [commissions]);
+    const overrides = useMemo(() => commissions.filter(c => c.description?.includes('Override')), [commissions]);
+    const recurring = useMemo(() => commissions.filter(c => c.description?.includes('Recurring')), [commissions]);
+
     const totalAmount = commissions.reduce((sum, commission) => sum + commission.amount, 0);
     
-    const getCommissionType = (commission: PayoutCommission) => {
-        if (commission.type === 'bonus') {
-            return { label: 'Bonus', variant: 'special' as const };
-        }
-        if (commission.description?.toLowerCase().includes('override')) {
-            return { label: 'Override', variant: 'info' as const };
-        }
-        return { label: 'Commission', variant: 'outline' as const };
-    };
+    const CommissionTable = ({ title, commissions, showClient = true }: { title: string, commissions: PayoutCommission[], showClient?: boolean }) => {
+      if (commissions.length === 0) return null;
+      return (
+        <Card>
+            <CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {showClient && <TableHead>Client</TableHead>}
+                            <TableHead>Description</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {commissions.map((c, i) => (
+                            <TableRow key={i}>
+                                {showClient && <TableCell>{c.clientName}</TableCell>}
+                                <TableCell>{c.description}</TableCell>
+                                <TableCell className="text-right font-semibold">{currencyFormatter.format(c.amount)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+      );
+    }
 
     return (
         <DialogContent className="sm:max-w-3xl">
@@ -64,43 +89,19 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                 </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-[50vh] pr-4">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Client</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {commissions.map((commission, index) => {
-                            const { label, variant } = getCommissionType(commission);
-                            return (
-                                <TableRow key={`${commission.id}-${index}`}>
-                                    <TableCell>
-                                        <Badge
-                                            variant={variant}
-                                            className="capitalize"
-                                        >
-                                            {label}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-sm">{commission.description}</TableCell>
-                                    <TableCell>{commission.clientName || 'N/A'}</TableCell>
-                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.amount)}</TableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                    <TFooter>
-                        <TableRow>
-                            <TableCell colSpan={3} className="text-right font-bold text-base">Total Amount</TableCell>
-                            <TableCell className="text-right font-bold text-base">{currencyFormatter.format(totalAmount)}</TableCell>
-                        </TableRow>
-                    </TFooter>
-                </Table>
+                <div className="space-y-4">
+                    <CommissionTable title="One-Time Commissions" commissions={directSales} />
+                    <CommissionTable title="QR Campaign Commissions" commissions={qrCampaigns} />
+                    <CommissionTable title="Recurring Commissions" commissions={recurring} />
+                    <CommissionTable title="Team Overrides" commissions={overrides} />
+                </div>
             </ScrollArea>
+            <DialogFooter className="border-t pt-4">
+                <div className="w-full flex justify-between items-center text-lg font-bold">
+                    <span>Total Payout</span>
+                    <span>{currencyFormatter.format(totalAmount)}</span>
+                </div>
+            </DialogFooter>
         </DialogContent>
     );
 }
@@ -291,7 +292,7 @@ function PayoutHistoryView({ userId, onProcessPayout, processingPayouts }: { use
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => onProcessPayout(`${payout.transactionId}-${payout.month}`, payout.commissions)}>
+                                                                    <AlertDialogAction onClick={() => onProcessPayout && onProcessPayout(`${payout.transactionId}-${payout.month}`, payout.commissions)}>
                                                                         Yes, Confirm Payout
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>

@@ -93,7 +93,11 @@ export function useCommissions(userId?: string) {
             setCommissions(prevCommissions => {
                 const existingIds = new Set(prevCommissions.map(c => c.id));
                 const newCommissions = fetchedCommissions.filter(c => !existingIds.has(c.id));
-                return [...prevCommissions, ...newCommissions];
+                const updatedCommissions = prevCommissions.map(pc => {
+                    const updated = fetchedCommissions.find(fc => fc.id === pc.id);
+                    return updated ? updated : pc;
+                });
+                return [...updatedCommissions, ...newCommissions];
             });
             setIsLoading(false); 
         }, (e: FirestoreError) => {
@@ -117,60 +121,46 @@ export function useCommissions(userId?: string) {
         const commissionsByMonth: Record<string, WithId<PayoutCommission>[]> = {};
         const clientMap = new Map(allClients.map(c => [c.id, c]));
         
-        // Process existing commissions from Firestore
         commissions.forEach(commission => {
             if(!commission.createdAt) return;
             const monthKey = format(startOfMonth(new Date(commission.createdAt)), 'MMMM yyyy');
             if (!commissionsByMonth[monthKey]) {
                 commissionsByMonth[monthKey] = [];
             }
-            const proposal = allProposals.find(p => p.id === commission.proposalId);
-            const clientName = clientMap.get(proposal?.clientId)?.companyName;
-
-            // Avoid duplicating commissions
-            if (!commissionsByMonth[monthKey].some(c => c.id === commission.id)) {
-                commissionsByMonth[monthKey].push({...commission, clientName});
-            }
+            const clientName = allProposals.find(p => p.id === commission.proposalId)?.clientId
+            commissionsByMonth[monthKey].push({...commission, clientName: clientMap.get(clientName || '')?.companyName});
         });
 
-        // Dynamically calculate and add recurring commissions
+        // Add recurring commissions for manager's direct sales.
+        const targetId = userId || authUser?.id;
+        const relevantProposals = allProposals.filter(p => p.status === 'accepted' && p.createdAt && p.userId === targetId);
         const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
-        const relevantProposals = allProposals.filter(p => p.status === 'accepted' && p.createdAt && (p.userId === authUser?.id || teamMemberIds.includes(p.userId)));
-
+        
         relevantProposals.forEach(proposal => {
             const client = clientMap.get(proposal.clientId);
             if (!client || !client.clientType) return;
-            
             const rate = recurringCommissionRates[client.clientType];
             if (rate === 0) return;
-
             const startDate = parseISO(proposal.createdAt);
             const today = new Date();
-
             for (let i = 0; i < 12; i++) {
                 const commissionMonthDate = addMonths(startDate, i);
-
-                if (commissionMonthDate > today) {
-                    break; // Stop if the commission month is in the future
-                }
-
+                if (commissionMonthDate > today) break;
+                
                 const monthKey = format(commissionMonthDate, 'MMMM yyyy');
                 if (!commissionsByMonth[monthKey]) {
                     commissionsByMonth[monthKey] = [];
                 }
-
-                const recurringCommissionId = `recurring-${proposal.id}-${i}`;
                 
-                // Check if this recurring commission has already been added
-                if (!commissionsByMonth[monthKey].some(c => c.id === recurringCommissionId)) {
-                    const recurringCommissionAmount = proposal.amount * rate;
+                const recurringId = `recurring-${proposal.id}-${i}`;
+                if (!commissionsByMonth[monthKey].some(c => c.id === recurringId)) {
                     commissionsByMonth[monthKey].push({
-                        id: recurringCommissionId,
+                        id: recurringId,
                         userId: proposal.userId,
                         proposalId: proposal.id,
-                        amount: recurringCommissionAmount,
+                        amount: proposal.amount * rate,
                         createdAt: commissionMonthDate.toISOString(),
-                        status: 'pending', // Assume pending; will be reconciled with paid status later if needed
+                        status: 'pending',
                         type: 'commission',
                         description: `Recurring (${i + 1}/12)`,
                         clientName: client.companyName,
@@ -179,7 +169,6 @@ export function useCommissions(userId?: string) {
                 }
             }
         });
-
 
         const processedPayouts: MonthlyPayout[] = [];
         const targetUserId = userId || authUser?.id;
@@ -210,18 +199,16 @@ export function useCommissions(userId?: string) {
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, isLoading, proposalsLoading, clientsLoading, userId, authUser, allProposals, allClients, teamMemberIds]);
+    }, [commissions, isLoading, proposalsLoading, clientsLoading, userId, authUser, allProposals, allClients]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
-        commissions.forEach(commission => {
-            if(commission.createdAt) {
-                const date = new Date(commission.createdAt);
-                yearSet.add(date.getFullYear().toString());
-            }
+        allPayouts.forEach(payout => {
+            const date = new Date(payout.month);
+            yearSet.add(date.getFullYear().toString());
         });
         return Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a));
-    }, [commissions]);
+    }, [allPayouts]);
 
     const combinedIsLoading = isLoading || isFirebaseLoading || isUserAuthLoading || isSalesUsersLoading || proposalsLoading || clientsLoading;
 

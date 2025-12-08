@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -640,7 +639,7 @@ export default function MyTeamPage() {
   const { salesUsers, isLoading: usersLoading } = useSalesUsers();
   const { proposals, isLoading: proposalsLoading } = useAllProposals();
   const { clients, isLoading: clientsLoading } = useAllClients();
-  const { commissions, isLoading: commissionsLoading } = useCommissions(user?.id);
+  const { allPayouts, isLoading: commissionsLoading } = useCommissions();
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   const [proposalsByRepPeriod, setProposalsByRepPeriod] = useState<string>('all');
   const [leaderboardSearch, setLeaderboardSearch] = useState('');
@@ -779,118 +778,58 @@ export default function MyTeamPage() {
     };
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
- const commissionDetails = useMemo(() => {
-    if (proposalsLoading || clientsLoading || !isManager || !user) return { directSales: [], teamOverrides: [], recurring: [], qrCampaigns: [] };
-
-    const salesRepMap = new Map(salesUsers.map(u => [u.id, u]));
+  const commissionDetails = useMemo(() => {
+    if (proposalsLoading || clientsLoading || !isManager || !user) return { directSales: [], qrCampaigns: [], teamOverrides: [], recurring: [] };
+    
+    const managerPayouts = allPayouts.filter(p => p.commissions.some(c => c.userId === user.id));
+    
     const directSalesByMonth: Record<string, MonthlyCommissionBreakdown> = {};
     const qrCampaignsByMonth: Record<string, MonthlyCommissionBreakdown> = {};
     const overridesByMonth: Record<string, MonthlyCommissionBreakdown> = {};
     const recurringByMonth: Record<string, MonthlyCommissionBreakdown> = {};
-
-    const acceptedProposals = proposals.filter(p => p.status === 'accepted' && p.createdAt);
-
-    for (const proposal of acceptedProposals) {
-        const proposalDate = parseISO(proposal.createdAt);
-        const client = clientMap.get(proposal.clientId);
-        if (!client) continue;
-
-        const proposalCreatorId = proposal.userId;
-        const oneTimeMonthYear = format(proposalDate, 'MMMM yyyy');
-
-        // Manager's own sales (Direct or QR)
-        if (proposalCreatorId === user.id) {
-            const directCommissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
-            const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
-
-            const oneTimeRate = (client.clientType && directCommissionRates[client.clientType]) || 0;
-            const oneTimeCommission = proposal.amount * oneTimeRate;
-
-            if (oneTimeCommission > 0) {
-                // Check for QR Campaign
-                if (proposal.sourceLocation) {
-                    if (!qrCampaignsByMonth[oneTimeMonthYear]) qrCampaignsByMonth[oneTimeMonthYear] = { month: oneTimeMonthYear, total: 0, details: [] };
-                    qrCampaignsByMonth[oneTimeMonthYear].details.push({
-                        clientName: client.companyName, saleAmount: proposal.amount,
-                        commissionAmount: oneTimeCommission, rate: oneTimeRate, sourceLocation: proposal.sourceLocation,
-                        description: 'QR Campaign Commission', date: proposal.createdAt
-                    });
-                    qrCampaignsByMonth[oneTimeMonthYear].total += oneTimeCommission;
-                } else { // Direct Sale
-                    if (!directSalesByMonth[oneTimeMonthYear]) directSalesByMonth[oneTimeMonthYear] = { month: oneTimeMonthYear, total: 0, details: [] };
-                    directSalesByMonth[oneTimeMonthYear].details.push({
-                        clientName: client.companyName, saleAmount: proposal.amount,
-                        commissionAmount: oneTimeCommission, rate: oneTimeRate,
-                        description: 'Direct Sale Commission', date: proposal.createdAt
-                    });
-                    directSalesByMonth[oneTimeMonthYear].total += oneTimeCommission;
-                }
-            }
-
-            // Recurring commission for manager's direct sales
-            const recurringRate = (client.clientType && recurringCommissionRates[client.clientType]) || 0;
-            if (recurringRate > 0) {
-                const today = new Date();
-                const startDate = parseISO(proposal.createdAt);
-                 for (let i = 0; i < 12; i++) {
-                    const commissionMonthDate = addMonths(startDate, i);
-                    if (commissionMonthDate > today) break;
-
-                    const recurringMonthKey = format(commissionMonthDate, 'MMMM yyyy');
-                     if (!recurringByMonth[recurringMonthKey]) {
-                        recurringByMonth[recurringMonthKey] = { month: recurringMonthKey, total: 0, details: [] };
-                    }
-                    const recurringCommissionAmount = proposal.amount * recurringRate;
-                    
-                    const recurringId = `recurring-${proposal.id}-${i}`;
-                    if (!recurringByMonth[recurringMonthKey].details.some(d => d.description === `Recurring (${i + 1}/12)` && d.clientName === client.companyName)) {
-                      recurringByMonth[recurringMonthKey].details.push({
-                          clientName: client.companyName,
-                          saleAmount: proposal.amount,
-                          commissionAmount: recurringCommissionAmount,
-                          rate: recurringRate,
-                          description: `Recurring (${i + 1}/12)`,
-                          date: commissionMonthDate.toISOString()
-                      });
-                      recurringByMonth[recurringMonthKey].total += recurringCommissionAmount;
-                    }
-                }
-            }
-        }
-        // Team member's sales (Override for manager)
-        else if (myTeam.some(m => m.id === proposalCreatorId)) {
-            if (!overridesByMonth[oneTimeMonthYear]) {
-                overridesByMonth[oneTimeMonthYear] = { month: oneTimeMonthYear, total: 0, details: [] };
-            }
-            const salesRep = salesRepMap.get(proposalCreatorId);
-            if (salesRep) {
-                const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
-                const overrideRate = (client.clientType && managerOverrideRates[client.clientType]) || 0;
-                const overrideAmount = proposal.amount * overrideRate;
-
-                if (overrideAmount > 0) {
-                    overridesByMonth[oneTimeMonthYear].details.push({
-                        salesRepName: salesRep.displayName,
-                        clientName: client.companyName,
-                        saleAmount: proposal.amount,
-                        commissionAmount: overrideAmount,
-                        rate: overrideRate,
-                        sourceLocation: proposal.sourceLocation,
-                        date: proposal.createdAt
-                    });
-                    overridesByMonth[oneTimeMonthYear].total += overrideAmount;
-                }
-            }
-        }
-    }
     
+    managerPayouts.forEach(payout => {
+        payout.commissions.forEach(comm => {
+            const monthKey = payout.month;
+            const detail: CommissionDetail = {
+                salesRepName: salesUsers.find(u => u.id === comm.userId)?.displayName,
+                clientName: comm.clientName || 'N/A',
+                saleAmount: 0, // Not easily available, default to 0
+                commissionAmount: comm.amount,
+                rate: 0, // Not easily available
+                sourceLocation: proposals.find(p => p.id === comm.proposalId)?.sourceLocation,
+                description: comm.description,
+                date: comm.createdAt
+            };
+
+            if (comm.description?.includes('Override')) {
+                if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                overridesByMonth[monthKey].details.push(detail);
+                overridesByMonth[monthKey].total += comm.amount;
+            } else if (comm.description?.includes('QR Campaign')) {
+                if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                qrCampaignsByMonth[monthKey].details.push(detail);
+                qrCampaignsByMonth[monthKey].total += comm.amount;
+            } else if (comm.description?.includes('Recurring')) {
+                 if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                recurringByMonth[monthKey].details.push(detail);
+                recurringByMonth[monthKey].total += comm.amount;
+            }
+            else {
+                if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                directSalesByMonth[monthKey].details.push(detail);
+                directSalesByMonth[monthKey].total += comm.amount;
+            }
+        });
+    });
+
     return {
         directSales: Object.values(directSalesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
         qrCampaigns: Object.values(qrCampaignsByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
         teamOverrides: Object.values(overridesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
         recurring: Object.values(recurringByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
     };
-}, [proposals, clients, salesUsers, myTeam, user, isManager, proposalsLoading, clientsLoading, clientMap]);
+}, [allPayouts, isManager, user, proposalsLoading, clientsLoading, salesUsers]);
 
   const isLoading = usersLoading || proposalsLoading || clientsLoading || commissionsLoading;
 
@@ -914,11 +853,7 @@ export default function MyTeamPage() {
   }
 
   const currentMonth = format(new Date(), 'MMMM yyyy');
-  const currentMonthDirectSales = commissionDetails.directSales.find(mo => mo.month === currentMonth)?.total || 0;
-  const currentMonthQrCampaigns = commissionDetails.qrCampaigns.find(mo => mo.month === currentMonth)?.total || 0;
-  const currentMonthOverrides = commissionDetails.teamOverrides.find(mo => mo.month === currentMonth)?.total || 0;
-  const currentMonthRecurring = commissionDetails.recurring.find(mo => mo.month === currentMonth)?.total || 0;
-  const totalCurrentMonthCommission = currentMonthDirectSales + currentMonthQrCampaigns + currentMonthOverrides + currentMonthRecurring;
+  const totalCurrentMonthCommission = (allPayouts.find(p => p.month === currentMonth)?.totalAmount || 0);
 
 
   return (
@@ -1299,12 +1234,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
-    
-
-    
-
-
-
-
-
