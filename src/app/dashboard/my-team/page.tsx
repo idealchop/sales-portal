@@ -806,11 +806,11 @@ export default function MyTeamPage() {
             const oneTimeMonthYear = format(proposalDate, 'MMMM yyyy');
 
             if (oneTimeCommission > 0) {
-                 if ((proposal as any).sourceLocation) {
+                 if (proposal.sourceLocation) {
                     if (!qrCampaignsByMonth[oneTimeMonthYear]) qrCampaignsByMonth[oneTimeMonthYear] = { month: oneTimeMonthYear, total: 0, details: [] };
                     qrCampaignsByMonth[oneTimeMonthYear].details.push({
                         clientName: client.companyName, saleAmount: proposal.amount,
-                        commissionAmount: oneTimeCommission, rate: oneTimeRate, sourceLocation: (proposal as any).sourceLocation,
+                        commissionAmount: oneTimeCommission, rate: oneTimeRate, sourceLocation: proposal.sourceLocation,
                         description: 'QR Campaign Commission', date: proposal.createdAt
                     });
                     qrCampaignsByMonth[oneTimeMonthYear].total += oneTimeCommission;
@@ -828,8 +828,10 @@ export default function MyTeamPage() {
             const recurringRate = (client.clientType && recurringCommissionRates[client.clientType]) || 0;
             if (recurringRate > 0) {
                 const today = new Date();
+                const startDate = parseISO(proposal.createdAt);
+                
                 for (let i = 0; i < 12; i++) {
-                    const commissionMonthDate = addMonths(proposalDate, i);
+                    const commissionMonthDate = addMonths(startDate, i);
                     if (commissionMonthDate > today) break;
 
                     const recurringMonthKey = format(commissionMonthDate, 'MMMM yyyy');
@@ -837,15 +839,20 @@ export default function MyTeamPage() {
                         recurringByMonth[recurringMonthKey] = { month: recurringMonthKey, total: 0, details: [] };
                     }
                     const recurringCommissionAmount = proposal.amount * recurringRate;
-                    recurringByMonth[recurringMonthKey].details.push({
-                        clientName: client.companyName,
-                        saleAmount: proposal.amount,
-                        commissionAmount: recurringCommissionAmount,
-                        rate: recurringRate,
-                        description: `Recurring (${i + 1}/12)`,
-                        date: commissionMonthDate.toISOString()
-                    });
-                    recurringByMonth[recurringMonthKey].total += recurringCommissionAmount;
+                    
+                    const existingRecurring = recurringByMonth[recurringMonthKey].details.find(d => d.description === `Recurring (${i + 1}/12)` && d.clientName === client.companyName);
+
+                    if (!existingRecurring) {
+                      recurringByMonth[recurringMonthKey].details.push({
+                          clientName: client.companyName,
+                          saleAmount: proposal.amount,
+                          commissionAmount: recurringCommissionAmount,
+                          rate: recurringRate,
+                          description: `Recurring (${i + 1}/12)`,
+                          date: commissionMonthDate.toISOString()
+                      });
+                      recurringByMonth[recurringMonthKey].total += recurringCommissionAmount;
+                    }
                 }
             }
         }
@@ -867,7 +874,7 @@ export default function MyTeamPage() {
                         saleAmount: proposal.amount,
                         commissionAmount: overrideAmount,
                         rate: overrideRate,
-                        sourceLocation: (proposal as any).sourceLocation,
+                        sourceLocation: proposal.sourceLocation,
                         date: proposal.createdAt
                     });
                     overridesByMonth[overrideMonthYear].total += overrideAmount;
@@ -1295,6 +1302,7 @@ export default function MyTeamPage() {
     
 
     
+
 
 
 
