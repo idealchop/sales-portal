@@ -141,37 +141,41 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         const element = hiddenProposalRef.current;
         if (!element) return;
         setIsDownloading(true);
+
         try {
             element.style.display = 'block';
-
-            const canvas = await html2canvas(element, { 
+            
+            const canvas = await html2canvas(element, {
                 scale: 2,
                 useCORS: true,
                 windowWidth: element.scrollWidth,
                 windowHeight: element.scrollHeight,
-             });
-             
-            element.style.display = 'none';
+            });
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.9); // Use JPEG for compression
-            const imgWidth = 210; // A4 width in mm
-            const pageHeight = 295; // A4 height in mm
-            const imgHeight = canvas.height * imgWidth / canvas.width;
-            let heightLeft = imgHeight;
+            element.style.display = 'none';
             
+            const imgData = canvas.toDataURL('image/jpeg', 0.9);
             const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / pdfWidth;
+            const imgHeight = canvasHeight / ratio;
+
+            let heightLeft = imgHeight;
             let position = 0;
-            
-            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdfHeight;
 
             while (heightLeft > 0) {
                 position = heightLeft - imgHeight;
                 pdf.addPage();
-                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdfHeight;
             }
-            
+
             const totalPages = pdf.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 pdf.setPage(i);
@@ -186,6 +190,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
 
             pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.companyName}.pdf`);
             toast({ title: "Download Started", description: "Your proposal PDF is being generated." });
+
         } catch (error) {
             console.error("PDF generation failed:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not generate PDF.' });
@@ -493,7 +498,7 @@ function ContractPageContent() {
   const customLiters = searchParams.get('liters');
   const customCost = searchParams.get('cost');
   const customFreq = searchParams.get('freq');
-  const customType = searchParams.get('type');
+  const customType = searchParams.get('clientType');
   const companyName = searchParams.get('companyName') || '';
   const contactName = searchParams.get('contactName') || '';
   const contactEmail = searchParams.get('contactEmail') || '';
@@ -1224,3 +1229,4 @@ export default function ContractPage() {
     )
 }
 
+    
