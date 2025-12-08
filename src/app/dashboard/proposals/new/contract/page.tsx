@@ -142,26 +142,51 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         if (!element) return;
         setIsDownloading(true);
         try {
-            // Temporarily make the hidden div visible for rendering
             element.style.display = 'block';
 
             const canvas = await html2canvas(element, { 
                 scale: 2,
                 useCORS: true,
+                windowWidth: element.scrollWidth,
+                windowHeight: element.scrollHeight,
              });
              
-            // Hide it again
             element.style.display = 'none';
 
             const imgData = canvas.toDataURL('image/jpeg', 0.7);
+            const imgWidth = 210; // A4 width in mm
+            const pageHeight = 295; // A4 height in mm
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let heightLeft = imgHeight;
             
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'px',
-                format: [canvas.width, canvas.height]
-            });
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            let position = 0;
+            let pageCount = 1;
+            const totalPages = Math.ceil(imgHeight / pageHeight);
+
+            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pageCount++;
+                pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
             
-            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+            // Add page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                pdf.setPage(i);
+                pdf.setFontSize(8);
+                pdf.setTextColor(150);
+                pdf.text(
+                    `Page ${i} of ${totalPages}`,
+                    pdf.internal.pageSize.getWidth() - 20,
+                    pdf.internal.pageSize.getHeight() - 10
+                );
+            }
+
             pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.companyName}.pdf`);
             toast({ title: "Download Started", description: "Your proposal PDF is being generated." });
         } catch (error) {
@@ -717,7 +742,7 @@ function ContractPageContent() {
         const storage = getStorage();
         const filePath = `payment_proofs/${finalClientId}/${proposalId}/${paymentProofFile.name}`;
         const storageRef = ref(storage, filePath);
-        const snapshot = await uploadBytes(storageRef, paymentProofFile);
+        const snapshot = await uploadBytes(storageRef, file);
         downloadURL = await getDownloadURL(snapshot.ref);
       }
       
