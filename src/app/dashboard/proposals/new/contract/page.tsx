@@ -177,6 +177,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
     }
 
     if (!finalPlanDetails || !dialogCosts) return null;
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     return (
         <Dialog>
@@ -213,18 +214,18 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                             <CardContent className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                 <span className="text-muted-foreground">Subtotal ({dialogCosts.billingCycleLabel})</span>
-                                <span>{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.subtotal * (billingCycles.find(c=>c.value === dialogBillingCycle)?.multiplier || 1))}</span>
+                                <span>{currencyFormatter.format(dialogCosts.subtotal * (billingCycles.find(c=>c.value === dialogBillingCycle)?.multiplier || 1))}</span>
                                 </div>
                                 {dialogCosts.discountValue > 0 && (
                                 <div className="flex justify-between text-green-600">
                                     <span className="text-muted-foreground">Discount ({dialogCosts.discountPercentage}%)</span>
-                                    <span>- {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.discountValue)}</span>
+                                    <span>- {currencyFormatter.format(dialogCosts.discountValue)}</span>
                                 </div>
                                 )}
                                 <Separator />
                                 <div className="flex justify-between font-bold text-base">
                                     <span>Total Due</span>
-                                    <span>{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.totalAmountDue)}</span>
+                                    <span>{currencyFormatter.format(dialogCosts.totalAmountDue)}</span>
                                 </div>
                             </CardContent>
                          </Card>
@@ -236,7 +237,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                                     finalPlanDetails={{
                                         ...finalPlanDetails,
                                         billingCycleLabel: dialogCosts.billingCycleLabel,
-                                        totalAmountDue: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.totalAmountDue),
+                                        totalAmountDue: currencyFormatter.format(dialogCosts.totalAmountDue),
                                         discount: dialogCosts.discountPercentage / 100,
                                     }}
                                     isSigned={false}
@@ -245,12 +246,12 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                             </div>
                         </ScrollArea>
                         {/* Hidden div for PDF generation */}
-                        <div ref={hiddenProposalRef} style={{ display: 'none', width: '8.5in', height: '11in' }} className="p-12 bg-white text-black">
-                            <ContractDetails
+                         <div ref={hiddenProposalRef} style={{ display: 'none', position: 'absolute', left: '-9999px', width: '8.5in' }} className="p-12 bg-white text-black">
+                             <ContractDetails
                                 finalPlanDetails={{
                                     ...finalPlanDetails,
                                     billingCycleLabel: dialogCosts.billingCycleLabel,
-                                    totalAmountDue: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.totalAmountDue),
+                                    totalAmountDue: currencyFormatter.format(dialogCosts.totalAmountDue),
                                     discount: dialogCosts.discountPercentage / 100,
                                 }}
                                 isSigned={false}
@@ -811,15 +812,17 @@ function ContractPageContent() {
         await runTransaction(firestore, async (transaction) => {
             // --- All READ operations must come first ---
             const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+            let clientCounterRef;
+            if (!existingClientId && !generatedClientId) {
+                clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+            }
             
             const proposalCounterSnap = await transaction.get(proposalCounterRef);
             let clientCounterSnap;
-            if (!existingClientId && !generatedClientId) {
-                // Only read if we need to generate a new client ID
+            if (clientCounterRef) {
                 clientCounterSnap = await transaction.get(clientCounterRef);
             }
-
+            
             // --- All WRITE operations must come after all reads ---
             let finalClientId = generatedClientId;
             
@@ -889,7 +892,7 @@ function ContractPageContent() {
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
   const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
-  const discountValue = (finalPlanDetails.basePrice * selectedCycle.multiplier) * selectedCycle.discount;
+  const discountValue = isFlowPlan ? 0 : (finalPlanDetails.basePrice * selectedCycle.multiplier) * selectedCycle.discount;
 
 
   const clientTypeMap: { [key: string]: string } = {
@@ -1119,11 +1122,13 @@ function ContractPageContent() {
                           {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : <span className="text-sm font-normal text-muted-foreground"> / mo</span>}
                         </p>
                     </div>
-                    <ul className="text-xs text-muted-foreground list-disc pl-5">
-                        <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
-                        {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
-                        <li>Refill Frequency: {finalPlan.refillFrequency}</li>
-                    </ul>
+                    {!isFlowPlan && (
+                        <ul className="text-xs text-muted-foreground list-disc pl-5">
+                            <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
+                            {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
+                            <li>Refill Frequency: {finalPlan.refillFrequency}</li>
+                        </ul>
+                    )}
                 </div>
 
                 {!isFlowPlan && (
@@ -1197,4 +1202,3 @@ export default function ContractPage() {
     )
 }
 
-    
