@@ -13,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2 } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
-import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval, differenceInMonths } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval, differenceInMonths, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
   ResponsiveContainer,
@@ -797,7 +797,6 @@ export default function MyTeamPage() {
 
         const proposalCreatorId = proposal.userId;
 
-        // Case 1: Manager's direct sale (one-time and recurring)
         if (proposalCreatorId === user.id) {
             const directCommissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
             const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
@@ -826,28 +825,30 @@ export default function MyTeamPage() {
                 }
             }
             
-            // Recurring commission
             const recurringRate = (client.clientType && recurringCommissionRates[client.clientType]) || 0;
-            const monthDiff = differenceInMonths(new Date(), proposalDate);
-            
-            if (recurringRate > 0 && monthDiff < 12) {
-                const recurringCommissionAmount = proposal.amount * recurringRate;
-                for (let i = 0; i <= monthDiff; i++) {
-                    const recurringMonth = subMonths(new Date(), i);
-                    const recurringMonthKey = format(recurringMonth, 'MMMM yyyy');
-                    if (differenceInMonths(recurringMonth, proposalDate) < 12 && differenceInMonths(recurringMonth, proposalDate) >= 0) {
-                        if (!recurringByMonth[recurringMonthKey]) recurringByMonth[recurringMonthKey] = { month: recurringMonthKey, total: 0, details: [] };
-                        recurringByMonth[recurringMonthKey].details.push({
-                            clientName: client.companyName, saleAmount: proposal.amount,
-                            commissionAmount: recurringCommissionAmount, rate: recurringRate,
-                            description: `Recurring (${differenceInMonths(recurringMonth, proposalDate) + 1}/12)`, date: recurringMonth.toISOString()
-                        });
-                        recurringByMonth[recurringMonthKey].total += recurringCommissionAmount;
+            if (recurringRate > 0) {
+                const today = new Date();
+                for (let i = 0; i < 12; i++) {
+                    const commissionMonthDate = addMonths(proposalDate, i);
+                    if (commissionMonthDate > today) break;
+
+                    const recurringMonthKey = format(commissionMonthDate, 'MMMM yyyy');
+                    if (!recurringByMonth[recurringMonthKey]) {
+                        recurringByMonth[recurringMonthKey] = { month: recurringMonthKey, total: 0, details: [] };
                     }
+                    const recurringCommissionAmount = proposal.amount * recurringRate;
+                    recurringByMonth[recurringMonthKey].details.push({
+                        clientName: client.companyName,
+                        saleAmount: proposal.amount,
+                        commissionAmount: recurringCommissionAmount,
+                        rate: recurringRate,
+                        description: `Recurring (${i + 1}/12)`,
+                        date: commissionMonthDate.toISOString()
+                    });
+                    recurringByMonth[recurringMonthKey].total += recurringCommissionAmount;
                 }
             }
         }
-        // Case 2: Team member's sale (for override)
         else if (myTeam.some(m => m.id === proposalCreatorId)) {
              const overrideMonthYear = format(proposalDate, 'MMMM yyyy');
              if (!overridesByMonth[overrideMonthYear]) {
@@ -1294,5 +1295,6 @@ export default function MyTeamPage() {
     
 
     
+
 
 
