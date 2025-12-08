@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -540,12 +540,18 @@ function ContractPageContent() {
   
   const finalPlan = useMemo(() => {
     if (!plan) return null;
+
+    if (plan.id === 'enterprise-overflow') {
+      return {
+        ...plan,
+        liters: 'Usage-Based',
+      };
+    }
+
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const finalLiters = baseLiters + freeLiters + additionalLiters;
-    const planInclusions = plan.id === 'enterprise-overflow' 
-        ? ['Pay only for what you use'] 
-        : (plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : []);
+    const planInclusions = plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : [];
 
     return {
         ...plan,
@@ -586,7 +592,7 @@ function ContractPageContent() {
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const totalMonthlyLiters = baseLiters + freeLiters + additionalLiters;
-    const totalLitersForCycle = totalMonthlyLiters * selectedCycle.multiplier;
+    const totalLitersForCycle = isFlowPlan ? 0 : totalMonthlyLiters * selectedCycle.multiplier;
     
     const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
 
@@ -595,7 +601,7 @@ function ContractPageContent() {
     return {
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         summaryTitle: summaryTitle,
-        totalLiters: `${totalLitersForCycle.toLocaleString()} L`,
+        totalLiters: isFlowPlan ? 'Usage-Based' : `${totalLitersForCycle.toLocaleString()} L`,
         employees: finalPlan.employees,
         refillableGallons: rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic',
         refillFrequency: finalPlan.refillFrequency,
@@ -1144,3 +1150,4 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
