@@ -153,7 +153,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
              
             element.style.display = 'none';
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.7);
+            const imgData = canvas.toDataURL('image/jpeg', 0.9); // Use JPEG for compression
             const imgWidth = 210; // A4 width in mm
             const pageHeight = 295; // A4 height in mm
             const imgHeight = canvas.height * imgWidth / canvas.width;
@@ -161,21 +161,18 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
             
             const pdf = new jsPDF('p', 'mm', 'a4');
             let position = 0;
-            let pageCount = 1;
-            const totalPages = Math.ceil(imgHeight / pageHeight);
-
+            
             pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
 
             while (heightLeft > 0) {
                 position = heightLeft - imgHeight;
-                pageCount++;
                 pdf.addPage();
                 pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
             }
             
-            // Add page numbers
+            const totalPages = pdf.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 pdf.setPage(i);
                 pdf.setFontSize(8);
@@ -272,7 +269,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                         </ScrollArea>
                         {/* Hidden div for PDF generation */}
                          <div ref={hiddenProposalRef} style={{ display: 'none', position: 'absolute', left: '-9999px', width: '8.5in' }} className="p-12 bg-white text-black">
-                             <ContractDetails
+                            <ContractDetails
                                 finalPlanDetails={{
                                     ...finalPlanDetails,
                                     billingCycleLabel: dialogCosts.billingCycleLabel,
@@ -365,7 +362,7 @@ function PreviewDialog({
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
              <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
-                    <DialogTitle>Proposal Preview &amp; Finalization</DialogTitle>
+                    <DialogTitle>Proposal Preview & Finalization</DialogTitle>
                     <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
@@ -742,7 +739,7 @@ function ContractPageContent() {
         const storage = getStorage();
         const filePath = `payment_proofs/${finalClientId}/${proposalId}/${paymentProofFile.name}`;
         const storageRef = ref(storage, filePath);
-        const snapshot = await uploadBytes(storageRef, file);
+        const snapshot = await uploadBytes(storageRef, paymentProofFile);
         downloadURL = await getDownloadURL(snapshot.ref);
       }
       
