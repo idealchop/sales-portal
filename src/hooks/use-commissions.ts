@@ -51,12 +51,19 @@ export function useCommissions(userId?: string) {
 
     let userIdsToQuery: string[] = [];
 
+    // If a specific userId is passed, we query for that user.
+    // This is used for admins viewing a specific user's payouts.
     if (userId) { 
         userIdsToQuery = [userId];
-    } else if (authUser) { 
+    } 
+    // If no specific userId, we use the authenticated user.
+    else if (authUser) { 
+        // If the authenticated user is a manager, we want to see their own commissions
+        // plus all commissions from their team members to calculate overrides.
         if (isManager) {
             userIdsToQuery = [authUser.id, ...teamMemberIds];
         } else {
+            // A regular sales exec only sees their own commissions.
             userIdsToQuery = [authUser.id];
         }
     }
@@ -67,12 +74,14 @@ export function useCommissions(userId?: string) {
         return;
     }
     
+    // Firestore 'in' queries are limited to 30 values. We batch them.
     const MAX_IN_QUERIES = 30;
     const queryBatches: string[][] = [];
     for (let i = 0; i < userIdsToQuery.length; i += MAX_IN_QUERIES) {
         queryBatches.push(userIdsToQuery.slice(i, i + MAX_IN_QUERIES));
     }
 
+    // We create a listener for each batch of user IDs.
     const unsubscribers = queryBatches.map(batch => {
         const commissionsQuery = query(collection(firestore, 'commissions'), where('userId', 'in', batch));
         
@@ -89,9 +98,11 @@ export function useCommissions(userId?: string) {
                 fetchedCommissions.push({ ...data as Commission, id: doc.id, createdAt: createdAtString });
             });
             
+            // Atomically update the commissions state, replacing old commissions from this batch
+            // with the new ones to prevent duplicates.
             setCommissions(prevCommissions => {
-                const commissionIdsFromBatch = new Set(batch);
-                const otherCommissions = prevCommissions.filter(c => !commissionIdsFromBatch.has(c.userId));
+                const newCommissionIds = new Set(fetchedCommissions.map(c => c.id));
+                const otherCommissions = prevCommissions.filter(c => !newCommissionIds.has(c.id));
                 return [...otherCommissions, ...fetchedCommissions];
             });
             setIsLoading(false); 
@@ -108,10 +119,10 @@ export function useCommissions(userId?: string) {
         unsubscribers.forEach(unsub => unsub());
     };
 
-  }, [firestore, isFirebaseLoading, userId, isManager, teamMemberIds.length, authUser, isUserAuthLoading]);
+  }, [firestore, isFirebaseLoading, userId, isManager, teamMemberIds, authUser, isUserAuthLoading]);
   
     const allPayouts = useMemo(() => {
-        if (isLoading) return [];
+        if (isLoading || proposalsLoading || clientsLoading) return [];
         
         const commissionsByMonth: Record<string, WithId<PayoutCommission>[]> = {};
         
@@ -128,15 +139,22 @@ export function useCommissions(userId?: string) {
         });
 
         const processedPayouts: MonthlyPayout[] = [];
+        const targetUserId = userId || authUser?.id;
 
         Object.keys(commissionsByMonth).forEach(month => {
-            let monthCommissions = commissionsByMonth[month];
-            const totalAmount = monthCommissions.reduce((sum, c) => sum + c.amount, 0);
-            if (totalAmount === 0) return;
+            const monthCommissions = commissionsByMonth[month];
             
-            const allPaid = !monthCommissions.some(c => c.status === 'pending');
+            // Filter commissions to only include those relevant to the target user
+            // This is crucial for the manager's view, as it will contain their team's commissions too.
+            const userSpecificCommissions = monthCommissions.filter(c => c.userId === targetUserId);
+            
+            const totalAmount = userSpecificCommissions.reduce((sum, c) => sum + c.amount, 0);
+
+            if (totalAmount === 0 && !isManager) return; // Don't show months with zero payout for non-managers
+
+            const allPaid = !userSpecificCommissions.some(c => c.status === 'pending');
             const status = allPaid ? 'paid' : 'pending';
-            const targetUserId = userId || authUser?.id;
+            
             const userIdForTx = targetUserId?.slice(0, 4).toUpperCase() || 'USER';
             
             processedPayouts.push({
@@ -144,14 +162,14 @@ export function useCommissions(userId?: string) {
                 totalAmount,
                 status,
                 timelineStatus: allPaid ? 'paid' : 'calculated',
-                commissions: monthCommissions,
+                commissions: userSpecificCommissions,
                 transactionId: `SR-PO-${new Date(month).getFullYear()}${String(new Date(month).getMonth() + 1).padStart(2, '0')}-${userIdForTx}`
             });
         });
 
         processedPayouts.sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
         return processedPayouts;
-    }, [commissions, isLoading, userId, authUser, allProposals, allClients]);
+    }, [commissions, isLoading, proposalsLoading, clientsLoading, userId, authUser, isManager, allProposals, allClients]);
 
     const availableYears = useMemo(() => {
         const yearSet = new Set<string>();
