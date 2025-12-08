@@ -101,6 +101,7 @@ const additionalLiterCost = 3;
 
 function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode }) {
     const proposalRef = useRef<HTMLDivElement>(null);
+    const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
     
@@ -138,15 +139,22 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
 
 
     const handleDownloadPdf = async () => {
-        const element = proposalRef.current;
+        const element = hiddenProposalRef.current;
         if (!element) return;
         setIsDownloading(true);
         try {
+            // Temporarily make the hidden div visible for rendering
+            element.style.display = 'block';
+
             const canvas = await html2canvas(element, { 
                 scale: 2,
                 useCORS: true,
              });
-            const imgData = canvas.toDataURL('image/jpeg', 0.8);
+             
+            // Hide it again
+            element.style.display = 'none';
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.7);
             
             const pdf = new jsPDF({
                 orientation: 'portrait',
@@ -222,7 +230,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                     </div>
                     <div className="md:col-span-3 mt-6 md:mt-0">
                         <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
-                             <div ref={proposalRef} className="bg-white p-8" id="pdf-content">
+                             <div ref={proposalRef} className="bg-white p-8" id="pdf-content-preview">
                                 <ContractDetails
                                     finalPlanDetails={{
                                         ...finalPlanDetails,
@@ -235,6 +243,19 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                                 />
                             </div>
                         </ScrollArea>
+                        {/* Hidden div for PDF generation */}
+                        <div ref={hiddenProposalRef} style={{ display: 'none', width: '8.5in', height: '11in' }} className="p-12 bg-white text-black">
+                            <ContractDetails
+                                finalPlanDetails={{
+                                    ...finalPlanDetails,
+                                    billingCycleLabel: dialogCosts.billingCycleLabel,
+                                    totalAmountDue: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(dialogCosts.totalAmountDue),
+                                    discount: dialogCosts.discountPercentage / 100,
+                                }}
+                                isSigned={false}
+                                isProposalIllustration={true}
+                            />
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
@@ -545,6 +566,7 @@ function ContractPageContent() {
       return {
         ...plan,
         liters: 'Usage-Based',
+        inclusions: ['Pay only for what you use'],
       };
     }
 
@@ -592,7 +614,7 @@ function ContractPageContent() {
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const totalMonthlyLiters = baseLiters + freeLiters + additionalLiters;
-    const totalLitersForCycle = isFlowPlan ? 0 : totalMonthlyLiters * selectedCycle.multiplier;
+    const totalLitersForCycle = isFlowPlan ? 'Usage-Based' : `${(totalMonthlyLiters * selectedCycle.multiplier).toLocaleString()} L`;
     
     const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
 
@@ -601,7 +623,7 @@ function ContractPageContent() {
     return {
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         summaryTitle: summaryTitle,
-        totalLiters: isFlowPlan ? 'Usage-Based' : `${totalLitersForCycle.toLocaleString()} L`,
+        totalLiters: totalLitersForCycle,
         employees: finalPlan.employees,
         refillableGallons: rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic',
         refillFrequency: finalPlan.refillFrequency,
@@ -619,7 +641,7 @@ function ContractPageContent() {
         additionalDispenserCost,
         additionalLiterCost,
         totalMonthlyLiters,
-        totalLitersForCycle,
+        totalLitersForCycle: isFlowPlan ? 0 : (totalMonthlyLiters * selectedCycle.multiplier),
         clientId: generatedClientId,
         proposalId: generatedProposalId,
         companyName,
@@ -853,6 +875,8 @@ function ContractPageContent() {
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
   const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
+  const discountValue = (finalPlanDetails.basePrice * selectedCycle.multiplier) * selectedCycle.discount;
+
 
   const clientTypeMap: { [key: string]: string } = {
     household: 'Family',
@@ -1115,7 +1139,7 @@ function ContractPageContent() {
                         
                         <div className='space-y-2'>
                             <Label>Payment Schedule</Label>
-                            <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1">
+                            <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>
                                 {billingCycles.map((cycle) => (
                                     <div key={cycle.value} className="flex items-center space-x-2">
                                         <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
@@ -1131,6 +1155,14 @@ function ContractPageContent() {
                 )}
 
                 <Separator />
+                
+                {discountValue > 0 && !isFlowPlan && (
+                    <div className="flex justify-between items-center text-sm text-green-600">
+                        <span>Discount ({selectedCycle.discount * 100}%)</span>
+                        <span>- {currencyFormatter.format(discountValue)}</span>
+                    </div>
+                )}
+
 
                 <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
                     <span>Total Due</span>
@@ -1151,3 +1183,5 @@ export default function ContractPage() {
     )
 }
 
+
+    
