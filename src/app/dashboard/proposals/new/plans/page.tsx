@@ -299,7 +299,7 @@ const flowPlans: Plan[] = [
         name: 'Enterprise Overflow',
         monthlyFee: '₱50,000',
         liters: 'Usage-Based',
-        refillFrequency: 'On-demand',
+        refillFrequency: 'Based on schedule',
         inclusions: [
             'Initial top-up of ₱50,000.',
             'Preferential rate of ₱2.50 per liter.',
@@ -621,8 +621,14 @@ function PlansGrid({
         if (isSmeCommercialCustom) {
             return plans.filter(p => p.id === 'custom-plan');
         }
+        if (isSingleCustomPlan) {
+            return plans.filter(p => p.id === 'enterprise-customized');
+        }
+        if (isSingleOverflowPlan) {
+            return plans.filter(p => p.id === 'enterprise-overflow');
+        }
         return plans;
-    }, [plans, isSmeCommercialCustom]);
+    }, [plans, isSmeCommercialCustom, isSingleCustomPlan, isSingleOverflowPlan]);
 
     return (
     <RadioGroup
@@ -661,6 +667,7 @@ function PlansGrid({
             stations = `${totalDispensers} Dispensers`;
             monthlyFee = '₱50,000';
             liters = `Usage-Based`;
+            refillFrequency = `Based on schedule`;
         }
 
 
@@ -1011,7 +1018,7 @@ export default function PlansPage() {
         setCustomCalculatedValues(values);
     }, []);
 
-    const handleOverflowCalculated = useCallback((values: { locations: { name: string; dispensers: number; containers: number; }[] }) => {
+    const handleOverflowCalculated = useCallback((values: any) => {
         setOverflowCalculatedValues(values);
     }, []);
 
@@ -1071,7 +1078,6 @@ export default function PlansPage() {
                     customCalculatedValues={customCalculatedValues}
                     onCustomCalculated={handleCustomCalculated}
                     overflowCalculatedValues={overflowCalculatedValues}
-    
                     onOverflowCalculated={handleOverflowCalculated}
                     smeCommercialCustomValues={smeCommercialCustomValues}
                     onSmeCommercialCustomCalculated={handleSmeCommercialCustomCalculated}
