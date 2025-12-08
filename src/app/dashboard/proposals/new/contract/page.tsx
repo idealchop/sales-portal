@@ -70,11 +70,11 @@ const billingCycles = [
 
 const addons = [
   {
-    id: 'weekly-sanitation',
-    name: 'Weekly Sanitation',
-    description: 'Increase sanitation visits to weekly for high-traffic areas.',
-    fee: '₱1200 / month',
-    feeValue: 1200,
+    id: 'monthly-sanitation',
+    name: 'Monthly Sanitation',
+    description: 'Guaranteed monthly sanitation and equipment check-up for high-traffic areas.',
+    fee: '₱500 / month',
+    feeValue: 500,
     type: 'checkbox',
   },
   {
@@ -200,7 +200,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                                             <RadioGroupItem value={cycle.value} id={`dialog-${cycle.value}`} />
                                             <Label htmlFor={`dialog-${cycle.value}`} className="font-normal flex justify-between w-full">
                                                 <span>{cycle.label}</span>
-                                                {cycle.discount > 0 && <span className="font-semibold text-green-600">-{cycle.discount * 100}%</span>}
+                                                {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
                                             </Label>
                                         </div>
                                     ))}
@@ -485,7 +485,7 @@ function ContractPageContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingIds, setIsGeneratingIds] = useState(false);
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
-    'weekly-sanitation': false,
+    'monthly-sanitation': false,
   });
   const [additionalDispensers, setAdditionalDispensers] = useState(0);
   const [additionalLiters, setAdditionalLiters] = useState(0);
@@ -1106,7 +1106,7 @@ function ContractPageContent() {
                         </p>
                     </div>
                     <ul className="text-xs text-muted-foreground list-disc pl-5">
-                        <li>Total Liters: {finalPlan.liters} {isFlowPlan ? '' : '/ mo (includes 20% bonus)'}</li>
+                        <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
                         {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
                         <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                     </ul>
@@ -1182,6 +1182,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-
-    
