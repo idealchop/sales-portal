@@ -271,43 +271,46 @@ const TeamGoalsDialog = () => {
   );
 };
 
-interface OverrideCommissionDetail {
-    salesRepName: string;
+interface CommissionDetail {
+    salesRepName?: string;
     clientName: string;
     saleAmount: number;
-    overrideAmount: number;
-    overrideRate: number;
+    commissionAmount: number;
+    rate: number;
     sourceLocation?: string;
     description?: string;
+    date: string;
 }
 
-type MonthlyOverride = {
+type MonthlyCommissionBreakdown = {
     month: string;
     total: number;
-    details: OverrideCommissionDetail[];
+    details: CommissionDetail[];
 };
 
-const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissions }: { directSalesCommissions: MonthlyOverride[]; teamOverrideCommissions: MonthlyOverride[] }) => {
+const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissions, recurringCommissions }: { directSalesCommissions: MonthlyCommissionBreakdown[]; teamOverrideCommissions: MonthlyCommissionBreakdown[]; recurringCommissions: MonthlyCommissionBreakdown[] }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const allMonths = useMemo(() => {
-        const months = new Set([...directSalesCommissions.map(c => c.month), ...teamOverrideCommissions.map(c => c.month)]);
-        return Array.from(months).sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
-    }, [directSalesCommissions, teamOverrideCommissions]);
-    
+        const months = new Set([...directSalesCommissions.map(c => c.month), ...teamOverrideCommissions.map(c => c.month), ...recurringCommissions.map(c => c.month)]);
+        return Array.from(months).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    }, [directSalesCommissions, teamOverrideCommissions, recurringCommissions]);
+
     const [selectedMonth, setSelectedMonth] = useState<string>(allMonths[0] || '');
 
     const selectedDirectSales = useMemo(() => directSalesCommissions.find(c => c.month === selectedMonth) || { total: 0, details: [] }, [directSalesCommissions, selectedMonth]);
     const selectedOverrides = useMemo(() => teamOverrideCommissions.find(c => c.month === selectedMonth) || { total: 0, details: [] }, [teamOverrideCommissions, selectedMonth]);
-    const totalForMonth = selectedDirectSales.total + selectedOverrides.total;
+    const selectedRecurring = useMemo(() => recurringCommissions.find(c => c.month === selectedMonth) || { total: 0, details: [] }, [recurringCommissions, selectedMonth]);
+
+    const totalForMonth = selectedDirectSales.total + selectedOverrides.total + selectedRecurring.total;
 
     return (
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
                 <DialogTitle>My Commissions History</DialogTitle>
                 <DialogDescription>
                     Your direct sales commissions and team override commissions.
                 </DialogDescription>
-                 <div className="pt-4">
+                <div className="pt-4">
                     <Select onValueChange={setSelectedMonth} defaultValue={selectedMonth}>
                         <SelectTrigger className="w-full sm:w-[280px]">
                             <SelectValue placeholder="Select a month to view details" />
@@ -326,15 +329,14 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                 <div className="space-y-6 pr-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-lg">Direct Sales Commissions</CardTitle>
+                            <CardTitle className="text-lg">Direct Sales Commissions (One-Time)</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <Table>
+                            <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Client</TableHead>
                                         <TableHead>Campaign</TableHead>
-                                        <TableHead>Description</TableHead>
                                         <TableHead className="text-right">Commission</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -344,13 +346,43 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                             <TableRow key={index}>
                                                 <TableCell>{detail.clientName}</TableCell>
                                                 <TableCell>{detail.sourceLocation || 'Direct'}</TableCell>
-                                                <TableCell>{detail.description || 'N/A'}</TableCell>
-                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
+                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="text-center h-24">No direct sales for this month.</TableCell>
+                                            <TableCell colSpan={3} className="text-center h-24">No direct sales commissions for this month.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Recurring Commissions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Client</TableHead>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead className="text-right">Commission</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {selectedRecurring.details.length > 0 ? (
+                                        selectedRecurring.details.map((detail, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>{detail.clientName}</TableCell>
+                                                <TableCell>{detail.description}</TableCell>
+                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center h-24">No recurring commissions for this month.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -362,7 +394,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                             <CardTitle className="text-lg">Team Override Commissions</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <Table>
+                            <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Sales Rep</TableHead>
@@ -378,7 +410,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                                                 <TableCell>{detail.salesRepName}</TableCell>
                                                 <TableCell>{detail.clientName}</TableCell>
                                                 <TableCell>{detail.sourceLocation || 'Direct'}</TableCell>
-                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.overrideAmount)}</TableCell>
+                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
@@ -393,7 +425,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, teamOverrideCommissi
                 </div>
             </ScrollArea>
             {selectedMonth && (
-                 <DialogFooter className="border-t pt-4">
+                <DialogFooter className="border-t pt-4">
                     <div className="w-full flex justify-between items-center text-lg font-bold">
                         <span>Total for {selectedMonth}</span>
                         <span>{currencyFormatter.format(totalForMonth)}</span>
@@ -714,11 +746,12 @@ export default function MyTeamPage() {
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
  const commissionDetails = useMemo(() => {
-    if (proposalsLoading || clientsLoading || !isManager || !user) return { directSales: [], teamOverrides: [] };
+    if (proposalsLoading || clientsLoading || !isManager || !user) return { directSales: [], teamOverrides: [], recurring: [] };
     
     const salesRepMap = new Map(salesUsers.map(u => [u.id, u]));
-    const directSalesByMonth: { [month: string]: MonthlyOverride } = {};
-    const overridesByMonth: { [month: string]: MonthlyOverride } = {};
+    const directSalesByMonth: Record<string, MonthlyCommissionBreakdown> = {};
+    const overridesByMonth: Record<string, MonthlyCommissionBreakdown> = {};
+    const recurringByMonth: Record<string, MonthlyCommissionBreakdown> = {};
 
     const acceptedProposals = proposals.filter(p => p.status === 'accepted' && p.createdAt);
 
@@ -742,9 +775,9 @@ export default function MyTeamPage() {
             if (oneTimeCommission > 0) {
                 if (!directSalesByMonth[oneTimeMonthYear]) directSalesByMonth[oneTimeMonthYear] = { month: oneTimeMonthYear, total: 0, details: [] };
                 directSalesByMonth[oneTimeMonthYear].details.push({
-                    salesRepName: user.displayName, clientName: client.companyName, saleAmount: proposal.amount,
-                    overrideAmount: oneTimeCommission, overrideRate: oneTimeRate, sourceLocation: (proposal as any).sourceLocation,
-                    description: 'Direct Sale Commission'
+                    clientName: client.companyName, saleAmount: proposal.amount,
+                    commissionAmount: oneTimeCommission, rate: oneTimeRate, sourceLocation: (proposal as any).sourceLocation,
+                    description: 'Direct Sale Commission', date: proposal.createdAt
                 });
                 directSalesByMonth[oneTimeMonthYear].total += oneTimeCommission;
             }
@@ -759,13 +792,13 @@ export default function MyTeamPage() {
                     const recurringMonth = subMonths(new Date(), i);
                     const recurringMonthKey = format(recurringMonth, 'MMMM yyyy');
                     if (differenceInMonths(recurringMonth, proposalDate) < 12 && differenceInMonths(recurringMonth, proposalDate) >= 0) {
-                        if (!directSalesByMonth[recurringMonthKey]) directSalesByMonth[recurringMonthKey] = { month: recurringMonthKey, total: 0, details: [] };
-                        directSalesByMonth[recurringMonthKey].details.push({
-                            salesRepName: user.displayName, clientName: client.companyName, saleAmount: proposal.amount,
-                            overrideAmount: recurringCommissionAmount, overrideRate: recurringRate, sourceLocation: (proposal as any).sourceLocation,
-                            description: `Recurring (${differenceInMonths(recurringMonth, proposalDate) + 1}/12)`
+                        if (!recurringByMonth[recurringMonthKey]) recurringByMonth[recurringMonthKey] = { month: recurringMonthKey, total: 0, details: [] };
+                        recurringByMonth[recurringMonthKey].details.push({
+                            clientName: client.companyName, saleAmount: proposal.amount,
+                            commissionAmount: recurringCommissionAmount, rate: recurringRate, sourceLocation: (proposal as any).sourceLocation,
+                            description: `Recurring (${differenceInMonths(recurringMonth, proposalDate) + 1}/12)`, date: recurringMonth.toISOString()
                         });
-                        directSalesByMonth[recurringMonthKey].total += recurringCommissionAmount;
+                        recurringByMonth[recurringMonthKey].total += recurringCommissionAmount;
                     }
                 }
             }
@@ -788,9 +821,10 @@ export default function MyTeamPage() {
                         salesRepName: salesRep.displayName,
                         clientName: client.companyName,
                         saleAmount: proposal.amount,
-                        overrideAmount,
-                        overrideRate,
-                        sourceLocation: (proposal as any).sourceLocation
+                        commissionAmount: overrideAmount,
+                        rate: overrideRate,
+                        sourceLocation: (proposal as any).sourceLocation,
+                        date: proposal.createdAt
                     });
                     overridesByMonth[overrideMonthYear].total += overrideAmount;
                 }
@@ -801,6 +835,7 @@ export default function MyTeamPage() {
     return { 
         directSales: Object.values(directSalesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
         teamOverrides: Object.values(overridesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
+        recurring: Object.values(recurringByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
     };
 }, [proposalsLoading, clientsLoading, isManager, proposals, clientMap, salesUsers, myTeam, user]);
 
@@ -828,7 +863,8 @@ export default function MyTeamPage() {
   const currentMonth = format(new Date(), 'MMMM yyyy');
   const currentMonthDirectSales = commissionDetails.directSales.find(mo => mo.month === currentMonth)?.total || 0;
   const currentMonthOverrides = commissionDetails.teamOverrides.find(mo => mo.month === currentMonth)?.total || 0;
-  const totalCurrentMonthCommission = currentMonthDirectSales + currentMonthOverrides;
+  const currentMonthRecurring = commissionDetails.recurring.find(mo => mo.month === currentMonth)?.total || 0;
+  const totalCurrentMonthCommission = currentMonthDirectSales + currentMonthOverrides + currentMonthRecurring;
 
 
   return (
@@ -992,7 +1028,7 @@ export default function MyTeamPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                    <ManagerCommissionsDialog directSalesCommissions={commissionDetails.directSales} teamOverrideCommissions={commissionDetails.teamOverrides} />
+                    <ManagerCommissionsDialog directSalesCommissions={commissionDetails.directSales} teamOverrideCommissions={commissionDetails.teamOverrides} recurringCommissions={commissionDetails.recurring} />
                 </Dialog>
                 <Dialog>
                     <DialogTrigger asChild>
