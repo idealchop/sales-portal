@@ -808,22 +808,35 @@ function ContractPageContent() {
 
     try {
         await runTransaction(firestore, async (transaction) => {
+            // --- All READ operations must come first ---
             const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            let newProposalNumber;
-            if(!generatedProposalId) {
-                const proposalCounterSnap = await transaction.get(proposalCounterRef);
-                newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-                const newProposalId = String(newProposalNumber).padStart(10, '0');
-                setGeneratedProposalId(newProposalId);
-                transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-            }
+            const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
             
+            const proposalCounterSnap = await transaction.get(proposalCounterRef);
+            let clientCounterSnap;
             if (!existingClientId && !generatedClientId) {
-                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                const clientCounterSnap = await transaction.get(clientCounterRef);
+                // Only read if we need to generate a new client ID
+                clientCounterSnap = await transaction.get(clientCounterRef);
+            }
+
+            // --- All WRITE operations must come after all reads ---
+            let finalClientId = generatedClientId;
+            
+            // Calculate new proposal ID
+            const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+            const newProposalId = String(newProposalNumber).padStart(10, '0');
+
+            // Set the new proposal ID in state and in the transaction
+            setGeneratedProposalId(newProposalId);
+            transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+
+            // Calculate new client ID if necessary
+            if (clientCounterSnap) {
                 const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
                 const year = new Date().getFullYear().toString().slice(-2);
-                const finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                
+                // Set the new client ID in state and in the transaction
                 setGeneratedClientId(finalClientId);
                 transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
             }
@@ -1182,3 +1195,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
