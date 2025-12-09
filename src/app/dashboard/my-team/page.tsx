@@ -710,8 +710,6 @@ const commissionDetails = useMemo(() => {
         const monthKey = payout.month;
 
         payout.commissions.forEach(comm => {
-            if (comm.userId !== user.id && !teamMemberIds.has(comm.userId)) return;
-
             const proposal = proposals.find(p => p.id === comm.proposalId);
             const client = clients.find(c => c.id === proposal?.clientId);
             const salesRep = userMap.get(comm.userId);
@@ -729,31 +727,33 @@ const commissionDetails = useMemo(() => {
 
             const isRecurring = comm.description?.includes('Recurring');
             const isOverride = comm.description?.includes('Override');
+            
+            // Only process commissions for the current manager
+            if (comm.userId !== user.id) {
+                // If it's an override for this manager's team member, add it.
+                if (isOverride && teamMemberIds.has(proposal?.userId || '')) {
+                     if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                     const overrideDetail = { ...detail, salesRepName: userMap.get(proposal?.userId || '')?.displayName || 'N/A' };
+                     overridesByMonth[monthKey].details.push(overrideDetail);
+                     overridesByMonth[monthKey].total += comm.amount;
+                }
+                return; // Skip commissions not belonging to the manager
+            }
+            
             const isFromQR = !!proposal?.sourceLocation;
 
-            // Manager's own commissions
-            if (comm.userId === user.id) {
-                if (isRecurring) {
-                    if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                    recurringByMonth[monthKey].details.push(detail);
-                    recurringByMonth[monthKey].total += comm.amount;
-                } else if (isFromQR) {
-                    if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                    qrCampaignsByMonth[monthKey].details.push(detail);
-                    qrCampaignsByMonth[monthKey].total += comm.amount;
-                } else if (!isOverride) {
-                    if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                    directSalesByMonth[monthKey].details.push(detail);
-                    directSalesByMonth[monthKey].total += comm.amount;
-                }
-            }
-
-            // Team Override commissions
-            if (isOverride && teamMemberIds.has(proposal?.userId || '')) {
-                 if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                 const overrideDetail = { ...detail, salesRepName: userMap.get(proposal?.userId || '')?.displayName || 'N/A' };
-                 overridesByMonth[monthKey].details.push(overrideDetail);
-                 overridesByMonth[monthKey].total += comm.amount;
+            if (isRecurring) {
+                if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                recurringByMonth[monthKey].details.push(detail);
+                recurringByMonth[monthKey].total += comm.amount;
+            } else if (isFromQR) {
+                if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                qrCampaignsByMonth[monthKey].details.push(detail);
+                qrCampaignsByMonth[monthKey].total += comm.amount;
+            } else if (!isOverride) { // A manager's own direct sale
+                if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                directSalesByMonth[monthKey].details.push(detail);
+                directSalesByMonth[monthKey].total += comm.amount;
             }
         });
     });
@@ -1241,3 +1241,4 @@ const commissionDetails = useMemo(() => {
     </div>
   );
 }
+
