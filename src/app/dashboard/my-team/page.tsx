@@ -355,7 +355,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
                     Your direct sales commissions and team override commissions.
                 </DialogDescription>
                 <div className="pt-4">
-                    <Select onValueChange={setSelectedMonth} defaultValue={selectedMonth}>
+                    <Select onValueChange={setSelectedMonth} value={selectedMonth}>
                         <SelectTrigger className="w-full sm:w-[280px]">
                             <SelectValue placeholder="Select a month to view details" />
                         </SelectTrigger>
@@ -374,7 +374,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
                     <CommissionTable title="Direct Sales Commissions (One-Time)" commissions={selectedDirectSales.details} />
                     <CommissionTable title="QR Campaign Commissions (One-Time)" commissions={selectedQrCampaigns.details} showClient={true} showCampaign={true} />
                     <CommissionTable title="Recurring Commissions" commissions={selectedRecurring.details} />
-                    <CommissionTable title="Team Override Commissions" commissions={selectedOverrides.details} showSalesRep={true} />
+                    <CommissionTable title="Team Override Commissions" commissions={selectedOverrides.details} showSalesRep={true} showClient={true} />
                 </div>
             </ScrollArea>
             {selectedMonth && (
@@ -699,7 +699,7 @@ export default function MyTeamPage() {
     };
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
-  const commissionDetails = useMemo(() => {
+ const commissionDetails = useMemo(() => {
     if (commissionsLoading || proposalsLoading || clientsLoading || !isManager || !user) {
         return { directSales: [], qrCampaigns: [], teamOverrides: [], recurring: [] };
     }
@@ -713,7 +713,6 @@ export default function MyTeamPage() {
     const userMap = new Map(salesUsers.map(u => [u.id, u]));
     const proposalMap = new Map(proposals.map(p => [p.id, p]));
 
-    // Use allPayouts which contains commissions for the manager and their team
     allPayouts.forEach(payout => {
         payout.commissions.forEach(comm => {
             const monthKey = format(startOfMonth(new Date(comm.createdAt)), 'MMMM yyyy');
@@ -739,12 +738,11 @@ export default function MyTeamPage() {
             // Manager's own commissions
             if (comm.userId === user.id) {
                 if (isOneTimeCommission) {
-                    // Check if it's a QR campaign sale
                     if (proposal.sourceLocation) {
                         if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         qrCampaignsByMonth[monthKey].details.push(detail);
                         qrCampaignsByMonth[monthKey].total += comm.amount;
-                    } else { // It's a direct sale by the manager
+                    } else {
                         if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         directSalesByMonth[monthKey].details.push(detail);
                         directSalesByMonth[monthKey].total += comm.amount;
@@ -770,7 +768,7 @@ export default function MyTeamPage() {
         teamOverrides: Object.values(overridesByMonth),
         recurring: Object.values(recurringByMonth),
     };
-}, [allPayouts, commissionsLoading, proposalsLoading, clientsLoading, isManager, user, myTeam, salesUsers, proposals, clientMap]);
+}, [allPayouts, commissionsLoading, proposals, clients, myTeam, salesUsers, isManager, user, proposalMap, clientMap]);
 
 
  const qrCampaignClients = useMemo(() => {
