@@ -295,40 +295,36 @@ type MonthlyCommissionBreakdown = {
     details: CommissionDetail[];
 };
 
-
-const RecurringCommissionTimelineDialog = ({ commission }: { commission: CommissionDetail }) => {
+const RecurringCommissionDialog = ({ commission }: { commission: CommissionDetail }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const rate = commission.saleAmount > 0 ? (commission.commissionAmount / commission.saleAmount) * 100 : 0;
     const totalRecurringAmount = commission.commissionAmount * 12;
 
     return (
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Recurring Commission Timeline</DialogTitle>
-                <DialogDescription>12-month payout schedule for the sale to {commission.clientName}.</DialogDescription>
+                <DialogTitle>Recurring Commission Calculation</DialogTitle>
+                <DialogDescription>Breakdown for the sale to {commission.clientName}.</DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Month</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {Array.from({ length: 12 }).map((_, i) => (
-                            <TableRow key={i}>
-                                <TableCell>Month {i + 1}</TableCell>
-                                <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.commissionAmount)}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                    <TFooter>
-                        <TableRow>
-                            <TableCell className="font-bold text-base">Total</TableCell>
-                            <TableCell className="text-right font-bold text-base">{currencyFormatter.format(totalRecurringAmount)}</TableCell>
-                        </TableRow>
-                    </TFooter>
-                </Table>
+            <div className="py-4 space-y-4">
+                 <div className="space-y-2 text-sm p-4 border rounded-lg">
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Client Sale Amount</span>
+                        <span className="font-semibold">{currencyFormatter.format(commission.saleAmount)}</span>
+                    </div>
+                     <div className="flex justify-between">
+                        <span className="text-muted-foreground">Recurring Commission Rate</span>
+                        <span className="font-semibold">{rate.toFixed(1)}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Monthly Recurring Commission</span>
+                        <span className="font-semibold">{currencyFormatter.format(commission.commissionAmount)}</span>
+                    </div>
+                </div>
+                 <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
+                    <span>Total Recurring Commission (12 Months)</span>
+                    <span>{currencyFormatter.format(totalRecurringAmount)}</span>
+                </div>
             </div>
         </DialogContent>
     );
@@ -417,9 +413,9 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
                                       {commissionType === 'recurring' ? (
                                           <Dialog>
                                               <DialogTrigger asChild>
-                                                  <Button variant="outline" size="sm">View Timeline</Button>
+                                                  <Button variant="outline" size="sm">View</Button>
                                               </DialogTrigger>
-                                              <RecurringCommissionTimelineDialog commission={detail} />
+                                              <RecurringCommissionDialog commission={detail} />
                                           </Dialog>
                                       ) : (
                                         <Dialog>
@@ -831,7 +827,7 @@ export default function MyTeamPage() {
             const isManagerCommission = comm.userId === user.id;
 
             if (isManagerCommission) {
-                 if (comm.description?.includes('Recurring')) {
+                if (comm.description?.includes('Recurring')) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
@@ -1337,3 +1333,4 @@ export default function MyTeamPage() {
     </div>
   );
 }
+
