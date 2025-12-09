@@ -728,7 +728,7 @@ const commissionDetails = useMemo(() => {
                 clientName: client.companyName || 'N/A',
                 saleAmount: proposal.amount,
                 commissionAmount: comm.amount,
-                rate: 0, // This will be calculated if needed
+                rate: 0,
                 sourceLocation: proposal.sourceLocation,
                 description: comm.description,
                 date: comm.createdAt
@@ -741,13 +741,15 @@ const commissionDetails = useMemo(() => {
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
                 }
-                // Check for one-time commissions for the manager
                 else if (!comm.description?.includes('Override')) {
-                    if (proposal.sourceLocation) { // QR Campaign Commission
+                    // QR Campaign Commission for manager
+                    if (proposal.sourceLocation) {
                         if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         qrCampaignsByMonth[monthKey].details.push(detail);
                         qrCampaignsByMonth[monthKey].total += comm.amount;
-                    } else { // Direct Sale Commission
+                    } 
+                    // Direct Sale Commission for manager
+                    else {
                         if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         directSalesByMonth[monthKey].details.push(detail);
                         directSalesByMonth[monthKey].total += comm.amount;
@@ -1246,3 +1248,4 @@ const commissionDetails = useMemo(() => {
     </div>
   );
 }
+
