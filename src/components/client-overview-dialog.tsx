@@ -505,8 +505,6 @@ export function ClientOverviewDialog({
       : null;
 
     const isQrCampaign = !!selectedProposal.sourceLocation;
-    const managerWhoOwnsCampaign = isQrCampaign ? userMap.get(selectedProposal.userId) : null;
-    const commissionRecipientId = (isQrCampaign && managerWhoOwnsCampaign) ? managerWhoOwnsCampaign.id : proposalCreatorId;
 
     setIsConfirmingPayment(true);
     try {
@@ -534,8 +532,9 @@ export function ClientOverviewDialog({
         const rate = (subscriptionInfo.clientType && commissionRates[subscriptionInfo.clientType]) || 0;
         const commissionAmount = subscriptionInfo.totalAmountDue * rate;
         
-        // One-time commission
+        // One-time commission for direct sales (sales or manager) or QR campaigns (manager)
         if (commissionAmount > 0) {
+          const commissionRecipientId = (isQrCampaign && proposalCreator?.role === 'manager') ? proposalCreator.id : proposalCreatorId;
           const execCommissionRef = doc(collection(firestore, 'commissions'));
           transaction.set(execCommissionRef, {
             userId: commissionRecipientId,
@@ -550,9 +549,9 @@ export function ClientOverviewDialog({
           });
         }
         
-        // Recurring commission for direct sales by manager or QR campaigns
-        if (isQrCampaign || (proposalCreator && proposalCreator.role === 'manager')) {
-            if (subscriptionInfo.clientType && recurringCommissionRates[subscriptionInfo.clientType] > 0) {
+        // Recurring commission for direct sales by sales execs OR QR campaigns by managers
+        if (subscriptionInfo.clientType && recurringCommissionRates[subscriptionInfo.clientType] > 0) {
+            if ((proposalCreator?.role === 'sales' && !isQrCampaign) || (proposalCreator?.role === 'manager' && isQrCampaign)) {
                 const recurringRate = recurringCommissionRates[subscriptionInfo.clientType];
                 const recurringAmount = subscriptionInfo.totalAmountDue * recurringRate;
                 const startDate = parseISO(selectedProposal.createdAt);
@@ -560,7 +559,7 @@ export function ClientOverviewDialog({
                     const commissionDate = addMonths(startDate, i);
                     const recurringCommissionRef = doc(collection(firestore, 'commissions'));
                     transaction.set(recurringCommissionRef, {
-                        userId: commissionRecipientId,
+                        userId: proposalCreatorId,
                         proposalId: finalProposalId,
                         amount: recurringAmount,
                         createdAt: commissionDate,
@@ -574,7 +573,7 @@ export function ClientOverviewDialog({
             }
         }
         
-        // Team Override commission
+        // Team Override commission for sales exec's direct sale
         if (proposalCreator && proposalCreator.role === 'sales' && teamManager && !isQrCampaign) {
             const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
             const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;

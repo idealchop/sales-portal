@@ -366,7 +366,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
             <ScrollArea className="h-[60vh]">
                 <div className="space-y-6 pr-4">
                     <CommissionTable title="Direct Sales Commissions (One-Time)" commissions={selectedDirectSales.details} />
-                    <CommissionTable title="QR Campaign Commissions" commissions={selectedQrCampaigns.details} showClient={true} showCampaign={true} />
+                    <CommissionTable title="QR Campaign Commissions (One-Time)" commissions={selectedQrCampaigns.details} showClient={true} showCampaign={true} />
                     <CommissionTable title="Recurring Commissions" commissions={selectedRecurring.details} />
                     <CommissionTable title="Team Override Commissions" commissions={selectedOverrides.details} showSalesRep={true} />
                 </div>
@@ -712,7 +712,6 @@ const commissionDetails = useMemo(() => {
             const proposal = proposals.find(p => p.id === comm.proposalId);
             const client = clients.find(c => c.id === proposal?.clientId);
             const salesRep = userMap.get(comm.userId);
-            const proposalCreatorId = proposal?.userId;
 
             const detail: CommissionDetail = {
                 salesRepName: salesRep?.displayName || 'N/A',
@@ -725,14 +724,16 @@ const commissionDetails = useMemo(() => {
                 date: comm.createdAt
             };
             
-            const isTeamOverride = teamMemberIds.has(comm.userId) && comm.description?.includes('Override');
-
+            // Check if the commission is for the current manager
             if (comm.userId === user.id) {
-                if (comm.description?.includes('Recurring')) {
+                const isRecurring = comm.description?.includes('Recurring');
+                const isFromQR = !!proposal?.sourceLocation;
+
+                if (isRecurring) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
-                } else if (proposal?.sourceLocation) {
+                } else if (isFromQR) {
                     if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     qrCampaignsByMonth[monthKey].details.push(detail);
                     qrCampaignsByMonth[monthKey].total += comm.amount;
@@ -741,7 +742,9 @@ const commissionDetails = useMemo(() => {
                     directSalesByMonth[monthKey].details.push(detail);
                     directSalesByMonth[monthKey].total += comm.amount;
                 }
-            } else if (isTeamOverride) {
+            } 
+            // Check if it's a team override commission
+            else if (teamMemberIds.has(comm.userId) && comm.description?.includes('Override')) {
                 if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                 overridesByMonth[monthKey].details.push(detail);
                 overridesByMonth[monthKey].total += comm.amount;
