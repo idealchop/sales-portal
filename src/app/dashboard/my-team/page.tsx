@@ -698,57 +698,61 @@ const commissionDetails = useMemo(() => {
         return { directSales: [], qrCampaigns: [], teamOverrides: [], recurring: [] };
     }
 
-    const directSalesByMonth: Record<string, MonthlyCommissionBreakdown> = {};
-    const qrCampaignsByMonth: Record<string, MonthlyCommissionBreakdown> = {};
-    const overridesByMonth: Record<string, MonthlyCommissionBreakdown> = {};
-    const recurringByMonth: Record<string, MonthlyCommissionBreakdown> = {};
-
+    const directSalesByMonth: { [month: string]: MonthlyCommissionBreakdown } = {};
+    const qrCampaignsByMonth: { [month: string]: MonthlyCommissionBreakdown } = {};
+    const overridesByMonth: { [month: string]: MonthlyCommissionBreakdown } = {};
+    const recurringByMonth: { [month: string]: MonthlyCommissionBreakdown } = {};
+    
     const teamMemberIds = new Set(myTeam.map(m => m.id));
     const userMap = new Map(salesUsers.map(u => [u.id, u]));
+    const proposalMap = new Map(proposals.map(p => [p.id, p]));
 
     allPayouts.forEach(payout => {
         const monthKey = payout.month;
 
         payout.commissions.forEach(comm => {
-            const proposal = proposals.find(p => p.id === comm.proposalId);
+            const proposal = proposalMap.get(comm.proposalId);
             if (!proposal) return;
-            
-            const client = clients.find(c => c.id === proposal?.clientId);
-            
+
+            const client = clientMap.get(proposal.clientId);
+            const isRecurring = comm.description?.includes('Recurring');
+            const isOverride = comm.description?.includes('Override');
+
             const detail: CommissionDetail = {
                 salesRepName: userMap.get(proposal.userId)?.displayName || 'N/A',
                 clientName: client?.companyName || 'N/A',
-                saleAmount: proposal?.amount || 0,
+                saleAmount: proposal.amount,
                 commissionAmount: comm.amount,
                 rate: 0,
-                sourceLocation: proposal?.sourceLocation,
+                sourceLocation: proposal.sourceLocation,
                 description: comm.description,
                 date: comm.createdAt
             };
 
-            const isRecurring = comm.description?.includes('Recurring');
-            const isOverride = comm.description?.includes('Override');
-
-            if (comm.userId === user.id) { // This is the manager's commission
+            // Manager's own commissions
+            if (comm.userId === user.id) {
                 if (isRecurring) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
-                } else if (proposal.sourceLocation) {
-                    if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                    qrCampaignsByMonth[monthKey].details.push(detail);
-                    qrCampaignsByMonth[monthKey].total += comm.amount;
                 } else if (!isOverride) {
-                    if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                    directSalesByMonth[monthKey].details.push(detail);
-                    directSalesByMonth[monthKey].total += comm.amount;
+                    if (proposal.sourceLocation) { // QR Campaign Commission
+                        if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                        qrCampaignsByMonth[monthKey].details.push(detail);
+                        qrCampaignsByMonth[monthKey].total += comm.amount;
+                    } else { // Direct Sale Commission
+                        if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                        directSalesByMonth[monthKey].details.push(detail);
+                        directSalesByMonth[monthKey].total += comm.amount;
+                    }
                 }
             }
-            
-            if (isOverride && teamMemberIds.has(proposal.userId)) {
-                 if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                 overridesByMonth[monthKey].details.push(detail);
-                 overridesByMonth[monthKey].total += comm.amount;
+
+            // Team Overrides
+            if (isOverride && comm.userId === user.id && teamMemberIds.has(proposal.userId)) {
+                if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                overridesByMonth[monthKey].details.push(detail);
+                overridesByMonth[monthKey].total += comm.amount;
             }
         });
     });
