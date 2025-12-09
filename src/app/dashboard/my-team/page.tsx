@@ -714,19 +714,18 @@ const commissionDetails = useMemo(() => {
     const proposalMap = new Map(proposals.map(p => [p.id, p]));
 
     allPayouts.forEach(payout => {
+        const monthKey = payout.month;
+        
         payout.commissions.forEach(comm => {
-            if (!comm.createdAt) return;
-            const monthKey = format(startOfMonth(new Date(comm.createdAt)), 'MMMM yyyy');
             const proposal = proposalMap.get(comm.proposalId);
             if (!proposal) return;
 
             const client = clientMap.get(proposal.clientId);
-            const isRecurring = comm.description?.includes('Recurring');
-            const isOverride = comm.description?.includes('Override');
-
+            if (!client) return;
+            
             const detail: CommissionDetail = {
                 salesRepName: userMap.get(proposal.userId)?.displayName || 'N/A',
-                clientName: client?.companyName || 'N/A',
+                clientName: client.companyName || 'N/A',
                 saleAmount: proposal.amount,
                 commissionAmount: comm.amount,
                 rate: 0,
@@ -734,14 +733,14 @@ const commissionDetails = useMemo(() => {
                 description: comm.description,
                 date: comm.createdAt
             };
-            
-            // Manager's own commissions (Direct or QR) and recurring from those
+
+            // Manager's own commissions
             if (comm.userId === user.id) {
-                 if (isRecurring) {
+                if (comm.description?.includes('Recurring')) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
-                } else if (!isOverride) { // One-time commissions
+                } else if (!comm.description?.includes('Override')) { // One-time commissions for the manager
                     if (proposal.sourceLocation) { // QR Campaign Commission
                         if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         qrCampaignsByMonth[monthKey].details.push(detail);
@@ -754,8 +753,8 @@ const commissionDetails = useMemo(() => {
                 }
             }
             
-            // Team Overrides for the manager
-            if (teamMemberIds.has(proposal.userId) && isOverride) {
+            // Team Overrides for the manager from their team members' sales
+            if (teamMemberIds.has(comm.userId) && comm.description?.includes('Override')) {
                 if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                 overridesByMonth[monthKey].details.push(detail);
                 overridesByMonth[monthKey].total += comm.amount;
