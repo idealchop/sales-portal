@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -304,6 +303,42 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
 
     const totalForMonth = selectedDirectSales.total + selectedQrCampaigns.total + selectedOverrides.total + selectedRecurring.total;
 
+    const CommissionTable = ({ title, commissions, showClient = true, showCampaign = false, showSalesRep = false }: { title: string, commissions: CommissionDetail[], showClient?: boolean, showCampaign?: boolean, showSalesRep?: boolean }) => {
+        if (commissions.length === 0) return null;
+
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">{title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                {showSalesRep && <TableHead>Sales Rep</TableHead>}
+                                {showClient && <TableHead>Client</TableHead>}
+                                {showCampaign && <TableHead>Campaign</TableHead>}
+                                <TableHead>Description</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {commissions.map((detail, index) => (
+                                <TableRow key={index}>
+                                    {showSalesRep && <TableCell>{detail.salesRepName}</TableCell>}
+                                    {showClient && <TableCell>{detail.clientName}</TableCell>}
+                                    {showCampaign && <TableCell>{detail.sourceLocation || 'N/A'}</TableCell>}
+                                    <TableCell>{detail.description}</TableCell>
+                                    <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        );
+    }
+
     return (
         <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
@@ -328,133 +363,10 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
             </DialogHeader>
             <ScrollArea className="h-[60vh]">
                 <div className="space-y-6 pr-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Direct Sales Commissions (One-Time)</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Client</TableHead>
-                                        <TableHead className="text-right">Commission</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {selectedDirectSales.details.length > 0 ? (
-                                        selectedDirectSales.details.map((detail, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell>{detail.clientName}</TableCell>
-                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={2} className="text-center h-24">No direct sales commissions for this month.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">QR Campaign Commissions</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Client</TableHead>
-                                        <TableHead>Campaign</TableHead>
-                                        <TableHead className="text-right">Commission</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {selectedQrCampaigns.details.length > 0 ? (
-                                        selectedQrCampaigns.details.map((detail, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell>{detail.clientName}</TableCell>
-                                                <TableCell>{detail.sourceLocation}</TableCell>
-                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="text-center h-24">No QR campaign commissions for this month.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Recurring Commissions</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Client</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead className="text-right">Commission</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {selectedRecurring.details.length > 0 ? (
-                                        selectedRecurring.details.map((detail, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell>{detail.clientName}</TableCell>
-                                                <TableCell>{detail.description}</TableCell>
-                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="text-center h-24">No recurring commissions for this month.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Team Override Commissions</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Sales Rep</TableHead>
-                                        <TableHead>Client</TableHead>
-                                        <TableHead>Campaign</TableHead>
-                                        <TableHead className="text-right">Override</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {selectedOverrides.details.length > 0 ? (
-                                        selectedOverrides.details.map((detail, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell>{detail.salesRepName}</TableCell>
-                                                <TableCell>{detail.clientName}</TableCell>
-                                                <TableCell>{detail.sourceLocation || 'Direct'}</TableCell>
-                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="text-center h-24">No team override commissions for this month.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                    <CommissionTable title="Direct Sales Commissions (One-Time)" commissions={selectedDirectSales.details} />
+                    <CommissionTable title="QR Campaign Commissions" commissions={selectedQrCampaigns.details} showCampaign={true} />
+                    <CommissionTable title="Recurring Commissions" commissions={selectedRecurring.details} />
+                    <CommissionTable title="Team Override Commissions" commissions={selectedOverrides.details} showSalesRep={true} />
                 </div>
             </ScrollArea>
             {selectedMonth && (
@@ -780,45 +692,54 @@ export default function MyTeamPage() {
 
   const commissionDetails = useMemo(() => {
     if (proposalsLoading || clientsLoading || !isManager || !user) return { directSales: [], qrCampaigns: [], teamOverrides: [], recurring: [] };
-    
-    const managerPayouts = allPayouts.filter(p => p.commissions.some(c => c.userId === user.id));
-    
+
     const directSalesByMonth: Record<string, MonthlyCommissionBreakdown> = {};
     const qrCampaignsByMonth: Record<string, MonthlyCommissionBreakdown> = {};
     const overridesByMonth: Record<string, MonthlyCommissionBreakdown> = {};
     const recurringByMonth: Record<string, MonthlyCommissionBreakdown> = {};
-    
-    managerPayouts.forEach(payout => {
+
+    const teamMemberIds = new Set(myTeam.map(m => m.id));
+
+    // Process all payouts from useCommissions
+    allPayouts.forEach(payout => {
         payout.commissions.forEach(comm => {
             const monthKey = payout.month;
+            const proposal = proposals.find(p => p.id === comm.proposalId);
+            const client = clients.find(c => c.id === proposal?.clientId);
+            const salesRep = salesUsers.find(u => u.id === comm.userId);
+
             const detail: CommissionDetail = {
-                salesRepName: salesUsers.find(u => u.id === comm.userId)?.displayName,
-                clientName: comm.clientName || 'N/A',
-                saleAmount: 0, // Not easily available, default to 0
+                salesRepName: salesRep?.displayName || 'N/A',
+                clientName: client?.companyName || 'N/A',
+                saleAmount: proposal?.amount || 0,
                 commissionAmount: comm.amount,
-                rate: 0, // Not easily available
-                sourceLocation: proposals.find(p => p.id === comm.proposalId)?.sourceLocation,
+                rate: 0,
+                sourceLocation: proposal?.sourceLocation,
                 description: comm.description,
                 date: comm.createdAt
             };
 
-            if (comm.description?.includes('Override')) {
+            // Manager's own commissions
+            if (comm.userId === user.id) {
+                if (comm.description?.includes('Recurring')) {
+                    if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                    recurringByMonth[monthKey].details.push(detail);
+                    recurringByMonth[monthKey].total += comm.amount;
+                } else if (comm.description?.includes('QR Campaign')) {
+                    if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                    qrCampaignsByMonth[monthKey].details.push(detail);
+                    qrCampaignsByMonth[monthKey].total += comm.amount;
+                } else {
+                    if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                    directSalesByMonth[monthKey].details.push(detail);
+                    directSalesByMonth[monthKey].total += comm.amount;
+                }
+            } 
+            // Team Overrides
+            else if (teamMemberIds.has(comm.userId) && comm.description?.includes('Override')) {
                 if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                 overridesByMonth[monthKey].details.push(detail);
                 overridesByMonth[monthKey].total += comm.amount;
-            } else if (comm.description?.includes('QR Campaign')) {
-                if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                qrCampaignsByMonth[monthKey].details.push(detail);
-                qrCampaignsByMonth[monthKey].total += comm.amount;
-            } else if (comm.description?.includes('Recurring')) {
-                 if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                recurringByMonth[monthKey].details.push(detail);
-                recurringByMonth[monthKey].total += comm.amount;
-            }
-            else {
-                if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                directSalesByMonth[monthKey].details.push(detail);
-                directSalesByMonth[monthKey].total += comm.amount;
             }
         });
     });
@@ -829,7 +750,7 @@ export default function MyTeamPage() {
         teamOverrides: Object.values(overridesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
         recurring: Object.values(recurringByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
     };
-}, [allPayouts, isManager, user, proposalsLoading, clientsLoading, salesUsers]);
+}, [allPayouts, isManager, user, proposals, clients, salesUsers, myTeam, proposalsLoading, clientsLoading]);
 
   const isLoading = usersLoading || proposalsLoading || clientsLoading || commissionsLoading;
 

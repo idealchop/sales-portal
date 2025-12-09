@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -51,6 +50,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { addMonths, parseISO } from 'date-fns';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -503,10 +503,7 @@ export function ClientOverviewDialog({
         ? allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team)
         : null;
     
-    // If it's a QR campaign, the commission goes to the manager who owns it.
-    // The proposal's userId is already set to the manager in this case.
     const isQrCampaign = !!selectedProposal?.sourceLocation;
-    const commissionRecipientId = isQrCampaign ? proposalCreatorId : proposalCreatorId;
   
     setIsConfirmingPayment(true);
     try {
@@ -534,25 +531,48 @@ export function ClientOverviewDialog({
         });
   
         const commissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
+        const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
         const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
   
         const rate = (subscriptionInfo.clientType && commissionRates[subscriptionInfo.clientType]) || 0;
         const commissionAmount = subscriptionInfo.totalAmountDue * rate;
         
-        // Standard or QR campaign commission
+        // Standard or QR campaign one-time commission
         if (commissionAmount > 0) {
           const execCommissionRef = doc(collection(firestore, 'commissions'));
           transaction.set(execCommissionRef, {
-            userId: commissionRecipientId,
+            userId: proposalCreatorId,
             proposalId: finalProposalId,
             amount: commissionAmount,
             createdAt: serverTimestamp(),
             status: 'pending',
             type: 'commission',
-            description: `${selectedProposal?.sourceLocation ? 'QR Campaign' : 'Commission'} for ${subscriptionInfo.planName}`,
+            description: `${isQrCampaign ? 'QR Campaign' : 'Commission'} for ${subscriptionInfo.planName}`,
             clientName: client.companyName,
             referenceId: finalProposalId
           });
+        }
+        
+        // Recurring commission for direct sales by manager or QR campaign sales
+        if ((proposalCreatorId === user?.id || isQrCampaign) && subscriptionInfo.clientType && recurringCommissionRates[subscriptionInfo.clientType] > 0) {
+            const recurringRate = recurringCommissionRates[subscriptionInfo.clientType];
+            const recurringAmount = subscriptionInfo.totalAmountDue * recurringRate;
+            const startDate = parseISO(selectedProposal!.createdAt);
+            for (let i = 0; i < 12; i++) {
+                const commissionDate = addMonths(startDate, i);
+                const recurringCommissionRef = doc(collection(firestore, 'commissions'));
+                transaction.set(recurringCommissionRef, {
+                    userId: proposalCreatorId,
+                    proposalId: finalProposalId,
+                    amount: recurringAmount,
+                    createdAt: commissionDate,
+                    status: 'pending',
+                    type: 'commission',
+                    description: `Recurring (${i + 1}/12)`,
+                    clientName: client.companyName,
+                    referenceId: `recurring-${finalProposalId}-${i}`
+                });
+            }
         }
         
         // Override commission for the manager, if the original seller was a sales exec (and not a QR campaign sale by the manager)
