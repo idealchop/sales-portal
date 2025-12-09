@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TFooter } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2, Loader, Calendar, File } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2, Loader, Calendar, File, Percent } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval, differenceInMonths, addMonths } from 'date-fns';
@@ -334,6 +334,36 @@ const RecurringCommissionTimelineDialog = ({ commission }: { commission: Commiss
     );
 };
 
+const CommissionCalculationDialog = ({ commission }: { commission: CommissionDetail }) => {
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const rate = commission.saleAmount > 0 ? (commission.commissionAmount / commission.saleAmount) * 100 : 0;
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Commission Calculation</DialogTitle>
+                <DialogDescription>Breakdown for the sale to {commission.clientName}.</DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+                 <div className="space-y-2 text-sm p-4 border rounded-lg">
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Client Sale Amount</span>
+                        <span className="font-semibold">{currencyFormatter.format(commission.saleAmount)}</span>
+                    </div>
+                     <div className="flex justify-between">
+                        <span className="text-muted-foreground">Commission Rate</span>
+                        <span className="font-semibold">{rate.toFixed(1)}%</span>
+                    </div>
+                </div>
+                 <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
+                    <span>Final Commission</span>
+                    <span>{currencyFormatter.format(commission.commissionAmount)}</span>
+                </div>
+            </div>
+        </DialogContent>
+    )
+}
+
 const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommissions, teamOverrideCommissions, recurringCommissions, allClients, allProposals, allUsers }: { directSalesCommissions: MonthlyCommissionBreakdown[]; qrCampaignCommissions: MonthlyCommissionBreakdown[]; teamOverrideCommissions: MonthlyCommissionBreakdown[]; recurringCommissions: MonthlyCommissionBreakdown[], allClients: Client[], allProposals: Proposal[], allUsers: UserProfile[] }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const allMonths = useMemo(() => {
@@ -375,8 +405,6 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
                         </TableHeader>
                         <TableBody>
                             {commissions.map((detail, index) => {
-                                const client = allClients.find(c => c.id === detail.clientId);
-                                const proposal = allProposals.find(p => p.id === detail.proposalId);
                                 return (
                                 <TableRow key={index}>
                                     <TableCell>
@@ -393,12 +421,13 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
                                               </DialogTrigger>
                                               <RecurringCommissionTimelineDialog commission={detail} />
                                           </Dialog>
-                                      ) : client && proposal ? (
-                                        <ClientOverviewDialog client={client} proposal={proposal} allUsers={allUsers} view="clients">
-                                            <Button variant="outline" size="sm">View Contract</Button>
-                                        </ClientOverviewDialog>
                                       ) : (
-                                        <Button variant="outline" size="sm" disabled>View</Button>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" size="sm">View</Button>
+                                            </DialogTrigger>
+                                            <CommissionCalculationDialog commission={detail} />
+                                        </Dialog>
                                       )}
                                     </TableCell>
                                 </TableRow>
