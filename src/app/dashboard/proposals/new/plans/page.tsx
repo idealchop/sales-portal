@@ -33,7 +33,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle, Home, RefreshCw as RefreshIcon, Trash2 } from 'lucide-react';
+import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle, Home, RefreshCw as RefreshIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Input } from '@/components/ui/input';
@@ -1126,10 +1126,10 @@ export default function PlansPage() {
         return `/dashboard/proposals/new/contract?${params.toString()}`;
     };
 
-    const prevLink = `/dashboard/proposals/new/comparison?${searchParams.toString()}`;
+    const prevLink = `/dashboard/proposals/new/comparison?${params.toString()}`;
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 pb-24 sm:pb-0">
         <div className="flex items-center justify-between">
             <div>
             <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
@@ -1137,7 +1137,7 @@ export default function PlansPage() {
                 Step 4: Select a Client Type, Choose a Plan & Review Inclusions
             </p>
             </div>
-            <div className="flex gap-2">
+            <div className="hidden sm:flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" asChild>
                     <Link href={prevLink}>Previous</Link>
                 </Button>
@@ -1254,6 +1254,17 @@ export default function PlansPage() {
               </Card>
           </div>
         )}
+
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
+            <div className="flex gap-2">
+                <Button variant="outline" asChild className="flex-1">
+                    <Link href={prevLink}>Previous</Link>
+                </Button>
+                <Button asChild={!isNextDisabled} disabled={isNextDisabled} className="flex-1">
+                    <Link href={getNextLink()}>Next Step</Link>
+                </Button>
+            </div>
+        </div>
 
         </div>
     );

@@ -59,7 +59,7 @@ export default function ComparisonPage() {
   const nextLink = `/dashboard/proposals/new/plans?${params.toString()}`;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-24 sm:pb-0">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Frequently Asked Questions</h1>
@@ -67,7 +67,7 @@ export default function ComparisonPage() {
             Step 3: Common questions about the Smart Refill service.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="hidden sm:flex flex-col sm:flex-row gap-2">
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
@@ -119,6 +119,17 @@ export default function ComparisonPage() {
                 </Button>
             </CardContent>
         </Card>
+      </div>
+
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
+          <div className="flex gap-2">
+              <Button variant="outline" asChild className="flex-1">
+                  <Link href={prevLink}>Previous</Link>
+              </Button>
+              <Button asChild className="flex-1">
+                  <Link href={nextLink}>Next Step</Link>
+              </Button>
+          </div>
       </div>
     </div>
   );

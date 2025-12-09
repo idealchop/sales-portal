@@ -726,7 +726,7 @@ function ContractPageContent() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-24 sm:pb-0">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Finalize Proposal</h1>
@@ -734,7 +734,7 @@ function ContractPageContent() {
             Step 5: Review inclusions, add-ons, and sign the agreement.
           </p>
         </div>
-         <div className="flex gap-2">
+         <div className="hidden sm:flex flex-col sm:flex-row gap-2">
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
@@ -982,6 +982,18 @@ function ContractPageContent() {
 
         <PaymentMethods />
       </div>
+
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
+          <div className="flex gap-2">
+              <Button variant="outline" asChild className="flex-1">
+                  <Link href={prevLink}>Previous</Link>
+              </Button>
+              <Button onClick={handleReviewAndSignClick} disabled={isSaving || isGeneratingIds} className="flex-1">
+                {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Review &amp; Sign
+              </Button>
+          </div>
+      </div>
     </div>
   );
 }
@@ -993,5 +1005,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
