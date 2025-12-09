@@ -23,11 +23,11 @@ import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['sales', 'admin'], exclude: ['manager'] },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['sales', 'manager', 'admin'] },
   { href: '/dashboard/my-team', icon: TeamIcon, label: 'My Team', roles: ['manager'] },
   { href: '/dashboard/proposals', icon: FileText, label: 'Proposals & Clients', roles: ['sales', 'manager', 'admin'] },
   { href: '/dashboard/materials', icon: BookCopy, label: 'Sales Materials', roles: ['sales', 'manager', 'admin'] },
-  { href: '#', icon: Megaphone, label: 'Content Studio', roles: ['sales', 'manager', 'admin'] },
+  { href: '/dashboard/content-studio', icon: Megaphone, label: 'Content Studio', roles: ['sales', 'manager', 'admin'] },
   { href: '/admin', icon: ShieldCheck, label: 'Admin', roles: ['admin'] },
 ];
 
@@ -56,27 +56,24 @@ export function DashboardNav() {
 
   const filteredNavItems = navItems.filter(item => {
     const hasRole = item.roles.some(role => userRoles.includes(role));
-    const isExcluded = item.exclude?.some(role => userRoles.includes(role));
+    const isExcluded = (item as any).exclude?.some((role: string) => userRoles.includes(role));
     return hasRole && !isExcluded;
   });
 
   return (
     <SidebarMenu className="p-2">
       {filteredNavItems.map((item) => {
-          const isUnderConstruction = item.href === '#';
-          const isActive = item.href === '/dashboard' 
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+          const isActive = (item.href === '/dashboard' && pathname === item.href) || 
+                           (item.href !== '/dashboard' && pathname.startsWith(item.href));
 
           return (
             <SidebarMenuItem key={item.href + item.label}>
               <SidebarMenuButton
                 asChild
-                isActive={isActive && !isUnderConstruction}
+                isActive={isActive}
                 tooltip={{ children: item.label }}
                 variant="default"
                 className="text-sidebar-foreground/70 hover:text-sidebar-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
-                onClick={isUnderConstruction ? handleUnderConstructionClick : undefined}
               >
                 <Link href={item.href}>
                   <item.icon />
