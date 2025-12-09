@@ -729,14 +729,19 @@ const commissionDetails = useMemo(() => {
                 date: comm.createdAt
             };
 
+            // Manager's own commissions
             if (comm.userId === user.id) {
                 if (isRecurring) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
                 } else if (isOverride) {
-                    // This case should ideally not happen if overrides are only for team members
+                    // This is an override commission for one of the team member's sales
+                    if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                    overridesByMonth[monthKey].details.push(detail);
+                    overridesByMonth[monthKey].total += comm.amount;
                 } else {
+                    // This is a one-time commission from the manager's own sale
                     if (proposal.sourceLocation) { // QR Campaign Commission
                         if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         qrCampaignsByMonth[monthKey].details.push(detail);
@@ -747,43 +752,9 @@ const commissionDetails = useMemo(() => {
                         directSalesByMonth[monthKey].total += comm.amount;
                     }
                 }
-            } else if (teamMemberIds.has(comm.userId) && isOverride) {
-                // This logic is incorrect, overrides are assigned to the manager, not the sales rep.
-                // The check `comm.userId === user.id` above should handle overrides correctly.
-                // Let's adjust the logic to correctly attribute overrides to the manager.
             }
         });
     });
-
-    // A separate loop to correctly handle overrides assigned to the manager
-    allPayouts.forEach(payout => {
-        payout.commissions.forEach(comm => {
-            if (!comm.createdAt) return;
-            const monthKey = format(startOfMonth(new Date(comm.createdAt)), 'MMMM yyyy');
-            const proposal = proposalMap.get(comm.proposalId);
-            if (!proposal) return;
-            
-            const isOverride = comm.description?.includes('Override');
-
-            if (comm.userId === user.id && isOverride) {
-                 const client = clientMap.get(proposal.clientId);
-                 const detail: CommissionDetail = {
-                    salesRepName: userMap.get(proposal.userId)?.displayName || 'N/A',
-                    clientName: client?.companyName || 'N/A',
-                    saleAmount: proposal.amount,
-                    commissionAmount: comm.amount,
-                    rate: 0,
-                    sourceLocation: proposal.sourceLocation,
-                    description: comm.description,
-                    date: comm.createdAt
-                };
-                if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                overridesByMonth[monthKey].details.push(detail);
-                overridesByMonth[monthKey].total += comm.amount;
-            }
-        })
-    });
-
 
     return {
         directSales: Object.values(directSalesByMonth),
