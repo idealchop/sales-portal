@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -364,7 +366,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
             <ScrollArea className="h-[60vh]">
                 <div className="space-y-6 pr-4">
                     <CommissionTable title="Direct Sales Commissions (One-Time)" commissions={selectedDirectSales.details} />
-                    <CommissionTable title="QR Campaign Commissions" commissions={selectedQrCampaigns.details} showCampaign={true} />
+                    <CommissionTable title="QR Campaign Commissions" commissions={selectedQrCampaigns.details} showClient={true} showCampaign={true} />
                     <CommissionTable title="Recurring Commissions" commissions={selectedRecurring.details} />
                     <CommissionTable title="Team Override Commissions" commissions={selectedOverrides.details} showSalesRep={true} />
                 </div>
@@ -691,7 +693,9 @@ export default function MyTeamPage() {
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
   const commissionDetails = useMemo(() => {
-    if (proposalsLoading || clientsLoading || !isManager || !user) return { directSales: [], qrCampaigns: [], teamOverrides: [], recurring: [] };
+    if (commissionsLoading || proposalsLoading || clientsLoading || !isManager || !user) {
+        return { directSales: [], qrCampaigns: [], teamOverrides: [], recurring: [] };
+    }
 
     const directSalesByMonth: Record<string, MonthlyCommissionBreakdown> = {};
     const qrCampaignsByMonth: Record<string, MonthlyCommissionBreakdown> = {};
@@ -700,7 +704,6 @@ export default function MyTeamPage() {
 
     const teamMemberIds = new Set(myTeam.map(m => m.id));
 
-    // Process all payouts from useCommissions
     allPayouts.forEach(payout => {
         payout.commissions.forEach(comm => {
             const monthKey = payout.month;
@@ -725,11 +728,11 @@ export default function MyTeamPage() {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
-                } else if (comm.description?.includes('QR Campaign')) {
+                } else if (proposal?.sourceLocation) { // QR Campaign Commission
                     if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     qrCampaignsByMonth[monthKey].details.push(detail);
                     qrCampaignsByMonth[monthKey].total += comm.amount;
-                } else {
+                } else { // Direct Sale Commission
                     if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     directSalesByMonth[monthKey].details.push(detail);
                     directSalesByMonth[monthKey].total += comm.amount;
@@ -750,7 +753,7 @@ export default function MyTeamPage() {
         teamOverrides: Object.values(overridesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
         recurring: Object.values(recurringByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
     };
-}, [allPayouts, isManager, user, proposals, clients, salesUsers, myTeam, proposalsLoading, clientsLoading]);
+}, [allPayouts, isManager, user, proposals, clients, salesUsers, myTeam, commissionsLoading, proposalsLoading, clientsLoading]);
 
   const isLoading = usersLoading || proposalsLoading || clientsLoading || commissionsLoading;
 
@@ -775,7 +778,6 @@ export default function MyTeamPage() {
 
   const currentMonth = format(new Date(), 'MMMM yyyy');
   const totalCurrentMonthCommission = (allPayouts.find(p => p.month === currentMonth)?.totalAmount || 0);
-
 
   return (
     <div className="space-y-6">
@@ -875,7 +877,7 @@ export default function MyTeamPage() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Time</SelectItem>
-                                {teamPerformance.availableMonths.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}
+                                {teamPerformance.availableMonths.map(month => <SelectItem key={month} value={month}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>

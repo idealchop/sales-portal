@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import Image from 'next/image';
@@ -161,13 +163,13 @@ function PaymentHistory({ client, proposals, onPaymentConfirm }: { client: Clien
     const getFormattedDate = (dateValue: string | { toDate: () => Date; }) => {
         if (!dateValue) return "Invalid Date";
         try {
+            if (typeof (dateValue as any).toDate === 'function') {
+                return (dateValue as any).toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
             if (typeof dateValue === 'string') {
               const date = new Date(dateValue);
               if (isNaN(date.getTime())) return "Invalid Date";
               return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-            }
-            if (dateValue && typeof (dateValue as any).toDate === 'function') {
-                return (dateValue as any).toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             }
         } catch (e) {
           return "Invalid Date";
@@ -485,26 +487,27 @@ export function ClientOverviewDialog({
   const handleConfirmPayment = async (proposalIdToConfirm?: string, fileToUpload?: File) => {
     const finalProposalId = proposalIdToConfirm || selectedProposal?.id;
     const finalFile = fileToUpload || paymentProofFile;
-  
-    if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo) {
+
+    if (!finalFile || !finalProposalId || !firestore || !subscriptionInfo || !selectedProposal) {
       toast({ variant: 'destructive', title: 'Error', description: 'Missing payment proof, proposal details, or subscription info.' });
       return;
     }
-    
-    // The user who created the proposal
-    const proposalCreatorId = selectedProposal?.userId;
-    if (!proposalCreatorId) {
-       toast({ variant: 'destructive', title: 'Error', description: 'Could not identify the sales representative for this proposal.' });
-       return;
-    }
-    const proposalCreator = userMap.get(proposalCreatorId);
 
-    const teamManager = (proposalCreator?.role === 'sales' && proposalCreator.team) 
-        ? allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team)
-        : null;
-    
-    const isQrCampaign = !!selectedProposal?.sourceLocation;
-  
+    const proposalCreatorId = selectedProposal.userId;
+    if (!proposalCreatorId) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not identify the sales representative for this proposal.' });
+      return;
+    }
+
+    const proposalCreator = userMap.get(proposalCreatorId);
+    const teamManager = (proposalCreator?.role === 'sales' && proposalCreator.team)
+      ? allUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team)
+      : null;
+
+    const isQrCampaign = !!selectedProposal.sourceLocation;
+    const managerWhoOwnsCampaign = isQrCampaign ? userMap.get(selectedProposal.userId) : null;
+    const commissionRecipientId = (isQrCampaign && managerWhoOwnsCampaign) ? managerWhoOwnsCampaign.id : proposalCreatorId;
+
     setIsConfirmingPayment(true);
     try {
       await runTransaction(firestore, async (transaction) => {
@@ -513,69 +516,65 @@ export function ClientOverviewDialog({
         const storageRef = ref(storage, filePath);
         const snapshot = await uploadBytes(storageRef, finalFile);
         const downloadURL = await getDownloadURL(snapshot.ref);
-  
+
         const proposalRef = doc(firestore, `clients/${client.id}/proposals`, finalProposalId);
-        transaction.update(proposalRef, {
-          status: 'accepted',
-          paymentProofUrl: downloadURL
-        });
-  
+        transaction.update(proposalRef, { status: 'accepted', paymentProofUrl: downloadURL });
+
         const clientRef = doc(firestore, 'clients', client.id);
         transaction.update(clientRef, {
           status: 'active',
           paymentStatus: 'Paid',
-          subscription: {
-            ...subscriptionInfo.rawContent,
-            dateSigned: new Date().toISOString()
-          }
+          subscription: { ...subscriptionInfo.rawContent, dateSigned: new Date().toISOString() }
         });
-  
+
         const commissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
         const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
         const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
-  
+
         const rate = (subscriptionInfo.clientType && commissionRates[subscriptionInfo.clientType]) || 0;
         const commissionAmount = subscriptionInfo.totalAmountDue * rate;
         
-        // Standard or QR campaign one-time commission
+        // One-time commission
         if (commissionAmount > 0) {
           const execCommissionRef = doc(collection(firestore, 'commissions'));
           transaction.set(execCommissionRef, {
-            userId: proposalCreatorId,
+            userId: commissionRecipientId,
             proposalId: finalProposalId,
             amount: commissionAmount,
             createdAt: serverTimestamp(),
             status: 'pending',
             type: 'commission',
-            description: `${isQrCampaign ? 'QR Campaign' : 'Commission'} for ${subscriptionInfo.planName}`,
+            description: `Commission for ${subscriptionInfo.planName}`,
             clientName: client.companyName,
             referenceId: finalProposalId
           });
         }
         
-        // Recurring commission for direct sales by manager or QR campaign sales
-        if ((proposalCreatorId === user?.id || isQrCampaign) && subscriptionInfo.clientType && recurringCommissionRates[subscriptionInfo.clientType] > 0) {
-            const recurringRate = recurringCommissionRates[subscriptionInfo.clientType];
-            const recurringAmount = subscriptionInfo.totalAmountDue * recurringRate;
-            const startDate = parseISO(selectedProposal!.createdAt);
-            for (let i = 0; i < 12; i++) {
-                const commissionDate = addMonths(startDate, i);
-                const recurringCommissionRef = doc(collection(firestore, 'commissions'));
-                transaction.set(recurringCommissionRef, {
-                    userId: proposalCreatorId,
-                    proposalId: finalProposalId,
-                    amount: recurringAmount,
-                    createdAt: commissionDate,
-                    status: 'pending',
-                    type: 'commission',
-                    description: `Recurring (${i + 1}/12)`,
-                    clientName: client.companyName,
-                    referenceId: `recurring-${finalProposalId}-${i}`
-                });
+        // Recurring commission for direct sales by manager or QR campaigns
+        if (isQrCampaign || (proposalCreator && proposalCreator.role === 'manager')) {
+            if (subscriptionInfo.clientType && recurringCommissionRates[subscriptionInfo.clientType] > 0) {
+                const recurringRate = recurringCommissionRates[subscriptionInfo.clientType];
+                const recurringAmount = subscriptionInfo.totalAmountDue * recurringRate;
+                const startDate = parseISO(selectedProposal.createdAt);
+                for (let i = 0; i < 12; i++) {
+                    const commissionDate = addMonths(startDate, i);
+                    const recurringCommissionRef = doc(collection(firestore, 'commissions'));
+                    transaction.set(recurringCommissionRef, {
+                        userId: commissionRecipientId,
+                        proposalId: finalProposalId,
+                        amount: recurringAmount,
+                        createdAt: commissionDate,
+                        status: 'pending',
+                        type: 'commission',
+                        description: `Recurring (${i + 1}/12)`,
+                        clientName: client.companyName,
+                        referenceId: `recurring-${finalProposalId}-${i}`
+                    });
+                }
             }
         }
         
-        // Override commission for the manager, if the original seller was a sales exec (and not a QR campaign sale by the manager)
+        // Team Override commission
         if (proposalCreator && proposalCreator.role === 'sales' && teamManager && !isQrCampaign) {
             const overrideRate = (subscriptionInfo.clientType && managerOverrideRates[subscriptionInfo.clientType]) || 0;
             const overrideAmount = subscriptionInfo.totalAmountDue * overrideRate;
@@ -595,12 +594,12 @@ export function ClientOverviewDialog({
             }
         }
       });
-  
+
       toast({
         title: "Payment Confirmed & Client Activated!",
         description: `${client.companyName}'s account is now active and has been passed to the onboarding team.`,
       });
-  
+
       if (view === 'proposals') {
         setOpen(false);
         if (setActiveView) {
@@ -653,13 +652,13 @@ export function ClientOverviewDialog({
   const getFormattedDate = (dateValue: string | { toDate: () => Date; }) => {
     if (!dateValue) return "Invalid Date";
     try {
+      if (typeof (dateValue as any).toDate === 'function') {
+          return (dateValue as any).toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
       if (typeof dateValue === 'string') {
           const date = new Date(dateValue);
           if (isNaN(date.getTime())) return "Invalid Date";
           return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      }
-      if (dateValue && typeof (dateValue as any).toDate === 'function') {
-          return (dateValue as any).toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       }
     } catch (e) {
       return "Invalid Date";

@@ -41,13 +41,13 @@ type PayoutCommission = Commission & { clientName?: string };
 
 type TimelineStatus = 'calculated' | 'reviewed' | 'processing' | 'paid';
 
-function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commissions: PayoutCommission[] }) {
+function PayoutMonthDetailsDialog({ month, commissions, allCommissions }: { month: string, commissions: PayoutCommission[], allCommissions: PayoutCommission[] }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-    const directSales = useMemo(() => commissions.filter(c => c.type === 'commission' && !c.description?.includes('Override') && !c.description?.includes('QR') && !c.description?.includes('Recurring')), [commissions]);
-    const qrCampaigns = useMemo(() => commissions.filter(c => c.description?.includes('QR')), [commissions]);
-    const overrides = useMemo(() => commissions.filter(c => c.description?.includes('Override')), [commissions]);
-    const recurring = useMemo(() => commissions.filter(c => c.description?.includes('Recurring')), [commissions]);
+    const directSales = useMemo(() => allCommissions.filter(c => c.type === 'commission' && !c.description?.includes('Override') && !c.description?.includes('QR') && !c.description?.includes('Recurring')), [allCommissions]);
+    const qrCampaigns = useMemo(() => allCommissions.filter(c => c.description?.includes('QR')), [allCommissions]);
+    const overrides = useMemo(() => allCommissions.filter(c => c.description?.includes('Override')), [allCommissions]);
+    const recurring = useMemo(() => allCommissions.filter(c => c.description?.includes('Recurring')), [allCommissions]);
 
     const totalAmount = commissions.reduce((sum, commission) => sum + commission.amount, 0);
     
@@ -93,7 +93,7 @@ function PayoutMonthDetailsDialog({ month, commissions }: { month: string, commi
                     <CommissionTable title="One-Time Commissions" commissions={directSales} />
                     <CommissionTable title="QR Campaign Commissions" commissions={qrCampaigns} />
                     <CommissionTable title="Recurring Commissions" commissions={recurring} />
-                    <CommissionTable title="Team Overrides" commissions={overrides} />
+                    <CommissionTable title="Team Overrides" commissions={overrides} showClient={false} />
                 </div>
             </ScrollArea>
             <DialogFooter className="border-t pt-4">
@@ -250,7 +250,7 @@ function PayoutHistoryView({ userId, onProcessPayout, processingPayouts }: { use
                                                             {currencyFormatter.format(payout.totalAmount)}
                                                         </button>
                                                     </DialogTrigger>
-                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} />
+                                                    <PayoutMonthDetailsDialog month={payout.month} commissions={payout.commissions} allCommissions={payout.commissions} />
                                                 </Dialog>
                                             </TableCell>
                                             <TableCell>

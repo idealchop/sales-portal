@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -133,16 +134,25 @@ export function useCommissions(userId?: string) {
 
     // Dynamically calculate and add recurring commissions for all relevant users
     const userIdsWithSales = new Set(allProposals.filter(p => p.status === 'accepted').map(p => p.userId));
+    const userMap = new Map(salesUsers.map(u => [u.id, u]));
     
     userIdsWithSales.forEach(uId => {
+      const user = userMap.get(uId);
       const userProposals = allProposals.filter(p => p.status === 'accepted' && p.createdAt && p.userId === uId);
       const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
       
       userProposals.forEach(proposal => {
           const client = clientMap.get(proposal.clientId);
           if (!client || !client.clientType) return;
+          
+          const isDirectSaleByManager = user?.role === 'manager' && proposal.userId === user.id && !proposal.sourceLocation;
+          const isQrSaleByManager = user?.role === 'manager' && proposal.userId === user.id && !!proposal.sourceLocation;
+
+          if (user?.role !== 'sales' && !isDirectSaleByManager && !isQrSaleByManager) return; // Only sales execs, or managers on direct/qr sales get recurring
+
           const rate = recurringCommissionRates[client.clientType];
           if (rate === 0) return;
+
           const startDate = parseISO(proposal.createdAt);
           const today = new Date();
 
@@ -156,7 +166,7 @@ export function useCommissions(userId?: string) {
               }
               
               const recurringId = `recurring-${proposal.id}-${i}`;
-              if (!commissionsByMonth[monthKey].some(c => c.id === recurringId)) {
+              if (!commissionsByMonth[monthKey].some(c => c.id === recurringId && c.userId === uId)) {
                   commissionsByMonth[monthKey].push({
                       id: recurringId,
                       userId: proposal.userId,
