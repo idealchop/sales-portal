@@ -8,7 +8,7 @@ import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TFooter } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2, Loader, Calendar, File } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
@@ -322,10 +322,12 @@ const RecurringCommissionTimelineDialog = ({ commission }: { commission: Commiss
                             </TableRow>
                         ))}
                     </TableBody>
-                    <TableRow>
-                        <TableCell className="font-bold text-base">Total</TableCell>
-                        <TableCell className="text-right font-bold text-base">{currencyFormatter.format(totalRecurringAmount)}</TableCell>
-                    </TableRow>
+                    <TFooter>
+                        <TableRow>
+                            <TableCell className="font-bold text-base">Total</TableCell>
+                            <TableCell className="text-right font-bold text-base">{currencyFormatter.format(totalRecurringAmount)}</TableCell>
+                        </TableRow>
+                    </TFooter>
                 </Table>
             </div>
         </DialogContent>
