@@ -186,7 +186,7 @@ export default function NewProposalPage() {
   }));
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto pb-24 sm:pb-0">
         <div className="flex items-center justify-between">
             <div>
                 <div className="flex items-center gap-2">
@@ -197,9 +197,11 @@ export default function NewProposalPage() {
                 </p>
             </div>
             {clientSelectionType && (
-                 <Button asChild size="lg" disabled={isNextDisabled}>
-                    <Link href={getNextStepLink()}>Next Step</Link>
-                </Button>
+                <div className="hidden sm:block">
+                    <Button asChild size="lg" disabled={isNextDisabled}>
+                        <Link href={getNextStepLink()}>Next Step</Link>
+                    </Button>
+                </div>
             )}
         </div>
 
@@ -374,6 +376,14 @@ export default function NewProposalPage() {
             />
           </div>
         </div>
+
+        {clientSelectionType && (
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
+                <Button asChild size="lg" disabled={isNextDisabled} className="w-full">
+                    <Link href={getNextStepLink()}>Next Step</Link>
+                </Button>
+            </div>
+        )}
     </div>
   );
 }
