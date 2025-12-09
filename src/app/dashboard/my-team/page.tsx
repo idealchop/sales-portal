@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2, Loader } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval, differenceInMonths, addMonths } from 'date-fns';
@@ -741,17 +741,7 @@ export default function MyTeamPage() {
             const isManagerCommission = comm.userId === user.id;
 
             if (isManagerCommission) {
-                if (comm.type === 'commission' && !comm.description?.includes('Recurring') && !comm.description?.includes('Override')) {
-                     if (proposal.sourceLocation) {
-                        if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                        qrCampaignsByMonth[monthKey].details.push(detail);
-                        qrCampaignsByMonth[monthKey].total += comm.amount;
-                    } else {
-                        if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                        directSalesByMonth[monthKey].details.push(detail);
-                        directSalesByMonth[monthKey].total += comm.amount;
-                    }
-                } else if (comm.description?.includes('Recurring')) {
+                 if (comm.description?.includes('Recurring')) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
@@ -761,6 +751,14 @@ export default function MyTeamPage() {
                         overridesByMonth[monthKey].details.push(detail);
                         overridesByMonth[monthKey].total += comm.amount;
                     }
+                } else if (proposal.sourceLocation) { // One-time QR commission
+                    if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                    qrCampaignsByMonth[monthKey].details.push(detail);
+                    qrCampaignsByMonth[monthKey].total += comm.amount;
+                } else { // One-time direct sale commission
+                    if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                    directSalesByMonth[monthKey].details.push(detail);
+                    directSalesByMonth[monthKey].total += comm.amount;
                 }
             }
         });
@@ -1249,3 +1247,4 @@ export default function MyTeamPage() {
     </div>
   );
 }
+
