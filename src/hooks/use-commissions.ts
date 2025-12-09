@@ -128,8 +128,9 @@ export function useCommissions(userId?: string) {
         if (!commissionsByMonth[monthKey]) {
             commissionsByMonth[monthKey] = [];
         }
-        const clientName = allProposals.find(p => p.id === commission.proposalId)?.clientId
-        commissionsByMonth[monthKey].push({...commission, clientName: clientMap.get(clientName || '')?.companyName});
+        const proposal = allProposals.find(p => p.id === commission.proposalId);
+        const clientName = proposal ? clientMap.get(proposal.clientId)?.companyName : undefined;
+        commissionsByMonth[monthKey].push({...commission, clientName});
     });
 
     // Dynamically calculate and add recurring commissions for all relevant users
@@ -145,10 +146,9 @@ export function useCommissions(userId?: string) {
           const client = clientMap.get(proposal.clientId);
           if (!client || !client.clientType) return;
           
-          const isDirectSaleByManager = user?.role === 'manager' && proposal.userId === user.id && !proposal.sourceLocation;
           const isQrSaleByManager = user?.role === 'manager' && proposal.userId === user.id && !!proposal.sourceLocation;
 
-          if (user?.role !== 'sales' && !isDirectSaleByManager && !isQrSaleByManager) return; // Only sales execs, or managers on direct/qr sales get recurring
+          if (user?.role !== 'sales' && !isQrSaleByManager) return; // Only sales execs on direct sales, or managers on QR sales get recurring
 
           const rate = recurringCommissionRates[client.clientType];
           if (rate === 0) return;
@@ -175,7 +175,7 @@ export function useCommissions(userId?: string) {
                       createdAt: commissionMonthDate.toISOString(),
                       status: 'pending',
                       type: 'commission',
-                      description: `Recurring (${i + 1}/12)`,
+                      description: `Recurring (${i + 1}/12)` + (isQrSaleByManager ? ' (QR Campaign)' : ''),
                       clientName: client.companyName,
                       referenceId: `recurring-${proposal.id}`
                   });

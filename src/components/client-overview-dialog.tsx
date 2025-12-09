@@ -534,7 +534,7 @@ export function ClientOverviewDialog({
         
         // One-time commission for direct sales (sales or manager) or QR campaigns (manager)
         if (commissionAmount > 0) {
-          const commissionRecipientId = (isQrCampaign && proposalCreator?.role === 'manager') ? proposalCreator.id : proposalCreatorId;
+          const commissionRecipientId = proposalCreatorId;
           const execCommissionRef = doc(collection(firestore, 'commissions'));
           transaction.set(execCommissionRef, {
             userId: commissionRecipientId,
@@ -543,7 +543,7 @@ export function ClientOverviewDialog({
             createdAt: serverTimestamp(),
             status: 'pending',
             type: 'commission',
-            description: `Commission for ${subscriptionInfo.planName}`,
+            description: `Commission for ${subscriptionInfo.planName}` + (isQrCampaign ? ' (QR Campaign)' : ''),
             clientName: client.companyName,
             referenceId: finalProposalId
           });
@@ -565,7 +565,7 @@ export function ClientOverviewDialog({
                         createdAt: commissionDate,
                         status: 'pending',
                         type: 'commission',
-                        description: `Recurring (${i + 1}/12)`,
+                        description: `Recurring (${i + 1}/12)` + (isQrCampaign ? ' (QR Campaign)' : ''),
                         clientName: client.companyName,
                         referenceId: `recurring-${finalProposalId}-${i}`
                     });
@@ -1074,3 +1074,4 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
