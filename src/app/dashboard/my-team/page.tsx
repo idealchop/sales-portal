@@ -692,7 +692,7 @@ export default function MyTeamPage() {
     };
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
 
-  const commissionDetails = useMemo(() => {
+const commissionDetails = useMemo(() => {
     if (commissionsLoading || proposalsLoading || clientsLoading || !isManager || !user) {
         return { directSales: [], qrCampaigns: [], teamOverrides: [], recurring: [] };
     }
@@ -703,13 +703,15 @@ export default function MyTeamPage() {
     const recurringByMonth: Record<string, MonthlyCommissionBreakdown> = {};
 
     const teamMemberIds = new Set(myTeam.map(m => m.id));
+    const userMap = new Map(salesUsers.map(u => [u.id, u]));
 
     allPayouts.forEach(payout => {
         payout.commissions.forEach(comm => {
             const monthKey = payout.month;
             const proposal = proposals.find(p => p.id === comm.proposalId);
             const client = clients.find(c => c.id === proposal?.clientId);
-            const salesRep = salesUsers.find(u => u.id === comm.userId);
+            const salesRep = userMap.get(comm.userId);
+            const proposalCreator = userMap.get(proposal?.userId ?? '');
 
             const detail: CommissionDetail = {
                 salesRepName: salesRep?.displayName || 'N/A',
@@ -722,24 +724,24 @@ export default function MyTeamPage() {
                 date: comm.createdAt
             };
 
-            // Manager's own commissions
-            if (comm.userId === user.id) {
-                if (comm.description?.includes('Recurring')) {
+            const isForManager = comm.userId === user.id;
+            const isTeamOverride = teamMemberIds.has(comm.userId) && comm.description?.includes('Override');
+
+            if (isForManager) {
+                 if (comm.description?.includes('Recurring')) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
-                } else if (proposal?.sourceLocation) { // QR Campaign Commission
+                } else if (proposal?.sourceLocation) {
                     if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     qrCampaignsByMonth[monthKey].details.push(detail);
                     qrCampaignsByMonth[monthKey].total += comm.amount;
-                } else { // Direct Sale Commission
+                } else {
                     if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     directSalesByMonth[monthKey].details.push(detail);
                     directSalesByMonth[monthKey].total += comm.amount;
                 }
-            } 
-            // Team Overrides
-            else if (teamMemberIds.has(comm.userId) && comm.description?.includes('Override')) {
+            } else if (isTeamOverride) {
                 if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                 overridesByMonth[monthKey].details.push(detail);
                 overridesByMonth[monthKey].total += comm.amount;
@@ -753,7 +755,8 @@ export default function MyTeamPage() {
         teamOverrides: Object.values(overridesByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
         recurring: Object.values(recurringByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
     };
-}, [allPayouts, isManager, user, proposals, clients, salesUsers, myTeam, commissionsLoading, proposalsLoading, clientsLoading]);
+}, [allPayouts, commissionsLoading, proposalsLoading, clientsLoading, isManager, user, myTeam, salesUsers, proposals, clients]);
+
 
   const isLoading = usersLoading || proposalsLoading || clientsLoading || commissionsLoading;
 
@@ -877,7 +880,7 @@ export default function MyTeamPage() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Time</SelectItem>
-                                {teamPerformance.availableMonths.map(month => <SelectItem key={month} value={month}</SelectItem>)}
+                                {teamPerformance.availableMonths.map(month => <SelectItem key={month} value={month}></SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
