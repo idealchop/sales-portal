@@ -36,117 +36,103 @@ function SmartRefillIntro() {
   const address = searchParams.get('address') || '';
 
   return (
-    <Card className="flex-1">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-            <div>
-                <CardTitle>What is Smart Refill?</CardTitle>
-                <CardDescription>
-                  An overview of the value proposition.
-                </CardDescription>
-            </div>
-             <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <div>
-                             <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm" disabled={!address}>
-                                        <Map className="mr-2 h-4 w-4" /> See Partner Stations
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col">
-                                    <DialogHeader>
-                                        <DialogTitle>Nearby Partner Water Stations</DialogTitle>
-                                        <DialogDescription>
-                                            Showing stations near {address}.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="h-full w-full rounded-md overflow-hidden flex-1">
-                                        <GoogleMap address={address} onAddressChange={() => {}} additionalMarkers={stationMarkers} />
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
+    <Card className="flex-1 overflow-hidden">
+        <div className="grid md:grid-cols-2">
+            <div className="p-8 space-y-6">
+                <CardHeader className="p-0">
+                    <CardTitle>What is Smart Refill?</CardTitle>
+                    <CardDescription>
+                        An overview of our value proposition.
+                    </CardDescription>
+                </CardHeader>
+                <div className="space-y-4 text-sm text-muted-foreground">
+                    <p className="font-semibold text-foreground">
+                    Smart Refill is the Philippines’ first automated water refill system
+                    for businesses — built to make water supply safe, seamless, and
+                    scalable.
+                    </p>
+                    <p>
+                    We connect businesses directly to a nationwide network of verified and
+                    compliant local water refilling stations, ensuring every delivery is
+                    automatic, on time, and fully compliant with sanitation and water
+                    quality standards.
+                    </p>
+                </div>
+                 <div>
+                    <h3 className="font-semibold text-foreground text-base mb-4">Smart Refill powers your business with:</h3>
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                            <RefreshCw className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                            <div>
+                                <span className="font-semibold text-foreground">Automated Refills</span>
+                                <p className="text-xs text-muted-foreground">No more texts, calls, or manual orders.</p>
+                            </div>
                         </div>
-                    </TooltipTrigger>
-                    {!address && (
-                        <TooltipContent>
-                            <p>Please enter a client address to see nearby stations.</p>
-                        </TooltipContent>
-                    )}
-                </Tooltip>
-            </TooltipProvider>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-8">
-        <div className="grid md:grid-cols-2 gap-8 items-start text-sm text-muted-foreground prose">
-            <div className="space-y-6 max-w-prose">
-                <p className="font-semibold text-foreground">
-                Smart Refill is the Philippines’ first automated water refill system
-                for businesses — built to make water supply safe, seamless, and
-                scalable.
-                </p>
-                <p>
-                We connect businesses directly to a nationwide network of verified and
-                compliant local water refilling stations, ensuring every delivery is
-                automatic, on time, and fully compliant with sanitation and water
-                quality standards.
-                </p>
-                <p>
-                Businesses no longer need to worry about reordering
-                water — refills are delivered automatically. You can easily monitor
-                consumption, providers, and payments, and scale your operations
-                anytime, all through one Smart Refill Client Portal.
-                </p>
-            </div>
-            
-            <div>
-                <h3 className="font-semibold text-foreground text-base">Smart Refill powers your business with:</h3>
-                <div className="space-y-4 mt-4">
-                    <div className="flex items-start gap-3">
-                        <RefreshCw className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                        <div>
-                            <span className="font-semibold text-foreground">Automated Refills</span> – No more texts, calls, or manual orders.
+                        <div className="flex items-start gap-3">
+                            <Globe className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                            <div>
+                                <span className="font-semibold text-foreground">Nationwide Access</span>
+                                <p className="text-xs text-muted-foreground">Refill anywhere in the Philippines with verified partners.</p>
+                            </div>
                         </div>
-                    </div>
-                     <div className="flex items-start gap-3">
-                        <Globe className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                        <div>
-                            <span className="font-semibold text-foreground">Nationwide Access</span> – Refill anywhere in the Philippines with verified partners.
+                        <div className="flex items-start gap-3">
+                            <LayoutDashboard className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                            <div>
+                                <span className="font-semibold text-foreground">Centralized Dashboard</span>
+                                <p className="text-xs text-muted-foreground">Monitor water usage, billing, and deliveries in real time.</p>
+                            </div>
                         </div>
-                    </div>
-                     <div className="flex items-start gap-3">
-                        <LayoutDashboard className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                        <div>
-                            <span className="font-semibold text-foreground">Centralized Dashboard</span> – Monitor water usage, billing, and deliveries in real time.
-                        </div>
-                    </div>
-                     <div className="flex items-start gap-3">
-                        <ShieldCheck className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                        <div>
-                            <span className="font-semibold text-foreground">Compliance Assurance</span> – Every refill meets sanitation and safety standards.
-                        </div>
-                    </div>
-                     <div className="flex items-start gap-3">
-                        <Scaling className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                        <div>
-                            <span className="font-semibold text-foreground">Scalable Plans</span> – Flexible liters and billing for every business size.
+                        <div className="flex items-start gap-3">
+                            <ShieldCheck className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                            <div>
+                                <span className="font-semibold text-foreground">Compliance Assurance</span>
+                                <p className="text-xs text-muted-foreground">Every refill meets sanitation and safety standards.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" disabled={!address}>
+                                            <Map className="mr-2 h-4 w-4" /> See Partner Stations
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col">
+                                        <DialogHeader>
+                                            <DialogTitle>Nearby Partner Water Stations</DialogTitle>
+                                            <DialogDescription>
+                                                Showing stations near {address}.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="h-full w-full rounded-md overflow-hidden flex-1">
+                                            <GoogleMap address={address} onAddressChange={() => {}} additionalMarkers={stationMarkers} />
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </TooltipTrigger>
+                        {!address && (
+                            <TooltipContent>
+                                <p>Please enter a client address to see nearby stations.</p>
+                            </TooltipContent>
+                        )}
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
+            <div className="relative min-h-[400px] hidden md:block">
+                <Image 
+                    src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/River%20Mobile%2Flanding%20page%20image.png?alt=media&token=bce76780-73c9-4b4c-8e6f-83e5234d337a"
+                    alt="Smart Refill App on a phone"
+                    fill
+                    className="object-contain p-8"
+                    data-ai-hint="app interface"
+                />
             </div>
         </div>
-        
-        <div className="relative aspect-video rounded-lg overflow-hidden">
-            <Image 
-                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSmartRefill_01.jpg?alt=media&token=722b6080-2773-483c-a9ca-1b4127898dd8"
-                alt="Smart Refill service infographic"
-                fill
-                className="object-cover"
-                data-ai-hint="infographic water service"
-            />
-        </div>
-      </CardContent>
     </Card>
   );
 }
