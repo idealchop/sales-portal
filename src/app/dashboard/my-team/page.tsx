@@ -726,7 +726,7 @@ const commissionDetails = useMemo(() => {
 
             const isRecurring = comm.description?.includes('Recurring');
             
-            if (comm.userId === user.id) {
+            if (comm.userId === user.id) { // Manager's own commissions
                 const isFromQR = !!proposal?.sourceLocation;
                 if (isRecurring) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
@@ -743,7 +743,7 @@ const commissionDetails = useMemo(() => {
                 }
             } 
             
-            if (comm.description?.includes('Override') && comm.userId === user.id) {
+            if (comm.description?.includes('Override') && comm.userId === user.id) { // Manager's override commissions
                  if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                 overridesByMonth[monthKey].details.push(detail);
                 overridesByMonth[monthKey].total += comm.amount;
