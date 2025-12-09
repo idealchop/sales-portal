@@ -713,6 +713,7 @@ export default function MyTeamPage() {
     const userMap = new Map(salesUsers.map(u => [u.id, u]));
     const proposalMap = new Map(proposals.map(p => [p.id, p]));
 
+    // Use allPayouts which contains commissions for the manager and their team
     allPayouts.forEach(payout => {
         payout.commissions.forEach(comm => {
             const monthKey = format(startOfMonth(new Date(comm.createdAt)), 'MMMM yyyy');
@@ -727,7 +728,7 @@ export default function MyTeamPage() {
                 clientName: client.companyName || 'N/A',
                 saleAmount: proposal.amount,
                 commissionAmount: comm.amount,
-                rate: 0,
+                rate: 0, 
                 sourceLocation: proposal.sourceLocation,
                 description: comm.description,
                 date: comm.createdAt
@@ -735,23 +736,27 @@ export default function MyTeamPage() {
 
             const isOneTimeCommission = comm.type === 'commission' && !comm.description?.includes('Recurring') && !comm.description?.includes('Override');
 
-            if (comm.userId === user.id) { // Commissions for the manager
+            // Manager's own commissions
+            if (comm.userId === user.id) {
                 if (isOneTimeCommission) {
-                    if (proposal.sourceLocation) { // QR Campaign Commission
+                    // Check if it's a QR campaign sale
+                    if (proposal.sourceLocation) {
                         if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         qrCampaignsByMonth[monthKey].details.push(detail);
                         qrCampaignsByMonth[monthKey].total += comm.amount;
-                    } else { // Direct Sale Commission
+                    } else { // It's a direct sale by the manager
                         if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         directSalesByMonth[monthKey].details.push(detail);
                         directSalesByMonth[monthKey].total += comm.amount;
                     }
-                } else if (comm.description?.includes('Recurring')) { // Recurring Commission
+                } else if (comm.description?.includes('Recurring')) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
                 }
-            } else if (teamMemberIds.has(comm.userId) && comm.description?.includes('Override')) { // Team Overrides
+            }
+            // Team Overrides
+            else if (teamMemberIds.has(proposal.userId) && comm.description?.includes('Override') && comm.userId === user.id) {
                 if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                 overridesByMonth[monthKey].details.push(detail);
                 overridesByMonth[monthKey].total += comm.amount;
