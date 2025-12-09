@@ -6,10 +6,14 @@ import Image from 'next/image';
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useSearchParams } from 'next/navigation';
+import { ExternalLink } from 'lucide-react';
 
 const faqData = [
   {
@@ -73,7 +77,7 @@ export default function ComparisonPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-0">
+      <div className="container mx-auto px-0 space-y-6">
         <div className="grid md:grid-cols-2 gap-6 items-start rounded-lg border bg-card text-card-foreground shadow-sm p-6">
             <div className="relative aspect-video rounded-lg overflow-hidden">
                 <Image 
@@ -102,6 +106,19 @@ export default function ComparisonPage() {
                 </CardContent>
             </Card>
         </div>
+         <Card className="bg-muted/50">
+            <CardHeader>
+                <CardTitle>Explore the Smart Refill App</CardTitle>
+                <CardDescription>See how you can manage your water supply, monitor consumption, and handle payments all in one place. </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Button asChild>
+                    <Link href="https://app.riverph.com" target="_blank">
+                        Visit app.riverph.com <ExternalLink className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
       </div>
     </div>
   );
