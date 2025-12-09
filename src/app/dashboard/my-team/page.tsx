@@ -298,6 +298,12 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
 
     const [selectedMonth, setSelectedMonth] = useState<string>(allMonths[0] || '');
 
+    useEffect(() => {
+        if (!selectedMonth && allMonths.length > 0) {
+            setSelectedMonth(allMonths[0]);
+        }
+    }, [allMonths, selectedMonth]);
+
     const selectedDirectSales = useMemo(() => directSalesCommissions.find(c => c.month === selectedMonth) || { total: 0, details: [] }, [directSalesCommissions, selectedMonth]);
     const selectedQrCampaigns = useMemo(() => qrCampaignCommissions.find(c => c.month === selectedMonth) || { total: 0, details: [] }, [qrCampaignCommissions, selectedMonth]);
     const selectedOverrides = useMemo(() => teamOverrideCommissions.find(c => c.month === selectedMonth) || { total: 0, details: [] }, [teamOverrideCommissions, selectedMonth]);
@@ -1240,4 +1246,3 @@ const commissionDetails = useMemo(() => {
     </div>
   );
 }
-
