@@ -698,6 +698,8 @@ export default function MyTeamPage() {
         teamProposals,
     };
   }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
+  
+  const proposalMap = useMemo(() => new Map(proposals.map(p => [p.id, p])), [proposals]);
 
  const commissionDetails = useMemo(() => {
     if (commissionsLoading || proposalsLoading || clientsLoading || !isManager || !user) {
@@ -711,7 +713,6 @@ export default function MyTeamPage() {
     
     const teamMemberIds = new Set(myTeam.map(m => m.id));
     const userMap = new Map(salesUsers.map(u => [u.id, u]));
-    const proposalMap = new Map(proposals.map(p => [p.id, p]));
 
     allPayouts.forEach(payout => {
         payout.commissions.forEach(comm => {
@@ -732,13 +733,12 @@ export default function MyTeamPage() {
                 description: comm.description,
                 date: comm.createdAt
             };
+            
+            const isManagerCommission = comm.userId === user.id;
 
-            const isOneTimeCommission = comm.type === 'commission' && !comm.description?.includes('Recurring') && !comm.description?.includes('Override');
-
-            // Manager's own commissions
-            if (comm.userId === user.id) {
-                if (isOneTimeCommission) {
-                    if (proposal.sourceLocation) {
+            if (isManagerCommission) {
+                if (comm.type === 'commission' && !comm.description?.includes('Recurring') && !comm.description?.includes('Override')) {
+                     if (proposal.sourceLocation) {
                         if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         qrCampaignsByMonth[monthKey].details.push(detail);
                         qrCampaignsByMonth[monthKey].total += comm.amount;
@@ -751,13 +751,13 @@ export default function MyTeamPage() {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
+                } else if (comm.description?.includes('Override')) {
+                    if (teamMemberIds.has(proposal.userId)) {
+                        if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                        overridesByMonth[monthKey].details.push(detail);
+                        overridesByMonth[monthKey].total += comm.amount;
+                    }
                 }
-            }
-            // Team Overrides
-            else if (teamMemberIds.has(proposal.userId) && comm.description?.includes('Override') && comm.userId === user.id) {
-                if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                overridesByMonth[monthKey].details.push(detail);
-                overridesByMonth[monthKey].total += comm.amount;
             }
         });
     });
@@ -1245,8 +1245,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
-
-
-
-    
