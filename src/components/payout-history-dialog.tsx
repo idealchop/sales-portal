@@ -45,7 +45,7 @@ function PayoutMonthDetailsDialog({ month, commissions, allCommissions }: { mont
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     const directSales = useMemo(() => allCommissions.filter(c => c.type === 'commission' && !c.description?.includes('Override') && !c.description?.includes('QR') && !c.description?.includes('Recurring')), [allCommissions]);
-    const qrCampaigns = useMemo(() => allCommissions.filter(c => c.description?.includes('QR')), [allCommissions]);
+    const qrCampaigns = useMemo(() => allCommissions.filter(c => c.description?.includes('QR') && !c.description?.includes('Recurring')), [allCommissions]);
     const overrides = useMemo(() => allCommissions.filter(c => c.description?.includes('Override')), [allCommissions]);
     const recurring = useMemo(() => allCommissions.filter(c => c.description?.includes('Recurring')), [allCommissions]);
 
@@ -390,3 +390,5 @@ export function PayoutHistoryDialog({ children, user: propUser, isAdmin = false,
         </Dialog>
     );
 }
+
+    
