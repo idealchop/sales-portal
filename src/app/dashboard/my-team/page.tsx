@@ -557,6 +557,7 @@ export default function MyTeamPage() {
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   const [proposalsByRepPeriod, setProposalsByRepPeriod] = useState<string>('all');
   const [leaderboardSearch, setLeaderboardSearch] = useState('');
+  const [qrCampaignSearch, setQrCampaignSearch] = useState('');
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
 
 
@@ -711,7 +712,7 @@ const commissionDetails = useMemo(() => {
             const proposal = proposals.find(p => p.id === comm.proposalId);
             const client = clients.find(c => c.id === proposal?.clientId);
             const salesRep = userMap.get(comm.userId);
-            const proposalCreator = userMap.get(proposal?.userId ?? '');
+            const proposalCreatorId = proposal?.userId;
 
             const detail: CommissionDetail = {
                 salesRepName: salesRep?.displayName || 'N/A',
@@ -723,12 +724,11 @@ const commissionDetails = useMemo(() => {
                 description: comm.description,
                 date: comm.createdAt
             };
-
-            const isForManager = comm.userId === user.id;
+            
             const isTeamOverride = teamMemberIds.has(comm.userId) && comm.description?.includes('Override');
 
-            if (isForManager) {
-                 if (comm.description?.includes('Recurring')) {
+            if (comm.userId === user.id) {
+                if (comm.description?.includes('Recurring')) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
@@ -756,6 +756,26 @@ const commissionDetails = useMemo(() => {
         recurring: Object.values(recurringByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
     };
 }, [allPayouts, commissionsLoading, proposalsLoading, clientsLoading, isManager, user, myTeam, salesUsers, proposals, clients]);
+
+ const qrCampaignClients = useMemo(() => {
+    if (!user || !isManager || proposalsLoading || clientsLoading) return [];
+    
+    return proposals
+      .filter(p => p.userId === user.id && p.sourceLocation && p.status === 'accepted')
+      .map(p => {
+        const client = clientMap.get(p.clientId);
+        return {
+          proposal: p,
+          client: client,
+        };
+      })
+      .filter(item => {
+        if (!item.client) return false;
+        const searchTerm = qrCampaignSearch.toLowerCase();
+        return item.client.companyName.toLowerCase().includes(searchTerm) ||
+               (item.proposal.sourceLocation && item.proposal.sourceLocation.toLowerCase().includes(searchTerm));
+      });
+  }, [user, isManager, proposals, clients, proposalsLoading, clientsLoading, clientMap, qrCampaignSearch]);
 
 
   const isLoading = usersLoading || proposalsLoading || clientsLoading || commissionsLoading;
@@ -1157,6 +1177,58 @@ const commissionDetails = useMemo(() => {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className='flex-1'>
+              <CardTitle>QR Campaign Client Tracker</CardTitle>
+              <CardDescription>Clients who have signed up through your QR campaigns.</CardDescription>
+            </div>
+            <div className="relative w-full sm:w-auto sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by client or campaign..."
+                value={qrCampaignSearch}
+                onChange={(e) => setQrCampaignSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Client</TableHead>
+                <TableHead>Campaign Name</TableHead>
+                <TableHead className="text-right">Contract Amount</TableHead>
+                <TableHead className="text-right">Date Signed</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {qrCampaignClients.length > 0 ? (
+                qrCampaignClients.map(({ proposal, client }) => (
+                  <ClientOverviewDialog key={proposal.id} client={client!} proposal={proposal} allUsers={salesUsers} view="clients">
+                    <TableRow className="cursor-pointer">
+                      <TableCell className="font-medium">{client!.companyName}</TableCell>
+                      <TableCell>{proposal.sourceLocation}</TableCell>
+                      <TableCell className="text-right">{currencyFormatter.format(proposal.amount)}</TableCell>
+                      <TableCell className="text-right">{format(new Date(proposal.createdAt), 'PPP')}</TableCell>
+                    </TableRow>
+                  </ClientOverviewDialog>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    No clients have signed up via QR campaigns yet.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
