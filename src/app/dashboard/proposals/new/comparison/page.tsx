@@ -8,52 +8,41 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useSearchParams } from 'next/navigation';
 
-const comparisonData = [
+const faqData = [
   {
-    aspect: 'Pricing Structure',
-    traditional: 'Pay per gallon, with prices ranging from ₱30 to ₱100 each, depending on the business location.',
-    smartRefill: 'Pay a fixed monthly fee based on liters (₱2.50–₱3.00/L), predictable and budget-friendly.',
-    advantage: '🧾 Predictable billing — easier budgeting for clients.',
+    question: 'How does Smart Refill work?',
+    answer: 'Smart Refill automates your water refills based on your schedule and usage patterns. You can track deliveries, water quality, and compliance all in the app.',
   },
   {
-    aspect: 'Ordering Process',
-    traditional: 'Manual ordering by call or text. Risk of running out or delayed refills.',
-    smartRefill: 'Automated scheduling and refill tracking through the app.',
-    advantage: '⚙️ No manual ordering — 100% automated and smart delivery.',
+    question: 'Is the water safe?',
+    answer: 'Yes. Every delivery passes strict quality checks, and partner water stations are continuously monitored to ensure clean and safe drinking water.',
   },
   {
-    aspect: 'Monitoring Usage',
-    traditional: 'No tracking. Businesses often overorder or underorder.',
-    smartRefill: 'Real-time monitoring of liters used and refills made.',
-    advantage: '📊 Transparent usage data for accounting and cost optimization.',
+    question: 'Do I still need to message or call to reorder?',
+    answer: 'No. Refills are fully automated. You’ll only receive notifications for scheduled deliveries, completed refills, or available quality reports.',
   },
   {
-    aspect: 'Wastage',
-    traditional: 'Bottles sometimes unused, misplaced, or lost.',
-    smartRefill: 'Liter-based tracking + roll-over feature (2 months).',
-    advantage: '🔄 No wastage — unused liters are saved.',
+    question: 'What if I want to change my schedule or report an issue?',
+    answer: 'You can adjust your delivery schedule, pause service, or request urgent refills directly in the app. Our support team is available 24/7 to help.',
   },
   {
-    aspect: 'Scalability',
-    traditional: 'Hard to manage for multiple branches.',
-    smartRefill: 'Centralized control for all locations via one dashboard.',
-    advantage: '🌐 Multi-site management for enterprises.',
+    question: 'Do you offer nationwide service?',
+    answer: 'Yes. Smart Refill works with 200+ verified water stations across the Philippines, with coverage expanding continuously.',
   },
   {
-    aspect: 'Water Quality & Compliance',
-    traditional: 'Quality varies per supplier. No digital record.',
-    smartRefill: 'Monitored through Client Portal',
-    advantage: '💧 Verified water sources with digital compliance record.',
+    question: 'Are containers and dispensers free?',
+    answer: 'Containers are free to use. Dispensers depend on your plan—some include free use, while others offer discounted rental or purchase options.',
   },
   {
-    aspect: 'Customer Experience',
-    traditional: 'Reactive and inconsistent service.',
-    smartRefill: 'Automated, proactive, and data-driven service.',
-    advantage: '🚀 Modern and hassle-free experience.',
+    question: 'How much does the plan cost? Do unused liters carry over?',
+    answer: 'Plans start at ₱2–₱3 per liter. Any unused liters automatically roll over to the next month.',
+  },
+  {
+    question: 'Is the app free, and what can it do?',
+    answer: 'Yes. The app is included in your plan at no extra cost. It lets you track deliveries, view water quality reports, manage schedules and payments, and request urgent refills anytime.',
   },
 ];
 
@@ -69,9 +58,9 @@ export default function ComparisonPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">The Smart Refill Advantage</h1>
+          <h1 className="text-2xl font-bold">Frequently Asked Questions</h1>
           <p className="text-muted-foreground">
-            Step 3: A clear comparison against the traditional model.
+            Step 3: Common questions about the Smart Refill service.
           </p>
         </div>
         <div className="flex gap-2">
@@ -98,32 +87,14 @@ export default function ComparisonPage() {
 
             <Card className="shadow-md">
                 <CardContent className="p-0">
-                <Accordion type="single" collapsible defaultValue={comparisonData[0].aspect}>
-                    {comparisonData.map((item) => (
-                    <AccordionItem value={item.aspect} key={item.aspect}>
-                        <AccordionTrigger className="px-6 text-base font-semibold">
-                        {item.aspect}
+                <Accordion type="single" collapsible defaultValue={faqData[0].question}>
+                    {faqData.map((item) => (
+                    <AccordionItem value={item.question} key={item.question}>
+                        <AccordionTrigger className="px-6 text-base font-semibold text-left">
+                        {item.question}
                         </AccordionTrigger>
-                        <AccordionContent className="px-6 pb-6">
-                        <div className="grid gap-4 pt-4">
-                            <div className="space-y-2 rounded-lg bg-background p-4 border">
-                                <div className="flex items-center gap-2">
-                                    <XCircle className="h-5 w-5 text-destructive" />
-                                    <h4 className="font-semibold text-muted-foreground">Traditional Model</h4>
-                                </div>
-                                <p className="text-sm pl-7">{item.traditional}</p>
-                            </div>
-                            <div className="space-y-2 rounded-lg bg-primary/10 p-4 border border-primary/20">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="h-5 w-5 text-primary" />
-                                    <h4 className="font-semibold text-primary">Smart Refill Model</h4>
-                                </div>
-                                <p className="text-sm pl-7">{item.smartRefill}</p>
-                                <div className="mt-2 pl-7">
-                                    <p className="text-sm font-semibold text-primary">{item.advantage}</p>
-                                </div>
-                            </div>
-                        </div>
+                        <AccordionContent className="px-6 pb-6 text-muted-foreground">
+                          {item.answer}
                         </AccordionContent>
                     </AccordionItem>
                     ))}
