@@ -334,7 +334,7 @@ export default function DashboardPage() {
         try {
           if (!proposal.content) return null;
           const content = JSON.parse(proposal.content);
-          if (content.billingCycleLabel && content.billingCycleLabel !== 'Monthly') {
+          if (content.billingCycleLabel && ['Semi-Annually', 'Annually'].includes(content.billingCycleLabel)) {
             const client = clientMap.get(proposal.clientId);
             return {
               clientName: client?.companyName || 'Unknown Client',
@@ -1143,5 +1143,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
