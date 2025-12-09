@@ -723,12 +723,12 @@ const commissionDetails = useMemo(() => {
                 description: comm.description,
                 date: comm.createdAt
             };
-            
-            // Check if the commission is for the current manager
-            if (comm.userId === user.id) {
-                const isRecurring = comm.description?.includes('Recurring');
-                const isFromQR = !!proposal?.sourceLocation;
 
+            const isRecurring = comm.description?.includes('Recurring');
+            
+            // Manager's own commissions
+            if (comm.userId === user.id) {
+                const isFromQR = !!proposal?.sourceLocation;
                 if (isRecurring) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
@@ -743,11 +743,15 @@ const commissionDetails = useMemo(() => {
                     directSalesByMonth[monthKey].total += comm.amount;
                 }
             } 
-            // Check if it's a team override commission
-            else if (teamMemberIds.has(comm.userId) && comm.description?.includes('Override')) {
-                if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                overridesByMonth[monthKey].details.push(detail);
-                overridesByMonth[monthKey].total += comm.amount;
+            // Team member commissions for override calculation
+            else if (teamMemberIds.has(comm.userId)) {
+                if (isRecurring) {
+                    // Recurring commissions from team members are not part of manager's payout
+                } else if (comm.description?.includes('Override')) {
+                     if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                    overridesByMonth[monthKey].details.push(detail);
+                    overridesByMonth[monthKey].total += comm.amount;
+                }
             }
         });
     });
