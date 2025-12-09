@@ -627,7 +627,7 @@ export default function MyTeamPage() {
 
     const winRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
     const winRateLastMonth = sentLastMonth.length > 0 ? (acceptedLastMonth.length / sentLastMonth.length) * 100 : 0;
-    const winRateChange = winRateLastMonth > 0 ? ((winRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : winRateThisMonth > 0 ? 100 : 0;
+    const winRateChange = winRateLastMonth > 0 ? ((winRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
     
     const revenueThisMonth = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
     const revenueLastMonth = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
@@ -728,20 +728,14 @@ const commissionDetails = useMemo(() => {
                 description: comm.description,
                 date: comm.createdAt
             };
-
-            // Manager's own commissions
+            
+            // Manager's own commissions (Direct or QR) and recurring from those
             if (comm.userId === user.id) {
-                if (isRecurring) {
+                 if (isRecurring) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
-                } else if (isOverride) {
-                    // This is an override commission for one of the team member's sales
-                    if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                    overridesByMonth[monthKey].details.push(detail);
-                    overridesByMonth[monthKey].total += comm.amount;
-                } else {
-                    // This is a one-time commission from the manager's own sale
+                } else if (!isOverride) { // One-time commissions
                     if (proposal.sourceLocation) { // QR Campaign Commission
                         if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         qrCampaignsByMonth[monthKey].details.push(detail);
@@ -753,16 +747,23 @@ const commissionDetails = useMemo(() => {
                     }
                 }
             }
+            
+            // Team Overrides for the manager
+            if (teamMemberIds.has(proposal.userId) && isOverride) {
+                if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                overridesByMonth[monthKey].details.push(detail);
+                overridesByMonth[monthKey].total += comm.amount;
+            }
         });
     });
-
+    
     return {
         directSales: Object.values(directSalesByMonth),
         qrCampaigns: Object.values(qrCampaignsByMonth),
         teamOverrides: Object.values(overridesByMonth),
         recurring: Object.values(recurringByMonth),
     };
-}, [allPayouts, commissionsLoading, proposalsLoading, clientsLoading, isManager, user, myTeam, salesUsers, proposals, clients]);
+}, [allPayouts, commissionsLoading, proposalsLoading, clientsLoading, isManager, user, myTeam, salesUsers, proposals, clientMap]);
 
 
  const qrCampaignClients = useMemo(() => {
@@ -1239,3 +1240,4 @@ const commissionDetails = useMemo(() => {
     </div>
   );
 }
+
