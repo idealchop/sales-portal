@@ -728,33 +728,34 @@ const commissionDetails = useMemo(() => {
                 clientName: client.companyName || 'N/A',
                 saleAmount: proposal.amount,
                 commissionAmount: comm.amount,
-                rate: 0,
+                rate: 0, // This will be calculated later if needed
                 sourceLocation: proposal.sourceLocation,
                 description: comm.description,
                 date: comm.createdAt
             };
+
+            const isOneTimeCommission = comm.type === 'commission' && !comm.description?.includes('Recurring') && !comm.description?.includes('Override');
             
-            // Manager's own commissions
-            if (comm.userId === user.id) {
-                if (comm.description?.includes('Recurring')) {
-                    if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                    recurringByMonth[monthKey].details.push(detail);
-                    recurringByMonth[monthKey].total += comm.amount;
+            // Manager's own one-time commissions
+            if (comm.userId === user.id && isOneTimeCommission) {
+                // QR Campaign Commission for manager
+                if (proposal.sourceLocation) {
+                    if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                    qrCampaignsByMonth[monthKey].details.push(detail);
+                    qrCampaignsByMonth[monthKey].total += comm.amount;
+                } 
+                // Direct Sale Commission for manager
+                else {
+                    if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                    directSalesByMonth[monthKey].details.push(detail);
+                    directSalesByMonth[monthKey].total += comm.amount;
                 }
-                else if (!comm.description?.includes('Override')) {
-                    // QR Campaign Commission for manager
-                    if (proposal.sourceLocation) {
-                        if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                        qrCampaignsByMonth[monthKey].details.push(detail);
-                        qrCampaignsByMonth[monthKey].total += comm.amount;
-                    } 
-                    // Direct Sale Commission for manager
-                    else {
-                        if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                        directSalesByMonth[monthKey].details.push(detail);
-                        directSalesByMonth[monthKey].total += comm.amount;
-                    }
-                }
+            }
+            // Recurring Commissions for manager
+            else if (comm.userId === user.id && comm.description?.includes('Recurring')) {
+                if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                recurringByMonth[monthKey].details.push(detail);
+                recurringByMonth[monthKey].total += comm.amount;
             }
             // Team Overrides for the manager from their team members' sales
             else if (teamMemberIds.has(comm.userId) && comm.description?.includes('Override')) {
@@ -1249,3 +1250,7 @@ const commissionDetails = useMemo(() => {
   );
 }
 
+
+
+
+    
