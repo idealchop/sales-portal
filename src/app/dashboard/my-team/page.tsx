@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2, Loader } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2, Loader, Calendar, File } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval, differenceInMonths, addMonths } from 'date-fns';
@@ -285,6 +285,8 @@ interface CommissionDetail {
     sourceLocation?: string;
     description?: string;
     date: string;
+    proposalId: string;
+    clientId: string;
 }
 
 type MonthlyCommissionBreakdown = {
@@ -293,7 +295,44 @@ type MonthlyCommissionBreakdown = {
     details: CommissionDetail[];
 };
 
-const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommissions, teamOverrideCommissions, recurringCommissions }: { directSalesCommissions: MonthlyCommissionBreakdown[]; qrCampaignCommissions: MonthlyCommissionBreakdown[]; teamOverrideCommissions: MonthlyCommissionBreakdown[]; recurringCommissions: MonthlyCommissionBreakdown[] }) => {
+
+const RecurringCommissionTimelineDialog = ({ commission }: { commission: CommissionDetail }) => {
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const totalRecurringAmount = commission.commissionAmount * 12;
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Recurring Commission Timeline</DialogTitle>
+                <DialogDescription>12-month payout schedule for the sale to {commission.clientName}.</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Month</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {Array.from({ length: 12 }).map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell>Month {i + 1}</TableCell>
+                                <TableCell className="text-right font-semibold">{currencyFormatter.format(commission.commissionAmount)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                    <TableRow>
+                        <TableCell className="font-bold text-base">Total</TableCell>
+                        <TableCell className="text-right font-bold text-base">{currencyFormatter.format(totalRecurringAmount)}</TableCell>
+                    </TableRow>
+                </Table>
+            </div>
+        </DialogContent>
+    );
+};
+
+const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommissions, teamOverrideCommissions, recurringCommissions, allClients, allProposals, allUsers }: { directSalesCommissions: MonthlyCommissionBreakdown[]; qrCampaignCommissions: MonthlyCommissionBreakdown[]; teamOverrideCommissions: MonthlyCommissionBreakdown[]; recurringCommissions: MonthlyCommissionBreakdown[], allClients: Client[], allProposals: Proposal[], allUsers: UserProfile[] }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const allMonths = useMemo(() => {
         const months = new Set([...directSalesCommissions.map(c => c.month), ...qrCampaignCommissions.map(c => c.month), ...teamOverrideCommissions.map(c => c.month), ...recurringCommissions.map(c => c.month)]);
@@ -315,7 +354,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
 
     const totalForMonth = selectedDirectSales.total + selectedQrCampaigns.total + selectedOverrides.total + selectedRecurring.total;
 
-    const CommissionTable = ({ title, commissions, showClient = true, showCampaign = false, showSalesRep = false }: { title: string, commissions: CommissionDetail[], showClient?: boolean, showCampaign?: boolean, showSalesRep?: boolean }) => {
+    const CommissionTable = ({ title, commissions, commissionType }: { title: string, commissions: CommissionDetail[], commissionType: 'onetime' | 'override' | 'recurring' }) => {
         if (commissions.length === 0) return null;
 
         return (
@@ -327,23 +366,41 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                {showSalesRep && <TableHead>Sales Rep</TableHead>}
-                                {showClient && <TableHead>Client</TableHead>}
-                                {showCampaign && <TableHead>Campaign</TableHead>}
-                                <TableHead>Description</TableHead>
+                                <TableHead>Details</TableHead>
                                 <TableHead className="text-right">Amount</TableHead>
+                                <TableHead className="text-center">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {commissions.map((detail, index) => (
+                            {commissions.map((detail, index) => {
+                                const client = allClients.find(c => c.id === detail.clientId);
+                                const proposal = allProposals.find(p => p.id === detail.proposalId);
+                                return (
                                 <TableRow key={index}>
-                                    {showSalesRep && <TableCell>{detail.salesRepName}</TableCell>}
-                                    {showClient && <TableCell>{detail.clientName}</TableCell>}
-                                    {showCampaign && <TableCell>{detail.sourceLocation || 'N/A'}</TableCell>}
-                                    <TableCell>{detail.description}</TableCell>
+                                    <TableCell>
+                                        <p className="font-semibold">{detail.clientName}</p>
+                                        <p className="text-xs text-muted-foreground">{detail.description}</p>
+                                        {commissionType === 'override' && <p className="text-xs text-muted-foreground">From: {detail.salesRepName}</p>}
+                                    </TableCell>
                                     <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
+                                    <TableCell className="text-center">
+                                      {commissionType === 'recurring' ? (
+                                          <Dialog>
+                                              <DialogTrigger asChild>
+                                                  <Button variant="outline" size="sm">View Timeline</Button>
+                                              </DialogTrigger>
+                                              <RecurringCommissionTimelineDialog commission={detail} />
+                                          </Dialog>
+                                      ) : client && proposal ? (
+                                        <ClientOverviewDialog client={client} proposal={proposal} allUsers={allUsers} view="clients">
+                                            <Button variant="outline" size="sm">View Contract</Button>
+                                        </ClientOverviewDialog>
+                                      ) : (
+                                        <Button variant="outline" size="sm" disabled>View</Button>
+                                      )}
+                                    </TableCell>
                                 </TableRow>
-                            ))}
+                            )})}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -375,10 +432,10 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
             </DialogHeader>
             <ScrollArea className="h-[60vh]">
                  <div className="space-y-6 pr-4">
-                    <CommissionTable title="Direct Sales Commissions (One-Time)" commissions={selectedDirectSales.details} />
-                    <CommissionTable title="QR Campaign Commissions (One-Time)" commissions={selectedQrCampaigns.details} showClient={true} showCampaign={true} />
-                    <CommissionTable title="Recurring Commissions" commissions={selectedRecurring.details} />
-                    <CommissionTable title="Team Override Commissions" commissions={selectedOverrides.details} showSalesRep={true} showClient={true} />
+                    <CommissionTable title="Direct Sales Commissions" commissions={selectedDirectSales.details} commissionType="onetime" />
+                    <CommissionTable title="QR Campaign Commissions" commissions={selectedQrCampaigns.details} commissionType="onetime" />
+                    <CommissionTable title="Recurring Commissions" commissions={selectedRecurring.details} commissionType="recurring" />
+                    <CommissionTable title="Team Override Commissions" commissions={selectedOverrides.details} commissionType="override" />
                 </div>
             </ScrollArea>
             {selectedMonth && (
@@ -735,7 +792,9 @@ export default function MyTeamPage() {
                 rate: 0, 
                 sourceLocation: proposal.sourceLocation,
                 description: comm.description,
-                date: comm.createdAt
+                date: comm.createdAt,
+                proposalId: proposal.id,
+                clientId: client.id,
             };
             
             const isManagerCommission = comm.userId === user.id;
@@ -751,7 +810,7 @@ export default function MyTeamPage() {
                         overridesByMonth[monthKey].details.push(detail);
                         overridesByMonth[monthKey].total += comm.amount;
                     }
-                } else if (proposal.sourceLocation) { // One-time QR commission
+                } else if (comm.description?.includes('QR Campaign')) {
                     if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     qrCampaignsByMonth[monthKey].details.push(detail);
                     qrCampaignsByMonth[monthKey].total += comm.amount;
@@ -979,7 +1038,7 @@ export default function MyTeamPage() {
                             </CardContent>
                         </Card>
                     </DialogTrigger>
-                    <ManagerCommissionsDialog directSalesCommissions={commissionDetails.directSales} qrCampaignCommissions={commissionDetails.qrCampaigns} teamOverrideCommissions={commissionDetails.teamOverrides} recurringCommissions={commissionDetails.recurring} />
+                    <ManagerCommissionsDialog directSalesCommissions={commissionDetails.directSales} qrCampaignCommissions={commissionDetails.qrCampaigns} teamOverrideCommissions={commissionDetails.teamOverrides} recurringCommissions={commissionDetails.recurring} allClients={clients} allProposals={proposals} allUsers={salesUsers} />
                 </Dialog>
                 <Dialog>
                     <DialogTrigger asChild>
@@ -1247,4 +1306,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
