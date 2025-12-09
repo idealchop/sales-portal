@@ -75,8 +75,6 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
           const userData = docSnap.data();
           if (!userData.onboardingCompleted) {
             router.push('/onboarding/profile');
-          } else if (isManager && pathname === '/dashboard') {
-            router.replace('/dashboard/my-team');
           }
         } else {
           console.error("User document not found, redirecting to login.");
@@ -87,10 +85,10 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
     } else {
       router.push('/login');
     }
-  }, [user, isUserLoading, firestore, router, isManager, pathname]);
+  }, [user, isUserLoading, firestore, router, pathname]);
 
 
-  if (isUserLoading || !user || (isManager && pathname === '/dashboard')) {
+  if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
