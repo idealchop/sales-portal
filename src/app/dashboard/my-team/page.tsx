@@ -728,19 +728,21 @@ const commissionDetails = useMemo(() => {
                 clientName: client.companyName || 'N/A',
                 saleAmount: proposal.amount,
                 commissionAmount: comm.amount,
-                rate: 0,
+                rate: 0, // This will be calculated if needed
                 sourceLocation: proposal.sourceLocation,
                 description: comm.description,
                 date: comm.createdAt
             };
-
+            
             // Manager's own commissions
             if (comm.userId === user.id) {
                 if (comm.description?.includes('Recurring')) {
                     if (!recurringByMonth[monthKey]) recurringByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     recurringByMonth[monthKey].details.push(detail);
                     recurringByMonth[monthKey].total += comm.amount;
-                } else if (!comm.description?.includes('Override')) { // One-time commissions for the manager
+                }
+                // Check for one-time commissions for the manager
+                else if (!comm.description?.includes('Override')) {
                     if (proposal.sourceLocation) { // QR Campaign Commission
                         if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                         qrCampaignsByMonth[monthKey].details.push(detail);
@@ -752,9 +754,8 @@ const commissionDetails = useMemo(() => {
                     }
                 }
             }
-            
             // Team Overrides for the manager from their team members' sales
-            if (teamMemberIds.has(comm.userId) && comm.description?.includes('Override')) {
+            else if (teamMemberIds.has(comm.userId) && comm.description?.includes('Override')) {
                 if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                 overridesByMonth[monthKey].details.push(detail);
                 overridesByMonth[monthKey].total += comm.amount;
