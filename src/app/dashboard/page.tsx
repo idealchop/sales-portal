@@ -299,7 +299,7 @@ export default function DashboardPage() {
         return client && client.clientType === 'household';
     });
     
-    const corporateClientsTarget = 3;
+    const corporateClientsTarget = 5;
     const individualClientsTarget = 10;
     
     const quarterStart = startOfQuarter(now);
@@ -349,7 +349,7 @@ export default function DashboardPage() {
       .filter((item): item is { clientName: string; term: string } => item !== null);
 
     const prepaidContracts = prepaidContractsDetails.length;
-    const prepaidContractsTarget = 5;
+    const prepaidContractsTarget = 3;
 
     return {
         monthlyCommission,
@@ -401,9 +401,11 @@ export default function DashboardPage() {
   ];
   
   const closerBonusTiers = [
-    { target: 3, bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 5, bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 10, bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 5, bonus: 1000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 10, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 20, bonus: 5000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 30, bonus: 10000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 50, bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
   ]
    const individualCloserBonusTiers = [
     { target: 10, bonus: 500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
@@ -1083,7 +1085,7 @@ export default function DashboardPage() {
                     value={`${dashboardData.prepaidContracts} / ${dashboardData.prepaidContractsTarget}`}
                     progress={(dashboardData.prepaidContracts / dashboardData.prepaidContractsTarget) * 100}
                     goal={`Goal: ${dashboardData.prepaidContractsTarget} prepaid contracts`}
-                    description="Reward for closing long-term prepaid contracts.">
+                    description="Reward for closing Semi-Annual or Annual contracts.">
                      <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Prepayment Power-Up Bonus</DialogTitle>
@@ -1143,7 +1145,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    

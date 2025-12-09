@@ -160,9 +160,11 @@ const ProposalsDialog = ({ rep, proposals, clientMap, salesUsers, currencyFormat
 const TeamGoalsDialog = () => {
   const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
   const closerBonusTiers = [
-    { target: 3, bonus: 2000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 5, bonus: 5000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 10, bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 5, bonus: 1000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 10, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 20, bonus: 5000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 30, bonus: 10000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 50, bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
   ];
   const individualCloserBonusTiers = [
     { target: 10, bonus: 500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
