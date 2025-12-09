@@ -38,7 +38,7 @@ function SmartRefillIntro() {
   return (
     <Card className="flex-1 overflow-hidden">
         <div className="grid md:grid-cols-2">
-            <div className="relative min-h-[300px] md:min-h-[400px] order-1 md:order-2">
+             <div className="relative min-h-[300px] md:min-h-[400px]">
                 <Image 
                     src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/River%20Mobile%2Flanding%20page%20image.png?alt=media&token=bce76780-73c9-4b4c-8e6f-83e5234d337a"
                     alt="Smart Refill App on a phone"
@@ -47,7 +47,7 @@ function SmartRefillIntro() {
                     data-ai-hint="app interface"
                 />
             </div>
-            <div className="p-8 space-y-6 order-2 md:order-1">
+            <div className="p-8 space-y-6">
                 <CardHeader className="p-0">
                     <CardTitle>What is Smart Refill?</CardTitle>
                     <CardDescription>
@@ -146,15 +146,15 @@ export default function AboutPage() {
 
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-6 pb-24 sm:pb-0">
+            <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">About Smart Refill</h1>
                     <p className="text-muted-foreground">
                         Step 2: An overview of Smart Refill for the client
                     </p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="hidden sm:flex flex-col sm:flex-row gap-2">
                     <Button variant="outline" asChild className="w-full sm:w-auto">
                         <Link href={prevLink}>Previous</Link>
                     </Button>
@@ -163,7 +163,19 @@ export default function AboutPage() {
                     </Button>
                 </div>
             </div>
+
             <SmartRefillIntro />
+
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
+                <div className="flex gap-2">
+                    <Button variant="outline" asChild className="flex-1">
+                        <Link href={prevLink}>Previous</Link>
+                    </Button>
+                    <Button asChild className="flex-1">
+                        <Link href={nextLink}>Next Step</Link>
+                    </Button>
+                </div>
+            </div>
         </div>
     )
 }
