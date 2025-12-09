@@ -977,6 +977,7 @@ function EnterpriseTypeSelector({
 
 export default function PlansPage() {
     const searchParams = useSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
