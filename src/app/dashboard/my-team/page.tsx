@@ -627,7 +627,7 @@ export default function MyTeamPage() {
 
     const winRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
     const winRateLastMonth = sentLastMonth.length > 0 ? (acceptedLastMonth.length / sentLastMonth.length) * 100 : 0;
-    const winRateChange = winRateLastMonth > 0 ? ((winRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
+    const winRateChange = winRateLastMonth > 0 ? ((winRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : winRateThisMonth > 0 ? 100 : 0;
     
     const revenueThisMonth = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
     const revenueLastMonth = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
