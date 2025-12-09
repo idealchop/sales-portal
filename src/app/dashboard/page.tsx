@@ -86,14 +86,17 @@ const statusStyles: { [key: string]: string } = {
   rejected: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
 };
 
-const BonusCard = ({ icon, title, value, progress, goal, description, children }: { icon: React.ReactNode, title: string, value: string | number, progress: number, goal: string, description: string, children?: React.ReactNode }) => (
+const BonusCard = ({ icon, title, value, progress, goal, description, badgeText, children }: { icon: React.ReactNode, title: string, value: string | number, progress: number, goal: string, description: string, badgeText?: string, children?: React.ReactNode }) => (
     <Dialog>
         <DialogTrigger asChild>
             <Card className="cursor-pointer hover:border-primary hover:shadow-lg transition-all duration-300">
                 <CardHeader className="pb-2">
-                    <div className="flex items-center gap-3">
-                        {icon}
-                        <CardTitle className="text-base font-semibold">{title}</CardTitle>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                          {icon}
+                          <CardTitle className="text-base font-semibold">{title}</CardTitle>
+                      </div>
+                      {badgeText && <Badge variant="outline">{badgeText}</Badge>}
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -984,7 +987,9 @@ export default function DashboardPage() {
                     value={`${dashboardData.corporateClientsThisMonth} / ${dashboardData.corporateClientsTarget}`}
                     progress={(dashboardData.corporateClientsThisMonth / dashboardData.corporateClientsTarget) * 100}
                     goal={`This Month's Goal: ${dashboardData.corporateClientsTarget} clients`}
-                    description="For SME, Commercial & Business clients.">
+                    description="For SME, Commercial & Business clients."
+                    badgeText="Monthly"
+                  >
                      <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Corporate Closer Bonus</DialogTitle>
@@ -1018,7 +1023,9 @@ export default function DashboardPage() {
                     value={`${dashboardData.individualClientsThisMonth} / ${dashboardData.individualClientsTarget}`}
                     progress={(dashboardData.individualClientsThisMonth / dashboardData.individualClientsTarget) * 100}
                     goal={`This Month's Goal: ${dashboardData.individualClientsTarget} clients`}
-                    description="For Family Plan clients.">
+                    description="For Family Plan clients."
+                    badgeText="Monthly"
+                  >
                      <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Family Plan Closer Bonus</DialogTitle>
@@ -1052,7 +1059,9 @@ export default function DashboardPage() {
                     value={`${currencyFormatter.format(dashboardData.quarterlySalesVolume)}`}
                     progress={(dashboardData.quarterlySalesVolume / dashboardData.quarterlyVolumeTarget) * 100}
                     goal={`Quarterly Goal: ${currencyFormatter.format(200000)}`}
-                    description="Rewards expansion of your client base.">
+                    description="Rewards expansion of your client base."
+                    badgeText="Quarterly"
+                  >
                      <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Quarterly Growth Bonus</DialogTitle>
@@ -1085,7 +1094,9 @@ export default function DashboardPage() {
                     value={`${dashboardData.prepaidContracts} / ${dashboardData.prepaidContractsTarget}`}
                     progress={(dashboardData.prepaidContracts / dashboardData.prepaidContractsTarget) * 100}
                     goal={`Goal: ${dashboardData.prepaidContractsTarget} prepaid contracts`}
-                    description="Reward for closing Semi-Annual or Annual contracts.">
+                    description="Reward for closing Semi-Annual or Annual contracts."
+                    badgeText="Ongoing"
+                  >
                      <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Prepayment Power-Up Bonus</DialogTitle>
