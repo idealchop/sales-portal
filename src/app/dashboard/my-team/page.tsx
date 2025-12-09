@@ -726,7 +726,6 @@ const commissionDetails = useMemo(() => {
 
             const isRecurring = comm.description?.includes('Recurring');
             
-            // Manager's own commissions
             if (comm.userId === user.id) {
                 const isFromQR = !!proposal?.sourceLocation;
                 if (isRecurring) {
@@ -737,21 +736,17 @@ const commissionDetails = useMemo(() => {
                     if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     qrCampaignsByMonth[monthKey].details.push(detail);
                     qrCampaignsByMonth[monthKey].total += comm.amount;
-                } else {
+                } else if (!comm.description?.includes('Override')) {
                     if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     directSalesByMonth[monthKey].details.push(detail);
                     directSalesByMonth[monthKey].total += comm.amount;
                 }
             } 
-            // Team member commissions for override calculation
-            else if (teamMemberIds.has(comm.userId)) {
-                if (isRecurring) {
-                    // Recurring commissions from team members are not part of manager's payout
-                } else if (comm.description?.includes('Override')) {
-                     if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
-                    overridesByMonth[monthKey].details.push(detail);
-                    overridesByMonth[monthKey].total += comm.amount;
-                }
+            
+            if (comm.description?.includes('Override') && comm.userId === user.id) {
+                 if (!overridesByMonth[monthKey]) overridesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                overridesByMonth[monthKey].details.push(detail);
+                overridesByMonth[monthKey].total += comm.amount;
             }
         });
     });
@@ -763,6 +758,7 @@ const commissionDetails = useMemo(() => {
         recurring: Object.values(recurringByMonth).sort((a,b) => new Date(b.month).getTime() - new Date(a.month).getTime()),
     };
 }, [allPayouts, commissionsLoading, proposalsLoading, clientsLoading, isManager, user, myTeam, salesUsers, proposals, clients]);
+
 
  const qrCampaignClients = useMemo(() => {
     if (!user || !isManager || proposalsLoading || clientsLoading) return [];
@@ -1238,4 +1234,3 @@ const commissionDetails = useMemo(() => {
     </div>
   );
 }
-
