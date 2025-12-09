@@ -165,9 +165,11 @@ const TeamGoalsDialog = () => {
     { target: 10, bonus: 12000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
   ];
   const individualCloserBonusTiers = [
-    { target: 10, bonus: 2500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
-    { target: 20, bonus: 6000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
-    { target: 30, bonus: 15000, icon: <Award className="h-5 w-5 text-violet-500" /> },
+    { target: 10, bonus: 500, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 20, bonus: 1000, icon: <Star className="h-5 w-5 text-yellow-400" /> },
+    { target: 50, bonus: 2500, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 75, bonus: 5000, icon: <Trophy className="h-5 w-5 text-amber-500" /> },
+    { target: 100, bonus: 10000, icon: <Award className="h-5 w-5 text-violet-500" /> },
   ];
   const growthBonusTiers = [
     { target: 400000, bonus: '₱5,000', icon: <Star className="h-5 w-5 text-yellow-400" /> },
