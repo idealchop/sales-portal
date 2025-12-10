@@ -295,45 +295,6 @@ type MonthlyCommissionBreakdown = {
     details: CommissionDetail[];
 };
 
-const RecurringCommissionTimelineDialog = ({ commission }: { commission: CommissionDetail }) => {
-    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-    const totalRecurringAmount = commission.commissionAmount * 12;
-    
-    return (
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Recurring Commission Calculation</DialogTitle>
-                <DialogDescription>
-                    12-month payout schedule for the sale to {commission.clientName}.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-4">
-                 <div className="space-y-2 text-sm p-4 border rounded-lg">
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Original Sale Amount</span>
-                        <span className="font-semibold">{currencyFormatter.format(commission.saleAmount)}</span>
-                    </div>
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">Recurring Commission Rate</span>
-                        <span className="font-semibold">{commission.rate.toFixed(1)}%</span>
-                    </div>
-                </div>
-                 <div className="space-y-2 text-sm p-4 border rounded-lg bg-muted/50">
-                    <div className="flex justify-between items-center font-semibold">
-                        <span>Monthly Recurring Payout</span>
-                        <span>{currencyFormatter.format(commission.commissionAmount)}</span>
-                    </div>
-                    <div className="flex justify-between items-center font-bold text-lg pt-2 border-t mt-2">
-                        <span>Total (12 Months)</span>
-                        <span>{currencyFormatter.format(totalRecurringAmount)}</span>
-                    </div>
-                </div>
-            </div>
-        </DialogContent>
-    );
-};
-
-
 const CommissionCalculationDialog = ({ commission, isRecurring = false }: { commission: CommissionDetail, isRecurring?: boolean }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const totalRecurringAmount = isRecurring ? commission.commissionAmount * 12 : 0;
@@ -377,7 +338,8 @@ const CommissionCalculationDialog = ({ commission, isRecurring = false }: { comm
             </div>
         </DialogContent>
     )
-}
+};
+
 
 const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommissions, teamOverrideCommissions, recurringCommissions, allClients, allProposals, allUsers }: { directSalesCommissions: MonthlyCommissionBreakdown[]; qrCampaignCommissions: MonthlyCommissionBreakdown[]; teamOverrideCommissions: MonthlyCommissionBreakdown[]; recurringCommissions: MonthlyCommissionBreakdown[], allClients: Client[], allProposals: Proposal[], allUsers: UserProfile[] }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -731,7 +693,8 @@ export default function MyTeamPage() {
 
     const winRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
     const winRateLastMonth = sentLastMonth.length > 0 ? (acceptedLastMonth.length / sentLastMonth.length) * 100 : 0;
-    const winRateChange = winRateLastMonth > 0 ? ((winRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
+    const teamWinRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
+    const winRateChange = winRateLastMonth > 0 ? ((teamWinRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
     
     const revenueThisMonth = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
     const revenueLastMonth = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
@@ -1349,3 +1312,5 @@ export default function MyTeamPage() {
     </div>
   );
 }
+
+    
