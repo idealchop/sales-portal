@@ -295,50 +295,75 @@ type MonthlyCommissionBreakdown = {
     details: CommissionDetail[];
 };
 
-const RecurringCommissionDialog = ({ commission }: { commission: CommissionDetail }) => {
+const RecurringCommissionTimelineDialog = ({ commission }: { commission: CommissionDetail }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-    const rate = commission.saleAmount > 0 ? (commission.commissionAmount / commission.saleAmount) * 100 : 0;
     const totalRecurringAmount = commission.commissionAmount * 12;
+    const timeline = Array.from({ length: 12 }).map((_, i) => ({
+        month: format(addMonths(new Date(commission.date), i), 'MMMM yyyy'),
+        amount: commission.commissionAmount,
+    }));
 
     return (
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Recurring Commission Calculation</DialogTitle>
-                <DialogDescription>Breakdown for the sale to {commission.clientName}.</DialogDescription>
+                <DialogTitle>Recurring Commission Timeline</DialogTitle>
+                <DialogDescription>
+                    12-month payout schedule for the sale to {commission.clientName}.
+                </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
-                 <div className="space-y-2 text-sm p-4 border rounded-lg">
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Client Sale Amount</span>
-                        <span className="font-semibold">{currencyFormatter.format(commission.saleAmount)}</span>
-                    </div>
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">Recurring Commission Rate</span>
-                        <span className="font-semibold">{rate.toFixed(1)}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Monthly Recurring Commission</span>
-                        <span className="font-semibold">{currencyFormatter.format(commission.commissionAmount)}</span>
-                    </div>
-                </div>
-                 <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
-                    <span>Total Recurring Commission (12 Months)</span>
-                    <span>{currencyFormatter.format(totalRecurringAmount)}</span>
-                </div>
+                <Card>
+                    <CardContent className="p-4 space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Original Sale Amount</span>
+                            <span className="font-semibold">{currencyFormatter.format(commission.saleAmount)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Recurring Commission Rate</span>
+                            <span className="font-semibold">{commission.rate.toFixed(1)}%</span>
+                        </div>
+                    </CardContent>
+                </Card>
+                <ScrollArea className="h-60">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Month</TableHead>
+                                <TableHead className="text-right">Payout</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {timeline.map((item, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{item.month}</TableCell>
+                                    <TableCell className="text-right font-medium">{currencyFormatter.format(item.amount)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
+                <TFooter>
+                    <TableRow>
+                        <TableCell className="text-right font-bold text-base" colSpan={2}>Total Recurring Payout: {currencyFormatter.format(totalRecurringAmount)}</TableCell>
+                    </TableRow>
+                </TFooter>
             </div>
         </DialogContent>
     );
 };
 
-const CommissionCalculationDialog = ({ commission }: { commission: CommissionDetail }) => {
-    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-    const rate = commission.saleAmount > 0 ? (commission.commissionAmount / commission.saleAmount) * 100 : 0;
 
+const CommissionCalculationDialog = ({ commission, isRecurring = false }: { commission: CommissionDetail, isRecurring?: boolean }) => {
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    const totalRecurringAmount = isRecurring ? commission.commissionAmount * 12 : 0;
+    
     return (
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Commission Calculation</DialogTitle>
-                <DialogDescription>Breakdown for the sale to {commission.clientName}.</DialogDescription>
+                <DialogDescription>
+                    {isRecurring ? `Recurring commission for ${commission.clientName}` : `One-time commission for ${commission.clientName}`}
+                </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
                  <div className="space-y-2 text-sm p-4 border rounded-lg">
@@ -347,14 +372,27 @@ const CommissionCalculationDialog = ({ commission }: { commission: CommissionDet
                         <span className="font-semibold">{currencyFormatter.format(commission.saleAmount)}</span>
                     </div>
                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Commission Rate</span>
-                        <span className="font-semibold">{rate.toFixed(1)}%</span>
+                        <span className="text-muted-foreground">{isRecurring ? 'Recurring' : 'One-Time'} Commission Rate</span>
+                        <span className="font-semibold">{commission.rate.toFixed(1)}%</span>
                     </div>
                 </div>
-                 <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
-                    <span>Final Commission</span>
-                    <span>{currencyFormatter.format(commission.commissionAmount)}</span>
-                </div>
+                {isRecurring ? (
+                     <div className="space-y-2 text-sm p-4 border rounded-lg bg-muted/50">
+                        <div className="flex justify-between items-center font-semibold">
+                            <span>Monthly Recurring Payout</span>
+                            <span>{currencyFormatter.format(commission.commissionAmount)}</span>
+                        </div>
+                        <div className="flex justify-between items-center font-bold text-lg pt-2 border-t mt-2">
+                            <span>Total (12 Months)</span>
+                            <span>{currencyFormatter.format(totalRecurringAmount)}</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
+                        <span>Final Commission</span>
+                        <span>{currencyFormatter.format(commission.commissionAmount)}</span>
+                    </div>
+                )}
             </div>
         </DialogContent>
     )
@@ -384,7 +422,7 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
 
     const CommissionTable = ({ title, commissions, commissionType }: { title: string, commissions: CommissionDetail[], commissionType: 'onetime' | 'override' | 'recurring' }) => {
         if (commissions.length === 0) return null;
-
+        
         return (
             <Card>
                 <CardHeader>
@@ -410,21 +448,12 @@ const ManagerCommissionsDialog = ({ directSalesCommissions, qrCampaignCommission
                                     </TableCell>
                                     <TableCell className="text-right font-semibold">{currencyFormatter.format(detail.commissionAmount)}</TableCell>
                                     <TableCell className="text-center">
-                                      {commissionType === 'recurring' ? (
-                                          <Dialog>
-                                              <DialogTrigger asChild>
-                                                  <Button variant="outline" size="sm">View</Button>
-                                              </DialogTrigger>
-                                              <RecurringCommissionDialog commission={detail} />
-                                          </Dialog>
-                                      ) : (
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="outline" size="sm">View</Button>
-                                            </DialogTrigger>
-                                            <CommissionCalculationDialog commission={detail} />
-                                        </Dialog>
-                                      )}
+                                      <Dialog>
+                                        <DialogTrigger asChild>
+                                          <Button variant="outline" size="sm">View</Button>
+                                        </DialogTrigger>
+                                        <CommissionCalculationDialog commission={detail} isRecurring={commissionType === 'recurring'}/>
+                                      </Dialog>
                                     </TableCell>
                                 </TableRow>
                             )})}
@@ -710,8 +739,8 @@ export default function MyTeamPage() {
     const totalProposalsSent = sentProposalsAllTime.length;
     const teamWinRate = totalProposalsSent > 0 ? (acceptedProposalsAllTime.length / totalProposalsSent) * 100 : 0;
     const totalRevenue = acceptedProposalsAllTime.reduce((sum,p) => sum + p.amount, 0);
-    const avgDealSize = acceptedProposalsAllTime.length > 0 ? totalRevenue / acceptedProposalsAllTime.length : 0;
-    
+    const qrCampaignSales = proposals.filter(p => p.userId === user?.id && p.sourceLocation && p.status === 'accepted').length;
+
     const sentThisMonth = sentProposalsAllTime.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: currentMonthStart, end: now }));
     const sentLastMonth = sentProposalsAllTime.filter(p => getValidDate(p.createdAt) && isWithinInterval(getValidDate(p.createdAt)!, { start: lastMonthStart, end: lastMonthEnd }));
     const proposalsSentChange = sentLastMonth.length > 0 ? ((sentThisMonth.length - sentLastMonth.length) / sentLastMonth.length) * 100 : sentThisMonth.length > 0 ? 100 : 0;
@@ -727,10 +756,6 @@ export default function MyTeamPage() {
     const revenueLastMonth = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
     const totalRevenueChange = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : revenueThisMonth > 0 ? 100 : 0;
     
-    const avgDealSizeThisMonth = acceptedThisMonth.length > 0 ? revenueThisMonth / acceptedThisMonth.length : 0;
-    const avgDealSizeLastMonth = acceptedLastMonth.length > 0 ? revenueLastMonth / acceptedLastMonth.length : 0;
-    const avgDealSizeChange = avgDealSizeLastMonth > 0 ? ((avgDealSizeThisMonth - avgDealSizeLastMonth) / avgDealSizeLastMonth) * 100 : avgDealSizeThisMonth > 0 ? 100 : 0;
-
     const availableMonths = Array.from(new Set(teamProposals.map(p => p.createdAt ? format(new Date(p.createdAt), 'MMMM yyyy') : null).filter(Boolean) as string[]))
         .sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
@@ -774,18 +799,17 @@ export default function MyTeamPage() {
             totalProposalsSent,
             teamWinRate,
             totalRevenue,
-            avgDealSize,
             proposalsSentChange,
             winRateChange,
             totalRevenueChange,
-            avgDealSizeChange,
             proposalStatusCounts,
+            qrCampaignSales,
         },
         availableMonths,
         proposalsByRep,
         teamProposals,
     };
-  }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch]);
+  }, [proposals, myTeam, proposalsLoading, proposalsByRepPeriod, leaderboardSearch, user]);
   
   const proposalMap = useMemo(() => new Map(proposals.map(p => [p.id, p])), [proposals]);
 
@@ -804,6 +828,7 @@ export default function MyTeamPage() {
 
     allPayouts.forEach(payout => {
         payout.commissions.forEach(comm => {
+            if (!comm.createdAt) return;
             const monthKey = format(startOfMonth(new Date(comm.createdAt)), 'MMMM yyyy');
             const proposal = proposalMap.get(comm.proposalId);
             if (!proposal) return;
@@ -816,7 +841,7 @@ export default function MyTeamPage() {
                 clientName: client.companyName || 'N/A',
                 saleAmount: proposal.amount,
                 commissionAmount: comm.amount,
-                rate: 0, 
+                rate: proposal.amount > 0 ? (comm.amount / proposal.amount) * 100 : 0, 
                 sourceLocation: proposal.sourceLocation,
                 description: comm.description,
                 date: comm.createdAt,
@@ -825,6 +850,9 @@ export default function MyTeamPage() {
             };
             
             const isManagerCommission = comm.userId === user.id;
+            
+            const isDirectSale = !comm.description?.includes('Override') && !comm.description?.includes('QR') && !comm.description?.includes('Recurring');
+            const isQR = comm.description?.includes('QR') && !comm.description?.includes('Recurring');
 
             if (isManagerCommission) {
                 if (comm.description?.includes('Recurring')) {
@@ -837,11 +865,11 @@ export default function MyTeamPage() {
                         overridesByMonth[monthKey].details.push(detail);
                         overridesByMonth[monthKey].total += comm.amount;
                     }
-                } else if (comm.description?.includes('QR Campaign')) {
-                    if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
+                } else if (isQR) {
+                     if (!qrCampaignsByMonth[monthKey]) qrCampaignsByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     qrCampaignsByMonth[monthKey].details.push(detail);
                     qrCampaignsByMonth[monthKey].total += comm.amount;
-                } else { // One-time direct sale commission
+                } else if (isDirectSale) {
                     if (!directSalesByMonth[monthKey]) directSalesByMonth[monthKey] = { month: monthKey, total: 0, details: [] };
                     directSalesByMonth[monthKey].details.push(detail);
                     directSalesByMonth[monthKey].total += comm.amount;
@@ -972,15 +1000,12 @@ export default function MyTeamPage() {
             </Card>
             <Card className="bg-gradient-to-r from-primary to-[#3ab7b1] text-primary-foreground">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Average Deal Size</CardTitle>
-                    <BarChart3 className="h-4 w-4 text-primary-foreground/70" />
+                    <CardTitle className="text-sm font-medium">QR Campaign Sales</CardTitle>
+                    <QrCode className="h-4 w-4 text-primary-foreground/70" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{currencyFormatter.format(teamPerformance.kpis.avgDealSize || 0)}</div>
-                     <p className={cn("text-xs text-primary-foreground/80 flex items-center", (teamPerformance.kpis.avgDealSizeChange || 0) >= 0 ? "" : "text-red-300")}>
-                        {(teamPerformance.kpis.avgDealSizeChange || 0) >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                        {(teamPerformance.kpis.avgDealSizeChange || 0).toFixed(1)}% from last month
-                    </p>
+                    <div className="text-2xl font-bold">{teamPerformance.kpis.qrCampaignSales || 0}</div>
+                     <p className="text-xs text-primary-foreground/80">Total sales from all campaigns</p>
                 </CardContent>
             </Card>
         </div>
@@ -1333,4 +1358,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
