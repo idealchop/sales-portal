@@ -298,55 +298,36 @@ type MonthlyCommissionBreakdown = {
 const RecurringCommissionTimelineDialog = ({ commission }: { commission: CommissionDetail }) => {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     const totalRecurringAmount = commission.commissionAmount * 12;
-    const timeline = Array.from({ length: 12 }).map((_, i) => ({
-        month: format(addMonths(new Date(commission.date), i), 'MMMM yyyy'),
-        amount: commission.commissionAmount,
-    }));
-
+    
     return (
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Recurring Commission Timeline</DialogTitle>
+                <DialogTitle>Recurring Commission Calculation</DialogTitle>
                 <DialogDescription>
                     12-month payout schedule for the sale to {commission.clientName}.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
-                <Card>
-                    <CardContent className="p-4 space-y-2">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Original Sale Amount</span>
-                            <span className="font-semibold">{currencyFormatter.format(commission.saleAmount)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Recurring Commission Rate</span>
-                            <span className="font-semibold">{commission.rate.toFixed(1)}%</span>
-                        </div>
-                    </CardContent>
-                </Card>
-                <ScrollArea className="h-60">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Month</TableHead>
-                                <TableHead className="text-right">Payout</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {timeline.map((item, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>{item.month}</TableCell>
-                                    <TableCell className="text-right font-medium">{currencyFormatter.format(item.amount)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </ScrollArea>
-                <TFooter>
-                    <TableRow>
-                        <TableCell className="text-right font-bold text-base" colSpan={2}>Total Recurring Payout: {currencyFormatter.format(totalRecurringAmount)}</TableCell>
-                    </TableRow>
-                </TFooter>
+                 <div className="space-y-2 text-sm p-4 border rounded-lg">
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Original Sale Amount</span>
+                        <span className="font-semibold">{currencyFormatter.format(commission.saleAmount)}</span>
+                    </div>
+                     <div className="flex justify-between">
+                        <span className="text-muted-foreground">Recurring Commission Rate</span>
+                        <span className="font-semibold">{commission.rate.toFixed(1)}%</span>
+                    </div>
+                </div>
+                 <div className="space-y-2 text-sm p-4 border rounded-lg bg-muted/50">
+                    <div className="flex justify-between items-center font-semibold">
+                        <span>Monthly Recurring Payout</span>
+                        <span>{currencyFormatter.format(commission.commissionAmount)}</span>
+                    </div>
+                    <div className="flex justify-between items-center font-bold text-lg pt-2 border-t mt-2">
+                        <span>Total (12 Months)</span>
+                        <span>{currencyFormatter.format(totalRecurringAmount)}</span>
+                    </div>
+                </div>
             </div>
         </DialogContent>
     );
@@ -750,7 +731,7 @@ export default function MyTeamPage() {
 
     const winRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
     const winRateLastMonth = sentLastMonth.length > 0 ? (acceptedLastMonth.length / sentLastMonth.length) * 100 : 0;
-    const winRateChange = winRateLastMonth > 0 ? ((winRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : winRateThisMonth > 0 ? 100 : 0;
+    const winRateChange = winRateLastMonth > 0 ? ((winRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
     
     const revenueThisMonth = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
     const revenueLastMonth = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
@@ -1103,6 +1084,16 @@ export default function MyTeamPage() {
                     </DialogTrigger>
                     <TeamGoalsDialog />
                 </Dialog>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><QrCode/> QR Campaign Commissions</CardTitle>
+                        <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2 text-muted-foreground">
+                        <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
+                        <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
+                    </CardContent>
+                </Card>
                 <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
                   <Link href="/dashboard/materials">
                       <div className="relative aspect-video w-full">
