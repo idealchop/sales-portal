@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home, Share2, ClipboardCopy } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home, Share2, ClipboardCopy, FileText as FileTextIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -140,7 +140,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }
@@ -645,8 +645,9 @@ function ContractPageContent() {
         return false;
       }
       
-      const isDraftAndNoClient = status === 'draft' && !existingClientId;
+      const isDraftAndNoClient = status === 'draft' && !existingClientId && !generatedClientId;
 
+      // Handle saving a draft for a brand new client without creating a client document
       if (isDraftAndNoClient) {
         const proposalRef = doc(firestore, 'proposals', proposalId);
         const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
@@ -660,7 +661,7 @@ function ContractPageContent() {
             status: 'draft',
             amount: amountToSave,
             updatedAt: serverTimestamp(),
-            clientId: undefined, // Explicitly undefined for new client drafts
+            clientId: null, // Set to null or leave undefined for new client drafts
         };
          if (campaignName) {
           draftData.sourceLocation = campaignName;
@@ -677,6 +678,8 @@ function ContractPageContent() {
         return true;
       }
 
+
+      // Full save logic for existing clients or for finalizing a subscription
       const finalClientId = generatedClientId || existingClientId;
       if (!finalClientId) {
           toast({ variant: "destructive", title: "Save Failed", description: "Client ID is missing." });
