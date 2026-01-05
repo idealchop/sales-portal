@@ -3,7 +3,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useSalesUsers } from '@/hooks/use-sales-users';
 import { useAllProposals } from '@/hooks/use-all-proposals';
 import { useCommissions } from '@/hooks/use-commissions';
@@ -477,30 +477,32 @@ function QrCodeDialog({ managerId }: { managerId: string; }) {
         }
 
         setIsCreating(true);
-        try {
-            const baseUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
-            const urlWithParams = `${baseUrl}&campaignName=${encodeURIComponent(newCampaignName)}`;
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlWithParams)}`;
-            
-            const newCampaign: Omit<QRCampaign, 'id' | 'createdAt'> = {
-                name: newCampaignName,
-                url: urlWithParams,
-                qrUrl: qrUrl,
-            };
+        const baseUrl = `${window.location.origin}/proposal/new?managerId=${managerId}`;
+        const urlWithParams = `${baseUrl}&campaignName=${encodeURIComponent(newCampaignName)}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlWithParams)}`;
+        
+        const newCampaignData: Omit<QRCampaign, 'id'> = {
+            name: newCampaignName,
+            url: urlWithParams,
+            qrUrl: qrUrl,
+            createdAt: serverTimestamp() as unknown as string,
+        };
 
-            await addDoc(campaignsCollectionRef, {
-                ...newCampaign,
-                createdAt: serverTimestamp()
-            });
-            
+        addDoc(campaignsCollectionRef, newCampaignData)
+        .then(() => {
             setNewCampaignName('');
             toast({ title: "Campaign Created!", description: `The QR code for "${newCampaignName}" is ready.` });
-        } catch(error) {
-            console.error("Failed to create campaign:", error);
-            toast({ variant: "destructive", title: "Creation Failed", description: "Could not save the new campaign." });
-        } finally {
+        })
+        .catch(async (error) => {
+            const permissionError = new FirestorePermissionError({
+              path: campaignsCollectionRef.path,
+              operation: 'create',
+              requestResourceData: newCampaignData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }).finally(() => {
             setIsCreating(false);
-        }
+        });
     };
 
     const handleCopy = (url: string) => {
