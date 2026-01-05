@@ -869,17 +869,17 @@ const handleSaveDraft = async () => {
     }
 }
 
-const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
-    if (action === 'finalize') setIsGeneratingIds(true);
-    if (action === 'share') setIsSharing(true);
-
-    try {
+const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
+    if (action === 'generate') {
+      setIsGeneratingIds(true);
+      try {
         await ensureProposalIdIsGenerated();
-        if (action === 'finalize') setFinalizeOpen(true);
-    } catch (error: any) {
+        setFinalizeOpen(true);
+      } catch (error: any) {
         toast({ variant: "destructive", title: "Action Failed", description: error.message || "An unexpected error occurred." });
-    } finally {
-        if (action === 'finalize') setIsGeneratingIds(false);
+      } finally {
+        setIsGeneratingIds(false);
+      }
     }
     
     if (action === 'sign') {
@@ -890,9 +890,12 @@ const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
              console.error("Error preparing for signature:", error);
         }
     } else if (action === 'share') {
+        setIsSharing(true);
         try {
             const isSaved = await saveProposal('draft');
-            if (!isSaved) throw new Error("Failed to save draft before sharing.");
+            if (!isSaved) {
+                throw new Error("Failed to save the proposal draft before proceeding.");
+            }
 
             const finalClientId = generatedClientId || existingClientId;
             if (!finalClientId || !generatedProposalId || !user) throw new Error("Missing critical info for sharing link.");
@@ -987,7 +990,7 @@ const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
             </Button>
              <Dialog open={isFinalizeOpen} onOpenChange={setFinalizeOpen}>
                 <DialogTrigger asChild>
-                    <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('finalize')} disabled={isGeneratingIds || isSharing || isSaving}>
+                    <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds || isSharing || isSaving}>
                         {(isGeneratingIds || isSharing || isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Generate Proposal
                     </Button>
@@ -1283,3 +1286,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    

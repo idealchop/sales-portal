@@ -140,7 +140,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }
@@ -869,18 +869,17 @@ const handleSaveDraft = async () => {
     }
 }
 
-const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
-    setIsGeneratingIds(true);
-    if (action === 'share') setIsSharing(true);
-
-    try {
+const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
+    if (action === 'generate') {
+      setIsGeneratingIds(true);
+      try {
         await ensureProposalIdIsGenerated();
-        setFinalizeOpen(action === 'finalize');
-    } catch (error: any) {
+        setFinalizeOpen(true);
+      } catch (error: any) {
         toast({ variant: "destructive", title: "Action Failed", description: error.message || "An unexpected error occurred." });
-    } finally {
+      } finally {
         setIsGeneratingIds(false);
-        if (action === 'share') setIsSharing(false);
+      }
     }
     
     if (action === 'sign') {
@@ -894,7 +893,9 @@ const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
         setIsSharing(true);
         try {
             const isSaved = await saveProposal('draft');
-            if (!isSaved) throw new Error("Failed to save draft before sharing.");
+            if (!isSaved) {
+                throw new Error("Failed to save the proposal draft before proceeding.");
+            }
 
             const finalClientId = generatedClientId || existingClientId;
             if (!finalClientId || !generatedProposalId || !user) throw new Error("Missing critical info for sharing link.");
@@ -944,7 +945,7 @@ const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
                 </CardHeader>
                 <CardFooter>
                     <Button asChild className="w-full">
-                        <Link href="/dashboard/proposals/new/plans">Go to Plans</Link>
+                        <Link href="/proposal/new/plans">Go to Plans</Link>
                     </Button>
                 </CardFooter>
             </Card>
@@ -956,7 +957,7 @@ const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
   const isCustomPlan = plan.id === 'custom-plan';
   const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
-  const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
+  const prevLink = `/proposal/new/plans?${searchParams.toString()}`;
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
   
   const clientTypeMap: { [key: string]: string } = {
@@ -989,7 +990,7 @@ const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
             </Button>
              <Dialog open={isFinalizeOpen} onOpenChange={setFinalizeOpen}>
                 <DialogTrigger asChild>
-                    <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('finalize')} disabled={isGeneratingIds || isSharing || isSaving}>
+                    <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds || isSharing || isSaving}>
                         {(isGeneratingIds || isSharing || isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Generate Proposal
                     </Button>
@@ -1285,3 +1286,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
