@@ -396,14 +396,18 @@ export function ContractDetails({
 
     return (
         <div className="space-y-6 p-2">
-            <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold text-primary">River Tech Group, Inc.</h2>
-                <p className="text-muted-foreground">Operating as Smart Refill</p>
-                <p className="text-xs text-muted-foreground">123 Innovation Drive, BGC, Taguig, Metro Manila, Philippines | smartrefill.io</p>
+            <div className="text-center space-y-1">
+                <h2 className="text-xl font-bold text-primary">River Tech Inc.</h2>
+                <p className="text-xs text-muted-foreground">
+                    Filinvest Axis Tower 1 24th & 26th Flr, 304 Filinvest Ave, Alabang, Muntinlupa
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    www.smartrefill.io | customer@smartrefill.io
+                </p>
             </div>
             
             <Separator />
-            
+
             <Card>
                 <div className="grid md:grid-cols-2 items-center">
                     <div className="p-6">
@@ -414,7 +418,7 @@ export function ContractDetails({
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6 p-0">
-                            <p className="text-muted-foreground">
+                             <p className="text-muted-foreground">
                                 Thank you for choosing Smart Refill. This proposal outlines how our smart, reliable, and fully compliant solution helps your business achieve consistent water availability, lower operational costs, and complete visibility over your consumption.
                             </p>
                             <p className="text-muted-foreground mt-4">
