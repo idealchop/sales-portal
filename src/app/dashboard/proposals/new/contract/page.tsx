@@ -90,10 +90,17 @@ const addons = [
 ];
 
 
-function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDraft, isSharing, isSaving }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void, onSaveDraft: () => Promise<void>, isSharing: boolean, isSaving: boolean }) {
+function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDraft, isSharing, isSaving, ensureProposalId, isGeneratingIds }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void, onSaveDraft: () => Promise<void>, isSharing: boolean, isSaving: boolean, ensureProposalId: () => Promise<string | undefined>, isGeneratingIds: boolean; }) {
     const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
+    
+    useEffect(() => {
+        if (open) {
+            ensureProposalId();
+        }
+    }, [open, ensureProposalId]);
+
 
     const handleDownloadPdf = async () => {
         const element = hiddenProposalRef.current;
@@ -140,7 +147,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }
@@ -170,13 +177,19 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 </DialogHeader>
                 <div className="mt-6">
                     <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
-                        <div className="bg-white p-8" id="pdf-content-preview">
-                            <ContractDetails
-                                finalPlanDetails={finalPlanDetails}
-                                isSigned={false}
-                                isProposalIllustration={true}
-                            />
-                        </div>
+                        {isGeneratingIds ? (
+                            <div className="flex h-full items-center justify-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                            </div>
+                        ) : (
+                            <div className="bg-white p-8" id="pdf-content-preview">
+                                <ContractDetails
+                                    finalPlanDetails={finalPlanDetails}
+                                    isSigned={false}
+                                    isProposalIllustration={true}
+                                />
+                            </div>
+                        )}
                     </ScrollArea>
                     <div ref={hiddenProposalRef} style={{ display: 'none', position: 'absolute', left: '-9999px', width: '8.5in' }} className="p-12 bg-white text-black">
                         <ContractDetails
@@ -189,15 +202,15 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 <DialogFooter className="sm:justify-between items-center">
                     <p className="text-xs text-muted-foreground text-left">This proposal is valid for 30 days. Prices and terms are subject to change thereafter.</p>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={onSaveDraft} disabled={isSaving}>
+                        <Button variant="outline" onClick={onSaveDraft} disabled={isSaving || isGeneratingIds}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Save Draft
                         </Button>
-                        <Button variant="outline" onClick={onShare} disabled={isSharing}>
+                        <Button variant="outline" onClick={onShare} disabled={isSharing || isGeneratingIds}>
                             {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
                             {isSharing ? 'Generating...' : 'Share Link'}
                         </Button>
-                        <Button onClick={handleDownloadPdf} disabled={isDownloading}>
+                        <Button onClick={handleDownloadPdf} disabled={isDownloading || isGeneratingIds}>
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                             Download PDF
                         </Button>
@@ -871,18 +884,8 @@ const handleSaveDraft = async () => {
 
 const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
     if (action === 'generate') {
-      setIsGeneratingIds(true);
-      try {
-        await ensureProposalIdIsGenerated();
-        setFinalizeOpen(true);
-      } catch (error: any) {
-        toast({ variant: "destructive", title: "Action Failed", description: error.message || "An unexpected error occurred." });
-      } finally {
-        setIsGeneratingIds(false);
-      }
-    }
-    
-    if (action === 'sign') {
+      setFinalizeOpen(true);
+    } else if (action === 'sign') {
         try {
             await ensureClientAndProposalIdsAreGenerated();
             setTimeout(() => setReviewDialogOpen(true), 100);
@@ -945,7 +948,7 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
                 </CardHeader>
                 <CardFooter>
                     <Button asChild className="w-full">
-                        <Link href="/proposal/new/plans">Go to Plans</Link>
+                        <Link href="/dashboard/proposals/new/plans">Go to Plans</Link>
                     </Button>
                 </CardFooter>
             </Card>
@@ -957,7 +960,7 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
   const isCustomPlan = plan.id === 'custom-plan';
   const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
-  const prevLink = `/proposal/new/plans?${searchParams.toString()}`;
+  const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
   
   const clientTypeMap: { [key: string]: string } = {
@@ -988,22 +991,20 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-             <Dialog open={isFinalizeOpen} onOpenChange={setFinalizeOpen}>
-                <DialogTrigger asChild>
-                    <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds || isSharing || isSaving}>
-                        {(isGeneratingIds || isSharing || isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Generate Proposal
-                    </Button>
-                </DialogTrigger>
-                <GenerateProposalDialog 
-                    finalPlanDetails={finalPlanDetails} 
-                    onShare={() => handleActionClick('share')} 
-                    onSaveDraft={handleSaveDraft}
-                    isSharing={isSharing}
-                    isSaving={isSaving}
-                >
-                </GenerateProposalDialog>
-             </Dialog>
+             <GenerateProposalDialog 
+                finalPlanDetails={finalPlanDetails} 
+                onShare={() => handleActionClick('share')} 
+                onSaveDraft={handleSaveDraft}
+                isSharing={isSharing}
+                isSaving={isSaving}
+                ensureProposalId={ensureProposalIdIsGenerated}
+                isGeneratingIds={isGeneratingIds}
+             >
+                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds || isSharing || isSaving}>
+                    {(isGeneratingIds || isSharing || isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Generate Proposal
+                </Button>
+            </GenerateProposalDialog>
             <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
