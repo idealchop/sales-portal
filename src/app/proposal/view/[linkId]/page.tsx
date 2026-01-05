@@ -50,31 +50,20 @@ function SharedProposalContent() {
                      throw new Error("This sharing link has expired.");
                  }
                 
-                const proposalDocRef = doc(firestore, 'clients', linkData.clientId, 'proposals', linkData.proposalId);
+                // Corrected: Fetch from the top-level 'proposals' collection
+                const proposalDocRef = doc(firestore, 'proposals', linkData.proposalId);
                 const proposalDocSnap = await getDoc(proposalDocRef);
                 
                 if (!proposalDocSnap.exists()) {
-                    // Fallback to top-level proposals collection for older links
-                    const topLevelProposalDocRef = doc(firestore, 'proposals', linkData.proposalId);
-                    const topLevelProposalDocSnap = await getDoc(topLevelProposalDocRef);
-                    if(!topLevelProposalDocSnap.exists()) {
-                        throw new Error("The associated proposal could not be found.");
-                    }
-                    const proposalData = topLevelProposalDocSnap.data();
-                     if (proposalData.content) {
-                        const finalDetails = JSON.parse(proposalData.content) as FinalPlanDetails;
-                        setProposalDetails(finalDetails);
-                    } else {
-                        throw new Error("Proposal content is missing or invalid.");
-                    }
+                    throw new Error("The associated proposal could not be found.");
+                }
+                
+                const proposalData = proposalDocSnap.data();
+                if (proposalData.content) {
+                    const finalDetails = JSON.parse(proposalData.content) as FinalPlanDetails;
+                    setProposalDetails(finalDetails);
                 } else {
-                    const proposalData = proposalDocSnap.data();
-                    if (proposalData.content) {
-                        const finalDetails = JSON.parse(proposalData.content) as FinalPlanDetails;
-                        setProposalDetails(finalDetails);
-                    } else {
-                        throw new Error("Proposal content is missing or invalid.");
-                    }
+                    throw new Error("Proposal content is missing or invalid.");
                 }
 
             } catch (e: any) {

