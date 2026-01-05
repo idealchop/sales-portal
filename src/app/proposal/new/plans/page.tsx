@@ -353,7 +353,7 @@ function CustomPlanCalculator({
     minimumContainersPerWeek = 0,
 }: {
     pricePerLiter?: number;
-    onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
+    onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number }) => void;
     title?: string;
     description?: string;
     minimumCost?: number;
@@ -368,6 +368,8 @@ function CustomPlanCalculator({
     const [gallons, setGallons] = useState(maxGallons ? Math.min(10, maxGallons) : 10);
     const [deliveries, setDeliveries] = useState(1);
     const [pricePerLiter, setPricePerLiter] = useState(initialPricePerLiter);
+    const [dispensers, setDispensers] = useState(1);
+    const [containers, setContainers] = useState(5);
     const litersPerGallon = 19;
 
     const { totalLiters, totalCost } = useMemo(() => {
@@ -397,8 +399,8 @@ function CustomPlanCalculator({
         : deliveryFrequencies;
 
     useEffect(() => {
-        onCalculated({ totalLiters, totalCost, deliveries });
-    }, [totalLiters, totalCost, deliveries, onCalculated]);
+        onCalculated({ totalLiters, totalCost, deliveries, dispensers, containers });
+    }, [totalLiters, totalCost, deliveries, dispensers, containers, onCalculated]);
     
     const isMinimumMet = minimumContainersPerWeek > 0 
         ? (gallons * deliveries) >= minimumContainersPerWeek
@@ -431,6 +433,14 @@ function CustomPlanCalculator({
                             ))}
                         </SelectContent>
                     </Select>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="dispensers" className="text-sm font-medium text-primary-foreground/80">Dispensers</Label>
+                    <Input id="dispensers" type="number" value={dispensers} onChange={(e) => setDispensers(Number(e.target.value))} className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="containers" className="text-sm font-medium text-primary-foreground/80">Rotation Containers</Label>
+                    <Input id="containers" type="number" value={containers} onChange={(e) => setContainers(Number(e.target.value))} className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
                 </div>
                 {allowPriceEdit && (
                      <div className="space-y-2 sm:col-span-2">
@@ -596,12 +606,12 @@ function PlansGrid({
     selectedPlan: string | null, 
     onSelectPlan: (planId: string) => void, 
     businessSize: BusinessSize | null,
-    customCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number } | null,
-    onCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
+    customCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number, locations: any[] } | null,
+    onCustomCalculated: (values: any) => void;
     overflowCalculatedValues: { locations: { name: string; dispensers: number; containers: number; }[] } | null;
     onOverflowCalculated: (values: any) => void;
-    smeCommercialCustomValues: { totalLiters: number, totalCost: number, deliveries: number } | null;
-    onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
+    smeCommercialCustomValues: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number } | null,
+    onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number }) => void;
 }) {
     const getStations = (liters: number) => {
         if (liters <= 2000) return '1 Station';
@@ -676,10 +686,9 @@ function PlansGrid({
         let inclusions = [...plan.inclusions];
 
         if (isCustom && customCalculatedValues) {
-            employees = getEmployees(customCalculatedValues.totalLiters, false);
-            stations = getStations(customCalculatedValues.totalLiters);
-            monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(customCalculatedValues.totalCost);
-            liters = `${customCalculatedValues.totalLiters.toLocaleString()} L`;
+             const totalDispensers = customCalculatedValues.locations.reduce((sum, loc) => sum + loc.dispensers, 0);
+            employees = `${customCalculatedValues.locations.length} Locations`;
+            stations = `${totalDispensers} Dispensers`;
         }
         
         if (isOverflow && overflowCalculatedValues) {
@@ -760,11 +769,8 @@ function PlansGrid({
                     </CardContent>
                     
                     {plan.id === 'enterprise-customized' && isSelected && (
-                        <CustomPlanCalculator 
-                            onCalculated={onCustomCalculated} 
-                            allowPriceEdit={true}
-                            minimumContainersPerWeek={10}
-                            title="Customized Plan Calculator"
+                        <FlowPlanConfigurator 
+                           onCalculated={onCustomCalculated}
                         />
                     )}
                     
@@ -1002,9 +1008,9 @@ export default function PlansPage() {
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-    const [customCalculatedValues, setCustomCalculatedValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
+    const [customCalculatedValues, setCustomCalculatedValues] = useState<any>(null);
     const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[] } | null>(null);
-    const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
+    const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number } | null>(null);
     
     useEffect(() => {
         const clientType = searchParams.get('clientType');
@@ -1036,7 +1042,7 @@ export default function PlansPage() {
         setSelectedPlan(planId);
     }
 
-    const handleCustomCalculated = useCallback((values: { totalLiters: number, totalCost: number, deliveries: number }) => {
+    const handleCustomCalculated = useCallback((values: any) => {
         setCustomCalculatedValues(values);
     }, []);
 
@@ -1044,7 +1050,7 @@ export default function PlansPage() {
         setOverflowCalculatedValues(values);
     }, []);
 
-    const handleSmeCommercialCustomCalculated = useCallback((values: { totalLiters: number, totalCost: number, deliveries: number }) => {
+    const handleSmeCommercialCustomCalculated = useCallback((values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number }) => {
         setSmeCommercialCustomValues(values);
     }, []);
 
@@ -1110,8 +1116,7 @@ export default function PlansPage() {
         if (!selectedPlan) return true;
         if (selectedPlan === 'enterprise-customized') {
             if (!customCalculatedValues) return true;
-            const containersPerWeek = (customCalculatedValues as any).gallons * (customCalculatedValues as any).deliveries;
-            return containersPerWeek < 10;
+            return false;
         }
         if (selectedPlan === 'enterprise-overflow') {
             return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name);
@@ -1133,9 +1138,7 @@ export default function PlansPage() {
         }
 
         if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
-            params.set('liters', customCalculatedValues.totalLiters.toString());
-            params.set('cost', customCalculatedValues.totalCost.toString());
-            params.set('freq', customCalculatedValues.deliveries.toString());
+            params.set('locations', JSON.stringify(customCalculatedValues.locations));
         }
         if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
             params.set('cost', '50000');
@@ -1146,12 +1149,14 @@ export default function PlansPage() {
             params.set('cost', smeCommercialCustomValues.totalCost.toString());
             params.set('freq', smeCommercialCustomValues.deliveries.toString());
             params.set('type', selectedSize || '');
+            params.set('dispensers', smeCommercialCustomValues.dispensers.toString());
+            params.set('containers', smeCommercialCustomValues.containers.toString());
         }
-        return `/proposal/new/contract?${params.toString()}`;
+        return `/dashboard/proposals/new/contract?${params.toString()}`;
     };
 
     const params = new URLSearchParams(searchParams.toString());
-    const prevLink = `/proposal/new/comparison?${params.toString()}`;
+    const prevLink = `/dashboard/proposals/new/comparison?${params.toString()}`;
 
     return (
         <div className="flex flex-col gap-6 pb-24 sm:pb-0">
