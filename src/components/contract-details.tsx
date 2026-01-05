@@ -576,8 +576,8 @@ export function ContractDetails({
                                     <p className="font-semibold">{client.address || "N/A"}</p>
                                 </div>
                             </div>
-                            {proposalId && (
-                                <div className="flex items-start gap-3 sm:col-span-2">
+                             {proposalId && (
+                                <div className="flex items-start gap-3">
                                     <FileTextIcon className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div>
                                         <p className="text-xs text-muted-foreground">Proposal ID</p>
