@@ -445,8 +445,8 @@ export function ContractDetails({
             </div>
             
             <Separator />
-            
-             <Card>
+
+            <Card>
                 <div className="grid md:grid-cols-2 items-center">
                     <div className="p-6">
                         <CardHeader className="p-0 mb-4">
@@ -454,17 +454,12 @@ export function ContractDetails({
                             <CardDescription>Your Partner in Water Supply Automation</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
-                             <div className="space-y-4 text-muted-foreground">
-                                <p className="font-semibold text-foreground">
-                                Smart Refill is the Philippines’ first automated water refill system
-                                for businesses — built to make water supply safe, seamless, and
-                                scalable.
+                            <div className="space-y-4 text-muted-foreground">
+                                <p>
+                                    Thank you for choosing River Philippines. This proposal outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
                                 </p>
                                 <p>
-                                We connect businesses directly to a nationwide network of verified and
-                                compliant local water refilling stations, ensuring every delivery is
-                                automatic, on time, and fully compliant with sanitation and water
-                                quality standards.
+                                    We go beyond delivery—we provide a secure, high-quality hydration system that protects your team's health and optimizes your operational costs.
                                 </p>
                             </div>
                         </CardContent>
@@ -479,7 +474,29 @@ export function ContractDetails({
                         />
                     </div>
                 </div>
-                 <CardFooter className="p-6 bg-muted">
+            </Card>
+
+            <Card>
+                 <CardHeader>
+                    <CardTitle>What is Smart Refill?</CardTitle>
+                    <CardDescription>An overview of our value proposition.</CardDescription>
+                </CardHeader>
+                 <CardContent>
+                     <div className="space-y-4 text-sm text-muted-foreground">
+                        <p className="font-semibold text-foreground">
+                        Smart Refill is the Philippines’ first automated water refill system
+                        for businesses — built to make water supply safe, seamless, and
+                        scalable.
+                        </p>
+                        <p>
+                        We connect businesses directly to a nationwide network of verified and
+                        compliant local water refilling stations, ensuring every delivery is
+                        automatic, on time, and fully compliant with sanitation and water
+                        quality standards.
+                        </p>
+                    </div>
+                </CardContent>
+                <CardFooter className="p-6 bg-muted">
                      <div className="w-full">
                         <h3 className="font-semibold text-foreground text-base mb-4">Smart Refill powers your business with:</h3>
                         <div className="grid sm:grid-cols-2 gap-4">
