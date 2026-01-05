@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -30,12 +29,14 @@ export function ContractSection({
   );
 }
 
-export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycleLabel, totalAmountDue, selectedAddons, additionalDispensers, additionalLiters, addons } : { summaryTitle: string, finalPlan: any, baseLiters: number, billingCycleLabel: string, totalAmountDue: string, selectedAddons: any, additionalDispensers: number, additionalLiters: number, addons: any[]}) {
+export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycleLabel, totalAmountDue, selectedAddons, additionalDispensers, additionalLiters, addons, isCustomPlan, pricePerLiter } : { summaryTitle: string, finalPlan: any, baseLiters: number, billingCycleLabel: string, totalAmountDue: string, selectedAddons: any, additionalDispensers: number, additionalLiters: number, addons: any[], isCustomPlan: boolean, pricePerLiter: number }) {
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    
     return (
         <>
             <ContractSection title="1. Purpose">
                 <p>
-                    This Agreement governs the prepaid water supply subscription service delivered through Smart Refill’s automated system and partner refill stations.
+                    This Agreement governs the water supply subscription service delivered through Smart Refill’s automated system and partner refill stations.
                 </p>
             </ContractSection>
 
@@ -52,9 +53,15 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
             <ContractSection title="3. Subscription Plans">
                 <ul className="list-disc pl-5 space-y-2">
                     <li><span className="font-semibold">Plan:</span> {summaryTitle}</li>
-                    <li><span className="font-semibold">Monthly Liters:</span> {finalPlan.liters} (includes {baseLiters * 0.2}L bonus)</li>
+                    {!isCustomPlan && <li><span className="font-semibold">Monthly Liters:</span> {finalPlan.liters} (includes {baseLiters * 0.2}L bonus)</li>}
                     <li><span className="font-semibold">Billing Cycle:</span> {billingCycleLabel}</li>
-                    <li><span className="font-semibold">Total Amount Due per Cycle:</span> {totalAmountDue}</li>
+                    <li>
+                        <span className="font-semibold">Payment Term:</span> 
+                        {isCustomPlan 
+                            ? ` Billed based on monthly consumption at a rate of ${currencyFormatter.format(pricePerLiter)} per liter.`
+                            : ` Prepaid. Total Amount Due per Cycle: ${totalAmountDue}.`
+                        }
+                    </li>
                         {(Object.values(selectedAddons).some(v => v) || additionalDispensers > 0 || additionalLiters > 0) && (
                         <li className="font-semibold">Add-Ons:
                             <ul className="list-circle pl-5 font-normal">
@@ -85,10 +92,19 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
             </ContractSection>
 
             <ContractSection title="6. Payment Terms">
-                <ul className="list-disc pl-5 space-y-2">
-                    <li>Subscriptions are prepaid monthly.</li>
-                    <li>Payment covers the included liter allocation and any applicable service fees.</li>
-                    <li>Unused liters roll over for up to two (2) consecutive months, after which they expire.</li>
+                 <ul className="list-disc pl-5 space-y-2">
+                    {isCustomPlan ? (
+                        <>
+                            <li>Billing is based on actual consumption, calculated at the end of each monthly cycle.</li>
+                            <li>Invoices will be issued monthly and are due within 15 days of receipt.</li>
+                        </>
+                    ) : (
+                        <>
+                            <li>Subscriptions are prepaid based on the selected billing cycle.</li>
+                            <li>Payment covers the included liter allocation and any applicable service fees.</li>
+                            <li>Unused liters roll over for up to two (2) consecutive months, after which they expire.</li>
+                        </>
+                    )}
                     <li>Payments are non-refundable after activation.</li>
                 </ul>
             </ContractSection>
@@ -229,7 +245,7 @@ const inclusions = [
     },
     {
         icon: <CalendarClock className="h-5 w-5 text-primary" />,
-        title: 'Automated Scheduling &amp; Delivery',
+        title: 'Automated Scheduling & Delivery',
         description: 'No manual ordering; Smart Refill handles refills automatically.',
     },
     {
@@ -239,7 +255,7 @@ const inclusions = [
     },
     {
         icon: <Thermometer className="h-5 w-5 text-primary" />,
-        title: 'Free Dispensers, Gallons &amp; Sanitary Items',
+        title: 'Free Dispensers, Gallons & Sanitary Items',
         description: 'Included based on your plan.',
     },
     {
@@ -259,7 +275,7 @@ const inclusions = [
     },
     {
         icon: <Rocket className="h-5 w-5 text-primary" />,
-        title: 'Custom &amp; Scalable Plans',
+        title: 'Custom & Scalable Plans',
         description: 'Adjust liters, branches, and schedules as your business grows.',
     },
 ];
@@ -303,6 +319,7 @@ export type FinalPlanDetails = {
     address: string;
     clientType?: 'household' | 'sme' | 'commercial' | 'corporate' | 'enterprise';
     signature?: string;
+    pricePerLiter?: number;
 };
 
 
@@ -369,6 +386,8 @@ export function ContractDetails({
     
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
+    const isCustomPlan = plan.id === 'custom-plan';
+    const pricePerLiter = source.pricePerLiter || 0;
 
 
     if (!finalPlan) return null;
@@ -492,29 +511,33 @@ export function ContractDetails({
                     <div className="space-y-2 p-4 border rounded-lg">
                         <h4 className="font-semibold text-foreground">Base Plan: {summaryTitle}</h4>
                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Monthly Cost</span>
-                            <span className="font-semibold">{currencyFormatter.format(planBaseCost || source.basePrice || 0)}</span>
+                            <span className="text-muted-foreground">{isCustomPlan ? 'Price per Liter' : 'Monthly Cost'}</span>
+                            <span className="font-semibold">{isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(planBaseCost || source.basePrice || 0)}</span>
                         </div>
-                        <Separator className="my-2"/>
-                        <h5 className="font-semibold text-foreground text-sm pt-2">Free Inclusions:</h5>
-                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4 text-green-500" /> +20% Bonus Liters
-                            </span>
-                            <span className="font-semibold">{freeLiters.toLocaleString()} L / mo</span>
-                        </div>
-                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4 text-green-500" /> Automated Delivery &amp; Logistics
-                            </span>
-                            <span className="font-semibold">Included</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4 text-green-500" /> Monthly Sanitation &amp; Clean-up
-                            </span>
-                            <span className="font-semibold">Included</span>
-                        </div>
+                        {!isCustomPlan && (
+                            <>
+                                <Separator className="my-2"/>
+                                <h5 className="font-semibold text-foreground text-sm pt-2">Free Inclusions:</h5>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-green-500" /> +20% Bonus Liters
+                                    </span>
+                                    <span className="font-semibold">{freeLiters.toLocaleString()} L / mo</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-green-500" /> Automated Delivery &amp; Logistics
+                                    </span>
+                                    <span className="font-semibold">Included</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-green-500" /> Monthly Sanitation &amp; Clean-up
+                                    </span>
+                                    <span className="font-semibold">Included</span>
+                                </div>
+                            </>
+                        )}
                     </div>
                      {(Object.values(selectedAddons).some(v => v) || additionalDispensers > 0 || additionalLiters > 0) && (
                         <div className="space-y-2 p-4 border rounded-lg">
@@ -544,7 +567,7 @@ export function ContractDetails({
                     <Separator className="my-4" />
 
                     <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
-                        <span>Total Due for {billingCycleLabel} Period</span>
+                        <span>{isCustomPlan ? 'Billed by Consumption' : 'Total Due'}</span>
                         <span>{totalAmountDue}</span>
                     </div>
                      <p className="text-xs text-muted-foreground text-right">All applicable taxes are included.</p>
@@ -594,7 +617,7 @@ export function ContractDetails({
                     </div>
                     ))}
                 </CardContent>
-            </Card>
+              </Card>
 
             <Card>
                 <CardHeader>
@@ -646,6 +669,8 @@ export function ContractDetails({
                                 additionalDispensers={additionalDispensers}
                                 additionalLiters={additionalLiters}
                                 addons={addons}
+                                isCustomPlan={isCustomPlan}
+                                pricePerLiter={pricePerLiter}
                             />
                         </CardContent>
                     </Card>
@@ -697,3 +722,5 @@ export function ContractDetails({
         </div>
     );
 }
+
+    

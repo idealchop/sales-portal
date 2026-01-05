@@ -112,6 +112,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         if (!finalPlanDetails) return null;
         
         const isFlowPlan = finalPlanDetails.plan.id === 'enterprise-overflow';
+        const isCustomPlan = finalPlanDetails.plan.id === 'custom-plan';
         const planBaseCost = isFlowPlan ? 50000 : finalPlanDetails.planBaseCost;
 
         const addonsCost = addons.reduce((total, addon) => (addon.type === 'checkbox' && finalPlanDetails.selectedAddons[addon.id] ? total + addon.feeValue : total), 0);
@@ -122,13 +123,13 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         
         const selectedCycle = billingCycles.find(c => c.value === dialogBillingCycle) || billingCycles[0];
         
-        const discount = isFlowPlan ? 0 : selectedCycle.discount;
-        const totalBeforeDiscount = isFlowPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
+        const discount = isFlowPlan || isCustomPlan ? 0 : selectedCycle.discount;
+        const totalBeforeDiscount = isFlowPlan || isCustomPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
         const discountValue = totalBeforeDiscount * discount;
         const finalAmount = totalBeforeDiscount - discountValue;
 
         return {
-            subtotal: isFlowPlan ? planBaseCost : subtotal,
+            subtotal: isFlowPlan || isCustomPlan ? planBaseCost : subtotal,
             discountPercentage: discount * 100,
             discountValue,
             totalAmountDue: finalAmount,
@@ -204,6 +205,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
     }
 
     if (!finalPlanDetails || !dialogCosts) return null;
+    const isCustom = finalPlanDetails.plan.id === 'custom-plan';
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     return (
@@ -221,7 +223,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                                  <CardTitle className="text-base">Payment Schedule</CardTitle>
                              </CardHeader>
                              <CardContent>
-                                <RadioGroup value={dialogBillingCycle} onValueChange={setDialogBillingCycle} className="space-y-1">
+                                <RadioGroup value={dialogBillingCycle} onValueChange={setDialogBillingCycle} className="space-y-1" disabled={isCustom}>
                                     {billingCycles.map((cycle) => (
                                         <div key={`dialog-${cycle.value}`} className="flex items-center space-x-2">
                                             <RadioGroupItem value={cycle.value} id={`dialog-${cycle.value}`} />
@@ -239,20 +241,24 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                                 <CardTitle className="text-base">Cost Summary</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                <span className="text-muted-foreground">Subtotal ({dialogCosts.billingCycleLabel})</span>
-                                <span>{currencyFormatter.format(dialogCosts.subtotal * (billingCycles.find(c=>c.value === dialogBillingCycle)?.multiplier || 1))}</span>
-                                </div>
-                                {dialogCosts.discountValue > 0 && (
-                                <div className="flex justify-between text-green-600">
-                                    <span className="text-muted-foreground">Discount ({dialogCosts.discountPercentage}%)</span>
-                                    <span>- {currencyFormatter.format(dialogCosts.discountValue)}</span>
-                                </div>
-                                )}
-                                <Separator />
+                                {!isCustom &&
+                                    <>
+                                        <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Subtotal ({dialogCosts.billingCycleLabel})</span>
+                                        <span>{currencyFormatter.format(dialogCosts.subtotal * (billingCycles.find(c=>c.value === dialogBillingCycle)?.multiplier || 1))}</span>
+                                        </div>
+                                        {dialogCosts.discountValue > 0 && (
+                                        <div className="flex justify-between text-green-600">
+                                            <span className="text-muted-foreground">Discount ({dialogCosts.discountPercentage}%)</span>
+                                            <span>- {currencyFormatter.format(dialogCosts.discountValue)}</span>
+                                        </div>
+                                        )}
+                                        <Separator />
+                                    </>
+                                }
                                 <div className="flex justify-between font-bold text-base">
-                                    <span>Total Due</span>
-                                    <span>{currencyFormatter.format(dialogCosts.totalAmountDue)}</span>
+                                    <span>{isCustom ? 'Price per Liter' : 'Total Due'}</span>
+                                    <span>{isCustom ? `${currencyFormatter.format(finalPlanDetails.pricePerLiter || 0)}/L` : currencyFormatter.format(dialogCosts.totalAmountDue)}</span>
                                 </div>
                             </CardContent>
                          </Card>
@@ -263,8 +269,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                                 <ContractDetails
                                     finalPlanDetails={{
                                         ...finalPlanDetails,
-                                        billingCycleLabel: dialogCosts.billingCycleLabel,
-                                        totalAmountDue: currencyFormatter.format(dialogCosts.totalAmountDue),
+                                        billingCycleLabel: isCustom ? "Usage-Based" : dialogCosts.billingCycleLabel,
+                                        totalAmountDue: isCustom ? "Usage-Based" : currencyFormatter.format(dialogCosts.totalAmountDue),
                                         discount: dialogCosts.discountPercentage / 100,
                                     }}
                                     isSigned={false}
@@ -277,8 +283,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                             <ContractDetails
                                 finalPlanDetails={{
                                     ...finalPlanDetails,
-                                    billingCycleLabel: dialogCosts.billingCycleLabel,
-                                    totalAmountDue: currencyFormatter.format(dialogCosts.totalAmountDue),
+                                    billingCycleLabel: isCustom ? "Usage-Based" : dialogCosts.billingCycleLabel,
+                                    totalAmountDue: isCustom ? "Usage-Based" : currencyFormatter.format(dialogCosts.totalAmountDue),
                                     discount: dialogCosts.discountPercentage / 100,
                                 }}
                                 isSigned={false}
@@ -621,6 +627,7 @@ function ContractPageContent() {
     if (!plan || !finalPlan) return null;
     
     const isFlowPlan = plan.id === 'enterprise-overflow';
+    const isCustomPlan = plan.id === 'custom-plan';
     const planBaseCost = isFlowPlan ? 50000 : (parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) || 0);
 
     const addonsCost = addons.reduce((total, addon) => {
@@ -635,8 +642,8 @@ function ContractPageContent() {
     const subtotal = planBaseCost + addonsCost + dispensersCost + litersCost;
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
     
-    const discount = isFlowPlan ? 0 : selectedCycle.discount;
-    const totalBeforeDiscount = isFlowPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
+    const discount = isFlowPlan || isCustomPlan ? 0 : selectedCycle.discount;
+    const totalBeforeDiscount = isFlowPlan || isCustomPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
     const discountValue = totalBeforeDiscount * discount;
     const finalAmount = totalBeforeDiscount - discountValue;
 
@@ -649,6 +656,8 @@ function ContractPageContent() {
 
     const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
 
+    const pricePerLiter = (customCost && customLiters) ? parseFloat(customCost) / parseInt(customLiters) : 0;
+
     return {
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         summaryTitle: summaryTitle,
@@ -656,8 +665,8 @@ function ContractPageContent() {
         employees: finalPlan.employees,
         refillableGallons: rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic',
         refillFrequency: finalPlan.refillFrequency,
-        totalAmountDue: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
-        billingCycleLabel: selectedCycle.label,
+        totalAmountDue: isCustomPlan ? "Usage-Based" : new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
+        billingCycleLabel: isCustomPlan ? "Usage-Based" : selectedCycle.label,
         discount: discount,
         basePrice: subtotal,
         selectedAddons,
@@ -680,8 +689,9 @@ function ContractPageContent() {
         address,
         clientType,
         signature: signatureData,
+        pricePerLiter: isCustomPlan ? pricePerLiter : undefined,
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -697,8 +707,9 @@ function ContractPageContent() {
     }
 
     const isSubscribing = status === 'accepted';
+    const isCustomPlan = finalPlanDetails.plan.id === 'custom-plan';
 
-    if (isSubscribing && !paymentProofFile) {
+    if (isSubscribing && !isCustomPlan && !paymentProofFile) {
         toast({
             variant: "destructive",
             title: "Payment Proof Required",
@@ -763,7 +774,7 @@ function ContractPageContent() {
 
       if (isSubscribing) {
           clientData.status = 'active';
-          clientData.paymentStatus = 'Paid';
+          clientData.paymentStatus = isCustomPlan ? 'Paid' : 'Paid';
           clientData.subscription = {
             ...finalPlanDetails.plan,
             dateSigned: new Date().toISOString()
@@ -780,7 +791,7 @@ function ContractPageContent() {
       }
       
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
-      const amountToSave = parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, ""));
+      const amountToSave = isCustomPlan ? 0 : parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, ""));
       
       const newProposalData: any = {
         id: proposalId,
@@ -920,7 +931,7 @@ function ContractPageContent() {
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
   const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
-  const discountValue = isFlowPlan ? 0 : (finalPlanDetails.basePrice * selectedCycle.multiplier) * selectedCycle.discount;
+  const discountValue = isFlowPlan || isCustomPlan ? 0 : (finalPlanDetails.basePrice * selectedCycle.multiplier) * selectedCycle.discount;
 
 
   const clientTypeMap: { [key: string]: string } = {
@@ -937,12 +948,7 @@ function ContractPageContent() {
     return 'Employees';
   };
   
-  const pricePerLiter = (planBaseCost: number, totalMonthlyLiters: number) => {
-    if (totalMonthlyLiters > 0) {
-      return planBaseCost / totalMonthlyLiters;
-    }
-    return 0;
-  };
+  const pricePerLiter = finalPlanDetails.pricePerLiter || 0;
 
   return (
     <div className="flex flex-col gap-6 pb-24 sm:pb-0">
@@ -992,7 +998,7 @@ function ContractPageContent() {
                     <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
                     <CardDescription>
                         A summary of the selected subscription plan details.
-                        {!isFlowPlan && " (Includes +20% free liters every month)"}
+                        {!isFlowPlan && !isCustomPlan && " (Includes +20% free liters every month)"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1007,7 +1013,7 @@ function ContractPageContent() {
                             <CardContent>
                                 {isCustomPlan ? (
                                     <>
-                                        <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter(finalPlanDetails.planBaseCost, finalPlanDetails.totalMonthlyLiters))}</div>
+                                        <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}</div>
                                         <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
                                     </>
                                 ) : (
@@ -1048,7 +1054,7 @@ function ContractPageContent() {
                 </CardContent>
             </Card>
 
-            {!isFlowPlan && (
+            {!isFlowPlan && !isCustomPlan && (
                 <Card>
                     <CardHeader>
                         <CardTitle>Optional Add-Ons</CardTitle>
@@ -1161,12 +1167,13 @@ function ContractPageContent() {
             <CardContent className="space-y-4">
                 <div className="space-y-2">
                     <div>
-                        <p className="font-semibold">{summaryTitle}{!isFlowPlan && ` (${finalPlanDetails.billingCycleLabel})`}</p>
-                        <p className="text-2xl font-bold">{isFlowPlan ? currencyFormatter.format(50000) : currencyFormatter.format(finalPlanDetails.basePrice)}
-                          {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : <span className="text-sm font-normal text-muted-foreground"> / mo</span>}
+                        <p className="font-semibold">{summaryTitle}{!isFlowPlan && !isCustomPlan && ` (${finalPlanDetails.billingCycleLabel})`}</p>
+                        <p className="text-2xl font-bold">
+                          {isFlowPlan ? currencyFormatter.format(50000) : (isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(finalPlanDetails.basePrice))}
+                          {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : (!isCustomPlan ? <span className="text-sm font-normal text-muted-foreground"> / mo</span> : '')}
                         </p>
                     </div>
-                    {!isFlowPlan && (
+                    {(!isFlowPlan && !isCustomPlan) && (
                         <ul className="text-xs text-muted-foreground list-disc pl-5">
                             <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
                             {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
@@ -1175,7 +1182,7 @@ function ContractPageContent() {
                     )}
                 </div>
 
-                {!isFlowPlan && (
+                {!isFlowPlan && !isCustomPlan && (
                     <>
                         <div className="space-y-2">
                             {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
@@ -1202,10 +1209,10 @@ function ContractPageContent() {
                         
                         <div className='space-y-2'>
                             <Label>Payment Schedule</Label>
-                            <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>
+                            <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan || isCustomPlan}>
                                 {billingCycles.map((cycle) => (
                                     <div key={cycle.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
+                                        <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan || isCustomPlan}/>
                                         <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
                                             <span>{cycle.label}</span>
                                             {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
@@ -1219,7 +1226,7 @@ function ContractPageContent() {
 
                 <Separator />
                 
-                {discountValue > 0 && !isFlowPlan && (
+                {discountValue > 0 && !isFlowPlan && !isCustomPlan && (
                      <div className="flex justify-between items-center text-sm text-green-600">
                         <span>Discount ({selectedCycle.discount * 100}%)</span>
                         <span>- {currencyFormatter.format(discountValue)}</span>
@@ -1228,8 +1235,8 @@ function ContractPageContent() {
 
 
                 <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
-                    <span>Total Due</span>
-                    <span>{finalPlanDetails.totalAmountDue}</span>
+                    <span>{isCustomPlan ? 'Billed by Consumption' : 'Total Due'}</span>
+                    <span>{isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : finalPlanDetails.totalAmountDue}</span>
                 </div>
             </CardContent>
         </Card>
@@ -1258,3 +1265,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
