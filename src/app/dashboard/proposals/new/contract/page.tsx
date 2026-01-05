@@ -427,6 +427,7 @@ function ContractPageContent() {
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingIds, setIsGeneratingIds] = useState(false);
   
   const [sanitationFeeType, setSanitationFeeType] = useState('free');
   const [sanitationFee, setSanitationFee] = useState(500);
@@ -436,14 +437,15 @@ function ContractPageContent() {
   const [dispenserFee, setDispenserFee] = useState(250);
 
   const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [isFinalizeOpen, setFinalizeOpen] = useState(false);
-
+  const [isGenerateDialogOpen, setGenerateDialogOpen] = useState(false);
+  
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
   
   const [signatureData, setSignatureData] = useState<string | undefined>();
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [isSharing, setIsSharing] = useState(false);
+
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -795,10 +797,11 @@ function ContractPageContent() {
   };
 
 
-const ensureProposalIdIsGenerated = async () => {
+const ensureProposalIdIsGenerated = async (): Promise<string> => {
     if (generatedProposalId) return generatedProposalId;
     if (!firestore) throw new Error("Firestore not ready.");
 
+    setIsGeneratingIds(true);
     try {
         const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
         const newProposalNumber = await runTransaction(firestore, async (transaction) => {
@@ -819,19 +822,20 @@ const ensureProposalIdIsGenerated = async () => {
             description: "Could not generate a unique ID for the proposal. Please try again."
         });
         throw e;
+    } finally {
+        setIsGeneratingIds(false);
     }
 };
 
 const ensureClientAndProposalIdsAreGenerated = async () => {
-    const pId = await ensureProposalIdIsGenerated();
+    await ensureProposalIdIsGenerated();
     
     if (existingClientId || generatedClientId) {
-      if (pId && !generatedProposalId) setGeneratedProposalId(pId);
       return;
     };
 
     if (!firestore) throw new Error("Firestore not ready.");
-
+    setIsGeneratingIds(true);
     try {
         const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
         const newClientNumber = await runTransaction(firestore, async (transaction) => {
@@ -851,84 +855,65 @@ const ensureClientAndProposalIdsAreGenerated = async () => {
             description: "Could not generate a unique ID for the client. Please check your connection and try again."
         });
         throw e;
+    } finally {
+        setIsGeneratingIds(false);
     }
 }
 
 const handleSaveDraft = async () => {
-    try {
-        if (!generatedProposalId) {
-            await ensureProposalIdIsGenerated();
-            // Use timeout to allow state to update before saving
-            setTimeout(() => saveProposal('draft'), 100);
-        } else {
-            await saveProposal('draft');
-        }
-    } catch (error) {
-        console.error("Failed to save draft due to ID generation error.", error);
-    }
+    await ensureProposalIdIsGenerated();
+    await saveProposal('draft');
 }
 
 const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
-    if (action === 'generate') {
-      try {
-        await ensureProposalIdIsGenerated();
-        setFinalizeOpen(true);
-      } catch (error) {
-        console.error("Error preparing for generation:", error);
-      }
-    } else if (action === 'sign') {
-        try {
-            await ensureClientAndProposalIdsAreGenerated();
-            setTimeout(() => setReviewDialogOpen(true), 100); // Small delay to ensure state update
-        } catch (error) {
-             console.error("Error preparing for signature:", error);
-        }
-    } else if (action === 'share') {
-        setIsSharing(true);
-        try {
-            // Await ensures the ID is there before proceeding
-            if (!generatedProposalId) {
-                await ensureProposalIdIsGenerated();
+    setIsGeneratingIds(true);
+    try {
+        await ensureClientAndProposalIdsAreGenerated();
+        
+        if (action === 'generate') {
+            setGenerateDialogOpen(true);
+        } else if (action === 'sign') {
+            setReviewDialogOpen(true);
+        } else if (action === 'share') {
+            setIsSharing(true);
+            const isSaved = await saveProposal('draft');
+            if (!isSaved) {
+                throw new Error("Failed to save the proposal draft before proceeding.");
             }
 
-            // Use timeout to allow state to update before saving
-            setTimeout(async () => {
-                const isSaved = await saveProposal('draft');
-                if (!isSaved) {
-                    throw new Error("Failed to save the proposal draft before proceeding.");
-                }
+            const finalClientId = generatedClientId || existingClientId;
+            if (!finalClientId || !generatedProposalId || !user) {
+              throw new Error("Missing critical info for sharing link.");
+            }
 
-                const finalClientId = generatedClientId || existingClientId;
-                // Since we just saved, we can be sure generatedProposalId is set
-                if (!finalClientId || !generatedProposalId || !user) {
-                  throw new Error("Missing critical info for sharing link.");
-                }
+            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
 
-                const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-                const expiresAt = new Date();
-                expiresAt.setHours(expiresAt.getHours() + 24);
+            await setDoc(shareableLinkRef, {
+                id: shareableLinkRef.id,
+                proposalId: generatedProposalId,
+                clientId: finalClientId,
+                userId: user.uid,
+                expiresAt: expiresAt.toISOString(),
+                createdAt: serverTimestamp()
+            });
 
-                await setDoc(shareableLinkRef, {
-                    id: shareableLinkRef.id,
-                    proposalId: generatedProposalId,
-                    clientId: finalClientId,
-                    userId: user.uid,
-                    expiresAt: expiresAt.toISOString(),
-                    createdAt: serverTimestamp()
-                });
-
-                const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-                navigator.clipboard.writeText(shareUrl);
-                toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
-                setIsSharing(false);
-            }, 100);
-
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Share Failed", description: error.message });
+            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+            navigator.clipboard.writeText(shareUrl);
+            toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+            setIsSharing(false);
+        }
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Action Failed", description: error.message || 'An unexpected error occurred.' });
+    } finally {
+        setIsGeneratingIds(false);
+        if (action === 'share') {
             setIsSharing(false);
         }
     }
 };
+
   
     const handleSaveSignature = (data: string) => {
         setSignatureData(data);
@@ -1000,13 +985,13 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
                 isSharing={isSharing}
                 isSaving={isSaving}
              >
-                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving || isSharing || isGeneratingIds}>
+                    {(isSaving || isSharing || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Generate Proposal
                 </Button>
             </GenerateProposalDialog>
-            <Button onClick={() => handleActionClick('sign')} disabled={isSaving}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
+                {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
             </Button>
         </div>
@@ -1270,8 +1255,8 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
               <Button variant="outline" asChild className="flex-1">
                   <Link href={prevLink}>Previous</Link>
               </Button>
-              <Button onClick={() => handleActionClick('sign')} disabled={isSaving} className="flex-1">
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds} className="flex-1">
+                {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
               </Button>
           </div>

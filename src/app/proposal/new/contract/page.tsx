@@ -140,7 +140,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }
@@ -437,7 +437,7 @@ function ContractPageContent() {
   const [dispenserFee, setDispenserFee] = useState(250);
 
   const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [isFinalizeOpen, setFinalizeOpen] = useState(false);
+  const [isGenerateDialogOpen, setGenerateDialogOpen] = useState(false);
   
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
@@ -654,10 +654,9 @@ function ContractPageContent() {
         return false;
       }
       
-      const isDraftAndNoClient = status === 'draft' && !existingClientId && !generatedClientId;
+      const isDraftForNewClient = status === 'draft' && !existingClientId && !generatedClientId;
 
-      // Handle saving a draft for a brand new client without creating a client document
-      if (isDraftAndNoClient) {
+      if (isDraftForNewClient) {
         const proposalRef = doc(firestore, 'proposals', proposalId);
         const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData, proposalId };
         const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
@@ -670,7 +669,7 @@ function ContractPageContent() {
             status: 'draft',
             amount: amountToSave,
             updatedAt: serverTimestamp(),
-            clientId: null, // Set to null or leave undefined for new client drafts
+            clientId: null,
         };
          if (campaignName) {
           draftData.sourceLocation = campaignName;
@@ -687,8 +686,6 @@ function ContractPageContent() {
         return true;
       }
 
-
-      // Full save logic for existing clients or for finalizing a subscription
       const finalClientId = generatedClientId || existingClientId;
       if (!finalClientId) {
           toast({ variant: "destructive", title: "Save Failed", description: "Client ID is missing." });
@@ -800,7 +797,7 @@ function ContractPageContent() {
   };
 
 
-const ensureProposalIdIsGenerated = async () => {
+const ensureProposalIdIsGenerated = async (): Promise<string> => {
     if (generatedProposalId) return generatedProposalId;
     if (!firestore) throw new Error("Firestore not ready.");
 
@@ -831,10 +828,9 @@ const ensureProposalIdIsGenerated = async () => {
 };
 
 const ensureClientAndProposalIdsAreGenerated = async () => {
-    const pId = await ensureProposalIdIsGenerated();
+    await ensureProposalIdIsGenerated();
     
     if (existingClientId || generatedClientId) {
-      if (pId && !generatedProposalId) setGeneratedProposalId(pId);
       return;
     };
 
@@ -865,77 +861,60 @@ const ensureClientAndProposalIdsAreGenerated = async () => {
 }
 
 const handleSaveDraft = async () => {
-    try {
-        if (!generatedProposalId) {
-            await ensureProposalIdIsGenerated();
-            setTimeout(() => saveProposal('draft'), 100);
-        } else {
-            await saveProposal('draft');
-        }
-    } catch (error) {
-        console.error("Failed to save draft due to ID generation error.", error);
-    }
+    await ensureProposalIdIsGenerated();
+    await saveProposal('draft');
 }
 
 const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
-    if (action === 'generate') {
-      try {
-        await ensureProposalIdIsGenerated();
-        setFinalizeOpen(true);
-      } catch (error) {
-        console.error("Error preparing for generation:", error);
-      }
-    } else if (action === 'sign') {
-        try {
-            await ensureClientAndProposalIdsAreGenerated();
-            setTimeout(() => setReviewDialogOpen(true), 100);
-        } catch (error) {
-             console.error("Error preparing for signature:", error);
-        }
-    } else if (action === 'share') {
-        setIsSharing(true);
-        try {
-            if (!generatedProposalId) {
-                await ensureProposalIdIsGenerated();
+    setIsGeneratingIds(true);
+    try {
+        await ensureClientAndProposalIdsAreGenerated();
+        
+        if (action === 'generate') {
+            setGenerateDialogOpen(true);
+        } else if (action === 'sign') {
+            setReviewDialogOpen(true);
+        } else if (action === 'share') {
+            setIsSharing(true);
+            const isSaved = await saveProposal('draft');
+            if (!isSaved) {
+                throw new Error("Failed to save the proposal draft before proceeding.");
             }
 
-            // A short delay to allow state update before saving
-            setTimeout(async () => {
-                const isSaved = await saveProposal('draft');
-                if (!isSaved) {
-                    throw new Error("Failed to save the proposal draft before proceeding.");
-                }
+            const finalClientId = generatedClientId || existingClientId;
+            // The generatedProposalId state should be set now by ensureClientAndProposalIdsAreGenerated
+            if (!finalClientId || !generatedProposalId || !user) {
+              throw new Error("Missing critical info for sharing link.");
+            }
 
-                const finalClientId = generatedClientId || existingClientId;
-                if (!finalClientId || !generatedProposalId || !user) {
-                  throw new Error("Missing critical info for sharing link.");
-                }
+            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
 
-                const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-                const expiresAt = new Date();
-                expiresAt.setHours(expiresAt.getHours() + 24);
+            await setDoc(shareableLinkRef, {
+                id: shareableLinkRef.id,
+                proposalId: generatedProposalId,
+                clientId: finalClientId,
+                userId: user.uid,
+                expiresAt: expiresAt.toISOString(),
+                createdAt: serverTimestamp()
+            });
 
-                await setDoc(shareableLinkRef, {
-                    id: shareableLinkRef.id,
-                    proposalId: generatedProposalId,
-                    clientId: finalClientId,
-                    userId: user.uid,
-                    expiresAt: expiresAt.toISOString(),
-                    createdAt: serverTimestamp()
-                });
-
-                const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-                navigator.clipboard.writeText(shareUrl);
-                toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
-                setIsSharing(false);
-            }, 100);
-
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Share Failed", description: error.message });
+            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+            navigator.clipboard.writeText(shareUrl);
+            toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+            setIsSharing(false);
+        }
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Action Failed", description: error.message || 'An unexpected error occurred.' });
+    } finally {
+        setIsGeneratingIds(false);
+        if (action === 'share') {
             setIsSharing(false);
         }
     }
 };
+
   
     const handleSaveSignature = (data: string) => {
         setSignatureData(data);
@@ -1294,5 +1273,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
