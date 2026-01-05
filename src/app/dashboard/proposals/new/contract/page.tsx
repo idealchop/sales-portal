@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home, Share2, ClipboardCopy, FileText as FileTextIcon } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home, Share2, ClipboardCopy, FileText as FileTextIcon, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -436,13 +436,14 @@ function ContractPageContent() {
   const [dispenserFee, setDispenserFee] = useState(250);
 
   const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [isFinalizeOpen, setFinalizeOpen] = useState(false);
+
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
+  
   const [signatureData, setSignatureData] = useState<string | undefined>();
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
-  const [_, setForceUpdate] = useState(0);
   const [isSharing, setIsSharing] = useState(false);
-  const [isFinalizeOpen, setFinalizeOpen] = useState(false);
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -651,10 +652,9 @@ function ContractPageContent() {
         return false;
       }
       
-      const isDraftAndNoClient = status === 'draft' && !existingClientId && !generatedClientId;
+      const isDraftForNewClient = status === 'draft' && !existingClientId && !generatedClientId;
 
-      // Handle saving a draft for a brand new client without creating a client document
-      if (isDraftAndNoClient) {
+      if (isDraftForNewClient) {
         const proposalRef = doc(firestore, 'proposals', proposalId);
         const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData, proposalId };
         const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
@@ -667,7 +667,7 @@ function ContractPageContent() {
             status: 'draft',
             amount: amountToSave,
             updatedAt: serverTimestamp(),
-            clientId: null, // Set to null or leave undefined for new client drafts
+            clientId: null,
         };
          if (campaignName) {
           draftData.sourceLocation = campaignName;
@@ -684,8 +684,6 @@ function ContractPageContent() {
         return true;
       }
 
-
-      // Full save logic for existing clients or for finalizing a subscription
       const finalClientId = generatedClientId || existingClientId;
       if (!finalClientId) {
           toast({ variant: "destructive", title: "Save Failed", description: "Client ID is missing." });
@@ -860,6 +858,7 @@ const handleSaveDraft = async () => {
     try {
         if (!generatedProposalId) {
             await ensureProposalIdIsGenerated();
+            // Use timeout to allow state to update before saving
             setTimeout(() => saveProposal('draft'), 100);
         } else {
             await saveProposal('draft');
@@ -880,40 +879,52 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
     } else if (action === 'sign') {
         try {
             await ensureClientAndProposalIdsAreGenerated();
-            setTimeout(() => setReviewDialogOpen(true), 100);
+            setTimeout(() => setReviewDialogOpen(true), 100); // Small delay to ensure state update
         } catch (error) {
              console.error("Error preparing for signature:", error);
         }
     } else if (action === 'share') {
         setIsSharing(true);
         try {
-            const isSaved = await saveProposal('draft');
-            if (!isSaved) {
-                throw new Error("Failed to save the proposal draft before proceeding.");
+            // Await ensures the ID is there before proceeding
+            if (!generatedProposalId) {
+                await ensureProposalIdIsGenerated();
             }
 
-            const finalClientId = generatedClientId || existingClientId;
-            if (!finalClientId || !generatedProposalId || !user) throw new Error("Missing critical info for sharing link.");
+            // Use timeout to allow state to update before saving
+            setTimeout(async () => {
+                const isSaved = await saveProposal('draft');
+                if (!isSaved) {
+                    throw new Error("Failed to save the proposal draft before proceeding.");
+                }
 
-            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-            const expiresAt = new Date();
-            expiresAt.setHours(expiresAt.getHours() + 24);
+                const finalClientId = generatedClientId || existingClientId;
+                // Since we just saved, we can be sure generatedProposalId is set
+                if (!finalClientId || !generatedProposalId || !user) {
+                  throw new Error("Missing critical info for sharing link.");
+                }
 
-            await setDoc(shareableLinkRef, {
-                id: shareableLinkRef.id,
-                proposalId: generatedProposalId,
-                clientId: finalClientId,
-                userId: user.uid,
-                expiresAt: expiresAt.toISOString(),
-                createdAt: serverTimestamp()
-            });
+                const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+                const expiresAt = new Date();
+                expiresAt.setHours(expiresAt.getHours() + 24);
 
-            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-            navigator.clipboard.writeText(shareUrl);
-            toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+                await setDoc(shareableLinkRef, {
+                    id: shareableLinkRef.id,
+                    proposalId: generatedProposalId,
+                    clientId: finalClientId,
+                    userId: user.uid,
+                    expiresAt: expiresAt.toISOString(),
+                    createdAt: serverTimestamp()
+                });
+
+                const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+                navigator.clipboard.writeText(shareUrl);
+                toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+                setIsSharing(false);
+            }, 100);
+
         } catch (error: any) {
             toast({ variant: "destructive", title: "Share Failed", description: error.message });
-        } finally {
             setIsSharing(false);
         }
     }
@@ -925,7 +936,6 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
             title: "Signature Saved",
             description: "Your signature has been captured and is ready to be included in the final proposal.",
         });
-        setForceUpdate(v => v + 1);
     };
   
   if (!plan || !finalPlanDetails) {
@@ -1277,5 +1287,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
