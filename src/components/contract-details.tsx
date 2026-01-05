@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
 import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
-import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User, Mail, MapPin } from 'lucide-react';
+import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User, Mail, MapPin, ExternalLink } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -439,7 +439,7 @@ export function ContractDetails({
                 <p className="text-xs text-muted-foreground">
                     www.smartrefill.io | customer@smartrefill.io
                 </p>
-                <p className="text-xs text-muted-foreground">
+                 <p className="text-xs text-muted-foreground">
                     SEC. Registration ID: 2025080215620-07
                 </p>
             </div>
@@ -447,24 +447,24 @@ export function ContractDetails({
             <Separator />
 
              <Card>
-                 <div className="grid md:grid-cols-2 items-center gap-6">
-                    <div className="md:order-2">
-                         <CardHeader>
+                <div className="grid md:grid-cols-2 items-center gap-6">
+                    <div className="p-6 md:order-2">
+                        <CardHeader className="p-0 mb-4">
                             <CardTitle>Welcome to Smart Refill</CardTitle>
                             <CardDescription>Your Partner in Water Supply Automation</CardDescription>
                         </CardHeader>
-                        <CardContent className="pt-0">
-                            <div className="space-y-4">
-                                <p className="text-muted-foreground">
+                        <CardContent className="p-0">
+                            <div className="space-y-4 text-muted-foreground">
+                                <p>
                                     Thank you for choosing River Philippines. This proposal outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
                                 </p>
-                                <p className="text-muted-foreground">
+                                <p>
                                     We go beyond delivery—we provide a secure, high-quality hydration system that protects your team's health and optimizes your operational costs.
                                 </p>
                             </div>
                         </CardContent>
                     </div>
-                     <div className="relative min-h-[250px] md:order-1 p-6">
+                     <div className="relative min-h-[250px] p-6 md:order-1">
                         <Image 
                             src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5"
                             alt="Smart Refill App on a phone"
@@ -663,66 +663,34 @@ export function ContractDetails({
             
             <Card>
               <CardHeader>
-                  <CardTitle>Frequently Asked Questions</CardTitle>
-                  <CardDescription>Common questions about the Smart Refill service.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <div className="grid md:grid-cols-2 gap-6 items-start">
-                        <div className="relative aspect-video rounded-lg overflow-hidden">
-                            <Image 
-                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales_Smartreill.png?alt=media&token=b55f3099-38a1-45f9-98d8-cd530fb7b427"
-                                alt="Business professionals in a meeting"
-                                fill
-                                className="object-cover"
-                                data-ai-hint="business meeting"
-                            />
-                        </div>
-                        <Accordion type="single" collapsible defaultValue={faqData[0].question}>
-                            {faqData.map((item) => (
-                            <AccordionItem value={item.question} key={item.question}>
-                                <AccordionTrigger className="text-base font-semibold text-left">
-                                {item.question}
-                                </AccordionTrigger>
-                                <AccordionContent className="pb-6 text-muted-foreground">
-                                {item.answer}
-                                </AccordionContent>
-                            </AccordionItem>
-                            ))}
-                        </Accordion>
-                    </div>
-                </CardContent>
-            </Card>
-
-             <Card>
-                <CardHeader>
-                    <CardTitle>Included in Every Plan</CardTitle>
+                  <CardTitle>Included in Every Plan</CardTitle>
                      <CardDescription>
                         Every subscription plan includes full access to our growing network of partner perks.
                     </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-6 sm:grid-cols-2">
-                    {inclusions.map((item) => (
-                    <div key={item.title} className="flex items-start gap-3">
-                        <div>{item.icon}</div>
-                        <div>
-                        <h3 className="font-semibold text-sm">{item.title}</h3>
-                        <p className="text-xs text-muted-foreground">
-                            {item.description}
-                        </p>
-                        </div>
-                    </div>
-                    ))}
-                </CardContent>
+              </CardHeader>
+              <CardContent className="grid gap-6 sm:grid-cols-2">
+                  {inclusions.map((item) => (
+                  <div key={item.title} className="flex items-start gap-3">
+                      <div>{item.icon}</div>
+                      <div>
+                      <h3 className="font-semibold text-sm">{item.title}</h3>
+                      <p className="text-xs text-muted-foreground">
+                          {item.description}
+                      </p>
+                      </div>
+                  </div>
+                  ))}
+              </CardContent>
               </Card>
 
             <Card>
-                <CardHeader>
-                    <CardTitle>Partner Perks</CardTitle>
-                    <CardDescription>
-                        Enhance your subscription with exclusive benefits from our partners, included with every plan.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-8 sm:grid-cols-2">
+              <CardHeader>
+                  <CardTitle>Partner Perks</CardTitle>
+                  <CardDescription>
+                  Enhance your subscription with exclusive benefits from our partners, included with every plan.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-8 sm:grid-cols-2">
                    {perks.map((perk) => (
                         <div key={perk.partner} className="flex items-start gap-4">
                             {perk.icon}
@@ -733,8 +701,8 @@ export function ContractDetails({
                             </div>
                         </div>
                     ))}
-                </CardContent>
-                <CardFooter>
+              </CardContent>
+              <CardFooter>
                      <div className="text-sm text-muted-foreground space-y-2">
                        <p className="font-semibold text-foreground">Terms:</p>
                        <ul className="list-disc list-inside space-y-1">
@@ -744,6 +712,39 @@ export function ContractDetails({
                     </div>
                 </CardFooter>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Frequently Asked Questions</CardTitle>
+                    <CardDescription>Common questions about the Smart Refill service.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid md:grid-cols-2 gap-6 items-start">
+                          <div className="relative aspect-video rounded-lg overflow-hidden">
+                              <Image 
+                                  src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales_Smartreill.png?alt=media&token=b55f3099-38a1-45f9-98d8-cd530fb7b427"
+                                  alt="Business professionals in a meeting"
+                                  fill
+                                  className="object-cover"
+                                  data-ai-hint="business meeting"
+                              />
+                          </div>
+                          <Accordion type="single" collapsible defaultValue={faqData[0].question}>
+                              {faqData.map((item) => (
+                              <AccordionItem value={item.question} key={item.question}>
+                                  <AccordionTrigger className="text-base font-semibold text-left">
+                                  {item.question}
+                                  </AccordionTrigger>
+                                  <AccordionContent className="pb-6 text-muted-foreground">
+                                  {item.answer}
+                                  </AccordionContent>
+                              </AccordionItem>
+                              ))}
+                          </Accordion>
+                      </div>
+                  </CardContent>
+              </Card>
+
 
             {!isProposalIllustration && (
                 <>
