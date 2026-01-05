@@ -794,20 +794,32 @@ function ContractPageContent() {
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 24);
 
-            await setDoc(shareableLinkRef, {
+            const linkData = {
                 id: shareableLinkRef.id,
                 proposalId: currentProposalId,
                 clientId: finalClientId,
                 expiresAt: expiresAt.toISOString(),
                 createdAt: serverTimestamp()
-            });
+            };
 
-            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-            navigator.clipboard.writeText(shareUrl);
-            toast({
-                title: 'Share Link Copied!',
-                description: 'A link that expires in 24 hours has been copied to your clipboard.',
-            });
+            setDoc(shareableLinkRef, linkData)
+                .then(() => {
+                    const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+                    navigator.clipboard.writeText(shareUrl);
+                    toast({
+                        title: 'Share Link Copied!',
+                        description: 'A link that expires in 24 hours has been copied to your clipboard.',
+                    });
+                })
+                .catch(async (error) => {
+                    console.error("Error creating shareable link:", error);
+                    const permissionError = new FirestorePermissionError({
+                        path: shareableLinkRef.path,
+                        operation: 'create',
+                        requestResourceData: linkData,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                });
         }
 
     } catch (error: any) {
