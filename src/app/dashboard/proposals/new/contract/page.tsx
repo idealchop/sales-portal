@@ -140,7 +140,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }
@@ -455,7 +455,7 @@ function ContractPageContent() {
     const estimatedEmployees = Math.round(liters / (2 * 22));
     if (estimatedEmployees < 5) return '&lt; 5';
     if (estimatedEmployees > 500) return '500+';
-    return `~${'Math.round(estimatedEmployees / 10) * 10'}`;
+    return `~${Math.round(estimatedEmployees / 10) * 10}`;
   };
 
   const plan = useMemo(() => {
@@ -602,7 +602,7 @@ function ContractPageContent() {
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
-const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
+  const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
     if (!finalPlanDetails || !firestore) {
       toast({
         variant: "destructive",
@@ -651,6 +651,7 @@ const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
         const proposalRef = doc(firestore, 'proposals', proposalId);
         const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
         const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
+        
         const draftData: any = {
             id: proposalId,
             userId: proposalOwnerId,
@@ -659,8 +660,11 @@ const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
             status: 'draft',
             amount: amountToSave,
             updatedAt: serverTimestamp(),
-            clientId: existingClientId, // can be undefined
+            clientId: undefined, // Explicitly undefined for new client drafts
         };
+         if (campaignName) {
+          draftData.sourceLocation = campaignName;
+        }
 
         const proposalDoc = await getDoc(proposalRef);
         if (!proposalDoc.exists()) {
@@ -673,13 +677,11 @@ const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
         return true;
       }
 
-      
-      // Full save for 'accepted' or draft for existing client
-      const finalClientId = generatedClientId;
+      const finalClientId = generatedClientId || existingClientId;
       if (!finalClientId) {
-        toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
-        setIsSaving(false);
-        return false;
+          toast({ variant: "destructive", title: "Save Failed", description: "Client ID is missing." });
+          setIsSaving(false);
+          return false;
       }
       
       let downloadURL = '';
@@ -701,18 +703,18 @@ const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
         contactPhone: contactPhone,
         address: address,
         clientType: clientType || 'sme',
-        onboardingToken: onboardingToken,
       };
-
+      
       if (isSubscribing) {
+          clientData.onboardingToken = onboardingToken;
           clientData.status = 'active';
           clientData.paymentStatus = isCustomPlan ? 'Paid' : 'Paid';
           clientData.subscription = {
             ...finalPlanDetails.plan,
             dateSigned: new Date().toISOString()
           }
-      } else {
-          clientData.status = 'pending';
+      } else if (status === 'draft') {
+         clientData.status = clientData.status || 'pending';
       }
 
       const clientDoc = await getDoc(clientRef);
@@ -788,7 +790,7 @@ const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
 
 const ensureProposalIdIsGenerated = async () => {
     if (!firestore) throw new Error("Firestore not ready.");
-    if (generatedProposalId) return;
+    if (generatedProposalId) return generatedProposalId;
 
     setIsGeneratingIds(true);
     try {
@@ -800,7 +802,9 @@ const ensureProposalIdIsGenerated = async () => {
             transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
             return newId;
         });
-        setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
+        const newId = String(newProposalNumber).padStart(10, '0');
+        setGeneratedProposalId(newId);
+        return newId;
     } catch (e) {
         console.error("Error generating Proposal ID:", e);
         toast({
@@ -815,11 +819,12 @@ const ensureProposalIdIsGenerated = async () => {
 };
 
 const ensureClientAndProposalIdsAreGenerated = async () => {
-    if (!generatedProposalId) {
-        await ensureProposalIdIsGenerated();
-    }
+    const pId = generatedProposalId || await ensureProposalIdIsGenerated();
     
-    if (existingClientId || generatedClientId) return;
+    if (existingClientId || generatedClientId) {
+      if (pId && !generatedProposalId) setGeneratedProposalId(pId);
+      return;
+    };
 
     if (!firestore) throw new Error("Firestore not ready.");
     setIsGeneratingIds(true);
@@ -851,11 +856,11 @@ const handleSaveDraft = async () => {
     try {
         if (!generatedProposalId) {
             await ensureProposalIdIsGenerated();
+             // Use a short timeout to allow state to update before saving
+            setTimeout(() => saveProposal('draft'), 100);
+        } else {
+            await saveProposal('draft');
         }
-        
-        setTimeout(async () => {
-             await saveProposal('draft');
-        }, 100);
     } catch (error) {
         console.error("Failed to save draft due to ID generation error.", error);
     }
