@@ -602,7 +602,7 @@ function ContractPageContent() {
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
-  const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
+const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
     if (!finalPlanDetails || !firestore) {
       toast({
         variant: "destructive",
@@ -644,23 +644,37 @@ function ContractPageContent() {
         setIsSaving(false);
         return false;
       }
+      
+      const isDraftAndNoClient = status === 'draft' && !existingClientId;
 
-      if (status === 'draft') {
+      if (isDraftAndNoClient) {
         const proposalRef = doc(firestore, 'proposals', proposalId);
-        const draftData = {
-          ...finalPlanDetails,
-          clientId: existingClientId, // Drafts can have an existing client ID
-          status: 'draft',
-          userId: proposalOwnerId,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
+        const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
+        const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
+        const draftData: any = {
+            id: proposalId,
+            userId: proposalOwnerId,
+            title: proposalContentToSave.summaryTitle,
+            content: JSON.stringify(proposalContentToSave),
+            status: 'draft',
+            amount: amountToSave,
+            updatedAt: serverTimestamp(),
+            clientId: existingClientId, // can be undefined
         };
+
+        const proposalDoc = await getDoc(proposalRef);
+        if (!proposalDoc.exists()) {
+            draftData.createdAt = serverTimestamp();
+        }
+
         await setDoc(proposalRef, draftData, { merge: true });
         toast({ title: "Draft Saved!", description: "Your proposal draft has been successfully saved." });
+        setIsSaving(false);
         return true;
       }
+
       
-      // Full save for 'accepted' or client-creating 'draft'
+      // Full save for 'accepted' or draft for existing client
       const finalClientId = generatedClientId;
       if (!finalClientId) {
         toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
@@ -746,6 +760,8 @@ function ContractPageContent() {
             title: "Subscription Successful!",
             description: `Your proposal for ${companyName} has been processed.`,
         });
+      } else if (status === 'draft') {
+        toast({ title: "Draft Saved!", description: "Your proposal draft has been successfully saved." });
       }
       
       if (isSubscribing) {
@@ -799,7 +815,9 @@ const ensureProposalIdIsGenerated = async () => {
 };
 
 const ensureClientAndProposalIdsAreGenerated = async () => {
-    await ensureProposalIdIsGenerated();
+    if (!generatedProposalId) {
+        await ensureProposalIdIsGenerated();
+    }
     
     if (existingClientId || generatedClientId) return;
 
@@ -831,15 +849,12 @@ const ensureClientAndProposalIdsAreGenerated = async () => {
 
 const handleSaveDraft = async () => {
     try {
-        await ensureProposalIdIsGenerated();
+        if (!generatedProposalId) {
+            await ensureProposalIdIsGenerated();
+        }
+        
         setTimeout(async () => {
-            const isSaved = await saveProposal('draft');
-            if (isSaved) {
-                toast({
-                    title: "Draft Saved",
-                    description: "Your proposal draft has been successfully saved.",
-                });
-            }
+             await saveProposal('draft');
         }, 100);
     } catch (error) {
         console.error("Failed to save draft due to ID generation error.", error);
@@ -850,14 +865,18 @@ const handleActionClick = async (action: 'sign' | 'share') => {
     if (action === 'share') setIsSharing(true);
 
     try {
-        await ensureClientAndProposalIdsAreGenerated();
+        if (action === 'sign' && !existingClientId) {
+            await ensureClientAndProposalIdsAreGenerated();
+        } else if (!generatedProposalId) {
+            await ensureProposalIdIsGenerated();
+        }
         
         setTimeout(async () => {
             const isSaved = await saveProposal('draft');
             if (!isSaved) {
                 throw new Error("Failed to save the proposal draft before proceeding.");
             }
-
+        
             if (action === 'share') {
                 const finalClientId = generatedClientId || existingClientId;
                 if (!finalClientId || !generatedProposalId || !user) throw new Error("Failed to secure IDs or user for sharing.");
@@ -977,7 +996,7 @@ const handleActionClick = async (action: 'sign' | 'share') => {
             </GenerateProposalDialog>
             <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Review & Sign
+                Review &amp; Sign
             </Button>
         </div>
       </div>
