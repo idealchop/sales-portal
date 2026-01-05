@@ -437,6 +437,7 @@ function ContractPageContent() {
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [_, setForceUpdate] = useState(0);
   const [isSharing, setIsSharing] = useState(false);
+  const [isFinalizeOpen, setFinalizeOpen] = useState(false);
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -869,26 +870,27 @@ const handleSaveDraft = async () => {
     }
 }
 
-const handleActionClick = async (action: 'sign' | 'share') => {
+const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
     if (action === 'share') setIsSharing(true);
+    if (action === 'finalize') setIsGeneratingIds(true);
 
     try {
-        if (action === 'sign' && !existingClientId) {
-            await ensureClientAndProposalIdsAreGenerated();
-        } else if (!generatedProposalId) {
+        if (!generatedProposalId) {
             await ensureProposalIdIsGenerated();
         }
-        
+
+        // Use a short timeout to allow state update to propagate before opening dialogs
         setTimeout(async () => {
-            const isSaved = await saveProposal('draft');
-            if (!isSaved) {
-                throw new Error("Failed to save the proposal draft before proceeding.");
-            }
-        
-            if (action === 'share') {
+            if (action === 'finalize') {
+                setFinalizeOpen(true);
+            } else if (action === 'share') {
+                const isSaved = await saveProposal('draft');
+                if (!isSaved) {
+                    throw new Error("Failed to save the proposal draft before proceeding.");
+                }
                 const finalClientId = generatedClientId || existingClientId;
                 if (!finalClientId || !generatedProposalId || !user) throw new Error("Failed to secure IDs or user for sharing.");
-
+                
                 const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
                 const expiresAt = new Date();
                 expiresAt.setHours(expiresAt.getHours() + 24);
@@ -910,9 +912,13 @@ const handleActionClick = async (action: 'sign' | 'share') => {
                     description: 'A link that expires in 24 hours has been copied to your clipboard.',
                 });
             } else if (action === 'sign') {
-                setReviewDialogOpen(true);
+                if (!existingClientId && !generatedClientId) {
+                    await ensureClientAndProposalIdsAreGenerated();
+                }
+                 setTimeout(() => setReviewDialogOpen(true), 100);
             }
         }, 100);
+
     } catch (error: any) {
         console.error("Error in action handler:", error);
         toast({
@@ -922,6 +928,7 @@ const handleActionClick = async (action: 'sign' | 'share') => {
         });
     } finally {
         if (action === 'share') setIsSharing(false);
+        if (action === 'finalize') setIsGeneratingIds(false);
     }
 };
 
@@ -990,18 +997,22 @@ const handleActionClick = async (action: 'sign' | 'share') => {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-             <GenerateProposalDialog 
-                finalPlanDetails={finalPlanDetails} 
-                onShare={() => handleActionClick('share')} 
-                onSaveDraft={handleSaveDraft}
-                isSharing={isSharing}
-                isSaving={isSaving}
-             >
-                <Button id="generate-proposal-trigger" variant="outline" disabled={isGeneratingIds || isSharing || isSaving}>
-                    {(isGeneratingIds || isSharing || isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Finalize
-                </Button>
-            </GenerateProposalDialog>
+             <Dialog open={isFinalizeOpen} onOpenChange={setFinalizeOpen}>
+                <DialogTrigger asChild>
+                    <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('finalize')} disabled={isGeneratingIds || isSharing || isSaving}>
+                        {(isGeneratingIds || isSharing || isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Finalize
+                    </Button>
+                </DialogTrigger>
+                <GenerateProposalDialog 
+                    finalPlanDetails={finalPlanDetails} 
+                    onShare={() => handleActionClick('share')} 
+                    onSaveDraft={handleSaveDraft}
+                    isSharing={isSharing}
+                    isSaving={isSaving}
+                >
+                </GenerateProposalDialog>
+             </Dialog>
             <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
