@@ -504,7 +504,7 @@ function ContractPageContent() {
   const customLiters = searchParams.get('liters');
   const customCost = searchParams.get('cost');
   const customFreq = searchParams.get('freq');
-  const customType = searchParams.get('clientType');
+  const customType = searchParams.get('type');
   const companyName = searchParams.get('companyName') || '';
   const contactName = searchParams.get('contactName') || '';
   const contactEmail = searchParams.get('contactEmail') || '';
@@ -846,47 +846,35 @@ function ContractPageContent() {
   };
 
 
-  const handleActionClick = async () => {
+  const handleActionClick = async (action: 'generate' | 'sign') => {
     if (!firestore) return;
     setIsGeneratingIds(true);
 
     try {
         await runTransaction(firestore, async (transaction) => {
-            // --- All READ operations must come first ---
             const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            let clientCounterRef;
-            if (!existingClientId && !generatedClientId) {
-                clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-            }
-            
             const proposalCounterSnap = await transaction.get(proposalCounterRef);
-            let clientCounterSnap;
-            if (clientCounterRef) {
-                clientCounterSnap = await transaction.get(clientCounterRef);
-            }
-            
-            // --- All WRITE operations must come after all reads ---
-            let finalClientId = generatedClientId;
-            
-            // Calculate new proposal ID
             const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
             const newProposalId = String(newProposalNumber).padStart(10, '0');
-
-            // Set the new proposal ID in state and in the transaction
-            setGeneratedProposalId(newProposalId);
+            
             transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+            setGeneratedProposalId(newProposalId);
 
-            // Calculate new client ID if necessary
-            if (clientCounterSnap) {
+            if (action === 'sign' && !existingClientId && !generatedClientId) {
+                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                const clientCounterSnap = await transaction.get(clientCounterRef);
                 const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
                 const year = new Date().getFullYear().toString().slice(-2);
-                finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
                 
-                // Set the new client ID in state and in the transaction
-                setGeneratedClientId(finalClientId);
                 transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                setGeneratedClientId(newClientId);
             }
         });
+        
+        if (action === 'sign') {
+            setReviewDialogOpen(true);
+        }
 
     } catch (error: any) {
         console.error("Error generating IDs:", error);
@@ -968,12 +956,12 @@ function ContractPageContent() {
                 <Link href={prevLink}>Previous</Link>
             </Button>
              <GenerateProposalDialog finalPlanDetails={finalPlanDetails}>
-                <Button variant="outline" onClick={handleActionClick} disabled={isGeneratingIds}>
+                <Button variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds}>
                     {isGeneratingIds && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Generate Proposal
                 </Button>
             </GenerateProposalDialog>
-            <Button onClick={() => { handleActionClick().then(() => setReviewDialogOpen(true)) }} disabled={isSaving || isGeneratingIds}>
+            <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
             </Button>
@@ -1010,7 +998,7 @@ function ContractPageContent() {
                         <Card className="bg-primary text-primary-foreground">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">
-                                    {isFlowPlan ? 'Usage-Based' : (isCustomPlan ? 'Price per Liter' : 'Total Liters')}
+                                    {isFlowPlan ? 'Usage-Based' : (isCustomPlan ? 'Price per Liter' : 'Premium Liters Included')}
                                 </CardTitle>
                                 <Waves className="h-4 w-4 text-primary-foreground/70" />
                             </CardHeader>
@@ -1251,7 +1239,7 @@ function ContractPageContent() {
               <Button variant="outline" asChild className="flex-1">
                   <Link href={prevLink}>Previous</Link>
               </Button>
-              <Button onClick={() => { handleActionClick().then(() => setReviewDialogOpen(true)) }} disabled={isSaving || isGeneratingIds} className="flex-1">
+              <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds} className="flex-1">
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
             </Button>

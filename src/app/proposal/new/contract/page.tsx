@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -49,7 +49,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
 import Image from 'next/image';
-import { allPlans, deliveryFrequencies, gallonRotationData } from '../plans/page';
+import { allPlans, deliveryFrequencies, gallonRotationData } from '@/app/proposal/new/plans/page';
 import { PaymentMethods } from '@/components/payment-methods';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import type { Client } from '@/lib/definitions';
@@ -637,45 +637,35 @@ function ContractPageContent() {
   };
 
 
-  const handleReviewAndSignClick = async () => {
+  const handleActionClick = async (action: 'generate' | 'sign') => {
     if (!firestore) return;
     setIsGeneratingIds(true);
 
     try {
         await runTransaction(firestore, async (transaction) => {
             const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-            
             const proposalCounterSnap = await transaction.get(proposalCounterRef);
-            let clientCounterSnap;
-            if (!existingClientId && !generatedClientId) {
-                clientCounterSnap = await transaction.get(clientCounterRef);
-            }
-
-            let finalClientId = generatedClientId;
-            let newClientNumber;
-            if (clientCounterSnap && clientCounterSnap.exists()) {
-                newClientNumber = clientCounterSnap.data().currentId + 1;
-                const year = new Date().getFullYear().toString().slice(-2);
-                finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-            } else if (clientCounterSnap) {
-                 newClientNumber = 1;
-                 const year = new Date().getFullYear().toString().slice(-2);
-                 finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-            }
-            
             const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
             const newProposalId = String(newProposalNumber).padStart(10, '0');
-
-            if (newClientNumber) {
-                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                setGeneratedClientId(finalClientId);
-            }
+            
             transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
             setGeneratedProposalId(newProposalId);
-        });
 
-        setDialogOpen(true);
+            if (action === 'sign' && !existingClientId && !generatedClientId) {
+                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                const clientCounterSnap = await transaction.get(clientCounterRef);
+                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
+                const year = new Date().getFullYear().toString().slice(-2);
+                const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                
+                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                setGeneratedClientId(newClientId);
+            }
+        });
+        
+        if (action === 'sign') {
+            setDialogOpen(true);
+        }
 
     } catch (error: any) {
         console.error("Error generating IDs:", error);
@@ -757,7 +747,7 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-            <Button onClick={handleReviewAndSignClick} disabled={isSaving || isGeneratingIds}>
+            <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review & Sign
             </Button>
@@ -1027,7 +1017,7 @@ function ContractPageContent() {
               <Button variant="outline" asChild className="flex-1">
                   <Link href={prevLink}>Previous</Link>
               </Button>
-              <Button onClick={handleReviewAndSignClick} disabled={isSaving || isGeneratingIds} className="flex-1">
+              <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds} className="flex-1">
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
               </Button>
