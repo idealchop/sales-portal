@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, getDocs, query, onSnapshot, FirestoreError, collectionGroup } from 'firebase/firestore';
+import { collection, query, onSnapshot, FirestoreError } from 'firebase/firestore';
 import { useFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { Proposal } from '@/lib/definitions';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -26,7 +26,7 @@ export function useAllProposals(): UseAllProposalsResult {
 
     setIsLoading(true);
     
-    const proposalsQuery = query(collectionGroup(firestore, 'proposals'));
+    const proposalsQuery = query(collection(firestore, 'proposals'));
 
     const unsubscribe = onSnapshot(proposalsQuery, 
       (querySnapshot) => {
@@ -43,7 +43,6 @@ export function useAllProposals(): UseAllProposalsResult {
             allProposals.push({
                 ...(proposalData as Proposal),
                 id: doc.id,
-                clientId: doc.ref.parent.parent?.id || '',
                 createdAt: createdAtString,
                 amount: proposalData.amount || 0, // Ensure amount is always present
             });
@@ -81,3 +80,5 @@ export function useAllProposals(): UseAllProposalsResult {
     error
   };
 }
+
+    

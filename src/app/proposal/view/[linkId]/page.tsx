@@ -49,7 +49,7 @@ function SharedProposalContent() {
                     throw new Error("This sharing link has expired.");
                 }
                 
-                const proposalDocRef = doc(firestore, `clients/${linkData.clientId}/proposals/${linkData.proposalId}`);
+                const proposalDocRef = doc(firestore, 'proposals', linkData.proposalId);
                 const proposalDocSnap = await getDoc(proposalDocRef);
                 
                 if (!proposalDocSnap.exists()) {
@@ -195,3 +195,5 @@ export default function SharedProposalPage() {
         </Suspense>
     );
 }
+
+    

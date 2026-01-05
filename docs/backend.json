@@ -469,7 +469,7 @@
       },
       "description": "Stores client details. Includes client's core information."
     },
-    "/clients/{clientId}/proposals/{proposalId}": {
+    "/proposals/{proposalId}": {
       "schema": {
         "$ref": "#/entities/Proposal"
       },
@@ -513,3 +513,5 @@
     }
   }
 }
+
+    

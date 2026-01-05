@@ -27,21 +27,13 @@ service cloud.firestore {
         return userProfile.team == managerTeamName;
     }
 
-    function isViewingSharedProposal() {
-      let linkId = request.query.linkId;
-      return exists(
-        /databases/$(database)/documents/shareable_links/$(linkId)
-      ) && get(
-        /databases/$(database)/documents/shareable_links/$(linkId)
-      ).data.expiresAt > request.time;
+    function isViewingSharedProposal(linkId) {
+      let link = get(/databases/$(database)/documents/shareable_links/$(linkId)).data;
+      return link.expiresAt > request.time;
     }
     
-    function getSharedProposalClientId() {
-      return get(/databases/$(database)/documents/shareable_links/$(request.query.linkId)).data.clientId;
-    }
-    
-    function getSharedProposalId() {
-       return get(/databases/$(database)/documents/shareable_links/$(request.query.linkId)).data.proposalId;
+    function getSharedProposalData(linkId) {
+       return get(/databases/$(database)/documents/shareable_links/$(linkId)).data;
     }
 
     match /sales/{userId} {
@@ -64,9 +56,17 @@ service cloud.firestore {
     }
     
     match /shareable_links/{linkId} {
-      allow get: if true; // Public read to verify the link
-      allow create: if isSignedIn(); // Only authenticated users can create links
-      allow list, update, delete: if false; // Links are immutable from the client
+      allow get: if true;
+      allow create: if isSignedIn();
+      allow list, update, delete: if false;
+    }
+    
+    match /proposals/{proposalId} {
+        allow read: if isSignedIn() || (request.query.linkId != null && isViewingSharedProposal(request.query.linkId) && proposalId == getSharedProposalData(request.query.linkId).proposalId);
+        allow list: if isSignedIn();
+        allow create;
+        allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
+        allow delete: if false;
     }
 
     match /commissions/{commissionId} {
@@ -76,29 +76,15 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      allow read: if isSignedIn() || (isViewingSharedProposal() && clientId == getSharedProposalClientId());
+      allow read: if isSignedIn() || (request.query.linkId != null && isViewingSharedProposal(request.query.linkId) && clientId == getSharedProposalData(request.query.linkId).clientId);
+      allow list: if isSignedIn();
       allow create;
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
       allow delete: if false;
       
-      match /proposals/{proposalId} {
-        allow read: if isSignedIn() || (isViewingSharedProposal() && clientId == getSharedProposalClientId() && proposalId == getSharedProposalId());
-        allow create;
-        allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
-        allow delete: if false;
-      }
-      
       match /remarks/{remarkId} {
         allow read, create: if isSignedIn();
       }
-    }
-    
-    match /{path=**}/proposals/{proposalId} {
-      allow list: if isSignedIn();
-    }
-    
-    match /{path=**}/clients/{clientId} {
-      allow list: if isSignedIn();
     }
 
     match /users/{userId}/notifications/{notificationId} {
@@ -106,3 +92,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

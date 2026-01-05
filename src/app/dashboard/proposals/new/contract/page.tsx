@@ -715,7 +715,7 @@ function ContractPageContent() {
         newProposalData.paymentProofUrl = downloadURL;
       }
 
-      const proposalRef = doc(firestore, `clients/${finalClientId}/proposals`, proposalId);
+      const proposalRef = doc(firestore, "proposals", proposalId);
       await setDoc(proposalRef, newProposalData, { merge: true });
   
       toast({
@@ -1189,3 +1189,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
