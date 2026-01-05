@@ -90,7 +90,7 @@ const addons = [
 ];
 
 
-function GenerateProposalDialog({ finalPlanDetails, children, onShare }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void }) {
+function GenerateProposalDialog({ finalPlanDetails, children, onShare, isSharing }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void, isSharing: boolean }) {
     const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
@@ -189,8 +189,9 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare }: { final
                 <DialogFooter className="sm:justify-between items-center">
                     <p className="text-xs text-muted-foreground text-left">This proposal is valid for 30 days. Prices and terms are subject to change thereafter.</p>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={onShare}>
-                            <Share2 className="mr-2 h-4 w-4" /> Share Link
+                        <Button variant="outline" onClick={onShare} disabled={isSharing}>
+                            {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
+                            {isSharing ? 'Generating...' : 'Share Link'}
                         </Button>
                         <Button onClick={handleDownloadPdf} disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
@@ -431,6 +432,7 @@ function ContractPageContent() {
   const [signatureData, setSignatureData] = useState<string | undefined>();
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [_, setForceUpdate] = useState(0);
+  const [isSharing, setIsSharing] = useState(false);
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -743,6 +745,7 @@ function ContractPageContent() {
 
 
   const handleActionClick = async (action: 'generate' | 'sign' | 'share') => {
+    if (action === 'share') setIsSharing(true);
     setIsGeneratingIds(true);
     try {
         if (!firestore) throw new Error("Firestore not initialized.");
@@ -756,11 +759,18 @@ function ContractPageContent() {
                 const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
                 const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
                 
-                const reads = [];
+                const reads: Promise<any>[] = [];
+                let proposalCounterSnap, clientCounterSnap;
+
                 if (!currentProposalId) reads.push(transaction.get(proposalCounterRef));
                 if (!existingClientId && !currentClientId) reads.push(transaction.get(clientCounterRef));
 
-                const [proposalCounterSnap, clientCounterSnap] = await Promise.all(reads);
+                const snapshots = await Promise.all(reads);
+                
+                let snapIndex = 0;
+                if (!currentProposalId) proposalCounterSnap = snapshots[snapIndex++];
+                if (!existingClientId && !currentClientId) clientCounterSnap = snapshots[snapIndex];
+
 
                 if (proposalCounterSnap) {
                     const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
@@ -800,7 +810,7 @@ function ContractPageContent() {
                 createdAt: serverTimestamp()
             };
 
-            setDoc(shareableLinkRef, linkData)
+            await setDoc(shareableLinkRef, linkData)
                 .then(() => {
                     const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
                     navigator.clipboard.writeText(shareUrl);
@@ -812,7 +822,7 @@ function ContractPageContent() {
                 .catch(async (error) => {
                     console.error("Error creating shareable link:", error);
                     const permissionError = new FirestorePermissionError({
-                        path: shareableLinkRef.path,
+                        path: `users/${user.uid}/shareable_links/${shareableLinkRef.id}`,
                         operation: 'create',
                         requestResourceData: linkData,
                     });
@@ -829,6 +839,7 @@ function ContractPageContent() {
         });
     } finally {
         setIsGeneratingIds(false);
+        if(action === 'share') setIsSharing(false);
     }
 };
   
@@ -896,9 +907,9 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-             <GenerateProposalDialog finalPlanDetails={finalPlanDetails} onShare={() => handleActionClick('share')}>
-                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds}>
-                    {isGeneratingIds && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+             <GenerateProposalDialog finalPlanDetails={finalPlanDetails} onShare={() => handleActionClick('share')} isSharing={isSharing}>
+                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds || isSharing}>
+                    {(isGeneratingIds || isSharing) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Finalize
                 </Button>
             </GenerateProposalDialog>
