@@ -140,7 +140,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, isSharing
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }
@@ -157,7 +157,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, isSharing
             setIsDownloading(false);
         }
     };
-
+    
     if (!finalPlanDetails) return null;
 
     return (
@@ -451,7 +451,7 @@ function ContractPageContent() {
     const estimatedEmployees = Math.round(liters / (2 * 22));
     if (estimatedEmployees < 5) return '&lt; 5';
     if (estimatedEmployees > 500) return '500+';
-    return `~${Math.round(estimatedEmployees / 10) * 10}`;
+    return `~${'Math.round(estimatedEmployees / 10) * 10'}`;
   };
 
   const plan = useMemo(() => {
@@ -754,40 +754,33 @@ function ContractPageContent() {
         let currentProposalId = generatedProposalId;
         let currentClientId = generatedClientId;
 
-        if (!currentProposalId || (!currentClientId && !existingClientId)) {
-             await runTransaction(firestore, async (transaction) => {
+        await runTransaction(firestore, async (transaction) => {
+            let proposalCounterSnap, clientCounterSnap;
+
+            if (!currentProposalId) {
                 const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+                proposalCounterSnap = await transaction.get(proposalCounterRef);
+            }
+            if (!existingClientId && !currentClientId) {
                 const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                
-                const reads: Promise<any>[] = [];
-                let proposalCounterSnap, clientCounterSnap;
+                clientCounterSnap = await transaction.get(clientCounterRef);
+            }
 
-                if (!currentProposalId) reads.push(transaction.get(proposalCounterRef));
-                if (!existingClientId && !currentClientId) reads.push(transaction.get(clientCounterRef));
-
-                const snapshots = await Promise.all(reads);
-                
-                let snapIndex = 0;
-                if (!currentProposalId) proposalCounterSnap = snapshots[snapIndex++];
-                if (!existingClientId && !currentClientId) clientCounterSnap = snapshots[snapIndex];
-
-
-                if (proposalCounterSnap) {
-                    const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-                    currentProposalId = String(newProposalNumber).padStart(10, '0');
-                    transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-                    setGeneratedProposalId(currentProposalId);
-                }
-                
-                if (clientCounterSnap) {
-                    const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
-                    const year = new Date().getFullYear().toString().slice(-2);
-                    currentClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-                    transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                    setGeneratedClientId(currentClientId);
-                }
-            });
-        }
+            if (proposalCounterSnap) {
+                const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+                currentProposalId = String(newProposalNumber).padStart(10, '0');
+                transaction.set(doc(firestore, 'counters', 'proposalCounter'), { currentId: newProposalNumber }, { merge: true });
+                setGeneratedProposalId(currentProposalId);
+            }
+            
+            if (clientCounterSnap) {
+                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
+                const year = new Date().getFullYear().toString().slice(-2);
+                currentClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                transaction.set(doc(firestore, 'counters', 'clientCounter'), { currentId: newClientNumber }, { merge: true });
+                setGeneratedClientId(currentClientId);
+            }
+        });
         
         const finalClientId = currentClientId || existingClientId;
         if (!finalClientId || !currentProposalId) throw new Error("Failed to secure IDs for proposal.");
@@ -798,7 +791,7 @@ function ContractPageContent() {
         } else if (action === 'sign') {
             setReviewDialogOpen(true);
         } else if (action === 'share') {
-            const shareableLinkRef = doc(collection(firestore, `shareable_links`));
+            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 24);
 

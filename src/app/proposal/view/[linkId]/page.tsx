@@ -115,7 +115,7 @@ function SharedProposalContent() {
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }

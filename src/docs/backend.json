@@ -439,6 +439,10 @@
                 "type": "string",
                 "description": "The ID of the client associated with the proposal."
             },
+            "userId": {
+                "type": "string",
+                "description": "The ID of the user who created the link."
+            },
             "expiresAt": {
                 "type": "string",
                 "format": "date-time",
@@ -450,7 +454,7 @@
                 "description": "The timestamp when this link was created."
             }
         },
-        "required": ["id", "proposalId", "clientId", "expiresAt", "createdAt"]
+        "required": ["id", "proposalId", "clientId", "userId", "expiresAt", "createdAt"]
     }
   },
   "auth": {
@@ -501,11 +505,11 @@
       },
       "description": "Stores counters for sequential ID generation."
     },
-    "/users/{userId}/shareable_links/{linkId}": {
-        "schema": {
-            "$ref": "#/entities/ShareableLink"
-        },
-        "description": "Stores secure, expiring links for sharing proposals created by a specific user."
+    "/shareable_links/{linkId}": {
+      "schema": {
+        "$ref": "#/entities/ShareableLink"
+      },
+      "description": "Stores secure, expiring links for sharing proposals."
     }
   }
 }
