@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
 import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
 import { Logo } from '@/components/logo';
-import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot } from 'lucide-react';
+import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
 import Image from 'next/image';
 
@@ -401,7 +401,7 @@ export function ContractDetails({
                     <h2 className="text-2xl font-bold text-primary">River Tech Group, Inc.</h2>
                     <p className="text-muted-foreground">Operating as Smart Refill</p>
                     <p className="text-xs text-muted-foreground">123 Innovation Drive, BGC, Taguig, Metro Manila, Philippines</p>
-                    <p className="text-xs text-muted-foreground">www.smartrefill.io</p>
+                    <p className="text-xs text-muted-foreground">smartrefill.io</p>
                 </div>
                 <div className="text-right">
                     <p className="text-xl font-bold">Sales Illustration</p>
@@ -411,6 +411,24 @@ export function ContractDetails({
             </div>
             
             <Separator />
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Welcome to Smart Refill</CardTitle>
+                    <CardDescription>
+                        A smarter, more reliable way to manage your business's water supply.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">
+                        Thank you for choosing Smart Refill. This proposal outlines how our automated solution helps you achieve consistent water availability, lower operational costs, and complete visibility over your consumption.
+                    </p>
+                    <p className="text-muted-foreground mt-4">
+                        We go beyond delivery — we help you save time, cut inefficiencies, and ensure every liter counts.
+                    </p>
+                </CardContent>
+            </Card>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
@@ -500,18 +518,6 @@ export function ContractDetails({
             </div>
 
             <Card>
-                <CardContent className="pt-6">
-                    <p className="text-muted-foreground">
-                        Thank you for choosing Smart Refill as your trusted partner in water supply automation.
-                        This proposal presents how our smart, reliable, and fully compliant solution helps your business achieve consistent water availability, lower operational costs, and complete visibility over your consumption and deliveries.
-                    </p>
-                    <p className="text-muted-foreground mt-4">
-                        At Smart Refill, we go beyond water delivery — we help you save time, cut inefficiencies, and ensure every liter counts. Our platform is built to keep your operations running smoothly, so you can focus on growth, performance, and customer satisfaction.
-                    </p>
-                </CardContent>
-            </Card>
-
-             <Card>
                 <CardHeader>
                     <CardTitle>Subscription Summary &amp; Cost Breakdown</CardTitle>
                     <CardDescription>This section outlines the specific services and costs for this agreement, based on a {billingCycleLabel.toLowerCase()} payment schedule.</CardDescription>
