@@ -408,126 +408,129 @@ export function ContractDetails({
             
             <Separator />
 
-            <Card>
-                <div className="grid md:grid-cols-2 items-center">
-                     <div className="relative min-h-[250px] hidden md:block">
-                        <Image 
-                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/River%20Mobile%2Flanding%20page%20image.png?alt=media&token=bce76780-73c9-4b4c-8e6f-83e5234d337a"
-                            alt="Smart Refill App on a phone"
-                            fill
-                            className="object-contain rounded-l-lg p-8"
-                            data-ai-hint="app interface"
-                        />
-                    </div>
-                    <div className="p-6">
-                        <CardHeader className="p-0">
-                            <CardTitle>Your Partner in Water Supply Automation</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 p-0">
-                             <p className="text-muted-foreground">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Welcome to Smart Refill</CardTitle>
+                    <CardDescription>Your Partner in Water Supply Automation</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                    <div className="grid md:grid-cols-2 items-center gap-6">
+                         <div className="relative min-h-[250px]">
+                            <Image 
+                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5"
+                                alt="Smart Refill App on a phone"
+                                fill
+                                className="object-contain rounded-lg p-8"
+                                data-ai-hint="app interface"
+                            />
+                        </div>
+                        <div className="space-y-4">
+                            <p className="text-muted-foreground">
                                 Thank you for choosing River Philippines. This proposal outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
                             </p>
-                            <p className="text-muted-foreground mt-4">
+                            <p className="text-muted-foreground">
                                 We go beyond delivery—we provide a secure, high-quality hydration system that protects your team's health and optimizes your operational costs.
                             </p>
-                        </CardContent>
+                        </div>
                     </div>
-                </div>
+                </CardContent>
             </Card>
 
 
             <div className="grid grid-cols-1 gap-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Client Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                         <div className="flex items-start gap-3">
-                            <Building className="h-5 w-5 text-muted-foreground mt-1" />
-                            <div>
-                                <p className="text-xs text-muted-foreground">Company Name</p>
-                                <p className="font-semibold">{client.companyName || "N/A"}</p>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Client Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 gap-y-4 text-sm">
+                             <div className="flex items-start gap-3">
+                                <Building className="h-5 w-5 text-muted-foreground mt-1" />
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Company Name</p>
+                                    <p className="font-semibold">{client.companyName || "N/A"}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <User className="h-5 w-5 text-muted-foreground mt-1" />
-                            <div>
-                                <p className="text-xs text-muted-foreground">Contact Person</p>
-                                <p className="font-semibold">{client.contactName || "N/A"}</p>
+                            <div className="flex items-start gap-3">
+                                <User className="h-5 w-5 text-muted-foreground mt-1" />
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Contact Person</p>
+                                    <p className="font-semibold">{client.contactName || "N/A"}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <Mail className="h-5 w-5 text-muted-foreground mt-1" />
-                            <div>
-                                <p className="text-xs text-muted-foreground">Email</p>
-                                <p className="font-semibold">{client.contactEmail || "N/A"}</p>
+                            <div className="flex items-start gap-3">
+                                <Mail className="h-5 w-5 text-muted-foreground mt-1" />
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Email</p>
+                                    <p className="font-semibold">{client.contactEmail || "N/A"}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <Phone className="h-5 w-5 text-muted-foreground mt-1" />
-                            <div>
-                                <p className="text-xs text-muted-foreground">Phone</p>
-                                <p className="font-semibold">{client.contactPhone || "N/A"}</p>
+                            <div className="flex items-start gap-3">
+                                <Phone className="h-5 w-5 text-muted-foreground mt-1" />
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Phone</p>
+                                    <p className="font-semibold">{client.contactPhone || "N/A"}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-start gap-3 md:col-span-2">
-                            <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
-                            <div>
-                                <p className="text-xs text-muted-foreground">Address</p>
-                                <p className="font-semibold">{client.address || "N/A"}</p>
+                            <div className="flex items-start gap-3">
+                                <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Address</p>
+                                    <p className="font-semibold">{client.address || "N/A"}</p>
+                                </div>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Plan Details: {summaryTitle}</CardTitle>
-                    </CardHeader>
-                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                        <div className="flex items-start gap-3">
-                            <Waves className="h-5 w-5 text-primary" />
-                            <div>
-                                <p className="text-muted-foreground">Total Liters</p>
-                                <p className="font-semibold">{finalPlan.liters}</p>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Plan Details: {summaryTitle}</CardTitle>
+                        </CardHeader>
+                         <CardContent className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                            <div className="flex items-start gap-3">
+                                <Waves className="h-5 w-5 text-primary" />
+                                <div>
+                                    <p className="text-muted-foreground">Total Liters</p>
+                                    <p className="font-semibold">{finalPlan.liters}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <Users className="h-5 w-5 text-primary" />
-                            <div>
-                                <p className="text-muted-foreground">{source.clientType === 'household' ? 'Family' : 'Employees'}</p>
-                                <p className="font-semibold">{finalPlan.employees}</p>
+                            <div className="flex items-start gap-3">
+                                <Users className="h-5 w-5 text-primary" />
+                                <div>
+                                    <p className="text-muted-foreground">{source.clientType === 'household' ? 'Family' : 'Employees'}</p>
+                                    <p className="font-semibold">{finalPlan.employees}</p>
+                                </div>
                             </div>
-                        </div>
-                         <div className="flex items-start gap-3">
-                            <Package className="h-5 w-5 text-primary" />
-                            <div>
-                                <p className="text-muted-foreground">Rotation Containers</p>
-                                <p className="font-semibold">{refillableGallons} units</p>
+                             <div className="flex items-start gap-3">
+                                <Package className="h-5 w-5 text-primary" />
+                                <div>
+                                    <p className="text-muted-foreground">Rotation Containers</p>
+                                    <p className="font-semibold">{refillableGallons} units</p>
+                                </div>
                             </div>
-                        </div>
-                         <div className="flex items-start gap-3">
-                            <Computer className="h-5 w-5 text-primary" />
-                            <div>
-                                <p className="text-muted-foreground">Dispensers</p>
-                                <p className="font-semibold">{dispensers} units</p>
+                             <div className="flex items-start gap-3">
+                                <Computer className="h-5 w-5 text-primary" />
+                                <div>
+                                    <p className="text-muted-foreground">Dispensers</p>
+                                    <p className="font-semibold">{dispensers} units</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <RefreshCcw className="h-5 w-5 text-primary" />
-                            <div>
-                                <p className="text-muted-foreground">Refill Frequency</p>
-                                <p className="font-semibold">{finalPlan.refillFrequency}</p>
+                            <div className="flex items-start gap-3">
+                                <RefreshCcw className="h-5 w-5 text-primary" />
+                                <div>
+                                    <p className="text-muted-foreground">Refill Frequency</p>
+                                    <p className="font-semibold">{finalPlan.refillFrequency}</p>
+                                </div>
                             </div>
-                        </div>
-                         <div className="flex items-start gap-3">
-                            <Ship className="h-5 w-5 text-primary" />
-                            <div>
-                                <p className="text-muted-foreground">Water Stations</p>
-                                <p className="font-semibold">{finalPlan.stations}</p>
+                             <div className="flex items-start gap-3">
+                                <Ship className="h-5 w-5 text-primary" />
+                                <div>
+                                    <p className="text-muted-foreground">Water Stations</p>
+                                    <p className="font-semibold">{finalPlan.stations}</p>
+                                </div>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
             <Card>
