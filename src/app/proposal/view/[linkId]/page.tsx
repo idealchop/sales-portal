@@ -4,7 +4,7 @@
 import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, getDoc, FirestoreError } from 'firebase/firestore';
+import { doc, getDoc, FirestoreError, query, where, collection, getDocs, limit } from 'firebase/firestore';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, AlertTriangle, FileText, Download } from 'lucide-react';
@@ -49,14 +49,21 @@ function SharedProposalContent() {
                     throw new Error("This sharing link has expired.");
                 }
                 
-                const proposalDocRef = doc(firestore, 'proposals', linkData.proposalId);
-                const proposalDocSnap = await getDoc(proposalDocRef);
+                const q = query(
+                    collection(firestore, 'proposals'),
+                    where('id', '==', linkData.proposalId),
+                    limit(1)
+                );
+
+                const proposalQuerySnap = await getDocs(q);
                 
-                if (!proposalDocSnap.exists()) {
+                if (proposalQuerySnap.empty) {
                     throw new Error("The associated proposal could not be found.");
                 }
                 
+                const proposalDocSnap = proposalQuerySnap.docs[0];
                 const proposalData = proposalDocSnap.data();
+
                 if (proposalData.content) {
                     const finalDetails = JSON.parse(proposalData.content) as FinalPlanDetails;
                     setProposalDetails(finalDetails);
@@ -66,11 +73,7 @@ function SharedProposalContent() {
 
             } catch (e: any) {
                  if (e instanceof FirestoreError && e.code === 'permission-denied') {
-                    const contextualError = new FirestorePermissionError({
-                        path: `shareable_links/${linkId}`,
-                        operation: 'get',
-                    });
-                    errorEmitter.emit('permission-error', contextualError);
+                    setError("You do not have permission to view this proposal.");
                 } else {
                     console.error("Error fetching shared proposal: ", e);
                     setError(e.message || "An unexpected error occurred.");
@@ -195,5 +198,3 @@ export default function SharedProposalPage() {
         </Suspense>
     );
 }
-
-    
