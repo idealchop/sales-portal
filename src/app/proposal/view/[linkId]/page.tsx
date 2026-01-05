@@ -1,10 +1,10 @@
 
 'use client';
 
-import React, { Suspense, useEffect, useState, useMemo } from 'react';
+import React, { Suspense, useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore } from '@/firebase';
-import { doc, getDoc, collectionGroup, query, where, getDocs } from 'firebase/firestore';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, getDoc, collectionGroup, query, where, getDocs, FirestoreError } from 'firebase/firestore';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, AlertTriangle, FileText, Download } from 'lucide-react';
@@ -23,7 +23,7 @@ function SharedProposalContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
-    const proposalRef = useState<React.RefObject<HTMLDivElement>>(React.createRef())[0];
+    const proposalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!linkId || !firestore) {
@@ -34,13 +34,12 @@ function SharedProposalContent() {
 
         const fetchSharedProposal = async () => {
             setIsLoading(true);
+            const linksQuery = query(
+                collectionGroup(firestore, 'shareable_links'),
+                where('id', '==', linkId)
+            );
+            
             try {
-                // Query the collection group to find the link by its ID across all users
-                const linksQuery = query(
-                    collectionGroup(firestore, 'shareable_links'),
-                    where('id', '==', linkId)
-                );
-
                 const querySnapshot = await getDocs(linksQuery);
 
                 if (querySnapshot.empty) {
@@ -50,7 +49,7 @@ function SharedProposalContent() {
                 const linkDocSnap = querySnapshot.docs[0];
                 const linkData = linkDocSnap.data();
 
-                if (new Date() > new Date(linkData.expiresAt.seconds * 1000)) {
+                if (new Date(linkData.expiresAt) < new Date()) {
                     throw new Error("This sharing link has expired.");
                 }
 
@@ -70,8 +69,16 @@ function SharedProposalContent() {
                 }
 
             } catch (e: any) {
-                console.error("Error fetching shared proposal: ", e);
-                setError(e.message || "An unexpected error occurred.");
+                 if (e instanceof FirestoreError && e.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                        path: `shareable_links (collection group)`,
+                        operation: 'list',
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                } else {
+                    console.error("Error fetching shared proposal: ", e);
+                    setError(e.message || "An unexpected error occurred.");
+                }
             } finally {
                 setIsLoading(false);
             }
