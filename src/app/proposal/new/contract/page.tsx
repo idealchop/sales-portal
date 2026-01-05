@@ -746,23 +746,21 @@ function ContractPageContent() {
     setIsGeneratingIds(true);
     try {
         if (!firestore) throw new Error("Firestore not initialized.");
+        if (!user || !user.uid) throw new Error("User not authenticated.");
 
         let currentProposalId = generatedProposalId;
         let currentClientId = generatedClientId;
 
         if (!currentProposalId || (!currentClientId && !existingClientId)) {
-            await runTransaction(firestore, async (transaction) => {
+             await runTransaction(firestore, async (transaction) => {
                 const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
                 const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
                 
-                let proposalCounterSnap, clientCounterSnap;
+                const reads = [];
+                if (!currentProposalId) reads.push(transaction.get(proposalCounterRef));
+                if (!existingClientId && !currentClientId) reads.push(transaction.get(clientCounterRef));
 
-                if (!currentProposalId) {
-                    proposalCounterSnap = await transaction.get(proposalCounterRef);
-                }
-                if (!existingClientId && !currentClientId) {
-                    clientCounterSnap = await transaction.get(clientCounterRef);
-                }
+                const [proposalCounterSnap, clientCounterSnap] = await Promise.all(reads);
 
                 if (proposalCounterSnap) {
                     const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
@@ -790,7 +788,7 @@ function ContractPageContent() {
         } else if (action === 'sign') {
             setReviewDialogOpen(true);
         } else if (action === 'share') {
-            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+            const shareableLinkRef = doc(collection(firestore, `users/${user.uid}/shareable_links`));
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 24);
 
@@ -855,7 +853,7 @@ function ContractPageContent() {
                 </CardHeader>
                 <CardFooter>
                     <Button asChild className="w-full">
-                        <Link href="/proposal/new/plans">Go to Plans</Link>
+                        <Link href="/dashboard/proposals/new/plans">Go to Plans</Link>
                     </Button>
                 </CardFooter>
             </Card>
@@ -867,7 +865,7 @@ function ContractPageContent() {
   const isCustomPlan = plan.id === 'custom-plan';
   const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
-  const prevLink = `/proposal/new/plans?${searchParams.toString()}`;
+  const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
   
   const clientTypeMap: { [key: string]: string } = {

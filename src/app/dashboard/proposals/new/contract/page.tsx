@@ -746,23 +746,21 @@ function ContractPageContent() {
     setIsGeneratingIds(true);
     try {
         if (!firestore) throw new Error("Firestore not initialized.");
+        if (!user || !user.uid) throw new Error("User not authenticated.");
 
         let currentProposalId = generatedProposalId;
         let currentClientId = generatedClientId;
 
         if (!currentProposalId || (!currentClientId && !existingClientId)) {
-            await runTransaction(firestore, async (transaction) => {
+             await runTransaction(firestore, async (transaction) => {
                 const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
                 const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
                 
-                let proposalCounterSnap, clientCounterSnap;
+                const reads = [];
+                if (!currentProposalId) reads.push(transaction.get(proposalCounterRef));
+                if (!existingClientId && !currentClientId) reads.push(transaction.get(clientCounterRef));
 
-                if (!currentProposalId) {
-                    proposalCounterSnap = await transaction.get(proposalCounterRef);
-                }
-                if (!existingClientId && !currentClientId) {
-                    clientCounterSnap = await transaction.get(clientCounterRef);
-                }
+                const [proposalCounterSnap, clientCounterSnap] = await Promise.all(reads);
 
                 if (proposalCounterSnap) {
                     const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
@@ -790,7 +788,7 @@ function ContractPageContent() {
         } else if (action === 'sign') {
             setReviewDialogOpen(true);
         } else if (action === 'share') {
-            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+            const shareableLinkRef = doc(collection(firestore, `users/${user.uid}/shareable_links`));
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 24);
 
