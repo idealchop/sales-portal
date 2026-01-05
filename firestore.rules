@@ -53,11 +53,12 @@ service cloud.firestore {
     }
     
     match /proposals/{proposalId} {
+        // Authenticated users can read proposals.
+        // Public users can read if a valid, unexpired shareable link exists for this proposal.
         allow read: if isSignedIn() || 
-          exists(/databases/$(database)/documents/shareable_links/linkId) && 
-          get(/databases/$(database)/documents/shareable_links/linkId).data.proposalId == proposalId &&
-          get(/databases/$(database)/documents/shareable_links/linkId).data.clientId == resource.data.clientId &&
-          get(/databases/$(database)/documents/shareable_links/linkId).data.expiresAt > request.time;
+          exists(/databases/$(database)/documents/shareable_links/{linkId}) &&
+          get(/databases/$(database)/documents/shareable_links/{linkId}).data.proposalId == proposalId &&
+          get(/databases/$(database)/documents/shareable_links/{linkId}).data.expiresAt > request.time;
         allow list: if isSignedIn();
         allow create: if isSignedIn();
         allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
@@ -71,7 +72,12 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      allow read: if isSignedIn();
+      // Authenticated users can read client data.
+      // Public users can read client data if a valid shareable link exists for a proposal associated with this client.
+      allow read: if isSignedIn() || 
+        (exists(/databases/$(database)/documents/shareable_links/{linkId}) &&
+        get(/databases/$(database)/documents/shareable_links/{linkId}).data.clientId == clientId &&
+        get(/databases/$(database)/documents/shareable_links/{linkId}).data.expiresAt > request.time);
       allow list: if isSignedIn();
       allow create;
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
@@ -79,6 +85,15 @@ service cloud.firestore {
       
       match /remarks/{remarkId} {
         allow read, create: if isSignedIn();
+      }
+      
+      // Legacy path for proposals, can be removed after migration is complete.
+      match /proposals/{proposalId} {
+        allow read: if isSignedIn() || 
+          (exists(/databases/$(database)/documents/shareable_links/{linkId}) &&
+          get(/databases/$(database)/documents/shareable_links/{linkId}).data.proposalId == proposalId &&
+          get(/databases/$(database)/documents/shareable_links/{linkId}).data.clientId == clientId &&
+          get(/databases/$(database)/documents/shareable_links/{linkId}).data.expiresAt > request.time);
       }
     }
 
