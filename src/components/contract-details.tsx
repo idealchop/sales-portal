@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
 import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
 import { Logo } from '@/components/logo';
-import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User } from 'lucide-react';
+import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User, Mail, MapPin } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
 import Image from 'next/image';
 
@@ -416,12 +416,12 @@ export function ContractDetails({
                 <CardHeader>
                     <CardTitle>Welcome to Smart Refill</CardTitle>
                     <CardDescription>
-                        A smarter, more reliable way to manage your business's water supply.
+                       Your trusted partner in water supply automation.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <p className="text-muted-foreground">
-                        Thank you for choosing Smart Refill. This proposal outlines how our automated solution helps you achieve consistent water availability, lower operational costs, and complete visibility over your consumption.
+                        Thank you for choosing Smart Refill. This proposal outlines how our smart, reliable, and fully compliant solution helps your business achieve consistent water availability, lower operational costs, and complete visibility over your consumption.
                     </p>
                     <p className="text-muted-foreground mt-4">
                         We go beyond delivery — we help you save time, cut inefficiencies, and ensure every liter counts.
@@ -431,46 +431,53 @@ export function ContractDetails({
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
+                 <Card>
                     <CardHeader>
                         <CardTitle>Client Information</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 gap-x-8 gap-y-4 text-sm">
-                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                            <span className="text-muted-foreground">Client ID:</span>
-                            <span className="font-semibold font-mono">{clientId || 'Pending'}</span>
+                    <CardContent className="space-y-4 text-sm">
+                         <div className="flex items-start gap-3">
+                            <Building className="h-5 w-5 text-muted-foreground mt-1" />
+                            <div>
+                                <p className="text-xs text-muted-foreground">Company Name</p>
+                                <p className="font-semibold">{client.companyName || "N/A"}</p>
+                            </div>
                         </div>
-                         <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                            <span className="text-muted-foreground">Company:</span>
-                            <span className="font-semibold">{client.companyName || "N/A"}</span>
+                        <div className="flex items-start gap-3">
+                            <User className="h-5 w-5 text-muted-foreground mt-1" />
+                            <div>
+                                <p className="text-xs text-muted-foreground">Contact Person</p>
+                                <p className="font-semibold">{client.contactName || "N/A"}</p>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                            <span className="text-muted-foreground">Name:</span>
-                            <span className="font-semibold">{client.contactName || "N/A"}</span>
+                        <div className="flex items-start gap-3">
+                            <Mail className="h-5 w-5 text-muted-foreground mt-1" />
+                            <div>
+                                <p className="text-xs text-muted-foreground">Email</p>
+                                <p className="font-semibold">{client.contactEmail || "N/A"}</p>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                            <span className="text-muted-foreground">Email:</span>
-                            <span className="font-semibold">{client.contactEmail || "N/A"}</span>
+                        <div className="flex items-start gap-3">
+                            <Phone className="h-5 w-5 text-muted-foreground mt-1" />
+                            <div>
+                                <p className="text-xs text-muted-foreground">Phone</p>
+                                <p className="font-semibold">{client.contactPhone || "N/A"}</p>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                            <span className="text-muted-foreground">Phone:</span>
-                            <span className="font-semibold">{client.contactPhone || "N/A"}</span>
-                        </div>
-                        <div className="grid grid-cols-[100px_1fr] items-start gap-2">
-                            <span className="text-muted-foreground">Address:</span>
-                            <span className="font-semibold">{client.address || "N/A"}</span>
-                        </div>
-                        <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                            <span className="text-muted-foreground">Date:</span>
-                            <span className="font-semibold">{date}</span>
+                        <div className="flex items-start gap-3">
+                            <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
+                            <div>
+                                <p className="text-xs text-muted-foreground">Address</p>
+                                <p className="font-semibold">{client.address || "N/A"}</p>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
+                 <Card>
                     <CardHeader>
                         <CardTitle>Plan Details: {summaryTitle}</CardTitle>
                     </CardHeader>
-                     <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                     <CardContent className="space-y-4 text-sm">
                         <div className="flex items-start gap-3">
                             <Waves className="h-5 w-5 text-primary" />
                             <div>
