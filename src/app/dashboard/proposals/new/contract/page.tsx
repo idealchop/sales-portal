@@ -512,7 +512,7 @@ function ContractPageContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingIds, setIsGeneratingIds] = useState(false);
   
-  const [sanitationFeeType, setSanitationFeeType] = useState('paid');
+  const [sanitationFeeType, setSanitationFeeType] = useState('free');
   const [sanitationFee, setSanitationFee] = useState(500);
 
   const [dispenserFeeType, setDispenserFeeType] = useState('monthly');
@@ -656,7 +656,7 @@ function ContractPageContent() {
         billingCycleLabel: isCustomPlan ? "Usage-Based" : selectedCycle.label,
         discount: discount,
         basePrice: subtotal,
-        selectedAddons: {},
+        selectedAddons: { 'monthly-sanitation': sanitationFeeType === 'paid' },
         sanitationFeeType,
         sanitationFee,
         additionalDispensers: {
@@ -845,10 +845,6 @@ function ContractPageContent() {
              setIsGeneratingIds(false);
              return;
           }
-          const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-          const proposalCounterSnap = await getDoc(proposalCounterRef);
-          const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-          setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
         } catch (error: any) {
           console.error("Error generating Proposal ID:", error);
           toast({
@@ -1061,70 +1057,68 @@ function ContractPageContent() {
                 </CardContent>
             </Card>
             
-            {addons.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Optional Add-Ons</CardTitle>
-                        <CardDescription>
-                        Enhance your Smart Refill experience with premium service options.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                        <TableHeader>
-                            <TableRow>
-                            <TableHead>Add-On</TableHead>
-                            <TableHead className="w-[250px]">Configuration</TableHead>
-                            <TableHead className="text-right">Fee</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {addons.map((addon) => (
-                            <TableRow key={addon.id}>
-                                <TableCell>
-                                    <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                                    <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
-                                </TableCell>
-                                <TableCell>
-                                    {addon.type === 'configurable' && (
-                                        <div className="flex flex-col gap-2">
-                                            <Select value={sanitationFeeType} onValueChange={setSanitationFeeType}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="paid">Paid</SelectItem>
-                                                    <SelectItem value="free">Free</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            {sanitationFeeType === 'paid' && (
-                                                <Input type="number" min="0" value={sanitationFee} onChange={e => setSanitationFee(Number(e.target.value))} placeholder="Fee" />
-                                            )}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Optional Add-Ons</CardTitle>
+                    <CardDescription>
+                    Enhance your Smart Refill experience with premium service options.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Add-On</TableHead>
+                        <TableHead className="w-[250px]">Configuration</TableHead>
+                        <TableHead className="text-right">Fee</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {addons.map((addon) => (
+                        <TableRow key={addon.id}>
+                            <TableCell>
+                                <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                                <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
+                            </TableCell>
+                            <TableCell>
+                                {addon.type === 'configurable' && (
+                                    <div className="flex flex-col gap-2">
+                                        <Select value={sanitationFeeType} onValueChange={setSanitationFeeType}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="paid">Paid</SelectItem>
+                                                <SelectItem value="free">Free</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {sanitationFeeType === 'paid' && (
+                                            <Input type="number" min="0" value={sanitationFee} onChange={e => setSanitationFee(Number(e.target.value))} placeholder="Fee" />
+                                        )}
+                                    </div>
+                                )}
+                                {addon.type === 'custom' && (
+                                    <div className="flex flex-col gap-2">
+                                        <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {addon.feeOptions?.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <div className="flex items-center gap-2">
+                                            <Input type="number" min="0" value={dispenserQuantity} onChange={e => setDispenserQuantity(Number(e.target.value))} placeholder="Qty" className="w-16"/>
+                                            <Input type="number" min="0" value={dispenserFee} onChange={e => setDispenserFee(Number(e.target.value))} placeholder="Fee" className="flex-1"/>
                                         </div>
-                                    )}
-                                    {addon.type === 'custom' && (
-                                        <div className="flex flex-col gap-2">
-                                            <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    {addon.feeOptions?.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                            <div className="flex items-center gap-2">
-                                                <Input type="number" min="0" value={dispenserQuantity} onChange={e => setDispenserQuantity(Number(e.target.value))} placeholder="Qty" className="w-16"/>
-                                                <Input type="number" min="0" value={dispenserFee} onChange={e => setDispenserFee(Number(e.target.value))} placeholder="Fee" className="flex-1"/>
-                                            </div>
-                                        </div>
-                                    )}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    {addon.type === 'configurable' ? (sanitationFeeType === 'free' ? 'Free' : currencyFormatter.format(sanitationFee)) : 'Custom'}
-                                </TableCell>
-                            </TableRow>
-                            ))}
-                        </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            )}
+                                    </div>
+                                )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                                {addon.type === 'configurable' ? (sanitationFeeType === 'free' ? 'Free' : currencyFormatter.format(sanitationFee)) : 'Custom'}
+                            </TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
              <Card>
                 <CardHeader>
@@ -1261,4 +1255,6 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+    
+
     
