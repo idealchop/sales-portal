@@ -339,7 +339,7 @@ export const deliveryFrequencies = [
 ];
 
 function CustomPlanCalculator({
-    pricePerLiter = 3,
+    pricePerLiter: initialPricePerLiter = 3,
     onCalculated,
     title = 'Custom Plan Calculator',
     description = "Calculate a custom plan based on your client's needs.",
@@ -349,6 +349,7 @@ function CustomPlanCalculator({
     showEstimatedCost = false,
     maxGallons,
     maxDeliveries,
+    allowPriceEdit = false,
 }: {
     pricePerLiter?: number;
     onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
@@ -360,9 +361,11 @@ function CustomPlanCalculator({
     showEstimatedCost?: boolean;
     maxGallons?: number;
     maxDeliveries?: number;
+    allowPriceEdit?: boolean;
 }) {
     const [gallons, setGallons] = useState(maxGallons ? Math.min(10, maxGallons) : 10);
     const [deliveries, setDeliveries] = useState(1);
+    const [pricePerLiter, setPricePerLiter] = useState(initialPricePerLiter);
     const litersPerGallon = 19;
 
     const { totalLiters, totalCost } = useMemo(() => {
@@ -424,6 +427,19 @@ function CustomPlanCalculator({
                         </SelectContent>
                     </Select>
                 </div>
+                {allowPriceEdit && (
+                     <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="price-per-liter" className="text-sm font-medium text-primary-foreground/80">Price per Liter (₱)</Label>
+                        <Input 
+                            id="price-per-liter" 
+                            type="number" 
+                            value={pricePerLiter} 
+                            onChange={(e) => setPricePerLiter(parseFloat(e.target.value) || 0)} 
+                            className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60"
+                            step="0.01"
+                        />
+                    </div>
+                )}
             </div>
 
             <Card className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
@@ -741,7 +757,7 @@ function PlansGrid({
                     {plan.id === 'enterprise-customized' && isSelected && (
                         <CustomPlanCalculator 
                             onCalculated={onCustomCalculated} 
-                            pricePerLiter={3} 
+                            allowPriceEdit={true}
                             minimumCost={30000}
                             title="Customized Plan Calculator"
                         />

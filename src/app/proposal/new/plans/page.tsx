@@ -299,7 +299,7 @@ const flowPlans: Plan[] = [
         name: 'Enterprise Overflow',
         monthlyFee: '₱50,000',
         liters: 'Usage-Based',
-        refillFrequency: 'On-demand',
+        refillFrequency: 'Based on schedule',
         inclusions: [
             'Initial top-up of ₱50,000.',
             'Preferential rate of ₱2.50 per liter.',
@@ -339,16 +339,17 @@ export const deliveryFrequencies = [
 ];
 
 function CustomPlanCalculator({
-    pricePerLiter = 3,
+    pricePerLiter: initialPricePerLiter = 3,
     onCalculated,
     title = 'Custom Plan Calculator',
-    description = 'Calculate a custom plan based on your client\'s needs.',
+    description = "Calculate a custom plan based on your client's needs.",
     minimumCost = 0,
     isFixedPrice = false,
     fixedPrice = 0,
     showEstimatedCost = false,
     maxGallons,
     maxDeliveries,
+    allowPriceEdit = false,
 }: {
     pricePerLiter?: number;
     onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
@@ -360,9 +361,11 @@ function CustomPlanCalculator({
     showEstimatedCost?: boolean;
     maxGallons?: number;
     maxDeliveries?: number;
+    allowPriceEdit?: boolean;
 }) {
     const [gallons, setGallons] = useState(maxGallons ? Math.min(10, maxGallons) : 10);
     const [deliveries, setDeliveries] = useState(1);
+    const [pricePerLiter, setPricePerLiter] = useState(initialPricePerLiter);
     const litersPerGallon = 19;
 
     const { totalLiters, totalCost } = useMemo(() => {
@@ -424,6 +427,19 @@ function CustomPlanCalculator({
                         </SelectContent>
                     </Select>
                 </div>
+                {allowPriceEdit && (
+                     <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="price-per-liter" className="text-sm font-medium text-primary-foreground/80">Price per Liter (₱)</Label>
+                        <Input 
+                            id="price-per-liter" 
+                            type="number" 
+                            value={pricePerLiter} 
+                            onChange={(e) => setPricePerLiter(parseFloat(e.target.value) || 0)} 
+                            className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60"
+                            step="0.01"
+                        />
+                    </div>
+                )}
             </div>
 
             <Card className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
@@ -469,6 +485,94 @@ function CustomPlanCalculator({
     )
 }
 
+function FlowPlanConfigurator({
+  onCalculated,
+}: {
+  onCalculated: (values: { locations: { name: string; dispensers: number; containers: number }[] }) => void;
+}) {
+  const [locations, setLocations] = useState([{ name: '', dispensers: 1, containers: 5 }]);
+  const [newLocationName, setNewLocationName] = useState('');
+
+  useEffect(() => {
+    onCalculated({ locations });
+  }, [locations, onCalculated]);
+
+  const handleUpdateLocation = (index: number, field: 'name' | 'dispensers' | 'containers', value: string | number) => {
+    const newLocations = [...locations];
+    const numValue = typeof value === 'string' ? parseInt(value) : value;
+    if (field === 'name') {
+        newLocations[index][field] = value as string;
+    } else if (!isNaN(numValue) && numValue >= 0) {
+        newLocations[index][field] = numValue;
+    }
+    setLocations(newLocations);
+  };
+
+  const handleAddLocation = () => {
+    setLocations([...locations, { name: newLocationName || `Branch ${locations.length + 1}`, dispensers: 1, containers: 5 }]);
+    setNewLocationName('');
+  };
+
+  const handleRemoveLocation = (index: number) => {
+    const newLocations = locations.filter((_, i) => i !== index);
+    setLocations(newLocations);
+  };
+  
+  const totalDispensers = locations.reduce((sum, loc) => sum + loc.dispensers, 0);
+  const totalContainers = locations.reduce((sum, loc) => sum + loc.containers, 0);
+
+  return (
+    <div className="p-6 space-y-6">
+        <Card className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
+            <CardHeader>
+                <CardTitle className="text-base text-primary-foreground">Multi-Branch Equipment Setup</CardTitle>
+                <CardDescription className="text-primary-foreground/80">Add each branch location and specify the required equipment.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {locations.map((location, index) => (
+                    <Card key={index} className="bg-primary-foreground/5 border-primary-foreground/10">
+                        <CardHeader className="flex flex-row items-center justify-between p-4">
+                             <Input 
+                                value={location.name}
+                                onChange={(e) => handleUpdateLocation(index, 'name', e.target.value)}
+                                placeholder="Branch Name/Location"
+                                className="text-base font-semibold bg-transparent border-0 border-b-2 border-primary-foreground/20 rounded-none focus-visible:ring-0 focus:border-primary-foreground/80 text-primary-foreground"
+                            />
+                            {locations.length > 1 && (
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveLocation(index)} className="text-primary-foreground/60 hover:text-destructive hover:bg-destructive/20 h-8 w-8">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-2 gap-4 p-4 pt-0">
+                            <div className="space-y-1">
+                                <Label className="text-xs text-primary-foreground/80">Dispensers</Label>
+                                <Input type="number" value={location.dispensers} onChange={(e) => handleUpdateLocation(index, 'dispensers', e.target.value)} className="bg-transparent border-primary-foreground/50 text-primary-foreground"/>
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs text-primary-foreground/80">Containers</Label>
+                                <Input type="number" value={location.containers} onChange={(e) => handleUpdateLocation(index, 'containers', e.target.value)} className="bg-transparent border-primary-foreground/50 text-primary-foreground"/>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+                <Button onClick={handleAddLocation} variant="outline" className="w-full bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground">
+                    <Plus className="h-4 w-4 mr-2" /> Add Location
+                </Button>
+            </CardContent>
+            <CardFooter className="p-4 bg-black/10 text-sm font-semibold flex justify-between">
+                <span>Total Equipment:</span>
+                <div className="text-right">
+                    <p>{totalDispensers} Dispensers</p>
+                    <p>{totalContainers} Containers</p>
+                </div>
+            </CardFooter>
+        </Card>
+    </div>
+  );
+}
+
+
 function PlansGrid({ 
     plans, 
     defaultPlan, 
@@ -489,8 +593,8 @@ function PlansGrid({
     businessSize: BusinessSize | null,
     customCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number } | null,
     onCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
-    overflowCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number } | null;
-    onOverflowCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
+    overflowCalculatedValues: { locations: { name: string; dispensers: number; containers: number; }[] } | null;
+    onOverflowCalculated: (values: any) => void;
     smeCommercialCustomValues: { totalLiters: number, totalCost: number, deliveries: number } | null;
     onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
 }) {
@@ -533,8 +637,14 @@ function PlansGrid({
         if (isSmeCommercialCustom) {
             return plans.filter(p => p.id === 'custom-plan');
         }
+        if (isSingleCustomPlan) {
+            return plans.filter(p => p.id === 'enterprise-customized');
+        }
+        if (isSingleOverflowPlan) {
+            return plans.filter(p => p.id === 'enterprise-overflow');
+        }
         return plans;
-    }, [plans, isSmeCommercialCustom]);
+    }, [plans, isSmeCommercialCustom, isSingleCustomPlan, isSingleOverflowPlan]);
 
     return (
     <RadioGroup
@@ -568,14 +678,14 @@ function PlansGrid({
         }
         
         if (isOverflow && overflowCalculatedValues) {
-            employees = getEmployees(overflowCalculatedValues.totalLiters, false);
-            stations = getStations(overflowCalculatedValues.totalLiters);
-            // Keep the monthly fee as the fixed top-up, but liters are calculated
+            employees = `${overflowCalculatedValues.locations.length} Locations`;
+            const totalDispensers = overflowCalculatedValues.locations.reduce((sum, loc) => sum + loc.dispensers, 0);
+            stations = `${totalDispensers} Dispensers`;
             monthlyFee = '₱50,000';
-            liters = `${overflowCalculatedValues.totalLiters.toLocaleString()} L (estimated)`;
-            const freq = deliveryFrequencies.find(f => f.value === overflowCalculatedValues.deliveries);
-            refillFrequency = freq ? freq.label : plan.refillFrequency;
+            liters = `Usage-Based`;
+            refillFrequency = `Based on schedule`;
         }
+
 
         if (isCustomSmeCommercial) {
             const pricePerLiter = businessSize === 'household' ? 2.5 : 3;
@@ -647,20 +757,15 @@ function PlansGrid({
                     {plan.id === 'enterprise-customized' && isSelected && (
                         <CustomPlanCalculator 
                             onCalculated={onCustomCalculated} 
-                            pricePerLiter={3} 
+                            allowPriceEdit={true}
                             minimumCost={30000}
                             title="Customized Plan Calculator"
                         />
                     )}
                     
                     {plan.id === 'enterprise-overflow' && isSelected && (
-                        <CustomPlanCalculator 
-                            onCalculated={onOverflowCalculated} 
-                            pricePerLiter={2.5} 
-                            title="Estimate Monthly Usage"
-                            isFixedPrice={true}
-                            fixedPrice={50000}
-                            showEstimatedCost={true}
+                        <FlowPlanConfigurator 
+                           onCalculated={onOverflowCalculated}
                         />
                     )}
                     
@@ -679,7 +784,7 @@ function PlansGrid({
                         <div className="flex justify-between items-center w-full text-sm">
                             <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
                                 {businessSize === 'household' ? <Home className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                                <span className="font-semibold">{employees} {businessSize === 'household' ? 'Persons' : 'Employees'}</span>
+                                <span className="font-semibold">{employees} {businessSize === 'household' ? 'Persons' : (isOverflow ? '' : 'Employees')}</span>
                             </div>
                             <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
                                 {businessSize === 'household' ? <GlassWater className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
@@ -821,13 +926,55 @@ function BusinessSizeSelector({
     );
 }
 
+function EnterpriseTypeSelector({
+    selectedType,
+    onSelectType,
+}: {
+    selectedType: EnterpriseType | null;
+    onSelectType: (type: EnterpriseType) => void;
+}) {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             {enterpriseTypes.map((type) => (
+                <Card
+                    key={type.id}
+                    onClick={() => onSelectType(type.id)}
+                    className={cn(
+                        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 overflow-hidden flex flex-col',
+                        selectedType === type.id ? 'border-primary shadow-lg border-2' : ''
+                    )}
+                >
+                    {type.image && (
+                         <div className="relative aspect-video">
+                            <Image
+                                src={type.image.imageUrl}
+                                alt={type.image.description}
+                                fill
+                                className="object-cover"
+                                data-ai-hint={type.image.imageHint}
+                            />
+                        </div>
+                    )}
+                    <CardHeader className="flex-1">
+                        <div>
+                            <CardTitle>{type.title}</CardTitle>
+                            <CardDescription>{type.description}</CardDescription>
+                        </div>
+                    </CardHeader>
+                </Card>
+            ))}
+        </div>
+    );
+}
+
+
 export default function PlansPage() {
     const searchParams = useSearchParams();
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [customCalculatedValues, setCustomCalculatedValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
-    const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
+    const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[] } | null>(null);
     const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number } | null>(null);
     
     useEffect(() => {
@@ -846,6 +993,15 @@ export default function PlansPage() {
         setSmeCommercialCustomValues(null);
     };
 
+    const handleEnterpriseTypeSelect = (type: EnterpriseType) => {
+        setSelectedEnterpriseType(type);
+        if (type === 'customized') {
+            setSelectedPlan('enterprise-customized');
+        } else if (type === 'flowing') {
+            setSelectedPlan('enterprise-overflow');
+        }
+    }
+
     const handlePlanSelect = (planId: string) => {
         const plan = allPlans.find(p => p.id === planId);
         setSelectedPlan(planId);
@@ -855,7 +1011,7 @@ export default function PlansPage() {
         setCustomCalculatedValues(values);
     }, []);
 
-    const handleOverflowCalculated = useCallback((values: { totalLiters: number, totalCost: number, deliveries: number }) => {
+    const handleOverflowCalculated = useCallback((values: any) => {
         setOverflowCalculatedValues(values);
     }, []);
 
@@ -873,17 +1029,35 @@ export default function PlansPage() {
         let plansToRender: Plan[] = [];
         let defaultPlanId = '';
 
-        switch (selectedSize) {
-            case 'household':
-                plansToRender = [...householdPlans, { ...customSmeCommercialPlan, inclusions: [`Priced at ₱2.50 per liter`, ...customSmeCommercialPlan.inclusions.slice(1)] }];
-                defaultPlanId = 'household-family';
-                break;
-            case 'sme':
-                plansToRender = [...smePlans, customSmeCommercialPlan];
-                defaultPlanId = 'professional';
-                break;
-            default:
-                return null;
+        if (selectedSize === 'enterprise' && selectedEnterpriseType) {
+            if (selectedEnterpriseType === 'customized') {
+                 plansToRender = [flowPlans.find(p => p.id === 'enterprise-customized')!];
+                 defaultPlanId = 'enterprise-customized';
+            } else if (selectedEnterpriseType === 'flowing') {
+                plansToRender = [flowPlans.find(p => p.id === 'enterprise-overflow')!];
+                defaultPlanId = 'enterprise-overflow';
+            }
+        } else {
+            switch (selectedSize) {
+                case 'household':
+                    plansToRender = [...householdPlans, { ...customSmeCommercialPlan, inclusions: [`Priced at ₱2.50 per liter`, ...customSmeCommercialPlan.inclusions.slice(1)] }];
+                    defaultPlanId = 'household-family';
+                    break;
+                case 'sme':
+                    plansToRender = [...smePlans, customSmeCommercialPlan];
+                    defaultPlanId = 'professional';
+                    break;
+                case 'commercial':
+                    plansToRender = [...commercialPlans, customSmeCommercialPlan];
+                    defaultPlanId = 'pro';
+                    break;
+                case 'corporate':
+                    plansToRender = corporatePlans;
+                    defaultPlanId = 'enterprise-plus';
+                    break;
+                default:
+                    return null;
+            }
         }
 
         if (!plansToRender || plansToRender.length === 0) return null;
@@ -897,7 +1071,6 @@ export default function PlansPage() {
                     customCalculatedValues={customCalculatedValues}
                     onCustomCalculated={handleCustomCalculated}
                     overflowCalculatedValues={overflowCalculatedValues}
-    
                     onOverflowCalculated={handleOverflowCalculated}
                     smeCommercialCustomValues={smeCommercialCustomValues}
                     onSmeCommercialCustomCalculated={handleSmeCommercialCustomCalculated}
@@ -906,11 +1079,17 @@ export default function PlansPage() {
     
     const isNextDisabled = useMemo(() => {
         if (!selectedPlan) return true;
+        if (selectedPlan === 'enterprise-customized') {
+            return !customCalculatedValues || customCalculatedValues.totalCost < 30000;
+        }
+        if (selectedPlan === 'enterprise-overflow') {
+            return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name);
+        }
         if (selectedPlan === 'custom-plan') {
             return !smeCommercialCustomValues || smeCommercialCustomValues.totalCost <= 0;
         }
         return false;
-    }, [selectedPlan, smeCommercialCustomValues]);
+    }, [selectedPlan, customCalculatedValues, overflowCalculatedValues, smeCommercialCustomValues]);
 
     const getNextLink = () => {
         if (!selectedPlan) return '#';
@@ -922,6 +1101,15 @@ export default function PlansPage() {
           params.set('clientType', selectedSize);
         }
 
+        if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
+            params.set('liters', customCalculatedValues.totalLiters.toString());
+            params.set('cost', customCalculatedValues.totalCost.toString());
+            params.set('freq', customCalculatedValues.deliveries.toString());
+        }
+        if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
+            params.set('cost', '50000');
+            params.set('locations', JSON.stringify(overflowCalculatedValues.locations));
+        }
         if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
             params.set('liters', smeCommercialCustomValues.totalLiters.toString());
             params.set('cost', smeCommercialCustomValues.totalCost.toString());
@@ -971,8 +1159,8 @@ export default function PlansPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-2")}>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-3")}>
                         <BusinessSizeSelector 
                             selectedSize={selectedSize} 
                             onSelectSize={handleSizeSelect}
@@ -980,18 +1168,22 @@ export default function PlansPage() {
                         />
                     </div>
                     {selectedSize && (
-                        <div className="lg:col-span-1">
+                        <div className="lg:col-span-2">
                              <Card>
                                 <CardHeader>
                                     <CardTitle>
-                                        2. Choose a Plan
+                                        {selectedSize === 'enterprise' ? '2. Select Enterprise Type' : '2. Choose a Plan'}
                                     </CardTitle>
                                      <CardDescription>
-                                        Select the best plan for your client from the options below.
+                                        {selectedSize === 'enterprise' ? 'Select the type of enterprise plan needed.' : 'Select the best plan for your client from the options below.'}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {renderPlans()}
+                                    {selectedSize === 'enterprise' && !selectedEnterpriseType ? (
+                                        <EnterpriseTypeSelector selectedType={selectedEnterpriseType} onSelectType={handleEnterpriseTypeSelect} />
+                                    ) : (
+                                        renderPlans()
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
