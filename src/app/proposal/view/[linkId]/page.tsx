@@ -45,7 +45,7 @@ function SharedProposalContent() {
 
                 const linkData = linkDocSnap.data();
 
-                if (new Date(linkData.expiresAt.toDate()) < new Date()) {
+                if (new Date(linkData.expiresAt) < new Date()) {
                     throw new Error("This sharing link has expired.");
                 }
                 
