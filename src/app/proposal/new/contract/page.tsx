@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -58,6 +58,8 @@ import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDo
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 const billingCycles = [
@@ -88,6 +90,214 @@ const addons = [
   },
 ];
 
+
+function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode }) {
+    const hiddenProposalRef = useRef<HTMLDivElement>(null);
+    const { toast } = useToast();
+    const [isDownloading, setIsDownloading] = useState(false);
+    
+    // State for the dialog's payment schedule
+    const [dialogBillingCycle, setDialogBillingCycle] = useState(finalPlanDetails.billingCycleLabel.toLowerCase() || billingCycles[0].value);
+    
+    // Recalculate costs based on the dialog's state
+    const dialogCosts = useMemo(() => {
+        if (!finalPlanDetails) return null;
+        
+        const isFlowPlan = finalPlanDetails.plan.id === 'enterprise-overflow';
+        const isCustomPlan = finalPlanDetails.plan.id === 'custom-plan';
+        const planBaseCost = isFlowPlan ? 50000 : finalPlanDetails.planBaseCost;
+
+        const sanitationCost = finalPlanDetails.sanitationFeeType === 'paid' ? finalPlanDetails.sanitationFee : 0;
+        const dispensersCost = finalPlanDetails.additionalDispensers.feeType === 'monthly' ? (finalPlanDetails.additionalDispensers.quantity * finalPlanDetails.additionalDispensers.fee) : 0;
+
+        const subtotal = planBaseCost + sanitationCost + dispensersCost;
+        
+        const selectedCycle = billingCycles.find(c => c.value === dialogBillingCycle) || billingCycles[0];
+        
+        const discount = isFlowPlan || isCustomPlan ? 0 : selectedCycle.discount;
+        const totalBeforeDiscount = isFlowPlan || isCustomPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
+        const discountValue = totalBeforeDiscount * discount;
+        const finalAmount = totalBeforeDiscount - discountValue;
+
+        return {
+            subtotal: isFlowPlan || isCustomPlan ? planBaseCost : subtotal,
+            discountPercentage: discount * 100,
+            discountValue,
+            totalAmountDue: finalAmount,
+            billingCycleLabel: selectedCycle.label
+        };
+    }, [finalPlanDetails, dialogBillingCycle]);
+
+
+    const handleDownloadPdf = async () => {
+        const element = hiddenProposalRef.current;
+        if (!element) return;
+        setIsDownloading(true);
+
+        try {
+            element.style.display = 'block';
+            
+            const canvas = await html2canvas(element, {
+                scale: 2, // Higher scale for better quality
+                useCORS: true,
+                windowWidth: element.scrollWidth,
+                windowHeight: element.scrollHeight,
+            });
+
+            element.style.display = 'none';
+            
+            const imgData = canvas.toDataURL('image/jpeg', 0.9);
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / pdfWidth;
+            const imgHeight = canvasHeight / ratio;
+
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdfHeight;
+
+            while (heightLeft > 0) {
+                position = -pdfHeight * (pdf.internal.getNumberOfPages()); // Adjust position for subsequent pages
+                pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdfHeight;
+            }
+
+            const totalPages = pdf.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                pdf.setPage(i);
+                pdf.setFontSize(8);
+                pdf.setTextColor(150);
+                pdf.text(
+                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
+                    pdf.internal.pageSize.getWidth() / 2,
+                    pdf.internal.pageSize.getHeight() - 10,
+                    { align: 'center' }
+                );
+            }
+
+            pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.companyName}.pdf`);
+            toast({ title: "Download Started", description: "Your proposal PDF is being generated." });
+
+        } catch (error) {
+            console.error("PDF generation failed:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not generate PDF.' });
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const handleSendEmail = () => {
+        toast({ title: "Coming Soon!", description: "This feature will be available in a future update." });
+    }
+
+    if (!finalPlanDetails || !dialogCosts) return null;
+    const isCustom = finalPlanDetails.plan.id === 'custom-plan';
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent className="sm:max-w-5xl">
+                <DialogHeader>
+                    <DialogTitle>Generate Proposal</DialogTitle>
+                    <DialogDescription>Review the sales illustration below. You can download it as a PDF or send it via email.</DialogDescription>
+                </DialogHeader>
+                <div className="md:grid md:grid-cols-4 gap-6 items-start">
+                    <div className="md:col-span-1 space-y-4">
+                         <Card>
+                             <CardHeader>
+                                 <CardTitle className="text-base">Payment Schedule</CardTitle>
+                             </CardHeader>
+                             <CardContent>
+                                <RadioGroup value={dialogBillingCycle} onValueChange={setDialogBillingCycle} className="space-y-1" disabled={isCustom}>
+                                    {billingCycles.map((cycle) => (
+                                        <div key={`dialog-${cycle.value}`} className="flex items-center space-x-2">
+                                            <RadioGroupItem value={cycle.value} id={`dialog-${cycle.value}`} />
+                                            <Label htmlFor={`dialog-${cycle.value}`} className="font-normal flex justify-between w-full">
+                                                <span>{cycle.label}</span>
+                                                {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
+                                            </Label>
+                                        </div>
+                                    ))}
+                                </RadioGroup>
+                             </CardContent>
+                         </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Cost Summary</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm">
+                                {!isCustom &&
+                                    <>
+                                        <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Subtotal ({dialogCosts.billingCycleLabel})</span>
+                                        <span>{currencyFormatter.format(dialogCosts.subtotal * (billingCycles.find(c=>c.value === dialogBillingCycle)?.multiplier || 1))}</span>
+                                        </div>
+                                        {dialogCosts.discountValue > 0 && (
+                                        <div className="flex justify-between text-green-600">
+                                            <span className="text-muted-foreground">Discount ({dialogCosts.discountPercentage}%)</span>
+                                            <span>- {currencyFormatter.format(dialogCosts.discountValue)}</span>
+                                        </div>
+                                        )}
+                                        <Separator />
+                                    </>
+                                }
+                                <div className="flex justify-between font-bold text-base">
+                                    <span>{isCustom ? 'Price per Liter' : 'Total Due'}</span>
+                                    <span>{isCustom ? `${currencyFormatter.format(finalPlanDetails.pricePerLiter || 0)}/L` : currencyFormatter.format(dialogCosts.totalAmountDue)}</span>
+                                </div>
+                            </CardContent>
+                         </Card>
+                    </div>
+                    <div className="md:col-span-3 mt-6 md:mt-0">
+                        <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
+                             <div className="bg-white p-8" id="pdf-content-preview">
+                                <ContractDetails
+                                    finalPlanDetails={{
+                                        ...finalPlanDetails,
+                                        billingCycleLabel: isCustom ? "Usage-Based" : dialogCosts.billingCycleLabel,
+                                        totalAmountDue: isCustom ? "Usage-Based" : currencyFormatter.format(dialogCosts.totalAmountDue),
+                                        discount: dialogCosts.discountPercentage / 100,
+                                    }}
+                                    isSigned={false}
+                                    isProposalIllustration={true}
+                                />
+                            </div>
+                        </ScrollArea>
+                        {/* Hidden div for PDF generation */}
+                         <div ref={hiddenProposalRef} style={{ display: 'none', position: 'absolute', left: '-9999px', width: '8.5in' }} className="p-12 bg-white text-black">
+                            <ContractDetails
+                                finalPlanDetails={{
+                                    ...finalPlanDetails,
+                                    billingCycleLabel: isCustom ? "Usage-Based" : dialogCosts.billingCycleLabel,
+                                    totalAmountDue: isCustom ? "Usage-Based" : currencyFormatter.format(dialogCosts.totalAmountDue),
+                                    discount: dialogCosts.discountPercentage / 100,
+                                }}
+                                isSigned={false}
+                                isProposalIllustration={true}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={handleSendEmail} disabled>
+                        <Send className="mr-2 h-4 w-4" /> Send Email (Soon)
+                    </Button>
+                    <Button onClick={handleDownloadPdf} disabled={isDownloading}>
+                        {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        Download PDF
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function PreviewDialog({ 
     finalPlanDetails,
@@ -303,7 +513,7 @@ function ContractPageContent() {
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingIds, setIsGeneratingIds] = useState(false);
-
+  
   const [sanitationFeeType, setSanitationFeeType] = useState('free');
   const [sanitationFee, setSanitationFee] = useState(500);
 
@@ -721,7 +931,6 @@ function ContractPageContent() {
   };
 
   const getClientTypeLabel = (type: Client['clientType']) => {
-    if (!type) return 'Employees'; // Default label
     if (type === 'household') return 'Family';
     return 'Employees';
   };
@@ -790,6 +999,7 @@ function ContractPageContent() {
                         <CardContent>
                             {isCustomPlan ? (
                                 <div className="space-y-1">
+                                    <p className="text-sm font-semibold">Usage-Based</p>
                                     <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}<span className="text-lg">/L</span></div>
                                     <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
                                 </div>

@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -137,7 +137,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
             element.style.display = 'block';
             
             const canvas = await html2canvas(element, {
-                scale: 2,
+                scale: 2, // Higher scale for better quality
                 useCORS: true,
                 windowWidth: element.scrollWidth,
                 windowHeight: element.scrollHeight,
@@ -161,7 +161,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
             heightLeft -= pdfHeight;
 
             while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
+                position = -pdfHeight * (pdf.internal.getNumberOfPages()); // Adjust position for subsequent pages
                 pdf.addPage();
                 pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
                 heightLeft -= pdfHeight;
@@ -173,9 +173,10 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${i} of ${totalPages}`,
-                    pdf.internal.pageSize.getWidth() - 20,
-                    pdf.internal.pageSize.getHeight() - 10
+                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
+                    pdf.internal.pageSize.getWidth() / 2,
+                    pdf.internal.pageSize.getHeight() - 10,
+                    { align: 'center' }
                 );
             }
 
@@ -928,7 +929,6 @@ function ContractPageContent() {
   };
 
   const getClientTypeLabel = (type: Client['clientType']) => {
-    if (!type) return 'Employees'; // Default label
     if (type === 'household') return 'Family';
     return 'Employees';
   };
@@ -998,6 +998,7 @@ function ContractPageContent() {
                             <CardContent>
                                 {isCustomPlan ? (
                                     <div className="space-y-1">
+                                        <p className="text-sm font-semibold">Usage-Based</p>
                                         <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}<span className="text-lg">/L</span></div>
                                         <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
                                     </div>
