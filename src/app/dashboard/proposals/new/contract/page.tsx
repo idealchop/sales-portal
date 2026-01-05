@@ -94,39 +94,6 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
     const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
-    
-    // State for the dialog's payment schedule
-    const [dialogBillingCycle, setDialogBillingCycle] = useState(finalPlanDetails.billingCycleLabel.toLowerCase() || billingCycles[0].value);
-    
-    // Recalculate costs based on the dialog's state
-    const dialogCosts = useMemo(() => {
-        if (!finalPlanDetails) return null;
-        
-        const isFlowPlan = finalPlanDetails.plan.id === 'enterprise-overflow';
-        const isCustomPlan = finalPlanDetails.plan.id === 'custom-plan';
-        const planBaseCost = isFlowPlan ? 50000 : finalPlanDetails.planBaseCost;
-
-        const sanitationCost = finalPlanDetails.sanitationFeeType === 'paid' ? finalPlanDetails.sanitationFee : 0;
-        const dispensersCost = finalPlanDetails.additionalDispensers.feeType === 'monthly' ? (finalPlanDetails.additionalDispensers.quantity * finalPlanDetails.additionalDispensers.fee) : 0;
-
-        const subtotal = planBaseCost + sanitationCost + dispensersCost;
-        
-        const selectedCycle = billingCycles.find(c => c.value === dialogBillingCycle) || billingCycles[0];
-        
-        const discount = isFlowPlan || isCustomPlan ? 0 : selectedCycle.discount;
-        const totalBeforeDiscount = isFlowPlan || isCustomPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
-        const discountValue = totalBeforeDiscount * discount;
-        const finalAmount = totalBeforeDiscount - discountValue;
-
-        return {
-            subtotal: isFlowPlan || isCustomPlan ? planBaseCost : subtotal,
-            discountPercentage: discount * 100,
-            discountValue,
-            totalAmountDue: finalAmount,
-            billingCycleLabel: selectedCycle.label
-        };
-    }, [finalPlanDetails, dialogBillingCycle]);
-
 
     const handleDownloadPdf = async () => {
         const element = hiddenProposalRef.current;
@@ -137,7 +104,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
             element.style.display = 'block';
             
             const canvas = await html2canvas(element, {
-                scale: 2, // Higher scale for better quality
+                scale: 2,
                 useCORS: true,
                 windowWidth: element.scrollWidth,
                 windowHeight: element.scrollHeight,
@@ -161,7 +128,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
             heightLeft -= pdfHeight;
 
             while (heightLeft > 0) {
-                position = -pdfHeight * (pdf.internal.getNumberOfPages()); // Adjust position for subsequent pages
+                position = -pdfHeight * (pdf.internal.getNumberOfPages());
                 pdf.addPage();
                 pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
                 heightLeft -= pdfHeight;
@@ -195,9 +162,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         toast({ title: "Coming Soon!", description: "This feature will be available in a future update." });
     }
 
-    if (!finalPlanDetails || !dialogCosts) return null;
-    const isCustom = finalPlanDetails.plan.id === 'custom-plan';
-    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+    if (!finalPlanDetails) return null;
 
     return (
         <Dialog>
@@ -207,81 +172,22 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                     <DialogTitle>Generate Proposal</DialogTitle>
                     <DialogDescription>Review the sales illustration below. You can download it as a PDF or send it via email.</DialogDescription>
                 </DialogHeader>
-                <div className="md:grid md:grid-cols-4 gap-6 items-start">
-                    <div className="md:col-span-1 space-y-4">
-                         <Card>
-                             <CardHeader>
-                                 <CardTitle className="text-base">Payment Schedule</CardTitle>
-                             </CardHeader>
-                             <CardContent>
-                                <RadioGroup value={dialogBillingCycle} onValueChange={setDialogBillingCycle} className="space-y-1" disabled={isCustom}>
-                                    {billingCycles.map((cycle) => (
-                                        <div key={`dialog-${cycle.value}`} className="flex items-center space-x-2">
-                                            <RadioGroupItem value={cycle.value} id={`dialog-${cycle.value}`} />
-                                            <Label htmlFor={`dialog-${cycle.value}`} className="font-normal flex justify-between w-full">
-                                                <span>{cycle.label}</span>
-                                                {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
-                                            </Label>
-                                        </div>
-                                    ))}
-                                </RadioGroup>
-                             </CardContent>
-                         </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Cost Summary</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2 text-sm">
-                                {!isCustom &&
-                                    <>
-                                        <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Subtotal ({dialogCosts.billingCycleLabel})</span>
-                                        <span>{currencyFormatter.format(dialogCosts.subtotal * (billingCycles.find(c=>c.value === dialogBillingCycle)?.multiplier || 1))}</span>
-                                        </div>
-                                        {dialogCosts.discountValue > 0 && (
-                                        <div className="flex justify-between text-green-600">
-                                            <span className="text-muted-foreground">Discount ({dialogCosts.discountPercentage}%)</span>
-                                            <span>- {currencyFormatter.format(dialogCosts.discountValue)}</span>
-                                        </div>
-                                        )}
-                                        <Separator />
-                                    </>
-                                }
-                                <div className="flex justify-between font-bold text-base">
-                                    <span>{isCustom ? 'Price per Liter' : 'Total Due'}</span>
-                                    <span>{isCustom ? `${currencyFormatter.format(finalPlanDetails.pricePerLiter || 0)}/L` : currencyFormatter.format(dialogCosts.totalAmountDue)}</span>
-                                </div>
-                            </CardContent>
-                         </Card>
-                    </div>
-                    <div className="md:col-span-3 mt-6 md:mt-0">
-                        <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
-                             <div className="bg-white p-8" id="pdf-content-preview">
-                                <ContractDetails
-                                    finalPlanDetails={{
-                                        ...finalPlanDetails,
-                                        billingCycleLabel: isCustom ? "Usage-Based" : dialogCosts.billingCycleLabel,
-                                        totalAmountDue: isCustom ? "Usage-Based" : currencyFormatter.format(dialogCosts.totalAmountDue),
-                                        discount: dialogCosts.discountPercentage / 100,
-                                    }}
-                                    isSigned={false}
-                                    isProposalIllustration={true}
-                                />
-                            </div>
-                        </ScrollArea>
-                        {/* Hidden div for PDF generation */}
-                         <div ref={hiddenProposalRef} style={{ display: 'none', position: 'absolute', left: '-9999px', width: '8.5in' }} className="p-12 bg-white text-black">
+                <div className="mt-6">
+                    <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
+                        <div className="bg-white p-8" id="pdf-content-preview">
                             <ContractDetails
-                                finalPlanDetails={{
-                                    ...finalPlanDetails,
-                                    billingCycleLabel: isCustom ? "Usage-Based" : dialogCosts.billingCycleLabel,
-                                    totalAmountDue: isCustom ? "Usage-Based" : currencyFormatter.format(dialogCosts.totalAmountDue),
-                                    discount: dialogCosts.discountPercentage / 100,
-                                }}
+                                finalPlanDetails={finalPlanDetails}
                                 isSigned={false}
                                 isProposalIllustration={true}
                             />
                         </div>
+                    </ScrollArea>
+                    <div ref={hiddenProposalRef} style={{ display: 'none', position: 'absolute', left: '-9999px', width: '8.5in' }} className="p-12 bg-white text-black">
+                        <ContractDetails
+                            finalPlanDetails={finalPlanDetails}
+                            isSigned={false}
+                            isProposalIllustration={true}
+                        />
                     </div>
                 </div>
                 <DialogFooter>
@@ -998,7 +904,6 @@ function ContractPageContent() {
                             <CardContent>
                                 {isCustomPlan ? (
                                     <div className="space-y-1">
-                                        <p className="text-sm font-semibold">Usage-Based</p>
                                         <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}<span className="text-lg">/L</span></div>
                                         <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
                                     </div>
