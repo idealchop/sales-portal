@@ -871,51 +871,69 @@ const handleSaveDraft = async () => {
 }
 
 const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
-    if (action === 'share') setIsSharing(true);
-    if (action === 'finalize') setIsGeneratingIds(true);
+    if (action === 'finalize') {
+        setIsGeneratingIds(true);
+    } else if (action === 'share') {
+        setIsSharing(true);
+    }
 
     try {
         if (!generatedProposalId) {
             await ensureProposalIdIsGenerated();
         }
 
-        // Use a short timeout to allow state update to propagate before opening dialogs
+        // Delay further actions to allow state to update
         setTimeout(async () => {
-            if (action === 'finalize') {
-                setFinalizeOpen(true);
-            } else if (action === 'share') {
-                const isSaved = await saveProposal('draft');
-                if (!isSaved) {
-                    throw new Error("Failed to save the proposal draft before proceeding.");
+            try {
+                if (action === 'finalize') {
+                    setFinalizeOpen(true);
+                    setIsGeneratingIds(false); // Stop loading once dialog is open
+                } else if (action === 'share') {
+                    const isSaved = await saveProposal('draft');
+                    if (!isSaved) {
+                        throw new Error("Failed to save the proposal draft before proceeding.");
+                    }
+                    const finalClientId = generatedClientId || existingClientId;
+                    if (!finalClientId || !generatedProposalId || !user) {
+                        throw new Error("Failed to secure IDs or user for sharing.");
+                    }
+
+                    const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+                    const expiresAt = new Date();
+                    expiresAt.setHours(expiresAt.getHours() + 24);
+
+                    const linkData = {
+                        id: shareableLinkRef.id,
+                        proposalId: generatedProposalId,
+                        clientId: finalClientId,
+                        userId: user.uid,
+                        expiresAt: expiresAt.toISOString(),
+                        createdAt: serverTimestamp()
+                    };
+
+                    await setDoc(shareableLinkRef, linkData);
+                    const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+                    navigator.clipboard.writeText(shareUrl);
+                    toast({
+                        title: 'Share Link Copied!',
+                        description: 'A link that expires in 24 hours has been copied to your clipboard.',
+                    });
+                    setIsSharing(false);
+                } else if (action === 'sign') {
+                    if (!existingClientId && !generatedClientId) {
+                        await ensureClientAndProposalIdsAreGenerated();
+                    }
+                    setTimeout(() => setReviewDialogOpen(true), 100);
                 }
-                const finalClientId = generatedClientId || existingClientId;
-                if (!finalClientId || !generatedProposalId || !user) throw new Error("Failed to secure IDs or user for sharing.");
-                
-                const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-                const expiresAt = new Date();
-                expiresAt.setHours(expiresAt.getHours() + 24);
-
-                const linkData = {
-                    id: shareableLinkRef.id,
-                    proposalId: generatedProposalId,
-                    clientId: finalClientId,
-                    userId: user.uid,
-                    expiresAt: expiresAt.toISOString(),
-                    createdAt: serverTimestamp()
-                };
-
-                await setDoc(shareableLinkRef, linkData);
-                const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-                navigator.clipboard.writeText(shareUrl);
+            } catch (error: any) {
+                console.error("Error in action handler inner timeout:", error);
                 toast({
-                    title: 'Share Link Copied!',
-                    description: 'A link that expires in 24 hours has been copied to your clipboard.',
+                    variant: "destructive",
+                    title: "Action Failed",
+                    description: error.message || "An unexpected error occurred.",
                 });
-            } else if (action === 'sign') {
-                if (!existingClientId && !generatedClientId) {
-                    await ensureClientAndProposalIdsAreGenerated();
-                }
-                 setTimeout(() => setReviewDialogOpen(true), 100);
+                if (action === 'share') setIsSharing(false);
+                if (action === 'finalize') setIsGeneratingIds(false);
             }
         }, 100);
 
@@ -926,12 +944,10 @@ const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
             title: "Action Failed",
             description: error.message || "An unexpected error occurred.",
         });
-    } finally {
         if (action === 'share') setIsSharing(false);
         if (action === 'finalize') setIsGeneratingIds(false);
     }
 };
-
   
     const handleSaveSignature = (data: string) => {
         setSignatureData(data);
