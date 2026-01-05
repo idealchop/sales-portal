@@ -798,7 +798,7 @@ function ContractPageContent() {
         } else if (action === 'sign') {
             setReviewDialogOpen(true);
         } else if (action === 'share') {
-            const shareableLinkRef = doc(collection(firestore, `users/${user.uid}/shareable_links`));
+            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 24);
 
@@ -806,6 +806,7 @@ function ContractPageContent() {
                 id: shareableLinkRef.id,
                 proposalId: currentProposalId,
                 clientId: finalClientId,
+                userId: user.uid,
                 expiresAt: expiresAt.toISOString(),
                 createdAt: serverTimestamp()
             };
@@ -822,7 +823,7 @@ function ContractPageContent() {
                 .catch(async (error) => {
                     console.error("Error creating shareable link:", error);
                     const permissionError = new FirestorePermissionError({
-                        path: `users/${user.uid}/shareable_links/${shareableLinkRef.id}`,
+                        path: shareableLinkRef.path,
                         operation: 'create',
                         requestResourceData: linkData,
                     });

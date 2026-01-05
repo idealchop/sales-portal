@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { Suspense, useEffect, useState, useMemo, useRef } from 'react';
+import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, getDoc, collectionGroup, query, where, getDocs, FirestoreError } from 'firebase/firestore';
@@ -34,31 +34,22 @@ function SharedProposalContent() {
 
         const fetchSharedProposal = async () => {
             setIsLoading(true);
-            const linksQuery = query(
-                collectionGroup(firestore, 'shareable_links'),
-                where('id', '==', linkId)
-            );
+            const linkDocRef = doc(firestore, 'shareable_links', linkId);
             
             try {
-                const querySnapshot = await getDocs(linksQuery);
+                const linkDocSnap = await getDoc(linkDocRef);
 
-                if (querySnapshot.empty) {
+                if (!linkDocSnap.exists()) {
                     throw new Error("This sharing link is invalid or has been removed.");
                 }
 
-                const linkDocSnap = querySnapshot.docs[0];
                 const linkData = linkDocSnap.data();
 
                 if (new Date(linkData.expiresAt) < new Date()) {
                     throw new Error("This sharing link has expired.");
                 }
-                
-                const uid = linkDocSnap.ref.parent.parent?.id;
-                if (!uid) {
-                    throw new Error("Could not determine the owner of this link.");
-                }
 
-                const proposalDocRef = doc(firestore, `clients/${linkData.clientId}/proposals/${linkData.proposalId}?uid=${uid}&linkId=${linkId}`);
+                const proposalDocRef = doc(firestore, `clients/${linkData.clientId}/proposals/${linkData.proposalId}`);
                 const proposalDocSnap = await getDoc(proposalDocRef);
 
                 if (!proposalDocSnap.exists()) {
@@ -76,8 +67,8 @@ function SharedProposalContent() {
             } catch (e: any) {
                  if (e instanceof FirestoreError && e.code === 'permission-denied') {
                     const permissionError = new FirestorePermissionError({
-                        path: `shareable_links (collection group)`,
-                        operation: 'list',
+                        path: `shareable_links/${linkId}`,
+                        operation: 'get',
                     });
                     errorEmitter.emit('permission-error', permissionError);
                 } else {

@@ -27,6 +27,23 @@ service cloud.firestore {
         return userProfile.team == managerTeamName;
     }
 
+    function isViewingSharedProposal() {
+      let linkId = request.query.linkId;
+      return exists(
+        /databases/$(database)/documents/shareable_links/$(linkId)
+      ) && get(
+        /databases/$(database)/documents/shareable_links/$(linkId)
+      ).data.expiresAt > request.time;
+    }
+    
+    function getSharedProposalClientId() {
+      return get(/databases/$(database)/documents/shareable_links/$(request.query.linkId)).data.clientId;
+    }
+    
+    function getSharedProposalId() {
+       return get(/databases/$(database)/documents/shareable_links/$(request.query.linkId)).data.proposalId;
+    }
+
     match /sales/{userId} {
       allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
       allow list: if isSignedIn();
@@ -59,13 +76,13 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() || (isViewingSharedProposal() && clientId == getSharedProposalClientId());
       allow create;
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
       allow delete: if false;
       
       match /proposals/{proposalId} {
-        allow read: if isSignedIn();
+        allow read: if isSignedIn() || (isViewingSharedProposal() && clientId == getSharedProposalClientId() && proposalId == getSharedProposalId());
         allow create;
         allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
         allow delete: if false;
