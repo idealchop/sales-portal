@@ -72,9 +72,8 @@ const addons = [
     id: 'monthly-sanitation',
     name: 'Monthly Sanitation',
     description: 'Guaranteed monthly sanitation and equipment check-up for high-traffic areas.',
-    fee: '₱500 / month',
     feeValue: 500,
-    type: 'checkbox',
+    type: 'configurable',
   },
   {
     id: 'additional-dispensers',
@@ -316,7 +315,8 @@ function ContractPageContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingIds, setIsGeneratingIds] = useState(false);
 
-  const [sanitationIsFree, setSanitationIsFree] = useState(false);
+  const [sanitationFeeType, setSanitationFeeType] = useState('paid');
+  const [sanitationFee, setSanitationFee] = useState(500);
   const [additionalLiters, setAdditionalLiters] = useState(0);
 
   const [dispenserFeeType, setDispenserFeeType] = useState('monthly');
@@ -425,7 +425,7 @@ function ContractPageContent() {
     const isCustomPlan = plan.id === 'custom-plan';
     const planBaseCost = isFlowPlan ? 50000 : (parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) || 0);
 
-    const sanitationCost = sanitationIsFree ? 0 : 500;
+    const sanitationCost = sanitationFeeType === 'paid' ? sanitationFee : 0;
     const dispensersCost = dispenserFeeType === 'monthly' ? dispenserQuantity * dispenserFee : 0;
     const dispensersSecurityCost = dispenserFeeType === 'security' ? dispenserQuantity * dispenserFee : 0;
     const litersCost = additionalLiters * additionalLiterCost;
@@ -461,9 +461,9 @@ function ContractPageContent() {
         billingCycleLabel: isCustomPlan ? "Usage-Based" : selectedCycle.label,
         discount: discount,
         basePrice: subtotal,
-        selectedAddons: {
-          'monthly-sanitation': sanitationIsFree,
-        },
+        selectedAddons: {},
+        sanitationFeeType,
+        sanitationFee,
         additionalDispensers: {
             quantity: dispenserQuantity,
             feeType: dispenserFeeType,
@@ -491,7 +491,7 @@ function ContractPageContent() {
         dispensers: parseInt(dispensers || '0'),
         containers: parseInt(containers || '0'),
     };
-  }, [plan, finalPlan, billingCycle, sanitationIsFree, dispenserQuantity, dispenserFeeType, dispenserFee, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
+  }, [plan, finalPlan, billingCycle, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -880,7 +880,6 @@ function ContractPageContent() {
                         <Table>
                         <TableHeader>
                             <TableRow>
-                            <TableHead className="w-[50px]"></TableHead>
                             <TableHead>Add-On</TableHead>
                             <TableHead className="w-[250px]">Configuration</TableHead>
                             <TableHead className="text-right">Fee</TableHead>
@@ -890,13 +889,24 @@ function ContractPageContent() {
                             {addons.map((addon) => (
                             <TableRow key={addon.id}>
                                 <TableCell>
-                                    {addon.type === 'checkbox' && <Checkbox id={addon.id} onCheckedChange={(checked) => setSanitationIsFree(!!checked)} checked={sanitationIsFree} />}
-                                </TableCell>
-                                <TableCell>
                                     <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
                                     <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
                                 </TableCell>
                                 <TableCell>
+                                    {addon.type === 'configurable' && (
+                                        <div className="flex flex-col gap-2">
+                                            <Select value={sanitationFeeType} onValueChange={setSanitationFeeType}>
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="paid">Paid</SelectItem>
+                                                    <SelectItem value="free">Free</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            {sanitationFeeType === 'paid' && (
+                                                <Input type="number" min="0" value={sanitationFee} onChange={e => setSanitationFee(Number(e.target.value))} placeholder="Fee" />
+                                            )}
+                                        </div>
+                                    )}
                                     {addon.type === 'custom' && (
                                         <div className="flex flex-col gap-2">
                                             <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
@@ -919,7 +929,7 @@ function ContractPageContent() {
                                     )}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    {addon.type === 'checkbox' ? (sanitationIsFree ? 'Free' : addon.fee) : (addon.type === 'slider' ? addon.fee : 'Custom')}
+                                    {addon.type === 'configurable' ? (sanitationFeeType === 'free' ? 'Free' : currencyFormatter.format(sanitationFee)) : (addon.type === 'slider' ? addon.fee : 'Custom')}
                                 </TableCell>
                             </TableRow>
                             ))}
@@ -955,10 +965,10 @@ function ContractPageContent() {
                      {(!isFlowPlan || isCustomPlan) && (
                         <>
                              <div className="space-y-2">
-                                {sanitationIsFree && (
+                                {sanitationFeeType === 'paid' && (
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">Monthly Sanitation</span>
-                                        <span className="font-medium text-green-600">Free</span>
+                                        <span className="font-medium">{currencyFormatter.format(sanitationFee)}</span>
                                     </div>
                                 )}
                                 {dispenserQuantity > 0 && (
