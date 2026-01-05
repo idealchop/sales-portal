@@ -27,21 +27,17 @@ service cloud.firestore {
         return userProfile.team == managerTeamName;
     }
 
-    // Correctly check if the request is for a proposal linked by a valid shareable_links document
+    // Corrected function to find a valid shareable link for a given proposal.
+    // It queries the shareable_links collection instead of relying on request.query.
     function isReadingSharedProposal(proposalId, clientId) {
-      // The linkId must be passed as a query parameter from the client-side fetch
-      let linkId = request.query.linkId;
-      if (linkId == null) {
-        return false;
-      }
-      
-      let linkDoc = get(/databases/$(database)/documents/shareable_links/$(linkId));
-      
-      // Check if the link exists, is not expired, and matches the requested proposal and client
-      return linkDoc != null &&
-             linkDoc.data.expiresAt > request.time &&
-             linkDoc.data.proposalId == proposalId &&
-             linkDoc.data.clientId == clientId;
+      // Check if there's any document in shareable_links that matches the proposalId,
+      // is not expired, and matches the clientId.
+      return exists(
+        /databases/$(database)/documents/shareable_links
+          .where("proposalId", "==", proposalId)
+          .where("clientId", "==", clientId)
+          .where("expiresAt", ">", request.time)
+      );
     }
 
     match /sales/{userId} {
@@ -70,6 +66,8 @@ service cloud.firestore {
     }
     
     match /proposals/{proposalId} {
+        // Authenticated users can read proposals.
+        // Public users can read if a valid, unexpired shareable link exists for this proposal.
         allow read: if isSignedIn() || isReadingSharedProposal(proposalId, resource.data.clientId);
         allow list: if isSignedIn();
         allow create: if isSignedIn();
@@ -84,7 +82,9 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      allow read: if isSignedIn() || isReadingSharedProposal(request.resource.data.proposals[0].id, clientId);
+      // Authenticated users can read client data.
+      // Public users can read client data if a valid shareable link exists for a proposal associated with this client.
+      allow read: if isSignedIn() || exists(/databases/$(database)/documents/shareable_links) && isReadingSharedProposal(resource.data.proposals[0].id, clientId);
       allow list: if isSignedIn();
       allow create;
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
