@@ -34,20 +34,21 @@ function SharedProposalContent() {
 
         const fetchSharedProposal = async () => {
             setIsLoading(true);
-            const linkDocRef = doc(firestore, 'shareable_links', linkId);
+            setError(null);
             
             try {
-                const linkDocSnap = await getDoc(linkDocRef);
+                 const linkDocRef = doc(firestore, 'shareable_links', linkId);
+                 const linkDocSnap = await getDoc(linkDocRef);
 
-                if (!linkDocSnap.exists()) {
-                    throw new Error("This sharing link is invalid or has been removed.");
-                }
+                 if (!linkDocSnap.exists()) {
+                     throw new Error("This sharing link is invalid or has been removed.");
+                 }
 
-                const linkData = linkDocSnap.data();
+                 const linkData = linkDocSnap.data();
 
-                if (new Date(linkData.expiresAt) < new Date()) {
-                    throw new Error("This sharing link has expired.");
-                }
+                 if (new Date(linkData.expiresAt) < new Date()) {
+                     throw new Error("This sharing link has expired.");
+                 }
                 
                 const proposalDocRef = doc(firestore, 'clients', linkData.clientId, 'proposals', linkData.proposalId);
                 const proposalDocSnap = await getDoc(proposalDocRef);
@@ -66,11 +67,11 @@ function SharedProposalContent() {
                 }
 
             } catch (e: any) {
-                 if (e instanceof FirestoreError && e.code === 'permission-denied') {
-                    setError("You do not have permission to view this proposal.");
+                 if (e.code === 'permission-denied') {
+                    setError("You do not have permission to view this proposal. The link may be invalid or expired.");
                 } else {
                     console.error("Error fetching shared proposal: ", e);
-                    setError(e.message || "An unexpected error occurred.");
+                    setError(e.message || "An unexpected error occurred while fetching the proposal.");
                 }
             } finally {
                 setIsLoading(false);
@@ -112,7 +113,7 @@ function SharedProposalContent() {
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }
