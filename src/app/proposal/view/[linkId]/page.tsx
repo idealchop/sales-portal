@@ -52,8 +52,13 @@ function SharedProposalContent() {
                 if (new Date(linkData.expiresAt) < new Date()) {
                     throw new Error("This sharing link has expired.");
                 }
+                
+                const uid = linkDocSnap.ref.parent.parent?.id;
+                if (!uid) {
+                    throw new Error("Could not determine the owner of this link.");
+                }
 
-                const proposalDocRef = doc(firestore, `clients/${linkData.clientId}/proposals/${linkData.proposalId}`);
+                const proposalDocRef = doc(firestore, `clients/${linkData.clientId}/proposals/${linkData.proposalId}?uid=${uid}&linkId=${linkId}`);
                 const proposalDocSnap = await getDoc(proposalDocRef);
 
                 if (!proposalDocSnap.exists()) {

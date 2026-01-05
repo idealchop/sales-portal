@@ -27,6 +27,21 @@ service cloud.firestore {
         return userProfile.team == managerTeamName;
     }
 
+    function isViewingSharedProposal(clientId, proposalId) {
+      // Allow if there's a valid, unexpired shareable link for this proposal
+      return exists(
+        /databases/$(database)/documents/users/$(request.query.uid)/shareable_links/$(request.query.linkId)
+      ) && get(
+        /databases/$(database)/documents/users/$(request.query.uid)/shareable_links/$(request.query.linkId)
+      ).data.clientId == clientId 
+      && get(
+        /databases/$(database)/documents/users/$(request.query.uid)/shareable_links/$(request.query.linkId)
+      ).data.proposalId == proposalId
+      && get(
+        /databases/$(database)/documents/users/$(request.query.uid)/shareable_links/$(request.query.linkId)
+      ).data.expiresAt > request.time;
+    }
+
     match /sales/{userId} {
       allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
       allow list: if isSignedIn();
@@ -47,11 +62,12 @@ service cloud.firestore {
     }
     
     match /shareable_links/{linkId} {
-      allow get: if true;
-      allow list, update, delete: if false;
+      allow get: if true; // Public read to verify the link
+      allow list, update, delete: if false; // Links are immutable from the client
     }
     
     match /users/{userId}/shareable_links/{linkId} {
+        allow get: if true;
         allow create: if isSignedIn() && isOwner(userId);
     }
 
@@ -62,13 +78,13 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() || isViewingSharedProposal(clientId, request.query.proposalId);
       allow create;
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
       allow delete: if false;
       
       match /proposals/{proposalId} {
-        allow read: if isSignedIn();
+        allow read: if isSignedIn() || isViewingSharedProposal(clientId, proposalId);
         allow create;
         allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
         allow delete: if false;
