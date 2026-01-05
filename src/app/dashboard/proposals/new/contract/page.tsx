@@ -118,7 +118,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         const isCustomPlan = finalPlanDetails.plan.id === 'custom-plan';
         const planBaseCost = isFlowPlan ? 50000 : finalPlanDetails.planBaseCost;
 
-        const addonsCost = addons.reduce((total, addon) => (addon.type === 'checkbox' && finalPlanDetails.selectedAddons && finalPlanDetails.selectedAddons[addon.id] ? total + addon.feeValue : total), 0);
+        const addonsCost = addons.reduce((total, addon) => (addon.type === 'checkbox' && finalPlanDetails.selectedAddons?.[addon.id] ? total + addon.feeValue : total), 0);
         const dispensersCost = (finalPlanDetails.additionalDispensers as any).quantity * (finalPlanDetails.additionalDispensers as any).fee;
         const litersCost = finalPlanDetails.additionalLiters * additionalLiterCost;
 
@@ -852,16 +852,34 @@ function ContractPageContent() {
 
 
   const handleActionClick = async (action: 'generate' | 'sign') => {
-    if (!firestore) return;
-
     if (action === 'generate') {
-        const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-        const proposalCounterSnap = await getDoc(proposalCounterRef);
-        const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-        setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
+      setIsGeneratingIds(true);
+      if (!generatedProposalId) {
+        try {
+          if (!firestore) return;
+          const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+          const proposalCounterSnap = await getDoc(proposalCounterRef);
+          const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+          setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
+        } catch (error: any) {
+          console.error("Error generating Proposal ID:", error);
+          toast({
+            variant: "destructive",
+            title: "ID Generation Failed",
+            description: error.message || "Could not generate a Proposal ID.",
+          });
+          setIsGeneratingIds(false);
+          return;
+        }
+      }
+      // Open the dialog once the proposal ID is ready.
+      document.getElementById('generate-proposal-trigger')?.click();
+      setIsGeneratingIds(false);
+
     } else if (action === 'sign') {
         setIsGeneratingIds(true);
         try {
+            if (!firestore) return;
             await runTransaction(firestore, async (transaction) => {
                 const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
                 const proposalCounterSnap = await transaction.get(proposalCounterRef);
@@ -964,7 +982,7 @@ function ContractPageContent() {
                 <Link href={prevLink}>Previous</Link>
             </Button>
              <GenerateProposalDialog finalPlanDetails={finalPlanDetails}>
-                <Button variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds}>
+                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds}>
                     {isGeneratingIds && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Generate Proposal
                 </Button>
@@ -1075,7 +1093,11 @@ function ContractPageContent() {
                         {addons.map((addon) => (
                         <TableRow key={addon.id}>
                             <TableCell>
-                                {addon.type === 'checkbox' && <Checkbox id={addon.id} onCheckedChange={() => setSanitationIsFree(!sanitationIsFree)} checked={sanitationIsFree} />}
+                                {addon.type === 'checkbox' && (
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id={addon.id} onCheckedChange={(checked) => setSanitationIsFree(!!checked)} checked={sanitationIsFree} />
+                                    </div>
+                                )}
                             </TableCell>
                             <TableCell>
                                 <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
@@ -1171,7 +1193,7 @@ function ContractPageContent() {
                     )}
                 </div>
 
-                {!isFlowPlan && (
+                {(!isFlowPlan || isCustomPlan) && (
                     <>
                         <div className="space-y-2">
                             {sanitationIsFree && (
@@ -1239,7 +1261,7 @@ function ContractPageContent() {
               <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds} className="flex-1">
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
-            </Button>
+              </Button>
           </div>
       </div>
 

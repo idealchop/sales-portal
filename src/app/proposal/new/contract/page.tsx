@@ -642,17 +642,11 @@ function ContractPageContent() {
   };
 
 
-  const handleActionClick = async (action: 'generate' | 'sign') => {
-    if (!firestore) return;
-
-    if (action === 'generate') {
-        const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-        const proposalCounterSnap = await getDoc(proposalCounterRef);
-        const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-        setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
-    } else if (action === 'sign') {
+  const handleActionClick = async (action: 'sign') => {
+    if (action === 'sign') {
         setIsGeneratingIds(true);
         try {
+            if (!firestore) return;
             await runTransaction(firestore, async (transaction) => {
                 const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
                 const proposalCounterSnap = await transaction.get(proposalCounterRef);
@@ -896,7 +890,7 @@ function ContractPageContent() {
                             {addons.map((addon) => (
                             <TableRow key={addon.id}>
                                 <TableCell>
-                                    {addon.type === 'checkbox' && <Checkbox id={addon.id} onCheckedChange={() => setSanitationIsFree(!sanitationIsFree)} checked={sanitationIsFree} />}
+                                    {addon.type === 'checkbox' && <Checkbox id={addon.id} onCheckedChange={(checked) => setSanitationIsFree(!!checked)} checked={sanitationIsFree} />}
                                 </TableCell>
                                 <TableCell>
                                     <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
@@ -958,7 +952,7 @@ function ContractPageContent() {
                         )}
                     </div>
 
-                     {(!isFlowPlan && !isCustomPlan) && (
+                     {(!isFlowPlan || isCustomPlan) && (
                         <>
                              <div className="space-y-2">
                                 {sanitationIsFree && (
@@ -1035,5 +1029,4 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
     
