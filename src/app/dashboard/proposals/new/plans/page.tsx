@@ -742,7 +742,7 @@ function PlansGrid({
                     </CardHeader>
                     <CardContent className="flex-1 text-left space-y-4">
                         <div className="space-y-2">
-                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Liters Included</p>
+                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Premium Liters Included</p>
                             <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
                                 <span>{liters}</span>
                             </div>
