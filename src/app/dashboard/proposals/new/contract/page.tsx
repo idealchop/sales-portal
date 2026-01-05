@@ -915,6 +915,7 @@ function ContractPageContent() {
   }
 
   const isFlowPlan = plan.id === 'enterprise-overflow';
+  const isCustomPlan = plan.id === 'custom-plan';
   const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
   const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
@@ -934,6 +935,13 @@ function ContractPageContent() {
     if (!type) return 'Employees'; // Default label
     if (type === 'household') return 'Family';
     return 'Employees';
+  };
+  
+  const pricePerLiter = (planBaseCost: number, totalMonthlyLiters: number) => {
+    if (totalMonthlyLiters > 0) {
+      return planBaseCost / totalMonthlyLiters;
+    }
+    return 0;
   };
 
   return (
@@ -991,11 +999,20 @@ function ContractPageContent() {
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <Card className="bg-primary text-primary-foreground">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">{isFlowPlan ? 'Usage-Based' : 'Total Liters'}</CardTitle>
+                                <CardTitle className="text-sm font-medium">
+                                    {isFlowPlan ? 'Usage-Based' : (isCustomPlan ? 'Price per Liter' : 'Total Liters')}
+                                </CardTitle>
                                 <Waves className="h-4 w-4 text-primary-foreground/70" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{finalPlan.liters}{isFlowPlan ? '' : ' / mo'}</div>
+                                {isCustomPlan ? (
+                                    <>
+                                        <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter(finalPlanDetails.planBaseCost, finalPlanDetails.totalMonthlyLiters))}</div>
+                                        <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
+                                    </>
+                                ) : (
+                                    <div className="text-2xl font-bold">{finalPlan.liters}{isFlowPlan ? '' : ' / mo'}</div>
+                                )}
                             </CardContent>
                         </Card>
                         <Card className="bg-primary text-primary-foreground">
