@@ -403,13 +403,16 @@ export function ContractDetails({
                 <p className="text-xs text-muted-foreground">
                     www.smartrefill.io | customer@smartrefill.io
                 </p>
+                <p className="text-xs text-muted-foreground">
+                    SEC. Registration ID: 2025080215620-07
+                </p>
             </div>
             
             <Separator />
 
              <Card>
-                <div className="grid md:grid-cols-2 items-center gap-6">
-                    <div className="relative min-h-[250px] p-6">
+                 <div className="grid md:grid-cols-2 items-center gap-6">
+                    <div className="relative min-h-[250px] md:order-1 p-6">
                         <Image 
                             src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5"
                             alt="Smart Refill App on a phone"
@@ -418,8 +421,8 @@ export function ContractDetails({
                             data-ai-hint="app interface"
                         />
                     </div>
-                    <div>
-                        <CardHeader>
+                    <div className="md:order-2">
+                         <CardHeader>
                             <CardTitle>Welcome to Smart Refill</CardTitle>
                             <CardDescription>Your Partner in Water Supply Automation</CardDescription>
                         </CardHeader>
@@ -439,13 +442,13 @@ export function ContractDetails({
 
 
             <div className="grid grid-cols-1 gap-6">
-                 <div className="space-y-6">
-                     <Card>
+                <div className="space-y-6">
+                    <Card>
                         <CardHeader>
                             <CardTitle>Client Information</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                             <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3">
                                 <Building className="h-5 w-5 text-muted-foreground mt-1" />
                                 <div>
                                     <p className="text-xs text-muted-foreground">Company Name</p>
@@ -482,11 +485,11 @@ export function ContractDetails({
                             </div>
                         </CardContent>
                     </Card>
-                     <Card>
+                    <Card>
                         <CardHeader>
                             <CardTitle>Plan Details: {summaryTitle}</CardTitle>
                         </CardHeader>
-                         <CardContent className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                        <CardContent className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                             <div className="flex items-start gap-3">
                                 <Waves className="h-5 w-5 text-primary" />
                                 <div>
@@ -501,14 +504,14 @@ export function ContractDetails({
                                     <p className="font-semibold">{finalPlan.employees}</p>
                                 </div>
                             </div>
-                             <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3">
                                 <Package className="h-5 w-5 text-primary" />
                                 <div>
                                     <p className="text-muted-foreground">Rotation Containers</p>
                                     <p className="font-semibold">{refillableGallons} units</p>
                                 </div>
                             </div>
-                             <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3">
                                 <Computer className="h-5 w-5 text-primary" />
                                 <div>
                                     <p className="text-muted-foreground">Dispensers</p>
@@ -522,7 +525,7 @@ export function ContractDetails({
                                     <p className="font-semibold">{finalPlan.refillFrequency}</p>
                                 </div>
                             </div>
-                             <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3">
                                 <Ship className="h-5 w-5 text-primary" />
                                 <div>
                                     <p className="text-muted-foreground">Water Stations</p>
