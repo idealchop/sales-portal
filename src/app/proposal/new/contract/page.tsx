@@ -317,7 +317,7 @@ function ContractPageContent() {
   });
   const [additionalDispensers, setAdditionalDispensers] = useState(0);
   const [additionalLiters, setAdditionalLiters] = useState(0);
-  const [isDialogOpen, setDialogOpen] = useState(false);
+  const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
   const [signatureData, setSignatureData] = useState<string | undefined>();
@@ -639,43 +639,46 @@ function ContractPageContent() {
 
   const handleActionClick = async (action: 'generate' | 'sign') => {
     if (!firestore) return;
-    setIsGeneratingIds(true);
 
-    try {
-        await runTransaction(firestore, async (transaction) => {
-            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const proposalCounterSnap = await transaction.get(proposalCounterRef);
-            const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-            const newProposalId = String(newProposalNumber).padStart(10, '0');
-            
-            transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-            setGeneratedProposalId(newProposalId);
-
-            if (action === 'sign' && !existingClientId && !generatedClientId) {
-                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                const clientCounterSnap = await transaction.get(clientCounterRef);
-                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
-                const year = new Date().getFullYear().toString().slice(-2);
-                const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+    if (action === 'generate') {
+        const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+        const proposalCounterSnap = await getDoc(proposalCounterRef);
+        const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+        setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
+    } else if (action === 'sign') {
+        setIsGeneratingIds(true);
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+                const proposalCounterSnap = await transaction.get(proposalCounterRef);
+                const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+                const newProposalId = String(newProposalNumber).padStart(10, '0');
                 
-                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                setGeneratedClientId(newClientId);
-            }
-        });
-        
-        if (action === 'sign') {
-            setDialogOpen(true);
-        }
+                transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+                setGeneratedProposalId(newProposalId);
 
-    } catch (error: any) {
-        console.error("Error generating IDs:", error);
-        toast({
-            variant: "destructive",
-            title: "ID Generation Failed",
-            description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
-        });
-    } finally {
-        setIsGeneratingIds(false);
+                if (!existingClientId && !generatedClientId) {
+                    const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                    const clientCounterSnap = await transaction.get(clientCounterRef);
+                    const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
+                    const year = new Date().getFullYear().toString().slice(-2);
+                    const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                    
+                    transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                    setGeneratedClientId(newClientId);
+                }
+            });
+            setReviewDialogOpen(true);
+        } catch (error: any) {
+            console.error("Error generating IDs:", error);
+            toast({
+                variant: "destructive",
+                title: "ID Generation Failed",
+                description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
+            });
+        } finally {
+            setIsGeneratingIds(false);
+        }
     }
   };
   
@@ -758,8 +761,8 @@ function ContractPageContent() {
             <PreviewDialog 
                 finalPlanDetails={finalPlanDetails}
                 isSaving={isSaving}
-                isDialogOpen={isDialogOpen}
-                setDialogOpen={setDialogOpen}
+                isDialogOpen={isReviewDialogOpen}
+                setDialogOpen={setReviewDialogOpen}
                 saveProposal={saveProposal}
                 signatureData={signatureData}
                 onSaveSignature={handleSaveSignature}
@@ -866,73 +869,77 @@ function ContractPageContent() {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle>Optional Add-Ons</CardTitle>
-                    <CardDescription>
-                    Enhance your Smart Refill experience with premium service options.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead className="w-[50px]"></TableHead>
-                        <TableHead>Add-On</TableHead>
-                        <TableHead className="w-[200px]">Quantity</TableHead>
-                        <TableHead className="text-right">Monthly Fee</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {addons.map((addon) => (
-                        <TableRow key={addon.id}>
-                            <TableCell>
-                                {addon.type === 'checkbox' && (
-                                    <Checkbox 
-                                        id={addon.id} 
-                                        onCheckedChange={() => handleAddonToggle(addon.id)}
-                                        checked={selectedAddons[addon.id]}
-                                    />
+            <div className="lg:col-span-2">
+                {!isFlowPlan && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Optional Add-Ons</CardTitle>
+                            <CardDescription>
+                            Enhance your Smart Refill experience with premium service options.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                            <TableHeader>
+                                <TableRow>
+                                <TableHead className="w-[50px]"></TableHead>
+                                <TableHead>Add-On</TableHead>
+                                <TableHead className="w-[200px]">Quantity</TableHead>
+                                <TableHead className="text-right">Monthly Fee</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {addons.map((addon) => (
+                                <TableRow key={addon.id}>
+                                    <TableCell>
+                                        {addon.type === 'checkbox' && (
+                                            <Checkbox 
+                                                id={addon.id} 
+                                                onCheckedChange={() => handleAddonToggle(addon.id)}
+                                                checked={selectedAddons[addon.id]}
+                                            />
 
-                                )}
-                            </TableCell>
-                            <TableCell>
-                                <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                                <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
-                            </TableCell>
-                            <TableCell>
-                                {addon.type === 'quantity' && (
-                                    <Input 
-                                        id={addon.id}
-                                        type="number"
-                                        min="0"
-                                        value={additionalDispensers}
-                                        onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
-                                        className="w-24"
-                                    />
-                                )}
-                                {addon.type === 'slider' && (
-                                    <div className="flex items-center gap-4">
-                                        <Slider
-                                            id={addon.id}
-                                            min={0}
-                                            max={1000}
-                                            step={50}
-                                            value={[additionalLiters]}
-                                            onValueChange={(value) => setAdditionalLiters(value[0])}
-                                            className="w-[120px]"
-                                        />
-                                        <span className="text-sm font-medium w-[60px] text-right">{additionalLiters} L</span>
-                                    </div>
-                                )}
-                            </TableCell>
-                            <TableCell className="text-right">{addon.fee}</TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                                        <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
+                                    </TableCell>
+                                    <TableCell>
+                                        {addon.type === 'quantity' && (
+                                            <Input 
+                                                id={addon.id}
+                                                type="number"
+                                                min="0"
+                                                value={additionalDispensers}
+                                                onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
+                                                className="w-24"
+                                            />
+                                        )}
+                                        {addon.type === 'slider' && (
+                                            <div className="flex items-center gap-4">
+                                                <Slider
+                                                    id={addon.id}
+                                                    min={0}
+                                                    max={1000}
+                                                    step={50}
+                                                    value={[additionalLiters]}
+                                                    onValueChange={(value) => setAdditionalLiters(value[0])}
+                                                    className="w-[120px]"
+                                                />
+                                                <span className="text-sm font-medium w-[60px] text-right">{additionalLiters} L</span>
+                                            </div>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-right">{addon.fee}</TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
             
             <Card>
                 <CardHeader>

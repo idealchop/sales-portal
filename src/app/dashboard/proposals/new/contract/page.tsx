@@ -848,43 +848,46 @@ function ContractPageContent() {
 
   const handleActionClick = async (action: 'generate' | 'sign') => {
     if (!firestore) return;
-    setIsGeneratingIds(true);
 
-    try {
-        await runTransaction(firestore, async (transaction) => {
-            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const proposalCounterSnap = await transaction.get(proposalCounterRef);
-            const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-            const newProposalId = String(newProposalNumber).padStart(10, '0');
-            
-            transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-            setGeneratedProposalId(newProposalId);
-
-            if (action === 'sign' && !existingClientId && !generatedClientId) {
-                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                const clientCounterSnap = await transaction.get(clientCounterRef);
-                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
-                const year = new Date().getFullYear().toString().slice(-2);
-                const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+    if (action === 'generate') {
+        const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+        const proposalCounterSnap = await getDoc(proposalCounterRef);
+        const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+        setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
+    } else if (action === 'sign') {
+        setIsGeneratingIds(true);
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+                const proposalCounterSnap = await transaction.get(proposalCounterRef);
+                const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+                const newProposalId = String(newProposalNumber).padStart(10, '0');
                 
-                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                setGeneratedClientId(newClientId);
-            }
-        });
-        
-        if (action === 'sign') {
-            setReviewDialogOpen(true);
-        }
+                transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+                setGeneratedProposalId(newProposalId);
 
-    } catch (error: any) {
-        console.error("Error generating IDs:", error);
-        toast({
-            variant: "destructive",
-            title: "ID Generation Failed",
-            description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
-        });
-    } finally {
-        setIsGeneratingIds(false);
+                if (!existingClientId && !generatedClientId) {
+                    const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                    const clientCounterSnap = await transaction.get(clientCounterRef);
+                    const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
+                    const year = new Date().getFullYear().toString().slice(-2);
+                    const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                    
+                    transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                    setGeneratedClientId(newClientId);
+                }
+            });
+            setReviewDialogOpen(true);
+        } catch (error: any) {
+            console.error("Error generating IDs:", error);
+            toast({
+                variant: "destructive",
+                title: "ID Generation Failed",
+                description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
+            });
+        } finally {
+            setIsGeneratingIds(false);
+        }
     }
   };
   
@@ -1046,7 +1049,7 @@ function ContractPageContent() {
                 </CardContent>
             </Card>
 
-            {!isFlowPlan && !isCustomPlan && (
+            {!isFlowPlan && (
                 <Card>
                     <CardHeader>
                         <CardTitle>Optional Add-Ons</CardTitle>
@@ -1174,7 +1177,7 @@ function ContractPageContent() {
                     )}
                 </div>
 
-                {!isFlowPlan && !isCustomPlan && (
+                {!isFlowPlan && (
                     <>
                         <div className="space-y-2">
                             {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
