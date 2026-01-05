@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
 import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
-import { Logo } from '@/components/logo';
 import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User, Mail, MapPin } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
 import Image from 'next/image';
@@ -409,41 +408,43 @@ export function ContractDetails({
             <Separator />
 
              <Card>
-                <CardHeader>
-                    <CardTitle>Welcome to Smart Refill</CardTitle>
-                    <CardDescription>Your Partner in Water Supply Automation</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    <div className="grid md:grid-cols-2 items-center gap-6">
-                         <div className="relative min-h-[250px]">
-                            <Image 
-                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5"
-                                alt="Smart Refill App on a phone"
-                                fill
-                                className="object-contain rounded-lg p-8"
-                                data-ai-hint="app interface"
-                            />
-                        </div>
-                        <div className="space-y-4">
-                            <p className="text-muted-foreground">
-                                Thank you for choosing River Philippines. This proposal outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
-                            </p>
-                            <p className="text-muted-foreground">
-                                We go beyond delivery—we provide a secure, high-quality hydration system that protects your team's health and optimizes your operational costs.
-                            </p>
-                        </div>
+                <div className="grid md:grid-cols-2 items-center gap-6">
+                    <div className="relative min-h-[250px] p-6">
+                        <Image 
+                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5"
+                            alt="Smart Refill App on a phone"
+                            fill
+                            className="object-contain rounded-lg"
+                            data-ai-hint="app interface"
+                        />
                     </div>
-                </CardContent>
+                    <div>
+                        <CardHeader>
+                            <CardTitle>Welcome to Smart Refill</CardTitle>
+                            <CardDescription>Your Partner in Water Supply Automation</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                            <div className="space-y-4">
+                                <p className="text-muted-foreground">
+                                    Thank you for choosing River Philippines. This proposal outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
+                                </p>
+                                <p className="text-muted-foreground">
+                                    We go beyond delivery—we provide a secure, high-quality hydration system that protects your team's health and optimizes your operational costs.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </div>
+                </div>
             </Card>
 
 
             <div className="grid grid-cols-1 gap-6">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-6">
                      <Card>
                         <CardHeader>
                             <CardTitle>Client Information</CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 gap-y-4 text-sm">
+                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
                              <div className="flex items-start gap-3">
                                 <Building className="h-5 w-5 text-muted-foreground mt-1" />
                                 <div>
@@ -472,7 +473,7 @@ export function ContractDetails({
                                     <p className="font-semibold">{client.contactPhone || "N/A"}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 sm:col-span-2">
                                 <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
                                 <div>
                                     <p className="text-xs text-muted-foreground">Address</p>
