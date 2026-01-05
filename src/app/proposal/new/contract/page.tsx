@@ -629,65 +629,49 @@ function ContractPageContent() {
 
 
   const handleActionClick = async (action: 'generate' | 'sign') => {
-    if (action === 'generate') {
-      // This is now handled by the DialogTrigger, but we keep the ID generation logic here.
-      setIsGeneratingIds(true);
-      try {
-        if (!firestore) { throw new Error("Firestore not initialized."); }
-        if (!generatedProposalId) {
-          await runTransaction(firestore, async (transaction) => {
-            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const proposalCounterSnap = await transaction.get(proposalCounterRef);
-            const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-            const newProposalId = String(newProposalNumber).padStart(10, '0');
-            transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-            setGeneratedProposalId(newProposalId);
-          });
+    setIsGeneratingIds(true);
+    try {
+        if (!firestore) {
+            throw new Error("Firestore not initialized.");
         }
-      } catch (error: any) {
-        toast({ variant: "destructive", title: "ID Generation Failed", description: error.message });
-      } finally {
-        setIsGeneratingIds(false);
-      }
-    } else if (action === 'sign') {
-        setIsGeneratingIds(true);
-        try {
-            if (!firestore) {
-              throw new Error("Firestore not initialized.");
-            };
-            await runTransaction(firestore, async (transaction) => {
-                if (!generatedProposalId) {
-                  const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-                  const proposalCounterSnap = await transaction.get(proposalCounterRef);
-                  const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-                  const newProposalId = String(newProposalNumber).padStart(10, '0');
-                  transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-                  setGeneratedProposalId(newProposalId);
-                }
+        await runTransaction(firestore, async (transaction) => {
+            if (!generatedProposalId) {
+                const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+                const proposalCounterSnap = await transaction.get(proposalCounterRef);
+                const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+                const newProposalId = String(newProposalNumber).padStart(10, '0');
+                transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+                setGeneratedProposalId(newProposalId);
+            }
 
-                if (!existingClientId && !generatedClientId) {
-                    const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                    const clientCounterSnap = await transaction.get(clientCounterRef);
-                    const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
-                    const year = new Date().getFullYear().toString().slice(-2);
-                    const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-                    transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                    setGeneratedClientId(newClientId);
-                }
-            });
+            if (action === 'sign' && !existingClientId && !generatedClientId) {
+                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                const clientCounterSnap = await transaction.get(clientCounterRef);
+                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
+                const year = new Date().getFullYear().toString().slice(-2);
+                const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                setGeneratedClientId(newClientId);
+            }
+        });
+
+        if (action === 'generate') {
+            document.getElementById('generate-proposal-trigger')?.click();
+        } else if (action === 'sign') {
             setReviewDialogOpen(true);
-        } catch (error: any) {
-            console.error("Error generating IDs:", error);
-            toast({
-                variant: "destructive",
-                title: "ID Generation Failed",
-                description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
-            });
-        } finally {
-            setIsGeneratingIds(false);
         }
+
+    } catch (error: any) {
+        console.error("Error generating IDs:", error);
+        toast({
+            variant: "destructive",
+            title: "ID Generation Failed",
+            description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
+        });
+    } finally {
+        setIsGeneratingIds(false);
     }
-  };
+};
   
     const handleSaveSignature = (data: string) => {
         setSignatureData(data);
@@ -798,17 +782,17 @@ function ContractPageContent() {
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                             <CardTitle className="text-sm font-medium">
-                                {isFlowPlan ? 'Usage-Based' : (isCustomPlan ? 'Price per Liter' : 'Premium Liters Included')}
+                            <CardTitle className="text-sm font-medium">
+                                {isFlowPlan ? 'Top-Up Amount' : (isCustomPlan ? 'Usage-Based' : 'Premium Liters Included')}
                             </CardTitle>
                             <Waves className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
                             {isCustomPlan ? (
-                                <>
-                                    <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}</div>
+                                <div className="space-y-1">
+                                    <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}<span className="text-lg">/L</span></div>
                                     <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
-                                </>
+                                </div>
                             ) : (
                                 <div className="text-2xl font-bold">{finalPlan.liters} / mo</div>
                             )}
@@ -970,40 +954,44 @@ function ContractPageContent() {
                         )}
                     </div>
 
-                    <div className="space-y-2">
-                        {sanitationFeeType === 'paid' && (
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Monthly Sanitation</span>
-                                <span className="font-medium">{currencyFormatter.format(sanitationFee)}</span>
-                            </div>
-                        )}
-                        {dispenserQuantity > 0 && (
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Add'l Dispensers ({dispenserQuantity}x)</span>
-                                <span className="font-medium">{dispenserFeeType === 'free' ? 'Free' : currencyFormatter.format(dispenserFee * dispenserQuantity)}</span>
-                            </div>
-                        )}
-                    </div>
-                    
-                    {!isCustomPlan && (
+                    {(sanitationFeeType !== 'free' || dispenserQuantity > 0) && (
                         <>
-                            <Separator />
-                            <div className='space-y-2'>
-                                <Label>Payment Schedule</Label>
-                                <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan || isCustomPlan}>
-                                    {billingCycles.map((cycle) => (
-                                        <div key={cycle.value} className="flex items-center space-x-2">
-                                            <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan || isCustomPlan}/>
-                                            <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
-                                                <span>{cycle.label}</span>
-                                                {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
-                                            </Label>
-                                        </div>
-                                    ))}
-                                </RadioGroup>
+                            <div className="space-y-2">
+                                {sanitationFeeType === 'paid' && (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Monthly Sanitation</span>
+                                        <span className="font-medium">{currencyFormatter.format(sanitationFee)}</span>
+                                    </div>
+                                )}
+                                {dispenserQuantity > 0 && (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Add'l Dispensers ({dispenserQuantity}x)</span>
+                                        <span className="font-medium">{dispenserFeeType === 'free' ? 'Free' : currencyFormatter.format(dispenserFee * dispenserQuantity)}</span>
+                                    </div>
+                                )}
                             </div>
+                            
+                            <Separator />
                         </>
                     )}
+                    
+                    {!isCustomPlan && (
+                        <div className='space-y-2'>
+                            <Label>Payment Schedule</Label>
+                            <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>
+                                {billingCycles.map((cycle) => (
+                                    <div key={cycle.value} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
+                                        <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
+                                            <span>{cycle.label}</span>
+                                            {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        </div>
+                    )}
+
 
                     <Separator />
                     

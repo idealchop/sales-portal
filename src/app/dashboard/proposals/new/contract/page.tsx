@@ -107,7 +107,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         const planBaseCost = isFlowPlan ? 50000 : finalPlanDetails.planBaseCost;
 
         const sanitationCost = finalPlanDetails.sanitationFeeType === 'paid' ? finalPlanDetails.sanitationFee : 0;
-        const dispensersCost = (finalPlanDetails.additionalDispensers as any).quantity * (finalPlanDetails.additionalDispensers as any).fee;
+        const dispensersCost = finalPlanDetails.additionalDispensers.feeType === 'monthly' ? (finalPlanDetails.additionalDispensers.quantity * finalPlanDetails.additionalDispensers.fee) : 0;
 
         const subtotal = planBaseCost + sanitationCost + dispensersCost;
         
@@ -991,16 +991,16 @@ function ContractPageContent() {
                         <Card className="bg-primary text-primary-foreground">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">
-                                    {isFlowPlan ? 'Usage-Based' : (isCustomPlan ? 'Price per Liter' : 'Premium Liters Included')}
+                                    {isFlowPlan ? 'Top-Up Amount' : (isCustomPlan ? 'Usage-Based' : 'Premium Liters Included')}
                                 </CardTitle>
                                 <Waves className="h-4 w-4 text-primary-foreground/70" />
                             </CardHeader>
                             <CardContent>
                                 {isCustomPlan ? (
-                                    <>
-                                        <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}</div>
+                                    <div className="space-y-1">
+                                        <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}<span className="text-lg">/L</span></div>
                                         <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
-                                    </>
+                                    </div>
                                 ) : (
                                     <div className="text-2xl font-bold">{finalPlan.liters}{isFlowPlan ? '' : ' / mo'}</div>
                                 )}
@@ -1160,7 +1160,7 @@ function ContractPageContent() {
                     )}
                 </div>
 
-                {(!isFlowPlan || isCustomPlan) && (
+                {(sanitationFeeType !== 'free' || dispenserQuantity > 0) && (
                     <>
                         <div className="space-y-2">
                             {sanitationFeeType === 'paid' && (
@@ -1178,23 +1178,26 @@ function ContractPageContent() {
                         </div>
                         
                         <Separator />
-                        
-                        <div className='space-y-2'>
-                            <Label>Payment Schedule</Label>
-                            <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan || isCustomPlan}>
-                                {billingCycles.map((cycle) => (
-                                    <div key={cycle.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan || isCustomPlan}/>
-                                        <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
-                                            <span>{cycle.label}</span>
-                                            {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
-                                        </Label>
-                                    </div>
-                                ))}
-                            </RadioGroup>
-                        </div>
                     </>
                 )}
+                
+                {!isCustomPlan && (
+                    <div className='space-y-2'>
+                        <Label>Payment Schedule</Label>
+                        <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>
+                            {billingCycles.map((cycle) => (
+                                <div key={cycle.value} className="flex items-center space-x-2">
+                                    <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
+                                    <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
+                                        <span>{cycle.label}</span>
+                                        {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
+                                    </Label>
+                                </div>
+                            ))}
+                        </RadioGroup>
+                    </div>
+                )}
+
 
                 <Separator />
                 
