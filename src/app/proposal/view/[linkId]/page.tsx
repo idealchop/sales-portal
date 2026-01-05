@@ -2,7 +2,7 @@
 'use client';
 
 import React, { Suspense, useEffect, useState, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, getDoc, collectionGroup, query, where, getDocs, FirestoreError } from 'firebase/firestore';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
@@ -18,6 +18,7 @@ function SharedProposalContent() {
     const linkId = params.linkId as string;
     const firestore = useFirestore();
     const { toast } = useToast();
+    const searchParams = useSearchParams();
 
     const [proposalDetails, setProposalDetails] = useState<FinalPlanDetails | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +49,10 @@ function SharedProposalContent() {
                 if (new Date(linkData.expiresAt) < new Date()) {
                     throw new Error("This sharing link has expired.");
                 }
+                
+                const url = new URL(window.location.href);
+                url.searchParams.set('linkId', linkId);
+                window.history.replaceState({}, '', url.toString());
 
                 const proposalDocRef = doc(firestore, `clients/${linkData.clientId}/proposals/${linkData.proposalId}`);
                 const proposalDocSnap = await getDoc(proposalDocRef);
@@ -66,11 +71,11 @@ function SharedProposalContent() {
 
             } catch (e: any) {
                  if (e instanceof FirestoreError && e.code === 'permission-denied') {
-                    const permissionError = new FirestorePermissionError({
+                    const contextualError = new FirestorePermissionError({
                         path: `shareable_links/${linkId}`,
                         operation: 'get',
                     });
-                    errorEmitter.emit('permission-error', permissionError);
+                    errorEmitter.emit('permission-error', contextualError);
                 } else {
                     console.error("Error fetching shared proposal: ", e);
                     setError(e.message || "An unexpected error occurred.");
@@ -115,7 +120,7 @@ function SharedProposalContent() {
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }
