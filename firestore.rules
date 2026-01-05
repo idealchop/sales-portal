@@ -27,23 +27,6 @@ service cloud.firestore {
         return userProfile.team == managerTeamName;
     }
 
-    // Correctly check if the request is for a proposal linked by a valid shareable_links document
-    function isReadingSharedProposal(proposalId, clientId) {
-      // The linkId must be passed as a query parameter from the client-side fetch
-      let linkId = request.query.linkId;
-      if (linkId == null) {
-        return false;
-      }
-      
-      let linkDoc = get(/databases/$(database)/documents/shareable_links/$(linkId));
-      
-      // Check if the link exists, is not expired, and matches the requested proposal and client
-      return linkDoc != null &&
-             linkDoc.data.expiresAt > request.time &&
-             linkDoc.data.proposalId == proposalId &&
-             linkDoc.data.clientId == clientId;
-    }
-
     match /sales/{userId} {
       allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
       allow list: if isSignedIn();
@@ -70,7 +53,11 @@ service cloud.firestore {
     }
     
     match /proposals/{proposalId} {
-        allow read: if isSignedIn() || isReadingSharedProposal(proposalId, resource.data.clientId);
+        allow read: if isSignedIn() || 
+          exists(/databases/$(database)/documents/shareable_links/linkId) && 
+          get(/databases/$(database)/documents/shareable_links/linkId).data.proposalId == proposalId &&
+          get(/databases/$(database)/documents/shareable_links/linkId).data.clientId == resource.data.clientId &&
+          get(/databases/$(database)/documents/shareable_links/linkId).data.expiresAt > request.time;
         allow list: if isSignedIn();
         allow create: if isSignedIn();
         allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
@@ -84,7 +71,7 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      allow read: if isSignedIn() || isReadingSharedProposal(request.resource.data.proposals[0].id, clientId);
+      allow read: if isSignedIn();
       allow list: if isSignedIn();
       allow create;
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
