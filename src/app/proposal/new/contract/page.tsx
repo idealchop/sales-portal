@@ -191,14 +191,17 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                         />
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={handleSendEmail} disabled>
-                        <Send className="mr-2 h-4 w-4" /> Send Email (Soon)
-                    </Button>
-                    <Button onClick={handleDownloadPdf} disabled={isDownloading}>
-                        {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                        Download PDF
-                    </Button>
+                <DialogFooter className="sm:justify-between items-center">
+                    <p className="text-xs text-muted-foreground text-left">This proposal is valid for 30 days. Prices and terms are subject to change thereafter.</p>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={handleSendEmail} disabled>
+                            <Send className="mr-2 h-4 w-4" /> Send Email (Soon)
+                        </Button>
+                        <Button onClick={handleDownloadPdf} disabled={isDownloading}>
+                            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                            Download PDF
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
