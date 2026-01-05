@@ -118,8 +118,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         const isCustomPlan = finalPlanDetails.plan.id === 'custom-plan';
         const planBaseCost = isFlowPlan ? 50000 : finalPlanDetails.planBaseCost;
 
-        const addonsCost = addons.reduce((total, addon) => (addon.type === 'checkbox' && finalPlanDetails.selectedAddons[addon.id] ? total + addon.feeValue : total), 0);
-        const dispensersCost = finalPlanDetails.additionalDispensers * additionalDispenserCost;
+        const addonsCost = addons.reduce((total, addon) => (addon.type === 'checkbox' && finalPlanDetails.selectedAddons && finalPlanDetails.selectedAddons[addon.id] ? total + addon.feeValue : total), 0);
+        const dispensersCost = (finalPlanDetails.additionalDispensers as any).quantity * (finalPlanDetails.additionalDispensers as any).fee;
         const litersCost = finalPlanDetails.additionalLiters * additionalLiterCost;
 
         const subtotal = planBaseCost + addonsCost + dispensersCost + litersCost;
@@ -670,7 +670,9 @@ function ContractPageContent() {
         billingCycleLabel: isCustomPlan ? "Usage-Based" : selectedCycle.label,
         discount: discount,
         basePrice: subtotal,
-        sanitationIsFree,
+        selectedAddons: {
+          'monthly-sanitation': sanitationIsFree,
+        },
         additionalDispensers: {
             quantity: dispenserQuantity,
             feeType: dispenserFeeType,

@@ -461,7 +461,9 @@ function ContractPageContent() {
         billingCycleLabel: isCustomPlan ? "Usage-Based" : selectedCycle.label,
         discount: discount,
         basePrice: subtotal,
-        sanitationIsFree,
+        selectedAddons: {
+          'monthly-sanitation': sanitationIsFree,
+        },
         additionalDispensers: {
             quantity: dispenserQuantity,
             feeType: dispenserFeeType,
