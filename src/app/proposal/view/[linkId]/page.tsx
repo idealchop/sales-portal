@@ -1,10 +1,10 @@
 
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collectionGroup, query, where, getDocs } from 'firebase/firestore';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, AlertTriangle, FileText, Download } from 'lucide-react';
@@ -35,13 +35,19 @@ function SharedProposalContent() {
         const fetchSharedProposal = async () => {
             setIsLoading(true);
             try {
-                const linkDocRef = doc(firestore, 'shareable_links', linkId);
-                const linkDocSnap = await getDoc(linkDocRef);
+                // Query the collection group to find the link by its ID across all users
+                const linksQuery = query(
+                    collectionGroup(firestore, 'shareable_links'),
+                    where('id', '==', linkId)
+                );
 
-                if (!linkDocSnap.exists()) {
+                const querySnapshot = await getDocs(linksQuery);
+
+                if (querySnapshot.empty) {
                     throw new Error("This sharing link is invalid or has been removed.");
                 }
 
+                const linkDocSnap = querySnapshot.docs[0];
                 const linkData = linkDocSnap.data();
 
                 if (new Date() > new Date(linkData.expiresAt.seconds * 1000)) {
