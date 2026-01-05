@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -186,4 +186,3 @@ export default function SharedProposalPage() {
         </Suspense>
     );
 }
-
