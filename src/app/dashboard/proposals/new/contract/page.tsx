@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -605,7 +604,7 @@ function ContractPageContent() {
         title: "Missing Information",
         description: "Cannot save proposal without complete plan details or Firestore instance.",
       });
-      return;
+      return false;
     }
 
     const isSubscribing = status === 'accepted';
@@ -617,7 +616,7 @@ function ContractPageContent() {
             title: "Payment Proof Required",
             description: "Please upload your proof of payment to subscribe.",
         });
-        return;
+        return false;
     }
 
     const proposalOwnerId = managerId || user?.uid;
@@ -627,7 +626,7 @@ function ContractPageContent() {
         title: "Authentication Error",
         description: "Could not determine the proposal owner. Please ensure you are logged in.",
       });
-      return;
+      return false;
     }
   
     setIsSaving(true);
@@ -641,7 +640,7 @@ function ContractPageContent() {
         } else {
           toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
           setIsSaving(false);
-          return;
+          return false;
         }
       }
       
@@ -649,7 +648,7 @@ function ContractPageContent() {
       if (!proposalId) {
         toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
         setIsSaving(false);
-        return;
+        return false;
       }
       
       let downloadURL = '';
@@ -718,16 +717,23 @@ function ContractPageContent() {
       const proposalRef = doc(firestore, "proposals", proposalId);
       await setDoc(proposalRef, newProposalData, { merge: true });
   
-      toast({
-        title: status === 'draft' ? "Proposal Saved!" : "Subscription Successful!",
-        description: `Your proposal for ${companyName} has been saved.`,
-      });
+      if (status !== 'draft') {
+        toast({
+            title: status === 'accepted' ? "Subscription Successful!" : "Proposal Updated!",
+            description: `Your proposal for ${companyName} has been processed.`,
+        });
+      }
       
       if (isSubscribing) {
           router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${proposalId}&token=${onboardingToken}`);
-      } else {
+      } else if (status === 'draft' && !isSubscribing) {
+          // This case is for sharing, so we don't redirect, just show a silent success
+      }
+      else {
           router.push('/dashboard/proposals');
       }
+      
+      return true;
   
     } catch (error) {
         console.error("Error saving proposal:", error);
@@ -738,6 +744,7 @@ function ContractPageContent() {
             description: (error as Error).message || "An error occurred while saving the proposal.",
           });
         }
+        return false;
     } finally {
       setIsSaving(false);
     }
@@ -747,50 +754,52 @@ function ContractPageContent() {
   const handleActionClick = async (action: 'generate' | 'sign' | 'share') => {
     if (action === 'share') setIsSharing(true);
     setIsGeneratingIds(true);
+
     try {
-        if (!firestore) throw new Error("Firestore not initialized.");
-        if (!user || !user.uid) throw new Error("User not authenticated.");
+        if (!firestore || !user || !user.uid) throw new Error("Authentication or Firestore not ready.");
 
         let currentProposalId = generatedProposalId;
+        if (!currentProposalId) {
+            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+            const newProposalNumber = await runTransaction(firestore, async (transaction) => {
+                const counterSnap = await transaction.get(proposalCounterRef);
+                const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
+                const newId = currentId + 1;
+                transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
+                return newId;
+            });
+            currentProposalId = String(newProposalNumber).padStart(10, '0');
+            setGeneratedProposalId(currentProposalId);
+        }
+
         let currentClientId = generatedClientId;
-
-        await runTransaction(firestore, async (transaction) => {
-            let proposalCounterSnap, clientCounterSnap;
-
-            if (!currentProposalId) {
-                const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-                proposalCounterSnap = await transaction.get(proposalCounterRef);
-            }
-            if (!existingClientId && !currentClientId) {
-                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                clientCounterSnap = await transaction.get(clientCounterRef);
-            }
-
-            if (proposalCounterSnap) {
-                const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-                currentProposalId = String(newProposalNumber).padStart(10, '0');
-                transaction.set(doc(firestore, 'counters', 'proposalCounter'), { currentId: newProposalNumber }, { merge: true });
-                setGeneratedProposalId(currentProposalId);
-            }
-            
-            if (clientCounterSnap) {
-                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
-                const year = new Date().getFullYear().toString().slice(-2);
-                currentClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-                transaction.set(doc(firestore, 'counters', 'clientCounter'), { currentId: newClientNumber }, { merge: true });
-                setGeneratedClientId(currentClientId);
-            }
-        });
+        if (!existingClientId && !currentClientId) {
+            const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+            const newClientNumber = await runTransaction(firestore, async (transaction) => {
+                const counterSnap = await transaction.get(clientCounterRef);
+                const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
+                const newId = currentId + 1;
+                transaction.set(clientCounterRef, { currentId: newId }, { merge: true });
+                return newId;
+            });
+            const year = new Date().getFullYear().toString().slice(-2);
+            currentClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+            setGeneratedClientId(currentClientId);
+        }
         
-        const finalClientId = currentClientId || existingClientId;
-        if (!finalClientId || !currentProposalId) throw new Error("Failed to secure IDs for proposal.");
-
+        const isSaved = await saveProposal('draft');
+        if (!isSaved) {
+            throw new Error("Failed to save the proposal draft before proceeding.");
+        }
 
         if (action === 'generate') {
             document.getElementById('generate-proposal-trigger')?.click();
         } else if (action === 'sign') {
             setReviewDialogOpen(true);
         } else if (action === 'share') {
+            const finalClientId = currentClientId || existingClientId;
+            if (!finalClientId || !currentProposalId) throw new Error("Failed to secure IDs for proposal.");
+
             const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 24);
@@ -804,26 +813,14 @@ function ContractPageContent() {
                 createdAt: serverTimestamp()
             };
 
-            await setDoc(shareableLinkRef, linkData)
-                .then(() => {
-                    const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-                    navigator.clipboard.writeText(shareUrl);
-                    toast({
-                        title: 'Share Link Copied!',
-                        description: 'A link that expires in 24 hours has been copied to your clipboard.',
-                    });
-                })
-                .catch(async (error) => {
-                    console.error("Error creating shareable link:", error);
-                    const permissionError = new FirestorePermissionError({
-                        path: shareableLinkRef.path,
-                        operation: 'create',
-                        requestResourceData: linkData,
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                });
+            await setDoc(shareableLinkRef, linkData);
+            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+            navigator.clipboard.writeText(shareUrl);
+            toast({
+                title: 'Share Link Copied!',
+                description: 'A link that expires in 24 hours has been copied to your clipboard.',
+            });
         }
-
     } catch (error: any) {
         console.error("Error performing action:", error);
         toast({
@@ -833,7 +830,7 @@ function ContractPageContent() {
         });
     } finally {
         setIsGeneratingIds(false);
-        if(action === 'share') setIsSharing(false);
+        if (action === 'share') setIsSharing(false);
     }
 };
   
@@ -1189,5 +1186,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
