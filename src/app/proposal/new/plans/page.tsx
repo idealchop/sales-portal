@@ -467,7 +467,7 @@ function CustomPlanCalculator({
                         <span className="font-bold">{isFixedPrice ? (showEstimatedCost ? 'Estimated Monthly Cost' : 'Top-Up Amount') : 'Estimated Monthly Cost'}</span>
                         <span className="font-bold text-lg">{currencyFormatter.format(showEstimatedCost ? estimatedCost : totalCost)}</span>
                     </div>
-                    {(minimumCost > 0 || minimumContainersPerWeek > 0) && !isFixedPrice && (
+                     {(minimumCost > 0 || minimumContainersPerWeek > 0) && !isFixedPrice && (
                         <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
                             'mt-4', 
                             isMinimumMet 
@@ -636,7 +636,7 @@ function PlansGrid({
     
     const isSingleCustomPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-customized';
     const isSingleOverflowPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-overflow';
-    const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household') && selectedPlan === 'custom-plan';
+    const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household' || businessSize === 'corporate') && selectedPlan === 'custom-plan';
 
     const visiblePlans = useMemo(() => {
         if (isSmeCommercialCustom) {
@@ -665,7 +665,7 @@ function PlansGrid({
         const isSelected = selectedPlan === plan.id;
         const isCustom = businessSize === 'enterprise' && (plan.id === 'enterprise-customized');
         const isOverflow = businessSize === 'enterprise' && (plan.id === 'enterprise-overflow');
-        const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household') && (plan.id === 'custom-plan');
+        const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household' || businessSize === 'corporate') && (plan.id === 'custom-plan');
         const isDisabled = false;
 
         let employees = plan.employees;
@@ -781,6 +781,7 @@ function PlansGrid({
                             title={businessSize === 'household' ? "Customize Family Plan" : "Customize SME/Commercial Plan"}
                             maxGallons={businessSize === 'household' ? 10 : undefined}
                             maxDeliveries={businessSize === 'household' ? 2 : undefined}
+                            allowPriceEdit={true}
                         />
                     )}
 
@@ -1080,7 +1081,7 @@ export default function PlansPage() {
                     defaultPlanId = 'pro';
                     break;
                 case 'corporate':
-                    plansToRender = corporatePlans;
+                    plansToRender = [...corporatePlans, customSmeCommercialPlan];
                     defaultPlanId = 'enterprise-plus';
                     break;
                 default:
@@ -1107,8 +1108,9 @@ export default function PlansPage() {
     
     const isNextDisabled = useMemo(() => {
         if (!selectedPlan) return true;
-        if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
-            const containersPerWeek = customCalculatedValues.gallons * customCalculatedValues.deliveries;
+        if (selectedPlan === 'enterprise-customized') {
+            if (!customCalculatedValues) return true;
+            const containersPerWeek = (customCalculatedValues as any).gallons * (customCalculatedValues as any).deliveries;
             return containersPerWeek < 10;
         }
         if (selectedPlan === 'enterprise-overflow') {
