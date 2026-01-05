@@ -397,7 +397,7 @@ export function ContractDetails({
     return (
         <div className="space-y-6 p-2">
             <div className="text-center space-y-1">
-                <h2 className="text-xl font-bold text-primary">River Tech Inc.</h2>
+                 <h2 className="text-xl font-bold text-primary">River Tech Group, Inc.</h2>
                 <p className="text-xs text-muted-foreground">
                     Filinvest Axis Tower 1 24th & 26th Flr, 304 Filinvest Ave, Alabang, Muntinlupa
                 </p>
@@ -410,6 +410,15 @@ export function ContractDetails({
 
             <Card>
                 <div className="grid md:grid-cols-2 items-center">
+                     <div className="relative min-h-[250px] hidden md:block">
+                        <Image 
+                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/River%20Mobile%2Flanding%20page%20image.png?alt=media&token=bce76780-73c9-4b4c-8e6f-83e5234d337a"
+                            alt="Smart Refill App on a phone"
+                            fill
+                            className="object-contain rounded-l-lg"
+                            data-ai-hint="app interface"
+                        />
+                    </div>
                     <div className="p-6">
                         <CardHeader className="p-0">
                             <CardTitle>Welcome To Smart Refill</CardTitle>
@@ -425,15 +434,6 @@ export function ContractDetails({
                                 We go beyond delivery — we help you save time, cut inefficiencies, and ensure every liter counts.
                             </p>
                         </CardContent>
-                    </div>
-                    <div className="relative min-h-[250px] hidden md:block">
-                        <Image 
-                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/River%20Mobile%2Flanding%20page%20image.png?alt=media&token=bce76780-73c9-4b4c-8e6f-83e5234d337a"
-                            alt="Smart Refill App on a phone"
-                            fill
-                            className="object-contain rounded-r-lg"
-                            data-ai-hint="app interface"
-                        />
                     </div>
                 </div>
             </Card>
