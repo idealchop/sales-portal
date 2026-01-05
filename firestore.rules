@@ -45,6 +45,12 @@ service cloud.firestore {
       allow get: if true; 
       allow list, write: if isAdmin(); 
     }
+    
+    match /shareable_links/{linkId} {
+      allow get: if true; // Public read to verify the link
+      allow create: if isSignedIn(); // Only authenticated users can create links
+      allow list, update, delete: if false; // Links are immutable from the client
+    }
 
     match /commissions/{commissionId} {
         allow read: if isSignedIn() && (isAdmin() || isOwner(resource.data.userId) || (isManager() && isSalesManagerOf(resource.data.userId)));

@@ -171,6 +171,10 @@
               "proofUrl"
             ]
           }
+        },
+        "onboardingToken": {
+            "type": "string",
+            "description": "A unique, secure token to authenticate access to the public onboarding status page."
         }
       },
       "required": [
@@ -416,6 +420,37 @@
       "required": [
         "currentId"
       ]
+    },
+    "ShareableLink": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ShareableLink",
+        "type": "object",
+        "description": "Represents a unique, expiring link for sharing proposals.",
+        "properties": {
+            "id": {
+                "type": "string",
+                "description": "The unique token for the shareable link."
+            },
+            "proposalId": {
+                "type": "string",
+                "description": "The ID of the proposal being shared."
+            },
+            "clientId": {
+                "type": "string",
+                "description": "The ID of the client associated with the proposal."
+            },
+            "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when this link will expire."
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when this link was created."
+            }
+        },
+        "required": ["id", "proposalId", "clientId", "expiresAt", "createdAt"]
     }
   },
   "auth": {
@@ -465,6 +500,12 @@
         "$ref": "#/entities/Counter"
       },
       "description": "Stores counters for sequential ID generation."
+    },
+    "/shareable_links/{linkId}": {
+      "schema": {
+        "$ref": "#/entities/ShareableLink"
+      },
+      "description": "Stores secure, expiring links for sharing proposals."
     }
   }
 }

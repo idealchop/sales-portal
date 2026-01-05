@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home, Share2, ClipboardCopy } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -60,7 +60,6 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/comp
 import { Progress } from '@/components/ui/progress';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0, multiplier: 1 },
@@ -91,7 +90,7 @@ const addons = [
 ];
 
 
-function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode }) {
+function GenerateProposalDialog({ finalPlanDetails, children, onShare }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void }) {
     const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
@@ -158,11 +157,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
             setIsDownloading(false);
         }
     };
-
-    const handleSendEmail = () => {
-        toast({ title: "Coming Soon!", description: "This feature will be available in a future update." });
-    }
-
+    
     if (!finalPlanDetails) return null;
 
     return (
@@ -170,8 +165,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
-                    <DialogTitle>Generate Proposal</DialogTitle>
-                    <DialogDescription>Review the sales illustration below. You can download it as a PDF or send it via email.</DialogDescription>
+                    <DialogTitle>Finalize & Share Proposal</DialogTitle>
+                    <DialogDescription>Review the final sales illustration. You can share a secure link with your client or download it as a PDF.</DialogDescription>
                 </DialogHeader>
                 <div className="mt-6">
                     <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
@@ -194,8 +189,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                 <DialogFooter className="sm:justify-between items-center">
                     <p className="text-xs text-muted-foreground text-left">This proposal is valid for 30 days. Prices and terms are subject to change thereafter.</p>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={handleSendEmail} disabled>
-                            <Send className="mr-2 h-4 w-4" /> Send Email (Soon)
+                        <Button variant="outline" onClick={onShare}>
+                            <Share2 className="mr-2 h-4 w-4" /> Share Link
                         </Button>
                         <Button onClick={handleDownloadPdf} disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
@@ -747,45 +742,72 @@ function ContractPageContent() {
   };
 
 
-  const handleActionClick = async (action: 'generate' | 'sign') => {
+  const handleActionClick = async (action: 'generate' | 'sign' | 'share') => {
     setIsGeneratingIds(true);
     try {
-        if (!firestore) {
-            throw new Error("Firestore not initialized.");
-        }
-        await runTransaction(firestore, async (transaction) => {
-            if (!generatedProposalId) {
-                const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-                const proposalCounterSnap = await transaction.get(proposalCounterRef);
-                const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-                const newProposalId = String(newProposalNumber).padStart(10, '0');
-                transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-                setGeneratedProposalId(newProposalId);
-            }
+        if (!firestore) throw new Error("Firestore not initialized.");
 
-            if (action === 'sign' && !existingClientId && !generatedClientId) {
-                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                const clientCounterSnap = await transaction.get(clientCounterRef);
-                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
-                const year = new Date().getFullYear().toString().slice(-2);
-                const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                setGeneratedClientId(newClientId);
-            }
-        });
+        let currentProposalId = generatedProposalId;
+        let currentClientId = generatedClientId;
+
+        if (!currentProposalId || (!currentClientId && !existingClientId)) {
+            await runTransaction(firestore, async (transaction) => {
+                if (!currentProposalId) {
+                    const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+                    const proposalCounterSnap = await transaction.get(proposalCounterRef);
+                    const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+                    currentProposalId = String(newProposalNumber).padStart(10, '0');
+                    transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+                    setGeneratedProposalId(currentProposalId);
+                }
+
+                if (!existingClientId && !currentClientId) {
+                    const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                    const clientCounterSnap = await transaction.get(clientCounterRef);
+                    const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
+                    const year = new Date().getFullYear().toString().slice(-2);
+                    currentClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                    transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                    setGeneratedClientId(currentClientId);
+                }
+            });
+        }
+        
+        const finalClientId = currentClientId || existingClientId;
+        if (!finalClientId || !currentProposalId) throw new Error("Failed to secure IDs for proposal.");
+
 
         if (action === 'generate') {
             document.getElementById('generate-proposal-trigger')?.click();
         } else if (action === 'sign') {
             setReviewDialogOpen(true);
+        } else if (action === 'share') {
+            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
+
+            await setDoc(shareableLinkRef, {
+                id: shareableLinkRef.id,
+                proposalId: currentProposalId,
+                clientId: finalClientId,
+                expiresAt: expiresAt.toISOString(),
+                createdAt: serverTimestamp()
+            });
+
+            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+            navigator.clipboard.writeText(shareUrl);
+            toast({
+                title: 'Share Link Copied!',
+                description: 'A link that expires in 24 hours has been copied to your clipboard.',
+            });
         }
 
     } catch (error: any) {
-        console.error("Error generating IDs:", error);
+        console.error("Error performing action:", error);
         toast({
             variant: "destructive",
-            title: "ID Generation Failed",
-            description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
+            title: "Action Failed",
+            description: error.message || "An unexpected error occurred.",
         });
     } finally {
         setIsGeneratingIds(false);
@@ -824,13 +846,10 @@ function ContractPageContent() {
   const isFlowPlan = plan.id === 'enterprise-overflow';
   const isCustomPlan = plan.id === 'custom-plan';
   const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
-  
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
-
   const prevLink = `/proposal/new/plans?${searchParams.toString()}`;
-  
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
-
+  
   const clientTypeMap: { [key: string]: string } = {
     household: 'Family',
     sme: 'SME',
@@ -848,7 +867,7 @@ function ContractPageContent() {
 
   return (
     <div className="flex flex-col gap-6 pb-24 sm:pb-0">
-      <div className="flex items-center justify-between">
+       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Finalize Proposal</h1>
           <p className="text-muted-foreground">
@@ -859,10 +878,10 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-             <GenerateProposalDialog finalPlanDetails={finalPlanDetails}>
+             <GenerateProposalDialog finalPlanDetails={finalPlanDetails} onShare={() => handleActionClick('share')}>
                 <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds}>
                     {isGeneratingIds && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Generate Proposal
+                    Finalize
                 </Button>
             </GenerateProposalDialog>
             <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
@@ -1147,6 +1166,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-    
-
-    

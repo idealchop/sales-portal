@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home, Share2, ClipboardCopy } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -90,7 +90,7 @@ const addons = [
 ];
 
 
-function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode }) {
+function GenerateProposalDialog({ finalPlanDetails, children, onShare }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void }) {
     const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
@@ -158,10 +158,6 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
         }
     };
 
-    const handleSendEmail = () => {
-        toast({ title: "Coming Soon!", description: "This feature will be available in a future update." });
-    }
-
     if (!finalPlanDetails) return null;
 
     return (
@@ -169,8 +165,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
-                    <DialogTitle>Generate Proposal</DialogTitle>
-                    <DialogDescription>Review the sales illustration below. You can download it as a PDF or send it via email.</DialogDescription>
+                    <DialogTitle>Finalize & Share Proposal</DialogTitle>
+                    <DialogDescription>Review the final sales illustration. You can share a secure link with your client or download it as a PDF.</DialogDescription>
                 </DialogHeader>
                 <div className="mt-6">
                     <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
@@ -193,8 +189,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
                 <DialogFooter className="sm:justify-between items-center">
                     <p className="text-xs text-muted-foreground text-left">This proposal is valid for 30 days. Prices and terms are subject to change thereafter.</p>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={handleSendEmail} disabled>
-                            <Send className="mr-2 h-4 w-4" /> Send Email (Soon)
+                        <Button variant="outline" onClick={onShare}>
+                            <Share2 className="mr-2 h-4 w-4" /> Share Link
                         </Button>
                         <Button onClick={handleDownloadPdf} disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
@@ -746,45 +742,72 @@ function ContractPageContent() {
   };
 
 
-  const handleActionClick = async (action: 'generate' | 'sign') => {
+  const handleActionClick = async (action: 'generate' | 'sign' | 'share') => {
     setIsGeneratingIds(true);
     try {
-        if (!firestore) {
-            throw new Error("Firestore not initialized.");
-        }
-        await runTransaction(firestore, async (transaction) => {
-            if (!generatedProposalId) {
-                const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-                const proposalCounterSnap = await transaction.get(proposalCounterRef);
-                const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-                const newProposalId = String(newProposalNumber).padStart(10, '0');
-                transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-                setGeneratedProposalId(newProposalId);
-            }
+        if (!firestore) throw new Error("Firestore not initialized.");
 
-            if (action === 'sign' && !existingClientId && !generatedClientId) {
-                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                const clientCounterSnap = await transaction.get(clientCounterRef);
-                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
-                const year = new Date().getFullYear().toString().slice(-2);
-                const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                setGeneratedClientId(newClientId);
-            }
-        });
+        let currentProposalId = generatedProposalId;
+        let currentClientId = generatedClientId;
+
+        if (!currentProposalId || (!currentClientId && !existingClientId)) {
+            await runTransaction(firestore, async (transaction) => {
+                if (!currentProposalId) {
+                    const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+                    const proposalCounterSnap = await transaction.get(proposalCounterRef);
+                    const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+                    currentProposalId = String(newProposalNumber).padStart(10, '0');
+                    transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+                    setGeneratedProposalId(currentProposalId);
+                }
+
+                if (!existingClientId && !currentClientId) {
+                    const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                    const clientCounterSnap = await transaction.get(clientCounterRef);
+                    const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
+                    const year = new Date().getFullYear().toString().slice(-2);
+                    currentClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                    transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                    setGeneratedClientId(currentClientId);
+                }
+            });
+        }
+        
+        const finalClientId = currentClientId || existingClientId;
+        if (!finalClientId || !currentProposalId) throw new Error("Failed to secure IDs for proposal.");
+
 
         if (action === 'generate') {
             document.getElementById('generate-proposal-trigger')?.click();
         } else if (action === 'sign') {
             setReviewDialogOpen(true);
+        } else if (action === 'share') {
+            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
+
+            await setDoc(shareableLinkRef, {
+                id: shareableLinkRef.id,
+                proposalId: currentProposalId,
+                clientId: finalClientId,
+                expiresAt: expiresAt.toISOString(),
+                createdAt: serverTimestamp()
+            });
+
+            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+            navigator.clipboard.writeText(shareUrl);
+            toast({
+                title: 'Share Link Copied!',
+                description: 'A link that expires in 24 hours has been copied to your clipboard.',
+            });
         }
 
     } catch (error: any) {
-        console.error("Error generating IDs:", error);
+        console.error("Error performing action:", error);
         toast({
             variant: "destructive",
-            title: "ID Generation Failed",
-            description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
+            title: "Action Failed",
+            description: error.message || "An unexpected error occurred.",
         });
     } finally {
         setIsGeneratingIds(false);
@@ -826,9 +849,7 @@ function ContractPageContent() {
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
   const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
-  const discountValue = isFlowPlan || isCustomPlan ? 0 : (finalPlanDetails.basePrice * selectedCycle.multiplier) * selectedCycle.discount;
-
-
+  
   const clientTypeMap: { [key: string]: string } = {
     household: 'Family',
     sme: 'SME',
@@ -857,15 +878,15 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
-             <GenerateProposalDialog finalPlanDetails={finalPlanDetails}>
+             <GenerateProposalDialog finalPlanDetails={finalPlanDetails} onShare={() => handleActionClick('share')}>
                 <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds}>
                     {isGeneratingIds && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Generate Proposal
+                    Finalize
                 </Button>
             </GenerateProposalDialog>
             <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Review &amp; Sign
+                Review & Sign
             </Button>
         </div>
       </div>
@@ -885,133 +906,71 @@ function ContractPageContent() {
             />
        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 flex flex-col gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
-                    <CardDescription>
-                        A summary of the selected subscription plan details.
-                        {!isFlowPlan && !isCustomPlan && " (Includes +20% free liters every month)"}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <Card className="bg-primary text-primary-foreground">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    {isFlowPlan ? 'Top-Up Amount' : (isCustomPlan ? 'Usage-Based' : 'Premium Liters Included')}
-                                </CardTitle>
-                                <Waves className="h-4 w-4 text-primary-foreground/70" />
-                            </CardHeader>
-                            <CardContent>
-                                {isCustomPlan ? (
-                                    <div className="space-y-1">
-                                        <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}<span className="text-lg">/L</span></div>
-                                        <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
-                                    </div>
-                                ) : (
-                                    <div className="text-2xl font-bold">{finalPlan.liters}{isFlowPlan ? '' : ' / mo'}</div>
-                                )}
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-primary text-primary-foreground">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Water Stations</CardTitle>
-                                <Building className="h-4 w-4 text-primary-foreground/70" />
-                            </CardHeader>
-                            <CardContent>
-                                 <div className="text-2xl font-bold">{finalPlan.stations}</div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-primary text-primary-foreground">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Free Refillable Gallons</CardTitle>
-                                <Package className="h-4 w-4 text-primary-foreground/70" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">
-                                    {isCustomPlan && finalPlanDetails.containers ? `${finalPlanDetails.containers} Gallons` : (rotationInfo && rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic')}
+      <div className="flex flex-col gap-6">
+        <Card>
+            <CardHeader>
+                <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
+                <CardDescription>
+                    A summary of the selected subscription plan details.
+                    {!isFlowPlan && !isCustomPlan && " (Includes +20% free liters every month)"}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Card className="bg-primary text-primary-foreground">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                {isFlowPlan ? 'Top-Up Amount' : (isCustomPlan ? 'Usage-Based' : 'Premium Liters Included')}
+                            </CardTitle>
+                            <Waves className="h-4 w-4 text-primary-foreground/70" />
+                        </CardHeader>
+                        <CardContent>
+                            {isCustomPlan ? (
+                                <div className="space-y-1">
+                                    <p className="text-sm font-semibold">Usage-Based</p>
+                                    <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}<span className="text-lg">/L</span></div>
+                                    <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
                                 </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-primary text-primary-foreground">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Avg. Refill Frequency</CardTitle>
-                                <RefreshCcw className="h-4 w-4 text-primary-foreground/70" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{finalPlan.refillFrequency}</div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </CardContent>
-            </Card>
-            
+                            ) : (
+                                <div className="text-2xl font-bold">{finalPlan.liters} / mo</div>
+                            )}
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-primary text-primary-foreground">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Water Stations</CardTitle>
+                            <Building className="h-4 w-4 text-primary-foreground/70" />
+                        </CardHeader>
+                        <CardContent>
+                             <div className="text-2xl font-bold">{finalPlan.stations}</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-primary text-primary-foreground">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Free Refillable Gallons</CardTitle>
+                            <Package className="h-4 w-4 text-primary-foreground/70" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {isCustomPlan && finalPlanDetails.containers ? `${finalPlanDetails.containers} Gallons` : (rotationInfo && rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic')}
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-primary text-primary-foreground">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Avg. Refill Frequency</CardTitle>
+                            <RefreshCcw className="h-4 w-4 text-primary-foreground/70" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{finalPlan.refillFrequency}</div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </CardContent>
+        </Card>
+        
+        <div className="w-full flex flex-col gap-6">
             <Card>
-                <CardHeader>
-                    <CardTitle>Optional Add-Ons</CardTitle>
-                    <CardDescription>
-                    Enhance your Smart Refill experience with premium service options.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Add-On</TableHead>
-                        <TableHead className="w-[250px]">Configuration</TableHead>
-                        <TableHead className="text-right">Fee</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {addons.map((addon) => (
-                        <TableRow key={addon.id}>
-                            <TableCell>
-                                <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                                <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
-                            </TableCell>
-                            <TableCell>
-                                {addon.type === 'configurable' && (
-                                    <div className="flex flex-col gap-2">
-                                        <Select value={sanitationFeeType} onValueChange={setSanitationFeeType}>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="paid">Paid</SelectItem>
-                                                <SelectItem value="free">Free</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {sanitationFeeType === 'paid' && (
-                                            <Input type="number" min="0" value={sanitationFee} onChange={e => setSanitationFee(Number(e.target.value))} placeholder="Fee" />
-                                        )}
-                                    </div>
-                                )}
-                                {addon.type === 'custom' && (
-                                    <div className="flex flex-col gap-2">
-                                        <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                {addon.feeOptions?.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <div className="flex items-center gap-2">
-                                            <Input type="number" min="0" value={dispenserQuantity} onChange={e => setDispenserQuantity(Number(e.target.value))} placeholder="Qty" className="w-16"/>
-                                            <Input type="number" min="0" value={dispenserFee} onChange={e => setDispenserFee(Number(e.target.value))} placeholder="Fee" className="flex-1"/>
-                                        </div>
-                                    </div>
-                                )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                {addon.type === 'configurable' ? (sanitationFeeType === 'free' ? 'Free' : currencyFormatter.format(sanitationFee)) : 'Custom'}
-                            </TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-             <Card>
                 <CardHeader>
                     <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
                     <CardDescription>Key milestones for service activation.</CardDescription>
@@ -1042,83 +1001,150 @@ function ContractPageContent() {
                     </div>
                 </CardContent>
             </Card>
-
-            <PaymentMethods />
         </div>
         
-        <Card className="lg:col-span-1">
-            <CardHeader>
-                <CardTitle>Summary &amp; Final Amount</CardTitle>
-                <CardDescription>Review the final costs before proceeding.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <div>
-                        <p className="font-semibold">{summaryTitle}{!isFlowPlan && !isCustomPlan && ` (${finalPlanDetails.billingCycleLabel})`}</p>
-                        <p className="text-2xl font-bold">
-                          {isFlowPlan ? currencyFormatter.format(50000) : (isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(finalPlanDetails.basePrice))}
-                          {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : (!isCustomPlan ? <span className="text-sm font-normal text-muted-foreground"> / mo</span> : '')}
-                        </p>
-                    </div>
-                    {(!isFlowPlan && !isCustomPlan) && (
-                        <ul className="text-xs text-muted-foreground list-disc pl-5">
-                            <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
-                            {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
-                            <li>Refill Frequency: {finalPlan.refillFrequency}</li>
-                        </ul>
-                    )}
-                </div>
-
-                {(sanitationFeeType !== 'free' || dispenserQuantity > 0) && (
-                    <>
-                        <div className="space-y-2">
-                            {sanitationFeeType === 'paid' && (
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Monthly Sanitation</span>
-                                    <span className="font-medium">{currencyFormatter.format(sanitationFee)}</span>
-                                </div>
-                            )}
-                            {dispenserQuantity > 0 && (
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Add'l Dispensers ({dispenserQuantity}x)</span>
-                                    <span className="font-medium">{dispenserFeeType === 'free' ? 'Free' : currencyFormatter.format(dispenserFee * dispenserQuantity)}</span>
-                                </div>
-                            )}
-                        </div>
-                        
-                        <Separator />
-                    </>
-                )}
-                
-                {!isCustomPlan && (
-                    <div className='space-y-2'>
-                        <Label>Payment Schedule</Label>
-                        <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>
-                            {billingCycles.map((cycle) => (
-                                <div key={cycle.value} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
-                                    <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
-                                        <span>{cycle.label}</span>
-                                        {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
-                                    </Label>
-                                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Optional Add-Ons</CardTitle>
+                        <CardDescription>
+                        Enhance your Smart Refill experience with premium service options.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead>Add-On</TableHead>
+                            <TableHead className="w-[250px]">Configuration</TableHead>
+                            <TableHead className="text-right">Fee</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {addons.map((addon) => (
+                            <TableRow key={addon.id}>
+                                <TableCell>
+                                    <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                                    <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
+                                </TableCell>
+                                <TableCell>
+                                    {addon.type === 'configurable' && (
+                                        <div className="flex flex-col gap-2">
+                                            <Select value={sanitationFeeType} onValueChange={setSanitationFeeType}>
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="paid">Paid</SelectItem>
+                                                    <SelectItem value="free">Free</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            {sanitationFeeType === 'paid' && (
+                                                <Input type="number" min="0" value={sanitationFee} onChange={e => setSanitationFee(Number(e.target.value))} placeholder="Fee" />
+                                            )}
+                                        </div>
+                                    )}
+                                    {addon.type === 'custom' && (
+                                        <div className="flex flex-col gap-2">
+                                            <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    {addon.feeOptions?.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="flex items-center gap-2">
+                                                <Input type="number" min="0" value={dispenserQuantity} onChange={e => setDispenserQuantity(Number(e.target.value))} placeholder="Qty" className="w-16"/>
+                                                <Input type="number" min="0" value={dispenserFee} onChange={e => setDispenserFee(Number(e.target.value))} placeholder="Fee" className="flex-1"/>
+                                            </div>
+                                        </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    {addon.type === 'configurable' ? (sanitationFeeType === 'free' ? 'Free' : currencyFormatter.format(sanitationFee)) : 'Custom'}
+                                </TableCell>
+                            </TableRow>
                             ))}
-                        </RadioGroup>
+                        </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Summary &amp; Final Amount</CardTitle>
+                    <CardDescription>Review the final costs before proceeding.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <div>
+                            <p className="font-semibold">{summaryTitle}{!isFlowPlan && !isCustomPlan && ` (${finalPlanDetails.billingCycleLabel})`}</p>
+                            <p className="text-2xl font-bold">
+                              {isFlowPlan ? currencyFormatter.format(50000) : (isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(finalPlanDetails.basePrice))}
+                              {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : (!isCustomPlan ? <span className="text-sm font-normal text-muted-foreground"> / mo</span> : '')}
+                            </p>
+                        </div>
+                        {(!isFlowPlan && !isCustomPlan) && (
+                            <ul className="text-xs text-muted-foreground list-disc pl-5">
+                                <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
+                                {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
+                                <li>Refill Frequency: {finalPlan.refillFrequency}</li>
+                            </ul>
+                        )}
                     </div>
-                )}
+
+                    {(sanitationFeeType !== 'free' || dispenserQuantity > 0) && (
+                        <>
+                            <div className="space-y-2">
+                                {sanitationFeeType === 'paid' && (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Monthly Sanitation</span>
+                                        <span className="font-medium">{currencyFormatter.format(sanitationFee)}</span>
+                                    </div>
+                                )}
+                                {dispenserQuantity > 0 && (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Add'l Dispensers ({dispenserQuantity}x)</span>
+                                        <span className="font-medium">{dispenserFeeType === 'free' ? 'Free' : currencyFormatter.format(dispenserFee * dispenserQuantity)}</span>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <Separator />
+                        </>
+                    )}
+                    
+                    {!isCustomPlan && (
+                        <div className='space-y-2'>
+                            <Label>Payment Schedule</Label>
+                            <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>
+                                {billingCycles.map((cycle) => (
+                                    <div key={cycle.value} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
+                                        <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
+                                            <span>{cycle.label}</span>
+                                            {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        </div>
+                    )}
 
 
-                <Separator />
-                
-                <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
-                    <span>{isCustomPlan ? 'Billed by Consumption' : 'Total Due'}</span>
-                    <span>{isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : finalPlanDetails.totalAmountDue}</span>
-                </div>
-            </CardContent>
-        </Card>
+                    <Separator />
+                    
+                    <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
+                        <span>{isCustomPlan ? 'Billed by Consumption' : 'Total Due'}</span>
+                        <span>{isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : finalPlanDetails.totalAmountDue}</span>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
+        <PaymentMethods />
       </div>
 
-       <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
           <div className="flex gap-2">
               <Button variant="outline" asChild className="flex-1">
                   <Link href={prevLink}>Previous</Link>
@@ -1129,7 +1155,6 @@ function ContractPageContent() {
               </Button>
           </div>
       </div>
-
     </div>
   );
 }
@@ -1141,6 +1166,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-    
-
-    
