@@ -396,30 +396,22 @@ export function ContractDetails({
 
     return (
         <div className="space-y-6 p-2">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h2 className="text-2xl font-bold text-primary">River Tech Group, Inc.</h2>
-                    <p className="text-muted-foreground">Operating as Smart Refill</p>
-                    <p className="text-xs text-muted-foreground">123 Innovation Drive, BGC, Taguig, Metro Manila, Philippines</p>
-                    <p className="text-xs text-muted-foreground">smartrefill.io</p>
-                </div>
-                <div className="text-right">
-                    <p className="text-xl font-bold">Sales Illustration</p>
-                    {clientId && <p className="font-mono text-sm text-muted-foreground">Client ID: {clientId}</p>}
-                    {proposalId && <p className="font-mono text-sm text-muted-foreground">Proposal ID: {proposalId}</p>}
-                </div>
+            <div className="text-center space-y-2">
+                <h2 className="text-2xl font-bold text-primary">River Tech Group, Inc.</h2>
+                <p className="text-muted-foreground">Operating as Smart Refill</p>
+                <p className="text-xs text-muted-foreground">123 Innovation Drive, BGC, Taguig, Metro Manila, Philippines | smartrefill.io</p>
             </div>
             
             <Separator />
             
             <Card>
                 <CardHeader>
-                    <CardTitle>Welcome to Smart Refill</CardTitle>
+                    <CardTitle>Welcome To Smart Refill</CardTitle>
                     <CardDescription>
                        Your trusted partner in water supply automation.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                     <p className="text-muted-foreground">
                         Thank you for choosing Smart Refill. This proposal outlines how our smart, reliable, and fully compliant solution helps your business achieve consistent water availability, lower operational costs, and complete visibility over your consumption.
                     </p>
@@ -435,7 +427,7 @@ export function ContractDetails({
                     <CardHeader>
                         <CardTitle>Client Information</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4 text-sm">
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                          <div className="flex items-start gap-3">
                             <Building className="h-5 w-5 text-muted-foreground mt-1" />
                             <div>
@@ -464,7 +456,7 @@ export function ContractDetails({
                                 <p className="font-semibold">{client.contactPhone || "N/A"}</p>
                             </div>
                         </div>
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3 md:col-span-2">
                             <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
                             <div>
                                 <p className="text-xs text-muted-foreground">Address</p>
@@ -477,7 +469,7 @@ export function ContractDetails({
                     <CardHeader>
                         <CardTitle>Plan Details: {summaryTitle}</CardTitle>
                     </CardHeader>
-                     <CardContent className="space-y-4 text-sm">
+                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                         <div className="flex items-start gap-3">
                             <Waves className="h-5 w-5 text-primary" />
                             <div>
