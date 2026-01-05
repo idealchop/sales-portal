@@ -29,7 +29,7 @@ export function ContractSection({
   );
 }
 
-export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycleLabel, totalAmountDue, selectedAddons, additionalDispensers, additionalLiters, addons, isCustomPlan, pricePerLiter } : { summaryTitle: string, finalPlan: any, baseLiters: number, billingCycleLabel: string, totalAmountDue: string, selectedAddons: any, additionalDispensers: number, additionalLiters: number, addons: any[], isCustomPlan: boolean, pricePerLiter: number }) {
+export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycleLabel, totalAmountDue, selectedAddons, additionalDispensers, addons, isCustomPlan, pricePerLiter, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee } : { summaryTitle: string, finalPlan: any, baseLiters: number, billingCycleLabel: string, totalAmountDue: string, selectedAddons: any, additionalDispensers: {quantity: number, feeType: string, fee: number}, addons: any[], isCustomPlan: boolean, pricePerLiter: number, sanitationFeeType: string, sanitationFee: number, dispenserQuantity: number, dispenserFeeType: string, dispenserFee: number }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
     return (
@@ -62,12 +62,11 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                             : ` Prepaid. Total Amount Due per Cycle: ${totalAmountDue}.`
                         }
                     </li>
-                        {(Object.values(selectedAddons).some(v => v) || additionalDispensers > 0 || additionalLiters > 0) && (
+                        {(sanitationFeeType !== 'free' || dispenserQuantity > 0) && (
                         <li className="font-semibold">Add-Ons:
                             <ul className="list-circle pl-5 font-normal">
-                                {addons.map((addon) => (addon.type === 'checkbox' && selectedAddons[addon.id] && <li key={addon.id}>{addon.name}</li>))}
-                                {Number(additionalDispensers) > 0 && (<li>{additionalDispensers}x Additional Dispensers</li>)}
-                                {additionalLiters > 0 && (<li>{additionalLiters} Additional Liters</li>)}
+                                {sanitationFeeType === 'paid' && <li>Monthly Sanitation</li>}
+                                {dispenserQuantity > 0 && (<li>{dispenserQuantity}x Additional Dispensers</li>)}
                             </ul>
                         </li>
                     )}
@@ -300,8 +299,9 @@ export type FinalPlanDetails = {
     discount: number;
     basePrice: number;
     selectedAddons: { [key: string]: boolean };
-    additionalDispensers: number;
-    additionalLiters: number;
+    sanitationFeeType: string;
+    sanitationFee: number;
+    additionalDispensers: { quantity: number; feeType: string; fee: number; };
     plan: Plan;
     finalPlan: any;
     planBaseCost: number;
@@ -366,10 +366,8 @@ export function ContractDetails({
     
     const selectedAddons = source.selectedAddons || {};
     
-    const additionalDispensers = source.additionalDispensers || 0;
+    const additionalDispensers = source.additionalDispensers.quantity || 0;
         
-    const additionalLiters = source.additionalLiters || 0;
-
     const billingCycleLabel = source.billingCycleLabel;
     const totalAmountDue = source.totalAmountDue;
 
@@ -381,9 +379,7 @@ export function ContractDetails({
     
     const addons = source.addons || [];
     const additionalDispenserCost = source.additionalDispenserCost || 250;
-    const additionalLiterCost = source.additionalLiterCost || 3;
     const dispensersCost = Number(additionalDispensers) * additionalDispenserCost;
-    const litersCost = additionalLiters * additionalLiterCost;
     
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
@@ -551,26 +547,19 @@ export function ContractDetails({
                             </>
                         )}
                     </div>
-                     {(Object.values(selectedAddons).some(v => v) || additionalDispensers > 0 || additionalLiters > 0) && (
+                     {(source.sanitationFeeType !== 'free' || source.additionalDispensers.quantity > 0) && (
                         <div className="space-y-2 p-4 border rounded-lg">
                              <h4 className="font-semibold text-foreground">Add-Ons</h4>
-                            {addons.map((addon) => (addon.type === 'checkbox' && selectedAddons[addon.id] && (
-                                    <div key={addon.id} className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">{addon.name}</span>
-                                        <span className="font-semibold">{currencyFormatter.format(addon.feeValue)}</span>
-                                    </div>
-                                )
-                            ))}
+                             {source.sanitationFeeType === 'paid' && (
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Monthly Sanitation</span>
+                                    <span className="font-semibold">{currencyFormatter.format(source.sanitationFee)}</span>
+                                </div>
+                            )}
                             {Number(additionalDispensers) > 0 && (
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
                                     <span className="font-semibold">{currencyFormatter.format(dispensersCost)}</span>
-                                </div>
-                            )}
-                            {additionalLiters > 0 && (
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Additional Liters ({additionalLiters} L)</span>
-                                    <span className="font-semibold">{currencyFormatter.format(litersCost)}</span>
                                 </div>
                             )}
                         </div>
@@ -678,11 +667,14 @@ export function ContractDetails({
                                 billingCycleLabel={billingCycleLabel}
                                 totalAmountDue={totalAmountDue}
                                 selectedAddons={selectedAddons}
-                                additionalDispensers={additionalDispensers}
-                                additionalLiters={additionalLiters}
                                 addons={addons}
                                 isCustomPlan={isCustomPlan}
                                 pricePerLiter={pricePerLiter}
+                                sanitationFeeType={source.sanitationFeeType}
+                                sanitationFee={source.sanitationFee}
+                                dispenserQuantity={source.additionalDispensers.quantity}
+                                dispenserFeeType={source.additionalDispensers.feeType}
+                                dispenserFee={source.additionalDispensers.fee}
                             />
                         </CardContent>
                     </Card>

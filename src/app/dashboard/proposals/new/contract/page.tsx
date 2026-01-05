@@ -87,18 +87,7 @@ const addons = [
         { value: 'free', label: 'Free', defaultCost: 0 },
     ],
   },
-  {
-    id: 'additional-liters',
-    name: 'Additional Liters',
-    description: 'Pre-purchase extra liters for the upcoming cycle.',
-    fee: '₱3.00 / liter',
-    feeValue: 3,
-    type: 'slider',
-  }
 ];
-
-const additionalDispenserCost = 250;
-const additionalLiterCost = 3;
 
 
 function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode }) {
@@ -107,7 +96,7 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
     const [isDownloading, setIsDownloading] = useState(false);
     
     // State for the dialog's payment schedule
-    const [dialogBillingCycle, setDialogBillingCycle] = useState(billingCycles[0].value);
+    const [dialogBillingCycle, setDialogBillingCycle] = useState(finalPlanDetails.billingCycleLabel.toLowerCase() || billingCycles[0].value);
     
     // Recalculate costs based on the dialog's state
     const dialogCosts = useMemo(() => {
@@ -119,9 +108,8 @@ function GenerateProposalDialog({ finalPlanDetails, children }: { finalPlanDetai
 
         const sanitationCost = finalPlanDetails.sanitationFeeType === 'paid' ? finalPlanDetails.sanitationFee : 0;
         const dispensersCost = (finalPlanDetails.additionalDispensers as any).quantity * (finalPlanDetails.additionalDispensers as any).fee;
-        const litersCost = finalPlanDetails.additionalLiters * additionalLiterCost;
 
-        const subtotal = planBaseCost + sanitationCost + dispensersCost + litersCost;
+        const subtotal = planBaseCost + sanitationCost + dispensersCost;
         
         const selectedCycle = billingCycles.find(c => c.value === dialogBillingCycle) || billingCycles[0];
         
@@ -526,7 +514,6 @@ function ContractPageContent() {
   
   const [sanitationFeeType, setSanitationFeeType] = useState('paid');
   const [sanitationFee, setSanitationFee] = useState(500);
-  const [additionalLiters, setAdditionalLiters] = useState(0);
 
   const [dispenserFeeType, setDispenserFeeType] = useState('monthly');
   const [dispenserQuantity, setDispenserQuantity] = useState(0);
@@ -615,7 +602,7 @@ function ContractPageContent() {
 
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
-    const finalLiters = baseLiters + freeLiters + additionalLiters;
+    const finalLiters = baseLiters + freeLiters;
     const planInclusions = plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : [];
 
     return {
@@ -625,7 +612,7 @@ function ContractPageContent() {
         employees: getEmployees(finalLiters, clientType === 'household'),
         stations: clientType === 'household' ? getStations(finalLiters) : plan.stations,
     }
-  }, [plan, additionalLiters, clientType]);
+  }, [plan, clientType]);
 
   const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
     if (!plan || !finalPlan) return null;
@@ -637,9 +624,8 @@ function ContractPageContent() {
     const sanitationCost = sanitationFeeType === 'paid' ? sanitationFee : 0;
     const dispensersCost = dispenserFeeType === 'monthly' ? dispenserQuantity * dispenserFee : 0;
     const dispensersSecurityCost = dispenserFeeType === 'security' ? dispenserQuantity * dispenserFee : 0;
-    const litersCost = additionalLiters * additionalLiterCost;
 
-    const subtotal = planBaseCost + sanitationCost + dispensersCost + litersCost;
+    const subtotal = planBaseCost + sanitationCost + dispensersCost;
     
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
     
@@ -650,7 +636,7 @@ function ContractPageContent() {
 
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
-    const totalMonthlyLiters = baseLiters + freeLiters + additionalLiters;
+    const totalMonthlyLiters = baseLiters + freeLiters;
     const totalLitersForCycle = isFlowPlan ? 'Usage-Based' : `${(totalMonthlyLiters * selectedCycle.multiplier).toLocaleString()} L`;
     
     const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
@@ -678,13 +664,12 @@ function ContractPageContent() {
             feeType: dispenserFeeType,
             fee: dispenserFee,
         },
-        additionalLiters,
         plan,
         finalPlan,
         planBaseCost,
         addons,
-        additionalDispenserCost,
-        additionalLiterCost,
+        additionalDispenserCost: 0,
+        additionalLiterCost: 0,
         totalMonthlyLiters,
         totalLitersForCycle: isFlowPlan ? 0 : (totalMonthlyLiters * selectedCycle.multiplier),
         clientId: generatedClientId,
@@ -700,7 +685,7 @@ function ContractPageContent() {
         dispensers: parseInt(dispensers || '0'),
         containers: parseInt(containers || '0'),
     };
-  }, [plan, finalPlan, billingCycle, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
+  }, [plan, finalPlan, billingCycle, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -852,11 +837,14 @@ function ContractPageContent() {
 
 
   const handleActionClick = async (action: 'generate' | 'sign') => {
+    setIsGeneratingIds(true);
     if (action === 'generate') {
-      setIsGeneratingIds(true);
       if (!generatedProposalId) {
         try {
-          if (!firestore) return;
+          if (!firestore) {
+             setIsGeneratingIds(false);
+             return;
+          }
           const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
           const proposalCounterSnap = await getDoc(proposalCounterRef);
           const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
@@ -872,14 +860,15 @@ function ContractPageContent() {
           return;
         }
       }
-      // Open the dialog once the proposal ID is ready.
       document.getElementById('generate-proposal-trigger')?.click();
       setIsGeneratingIds(false);
 
     } else if (action === 'sign') {
-        setIsGeneratingIds(true);
         try {
-            if (!firestore) return;
+            if (!firestore) {
+              setIsGeneratingIds(false);
+              return;
+            };
             await runTransaction(firestore, async (transaction) => {
                 const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
                 const proposalCounterSnap = await transaction.get(proposalCounterRef);
@@ -1071,75 +1060,71 @@ function ContractPageContent() {
                     </div>
                 </CardContent>
             </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Optional Add-Ons</CardTitle>
-                    <CardDescription>
-                    Enhance your Smart Refill experience with premium service options.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Add-On</TableHead>
-                        <TableHead className="w-[250px]">Configuration</TableHead>
-                        <TableHead className="text-right">Fee</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {addons.map((addon) => (
-                        <TableRow key={addon.id}>
-                            <TableCell>
-                                <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                                <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
-                            </TableCell>
-                            <TableCell>
-                                {addon.type === 'configurable' && (
-                                    <div className="flex flex-col gap-2">
-                                        <Select value={sanitationFeeType} onValueChange={setSanitationFeeType}>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="paid">Paid</SelectItem>
-                                                <SelectItem value="free">Free</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {sanitationFeeType === 'paid' && (
-                                            <Input type="number" min="0" value={sanitationFee} onChange={e => setSanitationFee(Number(e.target.value))} placeholder="Fee" />
-                                        )}
-                                    </div>
-                                )}
-                                {addon.type === 'custom' && (
-                                    <div className="flex flex-col gap-2">
-                                        <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                {addon.feeOptions?.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <div className="flex items-center gap-2">
-                                            <Input type="number" min="0" value={dispenserQuantity} onChange={e => setDispenserQuantity(Number(e.target.value))} placeholder="Qty" className="w-16"/>
-                                            <Input type="number" min="0" value={dispenserFee} onChange={e => setDispenserFee(Number(e.target.value))} placeholder="Fee" className="flex-1"/>
+            
+            {addons.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Optional Add-Ons</CardTitle>
+                        <CardDescription>
+                        Enhance your Smart Refill experience with premium service options.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead>Add-On</TableHead>
+                            <TableHead className="w-[250px]">Configuration</TableHead>
+                            <TableHead className="text-right">Fee</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {addons.map((addon) => (
+                            <TableRow key={addon.id}>
+                                <TableCell>
+                                    <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                                    <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
+                                </TableCell>
+                                <TableCell>
+                                    {addon.type === 'configurable' && (
+                                        <div className="flex flex-col gap-2">
+                                            <Select value={sanitationFeeType} onValueChange={setSanitationFeeType}>
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="paid">Paid</SelectItem>
+                                                    <SelectItem value="free">Free</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            {sanitationFeeType === 'paid' && (
+                                                <Input type="number" min="0" value={sanitationFee} onChange={e => setSanitationFee(Number(e.target.value))} placeholder="Fee" />
+                                            )}
                                         </div>
-                                    </div>
-                                )}
-                                {addon.type === 'slider' && (
-                                    <div className="flex items-center gap-4">
-                                        <Slider id={addon.id} min={0} max={1000} step={50} value={[additionalLiters]} onValueChange={(value) => setAdditionalLiters(value[0])} className="w-[120px]" />
-                                        <span className="text-sm font-medium w-[60px] text-right">{additionalLiters} L</span>
-                                    </div>
-                                )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                {addon.type === 'configurable' ? (sanitationFeeType === 'free' ? 'Free' : currencyFormatter.format(sanitationFee)) : (addon.type === 'slider' ? addon.fee : 'Custom')}
-                            </TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                    )}
+                                    {addon.type === 'custom' && (
+                                        <div className="flex flex-col gap-2">
+                                            <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    {addon.feeOptions?.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="flex items-center gap-2">
+                                                <Input type="number" min="0" value={dispenserQuantity} onChange={e => setDispenserQuantity(Number(e.target.value))} placeholder="Qty" className="w-16"/>
+                                                <Input type="number" min="0" value={dispenserFee} onChange={e => setDispenserFee(Number(e.target.value))} placeholder="Fee" className="flex-1"/>
+                                            </div>
+                                        </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    {addon.type === 'configurable' ? (sanitationFeeType === 'free' ? 'Free' : currencyFormatter.format(sanitationFee)) : 'Custom'}
+                                </TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
 
              <Card>
                 <CardHeader>
@@ -1212,12 +1197,6 @@ function ContractPageContent() {
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground">Add'l Dispensers ({dispenserQuantity}x)</span>
                                     <span className="font-medium">{dispenserFeeType === 'free' ? 'Free' : currencyFormatter.format(dispenserFee * dispenserQuantity)}</span>
-                                </div>
-                            )}
-                            {additionalLiters > 0 && (
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Additional Liters ({additionalLiters} L)</span>
-                                    <span className="font-medium">{currencyFormatter.format(additionalLiters * additionalLiterCost)}</span>
                                 </div>
                             )}
                         </div>
