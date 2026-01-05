@@ -635,19 +635,35 @@ function ContractPageContent() {
     }
   
     setIsSaving(true);
-    let finalClientId = generatedClientId;
     const onboardingToken = crypto.randomUUID();
   
     try {
-      if (!finalClientId) {
-        toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
-        setIsSaving(false);
-        return false;
-      }
-      
       const proposalId = generatedProposalId;
       if (!proposalId) {
         toast({ variant: "destructive", title: "Save Failed", description: "Proposal ID has not been generated." });
+        setIsSaving(false);
+        return false;
+      }
+
+      if (status === 'draft') {
+        const proposalRef = doc(firestore, 'proposals', proposalId);
+        const draftData = {
+          ...finalPlanDetails,
+          clientId: existingClientId, // Drafts can have an existing client ID
+          status: 'draft',
+          userId: proposalOwnerId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+        await setDoc(proposalRef, draftData, { merge: true });
+        toast({ title: "Draft Saved!", description: "Your proposal draft has been successfully saved." });
+        return true;
+      }
+      
+      // Full save for 'accepted' or client-creating 'draft'
+      const finalClientId = generatedClientId;
+      if (!finalClientId) {
+        toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
         setIsSaving(false);
         return false;
       }
@@ -754,52 +770,68 @@ function ContractPageContent() {
   };
 
 
-const ensureIdsAreGenerated = async () => {
+const ensureProposalIdIsGenerated = async () => {
     if (!firestore) throw new Error("Firestore not ready.");
-    setIsGeneratingIds(true);
-    
-    try {
-        if (!generatedProposalId) {
-            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const newProposalNumber = await runTransaction(firestore, async (transaction) => {
-                const counterSnap = await transaction.get(proposalCounterRef);
-                const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
-                const newId = currentId + 1;
-                transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
-                return newId;
-            });
-            setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
-        }
+    if (generatedProposalId) return;
 
-        if (!existingClientId && !generatedClientId) {
-            const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-            const newClientNumber = await runTransaction(firestore, async (transaction) => {
-                const counterSnap = await transaction.get(clientCounterRef);
-                const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
-                const newId = currentId + 1;
-                transaction.set(clientCounterRef, { currentId: newId }, { merge: true });
-                return newId;
-            });
-            const year = new Date().getFullYear().toString().slice(-2);
-            setGeneratedClientId(`SC${year}${String(newClientNumber).padStart(8, '0')}`);
-        }
+    setIsGeneratingIds(true);
+    try {
+        const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+        const newProposalNumber = await runTransaction(firestore, async (transaction) => {
+            const counterSnap = await transaction.get(proposalCounterRef);
+            const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
+            const newId = currentId + 1;
+            transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
+            return newId;
+        });
+        setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
     } catch (e) {
-        console.error("Error generating IDs:", e);
+        console.error("Error generating Proposal ID:", e);
         toast({
             variant: 'destructive',
             title: "ID Generation Failed",
-            description: "Could not generate unique IDs for the proposal. Please check your connection and try again."
+            description: "Could not generate a unique ID for the proposal. Please try again."
         });
-        throw e; // re-throw to be caught by handleActionClick
+        throw e;
     } finally {
         setIsGeneratingIds(false);
     }
 };
 
+const ensureClientAndProposalIdsAreGenerated = async () => {
+    await ensureProposalIdIsGenerated();
+    
+    if (existingClientId || generatedClientId) return;
+
+    if (!firestore) throw new Error("Firestore not ready.");
+    setIsGeneratingIds(true);
+    try {
+        const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+        const newClientNumber = await runTransaction(firestore, async (transaction) => {
+            const counterSnap = await transaction.get(clientCounterRef);
+            const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
+            const newId = currentId + 1;
+            transaction.set(clientCounterRef, { currentId: newId }, { merge: true });
+            return newId;
+        });
+        const year = new Date().getFullYear().toString().slice(-2);
+        setGeneratedClientId(`SC${year}${String(newClientNumber).padStart(8, '0')}`);
+    } catch (e) {
+        console.error("Error generating Client ID:", e);
+        toast({
+            variant: 'destructive',
+            title: "ID Generation Failed",
+            description: "Could not generate a unique ID for the client. Please check your connection and try again."
+        });
+        throw e;
+    } finally {
+        setIsGeneratingIds(false);
+    }
+}
+
 const handleSaveDraft = async () => {
     try {
-        await ensureIdsAreGenerated();
-        // Give React a moment to update state with new IDs
+        await ensureProposalIdIsGenerated();
         setTimeout(async () => {
             const isSaved = await saveProposal('draft');
             if (isSaved) {
@@ -810,7 +842,6 @@ const handleSaveDraft = async () => {
             }
         }, 100);
     } catch (error) {
-        // Error toast is already shown in ensureIdsAreGenerated
         console.error("Failed to save draft due to ID generation error.", error);
     }
 }
@@ -819,9 +850,8 @@ const handleActionClick = async (action: 'sign' | 'share') => {
     if (action === 'share') setIsSharing(true);
 
     try {
-        await ensureIdsAreGenerated();
+        await ensureClientAndProposalIdsAreGenerated();
         
-        // This timeout gives React a moment to update the state with the new IDs
         setTimeout(async () => {
             const isSaved = await saveProposal('draft');
             if (!isSaved) {
