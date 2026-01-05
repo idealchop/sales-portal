@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -635,13 +636,9 @@ function ContractPageContent() {
   
     try {
       if (!finalClientId) {
-        if (existingClientId) {
-          finalClientId = existingClientId;
-        } else {
-          toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
-          setIsSaving(false);
-          return false;
-        }
+        toast({ variant: "destructive", title: "Save Failed", description: "Client ID has not been generated." });
+        setIsSaving(false);
+        return false;
       }
       
       const proposalId = generatedProposalId;
@@ -684,7 +681,8 @@ function ContractPageContent() {
           clientData.status = 'pending';
       }
 
-      if (!existingClientId) {
+      const clientDoc = await getDoc(clientRef);
+      if (!clientDoc.exists()) {
         clientData.createdAt = serverTimestamp();
         await setDoc(clientRef, clientData, { merge: true });
       } else {
@@ -702,7 +700,6 @@ function ContractPageContent() {
         content: JSON.stringify(proposalContentToSave),
         status: status,
         amount: amountToSave,
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
@@ -715,6 +712,12 @@ function ContractPageContent() {
       }
 
       const proposalRef = doc(firestore, "proposals", proposalId);
+      const proposalDoc = await getDoc(proposalRef);
+
+      if (!proposalDoc.exists()) {
+        newProposalData.createdAt = serverTimestamp();
+      }
+
       await setDoc(proposalRef, newProposalData, { merge: true });
   
       if (status !== 'draft') {
@@ -760,9 +763,9 @@ function ContractPageContent() {
 
     try {
         if (!firestore || !user || !user.uid) throw new Error("Authentication or Firestore not ready.");
-
-        let currentProposalId = generatedProposalId;
-        if (!currentProposalId) {
+        
+        // Ensure IDs are generated before any action that needs them
+        if (!generatedProposalId) {
             const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
             const newProposalNumber = await runTransaction(firestore, async (transaction) => {
                 const counterSnap = await transaction.get(proposalCounterRef);
@@ -771,12 +774,10 @@ function ContractPageContent() {
                 transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
                 return newId;
             });
-            currentProposalId = String(newProposalNumber).padStart(10, '0');
-            setGeneratedProposalId(currentProposalId);
+            setGeneratedProposalId(String(newProposalNumber).padStart(10, '0'));
         }
 
-        let currentClientId = generatedClientId;
-        if (!existingClientId && !currentClientId) {
+        if (!existingClientId && !generatedClientId) {
             const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
             const newClientNumber = await runTransaction(firestore, async (transaction) => {
                 const counterSnap = await transaction.get(clientCounterRef);
@@ -786,56 +787,70 @@ function ContractPageContent() {
                 return newId;
             });
             const year = new Date().getFullYear().toString().slice(-2);
-            currentClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-            setGeneratedClientId(currentClientId);
+            setGeneratedClientId(`SC${year}${String(newClientNumber).padStart(8, '0')}`);
         }
-        
-        if (action === 'generate' || action === 'share') {
-            const isSaved = await saveProposal('draft');
-            if (!isSaved) {
-                throw new Error("Failed to save the proposal draft before proceeding.");
-            }
-        }
-        
-        if (action === 'generate') {
-            document.getElementById('generate-proposal-trigger')?.click();
-        } else if (action === 'sign') {
-            setReviewDialogOpen(true);
-        } else if (action === 'share') {
-            const finalClientId = currentClientId || existingClientId;
-            if (!finalClientId || !currentProposalId) throw new Error("Failed to secure IDs for proposal.");
-
-            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-            const expiresAt = new Date();
-            expiresAt.setHours(expiresAt.getHours() + 24);
-
-            const linkData = {
-                id: shareableLinkRef.id,
-                proposalId: currentProposalId,
-                clientId: finalClientId,
-                userId: user.uid,
-                expiresAt: expiresAt.toISOString(),
-                createdAt: serverTimestamp()
-            };
-
-            await setDoc(shareableLinkRef, linkData);
-            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-            navigator.clipboard.writeText(shareUrl);
-            toast({
-                title: 'Share Link Copied!',
-                description: 'A link that expires in 24 hours has been copied to your clipboard.',
-            });
-        }
-    } catch (error: any) {
-        console.error("Error performing action:", error);
+    } catch (error) {
+         console.error("Error generating IDs:", error);
         toast({
             variant: "destructive",
-            title: "Action Failed",
-            description: error.message || "An unexpected error occurred.",
+            title: "ID Generation Failed",
+            description: "Could not generate necessary IDs. Please check console.",
         });
-    } finally {
         setIsGeneratingIds(false);
         if (action === 'share') setIsSharing(false);
+        return; // Stop execution if ID generation fails
+    }
+
+    // This part runs after IDs are confirmed to be in state
+    if (action === 'generate' || action === 'share') {
+        // We need to wait for state to update if IDs were just generated.
+        // A short timeout can help ensure the state is propagated before saving.
+        setTimeout(async () => {
+            const isSaved = await saveProposal('draft');
+            if (!isSaved) {
+                setIsGeneratingIds(false);
+                if (action === 'share') setIsSharing(false);
+                toast({ variant: 'destructive', title: "Save Failed", description: "Failed to save the proposal draft before proceeding."});
+                return;
+            }
+
+            if (action === 'generate') {
+                document.getElementById('generate-proposal-trigger')?.click();
+            } else if (action === 'share') {
+                const finalClientId = generatedClientId || existingClientId;
+                if (!finalClientId || !generatedProposalId) {
+                    toast({ variant: "destructive", title: "Error", description: "Failed to secure IDs for proposal sharing." });
+                    setIsSharing(false);
+                    return;
+                }
+
+                const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+                const expiresAt = new Date();
+                expiresAt.setHours(expiresAt.getHours() + 24);
+
+                const linkData = {
+                    id: shareableLinkRef.id,
+                    proposalId: generatedProposalId,
+                    clientId: finalClientId,
+                    userId: user.uid,
+                    expiresAt: expiresAt.toISOString(),
+                    createdAt: serverTimestamp()
+                };
+
+                await setDoc(shareableLinkRef, linkData);
+                const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+                navigator.clipboard.writeText(shareUrl);
+                toast({
+                    title: 'Share Link Copied!',
+                    description: 'A link that expires in 24 hours has been copied to your clipboard.',
+                });
+                setIsSharing(false);
+            }
+            setIsGeneratingIds(false);
+        }, 100); 
+    } else if (action === 'sign') {
+        setReviewDialogOpen(true);
+        setIsGeneratingIds(false);
     }
 };
   
