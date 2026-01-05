@@ -1106,7 +1106,7 @@ function ContractPageContent() {
                               {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : (!isCustomPlan ? <span className="text-sm font-normal text-muted-foreground"> / mo</span> : '')}
                             </p>
                         </div>
-                        {(!isFlowPlan && !isCustomPlan) && (
+                        {!isFlowPlan && !isCustomPlan && (
                             <ul className="text-xs text-muted-foreground list-disc pl-5">
                                 <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
                                 {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
