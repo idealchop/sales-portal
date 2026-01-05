@@ -4,7 +4,7 @@
 import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, getDoc, FirestoreError, query, where, collection, getDocs, limit } from 'firebase/firestore';
+import { doc, getDoc, FirestoreError } from 'firebase/firestore';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, AlertTriangle, FileText, Download } from 'lucide-react';
@@ -49,19 +49,13 @@ function SharedProposalContent() {
                     throw new Error("This sharing link has expired.");
                 }
                 
-                const q = query(
-                    collection(firestore, 'proposals'),
-                    where('id', '==', linkData.proposalId),
-                    limit(1)
-                );
-
-                const proposalQuerySnap = await getDocs(q);
+                const proposalDocRef = doc(firestore, 'clients', linkData.clientId, 'proposals', linkData.proposalId);
+                const proposalDocSnap = await getDoc(proposalDocRef);
                 
-                if (proposalQuerySnap.empty) {
+                if (!proposalDocSnap.exists()) {
                     throw new Error("The associated proposal could not be found.");
                 }
                 
-                const proposalDocSnap = proposalQuerySnap.docs[0];
                 const proposalData = proposalDocSnap.data();
 
                 if (proposalData.content) {

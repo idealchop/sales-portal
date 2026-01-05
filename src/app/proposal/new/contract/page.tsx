@@ -692,6 +692,8 @@ function ContractPageContent() {
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
       const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
       
+      const proposalRef = doc(firestore, 'clients', finalClientId, 'proposals', proposalId);
+
       const newProposalData: any = {
         id: proposalId,
         clientId: finalClientId,
@@ -710,8 +712,7 @@ function ContractPageContent() {
       if(downloadURL) {
         newProposalData.paymentProofUrl = downloadURL;
       }
-
-      const proposalRef = doc(firestore, "proposals", proposalId);
+      
       const proposalDoc = await getDoc(proposalRef);
 
       if (!proposalDoc.exists()) {
@@ -754,65 +755,6 @@ function ContractPageContent() {
   };
 
 
- const handleActionClick = async (action: 'generate' | 'sign' | 'share') => {
-    if (action === 'share') setIsSharing(true);
-    setIsGeneratingIds(true);
-
-    try {
-      if (!firestore || !user || !user.uid) throw new Error("Authentication or Firestore not ready.");
-
-      // Use a separate function to ensure IDs are set before proceeding
-      await ensureIdsAreGenerated();
-      
-      if (action === 'generate' || action === 'share') {
-        const isSaved = await saveProposal('draft');
-        if (!isSaved) {
-          throw new Error("Failed to save the proposal draft before proceeding.");
-        }
-        
-        if (action === 'generate') {
-          document.getElementById('generate-proposal-trigger')?.click();
-        } else if (action === 'share') {
-          const finalClientId = generatedClientId || existingClientId;
-          if (!finalClientId || !generatedProposalId) throw new Error("Failed to secure IDs for proposal.");
-
-          const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-          const expiresAt = new Date();
-          expiresAt.setHours(expiresAt.getHours() + 24);
-
-          const linkData = {
-              id: shareableLinkRef.id,
-              proposalId: generatedProposalId,
-              clientId: finalClientId,
-              userId: user.uid,
-              expiresAt: expiresAt.toISOString(),
-              createdAt: serverTimestamp()
-          };
-
-          await setDoc(shareableLinkRef, linkData);
-          const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-          navigator.clipboard.writeText(shareUrl);
-          toast({
-              title: 'Share Link Copied!',
-              description: 'A link that expires in 24 hours has been copied to your clipboard.',
-          });
-        }
-      } else if (action === 'sign') {
-        setReviewDialogOpen(true);
-      }
-    } catch (error: any) {
-        console.error("Error performing action:", error);
-        toast({
-            variant: "destructive",
-            title: "Action Failed",
-            description: error.message || "An unexpected error occurred.",
-        });
-    } finally {
-        setIsGeneratingIds(false);
-        if (action === 'share') setIsSharing(false);
-    }
-};
-
 const ensureIdsAreGenerated = async () => {
     if (!firestore) throw new Error("Firestore not ready.");
     
@@ -841,6 +783,66 @@ const ensureIdsAreGenerated = async () => {
         setGeneratedClientId(`SC${year}${String(newClientNumber).padStart(8, '0')}`);
     }
 };
+
+const handleActionClick = async (action: 'generate' | 'sign' | 'share') => {
+    setIsGeneratingIds(true);
+    if (action === 'share') setIsSharing(true);
+
+    try {
+        await ensureIdsAreGenerated();
+
+        // This timeout gives React a moment to update the state with the new IDs
+        setTimeout(async () => {
+            if (action === 'generate' || action === 'share') {
+                const isSaved = await saveProposal('draft');
+                if (!isSaved) {
+                    throw new Error("Failed to save the proposal draft before proceeding.");
+                }
+                
+                if (action === 'generate') {
+                    document.getElementById('generate-proposal-trigger')?.click();
+                } else if (action === 'share') {
+                    const finalClientId = generatedClientId || existingClientId;
+                    if (!finalClientId || !generatedProposalId || !user) throw new Error("Failed to secure IDs or user for sharing.");
+
+                    const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+                    const expiresAt = new Date();
+                    expiresAt.setHours(expiresAt.getHours() + 24);
+
+                    const linkData = {
+                        id: shareableLinkRef.id,
+                        proposalId: generatedProposalId,
+                        clientId: finalClientId,
+                        userId: user.uid,
+                        expiresAt: expiresAt.toISOString(),
+                        createdAt: serverTimestamp()
+                    };
+
+                    await setDoc(shareableLinkRef, linkData);
+                    const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+                    navigator.clipboard.writeText(shareUrl);
+                    toast({
+                        title: 'Share Link Copied!',
+                        description: 'A link that expires in 24 hours has been copied to your clipboard.',
+                    });
+                }
+            } else if (action === 'sign') {
+                setReviewDialogOpen(true);
+            }
+        }, 100);
+    } catch (error: any) {
+        console.error("Error in action handler:", error);
+        toast({
+            variant: "destructive",
+            title: "Action Failed",
+            description: error.message || "An unexpected error occurred.",
+        });
+    } finally {
+        setIsGeneratingIds(false);
+        if (action === 'share') setIsSharing(false);
+    }
+};
+
   
     const handleSaveSignature = (data: string) => {
         setSignatureData(data);
