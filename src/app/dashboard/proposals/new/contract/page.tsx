@@ -838,66 +838,48 @@ function ContractPageContent() {
 
   const handleActionClick = async (action: 'generate' | 'sign') => {
     setIsGeneratingIds(true);
-    if (action === 'generate') {
-      if (!generatedProposalId) {
-        try {
-          if (!firestore) {
-             setIsGeneratingIds(false);
-             return;
-          }
-        } catch (error: any) {
-          console.error("Error generating Proposal ID:", error);
-          toast({
-            variant: "destructive",
-            title: "ID Generation Failed",
-            description: error.message || "Could not generate a Proposal ID.",
-          });
-          setIsGeneratingIds(false);
-          return;
+    try {
+        if (!firestore) {
+            throw new Error("Firestore not initialized.");
         }
-      }
-      document.getElementById('generate-proposal-trigger')?.click();
-      setIsGeneratingIds(false);
-
-    } else if (action === 'sign') {
-        try {
-            if (!firestore) {
-              setIsGeneratingIds(false);
-              return;
-            };
-            await runTransaction(firestore, async (transaction) => {
+        await runTransaction(firestore, async (transaction) => {
+            if (!generatedProposalId) {
                 const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
                 const proposalCounterSnap = await transaction.get(proposalCounterRef);
                 const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
                 const newProposalId = String(newProposalNumber).padStart(10, '0');
-                
                 transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
                 setGeneratedProposalId(newProposalId);
+            }
 
-                if (!existingClientId && !generatedClientId) {
-                    const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                    const clientCounterSnap = await transaction.get(clientCounterRef);
-                    const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
-                    const year = new Date().getFullYear().toString().slice(-2);
-                    const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-                    
-                    transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
-                    setGeneratedClientId(newClientId);
-                }
-            });
+            if (action === 'sign' && !existingClientId && !generatedClientId) {
+                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                const clientCounterSnap = await transaction.get(clientCounterRef);
+                const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
+                const year = new Date().getFullYear().toString().slice(-2);
+                const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+                transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
+                setGeneratedClientId(newClientId);
+            }
+        });
+
+        if (action === 'generate') {
+            document.getElementById('generate-proposal-trigger')?.click();
+        } else if (action === 'sign') {
             setReviewDialogOpen(true);
-        } catch (error: any) {
-            console.error("Error generating IDs:", error);
-            toast({
-                variant: "destructive",
-                title: "ID Generation Failed",
-                description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
-            });
-        } finally {
-            setIsGeneratingIds(false);
         }
+
+    } catch (error: any) {
+        console.error("Error generating IDs:", error);
+        toast({
+            variant: "destructive",
+            title: "ID Generation Failed",
+            description: error.message || "Could not generate required IDs. Please check console and Firestore rules.",
+        });
+    } finally {
+        setIsGeneratingIds(false);
     }
-  };
+};
   
     const handleSaveSignature = (data: string) => {
         setSignatureData(data);
@@ -1216,14 +1198,6 @@ function ContractPageContent() {
 
                 <Separator />
                 
-                {discountValue > 0 && !isFlowPlan && !isCustomPlan && (
-                     <div className="flex justify-between items-center text-sm text-green-600">
-                        <span>Discount ({selectedCycle.discount * 100}%)</span>
-                        <span>- {currencyFormatter.format(discountValue)}</span>
-                    </div>
-                )}
-
-
                 <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
                     <span>{isCustomPlan ? 'Billed by Consumption' : 'Total Due'}</span>
                     <span>{isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : finalPlanDetails.totalAmountDue}</span>

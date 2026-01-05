@@ -628,22 +628,42 @@ function ContractPageContent() {
   };
 
 
-  const handleActionClick = async (action: 'sign') => {
-    if (action === 'sign') {
+  const handleActionClick = async (action: 'generate' | 'sign') => {
+    if (action === 'generate') {
+      // This is now handled by the DialogTrigger, but we keep the ID generation logic here.
+      setIsGeneratingIds(true);
+      try {
+        if (!firestore) { throw new Error("Firestore not initialized."); }
+        if (!generatedProposalId) {
+          await runTransaction(firestore, async (transaction) => {
+            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+            const proposalCounterSnap = await transaction.get(proposalCounterRef);
+            const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+            const newProposalId = String(newProposalNumber).padStart(10, '0');
+            transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+            setGeneratedProposalId(newProposalId);
+          });
+        }
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "ID Generation Failed", description: error.message });
+      } finally {
+        setIsGeneratingIds(false);
+      }
+    } else if (action === 'sign') {
         setIsGeneratingIds(true);
         try {
             if (!firestore) {
-              setIsGeneratingIds(false);
-              return;
-            }
+              throw new Error("Firestore not initialized.");
+            };
             await runTransaction(firestore, async (transaction) => {
-                const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-                const proposalCounterSnap = await transaction.get(proposalCounterRef);
-                const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
-                const newProposalId = String(newProposalNumber).padStart(10, '0');
-                
-                transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
-                setGeneratedProposalId(newProposalId);
+                if (!generatedProposalId) {
+                  const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+                  const proposalCounterSnap = await transaction.get(proposalCounterRef);
+                  const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
+                  const newProposalId = String(newProposalNumber).padStart(10, '0');
+                  transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
+                  setGeneratedProposalId(newProposalId);
+                }
 
                 if (!existingClientId && !generatedClientId) {
                     const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
@@ -651,7 +671,6 @@ function ContractPageContent() {
                     const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
                     const year = new Date().getFullYear().toString().slice(-2);
                     const newClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-                    
                     transaction.set(clientCounterRef, { currentId: newClientNumber }, { merge: true });
                     setGeneratedClientId(newClientId);
                 }
@@ -738,6 +757,12 @@ function ContractPageContent() {
             <Button variant="outline" asChild>
                 <Link href={prevLink}>Previous</Link>
             </Button>
+             <GenerateProposalDialog finalPlanDetails={finalPlanDetails}>
+                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds}>
+                    {isGeneratingIds && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Generate Proposal
+                </Button>
+            </GenerateProposalDialog>
             <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
                 {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review & Sign
