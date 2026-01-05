@@ -140,7 +140,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 pdf.setFontSize(8);
                 pdf.setTextColor(150);
                 pdf.text(
-                    `Page ${'i'} of ${totalPages} | Smart Refill Proposal`,
+                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
                     pdf.internal.pageSize.getWidth() / 2,
                     pdf.internal.pageSize.getHeight() - 10,
                     { align: 'center' }
@@ -165,7 +165,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
-                    <DialogTitle>Finalize & Share Proposal</DialogTitle>
+                    <DialogTitle>Generate & Share Proposal</DialogTitle>
                     <DialogDescription>Review the final sales illustration. You can share a secure link with your client or download it as a PDF.</DialogDescription>
                 </DialogHeader>
                 <div className="mt-6">
@@ -651,7 +651,7 @@ function ContractPageContent() {
       // Handle saving a draft for a brand new client without creating a client document
       if (isDraftAndNoClient) {
         const proposalRef = doc(firestore, 'proposals', proposalId);
-        const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
+        const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData, proposalId };
         const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
         
         const draftData: any = {
@@ -729,7 +729,7 @@ function ContractPageContent() {
         await updateDoc(clientRef, clientData);
       }
       
-      const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
+      const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData, proposalId, clientId: finalClientId };
       const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
       
       const proposalRef = doc(firestore, 'proposals', proposalId);
@@ -793,8 +793,8 @@ function ContractPageContent() {
 
 
 const ensureProposalIdIsGenerated = async () => {
-    if (!firestore) throw new Error("Firestore not ready.");
     if (generatedProposalId) return generatedProposalId;
+    if (!firestore) throw new Error("Firestore not ready.");
 
     setIsGeneratingIds(true);
     try {
@@ -823,7 +823,7 @@ const ensureProposalIdIsGenerated = async () => {
 };
 
 const ensureClientAndProposalIdsAreGenerated = async () => {
-    const pId = generatedProposalId || await ensureProposalIdIsGenerated();
+    const pId = await ensureProposalIdIsGenerated();
     
     if (existingClientId || generatedClientId) {
       if (pId && !generatedProposalId) setGeneratedProposalId(pId);
@@ -860,7 +860,6 @@ const handleSaveDraft = async () => {
     try {
         if (!generatedProposalId) {
             await ensureProposalIdIsGenerated();
-             // Use a short timeout to allow state to update before saving
             setTimeout(() => saveProposal('draft'), 100);
         } else {
             await saveProposal('draft');
@@ -871,81 +870,54 @@ const handleSaveDraft = async () => {
 }
 
 const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
-    if (action === 'finalize') {
-        setIsGeneratingIds(true);
-    } else if (action === 'share') {
-        setIsSharing(true);
-    }
+    if (action === 'finalize') setIsGeneratingIds(true);
+    if (action === 'share') setIsSharing(true);
 
     try {
-        if (!generatedProposalId) {
-            await ensureProposalIdIsGenerated();
-        }
-
-        // Delay further actions to allow state to update
-        setTimeout(async () => {
-            try {
-                if (action === 'finalize') {
-                    setFinalizeOpen(true);
-                    setIsGeneratingIds(false); // Stop loading once dialog is open
-                } else if (action === 'share') {
-                    const isSaved = await saveProposal('draft');
-                    if (!isSaved) {
-                        throw new Error("Failed to save the proposal draft before proceeding.");
-                    }
-                    const finalClientId = generatedClientId || existingClientId;
-                    if (!finalClientId || !generatedProposalId || !user) {
-                        throw new Error("Failed to secure IDs or user for sharing.");
-                    }
-
-                    const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-                    const expiresAt = new Date();
-                    expiresAt.setHours(expiresAt.getHours() + 24);
-
-                    const linkData = {
-                        id: shareableLinkRef.id,
-                        proposalId: generatedProposalId,
-                        clientId: finalClientId,
-                        userId: user.uid,
-                        expiresAt: expiresAt.toISOString(),
-                        createdAt: serverTimestamp()
-                    };
-
-                    await setDoc(shareableLinkRef, linkData);
-                    const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-                    navigator.clipboard.writeText(shareUrl);
-                    toast({
-                        title: 'Share Link Copied!',
-                        description: 'A link that expires in 24 hours has been copied to your clipboard.',
-                    });
-                    setIsSharing(false);
-                } else if (action === 'sign') {
-                    if (!existingClientId && !generatedClientId) {
-                        await ensureClientAndProposalIdsAreGenerated();
-                    }
-                    setTimeout(() => setReviewDialogOpen(true), 100);
-                }
-            } catch (error: any) {
-                console.error("Error in action handler inner timeout:", error);
-                toast({
-                    variant: "destructive",
-                    title: "Action Failed",
-                    description: error.message || "An unexpected error occurred.",
-                });
-                if (action === 'share') setIsSharing(false);
-                if (action === 'finalize') setIsGeneratingIds(false);
-            }
-        }, 100);
-
+        await ensureProposalIdIsGenerated();
+        if (action === 'finalize') setFinalizeOpen(true);
     } catch (error: any) {
-        console.error("Error in action handler:", error);
-        toast({
-            variant: "destructive",
-            title: "Action Failed",
-            description: error.message || "An unexpected error occurred.",
-        });
-        if (action === 'share') setIsSharing(false);
+        toast({ variant: "destructive", title: "Action Failed", description: error.message || "An unexpected error occurred." });
+    } finally {
         if (action === 'finalize') setIsGeneratingIds(false);
+    }
+    
+    if (action === 'sign') {
+        try {
+            await ensureClientAndProposalIdsAreGenerated();
+            setTimeout(() => setReviewDialogOpen(true), 100);
+        } catch (error) {
+             console.error("Error preparing for signature:", error);
+        }
+    } else if (action === 'share') {
+        try {
+            const isSaved = await saveProposal('draft');
+            if (!isSaved) throw new Error("Failed to save draft before sharing.");
+
+            const finalClientId = generatedClientId || existingClientId;
+            if (!finalClientId || !generatedProposalId || !user) throw new Error("Missing critical info for sharing link.");
+
+            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
+
+            await setDoc(shareableLinkRef, {
+                id: shareableLinkRef.id,
+                proposalId: generatedProposalId,
+                clientId: finalClientId,
+                userId: user.uid,
+                expiresAt: expiresAt.toISOString(),
+                createdAt: serverTimestamp()
+            });
+
+            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+            navigator.clipboard.writeText(shareUrl);
+            toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Share Failed", description: error.message });
+        } finally {
+            setIsSharing(false);
+        }
     }
 };
   
@@ -1017,7 +989,7 @@ const handleActionClick = async (action: 'sign' | 'share' | 'finalize') => {
                 <DialogTrigger asChild>
                     <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('finalize')} disabled={isGeneratingIds || isSharing || isSaving}>
                         {(isGeneratingIds || isSharing || isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Finalize
+                        Generate Proposal
                     </Button>
                 </DialogTrigger>
                 <GenerateProposalDialog 
