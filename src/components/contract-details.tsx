@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
 import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
-import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User, Mail, MapPin, ExternalLink } from 'lucide-react';
+import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User, Mail, MapPin, ExternalLink, RefreshCw as RefreshCwIcon, Globe, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -445,28 +445,33 @@ export function ContractDetails({
             </div>
             
             <Separator />
-
+            
              <Card>
-                <div className="grid md:grid-cols-2 items-center gap-6">
-                    <div className="p-6 md:order-2">
+                <div className="grid md:grid-cols-2 items-center">
+                    <div className="p-6">
                         <CardHeader className="p-0 mb-4">
                             <CardTitle>Welcome to Smart Refill</CardTitle>
                             <CardDescription>Your Partner in Water Supply Automation</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <div className="space-y-4 text-muted-foreground">
-                                <p>
-                                    Thank you for choosing River Philippines. This proposal outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
+                             <div className="space-y-4 text-muted-foreground">
+                                <p className="font-semibold text-foreground">
+                                Smart Refill is the Philippines’ first automated water refill system
+                                for businesses — built to make water supply safe, seamless, and
+                                scalable.
                                 </p>
                                 <p>
-                                    We go beyond delivery—we provide a secure, high-quality hydration system that protects your team's health and optimizes your operational costs.
+                                We connect businesses directly to a nationwide network of verified and
+                                compliant local water refilling stations, ensuring every delivery is
+                                automatic, on time, and fully compliant with sanitation and water
+                                quality standards.
                                 </p>
                             </div>
                         </CardContent>
                     </div>
-                     <div className="relative min-h-[250px] p-6 md:order-1">
+                     <div className="relative min-h-[250px] p-6">
                         <Image 
-                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5"
+                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/River%20Mobile%2Flanding%20page%20image.png?alt=media&token=bce76780-73c9-4b4c-8e6f-83e5234d337a"
                             alt="Smart Refill App on a phone"
                             fill
                             className="object-contain rounded-lg"
@@ -474,6 +479,41 @@ export function ContractDetails({
                         />
                     </div>
                 </div>
+                 <CardFooter className="p-6 bg-muted">
+                     <div className="w-full">
+                        <h3 className="font-semibold text-foreground text-base mb-4">Smart Refill powers your business with:</h3>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            <div className="flex items-start gap-3">
+                                <RefreshCwIcon className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                <div>
+                                    <span className="font-semibold text-foreground">Automated Refills</span>
+                                    <p className="text-xs text-muted-foreground">No more texts, calls, or manual orders.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <Globe className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                <div>
+                                    <span className="font-semibold text-foreground">Nationwide Access</span>
+                                    <p className="text-xs text-muted-foreground">Refill anywhere in the Philippines with verified partners.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <LayoutDashboard className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                <div>
+                                    <span className="font-semibold text-foreground">Centralized Dashboard</span>
+                                    <p className="text-xs text-muted-foreground">Monitor water usage, billing, and deliveries in real time.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <ShieldCheck className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                <div>
+                                    <span className="font-semibold text-foreground">Compliance Assurance</span>
+                                    <p className="text-xs text-muted-foreground">Every refill meets sanitation and safety standards.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </CardFooter>
             </Card>
 
 
@@ -743,7 +783,7 @@ export function ContractDetails({
                           </Accordion>
                       </div>
                   </CardContent>
-              </Card>
+            </Card>
 
 
             {!isProposalIllustration && (
