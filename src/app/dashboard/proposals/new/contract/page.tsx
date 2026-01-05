@@ -802,7 +802,7 @@ function ContractPageContent() {
             const counterSnap = await transaction.get(clientCounterRef);
             const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
             const newId = currentId + 1;
-            transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
+            transaction.set(clientCounterRef, { currentId: newId }, { merge: true });
             return newId;
         });
         const year = new Date().getFullYear().toString().slice(-2);
@@ -962,7 +962,7 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
                 isSharing={isSharing}
                 isSaving={isSaving}
              >
-                <Button variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving}>
+                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     Generate Proposal
                 </Button>
@@ -1249,3 +1249,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
