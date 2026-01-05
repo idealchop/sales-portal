@@ -2,9 +2,9 @@
 'use client';
 
 import React, { Suspense, useEffect, useState, useRef } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, getDoc, collectionGroup, query, where, getDocs, FirestoreError } from 'firebase/firestore';
+import { doc, getDoc, FirestoreError } from 'firebase/firestore';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, AlertTriangle, FileText, Download } from 'lucide-react';
@@ -18,7 +18,6 @@ function SharedProposalContent() {
     const linkId = params.linkId as string;
     const firestore = useFirestore();
     const { toast } = useToast();
-    const searchParams = useSearchParams();
 
     const [proposalDetails, setProposalDetails] = useState<FinalPlanDetails | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -46,17 +45,13 @@ function SharedProposalContent() {
 
                 const linkData = linkDocSnap.data();
 
-                if (new Date(linkData.expiresAt) < new Date()) {
+                if (new Date(linkData.expiresAt.toDate()) < new Date()) {
                     throw new Error("This sharing link has expired.");
                 }
                 
-                const url = new URL(window.location.href);
-                url.searchParams.set('linkId', linkId);
-                window.history.replaceState({}, '', url.toString());
-
                 const proposalDocRef = doc(firestore, `clients/${linkData.clientId}/proposals/${linkData.proposalId}`);
                 const proposalDocSnap = await getDoc(proposalDocRef);
-
+                
                 if (!proposalDocSnap.exists()) {
                     throw new Error("The associated proposal could not be found.");
                 }
