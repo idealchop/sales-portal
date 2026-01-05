@@ -353,7 +353,7 @@ function CustomPlanCalculator({
     minimumContainersPerWeek = 0,
 }: {
     pricePerLiter?: number;
-    onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number }) => void;
+    onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => void;
     title?: string;
     description?: string;
     minimumCost?: number;
@@ -399,8 +399,8 @@ function CustomPlanCalculator({
         : deliveryFrequencies;
 
     useEffect(() => {
-        onCalculated({ totalLiters, totalCost, deliveries, dispensers, containers });
-    }, [totalLiters, totalCost, deliveries, dispensers, containers, onCalculated]);
+        onCalculated({ totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter });
+    }, [totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter, onCalculated]);
     
     const isMinimumMet = minimumContainersPerWeek > 0 
         ? (gallons * deliveries) >= minimumContainersPerWeek
@@ -606,12 +606,12 @@ function PlansGrid({
     selectedPlan: string | null, 
     onSelectPlan: (planId: string) => void, 
     businessSize: BusinessSize | null,
-    customCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number } | null,
+    customCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number, locations: any[] } | null,
     onCustomCalculated: (values: any) => void;
     overflowCalculatedValues: { locations: { name: string; dispensers: number; containers: number; }[] } | null;
     onOverflowCalculated: (values: any) => void;
-    smeCommercialCustomValues: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number } | null,
-    onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number }) => void;
+    smeCommercialCustomValues: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number } | null,
+    onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => void;
 }) {
     const getStations = (liters: number) => {
         if (liters <= 2000) return '1 Station';
@@ -686,10 +686,9 @@ function PlansGrid({
         let inclusions = [...plan.inclusions];
 
         if (isCustom && customCalculatedValues) {
-            employees = getEmployees(customCalculatedValues.totalLiters, false);
-            stations = getStations(customCalculatedValues.totalLiters);
-            monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(customCalculatedValues.totalCost);
-            liters = `${customCalculatedValues.totalLiters.toLocaleString()} L`;
+             const totalDispensers = customCalculatedValues.locations.reduce((sum, loc) => sum + loc.dispensers, 0);
+            employees = `${customCalculatedValues.locations.length} Locations`;
+            stations = `${totalDispensers} Dispensers`;
         }
         
         if (isOverflow && overflowCalculatedValues) {
@@ -703,7 +702,7 @@ function PlansGrid({
 
 
         if (isCustomSmeCommercial) {
-            const pricePerLiter = businessSize === 'household' ? 2.5 : 3;
+            const pricePerLiter = smeCommercialCustomValues?.pricePerLiter || (businessSize === 'household' ? 2.5 : 3);
             inclusions[0] = `Priced at ₱${pricePerLiter.toFixed(2)} per liter`;
             if (smeCommercialCustomValues) {
                 employees = getEmployees(smeCommercialCustomValues.totalLiters, businessSize === 'household');
@@ -1011,7 +1010,7 @@ export default function PlansPage() {
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [customCalculatedValues, setCustomCalculatedValues] = useState<any>(null);
     const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[] } | null>(null);
-    const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number } | null>(null);
+    const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number } | null>(null);
     
     useEffect(() => {
         const clientType = searchParams.get('clientType');
@@ -1051,7 +1050,7 @@ export default function PlansPage() {
         setOverflowCalculatedValues(values);
     }, []);
 
-    const handleSmeCommercialCustomCalculated = useCallback((values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number }) => {
+    const handleSmeCommercialCustomCalculated = useCallback((values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => {
         setSmeCommercialCustomValues(values);
     }, []);
 
@@ -1117,8 +1116,7 @@ export default function PlansPage() {
         if (!selectedPlan) return true;
         if (selectedPlan === 'enterprise-customized') {
             if (!customCalculatedValues) return true;
-            const containersPerWeek = (customCalculatedValues as any).gallons * (customCalculatedValues as any).deliveries;
-            return containersPerWeek < 10;
+            return false;
         }
         if (selectedPlan === 'enterprise-overflow') {
             return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name);
@@ -1140,9 +1138,6 @@ export default function PlansPage() {
         }
 
         if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
-            params.set('liters', customCalculatedValues.totalLiters.toString());
-            params.set('cost', customCalculatedValues.totalCost.toString());
-            params.set('freq', customCalculatedValues.deliveries.toString());
             params.set('locations', JSON.stringify(customCalculatedValues.locations));
         }
         if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
