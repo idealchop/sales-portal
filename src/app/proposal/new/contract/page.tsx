@@ -219,7 +219,7 @@ function PreviewDialog({
     isSaving: boolean;
     isDialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
-    saveProposal: (status: 'draft' | 'accepted') => Promise<void>;
+    saveProposal: (status: 'draft' | 'accepted') => Promise<boolean>;
     signatureData?: string;
     onSaveSignature: (dataUrl: string) => void;
     onClearSignature: () => void;
@@ -597,7 +597,7 @@ function ContractPageContent() {
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
-  const saveProposal = async (status: 'draft' | 'accepted') => {
+  const saveProposal = async (status: 'draft' | 'accepted'): Promise<boolean> => {
     if (!finalPlanDetails || !firestore) {
       toast({
         variant: "destructive",
@@ -722,15 +722,15 @@ function ContractPageContent() {
             title: status === 'accepted' ? "Subscription Successful!" : "Proposal Updated!",
             description: `Your proposal for ${companyName} has been processed.`,
         });
+      } else {
+          toast({
+            title: "Draft Saved!",
+            description: "Your proposal draft is saved and ready for sharing or finalization.",
+          });
       }
       
       if (isSubscribing) {
           router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${proposalId}&token=${onboardingToken}`);
-      } else if (status === 'draft' && !isSubscribing) {
-          // This case is for sharing, so we don't redirect, just show a silent success
-      }
-      else {
-          router.push('/dashboard/proposals');
       }
       
       return true;
@@ -762,7 +762,7 @@ function ContractPageContent() {
         if (!currentProposalId) {
             const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
             const newProposalNumber = await runTransaction(firestore, async (transaction) => {
-                const counterSnap = await transaction.get(proposalCounterRef);
+                const counterSnap = await transaction.get(counterRef);
                 const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
                 const newId = currentId + 1;
                 transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
@@ -787,11 +787,13 @@ function ContractPageContent() {
             setGeneratedClientId(currentClientId);
         }
         
-        const isSaved = await saveProposal('draft');
-        if (!isSaved) {
-            throw new Error("Failed to save the proposal draft before proceeding.");
+        if (action === 'generate' || action === 'share') {
+            const isSaved = await saveProposal('draft');
+            if (!isSaved) {
+                throw new Error("Failed to save the proposal draft before proceeding.");
+            }
         }
-
+        
         if (action === 'generate') {
             document.getElementById('generate-proposal-trigger')?.click();
         } else if (action === 'sign') {
@@ -899,7 +901,7 @@ function ContractPageContent() {
                 <Link href={prevLink}>Previous</Link>
             </Button>
              <GenerateProposalDialog finalPlanDetails={finalPlanDetails} onShare={() => handleActionClick('share')} isSharing={isSharing}>
-                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds || isSharing}>
+                <Button id="generate-proposal-trigger" variant="outline" disabled={isGeneratingIds || isSharing}>
                     {(isGeneratingIds || isSharing) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Finalize
                 </Button>
