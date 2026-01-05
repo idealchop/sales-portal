@@ -384,7 +384,7 @@ export function ContractDetails({
     const isCustomPlan = plan.id === 'custom-plan';
     const pricePerLiter = source.pricePerLiter || 0;
 
-    const dispenserFeeTypeLabel = source.additionalDispensers.feeType === 'monthly' ? 'Monthly' : source.additionalDispensers.feeType === 'security' ? 'Security Deposit' : 'Free';
+    const dispenserFeeTypeLabel = source.additionalDispensers.feeType === 'monthly' ? 'Monthly Fee' : source.additionalDispensers.feeType === 'security' ? 'Security Deposit' : 'Free';
     const dispensersCost = source.additionalDispensers.feeType !== 'free' ? source.additionalDispensers.quantity * source.additionalDispensers.fee : 0;
 
 
@@ -405,20 +405,33 @@ export function ContractDetails({
             <Separator />
             
             <Card>
-                <CardHeader>
-                    <CardTitle>Welcome To Smart Refill</CardTitle>
-                    <CardDescription>
-                       Your trusted partner in water supply automation.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    <p className="text-muted-foreground">
-                        Thank you for choosing Smart Refill. This proposal outlines how our smart, reliable, and fully compliant solution helps your business achieve consistent water availability, lower operational costs, and complete visibility over your consumption.
-                    </p>
-                    <p className="text-muted-foreground mt-4">
-                        We go beyond delivery — we help you save time, cut inefficiencies, and ensure every liter counts.
-                    </p>
-                </CardContent>
+                <div className="grid md:grid-cols-2 items-center">
+                    <div className="p-6">
+                        <CardHeader className="p-0">
+                            <CardTitle>Welcome To Smart Refill</CardTitle>
+                            <CardDescription>
+                            Your trusted partner in water supply automation.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-6 p-0">
+                            <p className="text-muted-foreground">
+                                Thank you for choosing Smart Refill. This proposal outlines how our smart, reliable, and fully compliant solution helps your business achieve consistent water availability, lower operational costs, and complete visibility over your consumption.
+                            </p>
+                            <p className="text-muted-foreground mt-4">
+                                We go beyond delivery — we help you save time, cut inefficiencies, and ensure every liter counts.
+                            </p>
+                        </CardContent>
+                    </div>
+                    <div className="relative min-h-[250px] hidden md:block">
+                        <Image 
+                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/River%20Mobile%2Flanding%20page%20image.png?alt=media&token=bce76780-73c9-4b4c-8e6f-83e5234d337a"
+                            alt="Smart Refill App on a phone"
+                            fill
+                            className="object-contain rounded-r-lg"
+                            data-ai-hint="app interface"
+                        />
+                    </div>
+                </div>
             </Card>
 
 
