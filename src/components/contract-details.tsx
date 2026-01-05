@@ -378,13 +378,14 @@ export function ContractDetails({
     const finalPlan = source.finalPlan;
     
     const addons = source.addons || [];
-    const additionalDispenserCost = source.additionalDispenserCost || 250;
-    const dispensersCost = Number(additionalDispensers) * additionalDispenserCost;
     
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const isCustomPlan = plan.id === 'custom-plan';
     const pricePerLiter = source.pricePerLiter || 0;
+
+    const dispenserFeeTypeLabel = source.additionalDispensers.feeType === 'monthly' ? 'Monthly' : source.additionalDispensers.feeType === 'security' ? 'Security Deposit' : 'Free';
+    const dispensersCost = source.additionalDispensers.feeType !== 'free' ? source.additionalDispensers.quantity * source.additionalDispensers.fee : 0;
 
 
     if (!finalPlan) return null;
@@ -558,8 +559,8 @@ export function ContractDetails({
                             )}
                             {Number(additionalDispensers) > 0 && (
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
-                                    <span className="font-semibold">{currencyFormatter.format(dispensersCost)}</span>
+                                    <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x) - {dispenserFeeTypeLabel}</span>
+                                    <span className="font-semibold">{dispensersCost > 0 ? currencyFormatter.format(dispensersCost) : 'Free'}</span>
                                 </div>
                             )}
                         </div>
