@@ -350,6 +350,7 @@ function CustomPlanCalculator({
     maxGallons,
     maxDeliveries,
     allowPriceEdit = false,
+    minimumContainersPerWeek = 0,
 }: {
     pricePerLiter?: number;
     onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number }) => void;
@@ -362,6 +363,7 @@ function CustomPlanCalculator({
     maxGallons?: number;
     maxDeliveries?: number;
     allowPriceEdit?: boolean;
+    minimumContainersPerWeek?: number;
 }) {
     const [gallons, setGallons] = useState(maxGallons ? Math.min(10, maxGallons) : 10);
     const [deliveries, setDeliveries] = useState(1);
@@ -398,7 +400,10 @@ function CustomPlanCalculator({
         onCalculated({ totalLiters, totalCost, deliveries });
     }, [totalLiters, totalCost, deliveries, onCalculated]);
     
-    const isMinimumMet = totalCost >= minimumCost;
+    const isMinimumMet = minimumContainersPerWeek > 0 
+        ? (gallons * deliveries) >= minimumContainersPerWeek
+        : totalCost >= minimumCost;
+
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
     const estimatedCost = totalLiters * pricePerLiter;
@@ -462,7 +467,7 @@ function CustomPlanCalculator({
                         <span className="font-bold">{isFixedPrice ? (showEstimatedCost ? 'Estimated Monthly Cost' : 'Top-Up Amount') : 'Estimated Monthly Cost'}</span>
                         <span className="font-bold text-lg">{currencyFormatter.format(showEstimatedCost ? estimatedCost : totalCost)}</span>
                     </div>
-                    {minimumCost > 0 && !isFixedPrice && (
+                     {(minimumCost > 0 || minimumContainersPerWeek > 0) && !isFixedPrice && (
                         <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
                             'mt-4', 
                             isMinimumMet 
@@ -472,8 +477,8 @@ function CustomPlanCalculator({
                             <AlertCircle className="h-4 w-4" />
                             <AlertTitle className={cn('font-bold', !isMinimumMet && 'text-red-100')}>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
                             <AlertDescription className={cn('text-base', !isMinimumMet && 'text-red-200')}>
-                                {isMinimumMet
-                                    ? `The estimated cost meets the ${currencyFormatter.format(minimumCost)} minimum.`
+                                {minimumContainersPerWeek > 0
+                                    ? `This plan requires a minimum of ${minimumContainersPerWeek} containers per week.`
                                     : `This plan requires a minimum monthly spend of ${currencyFormatter.format(minimumCost)}.`
                                 }
                             </AlertDescription>
@@ -758,7 +763,7 @@ function PlansGrid({
                         <CustomPlanCalculator 
                             onCalculated={onCustomCalculated} 
                             allowPriceEdit={true}
-                            minimumCost={30000}
+                            minimumContainersPerWeek={10}
                             title="Customized Plan Calculator"
                         />
                     )}
@@ -1103,7 +1108,7 @@ export default function PlansPage() {
     const isNextDisabled = useMemo(() => {
         if (!selectedPlan) return true;
         if (selectedPlan === 'enterprise-customized') {
-            return !customCalculatedValues || customCalculatedValues.totalCost < 30000;
+            return !customCalculatedValues || (customCalculatedValues.gallons * customCalculatedValues.deliveries) < 10;
         }
         if (selectedPlan === 'enterprise-overflow') {
             return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name);
