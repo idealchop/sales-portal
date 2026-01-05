@@ -41,7 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home, Share2, ClipboardCopy, FileText as FileTextIcon } from 'lucide-react';
+import { Download, Send, Rocket, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Phone, Users, Waves, Package, CheckCircle, CalendarCheck, Ship, Bot, Save, HeartPulse, Coffee, Building, Car, RefreshCcw, CreditCard, Loader2, FileCheck, FileText, Eye, Badge, Home, Share2, ClipboardCopy, FileText as FileTextIcon, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -90,16 +90,10 @@ const addons = [
 ];
 
 
-function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDraft, isSharing, isSaving, ensureProposalId, isGeneratingIds }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void, onSaveDraft: () => Promise<void>, isSharing: boolean, isSaving: boolean, ensureProposalId: () => Promise<string | undefined>, isGeneratingIds: boolean; }) {
+function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDraft, isSharing, isSaving }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void, onSaveDraft: () => Promise<void>, isSharing: boolean, isSaving: boolean }) {
     const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
-
-    useEffect(() => {
-        if (open) {
-            ensureProposalId();
-        }
-    }, [open, ensureProposalId]);
 
     const handleDownloadPdf = async () => {
         const element = hiddenProposalRef.current;
@@ -176,7 +170,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 </DialogHeader>
                 <div className="mt-6">
                     <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
-                        {isGeneratingIds ? (
+                        {!finalPlanDetails.proposalId ? (
                              <div className="flex h-full items-center justify-center">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary"/>
                             </div>
@@ -201,15 +195,15 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 <DialogFooter className="sm:justify-between items-center">
                     <p className="text-xs text-muted-foreground text-left">This proposal is valid for 30 days. Prices and terms are subject to change thereafter.</p>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={onSaveDraft} disabled={isSaving || isGeneratingIds}>
+                        <Button variant="outline" onClick={onSaveDraft} disabled={isSaving}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Save Draft
                         </Button>
-                        <Button variant="outline" onClick={onShare} disabled={isSharing || isGeneratingIds}>
+                        <Button variant="outline" onClick={onShare} disabled={isSharing}>
                             {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
                             {isSharing ? 'Generating...' : 'Share Link'}
                         </Button>
-                        <Button onClick={handleDownloadPdf} disabled={isDownloading || isGeneratingIds}>
+                        <Button onClick={handleDownloadPdf} disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                             Download PDF
                         </Button>
@@ -443,13 +437,15 @@ function ContractPageContent() {
   const [dispenserFee, setDispenserFee] = useState(250);
 
   const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [isFinalizeOpen, setFinalizeOpen] = useState(false);
+  
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
+  
   const [signatureData, setSignatureData] = useState<string | undefined>();
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
-  const [_, setForceUpdate] = useState(0);
   const [isSharing, setIsSharing] = useState(false);
-  const [isFinalizeOpen, setFinalizeOpen] = useState(false);
+
 
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
@@ -883,7 +879,12 @@ const handleSaveDraft = async () => {
 
 const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
     if (action === 'generate') {
-      setFinalizeOpen(true);
+      try {
+        await ensureProposalIdIsGenerated();
+        setFinalizeOpen(true);
+      } catch (error) {
+        console.error("Error preparing for generation:", error);
+      }
     } else if (action === 'sign') {
         try {
             await ensureClientAndProposalIdsAreGenerated();
@@ -894,33 +895,43 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
     } else if (action === 'share') {
         setIsSharing(true);
         try {
-            const isSaved = await saveProposal('draft');
-            if (!isSaved) {
-                throw new Error("Failed to save the proposal draft before proceeding.");
+            if (!generatedProposalId) {
+                await ensureProposalIdIsGenerated();
             }
 
-            const finalClientId = generatedClientId || existingClientId;
-            if (!finalClientId || !generatedProposalId || !user) throw new Error("Missing critical info for sharing link.");
+            // A short delay to allow state update before saving
+            setTimeout(async () => {
+                const isSaved = await saveProposal('draft');
+                if (!isSaved) {
+                    throw new Error("Failed to save the proposal draft before proceeding.");
+                }
 
-            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-            const expiresAt = new Date();
-            expiresAt.setHours(expiresAt.getHours() + 24);
+                const finalClientId = generatedClientId || existingClientId;
+                if (!finalClientId || !generatedProposalId || !user) {
+                  throw new Error("Missing critical info for sharing link.");
+                }
 
-            await setDoc(shareableLinkRef, {
-                id: shareableLinkRef.id,
-                proposalId: generatedProposalId,
-                clientId: finalClientId,
-                userId: user.uid,
-                expiresAt: expiresAt.toISOString(),
-                createdAt: serverTimestamp()
-            });
+                const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+                const expiresAt = new Date();
+                expiresAt.setHours(expiresAt.getHours() + 24);
 
-            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-            navigator.clipboard.writeText(shareUrl);
-            toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+                await setDoc(shareableLinkRef, {
+                    id: shareableLinkRef.id,
+                    proposalId: generatedProposalId,
+                    clientId: finalClientId,
+                    userId: user.uid,
+                    expiresAt: expiresAt.toISOString(),
+                    createdAt: serverTimestamp()
+                });
+
+                const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+                navigator.clipboard.writeText(shareUrl);
+                toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+                setIsSharing(false);
+            }, 100);
+
         } catch (error: any) {
             toast({ variant: "destructive", title: "Share Failed", description: error.message });
-        } finally {
             setIsSharing(false);
         }
     }
@@ -932,7 +943,6 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
             title: "Signature Saved",
             description: "Your signature has been captured and is ready to be included in the final proposal.",
         });
-        setForceUpdate(v => v + 1);
     };
   
   if (!plan || !finalPlanDetails) {
@@ -996,11 +1006,9 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
                 onSaveDraft={handleSaveDraft}
                 isSharing={isSharing}
                 isSaving={isSaving}
-                ensureProposalId={ensureProposalIdIsGenerated}
-                isGeneratingIds={isGeneratingIds}
             >
-                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving || isSharing || isGeneratingIds}>
+                    {(isSaving || isSharing || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Generate Proposal
                 </Button>
             </GenerateProposalDialog>

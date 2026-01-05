@@ -90,18 +90,11 @@ const addons = [
 ];
 
 
-function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDraft, isSharing, isSaving, ensureProposalId, isGeneratingIds }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void, onSaveDraft: () => Promise<void>, isSharing: boolean, isSaving: boolean, ensureProposalId: () => Promise<string | undefined>, isGeneratingIds: boolean; }) {
+function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDraft, isSharing, isSaving }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void, onSaveDraft: () => Promise<void>, isSharing: boolean, isSaving: boolean }) {
     const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
     
-    useEffect(() => {
-        if (open) {
-            ensureProposalId();
-        }
-    }, [open, ensureProposalId]);
-
-
     const handleDownloadPdf = async () => {
         const element = hiddenProposalRef.current;
         if (!element) return;
@@ -177,7 +170,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 </DialogHeader>
                 <div className="mt-6">
                     <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
-                        {isGeneratingIds ? (
+                        {!finalPlanDetails.proposalId ? (
                             <div className="flex h-full items-center justify-center">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary"/>
                             </div>
@@ -202,15 +195,15 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 <DialogFooter className="sm:justify-between items-center">
                     <p className="text-xs text-muted-foreground text-left">This proposal is valid for 30 days. Prices and terms are subject to change thereafter.</p>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={onSaveDraft} disabled={isSaving || isGeneratingIds}>
+                        <Button variant="outline" onClick={onSaveDraft} disabled={isSaving}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Save Draft
                         </Button>
-                        <Button variant="outline" onClick={onShare} disabled={isSharing || isGeneratingIds}>
+                        <Button variant="outline" onClick={onShare} disabled={isSharing}>
                             {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
                             {isSharing ? 'Generating...' : 'Share Link'}
                         </Button>
-                        <Button onClick={handleDownloadPdf} disabled={isDownloading || isGeneratingIds}>
+                        <Button onClick={handleDownloadPdf} disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                             Download PDF
                         </Button>
@@ -434,7 +427,6 @@ function ContractPageContent() {
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [isSaving, setIsSaving] = useState(false);
-  const [isGeneratingIds, setIsGeneratingIds] = useState(false);
   
   const [sanitationFeeType, setSanitationFeeType] = useState('free');
   const [sanitationFee, setSanitationFee] = useState(500);
@@ -809,7 +801,6 @@ const ensureProposalIdIsGenerated = async () => {
     if (generatedProposalId) return generatedProposalId;
     if (!firestore) throw new Error("Firestore not ready.");
 
-    setIsGeneratingIds(true);
     try {
         const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
         const newProposalNumber = await runTransaction(firestore, async (transaction) => {
@@ -830,8 +821,6 @@ const ensureProposalIdIsGenerated = async () => {
             description: "Could not generate a unique ID for the proposal. Please try again."
         });
         throw e;
-    } finally {
-        setIsGeneratingIds(false);
     }
 };
 
@@ -844,7 +833,7 @@ const ensureClientAndProposalIdsAreGenerated = async () => {
     };
 
     if (!firestore) throw new Error("Firestore not ready.");
-    setIsGeneratingIds(true);
+
     try {
         const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
         const newClientNumber = await runTransaction(firestore, async (transaction) => {
@@ -864,8 +853,6 @@ const ensureClientAndProposalIdsAreGenerated = async () => {
             description: "Could not generate a unique ID for the client. Please check your connection and try again."
         });
         throw e;
-    } finally {
-        setIsGeneratingIds(false);
     }
 }
 
@@ -884,7 +871,12 @@ const handleSaveDraft = async () => {
 
 const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
     if (action === 'generate') {
-      setFinalizeOpen(true);
+      try {
+        await ensureProposalIdIsGenerated();
+        setFinalizeOpen(true);
+      } catch (error) {
+        console.error("Error preparing for generation:", error);
+      }
     } else if (action === 'sign') {
         try {
             await ensureClientAndProposalIdsAreGenerated();
@@ -997,16 +989,14 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
                 onSaveDraft={handleSaveDraft}
                 isSharing={isSharing}
                 isSaving={isSaving}
-                ensureProposalId={ensureProposalIdIsGenerated}
-                isGeneratingIds={isGeneratingIds}
              >
-                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isGeneratingIds || isSharing || isSaving}>
-                    {(isGeneratingIds || isSharing || isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     Generate Proposal
                 </Button>
             </GenerateProposalDialog>
-            <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
-                {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={() => handleActionClick('sign')} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
             </Button>
         </div>
@@ -1270,8 +1260,8 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
               <Button variant="outline" asChild className="flex-1">
                   <Link href={prevLink}>Previous</Link>
               </Button>
-              <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds} className="flex-1">
-                {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button onClick={() => handleActionClick('sign')} disabled={isSaving} className="flex-1">
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
               </Button>
           </div>
