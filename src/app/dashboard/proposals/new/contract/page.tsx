@@ -514,6 +514,8 @@ function ContractPageContent() {
   const existingClientId = searchParams.get('clientId'); 
   const managerId = searchParams.get('managerId');
   const campaignName = searchParams.get('campaignName');
+  const dispensers = searchParams.get('dispensers');
+  const containers = searchParams.get('containers');
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -690,8 +692,10 @@ function ContractPageContent() {
         clientType,
         signature: signatureData,
         pricePerLiter: isCustomPlan ? pricePerLiter : undefined,
+        dispensers: parseInt(dispensers || '0'),
+        containers: parseInt(containers || '0'),
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters]);
+  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -1037,7 +1041,7 @@ function ContractPageContent() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">
-                                    {rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic'}
+                                    {isCustomPlan && finalPlanDetails.containers ? `${finalPlanDetails.containers} Gallons` : (rotationInfo && rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic')}
                                 </div>
                             </CardContent>
                         </Card>
@@ -1265,5 +1269,4 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
     

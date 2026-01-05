@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
 import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
 import { Logo } from '@/components/logo';
-import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship } from 'lucide-react';
+import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
 import Image from 'next/image';
 
@@ -320,6 +320,8 @@ export type FinalPlanDetails = {
     clientType?: 'household' | 'sme' | 'commercial' | 'corporate' | 'enterprise';
     signature?: string;
     pricePerLiter?: number;
+    dispensers?: number;
+    containers?: number;
 };
 
 
@@ -372,7 +374,6 @@ export function ContractDetails({
     const totalAmountDue = source.totalAmountDue;
 
     const rotationInfo = source.plan?.id ? (gallonRotationData[source.plan.id] || gallonRotationData['custom-plan']) : null;
-    const refillableGallons = source.refillableGallons;
     
     const plan = source.plan;
 
@@ -391,6 +392,10 @@ export function ContractDetails({
 
 
     if (!finalPlan) return null;
+    
+    const refillableGallons = isCustomPlan ? source.containers : source.refillableGallons;
+    const dispensers = isCustomPlan ? source.dispensers : (rotationInfo?.gallons ? Math.ceil(rotationInfo.gallons / 5) : 1);
+
 
     return (
         <div className="space-y-6 p-2">
@@ -468,8 +473,15 @@ export function ContractDetails({
                          <div className="flex items-start gap-3">
                             <Package className="h-5 w-5 text-primary" />
                             <div>
-                                <p className="text-muted-foreground">Refillable Gallons</p>
-                                <p className="font-semibold">{refillableGallons}</p>
+                                <p className="text-muted-foreground">Rotation Containers</p>
+                                <p className="font-semibold">{refillableGallons} units</p>
+                            </div>
+                        </div>
+                         <div className="flex items-start gap-3">
+                            <Computer className="h-5 w-5 text-primary" />
+                            <div>
+                                <p className="text-muted-foreground">Dispensers</p>
+                                <p className="font-semibold">{dispensers} units</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
@@ -722,5 +734,3 @@ export function ContractDetails({
         </div>
     );
 }
-
-    
