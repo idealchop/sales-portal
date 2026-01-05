@@ -90,7 +90,7 @@ const addons = [
 ];
 
 
-function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDraft, isSharing, isSaving }: { finalPlanDetails: FinalPlanDetails, children: React.ReactNode, onShare: () => void, onSaveDraft: () => Promise<void>, isSharing: boolean, isSaving: boolean }) {
+function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDraft, isSharing, isSaving }: { finalPlanDetails: FinalPlanDetails | null, children: React.ReactNode, onShare: () => void, onSaveDraft: () => Promise<void>, isSharing: boolean, isSaving: boolean }) {
     const hiddenProposalRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
@@ -147,7 +147,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 );
             }
 
-            pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.companyName}.pdf`);
+            pdf.save(`Smart-Refill-Proposal-${finalPlanDetails!.companyName}.pdf`);
             toast({ title: "Download Started", description: "Your proposal PDF is being generated." });
 
         } catch (error) {
@@ -158,8 +158,6 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
         }
     };
     
-    if (!finalPlanDetails) return null;
-
     return (
         <Dialog>
             <DialogTrigger asChild>{children}</DialogTrigger>
@@ -170,11 +168,7 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                 </DialogHeader>
                 <div className="mt-6">
                     <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
-                        {!finalPlanDetails.proposalId ? (
-                            <div className="flex h-full items-center justify-center">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary"/>
-                            </div>
-                        ) : (
+                         {finalPlanDetails ? (
                             <div className="bg-white p-8" id="pdf-content-preview">
                                 <ContractDetails
                                     finalPlanDetails={finalPlanDetails}
@@ -182,14 +176,18 @@ function GenerateProposalDialog({ finalPlanDetails, children, onShare, onSaveDra
                                     isProposalIllustration={true}
                                 />
                             </div>
+                        ) : (
+                           <div className="flex h-full items-center justify-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                            </div>
                         )}
                     </ScrollArea>
                     <div ref={hiddenProposalRef} style={{ display: 'none', position: 'absolute', left: '-9999px', width: '8.5in' }} className="p-12 bg-white text-black">
-                        <ContractDetails
+                       {finalPlanDetails && <ContractDetails
                             finalPlanDetails={finalPlanDetails}
                             isSigned={false}
                             isProposalIllustration={true}
-                        />
+                        />}
                     </div>
                 </div>
                 <DialogFooter className="sm:justify-between items-center">
@@ -226,7 +224,7 @@ function PreviewDialog({
     paymentProofFile,
     setPaymentProofFile,
 }: { 
-    finalPlanDetails: FinalPlanDetails,
+    finalPlanDetails: FinalPlanDetails | null,
     isSaving: boolean;
     isDialogOpen: boolean;
     setDialogOpen: (open: boolean) => void;
@@ -284,66 +282,72 @@ function PreviewDialog({
                     <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
-                    <div ref={contractRef} className="space-y-6">
-                        <ContractDetails
-                            finalPlanDetails={finalPlanDetails}
-                            isSigned={false}
-                            signatureData={signatureData}
-                            onSaveSignature={onSaveSignature}
-                            onClearSignature={onClearSignature}
-                        />
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Final Step: Upload Proof of Payment</CardTitle>
-                                <CardDescription>
-                                    Please upload a screenshot or document of your payment confirmation. This is required to finalize the proposal.
-                                </CardDescription>
-                            </CardHeader>
-                             <CardContent className="space-y-4">
-                                <PaymentMethods />
-                                <div className="pt-4 space-y-2">
-                                     <Label htmlFor="payment-proof">Payment Confirmation File</Label>
-                                     <Input 
-                                        id="payment-proof"
-                                        type="file" 
-                                        ref={fileInputRef} 
-                                        onChange={handleFileChange} 
-                                        accept="image/png, image/jpeg, application/pdf"
-                                     />
-                                     {isSaving && <Progress value={isSaving ? 50 : 0} className="w-full h-2 mt-2" />}
-                                     {paymentProofFile && (
-                                        <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md border">
-                                            <div className="flex items-center gap-2 overflow-hidden">
-                                                {paymentProofPreview ? (
-                                                    <div className="relative h-10 w-10 flex-shrink-0">
-                                                        <Image src={paymentProofPreview} alt="Preview" fill className="object-cover rounded-sm" />
-                                                    </div>
-                                                ) : (
-                                                    <FileCheck className="h-6 w-6 text-green-500 flex-shrink-0" />
-                                                )}
-                                                <span className="truncate">{paymentProofFile.name}</span>
-                                            </div>
-                                             {paymentProofPreview && (
-                                                 <Dialog>
-                                                    <DialogTrigger asChild>
-                                                         <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4"/> View</Button>
-                                                    </DialogTrigger>
-                                                    <DialogContent>
-                                                        <DialogHeader>
-                                                            <DialogTitle>Payment Proof Preview</DialogTitle>
-                                                        </DialogHeader>
-                                                        <div className="relative mt-4 aspect-auto max-h-[70vh] w-full">
-                                                            <Image src={paymentProofPreview} alt="Payment proof full preview" width={500} height={700} className="object-contain w-full h-full" />
+                    {finalPlanDetails ? (
+                        <div ref={contractRef} className="space-y-6">
+                            <ContractDetails
+                                finalPlanDetails={finalPlanDetails}
+                                isSigned={false}
+                                signatureData={signatureData}
+                                onSaveSignature={onSaveSignature}
+                                onClearSignature={onClearSignature}
+                            />
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Final Step: Upload Proof of Payment</CardTitle>
+                                    <CardDescription>
+                                        Please upload a screenshot or document of your payment confirmation. This is required to finalize the proposal.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <PaymentMethods />
+                                    <div className="pt-4 space-y-2">
+                                        <Label htmlFor="payment-proof">Payment Confirmation File</Label>
+                                        <Input 
+                                            id="payment-proof"
+                                            type="file" 
+                                            ref={fileInputRef} 
+                                            onChange={handleFileChange} 
+                                            accept="image/png, image/jpeg, application/pdf"
+                                        />
+                                        {isSaving && <Progress value={isSaving ? 50 : 0} className="w-full h-2 mt-2" />}
+                                        {paymentProofFile && (
+                                            <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md border">
+                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                    {paymentProofPreview ? (
+                                                        <div className="relative h-10 w-10 flex-shrink-0">
+                                                            <Image src={paymentProofPreview} alt="Preview" fill className="object-cover rounded-sm" />
                                                         </div>
-                                                    </DialogContent>
-                                                </Dialog>
-                                             )}
-                                        </div>
-                                     )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                                    ) : (
+                                                        <FileCheck className="h-6 w-6 text-green-500 flex-shrink-0" />
+                                                    )}
+                                                    <span className="truncate">{paymentProofFile.name}</span>
+                                                </div>
+                                                {paymentProofPreview && (
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4"/> View</Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent>
+                                                            <DialogHeader>
+                                                                <DialogTitle>Payment Proof Preview</DialogTitle>
+                                                            </DialogHeader>
+                                                            <div className="relative mt-4 aspect-auto max-h-[70vh] w-full">
+                                                                <Image src={paymentProofPreview} alt="Payment proof full preview" width={500} height={700} className="object-contain w-full h-full" />
+                                                            </div>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    ) : (
+                        <div className="flex h-full items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                        </div>
+                    )}
                 </ScrollArea>
                 <DialogFooter className="gap-2 sm:justify-between items-center border-t pt-4">
                      <Button type="button" onClick={handleSaveDraft} variant="outline" disabled={isSaving}>
@@ -427,7 +431,6 @@ function ContractPageContent() {
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [isSaving, setIsSaving] = useState(false);
-  const [isGeneratingIds, setIsGeneratingIds] = useState(false);
   
   const [sanitationFeeType, setSanitationFeeType] = useState('free');
   const [sanitationFee, setSanitationFee] = useState(500);
@@ -797,11 +800,10 @@ function ContractPageContent() {
   };
 
 
-const ensureProposalIdIsGenerated = async (): Promise<string> => {
+const ensureProposalIdIsGenerated = async (): Promise<string | undefined> => {
     if (generatedProposalId) return generatedProposalId;
     if (!firestore) throw new Error("Firestore not ready.");
 
-    setIsGeneratingIds(true);
     try {
         const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
         const newProposalNumber = await runTransaction(firestore, async (transaction) => {
@@ -822,8 +824,6 @@ const ensureProposalIdIsGenerated = async (): Promise<string> => {
             description: "Could not generate a unique ID for the proposal. Please try again."
         });
         throw e;
-    } finally {
-        setIsGeneratingIds(false);
     }
 };
 
@@ -835,7 +835,6 @@ const ensureClientAndProposalIdsAreGenerated = async () => {
     };
 
     if (!firestore) throw new Error("Firestore not ready.");
-    setIsGeneratingIds(true);
     try {
         const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
         const newClientNumber = await runTransaction(firestore, async (transaction) => {
@@ -855,21 +854,18 @@ const ensureClientAndProposalIdsAreGenerated = async () => {
             description: "Could not generate a unique ID for the client. Please check your connection and try again."
         });
         throw e;
-    } finally {
-        setIsGeneratingIds(false);
     }
 }
 
 const handleSaveDraft = async () => {
-    await ensureProposalIdIsGenerated();
+    await ensureClientAndProposalIdsAreGenerated();
     await saveProposal('draft');
 }
 
 const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
-    setIsGeneratingIds(true);
     try {
         await ensureClientAndProposalIdsAreGenerated();
-        
+
         if (action === 'generate') {
             setGenerateDialogOpen(true);
         } else if (action === 'sign') {
@@ -882,6 +878,7 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
             }
 
             const finalClientId = generatedClientId || existingClientId;
+            // The generatedProposalId state should be set now by ensureClientAndProposalIdsAreGenerated
             if (!finalClientId || !generatedProposalId || !user) {
               throw new Error("Missing critical info for sharing link.");
             }
@@ -907,7 +904,6 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
     } catch (error: any) {
         toast({ variant: "destructive", title: "Action Failed", description: error.message || 'An unexpected error occurred.' });
     } finally {
-        setIsGeneratingIds(false);
         if (action === 'share') {
             setIsSharing(false);
         }
@@ -985,13 +981,13 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
                 isSharing={isSharing}
                 isSaving={isSaving}
              >
-                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving || isSharing || isGeneratingIds}>
-                    {(isSaving || isSharing || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     Generate Proposal
                 </Button>
             </GenerateProposalDialog>
-            <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds}>
-                {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={() => handleActionClick('sign')} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
             </Button>
         </div>
@@ -1255,8 +1251,8 @@ const handleActionClick = async (action: 'sign' | 'share' | 'generate') => {
               <Button variant="outline" asChild className="flex-1">
                   <Link href={prevLink}>Previous</Link>
               </Button>
-              <Button onClick={() => handleActionClick('sign')} disabled={isSaving || isGeneratingIds} className="flex-1">
-                {(isSaving || isGeneratingIds) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button onClick={() => handleActionClick('sign')} disabled={isSaving} className="flex-1">
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
               </Button>
           </div>
