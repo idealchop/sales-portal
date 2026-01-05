@@ -397,14 +397,14 @@ export function ContractDetails({
     return (
         <div className="space-y-6 p-2">
             <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                    <Logo className="h-12 w-12" />
-                    <div>
-                        <h2 className="text-2xl font-bold text-primary">Smart Refill</h2>
-                        <p className="text-muted-foreground">Sales Illustration</p>
-                    </div>
+                <div>
+                    <h2 className="text-2xl font-bold text-primary">River Tech Group, Inc.</h2>
+                    <p className="text-muted-foreground">Operating as Smart Refill</p>
+                    <p className="text-xs text-muted-foreground">123 Innovation Drive, BGC, Taguig, Metro Manila, Philippines</p>
+                    <p className="text-xs text-muted-foreground">www.smartrefill.io</p>
                 </div>
                 <div className="text-right">
+                    <p className="text-xl font-bold">Sales Illustration</p>
                     {clientId && <p className="font-mono text-sm text-muted-foreground">Client ID: {clientId}</p>}
                     {proposalId && <p className="font-mono text-sm text-muted-foreground">Proposal ID: {proposalId}</p>}
                 </div>
