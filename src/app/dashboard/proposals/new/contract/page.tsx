@@ -752,18 +752,26 @@ function ContractPageContent() {
 
         if (!currentProposalId || (!currentClientId && !existingClientId)) {
             await runTransaction(firestore, async (transaction) => {
+                const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+                const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+                
+                let proposalCounterSnap, clientCounterSnap;
+
                 if (!currentProposalId) {
-                    const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-                    const proposalCounterSnap = await transaction.get(proposalCounterRef);
+                    proposalCounterSnap = await transaction.get(proposalCounterRef);
+                }
+                if (!existingClientId && !currentClientId) {
+                    clientCounterSnap = await transaction.get(clientCounterRef);
+                }
+
+                if (proposalCounterSnap) {
                     const newProposalNumber = proposalCounterSnap.exists() ? proposalCounterSnap.data().currentId + 1 : 1;
                     currentProposalId = String(newProposalNumber).padStart(10, '0');
                     transaction.set(proposalCounterRef, { currentId: newProposalNumber }, { merge: true });
                     setGeneratedProposalId(currentProposalId);
                 }
-
-                if (!existingClientId && !currentClientId) {
-                    const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-                    const clientCounterSnap = await transaction.get(clientCounterRef);
+                
+                if (clientCounterSnap) {
                     const newClientNumber = clientCounterSnap.exists() ? clientCounterSnap.data().currentId + 1 : 1;
                     const year = new Date().getFullYear().toString().slice(-2);
                     currentClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
