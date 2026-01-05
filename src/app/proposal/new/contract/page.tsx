@@ -80,9 +80,12 @@ const addons = [
     id: 'additional-dispensers',
     name: 'Additional Dispensers',
     description: 'Rent extra dispensers for more convenience.',
-    fee: '₱250 / month / unit',
-    feeValue: 250,
-    type: 'quantity',
+    type: 'custom',
+    feeOptions: [
+        { value: 'monthly', label: 'Monthly Fee', defaultCost: 250 },
+        { value: 'security', label: 'Security Deposit', defaultCost: 1000 },
+        { value: 'free', label: 'Free', defaultCost: 0 },
+    ],
   },
   {
     id: 'additional-liters',
@@ -312,11 +315,14 @@ function ContractPageContent() {
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingIds, setIsGeneratingIds] = useState(false);
-  const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: boolean }>({
-    'monthly-sanitation': false,
-  });
-  const [additionalDispensers, setAdditionalDispensers] = useState(0);
+
+  const [sanitationIsFree, setSanitationIsFree] = useState(false);
   const [additionalLiters, setAdditionalLiters] = useState(0);
+
+  const [dispenserFeeType, setDispenserFeeType] = useState('monthly');
+  const [dispenserQuantity, setDispenserQuantity] = useState(0);
+  const [dispenserFee, setDispenserFee] = useState(250);
+
   const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
@@ -412,10 +418,6 @@ function ContractPageContent() {
     }
   }, [plan, additionalLiters, clientType]);
 
-  const handleAddonToggle = (addonId: string) => {
-    setSelectedAddons(prev => ({...prev, [addonId]: !prev[addonId] }));
-  }
-
   const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
     if (!plan || !finalPlan) return null;
     
@@ -423,22 +425,19 @@ function ContractPageContent() {
     const isCustomPlan = plan.id === 'custom-plan';
     const planBaseCost = isFlowPlan ? 50000 : (parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) || 0);
 
-    const addonsCost = addons.reduce((total, addon) => {
-        if (addon.type === 'checkbox') {
-            return total + (selectedAddons[addon.id] ? addon.feeValue : 0);
-        }
-        return total;
-    }, 0);
-    const dispensersCost = additionalDispensers * additionalDispenserCost;
+    const sanitationCost = sanitationIsFree ? 0 : 500;
+    const dispensersCost = dispenserFeeType === 'monthly' ? dispenserQuantity * dispenserFee : 0;
+    const dispensersSecurityCost = dispenserFeeType === 'security' ? dispenserQuantity * dispenserFee : 0;
     const litersCost = additionalLiters * additionalLiterCost;
 
-    const subtotal = planBaseCost + addonsCost + dispensersCost + litersCost;
+    const subtotal = planBaseCost + sanitationCost + dispensersCost + litersCost;
+    
     const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
     
     const discount = isFlowPlan || isCustomPlan ? 0 : selectedCycle.discount;
     const totalBeforeDiscount = isFlowPlan || isCustomPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
     const discountValue = totalBeforeDiscount * discount;
-    const finalAmount = totalBeforeDiscount - discountValue;
+    const finalAmount = totalBeforeDiscount - discountValue + dispensersSecurityCost;
 
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
@@ -462,8 +461,12 @@ function ContractPageContent() {
         billingCycleLabel: isCustomPlan ? "Usage-Based" : selectedCycle.label,
         discount: discount,
         basePrice: subtotal,
-        selectedAddons,
-        additionalDispensers,
+        sanitationIsFree,
+        additionalDispensers: {
+            quantity: dispenserQuantity,
+            feeType: dispenserFeeType,
+            fee: dispenserFee,
+        },
         additionalLiters,
         plan,
         finalPlan,
@@ -486,7 +489,7 @@ function ContractPageContent() {
         dispensers: parseInt(dispensers || '0'),
         containers: parseInt(containers || '0'),
     };
-  }, [plan, finalPlan, billingCycle, selectedAddons, additionalDispensers, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
+  }, [plan, finalPlan, billingCycle, sanitationIsFree, dispenserQuantity, dispenserFeeType, dispenserFee, additionalLiters, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
@@ -586,7 +589,7 @@ function ContractPageContent() {
       }
       
       const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData };
-      const amountToSave = isCustomPlan ? 0 : parseFloat(proposalContentToSave.totalAmountDue.replace(/[^0-9.-]+/g, ""));
+      const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
       
       const newProposalData: any = {
         id: proposalId,
@@ -786,7 +789,7 @@ function ContractPageContent() {
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                              <CardTitle className="text-sm font-medium">
-                                {isFlowPlan ? 'Usage-Based' : (isCustomPlan ? 'Price per Liter' : 'Total Liters')}
+                                {isFlowPlan ? 'Usage-Based' : (isCustomPlan ? 'Price per Liter' : 'Premium Liters Included')}
                             </CardTitle>
                             <Waves className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
@@ -870,75 +873,64 @@ function ContractPageContent() {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-                {!isFlowPlan && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Optional Add-Ons</CardTitle>
-                            <CardDescription>
-                            Enhance your Smart Refill experience with premium service options.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                            <TableHeader>
-                                <TableRow>
-                                <TableHead className="w-[50px]"></TableHead>
-                                <TableHead>Add-On</TableHead>
-                                <TableHead className="w-[200px]">Quantity</TableHead>
-                                <TableHead className="text-right">Monthly Fee</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {addons.map((addon) => (
-                                <TableRow key={addon.id}>
-                                    <TableCell>
-                                        {addon.type === 'checkbox' && (
-                                            <Checkbox 
-                                                id={addon.id} 
-                                                onCheckedChange={() => handleAddonToggle(addon.id)}
-                                                checked={selectedAddons[addon.id]}
-                                            />
-
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                                        <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
-                                    </TableCell>
-                                    <TableCell>
-                                        {addon.type === 'quantity' && (
-                                            <Input 
-                                                id={addon.id}
-                                                type="number"
-                                                min="0"
-                                                value={additionalDispensers}
-                                                onChange={(e) => setAdditionalDispensers(Math.max(0, parseInt(e.target.value) || 0))}
-                                                className="w-24"
-                                            />
-                                        )}
-                                        {addon.type === 'slider' && (
-                                            <div className="flex items-center gap-4">
-                                                <Slider
-                                                    id={addon.id}
-                                                    min={0}
-                                                    max={1000}
-                                                    step={50}
-                                                    value={[additionalLiters]}
-                                                    onValueChange={(value) => setAdditionalLiters(value[0])}
-                                                    className="w-[120px]"
-                                                />
-                                                <span className="text-sm font-medium w-[60px] text-right">{additionalLiters} L</span>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Optional Add-Ons</CardTitle>
+                        <CardDescription>
+                        Enhance your Smart Refill experience with premium service options.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead className="w-[50px]"></TableHead>
+                            <TableHead>Add-On</TableHead>
+                            <TableHead className="w-[250px]">Configuration</TableHead>
+                            <TableHead className="text-right">Fee</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {addons.map((addon) => (
+                            <TableRow key={addon.id}>
+                                <TableCell>
+                                    {addon.type === 'checkbox' && <Checkbox id={addon.id} onCheckedChange={() => setSanitationIsFree(!sanitationIsFree)} checked={sanitationIsFree} />}
+                                </TableCell>
+                                <TableCell>
+                                    <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
+                                    <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
+                                </TableCell>
+                                <TableCell>
+                                    {addon.type === 'custom' && (
+                                        <div className="flex flex-col gap-2">
+                                            <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    {addon.feeOptions?.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="flex items-center gap-2">
+                                                <Input type="number" min="0" value={dispenserQuantity} onChange={e => setDispenserQuantity(Number(e.target.value))} placeholder="Qty" className="w-16"/>
+                                                <Input type="number" min="0" value={dispenserFee} onChange={e => setDispenserFee(Number(e.target.value))} placeholder="Fee" className="flex-1"/>
                                             </div>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-right">{addon.fee}</TableCell>
-                                </TableRow>
-                                ))}
-                            </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                )}
+                                        </div>
+                                    )}
+                                    {addon.type === 'slider' && (
+                                        <div className="flex items-center gap-4">
+                                            <Slider id={addon.id} min={0} max={1000} step={50} value={[additionalLiters]} onValueChange={(value) => setAdditionalLiters(value[0])} className="w-[120px]" />
+                                            <span className="text-sm font-medium w-[60px] text-right">{additionalLiters} L</span>
+                                        </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    {addon.type === 'checkbox' ? (sanitationIsFree ? 'Free' : addon.fee) : (addon.type === 'slider' ? addon.fee : 'Custom')}
+                                </TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </div>
             
             <Card>
@@ -966,17 +958,17 @@ function ContractPageContent() {
 
                      {(!isFlowPlan && !isCustomPlan) && (
                         <>
-                            <div className="space-y-2">
-                                {addons.map(addon => addon.type === 'checkbox' && selectedAddons[addon.id] && (
-                                    <div key={addon.id} className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">{addon.name}</span>
-                                        <span className="font-medium">{currencyFormatter.format(addon.feeValue)}</span>
-                                    </div>
-                                ))}
-                                {additionalDispensers > 0 && (
+                             <div className="space-y-2">
+                                {sanitationIsFree && (
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Additional Dispensers ({additionalDispensers}x)</span>
-                                        <span className="font-medium">{currencyFormatter.format(additionalDispensers * additionalDispenserCost)}</span>
+                                        <span className="text-muted-foreground">Monthly Sanitation</span>
+                                        <span className="font-medium text-green-600">Free</span>
+                                    </div>
+                                )}
+                                {dispenserQuantity > 0 && (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Add'l Dispensers ({dispenserQuantity}x)</span>
+                                        <span className="font-medium">{dispenserFeeType === 'free' ? 'Free' : currencyFormatter.format(dispenserFee * dispenserQuantity)}</span>
                                     </div>
                                 )}
                                 {additionalLiters > 0 && (
