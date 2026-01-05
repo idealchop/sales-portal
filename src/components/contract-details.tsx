@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignaturePad, type SignaturePadRef } from '@/components/signature-pad';
 import { allPlans, gallonRotationData } from '@/app/dashboard/proposals/new/plans/page';
-import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User, Mail, MapPin, ExternalLink, RefreshCw as RefreshCwIcon, Globe, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { Waves, Users, Package, RefreshCcw, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Phone, Rocket, HeartPulse, Coffee, Building, Car, CheckCircle, Ship, Bot, Loader2, Receipt, User, Mail, MapPin, ExternalLink, RefreshCw as RefreshCwIcon, Globe, LayoutDashboard, ShieldCheck, FileText as FileTextIcon } from 'lucide-react';
 import type { Client, Plan, Proposal } from '@/lib/definitions';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -541,7 +541,7 @@ export function ContractDetails({
                             <CardTitle>Client Information</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                                <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3">
                                 <Building className="h-5 w-5 text-muted-foreground mt-1" />
                                 <div>
                                     <p className="text-xs text-muted-foreground">Company Name</p>
@@ -576,6 +576,15 @@ export function ContractDetails({
                                     <p className="font-semibold">{client.address || "N/A"}</p>
                                 </div>
                             </div>
+                            {proposalId && (
+                                <div className="flex items-start gap-3 sm:col-span-2">
+                                    <FileTextIcon className="h-5 w-5 text-muted-foreground mt-1" />
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Proposal ID</p>
+                                        <p className="font-semibold font-mono">{proposalId}</p>
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                     <Card>
