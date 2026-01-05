@@ -469,7 +469,6 @@ function CustomPlanCalculator({
     )
 }
 
-
 function PlansGrid({ 
     plans, 
     defaultPlan, 
@@ -774,29 +773,6 @@ const businessSizes = [
     },
 ];
 
-const enterpriseTypes = [
-    {
-        id: 'customized' as EnterpriseType,
-        title: 'Customized Plan',
-        description: 'Tailored for predictable, prepaid enterprise solutions.',
-        image: {
-            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5',
-            description: 'A person using a water dispenser.',
-            imageHint: 'water dispenser',
-        }
-    },
-    {
-        id: 'flowing' as EnterpriseType,
-        title: 'Flowing Plan',
-        description: 'For pure usage-based, pay-as-you-go enterprise clients.',
-        image: {
-            imageUrl: 'https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Overflow.png?alt=media&token=ad6cec25-c755-4de3-8276-430a013741b5',
-            description: 'Water flowing from a tap.',
-            imageHint: 'water tap',
-        }
-    }
-];
-
 function BusinessSizeSelector({
     selectedSize,
     onSelectSize,
@@ -845,48 +821,6 @@ function BusinessSizeSelector({
     );
 }
 
-function EnterpriseTypeSelector({
-    selectedType,
-    onSelectType,
-}: {
-    selectedType: EnterpriseType | null;
-    onSelectType: (type: EnterpriseType) => void;
-}) {
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             {enterpriseTypes.map((type) => (
-                <Card
-                    key={type.id}
-                    onClick={() => onSelectType(type.id)}
-                    className={cn(
-                        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 overflow-hidden flex flex-col',
-                        selectedType === type.id ? 'border-primary shadow-lg border-2' : ''
-                    )}
-                >
-                    {type.image && (
-                         <div className="relative aspect-video">
-                            <Image
-                                src={type.image.imageUrl}
-                                alt={type.image.description}
-                                fill
-                                className="object-cover"
-                                data-ai-hint={type.image.imageHint}
-                            />
-                        </div>
-                    )}
-                    <CardHeader className="flex-1">
-                        <div>
-                            <CardTitle>{type.title}</CardTitle>
-                            <CardDescription>{type.description}</CardDescription>
-                        </div>
-                    </CardHeader>
-                </Card>
-            ))}
-        </div>
-    );
-}
-
-
 export default function PlansPage() {
     const searchParams = useSearchParams();
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
@@ -911,15 +845,6 @@ export default function PlansPage() {
         setOverflowCalculatedValues(null);
         setSmeCommercialCustomValues(null);
     };
-
-    const handleEnterpriseTypeSelect = (type: EnterpriseType) => {
-        setSelectedEnterpriseType(type);
-        if (type === 'customized') {
-            setSelectedPlan('enterprise-customized');
-        } else if (type === 'flowing') {
-            setSelectedPlan('enterprise-overflow');
-        }
-    }
 
     const handlePlanSelect = (planId: string) => {
         const plan = allPlans.find(p => p.id === planId);
@@ -948,35 +873,17 @@ export default function PlansPage() {
         let plansToRender: Plan[] = [];
         let defaultPlanId = '';
 
-        if (selectedSize === 'enterprise' && selectedEnterpriseType) {
-            if (selectedEnterpriseType === 'customized') {
-                 plansToRender = [flowPlans.find(p => p.id === 'enterprise-customized')!];
-                 defaultPlanId = 'enterprise-customized';
-            } else if (selectedEnterpriseType === 'flowing') {
-                plansToRender = [flowPlans.find(p => p.id === 'enterprise-overflow')!];
-                defaultPlanId = 'enterprise-overflow';
-            }
-        } else {
-            switch (selectedSize) {
-                case 'household':
-                    plansToRender = [...householdPlans, { ...customSmeCommercialPlan, inclusions: [`Priced at ₱2.50 per liter`, ...customSmeCommercialPlan.inclusions.slice(1)] }];
-                    defaultPlanId = 'household-family';
-                    break;
-                case 'sme':
-                    plansToRender = [...smePlans, customSmeCommercialPlan];
-                    defaultPlanId = 'professional';
-                    break;
-                case 'commercial':
-                    plansToRender = [...commercialPlans, customSmeCommercialPlan];
-                    defaultPlanId = 'pro';
-                    break;
-                case 'corporate':
-                    plansToRender = corporatePlans;
-                    defaultPlanId = 'enterprise-plus';
-                    break;
-                default:
-                    return null;
-            }
+        switch (selectedSize) {
+            case 'household':
+                plansToRender = [...householdPlans, { ...customSmeCommercialPlan, inclusions: [`Priced at ₱2.50 per liter`, ...customSmeCommercialPlan.inclusions.slice(1)] }];
+                defaultPlanId = 'household-family';
+                break;
+            case 'sme':
+                plansToRender = [...smePlans, customSmeCommercialPlan];
+                defaultPlanId = 'professional';
+                break;
+            default:
+                return null;
         }
 
         if (!plansToRender || plansToRender.length === 0) return null;
@@ -999,14 +906,11 @@ export default function PlansPage() {
     
     const isNextDisabled = useMemo(() => {
         if (!selectedPlan) return true;
-        if (selectedPlan === 'enterprise-customized') {
-            return !customCalculatedValues || customCalculatedValues.totalCost < 30000;
-        }
         if (selectedPlan === 'custom-plan') {
             return !smeCommercialCustomValues || smeCommercialCustomValues.totalCost <= 0;
         }
         return false;
-    }, [selectedPlan, customCalculatedValues, smeCommercialCustomValues]);
+    }, [selectedPlan, smeCommercialCustomValues]);
 
     const getNextLink = () => {
         if (!selectedPlan) return '#';
@@ -1018,16 +922,6 @@ export default function PlansPage() {
           params.set('clientType', selectedSize);
         }
 
-        if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
-            params.set('liters', customCalculatedValues.totalLiters.toString());
-            params.set('cost', customCalculatedValues.totalCost.toString());
-            params.set('freq', customCalculatedValues.deliveries.toString());
-        }
-        if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
-            params.set('liters', overflowCalculatedValues.totalLiters.toString());
-            params.set('cost', '50000');
-            params.set('freq', overflowCalculatedValues.deliveries.toString());
-        }
         if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
             params.set('liters', smeCommercialCustomValues.totalLiters.toString());
             params.set('cost', smeCommercialCustomValues.totalCost.toString());
@@ -1037,7 +931,8 @@ export default function PlansPage() {
         return `/proposal/new/contract?${params.toString()}`;
     };
 
-    const prevLink = `/proposal/new/comparison?${searchParams.toString()}`;
+    const params = new URLSearchParams(searchParams.toString());
+    const prevLink = `/proposal/new/comparison?${params.toString()}`;
 
     return (
         <div className="flex flex-col gap-6 pb-24 sm:pb-0">
@@ -1081,7 +976,7 @@ export default function PlansPage() {
                         <BusinessSizeSelector 
                             selectedSize={selectedSize} 
                             onSelectSize={handleSizeSelect}
-                            hiddenSizes={['commercial', 'corporate', 'enterprise']}
+                            hiddenSizes={selectedSize ? businessSizes.map(s => s.id).filter(id => id !== selectedSize) : ['commercial', 'corporate', 'enterprise']}
                         />
                     </div>
                     {selectedSize && (

@@ -33,7 +33,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle, Home, RefreshCw as RefreshIcon } from 'lucide-react';
+import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle, Home, RefreshCw as RefreshIcon, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Input } from '@/components/ui/input';
@@ -977,7 +977,6 @@ function EnterpriseTypeSelector({
 
 export default function PlansPage() {
     const searchParams = useSearchParams();
-    const params = new URLSearchParams(searchParams.toString());
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -1127,6 +1126,7 @@ export default function PlansPage() {
         return `/dashboard/proposals/new/contract?${params.toString()}`;
     };
 
+    const params = new URLSearchParams(searchParams.toString());
     const prevLink = `/dashboard/proposals/new/comparison?${params.toString()}`;
 
     return (
