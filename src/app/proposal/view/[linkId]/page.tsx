@@ -7,7 +7,7 @@ import { useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, AlertTriangle, FileText, Download } from 'lucide-react';
+import { Loader2, AlertTriangle, FileText, Download, Mail, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -95,14 +95,25 @@ function SharedProposalContent() {
             <div className="w-full max-w-4xl mx-auto space-y-4">
                  <Card>
                     <CardHeader>
-                        <CardTitle className="text-3xl font-bold">{proposalDetails.companyName}</CardTitle>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>Proposal</span>
+                        <CardTitle className="text-2xl font-bold">{proposalDetails.companyName}</CardTitle>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 gap-2 text-sm text-muted-foreground pt-1">
                             {proposalDetails.proposalId && (
-                                <>
-                                    <span className="text-border">|</span>
+                                <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4" />
                                     <span className="font-mono">ID: {proposalDetails.proposalId}</span>
-                                </>
+                                </div>
+                            )}
+                             {proposalDetails.contactEmail && (
+                                <div className="flex items-center gap-2">
+                                    <Mail className="h-4 w-4" />
+                                    <span>{proposalDetails.contactEmail}</span>
+                                </div>
+                            )}
+                             {proposalDetails.date && (
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>Created: {proposalDetails.date}</span>
+                                </div>
                             )}
                         </div>
                     </CardHeader>
@@ -128,4 +139,3 @@ export default function SharedProposalPage() {
         </Suspense>
     );
 }
-
