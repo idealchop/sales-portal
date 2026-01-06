@@ -338,88 +338,29 @@ export const deliveryFrequencies = [
 ];
 
 function CustomPlanCalculator({
-    pricePerLiter: initialPricePerLiter = 3,
     onCalculated,
-    title = 'Custom Plan Calculator',
-    description = "Calculate a custom plan based on your client's needs.",
-    minimumCost = 0,
-    isFixedPrice = false,
-    fixedPrice = 0,
-    showEstimatedCost = false,
-    maxGallons,
-    maxDeliveries,
-    allowPriceEdit = false,
-    minimumContainersPerWeek = 0,
 }: {
-    pricePerLiter?: number;
-    onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => void;
-    title?: string;
-    description?: string;
-    minimumCost?: number;
-    isFixedPrice?: boolean;
-    fixedPrice?: number;
-    showEstimatedCost?: boolean;
-    maxGallons?: number;
-    maxDeliveries?: number;
-    allowPriceEdit?: boolean;
-    minimumContainersPerWeek?: number;
+    onCalculated: (values: { deliveries: number, containers: number }) => void;
 }) {
-    const [gallons, setGallons] = useState(maxGallons ? Math.min(10, maxGallons) : 10);
     const [deliveries, setDeliveries] = useState(1);
-    const [pricePerLiter, setPricePerLiter] = useState(initialPricePerLiter);
-    const [dispensers, setDispensers] = useState(1);
     const [containers, setContainers] = useState(5);
-    const litersPerGallon = 19;
-
-    const { totalLiters, totalCost } = useMemo(() => {
-        const liters = gallons * deliveries * 4 * litersPerGallon;
-        const cost = isFixedPrice ? fixedPrice : liters * pricePerLiter;
-        return { totalLiters: liters, totalCost: cost ?? 0 };
-    }, [gallons, deliveries, pricePerLiter, isFixedPrice, fixedPrice]);
     
-    const handleGallonsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = parseInt(e.target.value) || 0;
-        if (maxGallons && value > maxGallons) {
-            value = maxGallons;
-        }
-        setGallons(value);
-    }
-    
-    const handleDeliveriesChange = (value: string) => {
-        let numValue = Number(value);
-        if (maxDeliveries && numValue > maxDeliveries) {
-            numValue = maxDeliveries;
-        }
-        setDeliveries(numValue);
-    }
-    
-    const availableFrequencies = maxDeliveries
-        ? deliveryFrequencies.filter(f => f.value <= maxDeliveries)
-        : deliveryFrequencies;
-
     useEffect(() => {
-        onCalculated({ totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter });
-    }, [totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter, onCalculated]);
+        onCalculated({ deliveries, containers });
+    }, [deliveries, containers, onCalculated]);
     
-    const isMinimumMet = minimumContainersPerWeek > 0 
-        ? (gallons * deliveries) >= minimumContainersPerWeek
-        : totalCost >= minimumCost;
-
-    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-
-    const estimatedCost = totalLiters * pricePerLiter;
 
     return (
         <div className="p-6 space-y-6">
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="deliveries" className="text-sm font-medium text-primary-foreground/80">Deliveries per Week</Label>
-                    <Select value={String(deliveries)} onValueChange={handleDeliveriesChange}>
+                    <Select value={String(deliveries)} onValueChange={(value) => setDeliveries(Number(value))}>
                         <SelectTrigger id="deliveries" className="bg-transparent border-primary-foreground/50 text-primary-foreground">
                             <SelectValue placeholder="Select frequency" />
                         </SelectTrigger>
                         <SelectContent>
-                            {availableFrequencies.map((freq) => (
+                            {deliveryFrequencies.map((freq) => (
                                 <SelectItem key={freq.value} value={String(freq.value)}>{freq.label}</SelectItem>
                             ))}
                         </SelectContent>
@@ -544,8 +485,8 @@ function PlansGrid({
     onCustomCalculated: (values: any) => void;
     overflowCalculatedValues: { locations: { name: string; dispensers: number; containers: number; }[] } | null;
     onOverflowCalculated: (values: any) => void;
-    smeCommercialCustomValues: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number } | null,
-    onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => void;
+    smeCommercialCustomValues: { deliveries: number; containers: number; } | null,
+    onSmeCommercialCustomCalculated: (values: { deliveries: number; containers: number; }) => void;
 }) {
     const getStations = (liters: number) => {
         if (liters <= 2000) return '1 Station';
@@ -636,126 +577,97 @@ function PlansGrid({
 
 
         if (isCustomSmeCommercial) {
-            const pricePerLiter = smeCommercialCustomValues?.pricePerLiter || (businessSize === 'household' ? 2.5 : 3);
+            const pricePerLiter = 3;
             inclusions[0] = `Priced at ₱${pricePerLiter.toFixed(2)} per liter`;
             if (smeCommercialCustomValues) {
-                employees = getEmployees(smeCommercialCustomValues.totalLiters, businessSize === 'household');
-                stations = getStations(smeCommercialCustomValues.totalLiters);
-                monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(smeCommercialCustomValues.totalCost);
-                liters = `${smeCommercialCustomValues.totalLiters.toLocaleString()} L`;
                 const freq = deliveryFrequencies.find(f => f.value === smeCommercialCustomValues.deliveries);
                 refillFrequency = freq ? freq.label : plan.refillFrequency;
             }
         }
-
-
-        const cardContent = (
-            <Card className={cn(
-                "relative flex flex-col h-full border-2 transition-all duration-300",
-                isSelected 
-                ? "border-primary shadow-lg bg-primary text-primary-foreground" 
-                : "bg-card text-card-foreground border shadow-md hover:border-primary/50",
-                isDisabled && "bg-muted text-muted-foreground"
-            )}>
-                {plan.isRecommended && !isSelected && (
-                <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
-                    Recommended
-                </div>
-                )}
-                {isSelected && !isDisabled && (
-                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
-                    <Check className="h-4 w-4 text-primary" />
-                </div>
-                )}
-                <CardHeader className="flex-1">
-                <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
-                <div className="flex items-baseline gap-2">
-                    {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{monthlyFee}</span>}
-                    {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && !isOverflow && plan.id !== 'custom-plan' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
-                    {isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Top-up</span>}
-                     {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
-                </div>
-                </CardHeader>
-                <CardContent className="flex-1 text-left space-y-4">
-                    <div className="space-y-2">
-                        <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>{isCustomSmeCommercial ? 'Estimated Liters per Month' : 'Premium Liters Included'}</p>
-                        <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
-                            <span>{liters}</span>
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
-                        <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
-                            <RefreshCcw className="h-5 w-5" />
-                            <span>{refillFrequency}</span>
-                        </div>
-                    </div>
-                     <ul className={cn('text-sm space-y-1 pl-4 list-disc', isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground')}>
-                        {inclusions.map((inclusion) => <li key={inclusion}>{inclusion}</li>)}
-                    </ul>
-                </CardContent>
-                
-                {plan.id === 'enterprise-customized' && isSelected && (
-                    <FlowPlanConfigurator 
-                       onCalculated={onCustomCalculated}
-                    />
-                )}
-                
-                {plan.id === 'enterprise-overflow' && isSelected && (
-                    <FlowPlanConfigurator 
-                       onCalculated={onOverflowCalculated}
-                    />
-                )}
-                
-                {plan.id === 'custom-plan' && isSelected && (
-                     <CustomPlanCalculator
-                        onCalculated={onSmeCommercialCustomCalculated}
-                        pricePerLiter={businessSize === 'household' ? 2.5 : 3}
-                        title={businessSize === 'household' ? "Customize Family Plan" : "Usage-Based Plan"}
-                        maxGallons={businessSize === 'household' ? 10 : undefined}
-                        maxDeliveries={businessSize === 'household' ? 2 : undefined}
-                        allowPriceEdit={true}
-                    />
-                )}
-
-
-                <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
-                    <div className="flex justify-between items-center w-full text-sm">
-                        <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                            {businessSize === 'household' ? <Home className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                            <span className="font-semibold">{employees} {businessSize === 'household' ? 'Persons' : (isOverflow ? '' : 'Employees')}</span>
-                        </div>
-                        <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                            {businessSize === 'household' ? <GlassWater className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
-                            <span className="font-semibold">{stations}</span>
-                        </div>
-                    </div>
-                </CardFooter>
-            </Card>
-        );
-
-        if (isDisabled) {
-            return (
-                <TooltipProvider key={plan.id}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                             <Label htmlFor={plan.id} className={cn("cursor-pointer h-full", isDisabled && "cursor-not-allowed opacity-70")}>
-                                <div className={cn('col-span-full')}>{cardContent}</div>
-                             </Label>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>This is a usage-based plan. Please contact sales for a custom quote.</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            )
-        }
-
+        
         const colSpanClass = (isCustom || isOverflow || isCustomSmeCommercial) && isSelected ? 'col-span-full' : 'col-span-1';
 
         return <div key={plan.id} className={cn(colSpanClass)}>
             <RadioGroupItem value={plan.id} id={plan.id} className="sr-only" />
-            <Label htmlFor={plan.id} className="cursor-pointer h-full">{cardContent}</Label>
+            <Label htmlFor={plan.id} className="cursor-pointer h-full">
+               <Card className={cn(
+                    "relative flex flex-col h-full border-2 transition-all duration-300",
+                    isSelected 
+                    ? "border-primary shadow-lg bg-primary text-primary-foreground" 
+                    : "bg-card text-card-foreground border shadow-md hover:border-primary/50",
+                    isDisabled && "bg-muted text-muted-foreground"
+                )}>
+                    {plan.isRecommended && !isSelected && (
+                    <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
+                        Recommended
+                    </div>
+                    )}
+                    {isSelected && !isDisabled && (
+                    <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
+                        <Check className="h-4 w-4 text-primary" />
+                    </div>
+                    )}
+                    <CardHeader className="flex-1">
+                    <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
+                    <div className="flex items-baseline gap-2">
+                        {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{monthlyFee}</span>}
+                        {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && !isOverflow && plan.id !== 'custom-plan' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                        {isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Top-up</span>}
+                         {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
+                    </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 text-left space-y-4">
+                        <div className="space-y-2">
+                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>{isCustomSmeCommercial ? 'Estimated Liters per Month' : 'Premium Liters Included'}</p>
+                            <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
+                                <span>{liters}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
+                            <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
+                                <RefreshCcw className="h-5 w-5" />
+                                <span>{refillFrequency}</span>
+                            </div>
+                        </div>
+                         <ul className={cn('text-sm space-y-1 pl-4 list-disc', isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground')}>
+                            {inclusions.map((inclusion) => <li key={inclusion}>{inclusion}</li>)}
+                        </ul>
+                    </CardContent>
+                    
+                    {plan.id === 'enterprise-customized' && isSelected && (
+                        <FlowPlanConfigurator 
+                           onCalculated={onCustomCalculated}
+                        />
+                    )}
+                    
+                    {plan.id === 'enterprise-overflow' && isSelected && (
+                        <FlowPlanConfigurator 
+                           onCalculated={onOverflowCalculated}
+                        />
+                    )}
+                    
+                    {plan.id === 'custom-plan' && isSelected && (
+                         <CustomPlanCalculator
+                            onCalculated={onSmeCommercialCustomCalculated}
+                        />
+                    )}
+
+
+                    <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
+                        <div className="flex justify-between items-center w-full text-sm">
+                            <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                {businessSize === 'household' ? <Home className="h-5 w-5" /> : <Users className="h-5 w-5" />}
+                                <span className="font-semibold">{employees} {businessSize === 'household' ? 'Persons' : (isOverflow ? '' : 'Employees')}</span>
+                            </div>
+                            <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                {businessSize === 'household' ? <GlassWater className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
+                                <span className="font-semibold">{stations}</span>
+                            </div>
+                        </div>
+                    </CardFooter>
+                </Card>
+            </Label>
         </div>;
       })}
     </RadioGroup>
@@ -903,7 +815,7 @@ export default function PlansPage() {
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [customCalculatedValues, setCustomCalculatedValues] = useState<any>(null);
     const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[] } | null>(null);
-    const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number } | null>(null);
+    const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ deliveries: number, containers: number } | null>(null);
     
     useEffect(() => {
         const clientType = searchParams.get('clientType');
@@ -943,7 +855,7 @@ export default function PlansPage() {
         setOverflowCalculatedValues(values);
     }, []);
 
-    const handleSmeCommercialCustomCalculated = useCallback((values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => {
+    const handleSmeCommercialCustomCalculated = useCallback((values: { deliveries: number; containers: number; }) => {
         setSmeCommercialCustomValues(values);
     }, []);
 
@@ -1007,7 +919,7 @@ export default function PlansPage() {
             return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name);
         }
         if (selectedPlan === 'custom-plan') {
-            return !smeCommercialCustomValues || smeCommercialCustomValues.totalCost <= 0;
+            return !smeCommercialCustomValues;
         }
         return false;
     }, [selectedPlan, customCalculatedValues, overflowCalculatedValues, smeCommercialCustomValues]);
@@ -1030,12 +942,9 @@ export default function PlansPage() {
             params.set('locations', JSON.stringify(overflowCalculatedValues.locations));
         }
         if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
-            params.set('liters', smeCommercialCustomValues.totalLiters.toString());
-            params.set('cost', smeCommercialCustomValues.totalCost.toString());
             params.set('freq', smeCommercialCustomValues.deliveries.toString());
-            params.set('type', selectedSize || '');
-            params.set('dispensers', smeCommercialCustomValues.dispensers.toString());
             params.set('containers', smeCommercialCustomValues.containers.toString());
+            params.set('type', selectedSize || '');
         }
         return `/proposal/new/contract?${params.toString()}`;
     };
