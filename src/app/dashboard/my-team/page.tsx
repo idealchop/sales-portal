@@ -957,69 +957,96 @@ export default function MyTeamPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2 flex flex-col">
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                        <div className="flex-1">
-                            <CardTitle className="flex items-center gap-2">
-                                <BarChartIcon className="h-5 w-5" />
-                                Proposals by Team Member
-                            </CardTitle>
-                            <CardDescription>Total proposals created by each executive.</CardDescription>
+            <div className="lg:col-span-2 flex flex-col gap-6">
+                 <Card className="flex flex-col flex-1">
+                    <CardHeader>
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                            <div className="flex-1">
+                                <CardTitle className="flex items-center gap-2">
+                                    <BarChartIcon className="h-5 w-5" />
+                                    Proposals by Team Member
+                                </CardTitle>
+                                <CardDescription>Total proposals created by each executive.</CardDescription>
+                            </div>
+                            <Select value={proposalsByRepPeriod} onValueChange={setProposalsByRepPeriod}>
+                                <SelectTrigger className="w-full sm:w-auto sm:max-w-xs">
+                                    <SelectValue placeholder="Select a period" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Time</SelectItem>
+                                    {teamPerformance.availableMonths.map(month => <SelectItem key={month} value={month}></SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <Select value={proposalsByRepPeriod} onValueChange={setProposalsByRepPeriod}>
-                            <SelectTrigger className="w-full sm:w-auto sm:max-w-xs">
-                                <SelectValue placeholder="Select a period" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Time</SelectItem>
-                                {teamPerformance.availableMonths.map(month => <SelectItem key={month} value={month}></SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col space-y-6">
-                    <div className="flex-1 pr-6 min-h-[250px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={teamPerformance.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
-                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                <XAxis 
-                                    dataKey="userId" 
-                                    tickLine={false} 
-                                    axisLine={false} 
-                                    tick={<CustomXAxisTick salesUsers={myTeam} />}
-                                    interval={0}
-                                />
-                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                                <Tooltip
-                                    cursor={{ fill: 'hsl(var(--muted))' }}
-                                    contentStyle={{ 
-                                        backgroundColor: 'hsl(var(--background))',
-                                        border: '1px solid hsl(var(--border))',
-                                        borderRadius: 'var(--radius)'
-                                    }}
-                                    labelFormatter={(value) => {
-                                        const user = myTeam.find(u => u.id === value);
-                                        return user ? user.displayName : 'Unknown';
-                                    }}
-                                />
-                                <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                     <div className="border-t pt-4">
-                        <h3 className="font-semibold text-sm mb-2">Team Proposal Funnel</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><FileText className="text-muted-foreground"/>Drafts</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.draft || 0}</span></div>
-                            <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><Send className="text-blue-500"/>Sent</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.sent || 0}</span></div>
-                            <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><Check className="text-green-500"/>Accepted</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.accepted || 0}</span></div>
-                            <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><X className="text-red-500"/>Rejected</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.rejected || 0}</span></div>
+                    </CardHeader>
+                    <CardContent className="flex-1 flex flex-col space-y-6">
+                        <div className="flex-1 pr-6 min-h-[250px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={teamPerformance.proposalsByRep} margin={{ top: 20, right: 0, left: 0, bottom: 20 }}>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                    <XAxis 
+                                        dataKey="userId" 
+                                        tickLine={false} 
+                                        axisLine={false} 
+                                        tick={<CustomXAxisTick salesUsers={myTeam} />}
+                                        interval={0}
+                                    />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <Tooltip
+                                        cursor={{ fill: 'hsl(var(--muted))' }}
+                                        contentStyle={{ 
+                                            backgroundColor: 'hsl(var(--background))',
+                                            border: '1px solid hsl(var(--border))',
+                                            borderRadius: 'var(--radius)'
+                                        }}
+                                        labelFormatter={(value) => {
+                                            const user = myTeam.find(u => u.id === value);
+                                            return user ? user.displayName : 'Unknown';
+                                        }}
+                                    />
+                                    <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div className="flex flex-col gap-6">
+                         <div className="border-t pt-4">
+                            <h3 className="font-semibold text-sm mb-2">Team Proposal Funnel</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><FileText className="text-muted-foreground"/>Drafts</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.draft || 0}</span></div>
+                                <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><Send className="text-blue-500"/>Sent</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.sent || 0}</span></div>
+                                <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><Check className="text-green-500"/>Accepted</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.accepted || 0}</span></div>
+                                <div className="flex justify-between items-center p-3 bg-muted rounded-lg"><span className="flex items-center gap-1.5"><X className="text-red-500"/>Rejected</span> <span className="font-semibold">{teamPerformance.kpis.proposalStatusCounts?.rejected || 0}</span></div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><QrCode/> QR Campaign Commissions</CardTitle>
+                        <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2 text-muted-foreground">
+                        <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
+                        <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
+                    </CardContent>
+                </Card>
+                <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                  <Link href="/dashboard/materials">
+                      <div className="relative aspect-video w-full">
+                        <Image
+                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                            alt="Sales Materials Preview"
+                            fill
+                            className="object-cover"
+                          />
+                      </div>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><BookCopy/> Sales Materials</CardTitle>
+                        <CardDescription>Your toolkit for success. Find presentations, brochures, and other assets.</CardDescription>
+                      </CardHeader>
+                  </Link>
+                </Card>
+            </div>
+            <div className="lg:col-span-1 flex flex-col gap-6">
                  <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
@@ -1049,32 +1076,6 @@ export default function MyTeamPage() {
                     </DialogTrigger>
                     <TeamGoalsDialog />
                 </Dialog>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><QrCode/> QR Campaign Commissions</CardTitle>
-                        <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-sm space-y-2 text-muted-foreground">
-                        <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
-                        <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
-                    </CardContent>
-                </Card>
-                <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
-                  <Link href="/dashboard/materials">
-                      <div className="relative aspect-video w-full">
-                        <Image
-                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
-                            alt="Sales Materials Preview"
-                            fill
-                            className="object-cover"
-                          />
-                      </div>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><BookCopy/> Sales Materials</CardTitle>
-                        <CardDescription>Your toolkit for success. Find presentations, brochures, and other assets.</CardDescription>
-                      </CardHeader>
-                  </Link>
-                </Card>
             </div>
         </div>
 
