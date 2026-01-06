@@ -1044,57 +1044,59 @@ export default function MyTeamPage() {
         </Card>
       </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base"><QrCode/> QR Campaign</CardTitle>
-                    <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2 text-muted-foreground">
-                    <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
-                    <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
-                </CardContent>
-            </Card>
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Card className="cursor-pointer hover:border-primary transition-colors flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base"><Trophy/> Team Goals</CardTitle>
-                            <CardDescription>Click to view current team incentives and bonuses.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-1 space-y-4">
-                            <div className="flex items-center gap-2 text-sm">
-                                <Star className="h-4 w-4 text-yellow-400" />
-                                <p><span className="font-semibold">Corporate Closer Bonus:</span> Earn up to {currencyFormatter.format(15000)}.</p>
-                            </div>
-                             <div className="flex items-center gap-2 text-sm">
-                                <Award className="h-4 w-4 text-violet-500" />
-                                <p><span className="font-semibold">Quarterly Growth Bonus:</span> Achieve sales milestones for big rewards.</p>
-                            </div>
-                        </CardContent>
-                         <CardFooter>
-                            <p className="text-xs text-muted-foreground">Bonuses are calculated and paid monthly.</p>
-                        </CardFooter>
-                    </Card>
-                </DialogTrigger>
-                <TeamGoalsDialog />
-            </Dialog>
-            <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
-                <Link href="/dashboard/materials">
-                    <div className="relative aspect-video w-full">
-                        <Image
-                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
-                            alt="Sales Materials Preview"
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
+       <div className="w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base"><BookCopy/> Sales Materials</CardTitle>
-                        <CardDescription>Your toolkit for success.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-base"><QrCode/> QR Campaign</CardTitle>
+                        <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
                     </CardHeader>
-                </Link>
-            </Card>
+                    <CardContent className="text-sm space-y-2 text-muted-foreground">
+                        <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
+                        <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
+                    </CardContent>
+                </Card>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="cursor-pointer hover:border-primary transition-colors flex flex-col">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base"><Trophy/> Team Goals</CardTitle>
+                                <CardDescription>Click to view current team incentives and bonuses.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-1 space-y-4">
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Star className="h-4 w-4 text-yellow-400" />
+                                    <p><span className="font-semibold">Corporate Closer Bonus:</span> Earn up to {currencyFormatter.format(15000)}.</p>
+                                </div>
+                                 <div className="flex items-center gap-2 text-sm">
+                                    <Award className="h-4 w-4 text-violet-500" />
+                                    <p><span className="font-semibold">Quarterly Growth Bonus:</span> Achieve sales milestones for big rewards.</p>
+                                </div>
+                            </CardContent>
+                             <CardFooter>
+                                <p className="text-xs text-muted-foreground">Bonuses are calculated and paid monthly.</p>
+                            </CardFooter>
+                        </Card>
+                    </DialogTrigger>
+                    <TeamGoalsDialog />
+                </Dialog>
+                <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                    <Link href="/dashboard/materials">
+                        <div className="relative aspect-video w-full">
+                            <Image
+                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                                alt="Sales Materials Preview"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base"><BookCopy/> Sales Materials</CardTitle>
+                            <CardDescription>Your toolkit for success.</CardDescription>
+                        </CardHeader>
+                    </Link>
+                </Card>
+            </div>
         </div>
 
 
@@ -1298,39 +1300,68 @@ export default function MyTeamPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Campaign Name</TableHead>
-                <TableHead className="text-right">Contract Amount</TableHead>
-                <TableHead className="text-right">Date Signed</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+           <div className="md:hidden space-y-4">
               {qrCampaignClients.length > 0 ? (
                 qrCampaignClients.map(({ proposal, client }) => (
                   <ClientOverviewDialog key={proposal.id} client={client!} proposal={proposal} allUsers={salesUsers} view="clients">
-                    <TableRow className="cursor-pointer">
-                      <TableCell className="font-medium">{client!.companyName}</TableCell>
-                      <TableCell>{proposal.sourceLocation}</TableCell>
-                      <TableCell className="text-right">{currencyFormatter.format(proposal.amount)}</TableCell>
-                      <TableCell className="text-right">{format(new Date(proposal.createdAt), 'PPP')}</TableCell>
-                    </TableRow>
+                    <Card className="p-4 cursor-pointer">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold">{client!.companyName}</p>
+                          <p className="text-sm text-muted-foreground">Campaign: {proposal.sourceLocation}</p>
+                        </div>
+                        <p className="text-sm font-bold text-primary">{currencyFormatter.format(proposal.amount)}</p>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
+                        Signed: {format(new Date(proposal.createdAt), 'PPP')}
+                      </div>
+                    </Card>
                   </ClientOverviewDialog>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    No clients have signed up via QR campaigns yet.
-                  </TableCell>
-                </TableRow>
+                <div className="text-center py-10 text-muted-foreground">
+                  No clients have signed up via QR campaigns yet.
+                </div>
               )}
-            </TableBody>
-          </Table>
+           </div>
+           <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Campaign Name</TableHead>
+                    <TableHead className="text-right">Contract Amount</TableHead>
+                    <TableHead className="text-right">Date Signed</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {qrCampaignClients.length > 0 ? (
+                    qrCampaignClients.map(({ proposal, client }) => (
+                      <ClientOverviewDialog key={proposal.id} client={client!} proposal={proposal} allUsers={salesUsers} view="clients">
+                        <TableRow className="cursor-pointer">
+                          <TableCell className="font-medium">{client!.companyName}</TableCell>
+                          <TableCell>{proposal.sourceLocation}</TableCell>
+                          <TableCell className="text-right">{currencyFormatter.format(proposal.amount)}</TableCell>
+                          <TableCell className="text-right">{format(new Date(proposal.createdAt), 'PPP')}</TableCell>
+                        </TableRow>
+                      </ClientOverviewDialog>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        No clients have signed up via QR campaigns yet.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
 
+
+
+    
