@@ -607,6 +607,55 @@ function ContractPageContent() {
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
+  const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
+    if (!firestore) throw new Error("Firestore not ready.");
+
+    let finalClientId = generatedClientId;
+    let finalProposalId = generatedProposalId;
+
+    if (!finalClientId && !existingClientId) {
+      try {
+        const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+        const newClientNumber = await runTransaction(firestore, async (transaction) => {
+            const counterSnap = await transaction.get(clientCounterRef);
+            const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
+            const newId = currentId + 1;
+            transaction.set(clientCounterRef, { currentId: newId }, { merge: true });
+            return newId;
+        });
+        const year = new Date().getFullYear().toString().slice(-2);
+        finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+        setGeneratedClientId(finalClientId);
+      } catch (e) {
+          console.error("Error generating Client ID:", e);
+          toast({ variant: 'destructive', title: "ID Generation Failed", description: "Could not generate a unique ID for the client." });
+          throw e;
+      }
+    } else {
+        finalClientId = finalClientId || existingClientId;
+    }
+    
+    if (!finalProposalId) {
+        try {
+            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+            const newProposalNumber = await runTransaction(firestore, async (transaction) => {
+                const counterSnap = await transaction.get(proposalCounterRef);
+                const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
+                const newId = currentId + 1;
+                transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
+                return newId;
+            });
+            finalProposalId = String(newProposalNumber).padStart(10, '0');
+            setGeneratedProposalId(finalProposalId);
+        } catch (e) {
+            console.error("Error generating Proposal ID:", e);
+            toast({ variant: 'destructive', title: "ID Generation Failed", description: "Could not generate a unique ID for the proposal." });
+            throw e;
+        }
+    }
+    return { clientId: finalClientId, proposalId: finalProposalId };
+  }, [firestore, generatedClientId, generatedProposalId, existingClientId, toast]);
+  
   const saveProposal = useCallback(async (status: 'draft' | 'accepted'): Promise<boolean> => {
     if (!finalPlanDetails || !firestore) {
       toast({
@@ -787,56 +836,6 @@ function ContractPageContent() {
   }, [finalPlanDetails, firestore, toast, paymentProofFile, managerId, user, existingClientId, campaignName, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, ensureClientAndProposalIdsAreGenerated, router]);
 
 
-  const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
-    if (!firestore) throw new Error("Firestore not ready.");
-
-    let finalClientId = generatedClientId;
-    let finalProposalId = generatedProposalId;
-
-    if (!finalClientId && !existingClientId) {
-      try {
-        const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-        const newClientNumber = await runTransaction(firestore, async (transaction) => {
-            const counterSnap = await transaction.get(clientCounterRef);
-            const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
-            const newId = currentId + 1;
-            transaction.set(clientCounterRef, { currentId: newId }, { merge: true });
-            return newId;
-        });
-        const year = new Date().getFullYear().toString().slice(-2);
-        finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-        setGeneratedClientId(finalClientId);
-      } catch (e) {
-          console.error("Error generating Client ID:", e);
-          toast({ variant: 'destructive', title: "ID Generation Failed", description: "Could not generate a unique ID for the client." });
-          throw e;
-      }
-    } else {
-        finalClientId = finalClientId || existingClientId;
-    }
-    
-    if (!finalProposalId) {
-        try {
-            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const newProposalNumber = await runTransaction(firestore, async (transaction) => {
-                const counterSnap = await transaction.get(proposalCounterRef);
-                const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
-                const newId = currentId + 1;
-                transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
-                return newId;
-            });
-            finalProposalId = String(newProposalNumber).padStart(10, '0');
-            setGeneratedProposalId(finalProposalId);
-        } catch (e) {
-            console.error("Error generating Proposal ID:", e);
-            toast({ variant: 'destructive', title: "ID Generation Failed", description: "Could not generate a unique ID for the proposal." });
-            throw e;
-        }
-    }
-    return { clientId: finalClientId, proposalId: finalProposalId };
-  }, [firestore, generatedClientId, generatedProposalId, existingClientId, toast]);
-
-
 const handleSaveDraft = useCallback(async () => {
     await saveProposal('draft');
 }, [saveProposal]);
@@ -864,8 +863,7 @@ const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generat
                 throw new Error("Failed to save the proposal draft before proceeding.");
             }
 
-            const finalClientId = generatedClientId;
-            const finalProposalId = generatedProposalId;
+            const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
 
             if (!finalClientId || !finalProposalId || !user) {
               throw new Error("Missing critical info for sharing link.");
@@ -911,7 +909,7 @@ const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generat
             setIsSharing(false);
         }
     }
-}, [ensureClientAndProposalIdsAreGenerated, saveProposal, generatedClientId, generatedProposalId, user, firestore, toast]);
+}, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, firestore, toast]);
 
   
     const handleSaveSignature = (data: string) => {
@@ -1273,6 +1271,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
-    
