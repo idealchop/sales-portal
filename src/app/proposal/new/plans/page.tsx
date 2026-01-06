@@ -44,6 +44,8 @@ import {
 } from "@/components/ui/tooltip"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSearchParams } from 'next/navigation';
+import { PreviewDialog } from '@/app/proposal/new/contract/page';
+
 
 type Plan = {
   id: string;
@@ -488,26 +490,6 @@ function PlansGrid({
     smeCommercialCustomValues: { deliveries: number; containers: number; } | null,
     onSmeCommercialCustomCalculated: (values: { deliveries: number; containers: number; }) => void;
 }) {
-    const getStations = (liters: number) => {
-        if (liters <= 2000) return '1 Station';
-        if (liters <= 6000) return '2-3 Stations';
-        if (liters <= 25000) return '3-4 Stations';
-        return '5+ Stations';
-    }
-
-    const getEmployees = (liters: number, isHousehold: boolean) => {
-        if (isHousehold) {
-            const estimatedPeople = Math.round(liters / (2 * 30)); // Assuming 2L per person per day
-            if (estimatedPeople <= 3) return '1-3';
-            if (estimatedPeople <= 5) return '3-5';
-            return '5+';
-        }
-        const estimatedEmployees = Math.round(liters / (2 * 22));
-        if (estimatedEmployees < 5) return '< 5';
-        if (estimatedEmployees > 500) return '500+';
-        return `~${Math.round(estimatedEmployees / 10) * 10}`;
-    };
-
     let gridColsClass = 'lg:grid-cols-3';
     if (businessSize === 'commercial') {
         gridColsClass = 'md:grid-cols-2';
@@ -537,143 +519,102 @@ function PlansGrid({
     }, [plans, isSmeCommercialCustom, isSingleCustomPlan, isSingleOverflowPlan]);
 
     return (
-    <RadioGroup
-        value={selectedPlan ?? defaultPlan} 
-        onValueChange={onSelectPlan}
-        className={cn(
-            "grid grid-cols-1 gap-6 items-start",
-            gridColsClass,
-            (isSingleCustomPlan || isSingleOverflowPlan || isSmeCommercialCustom) && 'md:grid-cols-1 lg:grid-cols-1'
-        )}
-    >
-      {visiblePlans.map((plan) => {
-        const isSelected = selectedPlan === plan.id;
-        const isCustom = businessSize === 'enterprise' && (plan.id === 'enterprise-customized');
-        const isOverflow = businessSize === 'enterprise' && (plan.id === 'enterprise-overflow');
-        const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'household') && (plan.id === 'custom-plan');
-        const isDisabled = false;
+        <RadioGroup
+            value={selectedPlan ?? defaultPlan}
+            onValueChange={onSelectPlan}
+            className={cn("grid grid-cols-1 gap-6 items-start", gridColsClass, (isSingleCustomPlan || isSingleOverflowPlan || isSmeCommercialCustom) && 'md:grid-cols-1 lg:grid-cols-1')}
+        >
+            {visiblePlans.map((plan) => {
+                const isSelected = selectedPlan === plan.id;
+                const isCustom = businessSize === 'enterprise' && (plan.id === 'enterprise-customized');
+                const isOverflow = businessSize === 'enterprise' && (plan.id === 'enterprise-overflow');
+                const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'household') && (plan.id === 'custom-plan');
+                const isDisabled = false;
 
-        let employees = plan.employees;
-        let stations = plan.stations;
-        let monthlyFee = plan.monthlyFee;
-        let liters = plan.liters;
-        let refillFrequency = plan.refillFrequency;
-        let inclusions = [...plan.inclusions];
-
-        if (isCustom && customCalculatedValues) {
-             const totalDispensers = customCalculatedValues.locations.reduce((sum, loc) => sum + loc.dispensers, 0);
-            employees = `${customCalculatedValues.locations.length} Locations`;
-            stations = `${totalDispensers} Dispensers`;
-        }
-        
-        if (isOverflow && overflowCalculatedValues) {
-            employees = `${overflowCalculatedValues.locations.length} Locations`;
-            const totalDispensers = overflowCalculatedValues.locations.reduce((sum, loc) => sum + loc.dispensers, 0);
-            stations = `${totalDispensers} Dispensers`;
-            monthlyFee = '₱50,000';
-            liters = `Usage-Based`;
-            refillFrequency = `Based on schedule`;
-        }
-
-
-        if (isCustomSmeCommercial) {
-            const pricePerLiter = 3;
-            inclusions[0] = `Priced at ₱${pricePerLiter.toFixed(2)} per liter`;
-            if (smeCommercialCustomValues) {
-                const freq = deliveryFrequencies.find(f => f.value === smeCommercialCustomValues.deliveries);
-                refillFrequency = freq ? freq.label : plan.refillFrequency;
-            }
-        }
-        
-        const colSpanClass = (isCustom || isOverflow || isCustomSmeCommercial) && isSelected ? 'col-span-full' : 'col-span-1';
-
-        return (
-            <div key={plan.id} className={cn(colSpanClass)}>
-                <RadioGroupItem value={plan.id} id={plan.id} className="sr-only" />
-                <Label htmlFor={plan.id} className="cursor-pointer h-full">
-                   <Card className={cn(
+                const cardContent = (
+                    <Card className={cn(
                         "relative flex flex-col h-full border-2 transition-all duration-300",
-                        isSelected 
-                        ? "border-primary shadow-lg bg-primary text-primary-foreground" 
-                        : "bg-card text-card-foreground border shadow-md hover:border-primary/50",
+                        isSelected
+                            ? "border-primary shadow-lg bg-primary text-primary-foreground"
+                            : "bg-card text-card-foreground border shadow-md hover:border-primary/50",
                         isDisabled && "bg-muted text-muted-foreground"
                     )}>
                         {plan.isRecommended && !isSelected && (
-                        <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
-                            Recommended
-                        </div>
+                            <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
+                                Recommended
+                            </div>
                         )}
                         {isSelected && !isDisabled && (
-                        <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
-                            <Check className="h-4 w-4 text-primary" />
-                        </div>
+                            <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
+                                <Check className="h-4 w-4 text-primary" />
+                            </div>
                         )}
                         <CardHeader className="flex-1">
-                        <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
-                        <div className="flex items-baseline gap-2">
-                            {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{monthlyFee}</span>}
-                            {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && !isOverflow && plan.id !== 'custom-plan' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
-                            {isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Top-up</span>}
-                             {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
-                        </div>
+                            <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
+                            <div className="flex items-baseline gap-2">
+                                {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{plan.monthlyFee}</span>}
+                                {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && !isOverflow && plan.id !== 'custom-plan' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                                {isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Top-up</span>}
+                                {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
+                            </div>
                         </CardHeader>
                         <CardContent className="flex-1 text-left space-y-4">
                             <div className="space-y-2">
                                 <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>{isCustomSmeCommercial ? 'Estimated Liters per Month' : 'Premium Liters Included'}</p>
                                 <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
-                                    <span>{liters}</span>
+                                    <span>{plan.liters}</span>
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
                                 <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
                                     <RefreshCcw className="h-5 w-5" />
-                                    <span>{refillFrequency}</span>
+                                    <span>{plan.refillFrequency}</span>
                                 </div>
                             </div>
-                             <ul className={cn('text-sm space-y-1 pl-4 list-disc', isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground')}>
-                                {inclusions.map((inclusion) => <li key={inclusion}>{inclusion}</li>)}
+                            <ul className={cn('text-sm space-y-1 pl-4 list-disc', isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground')}>
+                                {plan.inclusions.map((inclusion) => <li key={inclusion}>{inclusion}</li>)}
                             </ul>
                         </CardContent>
-                        
+
                         {plan.id === 'enterprise-customized' && isSelected && (
-                            <FlowPlanConfigurator 
-                               onCalculated={onCustomCalculated}
-                            />
-                        )}
-                        
-                        {plan.id === 'enterprise-overflow' && isSelected && (
-                            <FlowPlanConfigurator 
-                               onCalculated={onOverflowCalculated}
-                            />
-                        )}
-                        
-                        {plan.id === 'custom-plan' && isSelected && (
-                             <CustomPlanCalculator
-                                onCalculated={onSmeCommercialCustomCalculated}
-                            />
+                            <FlowPlanConfigurator onCalculated={onCustomCalculated} />
                         )}
 
+                        {plan.id === 'enterprise-overflow' && isSelected && (
+                            <FlowPlanConfigurator onCalculated={onOverflowCalculated} />
+                        )}
+
+                        {plan.id === 'custom-plan' && isSelected && (
+                            <CustomPlanCalculator onCalculated={onSmeCommercialCustomCalculated} />
+                        )}
 
                         <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
                             <div className="flex justify-between items-center w-full text-sm">
                                 <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
                                     {businessSize === 'household' ? <Home className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                                    <span className="font-semibold">{employees} {businessSize === 'household' ? 'Persons' : (isOverflow ? '' : 'Employees')}</span>
+                                    <span className="font-semibold">{plan.employees} {businessSize === 'household' ? 'Persons' : (isOverflow ? '' : 'Employees')}</span>
                                 </div>
                                 <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
                                     {businessSize === 'household' ? <GlassWater className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
-                                    <span className="font-semibold">{stations}</span>
+                                    <span className="font-semibold">{plan.stations}</span>
                                 </div>
                             </div>
                         </CardFooter>
                     </Card>
-                </Label>
-            </div>
-        )
-      })}
-    </RadioGroup>
-  );
+                );
+
+                const colSpanClass = (isCustom || isOverflow || isCustomSmeCommercial) && isSelected ? 'col-span-full' : 'col-span-1';
+
+                return (
+                    <Label key={plan.id} htmlFor={plan.id} className={cn("cursor-pointer h-full", colSpanClass)}>
+                        <RadioGroupItem value={plan.id} id={plan.id} className="sr-only" />
+                        {cardContent}
+                    </Label>
+                )
+            })}
+        </RadioGroup>
+    );
 }
 
 const businessSizes = [
@@ -769,55 +710,12 @@ function BusinessSizeSelector({
     );
 }
 
-function EnterpriseTypeSelector({
-    selectedType,
-    onSelectType,
-}: {
-    selectedType: EnterpriseType | null;
-    onSelectType: (type: EnterpriseType) => void;
-}) {
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             {enterpriseTypes.map((type) => (
-                <Card
-                    key={type.id}
-                    onClick={() => onSelectType(type.id)}
-                    className={cn(
-                        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 overflow-hidden flex flex-col',
-                        selectedType === type.id ? 'border-primary shadow-lg border-2' : ''
-                    )}
-                >
-                    {type.image && (
-                         <div className="relative aspect-video">
-                            <Image
-                                src={type.image.imageUrl}
-                                alt={type.image.description}
-                                fill
-                                className="object-cover"
-                            />
-                        </div>
-                    )}
-                    <CardHeader className="flex-1">
-                        <div>
-                            <CardTitle>{type.title}</CardTitle>
-                            <CardDescription>{type.description}</CardDescription>
-                        </div>
-                    </CardHeader>
-                </Card>
-            ))}
-        </div>
-    );
-}
-
-
 export default function PlansPage() {
     const searchParams = useSearchParams();
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
-    const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-    const [customCalculatedValues, setCustomCalculatedValues] = useState<any>(null);
-    const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[] } | null>(null);
-    const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ deliveries: number, containers: number } | null>(null);
+    const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ deliveries: number; containers: number; } | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
     
     useEffect(() => {
         const clientType = searchParams.get('clientType');
@@ -828,42 +726,20 @@ export default function PlansPage() {
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
-        setSelectedEnterpriseType(null); 
         setSelectedPlan(null); 
-        setCustomCalculatedValues(null);
-        setOverflowCalculatedValues(null);
         setSmeCommercialCustomValues(null);
     };
 
-    const handleEnterpriseTypeSelect = (type: EnterpriseType) => {
-        setSelectedEnterpriseType(type);
-        if (type === 'customized') {
-            setSelectedPlan('enterprise-customized');
-        } else if (type === 'flowing') {
-            setSelectedPlan('enterprise-overflow');
-        }
-    }
-
     const handlePlanSelect = (planId: string) => {
-        const plan = allPlans.find(p => p.id === planId);
         setSelectedPlan(planId);
     }
-
-    const handleCustomCalculated = useCallback((values: any) => {
-        setCustomCalculatedValues(values);
-    }, []);
-
-    const handleOverflowCalculated = useCallback((values: any) => {
-        setOverflowCalculatedValues(values);
-    }, []);
-
+    
     const handleSmeCommercialCustomCalculated = useCallback((values: { deliveries: number; containers: number; }) => {
         setSmeCommercialCustomValues(values);
     }, []);
 
     const resetSelection = () => {
         setSelectedSize(null);
-        setSelectedEnterpriseType(null);
         setSelectedPlan(null);
     }
     
@@ -871,60 +747,43 @@ export default function PlansPage() {
         let plansToRender: Plan[] = [];
         let defaultPlanId = '';
 
-        if (selectedSize === 'enterprise' && selectedEnterpriseType) {
-            if (selectedEnterpriseType === 'customized') {
-                 plansToRender = [flowPlans.find(p => p.id === 'enterprise-customized')!];
-                 defaultPlanId = 'enterprise-customized';
-            } else if (selectedEnterpriseType === 'flowing') {
-                plansToRender = [flowPlans.find(p => p.id === 'enterprise-overflow')!];
-                defaultPlanId = 'enterprise-overflow';
-            }
-        } else {
-            switch (selectedSize) {
-                case 'household':
-                    plansToRender = [...householdPlans, { ...customSmeCommercialPlan, inclusions: [`Priced at ₱2.50 per liter`, ...customSmeCommercialPlan.inclusions.slice(1)] }];
-                    defaultPlanId = 'household-family';
-                    break;
-                case 'sme':
-                    plansToRender = [smePlans.find(p => p.id === 'micro')!, smePlans.find(p => p.id === 'starter')!, customSmeCommercialPlan];
-                    defaultPlanId = 'micro';
-                    break;
-                default:
-                    return null;
-            }
+        switch (selectedSize) {
+            case 'household':
+                plansToRender = [...householdPlans, { ...customSmeCommercialPlan, inclusions: [`Priced at ₱2.50 per liter`, ...customSmeCommercialPlan.inclusions.slice(1)] }];
+                defaultPlanId = 'household-family';
+                break;
+            case 'sme':
+                plansToRender = [smePlans.find(p => p.id === 'micro')!, smePlans.find(p => p.id === 'starter')!, customSmeCommercialPlan];
+                defaultPlanId = 'micro';
+                break;
+            default:
+                return null;
         }
 
         if (!plansToRender || plansToRender.length === 0) return null;
 
         return <PlansGrid 
-                    plans={plansToRender} 
-                    defaultPlan={defaultPlanId} 
-                    selectedPlan={selectedPlan} 
-                    onSelectPlan={handlePlanSelect} 
-                    businessSize={selectedSize}
-                    customCalculatedValues={customCalculatedValues}
-                    onCustomCalculated={handleCustomCalculated}
-                    overflowCalculatedValues={overflowCalculatedValues}
-                    onOverflowCalculated={handleOverflowCalculated}
-                    smeCommercialCustomValues={smeCommercialCustomValues}
-                    onSmeCommercialCustomCalculated={handleSmeCommercialCustomCalculated}
-                />;
+            plans={plansToRender}
+            defaultPlan={defaultPlanId}
+            selectedPlan={selectedPlan}
+            onSelectPlan={handlePlanSelect}
+            businessSize={selectedSize}
+            smeCommercialCustomValues={smeCommercialCustomValues}
+            onSmeCommercialCustomCalculated={handleSmeCommercialCustomCalculated}
+            customCalculatedValues={null}
+            onCustomCalculated={() => {}}
+            overflowCalculatedValues={null}
+            onOverflowCalculated={() => {}}
+        />;
     };
     
     const isNextDisabled = useMemo(() => {
         if (!selectedPlan) return true;
-        if (selectedPlan === 'enterprise-customized') {
-            if (!customCalculatedValues) return true;
-            return false;
-        }
-        if (selectedPlan === 'enterprise-overflow') {
-            return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name);
-        }
         if (selectedPlan === 'custom-plan') {
             return !smeCommercialCustomValues;
         }
         return false;
-    }, [selectedPlan, customCalculatedValues, overflowCalculatedValues, smeCommercialCustomValues]);
+    }, [selectedPlan, smeCommercialCustomValues]);
 
     const getNextLink = () => {
         if (!selectedPlan) return '#';
@@ -935,164 +794,166 @@ export default function PlansPage() {
         if (selectedSize) {
           params.set('clientType', selectedSize);
         }
-
-        if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
-            params.set('locations', JSON.stringify(customCalculatedValues.locations));
-        }
-        if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
-            params.set('cost', '50000');
-            params.set('locations', JSON.stringify(overflowCalculatedValues.locations));
-        }
+        
         if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
             params.set('freq', smeCommercialCustomValues.deliveries.toString());
             params.set('containers', smeCommercialCustomValues.containers.toString());
             params.set('type', selectedSize || '');
         }
+
         return `/proposal/new/contract?${params.toString()}`;
     };
 
-    const params = new URLSearchParams(searchParams.toString());
-    const prevLink = `/proposal/new/about?${params.toString()}`;
+    const prevLink = `/proposal/new/about?${searchParams.toString()}`;
 
     return (
         <div className="flex flex-col gap-6 pb-24 sm:pb-0">
-        <div className="flex items-center justify-between">
-            <div>
-            <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
-            <p className="text-muted-foreground">
-                Step 3: Select a Client Type, Choose a Plan & Review Inclusions
-            </p>
-            </div>
-            <div className="hidden sm:flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" asChild>
-                    <Link href={prevLink}>Previous</Link>
-                </Button>
-                <Button asChild={!isNextDisabled} disabled={isNextDisabled}>
-                    <Link href={getNextLink()}>Review and Finalize Contract</Link>
-                </Button>
-            </div>
-        </div>
-
-        <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle>1. Select Client Type</CardTitle>
-                        <CardDescription>
-                        Choose the client type to see the recommended plans.
-                        </CardDescription>
-                    </div>
-                    {selectedSize && (
-                        <Button variant="outline" onClick={resetSelection}>
-                            <RefreshIcon className="mr-2 h-4 w-4" />
-                            Change
-                        </Button>
-                    )}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
+                    <p className="text-muted-foreground">
+                        Step 3: Select a Client Type, Choose a Plan & Review Inclusions
+                    </p>
                 </div>
-            </CardHeader>
-            <CardContent>
-                <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-6", selectedSize && "lg:grid-cols-[1fr,2fr]")}>
-                    <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-2")}>
-                        <BusinessSizeSelector 
-                            selectedSize={selectedSize} 
-                            onSelectSize={handleSizeSelect}
-                            hiddenSizes={selectedSize ? businessSizes.map(s => s.id).filter(id => id !== selectedSize) : []}
-                        />
-                    </div>
-                    {selectedSize && (
-                        <div className="lg:col-span-1">
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>
-                                        2. Choose a Plan
-                                    </CardTitle>
-                                     <CardDescription>
-                                        Select the best plan for your client from the options below.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {renderPlans()}
-                                </CardContent>
-                            </Card>
+                <div className="hidden sm:flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href={prevLink}>Previous</Link>
+                    </Button>
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button disabled={isNextDisabled}>
+                                Review and Finalize Contract
+                            </Button>
+                        </DialogTrigger>
+                        <PreviewDialog searchParams={searchParams} />
+                    </Dialog>
+                </div>
+            </div>
+
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>1. Select Client Type</CardTitle>
+                            <CardDescription>
+                            Choose the client type to see the recommended plans.
+                            </CardDescription>
                         </div>
-                    )}
-                </div>
-            </CardContent>
-             <CardFooter>
-                 <p className="text-xs text-muted-foreground text-center w-full">
-                    Need high volume water supply? Reach out here: <a href="mailto:business@smartrefill.io" className="font-semibold text-primary hover:underline">business@smartrefill.io</a>
-                 </p>
-            </CardFooter>
-        </Card>
-
-
-        {selectedPlan && (
-          <div className="grid gap-6">
-              <Card>
-              <CardHeader>
-                  <CardTitle>Included in Every Plan</CardTitle>
-                     <CardDescription>
-                        Every subscription plan includes full access to our growing network of partner perks.
-                    </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-6 sm:grid-cols-2">
-                  {inclusions.map((item) => (
-                  <div key={item.title} className="flex items-start gap-3">
-                      <div>{item.icon}</div>
-                      <div>
-                      <h3 className="font-semibold text-sm">{item.title}</h3>
-                      <p className="text-xs text-muted-foreground">
-                          {item.description}
-                      </p>
-                      </div>
-                  </div>
-                  ))}
-              </CardContent>
-              </Card>
-
-              <Card>
-              <CardHeader>
-                  <CardTitle>Partner Perks</CardTitle>
-                  <CardDescription>
-                  Enhance your subscription with exclusive benefits from our partners, included with every plan.
-                  </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-8 sm:grid-cols-2">
-                   {perks.map((perk) => (
-                        <div key={perk.partner} className="flex items-start gap-4">
-                            {perk.icon}
-                            <div className="space-y-1">
-                                <h3 className="font-semibold">{perk.partner}</h3>
-                                <p className="text-sm text-muted-foreground">{perk.description}</p>
-                                <p className="text-sm font-medium text-primary">{perk.benefit}</p>
+                        {selectedSize && (
+                            <Button variant="outline" onClick={resetSelection}>
+                                <RefreshIcon className="mr-2 h-4 w-4" />
+                                Change
+                            </Button>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-6", selectedSize && "lg:grid-cols-[1fr,2fr]")}>
+                        <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-2")}>
+                            <BusinessSizeSelector 
+                                selectedSize={selectedSize} 
+                                onSelectSize={handleSizeSelect}
+                                hiddenSizes={selectedSize ? businessSizes.map(s => s.id).filter(id => id !== selectedSize) : []}
+                            />
+                        </div>
+                        {selectedSize && (
+                            <div className="lg:col-span-1">
+                                 <Card>
+                                    <CardHeader>
+                                        <CardTitle>
+                                            2. Choose a Plan
+                                        </CardTitle>
+                                         <CardDescription>
+                                            Select the best plan for your client from the options below.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {renderPlans()}
+                                    </CardContent>
+                                </Card>
                             </div>
-                        </div>
-                    ))}
-              </CardContent>
-              <CardFooter>
-                  <div className="text-sm text-muted-foreground space-y-2">
-                  <p className="font-semibold text-foreground">Terms:</p>
-                  <ul className="list-disc list-inside space-y-1">
-                          <li>All employees of the subscribed company are eligible for these perks.</li>
-                          <li>To redeem, employees must present their company ID at partner establishments.</li>
-                  </ul>
-                  </div>
-              </CardFooter>
-              </Card>
-          </div>
-        )}
+                        )}
+                    </div>
+                </CardContent>
+                 <CardFooter>
+                     <p className="text-xs text-muted-foreground text-center w-full">
+                        Need high volume water supply? Reach out here: <a href="mailto:business@smartrefill.io" className="font-semibold text-primary hover:underline">business@smartrefill.io</a>
+                     </p>
+                </CardFooter>
+            </Card>
 
-        <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
-            <div className="flex gap-2">
-                <Button variant="outline" asChild className="flex-1">
-                    <Link href={prevLink}>Previous</Link>
-                </Button>
-                <Button asChild={!isNextDisabled} disabled={isNextDisabled} className="flex-1">
-                    <Link href={getNextLink()}>Review and Finalize Contract</Link>
-                </Button>
+
+            {selectedPlan && (
+              <div className="grid gap-6">
+                  <Card>
+                  <CardHeader>
+                      <CardTitle>Included in Every Plan</CardTitle>
+                         <CardDescription>
+                            Every subscription plan includes full access to our growing network of partner perks.
+                        </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-6 sm:grid-cols-2">
+                      {inclusions.map((item) => (
+                      <div key={item.title} className="flex items-start gap-3">
+                          <div>{item.icon}</div>
+                          <div>
+                          <h3 className="font-semibold text-sm">{item.title}</h3>
+                          <p className="text-xs text-muted-foreground">
+                              {item.description}
+                          </p>
+                          </div>
+                      </div>
+                      ))}
+                  </CardContent>
+                  </Card>
+
+                  <Card>
+                  <CardHeader>
+                      <CardTitle>Partner Perks</CardTitle>
+                      <CardDescription>
+                      Enhance your subscription with exclusive benefits from our partners, included with every plan.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-8 sm:grid-cols-2">
+                       {perks.map((perk) => (
+                            <div key={perk.partner} className="flex items-start gap-4">
+                                {perk.icon}
+                                <div className="space-y-1">
+                                    <h3 className="font-semibold">{perk.partner}</h3>
+                                    <p className="text-sm text-muted-foreground">{perk.description}</p>
+                                    <p className="text-sm font-medium text-primary">{perk.benefit}</p>
+                                </div>
+                            </div>
+                        ))}
+                  </CardContent>
+                  <CardFooter>
+                      <div className="text-sm text-muted-foreground space-y-2">
+                      <p className="font-semibold text-foreground">Terms:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                              <li>All employees of the subscribed company are eligible for these perks.</li>
+                              <li>To redeem, employees must present their company ID at partner establishments.</li>
+                      </ul>
+                      </div>
+                    </CardFooter>
+                  </Card>
+              </div>
+            )}
+
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
+                <div className="flex gap-2">
+                    <Button variant="outline" asChild className="flex-1">
+                        <Link href={prevLink}>Previous</Link>
+                    </Button>
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button disabled={isNextDisabled} className="flex-1">
+                                Review and Finalize Contract
+                            </Button>
+                        </DialogTrigger>
+                        <PreviewDialog searchParams={searchParams} />
+                    </Dialog>
+                </div>
             </div>
-        </div>
-
         </div>
     );
 }
