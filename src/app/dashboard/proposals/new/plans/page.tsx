@@ -90,7 +90,7 @@ const inclusions = [
     {
         icon: <RotateCw className="h-5 w-5 text-primary" />,
         title: 'Roll-Over Liters',
-        description: 'Unused liters carry over to the next cycle.',
+        description: 'Unused liters carry over to the next cycle. (For fixed plans only)',
     },
     {
         icon: <Thermometer className="h-5 w-5 text-primary" />,

@@ -101,7 +101,7 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                         <>
                             <li>Subscriptions are prepaid based on the selected billing cycle.</li>
                             <li>Payment covers the included liter allocation and any applicable service fees.</li>
-                            <li>Unused liters roll over for up to two (2) consecutive months, after which they expire.</li>
+                            <li>Unused liters roll over for up to two (2) consecutive months, after which they expire. (For fixed plans only)</li>
                         </>
                     )}
                     <li>Payments are non-refundable after activation.</li>
@@ -250,7 +250,7 @@ const inclusions = [
     {
         icon: <RotateCw className="h-5 w-5 text-primary" />,
         title: 'Roll-Over Liters',
-        description: 'Unused liters carry over to the next cycle.',
+        description: 'Unused liters carry over to the next cycle. (For fixed plans only)',
     },
     {
         icon: <Thermometer className="h-5 w-5 text-primary" />,
@@ -434,13 +434,13 @@ export function ContractDetails({
             <div className="text-center space-y-1">
                 <h2 className="text-xl font-bold text-primary">River Tech Inc.</h2>
                 <p className="text-xs text-muted-foreground">
+                    SEC. Registration ID: 2025080215620-07
+                </p>
+                <p className="text-xs text-muted-foreground">
                     Filinvest Axis Tower 1 24th & 26th Flr, 304 Filinvest Ave, Alabang, Muntinlupa
                 </p>
                 <p className="text-xs text-muted-foreground">
                     www.smartrefill.io | customer@smartrefill.io
-                </p>
-                 <p className="text-xs text-muted-foreground">
-                    SEC. Registration ID: 2025080215620-07
                 </p>
             </div>
             
@@ -450,13 +450,13 @@ export function ContractDetails({
                 <div className="grid md:grid-cols-2 items-center">
                     <div className="p-6">
                         <CardHeader className="p-0 mb-4">
-                            <CardTitle>Welcome to Smart Refill</CardTitle>
+                            <CardTitle>Welcome to Smart Refill, {client.companyName}</CardTitle>
                             <CardDescription>Your Partner in Water Supply Automation</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
                             <div className="space-y-4 text-muted-foreground">
                                 <p>
-                                    Thank you for choosing River Philippines. This proposal outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
+                                    Thank you for choosing River Philippines. This proposal for {client.companyName} outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
                                 </p>
                                 <p>
                                     We go beyond delivery—we provide a secure, high-quality hydration system that protects your team's health and optimizes your operational costs.
