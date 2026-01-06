@@ -587,88 +587,90 @@ function PlansGrid({
         
         const colSpanClass = (isCustom || isOverflow || isCustomSmeCommercial) && isSelected ? 'col-span-full' : 'col-span-1';
 
-        return <div key={plan.id} className={cn(colSpanClass)}>
-            <RadioGroupItem value={plan.id} id={plan.id} className="sr-only" />
-            <Label htmlFor={plan.id} className="cursor-pointer h-full">
-               <Card className={cn(
-                    "relative flex flex-col h-full border-2 transition-all duration-300",
-                    isSelected 
-                    ? "border-primary shadow-lg bg-primary text-primary-foreground" 
-                    : "bg-card text-card-foreground border shadow-md hover:border-primary/50",
-                    isDisabled && "bg-muted text-muted-foreground"
-                )}>
-                    {plan.isRecommended && !isSelected && (
-                    <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
-                        Recommended
-                    </div>
-                    )}
-                    {isSelected && !isDisabled && (
-                    <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
-                        <Check className="h-4 w-4 text-primary" />
-                    </div>
-                    )}
-                    <CardHeader className="flex-1">
-                    <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
-                    <div className="flex items-baseline gap-2">
-                        {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{monthlyFee}</span>}
-                        {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && !isOverflow && plan.id !== 'custom-plan' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
-                        {isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Top-up</span>}
-                         {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
-                    </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 text-left space-y-4">
-                        <div className="space-y-2">
-                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>{isCustomSmeCommercial ? 'Estimated Liters per Month' : 'Premium Liters Included'}</p>
-                            <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
-                                <span>{liters}</span>
-                            </div>
+        return (
+            <div key={plan.id} className={cn(colSpanClass)}>
+                <RadioGroupItem value={plan.id} id={plan.id} className="sr-only" />
+                <Label htmlFor={plan.id} className="cursor-pointer h-full">
+                   <Card className={cn(
+                        "relative flex flex-col h-full border-2 transition-all duration-300",
+                        isSelected 
+                        ? "border-primary shadow-lg bg-primary text-primary-foreground" 
+                        : "bg-card text-card-foreground border shadow-md hover:border-primary/50",
+                        isDisabled && "bg-muted text-muted-foreground"
+                    )}>
+                        {plan.isRecommended && !isSelected && (
+                        <div className="absolute top-0 right-0 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-md bg-primary text-primary-foreground">
+                            Recommended
                         </div>
-                        <div className="space-y-2">
-                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
-                            <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
-                                <RefreshCcw className="h-5 w-5" />
-                                <span>{refillFrequency}</span>
-                            </div>
+                        )}
+                        {isSelected && !isDisabled && (
+                        <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground">
+                            <Check className="h-4 w-4 text-primary" />
                         </div>
-                         <ul className={cn('text-sm space-y-1 pl-4 list-disc', isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground')}>
-                            {inclusions.map((inclusion) => <li key={inclusion}>{inclusion}</li>)}
-                        </ul>
-                    </CardContent>
-                    
-                    {plan.id === 'enterprise-customized' && isSelected && (
-                        <FlowPlanConfigurator 
-                           onCalculated={onCustomCalculated}
-                        />
-                    )}
-                    
-                    {plan.id === 'enterprise-overflow' && isSelected && (
-                        <FlowPlanConfigurator 
-                           onCalculated={onOverflowCalculated}
-                        />
-                    )}
-                    
-                    {plan.id === 'custom-plan' && isSelected && (
-                         <CustomPlanCalculator
-                            onCalculated={onSmeCommercialCustomCalculated}
-                        />
-                    )}
+                        )}
+                        <CardHeader className="flex-1">
+                        <CardTitle className={cn("text-2xl", isSelected && !isDisabled && "text-primary-foreground")}>{plan.name}</CardTitle>
+                        <div className="flex items-baseline gap-2">
+                            {plan.monthlyFee !== 'Custom' && <span className={cn("text-3xl font-bold", isSelected && !isDisabled && "text-primary-foreground")}>{monthlyFee}</span>}
+                            {plan.name !== 'Enterprise Customized' && plan.monthlyFee !== 'Usage-Based' && !isOverflow && plan.id !== 'custom-plan' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>/ month</span>}
+                            {isOverflow && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Top-up</span>}
+                             {plan.monthlyFee === 'Usage-Based' && <span className={cn("font-semibold", isSelected && !isDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground')}>Pay per Liter</span>}
+                        </div>
+                        </CardHeader>
+                        <CardContent className="flex-1 text-left space-y-4">
+                            <div className="space-y-2">
+                                <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>{isCustomSmeCommercial ? 'Estimated Liters per Month' : 'Premium Liters Included'}</p>
+                                <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
+                                    <span>{liters}</span>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Avg. Refill Frequency</p>
+                                <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
+                                    <RefreshCcw className="h-5 w-5" />
+                                    <span>{refillFrequency}</span>
+                                </div>
+                            </div>
+                             <ul className={cn('text-sm space-y-1 pl-4 list-disc', isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground')}>
+                                {inclusions.map((inclusion) => <li key={inclusion}>{inclusion}</li>)}
+                            </ul>
+                        </CardContent>
+                        
+                        {plan.id === 'enterprise-customized' && isSelected && (
+                            <FlowPlanConfigurator 
+                               onCalculated={onCustomCalculated}
+                            />
+                        )}
+                        
+                        {plan.id === 'enterprise-overflow' && isSelected && (
+                            <FlowPlanConfigurator 
+                               onCalculated={onOverflowCalculated}
+                            />
+                        )}
+                        
+                        {plan.id === 'custom-plan' && isSelected && (
+                             <CustomPlanCalculator
+                                onCalculated={onSmeCommercialCustomCalculated}
+                            />
+                        )}
 
 
-                    <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
-                        <div className="flex justify-between items-center w-full text-sm">
-                            <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                                {businessSize === 'household' ? <Home className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                                <span className="font-semibold">{employees} {businessSize === 'household' ? 'Persons' : (isOverflow ? '' : 'Employees')}</span>
+                        <CardFooter className={cn("p-4 rounded-b-lg", isSelected && !isDisabled ? "bg-black/20" : "bg-muted")}>
+                            <div className="flex justify-between items-center w-full text-sm">
+                                <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                    {businessSize === 'household' ? <Home className="h-5 w-5" /> : <Users className="h-5 w-5" />}
+                                    <span className="font-semibold">{employees} {businessSize === 'household' ? 'Persons' : (isOverflow ? '' : 'Employees')}</span>
+                                </div>
+                                <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                    {businessSize === 'household' ? <GlassWater className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
+                                    <span className="font-semibold">{stations}</span>
+                                </div>
                             </div>
-                            <div className={cn("flex items-center gap-2", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                                {businessSize === 'household' ? <GlassWater className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
-                                <span className="font-semibold">{stations}</span>
-                            </div>
-                        </div>
-                    </CardFooter>
-                </Card>
-            </Label>
-        </div>;
+                        </CardFooter>
+                    </Card>
+                </Label>
+            </div>
+        )
       })}
     </RadioGroup>
   );
@@ -966,7 +968,7 @@ export default function PlansPage() {
                     <Link href={prevLink}>Previous</Link>
                 </Button>
                 <Button asChild={!isNextDisabled} disabled={isNextDisabled}>
-                    <Link href={getNextLink()}>Next Step</Link>
+                    <Link href={getNextLink()}>Review and Finalize Contract</Link>
                 </Button>
             </div>
         </div>
@@ -1086,7 +1088,7 @@ export default function PlansPage() {
                     <Link href={prevLink}>Previous</Link>
                 </Button>
                 <Button asChild={!isNextDisabled} disabled={isNextDisabled} className="flex-1">
-                    <Link href={getNextLink()}>Next Step</Link>
+                    <Link href={getNextLink()}>Review and Finalize Contract</Link>
                 </Button>
             </div>
         </div>

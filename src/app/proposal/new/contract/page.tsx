@@ -226,6 +226,8 @@ function PreviewDialog({
 }) {
     const contractRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
 
@@ -262,6 +264,11 @@ function PreviewDialog({
             setPaymentProofPreview(null);
         }
     };
+    
+    const handleGoBack = () => {
+      const params = new URLSearchParams(searchParams.toString());
+      router.push(`/proposal/new/plans?${params.toString()}`);
+    }
 
     return (
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
@@ -277,123 +284,109 @@ function PreviewDialog({
                     )}
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
-                    {finalPlanDetails && (
-                        <div ref={contractRef} className="space-y-6 py-6">
-                            <ContractDetails
-                                finalPlanDetails={finalPlanDetails}
-                                isSigned={false}
-                                signatureData={signatureData}
-                                onSaveSignature={onSaveSignature}
-                                onClearSignature={onClearSignature}
-                            />
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Final Step: Upload Proof of Payment</CardTitle>
-                                    <CardDescription>
-                                        Please upload a screenshot or document of your payment confirmation. This is required to finalize the proposal.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <PaymentMethods />
-                                    <div className="pt-4 space-y-2">
-                                        <Label htmlFor="payment-proof">Payment Confirmation File</Label>
-                                        <Input 
-                                            id="payment-proof"
-                                            type="file" 
-                                            ref={fileInputRef} 
-                                            onChange={handleFileChange} 
-                                            accept="image/png, image/jpeg, application/pdf"
-                                        />
-                                        {isSaving && <Progress value={isSaving ? 50 : 0} className="w-full h-2 mt-2" />}
-                                        {paymentProofFile && (
-                                            <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md border">
-                                                <div className="flex items-center gap-2 overflow-hidden">
-                                                    {paymentProofPreview ? (
-                                                        <div className="relative h-10 w-10 flex-shrink-0">
-                                                            <Image src={paymentProofPreview} alt="Preview" fill className="object-cover rounded-sm" />
-                                                        </div>
-                                                    ) : (
-                                                        <FileCheck className="h-6 w-6 text-green-500 flex-shrink-0" />
-                                                    )}
-                                                    <span className="truncate">{paymentProofFile.name}</span>
-                                                </div>
-                                                {paymentProofPreview && (
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4"/> View</Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>Payment Proof Preview</DialogTitle>
-                                                            </DialogHeader>
-                                                            <div className="relative mt-4 aspect-auto max-h-[70vh] w-full">
-                                                                <Image src={paymentProofPreview} alt="Payment proof full preview" width={500} height={700} className="object-contain w-full h-full" />
+                    <div ref={contractRef} className="space-y-6 py-6">
+                        {finalPlanDetails && (
+                            <>
+                                <ContractDetails
+                                    finalPlanDetails={finalPlanDetails}
+                                    isSigned={false}
+                                    signatureData={signatureData}
+                                    onSaveSignature={onSaveSignature}
+                                    onClearSignature={onClearSignature}
+                                />
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Final Step: Upload Proof of Payment</CardTitle>
+                                        <CardDescription>
+                                            Please upload a screenshot or document of your payment confirmation. This is required to finalize the proposal.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <PaymentMethods />
+                                        <div className="pt-4 space-y-2">
+                                            <Label htmlFor="payment-proof">Payment Confirmation File</Label>
+                                            <Input 
+                                                id="payment-proof"
+                                                type="file" 
+                                                ref={fileInputRef} 
+                                                onChange={handleFileChange} 
+                                                accept="image/png, image/jpeg, application/pdf"
+                                            />
+                                            {isSaving && <Progress value={isSaving ? 50 : 0} className="w-full h-2 mt-2" />}
+                                            {paymentProofFile && (
+                                                <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md border">
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        {paymentProofPreview ? (
+                                                            <div className="relative h-10 w-10 flex-shrink-0">
+                                                                <Image src={paymentProofPreview} alt="Preview" fill className="object-cover rounded-sm" />
                                                             </div>
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
+                                                        ) : (
+                                                            <FileCheck className="h-6 w-6 text-green-500 flex-shrink-0" />
+                                                        )}
+                                                        <span className="truncate">{paymentProofFile.name}</span>
+                                                    </div>
+                                                    {paymentProofPreview && (
+                                                        <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4"/> View</Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent>
+                                                                <DialogHeader>
+                                                                    <DialogTitle>Payment Proof Preview</DialogTitle>
+                                                                </DialogHeader>
+                                                                <div className="relative mt-4 aspect-auto max-h-[70vh] w-full">
+                                                                    <Image src={paymentProofPreview} alt="Payment proof full preview" width={500} height={700} className="object-contain w-full h-full" />
+                                                                </div>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </>
+                        )}
+                    </div>
                 </ScrollArea>
                 <DialogFooter className="gap-2 sm:justify-between items-center border-t pt-4">
-                     <Button type="button" onClick={handleSaveDraft} variant="outline" disabled={isSaving}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Save as Draft
-                    </Button>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                                <Button type="button" disabled={isSaving}>
-                                <Send className="mr-2 h-4 w-4" />
-                                Subscribe to Smart Refill
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Finalize and Subscribe?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will submit your signed contract and proof of payment. This action marks your subscription as active.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
-                                    {isSaving ? (
-                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
-                                    ) : (
-                                        'Yes, Subscribe Now'
-                                    )}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <Button type="button" variant="outline" onClick={handleGoBack}>Go Back</Button>
+                    <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+                        <Button type="button" onClick={handleSaveDraft} variant="outline" disabled={isSaving}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Save as Draft
+                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                    <Button type="button" disabled={isSaving}>
+                                    <Send className="mr-2 h-4 w-4" />
+                                    Subscribe to Smart Refill
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Finalize and Subscribe?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will submit your signed contract and proof of payment. This action marks your subscription as active.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
+                                        {isSaving ? (
+                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
+                                        ) : (
+                                            'Yes, Subscribe Now'
+                                        )}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     )
-}
-
-function TimelineItem({ icon, title, description, isLast = false }: { icon: React.ReactNode; title: string; description: string; isLast?: boolean; }) {
-    return (
-        <div className="relative flex-1">
-            <div className="flex flex-col items-center text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground mb-2">
-                    {icon}
-                </div>
-                <h4 className="font-semibold text-sm">{title}</h4>
-                <p className="text-xs text-muted-foreground mt-1 px-2">{description}</p>
-            </div>
-            {!isLast && (
-                <div className="absolute top-5 left-1/2 w-full -translate-x-1/2">
-                    <div className="w-full border-t-2 border-dashed border-border -z-10 absolute top-0 left-full"></div>
-                </div>
-            )}
-        </div>
-    );
 }
 
 function ContractPageContent() {
@@ -431,14 +424,12 @@ function ContractPageContent() {
   const [dispenserFee, setDispenserFee] = useState(250);
 
   const [isReviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [isGenerateDialogOpen, setGenerateDialogOpen] = useState(false);
   
   const [generatedClientId, setGeneratedClientId] = useState<string | undefined>(existingClientId);
   const [generatedProposalId, setGeneratedProposalId] = useState<string | undefined>();
   
   const [signatureData, setSignatureData] = useState<string | undefined>();
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
-  const [isSharing, setIsSharing] = useState(false);
 
   useEffect(() => {
     // Automatically open the review dialog on page load
@@ -802,78 +793,6 @@ function ContractPageContent() {
     }
   }, [finalPlanDetails, firestore, toast, paymentProofFile, managerId, user, existingClientId, campaignName, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, ensureClientAndProposalIdsAreGenerated, router]);
   
-  const handleSaveDraft = useCallback(async () => {
-    await saveProposal('draft');
-  }, [saveProposal]);
-
-  const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generate') => {
-      try {
-          if (action === 'generate') {
-              setGenerateDialogOpen(true);
-              return;
-          } else if (action === 'sign') {
-              setReviewDialogOpen(true);
-              return;
-          } else if (action === 'share') {
-              setIsSharing(true);
-              
-              try {
-                await navigator.clipboard.writeText("Generating link...");
-              } catch (err) {
-                 console.warn("Clipboard write access denied:", err);
-              }
-
-              const isSaved = await saveProposal('draft');
-              if (!isSaved) {
-                  throw new Error("Failed to save the proposal draft before proceeding.");
-              }
-              
-              const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
-
-              if (!finalClientId || !finalProposalId || !user || !finalPlanDetails) {
-                throw new Error("Missing critical info for sharing link.");
-              }
-
-              const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-              
-              const proposalContent = { ...finalPlanDetails, signature: signatureData, proposalId: finalProposalId, clientId: finalClientId };
-
-              await setDoc(shareableLinkRef, {
-                  id: shareableLinkRef.id,
-                  content: JSON.stringify(proposalContent),
-                  createdAt: serverTimestamp()
-              });
-
-              const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-              try {
-                  await navigator.clipboard.writeText(shareUrl);
-                  toast({ title: 'Share Link Copied!', description: 'A permanent shareable link has been copied.' });
-              } catch (err) {
-                   toast({ 
-                      title: 'Share Link Generated!', 
-                      description: (
-                          <div className="flex flex-col gap-2">
-                             <p>The link is ready. Please copy it manually:</p>
-                             <div className="flex items-center gap-2">
-                               <Input readOnly value={shareUrl} className="h-8"/>
-                               <Button size="sm" onClick={() => navigator.clipboard.writeText(shareUrl)}>Copy</Button>
-                             </div>
-                          </div>
-                      ),
-                      duration: 10000,
-                  });
-              }
-          }
-      } catch (error: any) {
-          toast({ variant: "destructive", title: "Action Failed", description: error.message || 'An unexpected error occurred.' });
-      } finally {
-          if (action === 'share') {
-              setIsSharing(false);
-          }
-      }
-  }, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, firestore, toast, finalPlanDetails, signatureData]);
-
-  
     const handleSaveSignature = (data: string) => {
         setSignatureData(data);
         toast({
@@ -902,8 +821,6 @@ function ContractPageContent() {
     )
   }
 
-  const prevLink = `/proposal/new/plans?${searchParams.toString()}`;
-
   return (
     <>
       {finalPlanDetails && (
@@ -927,7 +844,7 @@ function ContractPageContent() {
           <div>
             <h1 className="text-2xl font-bold">Finalize Proposal</h1>
             <p className="text-muted-foreground">
-              Step 5: Review inclusions, add-ons, and sign the agreement.
+              Step 4: Review inclusions, add-ons, and sign the agreement.
             </p>
           </div>
         </div>
