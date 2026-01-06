@@ -35,7 +35,6 @@ import { Separator } from '@/components/ui/separator';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle, Home, RefreshCw as RefreshIcon, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Input } from '@/components/ui/input';
 import {
   Tooltip,
@@ -313,7 +312,7 @@ const flowPlans: Plan[] = [
 
 const customSmeCommercialPlan: Plan = {
     id: 'custom-plan',
-    name: 'Customize Your Plan',
+    name: 'Usage-Based Plan',
     monthlyFee: 'Custom',
     liters: 'Custom',
     refillFrequency: 'Custom',
@@ -945,7 +944,6 @@ function BusinessSizeSelector({
                                 alt={size.image.description}
                                 fill
                                 className="object-cover"
-                                data-ai-hint={size.image.imageHint}
                             />
                         </div>
                     )}
@@ -986,7 +984,6 @@ function EnterpriseTypeSelector({
                                 alt={type.image.description}
                                 fill
                                 className="object-cover"
-                                data-ai-hint={type.image.imageHint}
                             />
                         </div>
                     )}
@@ -1195,7 +1192,7 @@ export default function PlansPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-6", selectedSize && "lg:grid-cols-[1fr,2fr]")}>
                     <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-3")}>
                         <BusinessSizeSelector 
                             selectedSize={selectedSize} 
@@ -1204,7 +1201,7 @@ export default function PlansPage() {
                         />
                     </div>
                     {selectedSize && (
-                        <div className="lg:col-span-2">
+                        <div className="lg:col-span-1">
                              <Card>
                                 <CardHeader>
                                     <CardTitle>

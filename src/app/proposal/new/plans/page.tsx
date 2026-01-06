@@ -35,7 +35,6 @@ import { Separator } from '@/components/ui/separator';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Building, Building2, Store, Computer, CalendarClock, RotateCw, AreaChart, Thermometer, Wrench, CircleHelp, Rocket, Phone, Bot, HeartPulse, Coffee, Car, Users, GlassWater, Package, Check, RefreshCcw, Waves, Minus, Plus, HelpCircle, AlertCircle, Home, RefreshCw as RefreshIcon, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Input } from '@/components/ui/input';
 import {
   Tooltip,
@@ -716,7 +715,7 @@ function PlansGrid({
 
 
         const cardContent = (
-            <Card className={cn(
+             <Card className={cn(
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
                 ? "border-primary shadow-lg bg-primary text-primary-foreground" 
@@ -904,7 +903,6 @@ function BusinessSizeSelector({
                                 alt={size.image.description}
                                 fill
                                 className="object-cover"
-                                data-ai-hint={size.image.imageHint}
                             />
                         </div>
                     )}
@@ -945,7 +943,6 @@ function EnterpriseTypeSelector({
                                 alt={type.image.description}
                                 fill
                                 className="object-cover"
-                                data-ai-hint={type.image.imageHint}
                             />
                         </div>
                     )}
