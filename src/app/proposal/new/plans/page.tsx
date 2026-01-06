@@ -180,6 +180,27 @@ const smePlans: Plan[] = [
     employees: '5 – 10',
     stations: '1 Station',
   },
+  {
+    id: 'starter',
+    name: 'Starter',
+    monthlyFee: '₱3,000',
+    liters: '1,000 L',
+    refillFrequency: '2–3/week',
+    inclusions: [],
+    employees: '10 – 20',
+    stations: '1 Station',
+  },
+  {
+    id: 'professional',
+    name: 'Professional',
+    monthlyFee: '₱6,000',
+    liters: '2,000 L',
+    refillFrequency: '3–4/week',
+    inclusions: [],
+    employees: '20 – 40',
+    stations: '1 Station',
+    isRecommended: true,
+  },
 ];
 
 const commercialPlans: Plan[] = [
@@ -951,7 +972,7 @@ export default function PlansPage() {
                     defaultPlanId = 'household-family';
                     break;
                 case 'sme':
-                    plansToRender = [smePlans.find(p => p.id === 'micro')!, customSmeCommercialPlan];
+                    plansToRender = [smePlans.find(p => p.id === 'micro')!, smePlans.find(p => p.id === 'starter')!, customSmeCommercialPlan];
                     defaultPlanId = 'micro';
                     break;
                 default:
