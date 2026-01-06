@@ -1042,8 +1042,9 @@ export default function MyTeamPage() {
             </div>
           </div>
         </Card>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base"><QrCode/> QR Campaign</CardTitle>
@@ -1054,13 +1055,26 @@ export default function MyTeamPage() {
                     <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
                 </CardContent>
             </Card>
-             <Dialog>
+            <Dialog>
                 <DialogTrigger asChild>
-                    <Card className="cursor-pointer hover:border-primary transition-colors">
+                    <Card className="cursor-pointer hover:border-primary transition-colors flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base"><Trophy/> Team Goals</CardTitle>
                             <CardDescription>Click to view current team incentives and bonuses.</CardDescription>
                         </CardHeader>
+                        <CardContent className="flex-1 space-y-4">
+                            <div className="flex items-center gap-2 text-sm">
+                                <Star className="h-4 w-4 text-yellow-400" />
+                                <p><span className="font-semibold">Corporate Closer Bonus:</span> Earn up to {currencyFormatter.format(15000)}.</p>
+                            </div>
+                             <div className="flex items-center gap-2 text-sm">
+                                <Award className="h-4 w-4 text-violet-500" />
+                                <p><span className="font-semibold">Quarterly Growth Bonus:</span> Achieve sales milestones for big rewards.</p>
+                            </div>
+                        </CardContent>
+                         <CardFooter>
+                            <p className="text-xs text-muted-foreground">Bonuses are calculated and paid monthly.</p>
+                        </CardFooter>
                     </Card>
                 </DialogTrigger>
                 <TeamGoalsDialog />
@@ -1082,7 +1096,6 @@ export default function MyTeamPage() {
                 </Link>
             </Card>
         </div>
-      </div>
 
 
       <Card>
