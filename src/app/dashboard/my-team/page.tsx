@@ -10,7 +10,7 @@ import { useCommissions } from '@/hooks/use-commissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TFooter } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2, Loader, Calendar, File, Percent } from 'lucide-react';
+import { Loader2, Users, Trophy, Award, FileSignature, Target, CircleDollarSign, BarChart3, ArrowUp, ArrowDown, CalendarDays, BarChart as BarChartIcon, Phone, Mail, Eye, Search, Star, QrCode, Download, BookCopy, FileText, Check, X, Send, PlusCircle, Trash2, Loader, Calendar, File, Percent, MoreVertical } from 'lucide-react';
 import type { UserProfile, Proposal, Client, Commission } from '@/lib/definitions';
 import { WithId } from '@/firebase';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, isWithinInterval, differenceInMonths, addMonths } from 'date-fns';
@@ -40,6 +40,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 
 const proposalStatusStyles: { [key: string]: string } = {
@@ -577,28 +578,43 @@ function QrCodeDialog({ managerId }: { managerId: string; }) {
                                 <div className="space-y-4">
                                 {campaigns.map((campaign) => (
                                     <Card key={campaign.id}>
-                                        <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
-                                            <div className="p-2 bg-white rounded-md border">
-                                                <Image src={campaign.qrUrl} width={100} height={100} alt={`QR Code for ${campaign.name}`} />
-                                            </div>
-                                            <div className="flex-1 space-y-2">
-                                                <h4 className="font-semibold">{campaign.name}</h4>
-                                                <div className="flex gap-2">
-                                                    <Input value={campaign.url} readOnly className="h-8 text-xs" />
-                                                    <Button size="sm" onClick={() => handleCopy(campaign.url)}>Copy</Button>
+                                        <CardHeader className="flex flex-row items-start justify-between p-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2 bg-white rounded-md border flex-shrink-0">
+                                                    <Image src={campaign.qrUrl} width={80} height={80} alt={`QR Code for ${campaign.name}`} />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="font-semibold text-base">{campaign.name}</h4>
+                                                    <p className="text-xs text-muted-foreground">Created: {format(new Date(campaign.createdAt), 'PPP')}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-2">
-                                                <Button size="sm" variant="outline" onClick={() => handleDownload(campaign.qrUrl, campaign.name)}>
-                                                    <Download className="mr-2 h-4 w-4"/>
-                                                    Download
-                                                </Button>
-                                                 <Button size="sm" variant="destructive" onClick={() => handleDelete(campaign.id)}>
-                                                    <Trash2 className="mr-2 h-4 w-4"/>
-                                                    Delete
-                                                </Button>
+                                             <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleDownload(campaign.qrUrl, campaign.name)}>
+                                                        <Download className="mr-2 h-4 w-4"/>
+                                                        Download
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleCopy(campaign.url)}>
+                                                        <QrCode className="mr-2 h-4 w-4"/>
+                                                        Copy Link
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDelete(campaign.id)} className="text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </CardHeader>
+                                        <CardFooter className="p-4 pt-0">
+                                            <div className="flex w-full gap-2 items-center text-xs text-muted-foreground bg-muted p-2 rounded-md">
+                                                <Input value={campaign.url} readOnly className="h-7 text-xs bg-transparent border-0 ring-0 focus-visible:ring-0" />
                                             </div>
-                                        </CardContent>
+                                        </CardFooter>
                                     </Card>
                                 ))}
                                 </div>
@@ -1044,60 +1060,58 @@ export default function MyTeamPage() {
         </Card>
       </div>
 
-       <div className="w-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base"><QrCode/> QR Campaign</CardTitle>
-                        <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-sm space-y-2 text-muted-foreground">
-                        <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
-                        <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
-                    </CardContent>
-                </Card>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Card className="cursor-pointer hover:border-primary transition-colors flex flex-col">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-base"><Trophy/> Team Goals</CardTitle>
-                                <CardDescription>Click to view current team incentives and bonuses.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-1 space-y-4">
-                                <div className="flex items-center gap-2 text-sm">
-                                    <Star className="h-4 w-4 text-yellow-400" />
-                                    <p><span className="font-semibold">Corporate Closer Bonus:</span> Earn up to {currencyFormatter.format(15000)}.</p>
-                                </div>
-                                 <div className="flex items-center gap-2 text-sm">
-                                    <Award className="h-4 w-4 text-violet-500" />
-                                    <p><span className="font-semibold">Quarterly Growth Bonus:</span> Achieve sales milestones for big rewards.</p>
-                                </div>
-                            </CardContent>
-                             <CardFooter>
-                                <p className="text-xs text-muted-foreground">Bonuses are calculated and paid monthly.</p>
-                            </CardFooter>
-                        </Card>
-                    </DialogTrigger>
-                    <TeamGoalsDialog />
-                </Dialog>
-                <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
-                    <Link href="/dashboard/materials">
-                        <div className="relative aspect-video w-full">
-                            <Image
-                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
-                                alt="Sales Materials Preview"
-                                fill
-                                className="object-cover"
-                            />
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base"><QrCode/> QR Campaign</CardTitle>
+                  <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm space-y-2 text-muted-foreground">
+                  <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
+                  <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
+              </CardContent>
+          </Card>
+          <Dialog>
+              <DialogTrigger asChild>
+                  <Card className="cursor-pointer hover:border-primary transition-colors flex flex-col">
+                      <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-base"><Trophy/> Team Goals</CardTitle>
+                          <CardDescription>Click to view current team incentives and bonuses.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-1 space-y-4">
+                        <div className="flex items-center gap-2 text-sm">
+                            <Star className="h-4 w-4 text-yellow-400" />
+                            <p><span className="font-semibold">Corporate Closer Bonus:</span> Earn up to {currencyFormatter.format(15000)}.</p>
                         </div>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base"><BookCopy/> Sales Materials</CardTitle>
-                            <CardDescription>Your toolkit for success.</CardDescription>
-                        </CardHeader>
-                    </Link>
-                </Card>
-            </div>
-        </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Award className="h-4 w-4 text-violet-500" />
+                            <p><span className="font-semibold">Quarterly Growth Bonus:</span> Achieve sales milestones for big rewards.</p>
+                        </div>
+                      </CardContent>
+                        <CardFooter>
+                        <p className="text-xs text-muted-foreground">Bonuses are calculated and paid monthly.</p>
+                      </CardFooter>
+                  </Card>
+              </DialogTrigger>
+              <TeamGoalsDialog />
+          </Dialog>
+          <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
+              <Link href="/dashboard/materials">
+                  <div className="relative aspect-video w-full">
+                      <Image
+                          src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                          alt="Sales Materials Preview"
+                          fill
+                          className="object-cover"
+                      />
+                  </div>
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base"><BookCopy/> Sales Materials</CardTitle>
+                      <CardDescription>Your toolkit for success.</CardDescription>
+                  </CardHeader>
+              </Link>
+          </Card>
+      </div>
 
 
       <Card>
