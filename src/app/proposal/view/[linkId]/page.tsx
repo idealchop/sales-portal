@@ -149,14 +149,12 @@ function SharedProposalContent() {
                                 <FileText className="text-primary"/>
                                 Proposal for {proposalDetails.companyName}
                             </CardTitle>
-                            <CardDescription>
-                                This is a read-only view of the proposal. You can download it as a PDF.
-                            </CardDescription>
+                            {proposalDetails.proposalId && (
+                                <CardDescription>
+                                    Proposal ID: {proposalDetails.proposalId}
+                                </CardDescription>
+                            )}
                         </div>
-                        <Button onClick={handleDownloadPdf} disabled={isDownloading}>
-                            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            Download PDF
-                        </Button>
                     </CardHeader>
                 </Card>
                 <div ref={proposalRef} className="bg-white p-8 rounded-lg shadow-lg">
