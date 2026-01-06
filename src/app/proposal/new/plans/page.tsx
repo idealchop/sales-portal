@@ -606,7 +606,7 @@ function PlansGrid({
 
         const cardContent = (
             <Label 
-                htmlFor={plan.id} 
+                htmlFor={plan.id}
                 className={cn(
                     "cursor-pointer h-full",
                     isDisabled && "cursor-not-allowed opacity-70"
@@ -1068,7 +1068,7 @@ export default function PlansPage() {
                     )}
                 </div>
             </CardContent>
-            <CardFooter>
+             <CardFooter>
                  <p className="text-xs text-muted-foreground text-center w-full">
                     Need high volume water supply? Reach out here: <a href="mailto:business@smartrefill.io" className="font-semibold text-primary hover:underline">business@smartrefill.io</a>
                  </p>
