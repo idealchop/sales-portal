@@ -927,8 +927,8 @@ export default function PlansPage() {
                     defaultPlanId = 'household-family';
                     break;
                 case 'sme':
-                    plansToRender = [customSmeCommercialPlan];
-                    defaultPlanId = 'custom-plan';
+                    plansToRender = [...smePlans, customSmeCommercialPlan];
+                    defaultPlanId = 'professional';
                     break;
                 default:
                     return null;
