@@ -1041,7 +1041,7 @@ export default function PlansPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-6", selectedSize && "lg:grid-cols-[1fr,2fr]")}>
                     <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-2")}>
                         <BusinessSizeSelector 
                             selectedSize={selectedSize} 
@@ -1068,6 +1068,11 @@ export default function PlansPage() {
                     )}
                 </div>
             </CardContent>
+            <CardFooter>
+                 <p className="text-xs text-muted-foreground text-center w-full">
+                    Need high volume water supply? Reach out here: <a href="mailto:business@smartrefill.io" className="font-semibold text-primary hover:underline">business@smartrefill.io</a>
+                 </p>
+            </CardFooter>
         </Card>
 
 
