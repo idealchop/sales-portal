@@ -52,7 +52,7 @@ import Image from 'next/image';
 import { allPlans, deliveryFrequencies, gallonRotationData } from '@/app/proposal/new/plans/page';
 import { PaymentMethods } from '@/components/payment-methods';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
-import type { Client } from '@/lib/definitions';
+import type { Client, UserProfile } from '@/lib/definitions';
 import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, serverTimestamp, addDoc, doc, setDoc, runTransaction, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -60,6 +60,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/comp
 import { Progress } from '@/components/ui/progress';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { addMonths, parseISO } from 'date-fns';
 
 const billingCycles = [
   { value: 'monthly', label: 'Monthly', discount: 0, multiplier: 1 },
@@ -137,7 +138,7 @@ export function PreviewDialog({
     const contractRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
-
+    const [allSalesUsers, setAllSalesUsers] = useState<UserProfile[]>([]);
 
     useEffect(() => {
         if (!isDialogOpen) {
@@ -145,6 +146,16 @@ export function PreviewDialog({
             router.push(`/proposal/new/plans?${params.toString()}`);
         }
     }, [isDialogOpen, router, searchParams]);
+
+    useEffect(() => {
+        if (firestore) {
+            getDocs(collection(firestore, 'sales')).then(snapshot => {
+                const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
+                setAllSalesUsers(users);
+            });
+        }
+    }, [firestore]);
+
 
     const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
         if (!firestore) throw new Error("Firestore not ready.");
@@ -383,57 +394,115 @@ export function PreviewDialog({
         try {
             const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
             
-            let downloadURL = '';
-            if (paymentProofFile) {
-                const storage = getStorage();
-                const filePath = `payment_proofs/${finalClientId}/${finalProposalId}/${paymentProofFile.name}`;
-                const storageRef = ref(storage, filePath);
-                const snapshot = await uploadBytes(storageRef, paymentProofFile);
-                downloadURL = await getDownloadURL(snapshot.ref);
-            }
-            
-            const clientRef = doc(firestore, 'clients', finalClientId);
-            const clientData: any = { id: finalClientId, userId: proposalOwnerId, companyName, contactName, contactEmail, contactPhone, address, clientType: clientType || 'sme' };
-            
-            if (status === 'accepted') {
-                clientData.onboardingToken = onboardingToken;
-                clientData.status = 'active';
-                clientData.paymentStatus = 'Paid';
-                clientData.subscription = { ...finalPlanDetails.plan, dateSigned: new Date().toISOString() };
-            } else {
-                clientData.status = 'pending';
-            }
+            await runTransaction(firestore, async (transaction) => {
+                let downloadURL = '';
+                if (paymentProofFile) {
+                    const storage = getStorage();
+                    const filePath = `payment_proofs/${finalClientId}/${finalProposalId}/${paymentProofFile.name}`;
+                    const storageRef = ref(storage, filePath);
+                    const snapshot = await uploadBytes(storageRef, paymentProofFile);
+                    downloadURL = await getDownloadURL(snapshot.ref);
+                }
+                
+                const clientRef = doc(firestore, 'clients', finalClientId);
+                const clientData: any = { id: finalClientId, userId: proposalOwnerId, companyName, contactName, contactEmail, contactPhone, address, clientType: clientType || 'sme' };
+                
+                const clientDoc = await getDoc(clientRef);
+                if (!clientDoc.exists()) {
+                    clientData.createdAt = serverTimestamp();
+                }
 
-            const clientDoc = await getDoc(clientRef);
-            if (!clientDoc.exists()) {
-                clientData.createdAt = serverTimestamp();
-                await setDoc(clientRef, clientData);
-            } else {
-                await updateDoc(clientRef, clientData);
-            }
-            
-            const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData, proposalId: finalProposalId, clientId: finalClientId };
-            const amountToSave = finalPlanDetails.isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
-            
-            const proposalRef = doc(firestore, 'proposals', finalProposalId);
-            const nestedProposalRef = doc(firestore, `clients/${finalClientId}/proposals`, finalProposalId);
-            const newProposalData: any = {
-                id: finalProposalId, clientId: finalClientId, userId: proposalOwnerId, title: proposalContentToSave.summaryTitle,
-                content: JSON.stringify(proposalContentToSave), status, amount: amountToSave, updatedAt: serverTimestamp()
-            };
+                if (status === 'accepted') {
+                    clientData.onboardingToken = onboardingToken;
+                    clientData.status = 'active';
+                    clientData.paymentStatus = 'Paid';
+                    clientData.subscription = { ...finalPlanDetails.plan, dateSigned: new Date().toISOString() };
+                } else {
+                    if (!clientDoc.exists()) clientData.status = 'pending';
+                }
+                transaction.set(clientRef, clientData, { merge: true });
+                
+                const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData, proposalId: finalProposalId, clientId: finalClientId };
+                const amountToSave = finalPlanDetails.isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
+                
+                const proposalRef = doc(firestore, 'proposals', finalProposalId);
+                const nestedProposalRef = doc(firestore, `clients/${finalClientId}/proposals`, finalProposalId);
+                const newProposalData: any = {
+                    id: finalProposalId, clientId: finalClientId, userId: proposalOwnerId, title: proposalContentToSave.summaryTitle,
+                    content: JSON.stringify(proposalContentToSave), status, amount: amountToSave, updatedAt: serverTimestamp()
+                };
 
-            if (campaignName) newProposalData.sourceLocation = campaignName;
-            if(downloadURL) newProposalData.paymentProofUrl = downloadURL;
-            
-            const proposalDoc = await getDoc(proposalRef);
-            if (!proposalDoc.exists()) newProposalData.createdAt = serverTimestamp();
+                if (campaignName) newProposalData.sourceLocation = campaignName;
+                if(downloadURL) newProposalData.paymentProofUrl = downloadURL;
+                
+                const proposalDoc = await getDoc(proposalRef);
+                if (!proposalDoc.exists()) newProposalData.createdAt = serverTimestamp();
 
-            await setDoc(proposalRef, newProposalData, { merge: true });
-            await setDoc(nestedProposalRef, newProposalData, { merge: true });
+                transaction.set(proposalRef, newProposalData, { merge: true });
+                transaction.set(nestedProposalRef, newProposalData, { merge: true });
 
+                if (status === 'accepted') {
+                    const proposalCreator = allSalesUsers.find(u => u.id === proposalOwnerId);
+                    const teamManager = (proposalCreator?.role === 'sales' && proposalCreator.team)
+                        ? allSalesUsers.find(u => u.role === 'manager' && `${u.location} (${u.displayName})` === proposalCreator.team)
+                        : null;
+                    const isQrCampaign = !!campaignName;
+
+                    const commissionRates: { [key: string]: number } = { household: 0.12, sme: 0.12, commercial: 0.10, corporate: 0.10, enterprise: 0.08 };
+                    const recurringCommissionRates: { [key: string]: number } = { household: 0, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.03 };
+                    const managerOverrideRates: { [key: string]: number } = { household: 0.02, sme: 0.03, commercial: 0.03, corporate: 0.03, enterprise: 0.02 };
+                    
+                    const rate = (finalPlanDetails.clientType && commissionRates[finalPlanDetails.clientType]) || 0;
+                    const commissionAmount = amountToSave * rate;
+                    
+                    if (commissionAmount > 0) {
+                        const commissionRecipientId = proposalOwnerId;
+                        const execCommissionRef = doc(collection(firestore, 'commissions'));
+                        transaction.set(execCommissionRef, {
+                            userId: commissionRecipientId, proposalId: finalProposalId, amount: commissionAmount,
+                            createdAt: serverTimestamp(), status: 'pending', type: 'commission',
+                            description: `Commission for ${finalPlanDetails.summaryTitle}` + (isQrCampaign ? ' (QR Campaign)' : ''),
+                            clientName: companyName, referenceId: finalProposalId
+                        });
+                    }
+
+                    if (finalPlanDetails.clientType && recurringCommissionRates[finalPlanDetails.clientType] > 0) {
+                        const isRecurringEligible = (proposalCreator?.role === 'sales' && !isQrCampaign) || (proposalCreator?.role === 'manager' && isQrCampaign);
+                        if (isRecurringEligible) {
+                            const recurringRate = recurringCommissionRates[finalPlanDetails.clientType];
+                            const recurringAmount = amountToSave * recurringRate;
+                            const startDate = new Date();
+                            for (let i = 0; i < 12; i++) {
+                                const commissionDate = addMonths(startDate, i);
+                                const recurringCommissionRef = doc(collection(firestore, 'commissions'));
+                                transaction.set(recurringCommissionRef, {
+                                    userId: proposalOwnerId, proposalId: finalProposalId, amount: recurringAmount,
+                                    createdAt: commissionDate, status: 'pending', type: 'commission',
+                                    description: `Recurring (${i + 1}/12)` + (isQrCampaign ? ' (QR Campaign)' : ''),
+                                    clientName: companyName, referenceId: `recurring-${finalProposalId}-${i}`
+                                });
+                            }
+                        }
+                    }
+
+                    if (proposalCreator && proposalCreator.role === 'sales' && teamManager && !isQrCampaign) {
+                        const overrideRate = (finalPlanDetails.clientType && managerOverrideRates[finalPlanDetails.clientType]) || 0;
+                        const overrideAmount = amountToSave * overrideRate;
+                        if (overrideAmount > 0) {
+                            const managerCommissionRef = doc(collection(firestore, 'commissions'));
+                            transaction.set(managerCommissionRef, {
+                                userId: teamManager.id, proposalId: finalProposalId, amount: overrideAmount,
+                                createdAt: serverTimestamp(), status: 'pending', type: 'commission',
+                                description: `Manager Override for ${proposalCreator.displayName}'s sale`,
+                                clientName: companyName, referenceId: `override-${finalProposalId}`
+                            });
+                        }
+                    }
+                }
+            });
             if (status === 'accepted') {
                 toast({ title: "Subscription Successful!", description: `Proposal for ${companyName} has been processed.` });
-                router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${finalProposalId}&token=${onboardingToken}`);
+                router.push(`/onboarding/status?client_id=${finalPlanDetails.clientId}&proposal_id=${finalPlanDetails.proposalId}&token=${onboardingToken}`);
             } else {
                 toast({ title: "Draft Saved!", description: "Your proposal draft has been saved." });
             }
@@ -445,7 +514,7 @@ export function PreviewDialog({
         } finally {
             setIsSaving(false);
         }
-    }, [finalPlanDetails, firestore, toast, paymentProofFile, managerId, user, existingClientId, campaignName, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, ensureClientAndProposalIdsAreGenerated, router]);
+    }, [finalPlanDetails, firestore, toast, paymentProofFile, managerId, user, existingClientId, campaignName, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, ensureClientAndProposalIdsAreGenerated, router, allSalesUsers]);
   
     const handleSaveDraft = () => saveProposal('draft');
     
