@@ -696,7 +696,7 @@ export default function MyTeamPage() {
     const winRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
     const winRateLastMonth = sentLastMonth.length > 0 ? (acceptedLastMonth.length / sentLastMonth.length) * 100 : 0;
     const teamWinRateThisMonth = sentThisMonth.length > 0 ? (acceptedThisMonth.length / sentThisMonth.length) * 100 : 0;
-    const winRateChange = winRateLastMonth > 0 ? ((teamWinRateThisMonth - winRateLastMonth) / winRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
+    const winRateChange = winRateLastMonth > 0 ? ((teamWinRateThisMonth - winRateLastMonth) / teamWinRateLastMonth) * 100 : teamWinRateThisMonth > 0 ? 100 : 0;
     
     const revenueThisMonth = acceptedThisMonth.reduce((sum, p) => sum + p.amount, 0);
     const revenueLastMonth = acceptedLastMonth.reduce((sum, p) => sum + p.amount, 0);
@@ -1019,32 +1019,34 @@ export default function MyTeamPage() {
                         </div>
                     </CardContent>
                 </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><QrCode/> QR Campaign Commissions</CardTitle>
-                        <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-sm space-y-2 text-muted-foreground">
-                        <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
-                        <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
-                    </CardContent>
-                </Card>
-                <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
-                  <Link href="/dashboard/materials">
-                      <div className="relative aspect-video w-full">
-                        <Image
-                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
-                            alt="Sales Materials Preview"
-                            fill
-                            className="object-cover"
-                          />
-                      </div>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><BookCopy/> Sales Materials</CardTitle>
-                        <CardDescription>Your toolkit for success. Find presentations, brochures, and other assets.</CardDescription>
-                      </CardHeader>
-                  </Link>
-                </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><QrCode/> QR Campaign Commissions</CardTitle>
+                            <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="text-sm space-y-2 text-muted-foreground">
+                            <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
+                            <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                    <Link href="/dashboard/materials">
+                        <div className="relative aspect-video w-full">
+                            <Image
+                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                                alt="Sales Materials Preview"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><BookCopy/> Sales Materials</CardTitle>
+                            <CardDescription>Your toolkit for success. Find presentations, brochures, and other assets.</CardDescription>
+                        </CardHeader>
+                    </Link>
+                    </Card>
+                </div>
             </div>
             <div className="lg:col-span-1 flex flex-col gap-6">
                  <Dialog>
