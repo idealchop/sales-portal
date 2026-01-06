@@ -856,22 +856,19 @@ function ContractPageContent() {
               }
 
               const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-              const expiresAt = new Date();
-              expiresAt.setHours(expiresAt.getHours() + 24);
-
+              
               await setDoc(shareableLinkRef, {
                   id: shareableLinkRef.id,
                   proposalId: finalProposalId,
                   clientId: finalClientId,
                   userId: user.uid,
-                  expiresAt: expiresAt.toISOString(),
                   createdAt: serverTimestamp()
               });
 
               const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
               try {
                   await navigator.clipboard.writeText(shareUrl);
-                  toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+                  toast({ title: 'Share Link Copied!', description: 'A permanent shareable link has been copied.' });
               } catch (err) {
                    toast({ 
                       title: 'Share Link Generated!', 
@@ -1258,3 +1255,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    

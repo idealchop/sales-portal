@@ -434,6 +434,55 @@ function ContractPageContent() {
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [isSharing, setIsSharing] = useState(false);
 
+  const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
+    if (!firestore) throw new Error("Firestore not ready.");
+
+    let finalClientId = generatedClientId;
+    let finalProposalId = generatedProposalId;
+
+    if (!finalClientId && !existingClientId) {
+      try {
+        const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
+        const newClientNumber = await runTransaction(firestore, async (transaction) => {
+            const counterSnap = await transaction.get(clientCounterRef);
+            const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
+            const newId = currentId + 1;
+            transaction.set(clientCounterRef, { currentId: newId }, { merge: true });
+            return newId;
+        });
+        const year = new Date().getFullYear().toString().slice(-2);
+        finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
+        setGeneratedClientId(finalClientId);
+      } catch (e) {
+          console.error("Error generating Client ID:", e);
+          toast({ variant: 'destructive', title: "ID Generation Failed", description: "Could not generate a unique ID for the client." });
+          throw e;
+      }
+    } else {
+        finalClientId = finalClientId || existingClientId;
+    }
+    
+    if (!finalProposalId) {
+        try {
+            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
+            const newProposalNumber = await runTransaction(firestore, async (transaction) => {
+                const counterSnap = await transaction.get(proposalCounterRef);
+                const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
+                const newId = currentId + 1;
+                transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
+                return newId;
+            });
+            finalProposalId = String(newProposalNumber).padStart(10, '0');
+            setGeneratedProposalId(finalProposalId);
+        } catch (e) {
+            console.error("Error generating Proposal ID:", e);
+            toast({ variant: 'destructive', title: "ID Generation Failed", description: "Could not generate a unique ID for the proposal." });
+            throw e;
+        }
+    }
+    return { clientId: finalClientId, proposalId: finalProposalId };
+  }, [firestore, generatedClientId, generatedProposalId, existingClientId, toast]);
+  
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
     if (liters <= 6000) return '2-3 Stations';
@@ -521,55 +570,6 @@ function ContractPageContent() {
         stations: clientType === 'household' ? getStations(finalLiters) : plan.stations,
     }
   }, [plan, clientType]);
-
-  const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
-    if (!firestore) throw new Error("Firestore not ready.");
-
-    let finalClientId = generatedClientId;
-    let finalProposalId = generatedProposalId;
-
-    if (!finalClientId && !existingClientId) {
-      try {
-        const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
-        const newClientNumber = await runTransaction(firestore, async (transaction) => {
-            const counterSnap = await transaction.get(clientCounterRef);
-            const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
-            const newId = currentId + 1;
-            transaction.set(clientCounterRef, { currentId: newId }, { merge: true });
-            return newId;
-        });
-        const year = new Date().getFullYear().toString().slice(-2);
-        finalClientId = `SC${year}${String(newClientNumber).padStart(8, '0')}`;
-        setGeneratedClientId(finalClientId);
-      } catch (e) {
-          console.error("Error generating Client ID:", e);
-          toast({ variant: 'destructive', title: "ID Generation Failed", description: "Could not generate a unique ID for the client." });
-          throw e;
-      }
-    } else {
-        finalClientId = finalClientId || existingClientId;
-    }
-    
-    if (!finalProposalId) {
-        try {
-            const proposalCounterRef = doc(firestore, 'counters', 'proposalCounter');
-            const newProposalNumber = await runTransaction(firestore, async (transaction) => {
-                const counterSnap = await transaction.get(proposalCounterRef);
-                const currentId = counterSnap.exists() ? counterSnap.data().currentId : 0;
-                const newId = currentId + 1;
-                transaction.set(proposalCounterRef, { currentId: newId }, { merge: true });
-                return newId;
-            });
-            finalProposalId = String(newProposalNumber).padStart(10, '0');
-            setGeneratedProposalId(finalProposalId);
-        } catch (e) {
-            console.error("Error generating Proposal ID:", e);
-            toast({ variant: 'destructive', title: "ID Generation Failed", description: "Could not generate a unique ID for the proposal." });
-            throw e;
-        }
-    }
-    return { clientId: finalClientId, proposalId: finalProposalId };
-  }, [firestore, generatedClientId, generatedProposalId, existingClientId, toast]);
   
   const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
     if (!plan || !finalPlan) return null;
@@ -820,22 +820,19 @@ function ContractPageContent() {
               }
 
               const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-              const expiresAt = new Date();
-              expiresAt.setHours(expiresAt.getHours() + 24);
 
               await setDoc(shareableLinkRef, {
                   id: shareableLinkRef.id,
                   proposalId: finalProposalId,
                   clientId: finalClientId,
                   userId: user.uid,
-                  expiresAt: expiresAt.toISOString(),
                   createdAt: serverTimestamp()
               });
 
               const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
               try {
                   await navigator.clipboard.writeText(shareUrl);
-                  toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+                  toast({ title: 'Share Link Copied!', description: 'A permanent shareable link has been copied.' });
               } catch (err) {
                    toast({ 
                       title: 'Share Link Generated!', 
@@ -1222,3 +1219,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    

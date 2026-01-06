@@ -425,7 +425,7 @@
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "ShareableLink",
         "type": "object",
-        "description": "Represents a unique, expiring link for sharing proposals.",
+        "description": "Represents a unique link for sharing proposals.",
         "properties": {
             "id": {
                 "type": "string",
@@ -443,18 +443,13 @@
                 "type": "string",
                 "description": "The ID of the user who created the link."
             },
-            "expiresAt": {
-                "type": "string",
-                "format": "date-time",
-                "description": "The timestamp when this link will expire."
-            },
             "createdAt": {
                 "type": "string",
                 "format": "date-time",
                 "description": "The timestamp when this link was created."
             }
         },
-        "required": ["id", "proposalId", "clientId", "userId", "expiresAt", "createdAt"]
+        "required": ["id", "proposalId", "clientId", "userId", "createdAt"]
     }
   },
   "auth": {
@@ -513,3 +508,5 @@
     }
   }
 }
+
+    
