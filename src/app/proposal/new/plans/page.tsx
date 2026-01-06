@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -433,14 +432,7 @@ function CustomPlanCalculator({
                         </SelectContent>
                     </Select>
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="dispensers" className="text-sm font-medium text-primary-foreground/80">Dispensers</Label>
-                    <Input id="dispensers" type="number" value={dispensers} onChange={(e) => setDispensers(Number(e.target.value))} className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="containers" className="text-sm font-medium text-primary-foreground/80">Rotation Containers</Label>
-                    <Input id="containers" type="number" value={containers} onChange={(e) => setContainers(Number(e.target.value))} className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
-                </div>
+
                 {allowPriceEdit && (
                      <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="price-per-liter" className="text-sm font-medium text-primary-foreground/80">Price per Liter (₱)</Label>
@@ -1183,9 +1175,9 @@ export default function PlansPage() {
               <Card>
               <CardHeader>
                   <CardTitle>Included in Every Plan</CardTitle>
-                  <CardDescription>
-                      Every subscription plan includes full access to our growing network of partner perks.
-                  </CardDescription>
+                     <CardDescription>
+                        Every subscription plan includes full access to our growing network of partner perks.
+                    </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-6 sm:grid-cols-2">
                   {inclusions.map((item) => (
@@ -1206,7 +1198,7 @@ export default function PlansPage() {
               <CardHeader>
                   <CardTitle>Partner Perks</CardTitle>
                   <CardDescription>
-                  Every premium plan includes access to our growing network of partner benefits.
+                  Enhance your subscription with exclusive benefits from our partners, included with every plan.
                   </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-8 sm:grid-cols-2">
