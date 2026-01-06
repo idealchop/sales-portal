@@ -47,21 +47,14 @@ service cloud.firestore {
     }
     
     match /shareable_links/{linkId} {
-      allow get: if true; // Public read to verify the link
+      allow get: if true; // Publicly readable
       allow create: if isSignedIn(); // Only authenticated users can create links
       allow list, update, delete: if false; // Links are immutable from the client
     }
     
     match /proposals/{proposalId} {
-        // Authenticated users can perform any action on proposals they own or if they are admin/manager.
         allow read, list, create, update: if isSignedIn();
         allow delete: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
-        
-        // Public read access for a specific proposal if a valid, unexpired shareable link exists for it.
-        allow get: if exists( /databases/$(database)/documents/shareable_links,
-          resource.where("proposalId", "==", proposalId)
-                  .where("expiresAt", ">", request.time)
-        );
     }
 
     match /commissions/{commissionId} {
@@ -71,13 +64,7 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      // Authenticated users can read client data.
-      // Public users can read client data if a valid shareable link exists for a proposal associated with this client.
-      allow read: if isSignedIn() || 
-        exists( /databases/$(database)/documents/shareable_links,
-          resource.where("clientId", "==", clientId)
-                  .where("expiresAt", ">", request.time)
-        );
+      allow read: if isSignedIn();
       allow list: if isSignedIn();
       allow create;
       allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin() || isManager());
@@ -87,7 +74,6 @@ service cloud.firestore {
         allow read, create: if isSignedIn();
       }
       
-      // Legacy path for proposals, can be removed after migration is complete.
       match /proposals/{proposalId} {
         allow read, write: if isSignedIn();
       }
@@ -98,3 +84,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

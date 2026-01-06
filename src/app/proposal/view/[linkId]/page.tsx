@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, getDoc, FirestoreError } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, AlertTriangle, FileText, Download } from 'lucide-react';
@@ -45,18 +44,9 @@ function SharedProposalContent() {
                  }
 
                  const linkData = linkDocSnap.data();
-
                 
-                const proposalDocRef = doc(firestore, `clients/${linkData.clientId}/proposals`, linkData.proposalId);
-                const proposalDocSnap = await getDoc(proposalDocRef);
-                
-                if (!proposalDocSnap.exists()) {
-                    throw new Error("The associated proposal could not be found.");
-                }
-                
-                const proposalData = proposalDocSnap.data();
-                if (proposalData.content) {
-                    const finalDetails = JSON.parse(proposalData.content) as FinalPlanDetails;
+                if (linkData.content) {
+                    const finalDetails = JSON.parse(linkData.content) as FinalPlanDetails;
                     setProposalDetails(finalDetails);
                 } else {
                     throw new Error("Proposal content is missing or invalid.");

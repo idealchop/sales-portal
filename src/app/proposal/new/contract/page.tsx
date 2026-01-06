@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -163,13 +162,13 @@ function GenerateProposalDialog({ open, onOpenChange, finalPlanDetails, children
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
-                    <DialogTitle>Generate & Share Proposal</DialogTitle>
+                    <DialogTitle>Generate &amp; Share Proposal</DialogTitle>
                     <DialogDescription>Review the final sales illustration. You can share a secure link with your client or download it as a PDF.</DialogDescription>
                 </DialogHeader>
                 <div className="mt-6">
                     <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
                         <div ref={hiddenProposalRef} className="bg-white p-8" id="pdf-content-preview">
-                           {finalPlanDetails && (
+                           {finalPlanDetails &amp;&amp; (
                                 <ContractDetails
                                     finalPlanDetails={finalPlanDetails}
                                     isSigned={false}
@@ -256,7 +255,7 @@ function PreviewDialog({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] || null;
         setPaymentProofFile(file);
-        if (file && file.type.startsWith("image/")) {
+        if (file &amp;&amp; file.type.startsWith("image/")) {
             setPaymentProofPreview(URL.createObjectURL(file));
         } else {
             setPaymentProofPreview(null);
@@ -267,11 +266,11 @@ function PreviewDialog({
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
              <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
-                    <DialogTitle>Proposal Preview & Finalization</DialogTitle>
+                    <DialogTitle>Proposal Preview &amp; Finalization</DialogTitle>
                     <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
-                    {finalPlanDetails && (
+                    {finalPlanDetails &amp;&amp; (
                         <div ref={contractRef} className="space-y-6">
                             <ContractDetails
                                 finalPlanDetails={finalPlanDetails}
@@ -298,8 +297,8 @@ function PreviewDialog({
                                             onChange={handleFileChange} 
                                             accept="image/png, image/jpeg, application/pdf"
                                         />
-                                        {isSaving && <Progress value={isSaving ? 50 : 0} className="w-full h-2 mt-2" />}
-                                        {paymentProofFile && (
+                                        {isSaving &amp;&amp; <Progress value={isSaving ? 50 : 0} className="w-full h-2 mt-2" />}
+                                        {paymentProofFile &amp;&amp; (
                                             <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md border">
                                                 <div className="flex items-center gap-2 overflow-hidden">
                                                     {paymentProofPreview ? (
@@ -311,7 +310,7 @@ function PreviewDialog({
                                                     )}
                                                     <span className="truncate">{paymentProofFile.name}</span>
                                                 </div>
-                                                {paymentProofPreview && (
+                                                {paymentProofPreview &amp;&amp; (
                                                     <Dialog>
                                                         <DialogTrigger asChild>
                                                             <Button variant="ghost" size="sm"><Eye className="mr-2 h-4 w-4"/> View</Button>
@@ -357,7 +356,7 @@ function PreviewDialog({
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleFinalize} disabled={isSaving}>
                                     {isSaving ? (
-                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
+                                        <>&lt;Loader2 className=&quot;mr-2 h-4 w-4 animate-spin&quot; /> Submitting...</>
                                     ) : (
                                         'Yes, Subscribe Now'
                                     )}
@@ -381,7 +380,7 @@ function TimelineItem({ icon, title, description, isLast = false }: { icon: Reac
                 <h4 className="font-semibold text-sm">{title}</h4>
                 <p className="text-xs text-muted-foreground mt-1 px-2">{description}</p>
             </div>
-            {!isLast && (
+            {!isLast &amp;&amp; (
                 <div className="absolute top-5 left-1/2 w-full -translate-x-1/2">
                     <div className="w-full border-t-2 border-dashed border-border -z-10 absolute top-0 left-full"></div>
                 </div>
@@ -440,7 +439,7 @@ function ContractPageContent() {
     let finalClientId = generatedClientId;
     let finalProposalId = generatedProposalId;
 
-    if (!finalClientId && !existingClientId) {
+    if (!finalClientId &amp;&amp; !existingClientId) {
       try {
         const clientCounterRef = doc(firestore, 'counters', 'clientCounter');
         const newClientNumber = await runTransaction(firestore, async (transaction) => {
@@ -484,21 +483,21 @@ function ContractPageContent() {
   }, [firestore, generatedClientId, generatedProposalId, existingClientId, toast]);
   
   const getStations = (liters: number) => {
-    if (liters <= 2000) return '1 Station';
-    if (liters <= 6000) return '2-3 Stations';
-    if (liters <= 25000) return '3-4 Stations';
+    if (liters &lt;= 2000) return '1 Station';
+    if (liters &lt;= 6000) return '2-3 Stations';
+    if (liters &lt;= 25000) return '3-4 Stations';
     return '5+ Stations';
   }
 
   const getEmployees = (liters: number, isHousehold: boolean) => {
     if (isHousehold) {
         const estimatedPeople = Math.round(liters / (2 * 30)); // Assuming 2L per person per day
-        if (estimatedPeople <= 3) return '1-3 Persons';
-        if (estimatedPeople <= 5) return '3-5 Persons';
+        if (estimatedPeople &lt;= 3) return '1-3 Persons';
+        if (estimatedPeople &lt;= 5) return '3-5 Persons';
         return '5+ Persons';
     }
     const estimatedEmployees = Math.round(liters / (2 * 22));
-    if (estimatedEmployees < 5) return '&lt; 5';
+    if (estimatedEmployees &lt; 5) return '&amp;lt; 5';
     if (estimatedEmployees > 500) return '500+';
     return `~${Math.round(estimatedEmployees / 10) * 10}`;
   };
@@ -507,7 +506,7 @@ function ContractPageContent() {
     let basePlan = allPlans.find(p => p.id === planId);
     if (!basePlan) return null;
 
-    if (planId === 'custom-plan' && customType) {
+    if (planId === 'custom-plan' &amp;&amp; customType) {
         let typeName = '';
         if (customType === 'sme') {
             typeName = 'SME';
@@ -525,7 +524,7 @@ function ContractPageContent() {
         };
     }
 
-    if (customLiters && customCost) {
+    if (customLiters &amp;&amp; customCost) {
         const litersNum = parseInt(customLiters);
         basePlan = {
             ...basePlan,
@@ -560,7 +559,7 @@ function ContractPageContent() {
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const finalLiters = baseLiters + freeLiters;
-    const planInclusions = plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : [];
+    const planInclusions = plan.inclusions &amp;&amp; plan.inclusions.length > 0 ? [plan.inclusions[0]] : [];
 
     return {
         ...plan,
@@ -600,7 +599,7 @@ function ContractPageContent() {
 
     const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
 
-    const pricePerLiter = (customCost && customLiters) ? parseFloat(customCost) / parseInt(customLiters) : 0;
+    const pricePerLiter = (customCost &amp;&amp; customLiters) ? parseFloat(customCost) / parseInt(customLiters) : 0;
 
     return {
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -657,7 +656,7 @@ function ContractPageContent() {
     const isSubscribing = status === 'accepted';
     const isCustomPlan = finalPlanDetails.plan.id === 'custom-plan';
 
-    if (isSubscribing && !isCustomPlan && !paymentProofFile) {
+    if (isSubscribing &amp;&amp; !isCustomPlan &amp;&amp; !paymentProofFile) {
         toast({
             variant: "destructive",
             title: "Payment Proof Required",
@@ -681,6 +680,7 @@ function ContractPageContent() {
   
     try {
         const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
+        
         const isNewClient = !existingClientId;
         
         let downloadURL = '';
@@ -717,7 +717,7 @@ function ContractPageContent() {
         }
 
         const clientDoc = await getDoc(clientRef);
-        if (isNewClient && !clientDoc.exists()) {
+        if (isNewClient &amp;&amp; !clientDoc.exists()) {
             clientData.createdAt = serverTimestamp();
             await setDoc(clientRef, clientData);
         } else {
@@ -755,7 +755,6 @@ function ContractPageContent() {
             newProposalData.createdAt = serverTimestamp();
         }
 
-        // Write to both locations
         await setDoc(topLevelProposalRef, newProposalData, { merge: true });
         await setDoc(nestedProposalRef, newProposalData, { merge: true });
     
@@ -769,7 +768,7 @@ function ContractPageContent() {
         }
         
         if (isSubscribing) {
-            router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${finalProposalId}&token=${onboardingToken}`);
+            router.push(`/onboarding/status?client_id=${finalClientId}&amp;proposal_id=${finalProposalId}&amp;token=${onboardingToken}`);
         }
       
         return true;
@@ -810,25 +809,25 @@ function ContractPageContent() {
                  console.warn("Clipboard write access denied:", err);
               }
 
-              const isSaved = await saveProposal('draft');
-              if (!isSaved) {
-                  throw new Error("Failed to save the proposal draft before proceeding.");
-              }
+              await saveProposal('draft');
               
-              const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
+              const { clientId, proposalId } = await ensureClientAndProposalIdsAreGenerated();
 
-              if (!finalClientId || !finalProposalId) {
+              if (!clientId || !proposalId || !user || !finalPlanDetails) {
                 throw new Error("Missing critical info for sharing link.");
               }
 
               const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
               
+              const proposalContent = { ...finalPlanDetails, signature: signatureData, proposalId: proposalId, clientId: clientId };
+
               await setDoc(shareableLinkRef, {
                   id: shareableLinkRef.id,
-                  proposalId: finalProposalId,
-                  clientId: finalClientId,
-                  userId: managerId || user?.uid,
-                  createdAt: serverTimestamp()
+                  proposalId: proposalId,
+                  clientId: clientId,
+                  userId: managerId || user.uid,
+                  createdAt: serverTimestamp(),
+                  content: JSON.stringify(proposalContent),
               });
 
               const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
@@ -858,7 +857,7 @@ function ContractPageContent() {
               setIsSharing(false);
           }
       }
-  }, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, managerId, firestore, toast]);
+  }, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, managerId, firestore, toast, finalPlanDetails, signatureData]);
 
   
     const handleSaveSignature = (data: string) => {
@@ -940,13 +939,13 @@ function ContractPageContent() {
                 </Button>
             </GenerateProposalDialog>
             <Button onClick={() => handleActionClick('sign')} disabled={isSaving}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSaving &amp;&amp; <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
             </Button>
         </div>
       </div>
 
-       {finalPlanDetails && (
+       {finalPlanDetails &amp;&amp; (
             <PreviewDialog 
                 finalPlanDetails={finalPlanDetails}
                 isSaving={isSaving}
@@ -967,7 +966,7 @@ function ContractPageContent() {
                 <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
                 <CardDescription>
                     A summary of the selected subscription plan details.
-                    {!isFlowPlan && !isCustomPlan && " (Includes +20% free liters every month)"}
+                    {!isFlowPlan &amp;&amp; !isCustomPlan &amp;&amp; " (Includes +20% free liters every month)"}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1007,7 +1006,7 @@ function ContractPageContent() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {isCustomPlan && finalPlanDetails.containers ? `${finalPlanDetails.containers} Gallons` : (rotationInfo && rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic')}
+                                {isCustomPlan &amp;&amp; finalPlanDetails.containers ? `${finalPlanDetails.containers} Gallons` : (rotationInfo &amp;&amp; rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic')}
                             </div>
                         </CardContent>
                     </Card>
@@ -1084,24 +1083,24 @@ function ContractPageContent() {
                                     <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
                                 </TableCell>
                                 <TableCell>
-                                    {addon.type === 'configurable' && (
+                                    {addon.type === 'configurable' &amp;&amp; (
                                         <div className="flex flex-col gap-2">
                                             <Select value={sanitationFeeType} onValueChange={setSanitationFeeType}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectTrigger>&lt;SelectValue /></SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="paid">Paid</SelectItem>
                                                     <SelectItem value="free">Free</SelectItem>
                                                 </SelectContent>
                                             </Select>
-                                            {sanitationFeeType === 'paid' && (
+                                            {sanitationFeeType === 'paid' &amp;&amp; (
                                                 <Input type="number" min="0" value={sanitationFee} onChange={e => setSanitationFee(Number(e.target.value))} placeholder="Fee" />
                                             )}
                                         </div>
                                     )}
-                                    {addon.type === 'custom' && (
+                                    {addon.type === 'custom' &amp;&amp; (
                                         <div className="flex flex-col gap-2">
                                             <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectTrigger>&lt;SelectValue /></SelectTrigger>
                                                 <SelectContent>
                                                     {addon.feeOptions?.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                                                 </SelectContent>
@@ -1132,31 +1131,31 @@ function ContractPageContent() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <div>
-                            <p className="font-semibold">{summaryTitle}{!isFlowPlan && !isCustomPlan && ` (${finalPlanDetails.billingCycleLabel})`}</p>
+                            <p className="font-semibold">{summaryTitle}{!isFlowPlan &amp;&amp; !isCustomPlan &amp;&amp; ` (${finalPlanDetails.billingCycleLabel})`}</p>
                             <p className="text-2xl font-bold">
                               {isFlowPlan ? currencyFormatter.format(50000) : (isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(finalPlanDetails.basePrice))}
                               {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : (!isCustomPlan ? <span className="text-sm font-normal text-muted-foreground"> / mo</span> : '')}
                             </p>
                         </div>
-                        {!isFlowPlan && !isCustomPlan && (
+                        {!isFlowPlan &amp;&amp; !isCustomPlan &amp;&amp; (
                             <ul className="text-xs text-muted-foreground list-disc pl-5">
                                 <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
-                                {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
+                                {finalPlan.inclusions &amp;&amp; finalPlan.inclusions[0] &amp;&amp; <li>{finalPlan.inclusions[0]}</li>}
                                 <li>Refill Frequency: {finalPlan.refillFrequency}</li>
                             </ul>
                         )}
                     </div>
 
-                    {(sanitationFeeType !== 'free' || dispenserQuantity > 0) && (
+                    {(sanitationFeeType !== 'free' || dispenserQuantity > 0) &amp;&amp; (
                         <>
                             <div className="space-y-2">
-                                {sanitationFeeType === 'paid' && (
+                                {sanitationFeeType === 'paid' &amp;&amp; (
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">Monthly Sanitation</span>
                                         <span className="font-medium">{currencyFormatter.format(sanitationFee)}</span>
                                     </div>
                                 )}
-                                {dispenserQuantity > 0 && (
+                                {dispenserQuantity > 0 &amp;&amp; (
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">Add'l Dispensers ({dispenserQuantity}x)</span>
                                         <span className="font-medium">{dispenserFeeType === 'free' ? 'Free' : currencyFormatter.format(dispenserFee * dispenserQuantity)}</span>
@@ -1168,7 +1167,7 @@ function ContractPageContent() {
                         </>
                     )}
                     
-                    {!isCustomPlan && (
+                    {!isCustomPlan &amp;&amp; (
                         <div className='space-y-2'>
                             <Label>Payment Schedule</Label>
                             <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>
@@ -1177,7 +1176,7 @@ function ContractPageContent() {
                                         <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
                                         <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
                                             <span>{cycle.label}</span>
-                                            {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
+                                            {cycle.discount > 0 &amp;&amp; &lt;Badge variant=&quot;success&quot;>-{cycle.discount * 100}%</Badge>}
                                         </Label>
                                     </div>
                                 ))}
@@ -1205,7 +1204,7 @@ function ContractPageContent() {
                   <Link href={prevLink}>Previous</Link>
               </Button>
               <Button onClick={() => handleActionClick('sign')} disabled={isSaving} className="flex-1">
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSaving &amp;&amp; <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Review &amp; Sign
               </Button>
           </div>
@@ -1216,8 +1215,10 @@ function ContractPageContent() {
 
 export default function ContractPage() {
     return (
-        <React.Suspense fallback={<div>Loading...</div>}>
+        <React.Suspense fallback={&lt;div>Loading...</React.Suspense>}
             <ContractPageContent />
         </React.Suspense>
     )
 }
+
+    
