@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Suspense } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 
 const formSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters.'),
@@ -81,6 +82,12 @@ function ProfileSetupContent() {
   const managers = useMemo(() => {
     return salesUsers.filter(u => u.role === 'manager' && u.location);
   }, [salesUsers]);
+  
+  const locations = useMemo(() => {
+    const managerLocations = managers.map(m => m.location).filter((l): l is string => !!l);
+    return Array.from(new Set(managerLocations)).map(loc => ({ label: loc, value: loc }));
+  }, [managers]);
+
 
   useEffect(() => {
     const displayName = searchParams.get('displayName') || user?.displayName;
@@ -412,11 +419,15 @@ function ProfileSetupContent() {
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Location</FormLabel>
-                                                     <FormControl>
-                                                        <div className="relative">
-                                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                            <Input placeholder="e.g., NCR North" {...field} className="pl-10" />
-                                                        </div>
+                                                    <FormControl>
+                                                        <Combobox
+                                                            options={locations}
+                                                            value={field.value}
+                                                            onChange={field.onChange}
+                                                            placeholder="Select or create a location..."
+                                                            searchPlaceholder="Search locations..."
+                                                            noResultsText="No locations found. You can create a new one."
+                                                        />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -454,9 +465,9 @@ function ProfileSetupContent() {
                                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                         <FormControl>
                                                             <SelectTrigger>
-                                                                <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                                <div className="pl-7">
-                                                                    <SelectValue placeholder="Select your team" />
+                                                                <div className="flex items-center gap-2">
+                                                                     <Users className="h-4 w-4 text-muted-foreground" />
+                                                                     <SelectValue placeholder="Select your team" />
                                                                 </div>
                                                             </SelectTrigger>
                                                         </FormControl>
@@ -504,5 +515,3 @@ export default function ProfileSetupPage() {
         </Suspense>
     )
 }
-
-    
