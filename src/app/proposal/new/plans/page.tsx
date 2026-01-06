@@ -687,7 +687,7 @@ function PlansGrid({
                 )}
                 
                 {plan.id === 'custom-plan' && isSelected && (
-                    <CustomPlanCalculator
+                     <CustomPlanCalculator
                         onCalculated={onSmeCommercialCustomCalculated}
                         pricePerLiter={businessSize === 'household' ? 2.5 : 3}
                         title={businessSize === 'household' ? "Customize Family Plan" : "Customize SME/Commercial Plan"}
