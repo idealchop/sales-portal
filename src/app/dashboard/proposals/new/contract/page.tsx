@@ -169,16 +169,12 @@ function GenerateProposalDialog({ open, onOpenChange, finalPlanDetails, children
                 <div className="mt-6">
                     <ScrollArea className="h-[75vh] pr-4 border rounded-lg">
                         <div ref={hiddenProposalRef} className="bg-white p-8" id="pdf-content-preview">
-                            {finalPlanDetails && finalPlanDetails.proposalId ? (
+                            {finalPlanDetails && (
                                 <ContractDetails
                                     finalPlanDetails={finalPlanDetails}
                                     isSigned={false}
                                     isProposalIllustration={true}
                                 />
-                            ) : (
-                            <div className="flex h-full items-center justify-center">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary"/>
-                                </div>
                             )}
                         </div>
                     </ScrollArea>
@@ -275,7 +271,7 @@ function PreviewDialog({
                     <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
-                    {finalPlanDetails && finalPlanDetails.proposalId ? (
+                    {finalPlanDetails && (
                         <div ref={contractRef} className="space-y-6">
                             <ContractDetails
                                 finalPlanDetails={finalPlanDetails}
@@ -335,10 +331,6 @@ function PreviewDialog({
                                     </div>
                                 </CardContent>
                             </Card>
-                        </div>
-                    ) : (
-                        <div className="flex h-full items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary"/>
                         </div>
                     )}
                 </ScrollArea>
@@ -606,7 +598,7 @@ function ContractPageContent() {
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
-
+  
   const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
     if (!firestore) throw new Error("Firestore not ready.");
 
@@ -853,7 +845,6 @@ const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generat
         } else if (action === 'share') {
             setIsSharing(true);
             
-            // Immediately copy a placeholder to avoid focus issues
             navigator.clipboard.writeText("Generating link...").catch(err => {
                 console.warn("Clipboard write failed initially:", err);
             });
