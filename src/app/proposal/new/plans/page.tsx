@@ -313,7 +313,7 @@ const flowPlans: Plan[] = [
 
 const customSmeCommercialPlan: Plan = {
     id: 'custom-plan',
-    name: 'Customize Your Plan',
+    name: 'Usage-Based Plan',
     monthlyFee: 'Custom',
     liters: 'Custom',
     refillFrequency: 'Custom',
@@ -339,26 +339,76 @@ export const deliveryFrequencies = [
 ];
 
 function CustomPlanCalculator({
+    pricePerLiter: initialPricePerLiter = 3,
     onCalculated,
+    title = 'Custom Plan Calculator',
+    description = "Calculate a custom plan based on your client's needs.",
+    minimumCost = 0,
+    isFixedPrice = false,
+    fixedPrice = 0,
+    showEstimatedCost = false,
+    maxGallons,
+    maxDeliveries,
+    allowPriceEdit = false,
+    minimumContainersPerWeek = 0,
 }: {
+    pricePerLiter?: number;
     onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => void;
+    title?: string;
+    description?: string;
+    minimumCost?: number;
+    isFixedPrice?: boolean;
+    fixedPrice?: number;
+    showEstimatedCost?: boolean;
+    maxGallons?: number;
+    maxDeliveries?: number;
+    allowPriceEdit?: boolean;
+    minimumContainersPerWeek?: number;
 }) {
-    const [gallons, setGallons] = useState(10);
+    const [gallons, setGallons] = useState(maxGallons ? Math.min(10, maxGallons) : 10);
     const [deliveries, setDeliveries] = useState(1);
-    const [pricePerLiter, setPricePerLiter] = useState(2.5);
+    const [pricePerLiter, setPricePerLiter] = useState(initialPricePerLiter);
     const [dispensers, setDispensers] = useState(1);
     const [containers, setContainers] = useState(5);
     const litersPerGallon = 19;
 
     const { totalLiters, totalCost } = useMemo(() => {
         const liters = gallons * deliveries * 4 * litersPerGallon;
-        const cost = liters * pricePerLiter;
+        const cost = isFixedPrice ? fixedPrice : liters * pricePerLiter;
         return { totalLiters: liters, totalCost: cost ?? 0 };
-    }, [gallons, deliveries, pricePerLiter]);
+    }, [gallons, deliveries, pricePerLiter, isFixedPrice, fixedPrice]);
     
+    const handleGallonsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = parseInt(e.target.value) || 0;
+        if (maxGallons && value > maxGallons) {
+            value = maxGallons;
+        }
+        setGallons(value);
+    }
+    
+    const handleDeliveriesChange = (value: string) => {
+        let numValue = Number(value);
+        if (maxDeliveries && numValue > maxDeliveries) {
+            numValue = maxDeliveries;
+        }
+        setDeliveries(numValue);
+    }
+    
+    const availableFrequencies = maxDeliveries
+        ? deliveryFrequencies.filter(f => f.value <= maxDeliveries)
+        : deliveryFrequencies;
+
     useEffect(() => {
         onCalculated({ totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter });
     }, [totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter, onCalculated]);
+    
+    const isMinimumMet = minimumContainersPerWeek > 0 
+        ? (gallons * deliveries) >= minimumContainersPerWeek
+        : totalCost >= minimumCost;
+
+    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
+    const estimatedCost = totalLiters * pricePerLiter;
 
     return (
         <div className="p-6 space-y-6">
@@ -367,24 +417,85 @@ function CustomPlanCalculator({
                     <Label htmlFor="gallons" className="text-sm font-medium text-primary-foreground/80">5-Gallon Containers per Delivery</Label>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(Math.max(1, gallons - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="gallons" type="number" value={gallons} onChange={(e) => setGallons(parseInt(e.target.value) || 0)} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
-                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(gallons + 1)}><Plus className="h-4 w-4" /></Button>
+                        <Input id="gallons" type="number" value={gallons} onChange={handleGallonsChange} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" max={maxGallons}/>
+                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(maxGallons ? Math.min(gallons + 1, maxGallons) : gallons + 1)}><Plus className="h-4 w-4" /></Button>
                     </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="deliveries" className="text-sm font-medium text-primary-foreground/80">Deliveries per Week</Label>
-                    <Select value={String(deliveries)} onValueChange={(value) => setDeliveries(Number(value))}>
+                    <Select value={String(deliveries)} onValueChange={handleDeliveriesChange}>
                         <SelectTrigger id="deliveries" className="bg-transparent border-primary-foreground/50 text-primary-foreground">
                             <SelectValue placeholder="Select frequency" />
                         </SelectTrigger>
                         <SelectContent>
-                            {deliveryFrequencies.map((freq) => (
+                            {availableFrequencies.map((freq) => (
                                 <SelectItem key={freq.value} value={String(freq.value)}>{freq.label}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="dispensers" className="text-sm font-medium text-primary-foreground/80">Dispensers</Label>
+                    <Input id="dispensers" type="number" value={dispensers} onChange={(e) => setDispensers(Number(e.target.value))} className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="containers" className="text-sm font-medium text-primary-foreground/80">Rotation Containers</Label>
+                    <Input id="containers" type="number" value={containers} onChange={(e) => setContainers(Number(e.target.value))} className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
+                </div>
+                {allowPriceEdit && (
+                     <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="price-per-liter" className="text-sm font-medium text-primary-foreground/80">Price per Liter (₱)</Label>
+                        <Input 
+                            id="price-per-liter" 
+                            type="number" 
+                            value={pricePerLiter} 
+                            onChange={(e) => setPricePerLiter(parseFloat(e.target.value) || 0)} 
+                            className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60"
+                            step="0.01"
+                        />
+                    </div>
+                )}
             </div>
+
+            <Card className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
+                <CardHeader>
+                    <CardTitle className="text-base text-primary-foreground">{title}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                     <div className="flex justify-between items-center">
+                        <span className="text-primary-foreground/80">Est. Liters per Month</span>
+                        <span className="font-bold">{totalLiters.toLocaleString()} L</span>
+                    </div>
+                    <Separator className="bg-primary-foreground/20" />
+                    {!isFixedPrice && (
+                        <div className="flex justify-between items-center">
+                            <span className="text-primary-foreground/80">Price per Liter</span>
+                            <span className="font-semibold">{currencyFormatter.format(pricePerLiter)}</span>
+                        </div>
+                    )}
+                     <div className="flex justify-between items-center">
+                        <span className="font-bold">{isFixedPrice ? (showEstimatedCost ? 'Estimated Monthly Cost' : 'Top-Up Amount') : 'Estimated Monthly Cost'}</span>
+                        <span className="font-bold text-lg">{currencyFormatter.format(showEstimatedCost ? estimatedCost : totalCost)}</span>
+                    </div>
+                     {(minimumCost > 0 || minimumContainersPerWeek > 0) && !isFixedPrice && (
+                        <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
+                            'mt-4', 
+                            isMinimumMet 
+                                ? 'bg-green-500/20 border-green-500/40 text-green-200' 
+                                : 'bg-red-500/10 border-red-500/30 text-red-300'
+                        )}>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle className={cn('font-bold', !isMinimumMet && 'text-red-100')}>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
+                            <AlertDescription className={cn('text-base', !isMinimumMet && 'text-red-200')}>
+                                {minimumContainersPerWeek > 0
+                                    ? `This plan requires a minimum of ${minimumContainersPerWeek} containers per week.`
+                                    : `This plan requires a minimum monthly spend of ${currencyFormatter.format(minimumCost)}.`
+                                }
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     )
 }
