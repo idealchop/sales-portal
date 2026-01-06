@@ -462,38 +462,10 @@ function CustomPlanCalculator({
                     <CardTitle className="text-base text-primary-foreground">{title}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
-                     <div className="flex justify-between items-center">
-                        <span className="text-primary-foreground/80">Est. Liters per Month</span>
-                        <span className="font-bold">{totalLiters.toLocaleString()} L</span>
+                    <div className="flex justify-between items-center">
+                        <span className="font-bold">Price per Liter</span>
+                        <span className="font-bold text-lg">{currencyFormatter.format(pricePerLiter)}</span>
                     </div>
-                    <Separator className="bg-primary-foreground/20" />
-                    {!isFixedPrice && (
-                        <div className="flex justify-between items-center">
-                            <span className="text-primary-foreground/80">Price per Liter</span>
-                            <span className="font-semibold">{currencyFormatter.format(pricePerLiter)}</span>
-                        </div>
-                    )}
-                     <div className="flex justify-between items-center">
-                        <span className="font-bold">{isFixedPrice ? (showEstimatedCost ? 'Estimated Monthly Cost' : 'Top-Up Amount') : 'Estimated Monthly Cost'}</span>
-                        <span className="font-bold text-lg">{currencyFormatter.format(showEstimatedCost ? estimatedCost : totalCost)}</span>
-                    </div>
-                     {(minimumCost > 0 || minimumContainersPerWeek > 0) && !isFixedPrice && (
-                        <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
-                            'mt-4', 
-                            isMinimumMet 
-                                ? 'bg-green-500/20 border-green-500/40 text-green-200' 
-                                : 'bg-red-500/10 border-red-500/30 text-red-300'
-                        )}>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle className={cn('font-bold', !isMinimumMet && 'text-red-100')}>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
-                            <AlertDescription className={cn('text-base', !isMinimumMet && 'text-red-200')}>
-                                {minimumContainersPerWeek > 0
-                                    ? `This plan requires a minimum of ${minimumContainersPerWeek} containers per week.`
-                                    : `This plan requires a minimum monthly spend of ${currencyFormatter.format(minimumCost)}.`
-                                }
-                            </AlertDescription>
-                        </Alert>
-                    )}
                 </CardContent>
             </Card>
         </div>
