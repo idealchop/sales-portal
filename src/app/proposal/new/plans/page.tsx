@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -178,27 +179,6 @@ const smePlans: Plan[] = [
     inclusions: [],
     employees: '5 – 10',
     stations: '1 Station',
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    monthlyFee: '₱3,000',
-    liters: '1,000 L',
-    refillFrequency: '2–3/week',
-    inclusions: [],
-    employees: '10 – 20',
-    stations: '1 Station',
-  },
-  {
-    id: 'professional',
-    name: 'Professional',
-    monthlyFee: '₱6,000',
-    liters: '2,000 L',
-    refillFrequency: '3–4/week',
-    inclusions: [],
-    employees: '20 – 40',
-    stations: '1 Station',
-    isRecommended: true,
   },
 ];
 
@@ -764,7 +744,7 @@ function PlansGrid({
                     />
                 )}
                 
-                {plan.id === 'custom-plan' && isSelected && (
+                {plan.id === 'custom-plan' && isSelected && !isSmeCommercialCustom && (
                      <CustomPlanCalculator
                         onCalculated={onSmeCommercialCustomCalculated}
                     />
@@ -1062,7 +1042,8 @@ export default function PlansPage() {
             return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name);
         }
         if (selectedPlan === 'custom-plan') {
-            return !smeCommercialCustomValues || smeCommercialCustomValues.totalCost <= 0;
+            // No calculator, so it's always ready to proceed
+            return false;
         }
         return false;
     }, [selectedPlan, customCalculatedValues, overflowCalculatedValues, smeCommercialCustomValues]);
@@ -1084,13 +1065,16 @@ export default function PlansPage() {
             params.set('cost', '50000');
             params.set('locations', JSON.stringify(overflowCalculatedValues.locations));
         }
-        if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
-            params.set('liters', smeCommercialCustomValues.totalLiters.toString());
-            params.set('cost', smeCommercialCustomValues.totalCost.toString());
-            params.set('freq', smeCommercialCustomValues.deliveries.toString());
+        if (selectedPlan === 'custom-plan') {
+            // For public flow, these values are not needed as it's just a selection
+            // They will be calculated on the backend or contract page if needed
+            // But we can set defaults to avoid breaking the contract page logic
+            params.set('liters', '0');
+            params.set('cost', '0');
+            params.set('freq', '1');
             params.set('type', selectedSize || '');
-            params.set('dispensers', smeCommercialCustomValues.dispensers.toString());
-            params.set('containers', smeCommercialCustomValues.containers.toString());
+            params.set('dispensers', '1');
+            params.set('containers', '5');
         }
         return `/proposal/new/contract?${params.toString()}`;
     };
