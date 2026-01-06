@@ -434,6 +434,11 @@ function ContractPageContent() {
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [isSharing, setIsSharing] = useState(false);
 
+  useEffect(() => {
+    // Automatically open the review dialog on page load
+    setReviewDialogOpen(true);
+  }, []);
+
   const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
     if (!firestore) throw new Error("Firestore not ready.");
 
