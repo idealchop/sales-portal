@@ -339,74 +339,26 @@ export const deliveryFrequencies = [
 ];
 
 function CustomPlanCalculator({
-    pricePerLiter: initialPricePerLiter = 3,
     onCalculated,
-    title = 'Custom Plan Calculator',
-    description = "Calculate a custom plan based on your client's needs.",
-    minimumCost = 0,
-    isFixedPrice = false,
-    fixedPrice = 0,
-    showEstimatedCost = false,
-    maxGallons,
-    maxDeliveries,
-    allowPriceEdit = false,
-    minimumContainersPerWeek = 0,
 }: {
-    pricePerLiter?: number;
     onCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => void;
-    title?: string;
-    description?: string;
-    minimumCost?: number;
-    isFixedPrice?: boolean;
-    fixedPrice?: number;
-    showEstimatedCost?: boolean;
-    maxGallons?: number;
-    maxDeliveries?: number;
-    allowPriceEdit?: boolean;
-    minimumContainersPerWeek?: number;
 }) {
-    const [gallons, setGallons] = useState(maxGallons ? Math.min(10, maxGallons) : 10);
+    const [gallons, setGallons] = useState(10);
     const [deliveries, setDeliveries] = useState(1);
-    const pricePerLiter = initialPricePerLiter;
+    const [pricePerLiter, setPricePerLiter] = useState(2.5);
+    const [dispensers, setDispensers] = useState(1);
+    const [containers, setContainers] = useState(5);
     const litersPerGallon = 19;
 
     const { totalLiters, totalCost } = useMemo(() => {
         const liters = gallons * deliveries * 4 * litersPerGallon;
-        const cost = isFixedPrice ? fixedPrice : liters * pricePerLiter;
+        const cost = liters * pricePerLiter;
         return { totalLiters: liters, totalCost: cost ?? 0 };
-    }, [gallons, deliveries, pricePerLiter, isFixedPrice, fixedPrice]);
+    }, [gallons, deliveries, pricePerLiter]);
     
-    const handleGallonsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = parseInt(e.target.value) || 0;
-        if (maxGallons && value > maxGallons) {
-            value = maxGallons;
-        }
-        setGallons(value);
-    }
-    
-    const handleDeliveriesChange = (value: string) => {
-        let numValue = Number(value);
-        if (maxDeliveries && numValue > maxDeliveries) {
-            numValue = maxDeliveries;
-        }
-        setDeliveries(numValue);
-    }
-    
-    const availableFrequencies = maxDeliveries
-        ? deliveryFrequencies.filter(f => f.value <= maxDeliveries)
-        : deliveryFrequencies;
-
     useEffect(() => {
-        onCalculated({ totalLiters, totalCost, deliveries, dispensers: 1, containers: 5, pricePerLiter });
-    }, [totalLiters, totalCost, deliveries, pricePerLiter, onCalculated]);
-    
-    const isMinimumMet = minimumContainersPerWeek > 0 
-        ? (gallons * deliveries) >= minimumContainersPerWeek
-        : totalCost >= minimumCost;
-
-    const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-
-    const estimatedCost = totalLiters * pricePerLiter;
+        onCalculated({ totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter });
+    }, [totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter, onCalculated]);
 
     return (
         <div className="p-6 space-y-6">
@@ -415,18 +367,18 @@ function CustomPlanCalculator({
                     <Label htmlFor="gallons" className="text-sm font-medium text-primary-foreground/80">5-Gallon Containers per Delivery</Label>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(Math.max(1, gallons - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="gallons" type="number" value={gallons} onChange={handleGallonsChange} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" max={maxGallons}/>
-                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(maxGallons ? Math.min(gallons + 1, maxGallons) : gallons + 1)}><Plus className="h-4 w-4" /></Button>
+                        <Input id="gallons" type="number" value={gallons} onChange={(e) => setGallons(parseInt(e.target.value) || 0)} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
+                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(gallons + 1)}><Plus className="h-4 w-4" /></Button>
                     </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="deliveries" className="text-sm font-medium text-primary-foreground/80">Deliveries per Week</Label>
-                    <Select value={String(deliveries)} onValueChange={handleDeliveriesChange}>
+                    <Select value={String(deliveries)} onValueChange={(value) => setDeliveries(Number(value))}>
                         <SelectTrigger id="deliveries" className="bg-transparent border-primary-foreground/50 text-primary-foreground">
                             <SelectValue placeholder="Select frequency" />
                         </SelectTrigger>
                         <SelectContent>
-                            {availableFrequencies.map((freq) => (
+                            {deliveryFrequencies.map((freq) => (
                                 <SelectItem key={freq.value} value={String(freq.value)}>{freq.label}</SelectItem>
                             ))}
                         </SelectContent>
@@ -688,7 +640,7 @@ function PlansGrid({
                     </CardHeader>
                     <CardContent className="flex-1 text-left space-y-4">
                         <div className="space-y-2">
-                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>Premium Liters Included</p>
+                            <p className={cn("text-sm font-semibold", isSelected && !isDisabled ? "text-primary-foreground/80" : "text-muted-foreground")}>{isCustomSmeCommercial ? 'Estimated Liters per Month' : 'Premium Liters Included'}</p>
                             <div className={cn("flex items-center gap-2 text-lg font-bold", isSelected && !isDisabled && "text-primary-foreground")}>
                                 <span>{liters}</span>
                             </div>
@@ -720,11 +672,6 @@ function PlansGrid({
                     {plan.id === 'custom-plan' && isSelected && (
                          <CustomPlanCalculator
                             onCalculated={onSmeCommercialCustomCalculated}
-                            pricePerLiter={businessSize === 'household' ? 2.5 : 3}
-                            title={businessSize === 'household' ? "Customize Family Plan" : "Customize SME/Commercial Plan"}
-                            maxGallons={businessSize === 'household' ? 10 : undefined}
-                            maxDeliveries={businessSize === 'household' ? 2 : undefined}
-                            allowPriceEdit={true}
                         />
                     )}
 
