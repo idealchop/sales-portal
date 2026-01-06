@@ -834,12 +834,12 @@ const handleSaveDraft = useCallback(async () => {
 
 const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generate') => {
     try {
+        const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
+        
         if (action === 'generate') {
-            await ensureClientAndProposalIdsAreGenerated();
             setGenerateDialogOpen(true);
             return;
         } else if (action === 'sign') {
-            await ensureClientAndProposalIdsAreGenerated();
             setReviewDialogOpen(true);
             return;
         } else if (action === 'share') {
@@ -853,8 +853,6 @@ const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generat
             if (!isSaved) {
                 throw new Error("Failed to save the proposal draft before proceeding.");
             }
-
-            const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
 
             if (!finalClientId || !finalProposalId || !user) {
               throw new Error("Missing critical info for sharing link.");

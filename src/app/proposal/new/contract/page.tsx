@@ -598,7 +598,7 @@ function ContractPageContent() {
 
 
   const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
-
+  
   const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
     if (!firestore) throw new Error("Firestore not ready.");
 
@@ -685,44 +685,7 @@ function ContractPageContent() {
   
     try {
         const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
-
-        const isDraftForNewClient = status === 'draft' && !existingClientId && !finalClientId;
-
-        if (isDraftForNewClient) {
-            const proposalRef = doc(firestore, 'proposals', finalProposalId);
-            const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData, proposalId: finalProposalId };
-            const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
-            
-            const draftData: any = {
-                id: finalProposalId,
-                userId: proposalOwnerId,
-                title: proposalContentToSave.summaryTitle,
-                content: JSON.stringify(proposalContentToSave),
-                status: 'draft',
-                amount: amountToSave,
-                updatedAt: serverTimestamp(),
-                clientId: null,
-            };
-            if (campaignName) {
-                draftData.sourceLocation = campaignName;
-            }
-
-            const proposalDoc = await getDoc(proposalRef);
-            if (!proposalDoc.exists()) {
-                draftData.createdAt = serverTimestamp();
-            }
-
-            await setDoc(proposalRef, draftData, { merge: true });
-            toast({ title: "Draft Saved!", description: "Your proposal draft has been successfully saved." });
-            setIsSaving(false);
-            return true;
-        }
-
-        if (!finalClientId) {
-            toast({ variant: "destructive", title: "Save Failed", description: "Client ID is missing." });
-            setIsSaving(false);
-            return false;
-        }
+        const isNewClient = !existingClientId;
         
         let downloadURL = '';
         if (paymentProofFile) {
@@ -754,13 +717,13 @@ function ContractPageContent() {
                 dateSigned: new Date().toISOString()
             }
         } else if (status === 'draft') {
-            clientData.status = clientData.status || 'pending';
+            clientData.status = 'pending';
         }
 
         const clientDoc = await getDoc(clientRef);
-        if (!clientDoc.exists()) {
+        if (isNewClient && !clientDoc.exists()) {
             clientData.createdAt = serverTimestamp();
-            await setDoc(clientRef, clientData, { merge: true });
+            await setDoc(clientRef, clientData);
         } else {
             await updateDoc(clientRef, clientData);
         }
@@ -834,12 +797,12 @@ const handleSaveDraft = useCallback(async () => {
 
 const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generate') => {
     try {
+        const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
+        
         if (action === 'generate') {
-            await ensureClientAndProposalIdsAreGenerated();
             setGenerateDialogOpen(true);
             return;
         } else if (action === 'sign') {
-            await ensureClientAndProposalIdsAreGenerated();
             setReviewDialogOpen(true);
             return;
         } else if (action === 'share') {
@@ -853,8 +816,6 @@ const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generat
             if (!isSaved) {
                 throw new Error("Failed to save the proposal draft before proceeding.");
             }
-
-            const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
 
             if (!finalClientId || !finalProposalId || !user) {
               throw new Error("Missing critical info for sharing link.");
@@ -923,7 +884,7 @@ const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generat
                 </CardHeader>
                 <CardFooter>
                     <Button asChild className="w-full">
-                        <Link href="/dashboard/proposals/new/plans">Go to Plans</Link>
+                        <Link href="/proposal/new/plans">Go to Plans</Link>
                     </Button>
                 </CardFooter>
             </Card>
@@ -935,7 +896,7 @@ const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generat
   const isCustomPlan = plan.id === 'custom-plan';
   const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
-  const prevLink = `/dashboard/proposals/new/plans?${searchParams.toString()}`;
+  const prevLink = `/proposal/new/plans?${searchParams.toString()}`;
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
   
   const clientTypeMap: { [key: string]: string } = {
