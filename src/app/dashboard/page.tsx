@@ -879,62 +879,94 @@ export default function DashboardPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead className="hidden sm:table-cell">Sales Rep</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="hidden md:table-cell text-right">Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(proposalsLoading || clientsLoading || usersLoading) && (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    Loading proposals...
-                  </TableCell>
-                </TableRow>
+          <div className="md:hidden space-y-4">
+              {(proposalsLoading || clientsLoading || usersLoading) ? (
+                  <p className="text-center text-muted-foreground">Loading proposals...</p>
+              ) : paginatedProposals.length > 0 ? (
+                  paginatedProposals.map((proposal) => {
+                      const client = clientMap.get(proposal.clientId);
+                      const owner = userMap.get(proposal.userId);
+                      if (!client) return null;
+                      return (
+                          <ClientPopover key={proposal.id} client={client}>
+                            <Card className="p-4">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <p className="font-semibold text-primary">{client.companyName}</p>
+                                        <p className="text-sm text-muted-foreground">{client.contactName}</p>
+                                    </div>
+                                    <Badge className={cn("capitalize", statusStyles[proposal.status])} variant="outline">{proposal.status}</Badge>
+                                </div>
+                                <div className="mt-4 pt-4 border-t flex justify-between items-baseline">
+                                    <p className="text-sm text-muted-foreground">Amount: <span className="font-bold text-foreground">{currencyFormatter.format(proposal.amount)}</span></p>
+                                    <p className="text-xs text-muted-foreground">{new Date(proposal.createdAt).toLocaleDateString()}</p>
+                                </div>
+                            </Card>
+                          </ClientPopover>
+                      )
+                  })
+              ) : (
+                  <p className="text-center py-8 text-muted-foreground">No proposals found.</p>
               )}
-              {!(proposalsLoading || clientsLoading || usersLoading) && paginatedProposals.map((proposal) => {
-                const client = clientMap.get(proposal.clientId);
-                const owner = userMap.get(proposal.userId);
-                if (!client) return null;
-                return (
-                  <TableRow key={proposal.id}>
-                    <TableCell>
-                      <ClientPopover client={client}>
-                        <div className="font-medium text-primary hover:underline cursor-pointer">{client.companyName}</div>
-                      </ClientPopover>
-                      <div className="text-sm text-muted-foreground">{client.contactName}</div>
-                    </TableCell>
-                     <TableCell className="hidden sm:table-cell">
-                        <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                                <AvatarImage src={owner?.photoURL ?? undefined} />
-                                <AvatarFallback className="text-xs">{owner?.displayName?.[0]}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{owner?.displayName ?? 'N/A'}</span>
-                        </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={cn("capitalize", statusStyles[proposal.status])} variant="outline">{proposal.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{currencyFormatter.format(proposal.amount)}</TableCell>
-                    <TableCell className="hidden md:table-cell text-right">{new Date(proposal.createdAt).toLocaleDateString()}</TableCell>
+          </div>
+          <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead className="hidden sm:table-cell">Sales Rep</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="hidden md:table-cell text-right">Date</TableHead>
                   </TableRow>
-                );
-              })}
-               {!(proposalsLoading || clientsLoading) && proposals.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    No proposals found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {(proposalsLoading || clientsLoading || usersLoading) && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        Loading proposals...
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!(proposalsLoading || clientsLoading || usersLoading) && paginatedProposals.map((proposal) => {
+                    const client = clientMap.get(proposal.clientId);
+                    const owner = userMap.get(proposal.userId);
+                    if (!client) return null;
+                    return (
+                      <TableRow key={proposal.id}>
+                        <TableCell>
+                          <ClientPopover client={client}>
+                            <div className="font-medium text-primary hover:underline cursor-pointer">{client.companyName}</div>
+                          </ClientPopover>
+                          <div className="text-sm text-muted-foreground">{client.contactName}</div>
+                        </TableCell>
+                         <TableCell className="hidden sm:table-cell">
+                            <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                    <AvatarImage src={owner?.photoURL ?? undefined} />
+                                    <AvatarFallback className="text-xs">{owner?.displayName?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm">{owner?.displayName ?? 'N/A'}</span>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={cn("capitalize", statusStyles[proposal.status])} variant="outline">{proposal.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{currencyFormatter.format(proposal.amount)}</TableCell>
+                        <TableCell className="hidden md:table-cell text-right">{new Date(proposal.createdAt).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                   {!(proposalsLoading || clientsLoading) && proposals.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        No proposals found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+          </div>
         </CardContent>
          {totalProposalPages > 1 && (
             <CardFooter>
