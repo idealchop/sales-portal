@@ -509,8 +509,8 @@ export function PreviewDialog({
                         </div>
                     )}
                 </DialogHeader>
-                <ScrollArea className="h-[75vh] pr-6">
-                    <div ref={contractRef} className="space-y-6 py-6">
+                <ScrollArea className="h-[75vh] pr-6 py-6">
+                    <div ref={contractRef} className="space-y-6">
                         <ContractDetails
                             finalPlanDetails={finalPlanDetails}
                             isSigned={false}
@@ -575,8 +575,8 @@ export function PreviewDialog({
                     <Button type="button" variant="outline" onClick={handleGoBack}>Go Back</Button>
                     <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
                         <Button type="button" onClick={handleSaveDraft} variant="outline" disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            Save as Draft
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Phone className="mr-2 h-4 w-4" />}
+                            I'd like to receive a call
                         </Button>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -623,7 +623,7 @@ function ContractPageContent() {
                 <div>
                     <h1 className="text-2xl font-bold">Finalize Proposal</h1>
                     <p className="text-muted-foreground">
-                    Step 4: Review inclusions, add-ons, and sign the agreement.
+                        Step 4: Review inclusions, add-ons, and sign the agreement.
                     </p>
                 </div>
                 </div>
@@ -639,3 +639,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
