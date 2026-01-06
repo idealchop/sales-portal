@@ -817,7 +817,7 @@ function ContractPageContent() {
               
               const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
 
-              if (!finalClientId || !finalProposalId || !user) {
+              if (!finalClientId || !finalProposalId) {
                 throw new Error("Missing critical info for sharing link.");
               }
 
@@ -827,7 +827,7 @@ function ContractPageContent() {
                   id: shareableLinkRef.id,
                   proposalId: finalProposalId,
                   clientId: finalClientId,
-                  userId: user.uid,
+                  userId: managerId || user?.uid,
                   createdAt: serverTimestamp()
               });
 
@@ -858,7 +858,7 @@ function ContractPageContent() {
               setIsSharing(false);
           }
       }
-  }, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, firestore, toast]);
+  }, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, managerId, firestore, toast]);
 
   
     const handleSaveSignature = (data: string) => {
