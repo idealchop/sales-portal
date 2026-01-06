@@ -547,7 +547,7 @@ function PlansGrid({
         if (isSingleOverflowPlan) {
             return plans.filter(p => p.id === 'enterprise-overflow');
         }
-        return plans;
+        return visiblePlans;
     }, [plans, isSmeCommercialCustom, isSingleCustomPlan, isSingleOverflowPlan]);
 
     return (
@@ -1010,7 +1010,7 @@ export default function PlansPage() {
             <div>
             <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
             <p className="text-muted-foreground">
-                Step 4: Select a Client Type, Choose a Plan & Review Inclusions
+                Step 4: Select a Client Type, Choose a Plan &amp; Review Inclusions
             </p>
             </div>
             <div className="hidden sm:flex flex-col sm:flex-row gap-2">
@@ -1146,3 +1146,5 @@ export default function PlansPage() {
         </div>
     );
 }
+
+    
