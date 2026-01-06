@@ -41,15 +41,30 @@ export function Combobox({
   const [inputValue, setInputValue] = React.useState(value || "");
 
   React.useEffect(() => {
-    setInputValue(value || "");
-  }, [value]);
+    if (value) {
+      setInputValue(options.find(option => option.value === value)?.label || value);
+    } else {
+      setInputValue("");
+    }
+  }, [value, options]);
 
   const handleSelect = (currentValue: string) => {
-    const newValue = currentValue === value ? "" : currentValue;
-    onChange(newValue);
-    setInputValue(newValue);
+    onChange(currentValue);
     setOpen(false);
   }
+
+  const handleInputChange = (search: string) => {
+    setInputValue(search);
+  }
+
+  const filteredOptions = React.useMemo(() => {
+    if (!inputValue) return options;
+    return options.filter(option => 
+      option.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+  }, [inputValue, options]);
+
+  const showCreateOption = inputValue && !options.some(option => option.label.toLowerCase() === inputValue.toLowerCase());
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -70,17 +85,15 @@ export function Combobox({
         <Command>
           <CommandInput 
             placeholder={searchPlaceholder}
-            onValueChange={setInputValue}
+            value={inputValue}
+            onValueChange={handleInputChange}
           />
           <CommandList>
-            <CommandEmpty
-                onSelect={() => handleSelect(inputValue)}
-                className="py-1.5 px-2 text-sm"
-            >
-                Create "{inputValue}"
-            </CommandEmpty>
+            {filteredOptions.length === 0 && !showCreateOption && (
+              <CommandEmpty>{noResultsText}</CommandEmpty>
+            )}
             <CommandGroup>
-              {options.map((option) => (
+              {filteredOptions.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
@@ -95,6 +108,16 @@ export function Combobox({
                   {option.label}
                 </CommandItem>
               ))}
+              {showCreateOption && (
+                <CommandItem
+                  value={inputValue}
+                  onSelect={() => handleSelect(inputValue)}
+                  className="text-primary"
+                >
+                   <Check className="mr-2 h-4 w-4 opacity-0" />
+                  Create "{inputValue}"
+                </CommandItem>
+              )}
             </CommandGroup>
           </CommandList>
         </Command>
