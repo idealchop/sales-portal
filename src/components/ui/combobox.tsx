@@ -38,33 +38,11 @@ export function Combobox({
   noResultsText = "No results found." 
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
-  const [inputValue, setInputValue] = React.useState(value || "");
-
-  React.useEffect(() => {
-    if (value) {
-      setInputValue(options.find(option => option.value === value)?.label || value);
-    } else {
-      setInputValue("");
-    }
-  }, [value, options]);
-
+  
   const handleSelect = (currentValue: string) => {
     onChange(currentValue);
     setOpen(false);
   }
-
-  const handleInputChange = (search: string) => {
-    setInputValue(search);
-  }
-
-  const filteredOptions = React.useMemo(() => {
-    if (!inputValue) return options;
-    return options.filter(option => 
-      option.label.toLowerCase().includes(inputValue.toLowerCase())
-    );
-  }, [inputValue, options]);
-
-  const showCreateOption = inputValue && !options.some(option => option.label.toLowerCase() === inputValue.toLowerCase());
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -76,24 +54,42 @@ export function Combobox({
           className="w-full justify-between"
         >
           {value
-            ? options.find((option) => option.value === value)?.label
+            ? options.find((option) => option.value === value)?.label || value
             : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
+        <Command filter={(value, search) => {
+          const option = options.find(o => o.value === value);
+          if (option) {
+            return option.label.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+          }
+          return 0;
+        }}>
           <CommandInput 
             placeholder={searchPlaceholder}
-            value={inputValue}
-            onValueChange={handleInputChange}
           />
           <CommandList>
-            {filteredOptions.length === 0 && !showCreateOption && (
-              <CommandEmpty>{noResultsText}</CommandEmpty>
-            )}
+            <CommandEmpty>
+                <div
+                    className="cursor-pointer px-2 py-1.5 text-sm"
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onClick={() => {
+                        const input = document.querySelector(`[cmdk-input]`) as HTMLInputElement;
+                        if(input) {
+                            handleSelect(input.value)
+                        }
+                    }}
+                >
+                    Create "{document.querySelector(`[cmdk-input]`)?.getAttribute('value')}"
+                </div>
+            </CommandEmpty>
             <CommandGroup>
-              {filteredOptions.map((option) => (
+              {options.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
@@ -108,16 +104,6 @@ export function Combobox({
                   {option.label}
                 </CommandItem>
               ))}
-              {showCreateOption && (
-                <CommandItem
-                  value={inputValue}
-                  onSelect={() => handleSelect(inputValue)}
-                  className="text-primary"
-                >
-                   <Check className="mr-2 h-4 w-4 opacity-0" />
-                  Create "{inputValue}"
-                </CommandItem>
-              )}
             </CommandGroup>
           </CommandList>
         </Command>
