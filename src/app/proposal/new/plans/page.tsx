@@ -629,7 +629,7 @@ function PlansGrid({
 
 
         const cardContent = (
-             <Card className={cn(
+            <Card className={cn(
                 "relative flex flex-col h-full border-2 transition-all duration-300",
                 isSelected 
                 ? "border-primary shadow-lg bg-primary text-primary-foreground" 
@@ -690,7 +690,7 @@ function PlansGrid({
                      <CustomPlanCalculator
                         onCalculated={onSmeCommercialCustomCalculated}
                         pricePerLiter={businessSize === 'household' ? 2.5 : 3}
-                        title={businessSize === 'household' ? "Customize Family Plan" : "Customize SME/Commercial Plan"}
+                        title={businessSize === 'household' ? "Customize Family Plan" : "Usage-Based Plan"}
                         maxGallons={businessSize === 'household' ? 10 : undefined}
                         maxDeliveries={businessSize === 'household' ? 2 : undefined}
                         allowPriceEdit={true}
@@ -708,12 +708,6 @@ function PlansGrid({
                             {businessSize === 'household' ? <GlassWater className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
                             <span className="font-semibold">{stations}</span>
                         </div>
-                        <RadioGroupItem 
-                            value={plan.id} 
-                            id={plan.id}
-                            className="sr-only"
-                            disabled={isDisabled}
-                        />
                     </div>
                 </CardFooter>
             </Card>
@@ -738,7 +732,10 @@ function PlansGrid({
 
         const colSpanClass = (isCustom || isOverflow || isCustomSmeCommercial) && isSelected ? 'col-span-full' : 'col-span-1';
 
-        return <div key={plan.id} className={cn(colSpanClass)}><Label htmlFor={plan.id} className="cursor-pointer h-full">{cardContent}</Label></div>;
+        return <div key={plan.id} className={cn(colSpanClass)}>
+            <RadioGroupItem value={plan.id} id={plan.id} className="sr-only" />
+            <Label htmlFor={plan.id} className="cursor-pointer h-full">{cardContent}</Label>
+        </div>;
       })}
     </RadioGroup>
   );
