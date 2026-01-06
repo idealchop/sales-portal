@@ -278,7 +278,7 @@ function PreviewDialog({
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
                     {finalPlanDetails && (
-                        <div ref={contractRef} className="space-y-6">
+                        <div ref={contractRef} className="space-y-6 py-6">
                             <ContractDetails
                                 finalPlanDetails={finalPlanDetails}
                                 isSigned={false}
@@ -871,7 +871,7 @@ function ContractPageContent() {
               setIsSharing(false);
           }
       }
-  }, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, managerId, firestore, toast, finalPlanDetails, signatureData]);
+  }, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, firestore, toast, finalPlanDetails, signatureData]);
 
   
     const handleSaveSignature = (data: string) => {
