@@ -646,7 +646,7 @@ function PlansGrid({
     
     const isSingleCustomPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-customized';
     const isSingleOverflowPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-overflow';
-    const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household' || businessSize === 'corporate') && selectedPlan === 'custom-plan';
+    const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'household') && selectedPlan === 'custom-plan';
 
     const visiblePlans = useMemo(() => {
         if (isSmeCommercialCustom) {
@@ -675,7 +675,7 @@ function PlansGrid({
         const isSelected = selectedPlan === plan.id;
         const isCustom = businessSize === 'enterprise' && (plan.id === 'enterprise-customized');
         const isOverflow = businessSize === 'enterprise' && (plan.id === 'enterprise-overflow');
-        const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'commercial' || businessSize === 'household' || businessSize === 'corporate') && (plan.id === 'custom-plan');
+        const isCustomSmeCommercial = (businessSize === 'sme' || businessSize === 'household') && (plan.id === 'custom-plan');
         const isDisabled = false;
 
         let employees = plan.employees;
@@ -857,37 +857,7 @@ const businessSizes = [
             description: "An office with a few people",
             imageHint: "small office"
         },
-    },
-    { 
-        id: 'commercial' as BusinessSize, 
-        title: 'Commercial', 
-        description: 'For growing offices and warehouses.', 
-        image: {
-            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_Business.png?alt=media&token=b8536b3c-5199-460a-8612-003c99139d7c",
-            description: "A medium-sized office building.",
-            imageHint: "office building"
-        },
-    },
-    { 
-        id: 'corporate' as BusinessSize, 
-        title: 'Corporate', 
-        description: 'For multi-site companies and BPOs.', 
-        image: {
-            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2FWater_Refill_Enterprise.png?alt=media&token=29e0d6a7-41f7-4511-a8b6-0369989421bd",
-            description: "A large corporate building.",
-            imageHint: "corporate building"
-        },
-    },
-    { 
-        id: 'enterprise' as BusinessSize, 
-        title: 'Enterprise', 
-        description: 'Customize and pay based on consumption.', 
-        image: {
-            imageUrl: "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63",
-            description: "An abstract representation of a data flow.",
-            imageHint: "data flow"
-        },
-    },
+    }
 ];
 
 const enterpriseTypes = [
@@ -923,7 +893,7 @@ function BusinessSizeSelector({
     hiddenSizes?: BusinessSize[];
 }) {
     const isItemSelected = selectedSize !== null;
-    const gridCols = isItemSelected ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+    const gridCols = isItemSelected ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-2';
 
     return (
         <div className={cn("grid gap-4", gridCols)}>
@@ -1079,16 +1049,8 @@ export default function PlansPage() {
                     defaultPlanId = 'household-family';
                     break;
                 case 'sme':
-                    plansToRender = [...smePlans, customSmeCommercialPlan];
-                    defaultPlanId = 'professional';
-                    break;
-                case 'commercial':
-                    plansToRender = [...commercialPlans, customSmeCommercialPlan];
-                    defaultPlanId = 'pro';
-                    break;
-                case 'corporate':
-                    plansToRender = [...corporatePlans, customSmeCommercialPlan];
-                    defaultPlanId = 'enterprise-plus';
+                    plansToRender = [customSmeCommercialPlan];
+                    defaultPlanId = 'custom-plan';
                     break;
                 default:
                     return null;
@@ -1156,7 +1118,7 @@ export default function PlansPage() {
     };
 
     const params = new URLSearchParams(searchParams.toString());
-    const prevLink = `/proposal/new/comparison?${params.toString()}`;
+    const prevLink = `/proposal/new/about?${params.toString()}`;
 
     return (
         <div className="flex flex-col gap-6 pb-24 sm:pb-0">
@@ -1195,8 +1157,8 @@ export default function PlansPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-3")}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-2")}>
                         <BusinessSizeSelector 
                             selectedSize={selectedSize} 
                             onSelectSize={handleSizeSelect}
@@ -1204,22 +1166,18 @@ export default function PlansPage() {
                         />
                     </div>
                     {selectedSize && (
-                        <div className="lg:col-span-2">
+                        <div className="lg:col-span-1">
                              <Card>
                                 <CardHeader>
                                     <CardTitle>
-                                        {selectedSize === 'enterprise' ? '2. Select Enterprise Type' : '2. Choose a Plan'}
+                                        2. Choose a Plan
                                     </CardTitle>
                                      <CardDescription>
-                                        {selectedSize === 'enterprise' ? 'Select the type of enterprise plan needed.' : 'Select the best plan for your client from the options below.'}
+                                        Select the best plan for your client from the options below.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {selectedSize === 'enterprise' && !selectedEnterpriseType ? (
-                                        <EnterpriseTypeSelector selectedType={selectedEnterpriseType} onSelectType={handleEnterpriseTypeSelect} />
-                                    ) : (
-                                        renderPlans()
-                                    )}
+                                    {renderPlans()}
                                 </CardContent>
                             </Card>
                         </div>

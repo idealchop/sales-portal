@@ -142,7 +142,7 @@ export default function AboutPage() {
     const params = new URLSearchParams(searchParams.toString());
 
     const prevLink = `/proposal/new?${params.toString()}`;
-    const nextLink = `/proposal/new/comparison?${params.toString()}`;
+    const nextLink = `/proposal/new/plans?${params.toString()}`;
 
 
     return (
