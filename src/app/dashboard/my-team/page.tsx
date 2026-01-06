@@ -540,6 +540,18 @@ function QrCodeDialog({ managerId }: { managerId: string; }) {
             toast({ variant: "destructive", title: "Download Failed", description: "Could not download the QR code." });
         }
     };
+    
+    const getFormattedDate = (timestamp: any) => {
+        if (!timestamp) return 'N/A';
+        try {
+            if (timestamp.toDate) { // Firestore Timestamp
+                return format(timestamp.toDate(), 'PPP');
+            }
+            return format(new Date(timestamp), 'PPP');
+        } catch (error) {
+            return 'Invalid Date';
+        }
+    }
 
     return (
         <DialogContent className="sm:max-w-2xl">
@@ -585,7 +597,7 @@ function QrCodeDialog({ managerId }: { managerId: string; }) {
                                                 </div>
                                                 <div className="space-y-1">
                                                     <h4 className="font-semibold text-base">{campaign.name}</h4>
-                                                    <p className="text-xs text-muted-foreground">Created: {format(new Date(campaign.createdAt), 'PPP')}</p>
+                                                    <p className="text-xs text-muted-foreground">Created: {getFormattedDate(campaign.createdAt)}</p>
                                                 </div>
                                             </div>
                                              <DropdownMenu>
@@ -973,7 +985,7 @@ export default function MyTeamPage() {
         </div>
 
       <div className="space-y-6">
-        <Card className="lg:col-span-3">
+        <Card className="col-span-full">
           <div className="grid grid-cols-1 lg:grid-cols-3">
             <div className="lg:col-span-2 flex flex-col">
                 <CardHeader>
