@@ -1019,10 +1019,10 @@ export default function MyTeamPage() {
                         </div>
                     </CardContent>
                 </Card>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><QrCode/> QR Campaign Commissions</CardTitle>
+                            <CardTitle className="flex items-center gap-2 text-base"><QrCode/> QR Campaign</CardTitle>
                             <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
                         </CardHeader>
                         <CardContent className="text-sm space-y-2 text-muted-foreground">
@@ -1030,21 +1030,32 @@ export default function MyTeamPage() {
                             <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
                         </CardContent>
                     </Card>
+                     <Dialog>
+                        <DialogTrigger asChild>
+                            <Card className="cursor-pointer hover:border-primary transition-colors">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-base"><Trophy/> Team Goals</CardTitle>
+                                    <CardDescription>Click to view current team incentives and bonuses.</CardDescription>
+                                </CardHeader>
+                            </Card>
+                        </DialogTrigger>
+                        <TeamGoalsDialog />
+                    </Dialog>
                     <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
-                    <Link href="/dashboard/materials">
-                        <div className="relative aspect-video w-full">
-                            <Image
-                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
-                                alt="Sales Materials Preview"
-                                fill
-                                className="object-cover"
-                            />
-                        </div>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><BookCopy/> Sales Materials</CardTitle>
-                            <CardDescription>Your toolkit for success. Find presentations, brochures, and other assets.</CardDescription>
-                        </CardHeader>
-                    </Link>
+                        <Link href="/dashboard/materials">
+                            <div className="relative aspect-video w-full">
+                                <Image
+                                    src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                                    alt="Sales Materials Preview"
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base"><BookCopy/> Sales Materials</CardTitle>
+                                <CardDescription>Your toolkit for success.</CardDescription>
+                            </CardHeader>
+                        </Link>
                     </Card>
                 </div>
             </div>
@@ -1066,17 +1077,6 @@ export default function MyTeamPage() {
                         </Card>
                     </DialogTrigger>
                     <ManagerCommissionsDialog directSalesCommissions={commissionDetails.directSales} qrCampaignCommissions={commissionDetails.qrCampaigns} teamOverrideCommissions={commissionDetails.teamOverrides} recurringCommissions={commissionDetails.recurring} allClients={clients} allProposals={proposals} allUsers={salesUsers} />
-                </Dialog>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Card className="cursor-pointer hover:border-primary transition-colors">
-                            <CardHeader>
-                                <CardTitle>Team Goals &amp; Bonuses</CardTitle>
-                                <CardDescription>Click to view current team incentives.</CardDescription>
-                            </CardHeader>
-                        </Card>
-                    </DialogTrigger>
-                    <TeamGoalsDialog />
                 </Dialog>
             </div>
         </div>
@@ -1317,5 +1317,3 @@ export default function MyTeamPage() {
     </div>
   );
 }
-
-    
