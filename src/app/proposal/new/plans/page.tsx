@@ -44,8 +44,6 @@ import {
 } from "@/components/ui/tooltip"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSearchParams } from 'next/navigation';
-import { PreviewDialog } from '@/app/proposal/new/contract/page';
-
 
 type Plan = {
   id: string;
@@ -713,9 +711,11 @@ function BusinessSizeSelector({
 export default function PlansPage() {
     const searchParams = useSearchParams();
     const [selectedSize, setSelectedSize] = useState<BusinessSize | null>(null);
+    const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+    const [customCalculatedValues, setCustomCalculatedValues] = useState<any>(null);
+    const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[] } | null>(null);
     const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ deliveries: number; containers: number; } | null>(null);
-    const [dialogOpen, setDialogOpen] = useState(false);
     
     useEffect(() => {
         const clientType = searchParams.get('clientType');
@@ -726,11 +726,24 @@ export default function PlansPage() {
 
     const handleSizeSelect = (size: BusinessSize) => {
         setSelectedSize(size);
+        setSelectedEnterpriseType(null); 
         setSelectedPlan(null); 
+        setCustomCalculatedValues(null);
+        setOverflowCalculatedValues(null);
         setSmeCommercialCustomValues(null);
     };
 
+    const handleEnterpriseTypeSelect = (type: EnterpriseType) => {
+        setSelectedEnterpriseType(type);
+        if (type === 'customized') {
+            setSelectedPlan('enterprise-customized');
+        } else if (type === 'flowing') {
+            setSelectedPlan('enterprise-overflow');
+        }
+    }
+
     const handlePlanSelect = (planId: string) => {
+        const plan = allPlans.find(p => p.id === planId);
         setSelectedPlan(planId);
     }
     
@@ -740,6 +753,7 @@ export default function PlansPage() {
 
     const resetSelection = () => {
         setSelectedSize(null);
+        setSelectedEnterpriseType(null);
         setSelectedPlan(null);
     }
     
@@ -804,156 +818,148 @@ export default function PlansPage() {
         return `/proposal/new/contract?${params.toString()}`;
     };
 
-    const prevLink = `/proposal/new/about?${searchParams.toString()}`;
+    const params = new URLSearchParams(searchParams.toString());
+    const prevLink = `/proposal/new/comparison?${params.toString()}`;
 
     return (
         <div className="flex flex-col gap-6 pb-24 sm:pb-0">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
-                    <p className="text-muted-foreground">
-                        Step 3: Select a Client Type, Choose a Plan & Review Inclusions
-                    </p>
-                </div>
-                <div className="hidden sm:flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" asChild>
-                        <Link href={prevLink}>Previous</Link>
-                    </Button>
-                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button disabled={isNextDisabled}>
-                                Review and Finalize Contract
-                            </Button>
-                        </DialogTrigger>
-                        <PreviewDialog searchParams={searchParams} />
-                    </Dialog>
-                </div>
+        <div className="flex items-center justify-between">
+            <div>
+            <h1 className="text-2xl font-bold">Smart Refill - Subscription Model</h1>
+            <p className="text-muted-foreground">
+                Step 3: Select a Client Type, Choose a Plan & Review Inclusions
+            </p>
             </div>
+            <div className="hidden sm:flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" asChild>
+                    <Link href={prevLink}>Previous</Link>
+                </Button>
+                <Button asChild disabled={isNextDisabled}>
+                    <Link href={getNextLink()}>Review and Finalize Contract</Link>
+                </Button>
+            </div>
+        </div>
 
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>1. Select Client Type</CardTitle>
-                            <CardDescription>
-                            Choose the client type to see the recommended plans.
-                            </CardDescription>
-                        </div>
-                        {selectedSize && (
-                            <Button variant="outline" onClick={resetSelection}>
-                                <RefreshIcon className="mr-2 h-4 w-4" />
-                                Change
-                            </Button>
-                        )}
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-6", selectedSize && "lg:grid-cols-[1fr,2fr]")}>
-                        <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-2")}>
-                            <BusinessSizeSelector 
-                                selectedSize={selectedSize} 
-                                onSelectSize={handleSizeSelect}
-                                hiddenSizes={selectedSize ? businessSizes.map(s => s.id).filter(id => id !== selectedSize) : []}
-                            />
-                        </div>
-                        {selectedSize && (
-                            <div className="lg:col-span-1">
-                                 <Card>
-                                    <CardHeader>
-                                        <CardTitle>
-                                            2. Choose a Plan
-                                        </CardTitle>
-                                         <CardDescription>
-                                            Select the best plan for your client from the options below.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {renderPlans()}
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-                 <CardFooter>
-                     <p className="text-xs text-muted-foreground text-center w-full">
-                        Need high volume water supply? Reach out here: <a href="mailto:business@smartrefill.io" className="font-semibold text-primary hover:underline">business@smartrefill.io</a>
-                     </p>
-                </CardFooter>
-            </Card>
-
-
-            {selectedPlan && (
-              <div className="grid gap-6">
-                  <Card>
-                  <CardHeader>
-                      <CardTitle>Included in Every Plan</CardTitle>
-                         <CardDescription>
-                            Every subscription plan includes full access to our growing network of partner perks.
+        <Card>
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>1. Select Client Type</CardTitle>
+                        <CardDescription>
+                        Choose the client type to see the recommended plans.
                         </CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid gap-6 sm:grid-cols-2">
-                      {inclusions.map((item) => (
-                      <div key={item.title} className="flex items-start gap-3">
-                          <div>{item.icon}</div>
-                          <div>
-                          <h3 className="font-semibold text-sm">{item.title}</h3>
-                          <p className="text-xs text-muted-foreground">
-                              {item.description}
-                          </p>
-                          </div>
-                      </div>
-                      ))}
-                  </CardContent>
-                  </Card>
-
-                  <Card>
-                  <CardHeader>
-                      <CardTitle>Partner Perks</CardTitle>
-                      <CardDescription>
-                      Enhance your subscription with exclusive benefits from our partners, included with every plan.
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid gap-8 sm:grid-cols-2">
-                       {perks.map((perk) => (
-                            <div key={perk.partner} className="flex items-start gap-4">
-                                {perk.icon}
-                                <div className="space-y-1">
-                                    <h3 className="font-semibold">{perk.partner}</h3>
-                                    <p className="text-sm text-muted-foreground">{perk.description}</p>
-                                    <p className="text-sm font-medium text-primary">{perk.benefit}</p>
-                                </div>
-                            </div>
-                        ))}
-                  </CardContent>
-                  <CardFooter>
-                      <div className="text-sm text-muted-foreground space-y-2">
-                      <p className="font-semibold text-foreground">Terms:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                              <li>All employees of the subscribed company are eligible for these perks.</li>
-                              <li>To redeem, employees must present their company ID at partner establishments.</li>
-                      </ul>
-                      </div>
-                    </CardFooter>
-                  </Card>
-              </div>
-            )}
-
-            <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
-                <div className="flex gap-2">
-                    <Button variant="outline" asChild className="flex-1">
-                        <Link href={prevLink}>Previous</Link>
-                    </Button>
-                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button disabled={isNextDisabled} className="flex-1">
-                                Review and Finalize Contract
-                            </Button>
-                        </DialogTrigger>
-                        <PreviewDialog searchParams={searchParams} />
-                    </Dialog>
+                    </div>
+                    {selectedSize && (
+                        <Button variant="outline" onClick={resetSelection}>
+                            <RefreshIcon className="mr-2 h-4 w-4" />
+                            Change
+                        </Button>
+                    )}
                 </div>
+            </CardHeader>
+            <CardContent>
+                <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-6", selectedSize && "lg:grid-cols-[1fr,2fr]")}>
+                    <div className={cn(selectedSize ? "lg:col-span-1" : "lg:col-span-2")}>
+                        <BusinessSizeSelector 
+                            selectedSize={selectedSize} 
+                            onSelectSize={handleSizeSelect}
+                            hiddenSizes={selectedSize ? businessSizes.map(s => s.id).filter(id => id !== selectedSize) : []}
+                        />
+                    </div>
+                    {selectedSize && (
+                        <div className="lg:col-span-1">
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>
+                                        2. Choose a Plan
+                                    </CardTitle>
+                                     <CardDescription>
+                                        Select the best plan for your client from the options below.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {renderPlans()}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+             <CardFooter>
+                 <p className="text-xs text-muted-foreground text-center w-full">
+                    Need high volume water supply? Reach out here: <a href="mailto:business@smartrefill.io" className="font-semibold text-primary hover:underline">business@smartrefill.io</a>
+                 </p>
+            </CardFooter>
+        </Card>
+
+
+        {selectedPlan && (
+          <div className="grid gap-6">
+              <Card>
+              <CardHeader>
+                  <CardTitle>Included in Every Plan</CardTitle>
+                     <CardDescription>
+                        Every subscription plan includes full access to our growing network of partner perks.
+                    </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-6 sm:grid-cols-2">
+                  {inclusions.map((item) => (
+                  <div key={item.title} className="flex items-start gap-3">
+                      <div>{item.icon}</div>
+                      <div>
+                      <h3 className="font-semibold text-sm">{item.title}</h3>
+                      <p className="text-xs text-muted-foreground">
+                          {item.description}
+                      </p>
+                      </div>
+                  </div>
+                  ))}
+              </CardContent>
+              </Card>
+
+              <Card>
+              <CardHeader>
+                  <CardTitle>Partner Perks</CardTitle>
+                  <CardDescription>
+                  Enhance your subscription with exclusive benefits from our partners, included with every plan.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-8 sm:grid-cols-2">
+                   {perks.map((perk) => (
+                        <div key={perk.partner} className="flex items-start gap-4">
+                            {perk.icon}
+                            <div className="space-y-1">
+                                <h3 className="font-semibold">{perk.partner}</h3>
+                                <p className="text-sm text-muted-foreground">{perk.description}</p>
+                                <p className="text-sm font-medium text-primary">{perk.benefit}</p>
+                            </div>
+                        </div>
+                    ))}
+              </CardContent>
+              <CardFooter>
+                     <div className="text-sm text-muted-foreground space-y-2">
+                       <p className="font-semibold text-foreground">Terms:</p>
+                       <ul className="list-disc list-inside space-y-1">
+                            <li>All employees of the subscribed company are eligible for these perks.</li>
+                            <li>To redeem, employees must present their company ID at partner establishments.</li>
+                       </ul>
+                    </div>
+                </CardFooter>
+              </Card>
+          </div>
+        )}
+
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
+            <div className="flex gap-2">
+                <Button variant="outline" asChild className="flex-1">
+                    <Link href={prevLink}>Previous</Link>
+                </Button>
+                <Button asChild disabled={isNextDisabled} className="flex-1">
+                     <Link href={getNextLink()}>Review and Finalize Contract</Link>
+                </Button>
             </div>
+        </div>
+
         </div>
     );
 }
