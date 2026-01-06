@@ -591,6 +591,9 @@ export function DashboardHeader() {
                                 <Badge variant="outline" className="capitalize">
                                     {user?.role ? roleDisplayNames[user.role] : 'Sales'}
                                 </Badge>
+                                {user?.role === 'manager' && (user as any).location && (
+                                    <p className="text-xs text-muted-foreground">Location: {(user as any).location}</p>
+                                )}
                                 {user?.role === 'sales' && user?.team && (
                                     <p className="text-xs text-muted-foreground">Team: {user.team}</p>
                                 )}
