@@ -535,7 +535,7 @@ function PlansGrid({
     
     const isSingleCustomPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-customized';
     const isSingleOverflowPlan = businessSize === 'enterprise' && selectedPlan === 'enterprise-overflow';
-    const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'household') && selectedPlan === 'custom-plan';
+    const isSmeCommercialCustom = (businessSize === 'sme' || businessSize === 'household') && (plan.id === 'custom-plan');
 
     const visiblePlans = useMemo(() => {
         if (isSmeCommercialCustom) {
@@ -927,8 +927,8 @@ export default function PlansPage() {
                     defaultPlanId = 'household-family';
                     break;
                 case 'sme':
-                    plansToRender = [...smePlans, customSmeCommercialPlan];
-                    defaultPlanId = 'professional';
+                    plansToRender = [smePlans.find(p => p.id === 'micro')!, customSmeCommercialPlan];
+                    defaultPlanId = 'micro';
                     break;
                 default:
                     return null;
@@ -1140,3 +1140,5 @@ export default function PlansPage() {
         </div>
     );
 }
+
+    
