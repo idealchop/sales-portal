@@ -68,55 +68,6 @@ function SharedProposalContent() {
         fetchSharedProposal();
     }, [linkId, firestore]);
     
-    const handleDownloadPdf = async () => {
-        const element = proposalRef.current;
-        if (!element || !proposalDetails) return;
-        
-        setIsDownloading(true);
-        try {
-            const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-            const imgData = canvas.toDataURL('image/jpeg', 0.9);
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const imgHeight = canvas.height * pdfWidth / canvas.width;
-            
-            let heightLeft = imgHeight;
-            let position = 0;
-
-            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdfHeight;
-
-            while (heightLeft > 0) {
-                position = -pdfHeight * (pdf.internal.getNumberOfPages());
-                pdf.addPage();
-                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdfHeight;
-            }
-
-             const totalPages = pdf.internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                pdf.setPage(i);
-                pdf.setFontSize(8);
-                pdf.setTextColor(150);
-                pdf.text(
-                    `Page ${i} of ${totalPages} | Smart Refill Proposal`,
-                    pdf.internal.pageSize.getWidth() / 2,
-                    pdf.internal.pageSize.getHeight() - 10,
-                    { align: 'center' }
-                );
-            }
-            
-            pdf.save(`Smart-Refill-Proposal-${proposalDetails.companyName}.pdf`);
-            toast({ title: "Download Started", description: "Your proposal PDF is being generated." });
-        } catch (error) {
-            console.error("PDF generation failed:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not generate PDF.' });
-        } finally {
-            setIsDownloading(false);
-        }
-    };
-
     if (isLoading) {
         return (
             <div className="flex h-[80vh] w-full items-center justify-center">
@@ -143,16 +94,15 @@ function SharedProposalContent() {
         return (
             <div className="w-full max-w-4xl mx-auto space-y-4">
                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="flex items-center gap-2">
-                                <FileText className="text-primary"/>
-                                Proposal for {proposalDetails.companyName}
-                            </CardTitle>
+                    <CardHeader>
+                        <CardTitle className="text-3xl font-bold">{proposalDetails.companyName}</CardTitle>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>Proposal</span>
                             {proposalDetails.proposalId && (
-                                <CardDescription>
-                                    Proposal ID: {proposalDetails.proposalId}
-                                </CardDescription>
+                                <>
+                                    <span className="text-border">|</span>
+                                    <span className="font-mono">ID: {proposalDetails.proposalId}</span>
+                                </>
                             )}
                         </div>
                     </CardHeader>
@@ -178,3 +128,4 @@ export default function SharedProposalPage() {
         </Suspense>
     );
 }
+
