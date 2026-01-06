@@ -434,171 +434,6 @@ function ContractPageContent() {
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [isSharing, setIsSharing] = useState(false);
 
-
-  const getStations = (liters: number) => {
-    if (liters <= 2000) return '1 Station';
-    if (liters <= 6000) return '2-3 Stations';
-    if (liters <= 25000) return '3-4 Stations';
-    return '5+ Stations';
-  }
-
-  const getEmployees = (liters: number, isHousehold: boolean) => {
-    if (isHousehold) {
-        const estimatedPeople = Math.round(liters / (2 * 30)); // Assuming 2L per person per day
-        if (estimatedPeople <= 3) return '1-3 Persons';
-        if (estimatedPeople <= 5) return '3-5 Persons';
-        return '5+ Persons';
-    }
-    const estimatedEmployees = Math.round(liters / (2 * 22));
-    if (estimatedEmployees < 5) return '&lt; 5';
-    if (estimatedEmployees > 500) return '500+';
-    return `~${Math.round(estimatedEmployees / 10) * 10}`;
-  };
-
-  const plan = useMemo(() => {
-    let basePlan = allPlans.find(p => p.id === planId);
-    if (!basePlan) return null;
-
-    if (planId === 'custom-plan' && customType) {
-        let typeName = '';
-        if (customType === 'sme') {
-            typeName = 'SME';
-        } else if (customType === 'commercial') {
-            typeName = 'Commercial';
-        } else if (customType === 'household') {
-            typeName = 'Family';
-        } else {
-            typeName = customType.charAt(0).toUpperCase() + customType.slice(1);
-        }
-        
-        basePlan = {
-            ...basePlan,
-            name: `Custom ${typeName} Plan`,
-        };
-    }
-
-    if (customLiters && customCost) {
-        const litersNum = parseInt(customLiters);
-        basePlan = {
-            ...basePlan,
-            liters: `${litersNum} L`,
-            monthlyFee: `₱${parseFloat(customCost).toLocaleString()}`,
-            employees: getEmployees(litersNum, clientType === 'household'),
-            stations: clientType === 'household' ? basePlan.stations : getStations(litersNum),
-        };
-    }
-    
-    if (customFreq) {
-        const freqLabel = deliveryFrequencies.find(f => f.value === parseInt(customFreq))?.label;
-        if (freqLabel) {
-            basePlan.refillFrequency = freqLabel;
-        }
-    }
-
-    return basePlan;
-  }, [planId, customLiters, customCost, customFreq, customType, clientType]);
-  
-  const finalPlan = useMemo(() => {
-    if (!plan) return null;
-
-    if (plan.id === 'enterprise-overflow') {
-      return {
-        ...plan,
-        liters: 'Usage-Based',
-        inclusions: ['Pay only for what you use'],
-      };
-    }
-
-    const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
-    const freeLiters = baseLiters * 0.2;
-    const finalLiters = baseLiters + freeLiters;
-    const planInclusions = plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : [];
-
-    return {
-        ...plan,
-        liters: `${finalLiters.toLocaleString()} L`,
-        inclusions: planInclusions,
-        employees: getEmployees(finalLiters, clientType === 'household'),
-        stations: clientType === 'household' ? getStations(finalLiters) : plan.stations,
-    }
-  }, [plan, clientType]);
-
-  const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
-    if (!plan || !finalPlan) return null;
-    
-    const isFlowPlan = plan.id === 'enterprise-overflow';
-    const isCustomPlan = plan.id === 'custom-plan';
-    const planBaseCost = isFlowPlan ? 50000 : (parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) || 0);
-
-    const sanitationCost = sanitationFeeType === 'paid' ? sanitationFee : 0;
-    const dispensersCost = dispenserFeeType === 'monthly' ? dispenserQuantity * dispenserFee : 0;
-    const dispensersSecurityCost = dispenserFeeType === 'security' ? dispenserQuantity * dispenserFee : 0;
-
-    const subtotal = planBaseCost + sanitationCost + dispensersCost;
-    
-    const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
-    
-    const discount = isFlowPlan || isCustomPlan ? 0 : selectedCycle.discount;
-    const totalBeforeDiscount = isFlowPlan || isCustomPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
-    const discountValue = totalBeforeDiscount * discount;
-    const finalAmount = totalBeforeDiscount - discountValue + dispensersSecurityCost;
-
-    const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
-    const freeLiters = baseLiters * 0.2;
-    const totalMonthlyLiters = baseLiters + freeLiters;
-    const totalLitersForCycle = isFlowPlan ? 'Usage-Based' : `${(totalMonthlyLiters * selectedCycle.multiplier).toLocaleString()} L`;
-    
-    const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
-
-    const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
-
-    const pricePerLiter = (customCost && customLiters) ? parseFloat(customCost) / parseInt(customLiters) : 0;
-
-    return {
-        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-        summaryTitle: summaryTitle,
-        totalLiters: totalLitersForCycle,
-        employees: finalPlan.employees,
-        refillableGallons: rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic',
-        refillFrequency: finalPlan.refillFrequency,
-        totalAmountDue: isCustomPlan ? "Usage-Based" : new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
-        billingCycleLabel: isCustomPlan ? "Usage-Based" : selectedCycle.label,
-        discount: discount,
-        basePrice: subtotal,
-        selectedAddons: { 'monthly-sanitation': sanitationFeeType === 'paid' },
-        sanitationFeeType,
-        sanitationFee,
-        additionalDispensers: {
-            quantity: dispenserQuantity,
-            feeType: dispenserFeeType,
-            fee: dispenserFee,
-        },
-        plan,
-        finalPlan,
-        planBaseCost,
-        addons,
-        additionalDispenserCost: 0,
-        additionalLiterCost: 0,
-        totalMonthlyLiters,
-        totalLitersForCycle: isFlowPlan ? 0 : (totalMonthlyLiters * selectedCycle.multiplier),
-        clientId: generatedClientId,
-        proposalId: generatedProposalId,
-        companyName,
-        contactName,
-        contactEmail,
-        contactPhone,
-        address,
-        clientType,
-        signature: signatureData,
-        pricePerLiter: isCustomPlan ? pricePerLiter : undefined,
-        dispensers: parseInt(dispensers || '0'),
-        containers: parseInt(containers || '0'),
-    };
-  }, [plan, finalPlan, billingCycle, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
-
-
-  const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
-  
   const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
     if (!firestore) throw new Error("Firestore not ready.");
 
@@ -647,7 +482,7 @@ function ContractPageContent() {
     }
     return { clientId: finalClientId, proposalId: finalProposalId };
   }, [firestore, generatedClientId, generatedProposalId, existingClientId, toast]);
-  
+
   const saveProposal = useCallback(async (status: 'draft' | 'accepted'): Promise<boolean> => {
     if (!finalPlanDetails || !firestore) {
       toast({
@@ -828,6 +663,170 @@ function ContractPageContent() {
   }, [finalPlanDetails, firestore, toast, paymentProofFile, managerId, user, existingClientId, campaignName, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, ensureClientAndProposalIdsAreGenerated, router]);
 
 
+  const getStations = (liters: number) => {
+    if (liters <= 2000) return '1 Station';
+    if (liters <= 6000) return '2-3 Stations';
+    if (liters <= 25000) return '3-4 Stations';
+    return '5+ Stations';
+  }
+
+  const getEmployees = (liters: number, isHousehold: boolean) => {
+    if (isHousehold) {
+        const estimatedPeople = Math.round(liters / (2 * 30)); // Assuming 2L per person per day
+        if (estimatedPeople <= 3) return '1-3 Persons';
+        if (estimatedPeople <= 5) return '3-5 Persons';
+        return '5+ Persons';
+    }
+    const estimatedEmployees = Math.round(liters / (2 * 22));
+    if (estimatedEmployees < 5) return '&lt; 5';
+    if (estimatedEmployees > 500) return '500+';
+    return `~${Math.round(estimatedEmployees / 10) * 10}`;
+  };
+
+  const plan = useMemo(() => {
+    let basePlan = allPlans.find(p => p.id === planId);
+    if (!basePlan) return null;
+
+    if (planId === 'custom-plan' && customType) {
+        let typeName = '';
+        if (customType === 'sme') {
+            typeName = 'SME';
+        } else if (customType === 'commercial') {
+            typeName = 'Commercial';
+        } else if (customType === 'household') {
+            typeName = 'Family';
+        } else {
+            typeName = customType.charAt(0).toUpperCase() + customType.slice(1);
+        }
+        
+        basePlan = {
+            ...basePlan,
+            name: `Custom ${typeName} Plan`,
+        };
+    }
+
+    if (customLiters && customCost) {
+        const litersNum = parseInt(customLiters);
+        basePlan = {
+            ...basePlan,
+            liters: `${litersNum} L`,
+            monthlyFee: `₱${parseFloat(customCost).toLocaleString()}`,
+            employees: getEmployees(litersNum, clientType === 'household'),
+            stations: clientType === 'household' ? basePlan.stations : getStations(litersNum),
+        };
+    }
+    
+    if (customFreq) {
+        const freqLabel = deliveryFrequencies.find(f => f.value === parseInt(customFreq))?.label;
+        if (freqLabel) {
+            basePlan.refillFrequency = freqLabel;
+        }
+    }
+
+    return basePlan;
+  }, [planId, customLiters, customCost, customFreq, customType, clientType]);
+  
+  const finalPlan = useMemo(() => {
+    if (!plan) return null;
+
+    if (plan.id === 'enterprise-overflow') {
+      return {
+        ...plan,
+        liters: 'Usage-Based',
+        inclusions: ['Pay only for what you use'],
+      };
+    }
+
+    const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
+    const freeLiters = baseLiters * 0.2;
+    const finalLiters = baseLiters + freeLiters;
+    const planInclusions = plan.inclusions && plan.inclusions.length > 0 ? [plan.inclusions[0]] : [];
+
+    return {
+        ...plan,
+        liters: `${finalLiters.toLocaleString()} L`,
+        inclusions: planInclusions,
+        employees: getEmployees(finalLiters, clientType === 'household'),
+        stations: clientType === 'household' ? getStations(finalLiters) : plan.stations,
+    }
+  }, [plan, clientType]);
+
+  const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
+    if (!plan || !finalPlan) return null;
+    
+    const isFlowPlan = plan.id === 'enterprise-overflow';
+    const isCustomPlan = plan.id === 'custom-plan';
+    const planBaseCost = isFlowPlan ? 50000 : (parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) || 0);
+
+    const sanitationCost = sanitationFeeType === 'paid' ? sanitationFee : 0;
+    const dispensersCost = dispenserFeeType === 'monthly' ? dispenserQuantity * dispenserFee : 0;
+    const dispensersSecurityCost = dispenserFeeType === 'security' ? dispenserQuantity * dispenserFee : 0;
+
+    const subtotal = planBaseCost + sanitationCost + dispensersCost;
+    
+    const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
+    
+    const discount = isFlowPlan || isCustomPlan ? 0 : selectedCycle.discount;
+    const totalBeforeDiscount = isFlowPlan || isCustomPlan ? planBaseCost : subtotal * selectedCycle.multiplier;
+    const discountValue = totalBeforeDiscount * discount;
+    const finalAmount = totalBeforeDiscount - discountValue + dispensersSecurityCost;
+
+    const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
+    const freeLiters = baseLiters * 0.2;
+    const totalMonthlyLiters = baseLiters + freeLiters;
+    const totalLitersForCycle = isFlowPlan ? 'Usage-Based' : `${(totalMonthlyLiters * selectedCycle.multiplier).toLocaleString()} L`;
+    
+    const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
+
+    const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
+
+    const pricePerLiter = (customCost && customLiters) ? parseFloat(customCost) / parseInt(customLiters) : 0;
+
+    return {
+        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        summaryTitle: summaryTitle,
+        totalLiters: totalLitersForCycle,
+        employees: finalPlan.employees,
+        refillableGallons: rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic',
+        refillFrequency: finalPlan.refillFrequency,
+        totalAmountDue: isCustomPlan ? "Usage-Based" : new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
+        billingCycleLabel: isCustomPlan ? "Usage-Based" : selectedCycle.label,
+        discount: discount,
+        basePrice: subtotal,
+        selectedAddons: { 'monthly-sanitation': sanitationFeeType === 'paid' },
+        sanitationFeeType,
+        sanitationFee,
+        additionalDispensers: {
+            quantity: dispenserQuantity,
+            feeType: dispenserFeeType,
+            fee: dispenserFee,
+        },
+        plan,
+        finalPlan,
+        planBaseCost,
+        addons,
+        additionalDispenserCost: 0,
+        additionalLiterCost: 0,
+        totalMonthlyLiters,
+        totalLitersForCycle: isFlowPlan ? 0 : (totalMonthlyLiters * selectedCycle.multiplier),
+        clientId: generatedClientId,
+        proposalId: generatedProposalId,
+        companyName,
+        contactName,
+        contactEmail,
+        contactPhone,
+        address,
+        clientType,
+        signature: signatureData,
+        pricePerLiter: isCustomPlan ? pricePerLiter : undefined,
+        dispensers: parseInt(dispensers || '0'),
+        containers: parseInt(containers || '0'),
+    };
+  }, [plan, finalPlan, billingCycle, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
+
+
+  const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
+  
 const handleSaveDraft = useCallback(async () => {
     await saveProposal('draft');
 }, [saveProposal]);
