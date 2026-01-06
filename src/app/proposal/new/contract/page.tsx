@@ -795,8 +795,6 @@ function ContractPageContent() {
 
   const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generate') => {
       try {
-          const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
-          
           if (action === 'generate') {
               setGenerateDialogOpen(true);
               return;
@@ -806,21 +804,25 @@ function ContractPageContent() {
           } else if (action === 'share') {
               setIsSharing(true);
               
-              navigator.clipboard.writeText("Generating link...").catch(err => {
-                  console.warn("Clipboard write failed initially:", err);
-              });
+              try {
+                await navigator.clipboard.writeText("Generating link...");
+              } catch (err) {
+                 console.warn("Clipboard write access denied:", err);
+              }
 
               const isSaved = await saveProposal('draft');
               if (!isSaved) {
                   throw new Error("Failed to save the proposal draft before proceeding.");
               }
+              
+              const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
 
               if (!finalClientId || !finalProposalId || !user) {
                 throw new Error("Missing critical info for sharing link.");
               }
 
               const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-
+              
               await setDoc(shareableLinkRef, {
                   id: shareableLinkRef.id,
                   proposalId: finalProposalId,
@@ -1219,5 +1221,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    

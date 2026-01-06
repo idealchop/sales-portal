@@ -46,9 +46,6 @@ function SharedProposalContent() {
 
                  const linkData = linkDocSnap.data();
 
-                 if (new Date(linkData.expiresAt) < new Date()) {
-                     throw new Error("This sharing link has expired.");
-                 }
                 
                 const proposalDocRef = doc(firestore, `clients/${linkData.clientId}/proposals`, linkData.proposalId);
                 const proposalDocSnap = await getDoc(proposalDocRef);
