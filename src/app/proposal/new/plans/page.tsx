@@ -392,14 +392,6 @@ function CustomPlanCalculator({
         <div className="p-6 space-y-6">
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="gallons" className="text-sm font-medium text-primary-foreground/80">5-Gallon Containers per Delivery</Label>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(Math.max(1, gallons - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="gallons" type="number" value={gallons} onChange={handleGallonsChange} className="text-center bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" max={maxGallons}/>
-                        <Button variant="outline" size="icon" className="bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground" onClick={() => setGallons(maxGallons ? Math.min(gallons + 1, maxGallons) : gallons + 1)}><Plus className="h-4 w-4" /></Button>
-                    </div>
-                </div>
-                <div className="space-y-2">
                     <Label htmlFor="deliveries" className="text-sm font-medium text-primary-foreground/80">Deliveries per Week</Label>
                     <Select value={String(deliveries)} onValueChange={handleDeliveriesChange}>
                         <SelectTrigger id="deliveries" className="bg-transparent border-primary-foreground/50 text-primary-foreground">
@@ -412,61 +404,11 @@ function CustomPlanCalculator({
                         </SelectContent>
                     </Select>
                 </div>
-
-                {allowPriceEdit && (
-                     <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="price-per-liter" className="text-sm font-medium text-primary-foreground/80">Price per Liter (₱)</Label>
-                        <Input 
-                            id="price-per-liter" 
-                            type="number" 
-                            value={pricePerLiter} 
-                            onChange={(e) => setPricePerLiter(parseFloat(e.target.value) || 0)} 
-                            className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60"
-                            step="0.01"
-                        />
-                    </div>
-                )}
+                 <div className="space-y-2">
+                    <Label htmlFor="containers" className="text-sm font-medium text-primary-foreground/80">Rotation Containers</Label>
+                    <Input id="containers" type="number" value={containers} onChange={(e) => setContainers(Number(e.target.value))} className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
+                </div>
             </div>
-
-            <Card className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
-                <CardHeader>
-                    <CardTitle className="text-base text-primary-foreground">{title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm">
-                     <div className="flex justify-between items-center">
-                        <span className="text-primary-foreground/80">Est. Liters per Month</span>
-                        <span className="font-bold">{totalLiters.toLocaleString()} L</span>
-                    </div>
-                    <Separator className="bg-primary-foreground/20" />
-                    {!isFixedPrice && (
-                        <div className="flex justify-between items-center">
-                            <span className="text-primary-foreground/80">Price per Liter</span>
-                            <span className="font-semibold">{currencyFormatter.format(pricePerLiter)}</span>
-                        </div>
-                    )}
-                     <div className="flex justify-between items-center">
-                        <span className="font-bold">{isFixedPrice ? (showEstimatedCost ? 'Estimated Monthly Cost' : 'Top-Up Amount') : 'Estimated Monthly Cost'}</span>
-                        <span className="font-bold text-lg">{currencyFormatter.format(showEstimatedCost ? estimatedCost : totalCost)}</span>
-                    </div>
-                     {(minimumCost > 0 || minimumContainersPerWeek > 0) && !isFixedPrice && (
-                        <Alert variant={isMinimumMet ? 'default' : 'destructive'} className={cn(
-                            'mt-4', 
-                            isMinimumMet 
-                                ? 'bg-green-500/20 border-green-500/40 text-green-200' 
-                                : 'bg-red-500/10 border-red-500/30 text-red-300'
-                        )}>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle className={cn('font-bold', !isMinimumMet && 'text-red-100')}>{isMinimumMet ? 'Minimum Met' : 'Minimum Not Met'}</AlertTitle>
-                            <AlertDescription className={cn('text-base', !isMinimumMet && 'text-red-200')}>
-                                {minimumContainersPerWeek > 0
-                                    ? `This plan requires a minimum of ${minimumContainersPerWeek} containers per week.`
-                                    : `This plan requires a minimum monthly spend of ${currencyFormatter.format(minimumCost)}.`
-                                }
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                </CardContent>
-            </Card>
         </div>
     )
 }
@@ -744,9 +686,14 @@ function PlansGrid({
                     />
                 )}
                 
-                {plan.id === 'custom-plan' && isSelected && !isSmeCommercialCustom && (
-                     <CustomPlanCalculator
+                {plan.id === 'custom-plan' && isSelected && (
+                    <CustomPlanCalculator
                         onCalculated={onSmeCommercialCustomCalculated}
+                        pricePerLiter={businessSize === 'household' ? 2.5 : 3}
+                        title={businessSize === 'household' ? "Customize Family Plan" : "Customize SME/Commercial Plan"}
+                        maxGallons={businessSize === 'household' ? 10 : undefined}
+                        maxDeliveries={businessSize === 'household' ? 2 : undefined}
+                        allowPriceEdit={true}
                     />
                 )}
 
@@ -1042,8 +989,7 @@ export default function PlansPage() {
             return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name);
         }
         if (selectedPlan === 'custom-plan') {
-            // No calculator, so it's always ready to proceed
-            return false;
+            return !smeCommercialCustomValues || smeCommercialCustomValues.totalCost <= 0;
         }
         return false;
     }, [selectedPlan, customCalculatedValues, overflowCalculatedValues, smeCommercialCustomValues]);
@@ -1065,16 +1011,13 @@ export default function PlansPage() {
             params.set('cost', '50000');
             params.set('locations', JSON.stringify(overflowCalculatedValues.locations));
         }
-        if (selectedPlan === 'custom-plan') {
-            // For public flow, these values are not needed as it's just a selection
-            // They will be calculated on the backend or contract page if needed
-            // But we can set defaults to avoid breaking the contract page logic
-            params.set('liters', '0');
-            params.set('cost', '0');
-            params.set('freq', '1');
+        if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
+            params.set('liters', smeCommercialCustomValues.totalLiters.toString());
+            params.set('cost', smeCommercialCustomValues.totalCost.toString());
+            params.set('freq', smeCommercialCustomValues.deliveries.toString());
             params.set('type', selectedSize || '');
-            params.set('dispensers', '1');
-            params.set('containers', '5');
+            params.set('dispensers', smeCommercialCustomValues.dispensers.toString());
+            params.set('containers', smeCommercialCustomValues.containers.toString());
         }
         return `/proposal/new/contract?${params.toString()}`;
     };
