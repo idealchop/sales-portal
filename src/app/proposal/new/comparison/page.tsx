@@ -78,7 +78,7 @@ export default function ComparisonPage() {
       </div>
 
       <div className="container mx-auto px-0 space-y-6">
-        <div className="grid md:grid-cols-2 gap-6 items-start rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+        <div className="grid gap-6 items-start rounded-lg border bg-card text-card-foreground shadow-sm p-6">
             <div className="relative aspect-video rounded-lg overflow-hidden">
                 <Image 
                     src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales_Smartreill.png?alt=media&token=b55f3099-38a1-45f9-98d8-cd530fb7b427"

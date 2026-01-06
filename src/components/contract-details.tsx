@@ -851,15 +851,15 @@ export function ContractDetails({
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="name-preview">Name</Label>
-                                        <Input id="name-preview" placeholder="Full Name" value={client.contactName} readOnly />
+                                        <Input id="name-preview" value={client.contactName} readOnly />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="company-preview">Company</Label>
-                                        <Input id="company-preview" placeholder="Company Name" value={client.companyName} readOnly />
+                                        <Input id="company-preview" value={client.companyName} readOnly />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Date</Label>
-                                        <Input placeholder="Date" value={date} readOnly />
+                                        <Input value={date} readOnly />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
