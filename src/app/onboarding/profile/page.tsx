@@ -412,22 +412,12 @@ function ProfileSetupContent() {
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Location</FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                        <FormControl>
-                                                            <SelectTrigger>
-                                                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                                <div className="pl-7">
-                                                                    <SelectValue placeholder="Select your location" />
-                                                                </div>
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            <SelectItem value="NCR North">NCR North</SelectItem>
-                                                            <SelectItem value="NCR South">NCR South</SelectItem>
-                                                            <SelectItem value="Palawan">Palawan</SelectItem>
-                                                            <SelectItem value="Cebu">Cebu</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
+                                                     <FormControl>
+                                                        <div className="relative">
+                                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                            <Input placeholder="e.g., NCR North" {...field} className="pl-10" />
+                                                        </div>
+                                                    </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
