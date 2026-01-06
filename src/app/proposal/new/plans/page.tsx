@@ -367,9 +367,7 @@ function CustomPlanCalculator({
 }) {
     const [gallons, setGallons] = useState(maxGallons ? Math.min(10, maxGallons) : 10);
     const [deliveries, setDeliveries] = useState(1);
-    const [pricePerLiter, setPricePerLiter] = useState(initialPricePerLiter);
-    const [dispensers, setDispensers] = useState(1);
-    const [containers, setContainers] = useState(5);
+    const pricePerLiter = initialPricePerLiter;
     const litersPerGallon = 19;
 
     const { totalLiters, totalCost } = useMemo(() => {
@@ -399,8 +397,8 @@ function CustomPlanCalculator({
         : deliveryFrequencies;
 
     useEffect(() => {
-        onCalculated({ totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter });
-    }, [totalLiters, totalCost, deliveries, dispensers, containers, pricePerLiter, onCalculated]);
+        onCalculated({ totalLiters, totalCost, deliveries, dispensers: 1, containers: 5, pricePerLiter });
+    }, [totalLiters, totalCost, deliveries, pricePerLiter, onCalculated]);
     
     const isMinimumMet = minimumContainersPerWeek > 0 
         ? (gallons * deliveries) >= minimumContainersPerWeek
@@ -434,40 +432,7 @@ function CustomPlanCalculator({
                         </SelectContent>
                     </Select>
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="dispensers" className="text-sm font-medium text-primary-foreground/80">Dispensers</Label>
-                    <Input id="dispensers" type="number" value={dispensers} onChange={(e) => setDispensers(Number(e.target.value))} className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="containers" className="text-sm font-medium text-primary-foreground/80">Rotation Containers</Label>
-                    <Input id="containers" type="number" value={containers} onChange={(e) => setContainers(Number(e.target.value))} className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60" />
-                </div>
-                {allowPriceEdit && (
-                     <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="price-per-liter" className="text-sm font-medium text-primary-foreground/80">Price per Liter (₱)</Label>
-                        <Input 
-                            id="price-per-liter" 
-                            type="number" 
-                            value={pricePerLiter} 
-                            onChange={(e) => setPricePerLiter(parseFloat(e.target.value) || 0)} 
-                            className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60"
-                            step="0.01"
-                        />
-                    </div>
-                )}
             </div>
-
-            <Card className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
-                <CardHeader>
-                    <CardTitle className="text-base text-primary-foreground">{title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm">
-                    <div className="flex justify-between items-center">
-                        <span className="font-bold">Price per Liter</span>
-                        <span className="font-bold text-lg">{currencyFormatter.format(pricePerLiter)}</span>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     )
 }
