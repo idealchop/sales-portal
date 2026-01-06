@@ -539,6 +539,20 @@ export function ContractDetails({
                     <Card>
                         <CardHeader>
                             <CardTitle>Client Information</CardTitle>
+                             <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:gap-6 gap-2 text-sm text-muted-foreground pt-1">
+                                {clientId && (
+                                    <div className="flex items-center gap-2">
+                                        <User className="h-4 w-4" />
+                                        <span className="font-mono">Client ID: {clientId}</span>
+                                    </div>
+                                )}
+                                {proposalId && (
+                                    <div className="flex items-center gap-2">
+                                        <FileTextIcon className="h-4 w-4" />
+                                        <span className="font-mono">Proposal ID: {proposalId}</span>
+                                    </div>
+                                )}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
                             <div className="flex items-start gap-3">
@@ -576,24 +590,6 @@ export function ContractDetails({
                                     <p className="font-semibold">{client.address || "N/A"}</p>
                                 </div>
                             </div>
-                            {clientId && (
-                                <div className="flex items-start gap-3">
-                                    <User className="h-5 w-5 text-muted-foreground mt-1" />
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Client ID</p>
-                                        <p className="font-semibold font-mono">{clientId}</p>
-                                    </div>
-                                </div>
-                            )}
-                             {proposalId && (
-                                <div className="flex items-start gap-3">
-                                    <FileTextIcon className="h-5 w-5 text-muted-foreground mt-1" />
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Proposal ID</p>
-                                        <p className="font-semibold font-mono">{proposalId}</p>
-                                    </div>
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
                     <Card>
