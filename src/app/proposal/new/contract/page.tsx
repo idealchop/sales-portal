@@ -502,12 +502,6 @@ export function PreviewDialog({
                 <DialogHeader>
                     <DialogTitle>Proposal Preview & Finalization</DialogTitle>
                     <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
-                    {finalPlanDetails?.clientId && finalPlanDetails?.proposalId && (
-                        <div className="pt-4 space-y-2 text-center sm:text-left">
-                            <p className="text-sm font-mono text-muted-foreground">Client ID: {finalPlanDetails.clientId}</p>
-                            <p className="text-sm font-mono text-muted-foreground">Proposal ID: {finalPlanDetails.proposalId}</p>
-                        </div>
-                    )}
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6 py-6">
                     <div ref={contractRef} className="space-y-6">

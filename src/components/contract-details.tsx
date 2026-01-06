@@ -576,6 +576,15 @@ export function ContractDetails({
                                     <p className="font-semibold">{client.address || "N/A"}</p>
                                 </div>
                             </div>
+                            {clientId && (
+                                <div className="flex items-start gap-3">
+                                    <User className="h-5 w-5 text-muted-foreground mt-1" />
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Client ID</p>
+                                        <p className="font-semibold font-mono">{clientId}</p>
+                                    </div>
+                                </div>
+                            )}
                              {proposalId && (
                                 <div className="flex items-start gap-3">
                                     <FileTextIcon className="h-5 w-5 text-muted-foreground mt-1" />
