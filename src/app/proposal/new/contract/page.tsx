@@ -483,148 +483,6 @@ function ContractPageContent() {
     return { clientId: finalClientId, proposalId: finalProposalId };
   }, [firestore, generatedClientId, generatedProposalId, existingClientId, toast]);
   
-  const saveProposal = useCallback(async (status: 'draft' | 'accepted'): Promise<boolean> => {
-    if (!finalPlanDetails || !firestore) {
-      toast({
-        variant: "destructive",
-        title: "Missing Information",
-        description: "Cannot save proposal without complete plan details or Firestore instance.",
-      });
-      return false;
-    }
-
-    const isSubscribing = status === 'accepted';
-    const isCustomPlan = finalPlanDetails.plan.id === 'custom-plan';
-
-    if (isSubscribing && !isCustomPlan && !paymentProofFile) {
-        toast({
-            variant: "destructive",
-            title: "Payment Proof Required",
-            description: "Please upload your proof of payment to subscribe.",
-        });
-        return false;
-    }
-
-    const proposalOwnerId = managerId || user?.uid;
-    if (!proposalOwnerId) {
-       toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: "Could not determine the proposal owner. Please ensure you are logged in.",
-      });
-      return false;
-    }
-  
-    setIsSaving(true);
-    const onboardingToken = crypto.randomUUID();
-  
-    try {
-        const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
-        const isNewClient = !existingClientId;
-        
-        let downloadURL = '';
-        if (paymentProofFile) {
-            const storage = getStorage();
-            const filePath = `payment_proofs/${finalClientId}/${finalProposalId}/${paymentProofFile.name}`;
-            const storageRef = ref(storage, filePath);
-            const snapshot = await uploadBytes(storageRef, paymentProofFile);
-            downloadURL = await getDownloadURL(snapshot.ref);
-        }
-        
-        const clientRef = doc(firestore, 'clients', finalClientId);
-        const clientData: any = {
-            id: finalClientId,
-            userId: proposalOwnerId,
-            companyName: companyName,
-            contactName: contactName,
-            contactEmail: contactEmail,
-            contactPhone: contactPhone,
-            address: address,
-            clientType: clientType || 'sme',
-        };
-        
-        if (isSubscribing) {
-            clientData.onboardingToken = onboardingToken;
-            clientData.status = 'active';
-            clientData.paymentStatus = isCustomPlan ? 'Paid' : 'Paid';
-            clientData.subscription = {
-                ...finalPlanDetails.plan,
-                dateSigned: new Date().toISOString()
-            }
-        } else if (status === 'draft') {
-            clientData.status = 'pending';
-        }
-
-        const clientDoc = await getDoc(clientRef);
-        if (isNewClient && !clientDoc.exists()) {
-            clientData.createdAt = serverTimestamp();
-            await setDoc(clientRef, clientData);
-        } else {
-            await updateDoc(clientRef, clientData);
-        }
-        
-        const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData, proposalId: finalProposalId, clientId: finalClientId };
-        const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
-        
-        const proposalRef = doc(firestore, 'proposals', finalProposalId);
-
-        const newProposalData: any = {
-            id: finalProposalId,
-            clientId: finalClientId,
-            userId: proposalOwnerId,
-            title: proposalContentToSave.summaryTitle,
-            content: JSON.stringify(proposalContentToSave),
-            status: status,
-            amount: amountToSave,
-            updatedAt: serverTimestamp(),
-        };
-
-        if (campaignName) {
-            newProposalData.sourceLocation = campaignName;
-        }
-        
-        if(downloadURL) {
-            newProposalData.paymentProofUrl = downloadURL;
-        }
-        
-        const proposalDoc = await getDoc(proposalRef);
-
-        if (!proposalDoc.exists()) {
-            newProposalData.createdAt = serverTimestamp();
-        }
-
-        await setDoc(proposalRef, newProposalData, { merge: true });
-    
-        if (status === 'accepted') {
-            toast({
-                title: "Subscription Successful!",
-                description: `Your proposal for ${companyName} has been processed.`,
-            });
-        } else if (status === 'draft') {
-            toast({ title: "Draft Saved!", description: "Your proposal draft has been successfully saved." });
-        }
-        
-        if (isSubscribing) {
-            router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${finalProposalId}&token=${onboardingToken}`);
-        }
-      
-        return true;
-  
-    } catch (error) {
-        console.error("Error saving proposal:", error);
-        if (!(error instanceof FirestorePermissionError)) {
-          toast({
-            variant: "destructive",
-            title: "Save Failed",
-            description: (error as Error).message || "An error occurred while saving the proposal.",
-          });
-        }
-        return false;
-    } finally {
-      setIsSaving(false);
-    }
-  }, [finalPlanDetails, firestore, toast, paymentProofFile, managerId, user, existingClientId, campaignName, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, ensureClientAndProposalIdsAreGenerated, router]);
-
   const getStations = (liters: number) => {
     if (liters <= 2000) return '1 Station';
     if (liters <= 6000) return '2-3 Stations';
@@ -786,80 +644,219 @@ function ContractPageContent() {
     };
   }, [plan, finalPlan, billingCycle, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
 
+  const saveProposal = useCallback(async (status: 'draft' | 'accepted'): Promise<boolean> => {
+    if (!finalPlanDetails || !firestore) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Cannot save proposal without complete plan details or Firestore instance.",
+      });
+      return false;
+    }
 
-  const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
+    const isSubscribing = status === 'accepted';
+    const isCustomPlan = finalPlanDetails.plan.id === 'custom-plan';
+
+    if (isSubscribing && !isCustomPlan && !paymentProofFile) {
+        toast({
+            variant: "destructive",
+            title: "Payment Proof Required",
+            description: "Please upload your proof of payment to subscribe.",
+        });
+        return false;
+    }
+
+    const proposalOwnerId = managerId || user?.uid;
+    if (!proposalOwnerId) {
+       toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "Could not determine the proposal owner. Please ensure you are logged in.",
+      });
+      return false;
+    }
   
-const handleSaveDraft = useCallback(async () => {
-    await saveProposal('draft');
-}, [saveProposal]);
-
-const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generate') => {
+    setIsSaving(true);
+    const onboardingToken = crypto.randomUUID();
+  
     try {
         const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
+        const isNewClient = !existingClientId;
         
-        if (action === 'generate') {
-            setGenerateDialogOpen(true);
-            return;
-        } else if (action === 'sign') {
-            setReviewDialogOpen(true);
-            return;
-        } else if (action === 'share') {
-            setIsSharing(true);
-            
-            navigator.clipboard.writeText("Generating link...").catch(err => {
-                console.warn("Clipboard write failed initially:", err);
-            });
-
-            const isSaved = await saveProposal('draft');
-            if (!isSaved) {
-                throw new Error("Failed to save the proposal draft before proceeding.");
-            }
-
-            if (!finalClientId || !finalProposalId || !user) {
-              throw new Error("Missing critical info for sharing link.");
-            }
-
-            const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
-            const expiresAt = new Date();
-            expiresAt.setHours(expiresAt.getHours() + 24);
-
-            await setDoc(shareableLinkRef, {
-                id: shareableLinkRef.id,
-                proposalId: finalProposalId,
-                clientId: finalClientId,
-                userId: user.uid,
-                expiresAt: expiresAt.toISOString(),
-                createdAt: serverTimestamp()
-            });
-
-            const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
-            try {
-                await navigator.clipboard.writeText(shareUrl);
-                toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
-            } catch (err) {
-                 toast({ 
-                    title: 'Share Link Generated!', 
-                    description: (
-                        <div className="flex flex-col gap-2">
-                           <p>The link is ready. Please copy it manually:</p>
-                           <div className="flex items-center gap-2">
-                             <Input readOnly value={shareUrl} className="h-8"/>
-                             <Button size="sm" onClick={() => navigator.clipboard.writeText(shareUrl)}>Copy</Button>
-                           </div>
-                        </div>
-                    ),
-                    duration: 10000,
-                });
-            }
+        let downloadURL = '';
+        if (paymentProofFile) {
+            const storage = getStorage();
+            const filePath = `payment_proofs/${finalClientId}/${finalProposalId}/${paymentProofFile.name}`;
+            const storageRef = ref(storage, filePath);
+            const snapshot = await uploadBytes(storageRef, paymentProofFile);
+            downloadURL = await getDownloadURL(snapshot.ref);
         }
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Action Failed", description: error.message || 'An unexpected error occurred.' });
+        
+        const clientRef = doc(firestore, 'clients', finalClientId);
+        const clientData: any = {
+            id: finalClientId,
+            userId: proposalOwnerId,
+            companyName: companyName,
+            contactName: contactName,
+            contactEmail: contactEmail,
+            contactPhone: contactPhone,
+            address: address,
+            clientType: clientType || 'sme',
+        };
+        
+        if (isSubscribing) {
+            clientData.onboardingToken = onboardingToken;
+            clientData.status = 'active';
+            clientData.paymentStatus = isCustomPlan ? 'Paid' : 'Paid';
+            clientData.subscription = {
+                ...finalPlanDetails.plan,
+                dateSigned: new Date().toISOString()
+            }
+        } else if (status === 'draft') {
+            clientData.status = 'pending';
+        }
+
+        const clientDoc = await getDoc(clientRef);
+        if (isNewClient && !clientDoc.exists()) {
+            clientData.createdAt = serverTimestamp();
+            await setDoc(clientRef, clientData);
+        } else {
+            await updateDoc(clientRef, clientData);
+        }
+        
+        const proposalContentToSave: FinalPlanDetails = { ...finalPlanDetails, signature: signatureData, proposalId: finalProposalId, clientId: finalClientId };
+        const amountToSave = isCustomPlan ? 0 : parseFloat(String(proposalContentToSave.totalAmountDue).replace(/[^0-9.-]+/g, ""));
+        
+        const proposalRef = doc(firestore, 'proposals', finalProposalId);
+
+        const newProposalData: any = {
+            id: finalProposalId,
+            clientId: finalClientId,
+            userId: proposalOwnerId,
+            title: proposalContentToSave.summaryTitle,
+            content: JSON.stringify(proposalContentToSave),
+            status: status,
+            amount: amountToSave,
+            updatedAt: serverTimestamp(),
+        };
+
+        if (campaignName) {
+            newProposalData.sourceLocation = campaignName;
+        }
+        
+        if(downloadURL) {
+            newProposalData.paymentProofUrl = downloadURL;
+        }
+        
+        const proposalDoc = await getDoc(proposalRef);
+
+        if (!proposalDoc.exists()) {
+            newProposalData.createdAt = serverTimestamp();
+        }
+
+        await setDoc(proposalRef, newProposalData, { merge: true });
+    
+        if (status === 'accepted') {
+            toast({
+                title: "Subscription Successful!",
+                description: `Your proposal for ${companyName} has been processed.`,
+            });
+        } else if (status === 'draft') {
+            toast({ title: "Draft Saved!", description: "Your proposal draft has been successfully saved." });
+        }
+        
+        if (isSubscribing) {
+            router.push(`/onboarding/status?client_id=${finalClientId}&proposal_id=${finalProposalId}&token=${onboardingToken}`);
+        }
+      
+        return true;
+  
+    } catch (error) {
+        console.error("Error saving proposal:", error);
+        if (!(error instanceof FirestorePermissionError)) {
+          toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: (error as Error).message || "An error occurred while saving the proposal.",
+          });
+        }
+        return false;
     } finally {
-        if (action === 'share') {
-            setIsSharing(false);
-        }
+      setIsSaving(false);
     }
-}, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, firestore, toast]);
+  }, [finalPlanDetails, firestore, toast, paymentProofFile, managerId, user, existingClientId, campaignName, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, ensureClientAndProposalIdsAreGenerated, router]);
+  
+  const handleSaveDraft = useCallback(async () => {
+    await saveProposal('draft');
+  }, [saveProposal]);
+
+  const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generate') => {
+      try {
+          const { clientId: finalClientId, proposalId: finalProposalId } = await ensureClientAndProposalIdsAreGenerated();
+          
+          if (action === 'generate') {
+              setGenerateDialogOpen(true);
+              return;
+          } else if (action === 'sign') {
+              setReviewDialogOpen(true);
+              return;
+          } else if (action === 'share') {
+              setIsSharing(true);
+              
+              navigator.clipboard.writeText("Generating link...").catch(err => {
+                  console.warn("Clipboard write failed initially:", err);
+              });
+
+              const isSaved = await saveProposal('draft');
+              if (!isSaved) {
+                  throw new Error("Failed to save the proposal draft before proceeding.");
+              }
+
+              if (!finalClientId || !finalProposalId || !user) {
+                throw new Error("Missing critical info for sharing link.");
+              }
+
+              const shareableLinkRef = doc(collection(firestore, 'shareable_links'));
+              const expiresAt = new Date();
+              expiresAt.setHours(expiresAt.getHours() + 24);
+
+              await setDoc(shareableLinkRef, {
+                  id: shareableLinkRef.id,
+                  proposalId: finalProposalId,
+                  clientId: finalClientId,
+                  userId: user.uid,
+                  expiresAt: expiresAt.toISOString(),
+                  createdAt: serverTimestamp()
+              });
+
+              const shareUrl = `${window.location.origin}/proposal/view/${shareableLinkRef.id}`;
+              try {
+                  await navigator.clipboard.writeText(shareUrl);
+                  toast({ title: 'Share Link Copied!', description: 'A link expiring in 24 hours has been copied.' });
+              } catch (err) {
+                   toast({ 
+                      title: 'Share Link Generated!', 
+                      description: (
+                          <div className="flex flex-col gap-2">
+                             <p>The link is ready. Please copy it manually:</p>
+                             <div className="flex items-center gap-2">
+                               <Input readOnly value={shareUrl} className="h-8"/>
+                               <Button size="sm" onClick={() => navigator.clipboard.writeText(shareUrl)}>Copy</Button>
+                             </div>
+                          </div>
+                      ),
+                      duration: 10000,
+                  });
+              }
+          }
+      } catch (error: any) {
+          toast({ variant: "destructive", title: "Action Failed", description: error.message || 'An unexpected error occurred.' });
+      } finally {
+          if (action === 'share') {
+              setIsSharing(false);
+          }
+      }
+  }, [ensureClientAndProposalIdsAreGenerated, saveProposal, user, firestore, toast]);
 
   
     const handleSaveSignature = (data: string) => {
@@ -896,6 +893,7 @@ const handleActionClick = useCallback(async (action: 'sign' | 'share' | 'generat
   const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
   const prevLink = `/proposal/new/plans?${searchParams.toString()}`;
   const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
+  const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
   
   const clientTypeMap: { [key: string]: string } = {
     household: 'Family',
@@ -1221,3 +1219,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
