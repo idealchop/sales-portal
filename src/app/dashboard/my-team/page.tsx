@@ -956,9 +956,10 @@ export default function MyTeamPage() {
             </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 flex flex-col gap-6">
-                 <Card className="flex flex-col flex-1">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-3">
+              <div className="grid grid-cols-1 lg:grid-cols-3">
+                <div className="lg:col-span-2 flex flex-col">
                     <CardHeader>
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                             <div className="flex-1">
@@ -1005,7 +1006,7 @@ export default function MyTeamPage() {
                                         }}
                                     />
                                     <Bar dataKey="proposals" fill="hsl(var(--primary))" radius={4} barSize={20} label={<CustomBarLabel />} />
-                                </BarChart>
+                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                          <div className="border-t pt-4">
@@ -1018,66 +1019,68 @@ export default function MyTeamPage() {
                             </div>
                         </div>
                     </CardContent>
-                </Card>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base"><QrCode/> QR Campaign</CardTitle>
-                            <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="text-sm space-y-2 text-muted-foreground">
-                            <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
-                            <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
-                        </CardContent>
-                    </Card>
-                     <Dialog>
-                        <DialogTrigger asChild>
-                            <Card className="cursor-pointer hover:border-primary transition-colors">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-base"><Trophy/> Team Goals</CardTitle>
-                                    <CardDescription>Click to view current team incentives and bonuses.</CardDescription>
-                                </CardHeader>
-                            </Card>
-                        </DialogTrigger>
-                        <TeamGoalsDialog />
-                    </Dialog>
-                    <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
-                        <Link href="/dashboard/materials">
-                            <div className="relative aspect-video w-full">
-                                <Image
-                                    src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
-                                    alt="Sales Materials Preview"
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-base"><BookCopy/> Sales Materials</CardTitle>
-                                <CardDescription>Your toolkit for success.</CardDescription>
-                            </CardHeader>
-                        </Link>
-                    </Card>
                 </div>
-            </div>
-            <div className="lg:col-span-1 flex flex-col gap-6">
+                 <div className="lg:col-span-1 border-t lg:border-t-0 lg:border-l">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                           <div className="p-6 cursor-pointer hover:bg-muted/50 transition-colors h-full flex flex-col justify-center">
+                                <CardHeader className="p-0">
+                                    <CardTitle>My Commissions</CardTitle>
+                                    <CardDescription>Your direct sales and team override commissions.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-0 pt-6 flex flex-col items-center justify-center text-center">
+                                    <div className='flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4'>
+                                        <CircleDollarSign className='h-12 w-12 text-primary'/>
+                                    </div>
+                                    <p className="text-4xl font-bold">{currencyFormatter.format(totalCurrentMonthCommission)}</p>
+                                    <p className="text-sm text-muted-foreground">This Month</p>
+                                </CardContent>
+                           </div>
+                        </DialogTrigger>
+                        <ManagerCommissionsDialog directSalesCommissions={commissionDetails.directSales} qrCampaignCommissions={commissionDetails.qrCampaigns} teamOverrideCommissions={commissionDetails.teamOverrides} recurringCommissions={commissionDetails.recurring} allClients={clients} allProposals={proposals} allUsers={salesUsers} />
+                    </Dialog>
+                </div>
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base"><QrCode/> QR Campaign</CardTitle>
+                        <CardDescription>How earnings from your QR campaigns are calculated.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2 text-muted-foreground">
+                        <p>When a sale is made via one of your QR links, you receive the <span className="font-semibold text-primary">full one-time commission</span> and any applicable <span className="font-semibold text-primary">recurring commissions</span>.</p>
+                        <p>These sales are treated as your own direct sales, so no team override commissions apply.</p>
+                    </CardContent>
+                </Card>
                  <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer hover:border-primary transition-colors">
                             <CardHeader>
-                                <CardTitle>My Commissions</CardTitle>
-                                <CardDescription>Your direct sales and team override commissions.</CardDescription>
+                                <CardTitle className="flex items-center gap-2 text-base"><Trophy/> Team Goals</CardTitle>
+                                <CardDescription>Click to view current team incentives and bonuses.</CardDescription>
                             </CardHeader>
-                            <CardContent className="flex flex-col items-center justify-center text-center">
-                                <div className='flex items-center justify-center rounded-full bg-primary/10 h-24 w-24 mb-4'>
-                                    <CircleDollarSign className='h-12 w-12 text-primary'/>
-                                </div>
-                                <p className="text-4xl font-bold">{currencyFormatter.format(totalCurrentMonthCommission)}</p>
-                                <p className="text-sm text-muted-foreground">This Month</p>
-                            </CardContent>
                         </Card>
                     </DialogTrigger>
-                    <ManagerCommissionsDialog directSalesCommissions={commissionDetails.directSales} qrCampaignCommissions={commissionDetails.qrCampaigns} teamOverrideCommissions={commissionDetails.teamOverrides} recurringCommissions={commissionDetails.recurring} allClients={clients} allProposals={proposals} allUsers={salesUsers} />
+                    <TeamGoalsDialog />
                 </Dialog>
+                <Card className="overflow-hidden cursor-pointer hover:border-primary transition-colors">
+                    <Link href="/dashboard/materials">
+                        <div className="relative aspect-video w-full">
+                            <Image
+                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FPlans%2Fwater_refill_Flow.png?alt=media&token=6b11f719-39e9-4ea4-b4a6-1bbe587bfa63"
+                                alt="Sales Materials Preview"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base"><BookCopy/> Sales Materials</CardTitle>
+                            <CardDescription>Your toolkit for success.</CardDescription>
+                        </CardHeader>
+                    </Link>
+                </Card>
             </div>
         </div>
 
