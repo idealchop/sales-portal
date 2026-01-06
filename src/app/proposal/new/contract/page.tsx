@@ -269,6 +269,12 @@ function PreviewDialog({
                 <DialogHeader>
                     <DialogTitle>Proposal Preview & Finalization</DialogTitle>
                     <DialogDescription>Review the details, sign the agreement, and upload your payment to complete the process.</DialogDescription>
+                    {finalPlanDetails?.clientId && finalPlanDetails?.proposalId && (
+                        <div className="pt-4 space-y-2 text-center sm:text-left">
+                            <p className="text-sm font-mono text-muted-foreground">Client ID: {finalPlanDetails.clientId}</p>
+                            <p className="text-sm font-mono text-muted-foreground">Proposal ID: {finalPlanDetails.proposalId}</p>
+                        </div>
+                    )}
                 </DialogHeader>
                 <ScrollArea className="h-[75vh] pr-6">
                     {finalPlanDetails && (
@@ -436,7 +442,9 @@ function ContractPageContent() {
 
   useEffect(() => {
     // Automatically open the review dialog on page load
-    setReviewDialogOpen(true);
+    ensureClientAndProposalIdsAreGenerated().then(() => {
+        setReviewDialogOpen(true);
+    });
   }, []);
 
   const ensureClientAndProposalIdsAreGenerated = useCallback(async () => {
@@ -894,328 +902,37 @@ function ContractPageContent() {
     )
   }
 
-  const isFlowPlan = plan.id === 'enterprise-overflow';
-  const isCustomPlan = plan.id === 'custom-plan';
-  const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
-  const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
   const prevLink = `/proposal/new/plans?${searchParams.toString()}`;
-  const selectedCycle = billingCycles.find(c => c.value === billingCycle) || billingCycles[0];
-  const currencyFormatter = new Intl.NumberFormat('en-ph', { style: 'currency', currency: 'php' });
-  
-  const clientTypeMap: { [key: string]: string } = {
-    household: 'Family',
-    sme: 'SME',
-    commercial: 'Commercial',
-    corporate: 'Corporate',
-    enterprise: 'Enterprise'
-  };
-
-  const getClientTypeLabel = (type: Client['clientType']) => {
-    if (type === 'household') return 'Family';
-    return 'Employees';
-  };
-  
-  const pricePerLiter = finalPlanDetails.pricePerLiter || 0;
 
   return (
-    <div className="flex flex-col gap-6 pb-24 sm:pb-0">
-       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Finalize Proposal</h1>
-          <p className="text-muted-foreground">
-            Step 5: Review inclusions, add-ons, and sign the agreement.
-          </p>
-        </div>
-         <div className="hidden sm:flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" asChild>
-                <Link href={prevLink}>Previous</Link>
-            </Button>
-             <GenerateProposalDialog 
-                open={isGenerateDialogOpen}
-                onOpenChange={setGenerateDialogOpen}
-                finalPlanDetails={finalPlanDetails} 
-                onShare={() => handleActionClick('share')} 
-                onSaveDraft={handleSaveDraft}
-                isSharing={isSharing}
-                isSaving={isSaving}
-             >
-                <Button id="generate-proposal-trigger" variant="outline" onClick={() => handleActionClick('generate')} disabled={isSaving}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate Proposal
-                </Button>
-            </GenerateProposalDialog>
-            <Button onClick={() => handleActionClick('sign')} disabled={isSaving}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Review &amp; Sign
-            </Button>
-        </div>
-      </div>
+    <>
+      {finalPlanDetails && (
+          <PreviewDialog 
+              finalPlanDetails={finalPlanDetails}
+              isSaving={isSaving}
+              isDialogOpen={isReviewDialogOpen}
+              setDialogOpen={setReviewDialogOpen}
+              saveProposal={saveProposal}
+              signatureData={signatureData}
+              onSaveSignature={handleSaveSignature}
+              onClearSignature={() => setSignatureData(undefined)}
+              paymentProofFile={paymentProofFile}
+              setPaymentProofFile={setPaymentProofFile}
+          />
+      )}
 
-       {finalPlanDetails && (
-            <PreviewDialog 
-                finalPlanDetails={finalPlanDetails}
-                isSaving={isSaving}
-                isDialogOpen={isReviewDialogOpen}
-                setDialogOpen={setReviewDialogOpen}
-                saveProposal={saveProposal}
-                signatureData={signatureData}
-                onSaveSignature={handleSaveSignature}
-                onClearSignature={() => setSignatureData(undefined)}
-                paymentProofFile={paymentProofFile}
-                setPaymentProofFile={setPaymentProofFile}
-            />
-       )}
-
-      <div className="flex flex-col gap-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
-                <CardDescription>
-                    A summary of the selected subscription plan details.
-                    {!isFlowPlan && !isCustomPlan && " (Includes +20% free liters every month)"}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card className="bg-primary text-primary-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                {isFlowPlan ? 'Top-Up Amount' : (isCustomPlan ? 'Usage-Based' : 'Premium Liters Included')}
-                            </CardTitle>
-                            <Waves className="h-4 w-4 text-primary-foreground/70" />
-                        </CardHeader>
-                        <CardContent>
-                            {isCustomPlan ? (
-                                <div className="space-y-1">
-                                    <p className="text-sm font-semibold">Usage-Based</p>
-                                    <div className="text-2xl font-bold">{currencyFormatter.format(pricePerLiter)}<span className="text-lg">/L</span></div>
-                                    <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
-                                </div>
-                            ) : (
-                                <div className="text-2xl font-bold">{finalPlan.liters} / mo</div>
-                            )}
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary text-primary-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Water Stations</CardTitle>
-                            <Building className="h-4 w-4 text-primary-foreground/70" />
-                        </CardHeader>
-                        <CardContent>
-                             <div className="text-2xl font-bold">{finalPlan.stations}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary text-primary-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Free Refillable Gallons</CardTitle>
-                            <Package className="h-4 w-4 text-primary-foreground/70" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {isCustomPlan && finalPlanDetails.containers ? `${finalPlanDetails.containers} Gallons` : (rotationInfo && rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic')}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary text-primary-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Avg. Refill Frequency</CardTitle>
-                            <RefreshCcw className="h-4 w-4 text-primary-foreground/70" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{finalPlan.refillFrequency}</div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </CardContent>
-        </Card>
-        
-        <div className="w-full flex flex-col gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Distribution &amp; Operation Timeline</CardTitle>
-                    <CardDescription>Key milestones for service activation.</CardDescription>
-                </CardHeader>
-                 <CardContent className="pt-8">
-                     <div className="relative flex justify-between">
-                        <TimelineItem 
-                            icon={<CheckCircle className="h-5 w-5" />}
-                            title="Account Activation"
-                            description="Client portal is set up within 12 hours of signing and making payment."
-                        />
-                        <TimelineItem 
-                            icon={<CalendarCheck className="h-5 w-5" />}
-                            title="Onboarding"
-                            description="Initial delivery schedule confirmed within 12 hours."
-                        />
-                        <TimelineItem 
-                            icon={<Ship className="h-5 w-5" />}
-                            title="First Delivery"
-                            description="Equipment and first water batch delivered within 24 hours of signing."
-                        />
-                        <TimelineItem 
-                            icon={<Bot className="h-5 w-5" />}
-                            title="Automated Refill"
-                            description="System manages refills based on your consumption."
-                            isLast
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Optional Add-Ons</CardTitle>
-                        <CardDescription>
-                        Enhance your Smart Refill experience with premium service options.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                        <TableHeader>
-                            <TableRow>
-                            <TableHead>Add-On</TableHead>
-                            <TableHead className="w-[250px]">Configuration</TableHead>
-                            <TableHead className="text-right">Fee</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {addons.map((addon) => (
-                            <TableRow key={addon.id}>
-                                <TableCell>
-                                    <Label htmlFor={addon.id} className="font-semibold">{addon.name}</Label>
-                                    <p className="text-muted-foreground text-xs mt-1">{addon.description}</p>
-                                </TableCell>
-                                <TableCell>
-                                    {addon.type === 'configurable' && (
-                                        <div className="flex flex-col gap-2">
-                                            <Select value={sanitationFeeType} onValueChange={setSanitationFeeType}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="paid">Paid</SelectItem>
-                                                    <SelectItem value="free">Free</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            {sanitationFeeType === 'paid' && (
-                                                <Input type="number" min="0" value={sanitationFee} onChange={e => setSanitationFee(Number(e.target.value))} placeholder="Fee" />
-                                            )}
-                                        </div>
-                                    )}
-                                    {addon.type === 'custom' && (
-                                        <div className="flex flex-col gap-2">
-                                            <Select value={dispenserFeeType} onValueChange={setDispenserFeeType}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    {addon.feeOptions?.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                            <div className="flex items-center gap-2">
-                                                <Input type="number" min="0" value={dispenserQuantity} onChange={e => setDispenserQuantity(Number(e.target.value))} placeholder="Qty" className="w-16"/>
-                                                <Input type="number" min="0" value={dispenserFee} onChange={e => setDispenserFee(Number(e.target.value))} placeholder="Fee" className="flex-1"/>
-                                            </div>
-                                        </div>
-                                    )}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    {addon.type === 'configurable' ? (sanitationFeeType === 'free' ? 'Free' : currencyFormatter.format(sanitationFee)) : 'Custom'}
-                                </TableCell>
-                            </TableRow>
-                            ))}
-                        </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Summary &amp; Final Amount</CardTitle>
-                    <CardDescription>Review the final costs before proceeding.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <div>
-                            <p className="font-semibold">{summaryTitle}{!isFlowPlan && !isCustomPlan && ` (${finalPlanDetails.billingCycleLabel})`}</p>
-                            <p className="text-2xl font-bold">
-                              {isFlowPlan ? currencyFormatter.format(50000) : (isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(finalPlanDetails.basePrice))}
-                              {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : (!isCustomPlan ? <span className="text-sm font-normal text-muted-foreground"> / mo</span> : '')}
-                            </p>
-                        </div>
-                        {!isFlowPlan && !isCustomPlan && (
-                            <ul className="text-xs text-muted-foreground list-disc pl-5">
-                                <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
-                                {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
-                                <li>Refill Frequency: {finalPlan.refillFrequency}</li>
-                            </ul>
-                        )}
-                    </div>
-
-                    {(sanitationFeeType !== 'free' || dispenserQuantity > 0) && (
-                        <>
-                            <div className="space-y-2">
-                                {sanitationFeeType === 'paid' && (
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Monthly Sanitation</span>
-                                        <span className="font-medium">{currencyFormatter.format(sanitationFee)}</span>
-                                    </div>
-                                )}
-                                {dispenserQuantity > 0 && (
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Add'l Dispensers ({dispenserQuantity}x)</span>
-                                        <span className="font-medium">{dispenserFeeType === 'free' ? 'Free' : currencyFormatter.format(dispenserFee * dispenserQuantity)}</span>
-                                    </div>
-                                )}
-                            </div>
-                            
-                            <Separator />
-                        </>
-                    )}
-                    
-                    {!isCustomPlan && (
-                        <div className='space-y-2'>
-                            <Label>Payment Schedule</Label>
-                            <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>
-                                {billingCycles.map((cycle) => (
-                                    <div key={cycle.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={cycle.value} id={cycle.value} disabled={isFlowPlan}/>
-                                        <Label htmlFor={cycle.value} className="font-normal flex justify-between w-full">
-                                            <span>{cycle.label}</span>
-                                            {cycle.discount > 0 && <Badge variant="success">-{cycle.discount * 100}%</Badge>}
-                                        </Label>
-                                    </div>
-                                ))}
-                            </RadioGroup>
-                        </div>
-                    )}
-
-
-                    <Separator />
-                    
-                    <div className="flex justify-between items-center font-bold text-lg p-4 bg-muted rounded-lg">
-                        <span>{isCustomPlan ? 'Billed by Consumption' : 'Total Due'}</span>
-                        <span>{isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : finalPlanDetails.totalAmountDue}</span>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-
-        <PaymentMethods />
-      </div>
-
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
-          <div className="flex gap-2">
-              <Button variant="outline" asChild className="flex-1">
-                  <Link href={prevLink}>Previous</Link>
-              </Button>
-              <Button onClick={() => handleActionClick('sign')} disabled={isSaving} className="flex-1">
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Review &amp; Sign
-              </Button>
+      {/* This content is effectively hidden because the dialog opens automatically */}
+      <div className="hidden">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Finalize Proposal</h1>
+            <p className="text-muted-foreground">
+              Step 5: Review inclusions, add-ons, and sign the agreement.
+            </p>
           </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
