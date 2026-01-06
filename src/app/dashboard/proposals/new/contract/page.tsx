@@ -412,6 +412,15 @@ function ContractPageContent() {
   const campaignName = searchParams.get('campaignName');
   const dispensers = searchParams.get('dispensers');
   const containers = searchParams.get('containers');
+  const locationsParam = searchParams.get('locations');
+  
+  const locations = useMemo(() => {
+    try {
+      return locationsParam ? JSON.parse(locationsParam) : [];
+    } catch {
+      return [];
+    }
+  }, [locationsParam]);
 
   const { toast } = useToast();
   const [billingCycle, setBillingCycle] = useState(billingCycles[0].value);
@@ -1038,12 +1047,12 @@ function ContractPageContent() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Free Refillable Gallons</CardTitle>
+                            <CardTitle className="text-sm font-medium">{isFlowPlan ? 'Locations' : 'Free Refillable Gallons'}</CardTitle>
                             <Package className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {isCustomPlan && finalPlanDetails.containers ? `${finalPlanDetails.containers} Gallons` : (rotationInfo && rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic')}
+                                {isFlowPlan ? `${locations.length} Locations` : (isCustomPlan && finalPlanDetails.containers ? `${finalPlanDetails.containers} Gallons` : (rotationInfo && rotationInfo.gallons > 0 ? `${rotationInfo.gallons} Gallons` : 'Dynamic'))}
                             </div>
                         </CardContent>
                     </Card>
@@ -1257,3 +1266,5 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
+
+    
