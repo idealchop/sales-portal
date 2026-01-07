@@ -502,14 +502,15 @@ function CustomPlanCalculator({
 function FlowPlanConfigurator({
   onCalculated,
 }: {
-  onCalculated: (values: { locations: { name: string; dispensers: number; containers: number }[] }) => void;
+  onCalculated: (values: { locations: { name: string; dispensers: number; containers: number }[], topUpAmount: number }) => void;
 }) {
   const [locations, setLocations] = useState([{ name: '', dispensers: 1, containers: 5 }]);
   const [newLocationName, setNewLocationName] = useState('');
+  const [topUpAmount, setTopUpAmount] = useState(50000);
 
   useEffect(() => {
-    onCalculated({ locations });
-  }, [locations, onCalculated]);
+    onCalculated({ locations, topUpAmount });
+  }, [locations, topUpAmount, onCalculated]);
 
   const handleUpdateLocation = (index: number, field: 'name' | 'dispensers' | 'containers', value: string | number) => {
     const newLocations = [...locations];
@@ -534,6 +535,7 @@ function FlowPlanConfigurator({
   
   const totalDispensers = locations.reduce((sum, loc) => sum + loc.dispensers, 0);
   const totalContainers = locations.reduce((sum, loc) => sum + loc.containers, 0);
+  const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
   return (
     <div className="p-6 space-y-6">
@@ -543,6 +545,21 @@ function FlowPlanConfigurator({
                 <CardDescription className="text-primary-foreground/80">Add each branch location and specify the required equipment.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="top-up-amount" className="text-sm font-medium text-primary-foreground/80">Initial Top-Up Amount</Label>
+                    <Input
+                        id="top-up-amount"
+                        type="number"
+                        value={topUpAmount}
+                        onChange={(e) => setTopUpAmount(Number(e.target.value))}
+                        className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60"
+                        min="0"
+                    />
+                </div>
+                <p className="text-xs text-center text-primary-foreground/80">
+                    Equivalent to <span className="font-bold">{(topUpAmount / 2.5).toLocaleString()} Liters</span> at ₱2.50/L
+                </p>
+                <Separator className="bg-primary-foreground/20" />
                 {locations.map((location, index) => (
                     <Card key={index} className="bg-primary-foreground/5 border-primary-foreground/10">
                         <CardHeader className="flex flex-row items-center justify-between p-4">
@@ -607,7 +624,7 @@ function PlansGrid({
     businessSize: BusinessSize | null,
     customCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number, locations: any[] } | null,
     onCustomCalculated: (values: any) => void;
-    overflowCalculatedValues: { locations: { name: string; dispensers: number; containers: number; }[] } | null;
+    overflowCalculatedValues: { locations: { name: string; dispensers: number; containers: number; }[], topUpAmount: number } | null;
     onOverflowCalculated: (values: any) => void;
     smeCommercialCustomValues: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number } | null,
     onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => void;
@@ -694,7 +711,7 @@ function PlansGrid({
             employees = `${overflowCalculatedValues.locations.length} Locations`;
             const totalDispensers = overflowCalculatedValues.locations.reduce((sum, loc) => sum + loc.dispensers, 0);
             stations = `${totalDispensers} Dispensers`;
-            monthlyFee = '₱50,000';
+            monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(overflowCalculatedValues.topUpAmount);
             liters = `Usage-Based`;
             refillFrequency = `Based on schedule`;
         }
@@ -1006,7 +1023,7 @@ export default function PlansPage() {
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [customCalculatedValues, setCustomCalculatedValues] = useState<any>(null);
-    const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[] } | null>(null);
+    const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[], topUpAmount: number } | null>(null);
     const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number } | null>(null);
     
     useEffect(() => {
@@ -1116,7 +1133,7 @@ export default function PlansPage() {
             return false;
         }
         if (selectedPlan === 'enterprise-overflow') {
-            return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name);
+            return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name) || overflowCalculatedValues.topUpAmount <= 0;
         }
         if (selectedPlan === 'custom-plan') {
             return !smeCommercialCustomValues || smeCommercialCustomValues.totalCost <= 0;
@@ -1138,7 +1155,7 @@ export default function PlansPage() {
             params.set('locations', JSON.stringify(customCalculatedValues.locations));
         }
         if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
-            params.set('cost', '50000');
+            params.set('cost', overflowCalculatedValues.topUpAmount.toString());
             params.set('locations', JSON.stringify(overflowCalculatedValues.locations));
         }
         if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
@@ -1254,7 +1271,7 @@ export default function PlansPage() {
               <CardHeader>
                   <CardTitle>Partner Perks</CardTitle>
                   <CardDescription>
-                  Every premium plan includes access to our growing network of partner benefits.
+                  Enhance your subscription with exclusive benefits from our partners, included with every plan.
                   </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-8 sm:grid-cols-2">

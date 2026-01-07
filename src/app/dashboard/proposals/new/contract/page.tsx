@@ -559,12 +559,16 @@ function ContractPageContent() {
     if (!plan) return null;
 
     if (plan.id === 'enterprise-overflow') {
+      const topUpAmount = parseFloat(customCost || '50000');
+      const equivalentLiters = topUpAmount / 2.5;
       return {
         ...plan,
-        liters: '20,000 L', // 50,000 PHP / 2.5 PHP/L
+        monthlyFee: `₱${topUpAmount.toLocaleString()}`,
+        liters: `${equivalentLiters.toLocaleString()} L`,
         inclusions: [
-            '20,000 liters consumable across all locations.',
+            `${equivalentLiters.toLocaleString()} consumable liters.`,
             'Liters do not expire.',
+            'Consumable across all locations.',
             'Optional auto-top-up for seamless service.',
             'Real-time balance and usage tracking.'
         ],
@@ -583,14 +587,14 @@ function ContractPageContent() {
         employees: getEmployees(finalLiters, clientType === 'household'),
         stations: clientType === 'household' ? getStations(finalLiters) : plan.stations,
     }
-  }, [plan, clientType]);
+  }, [plan, clientType, customCost]);
   
   const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
     if (!plan || !finalPlan) return null;
     
     const isFlowPlan = plan.id === 'enterprise-overflow';
     const isCustomPlan = plan.id === 'custom-plan';
-    const planBaseCost = isFlowPlan ? 50000 : (parseFloat(plan.monthlyFee.replace(/[^0-9.-]+/g,"")) || 0);
+    const planBaseCost = parseFloat(customCost || plan.monthlyFee.replace(/[^0-9.-]+/g,"") || '0');
 
     const sanitationCost = sanitationFeeType === 'paid' ? sanitationFee : 0;
     const dispensersCost = dispenserFeeType === 'monthly' ? dispenserQuantity * dispenserFee : 0;
@@ -608,8 +612,13 @@ function ContractPageContent() {
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const totalMonthlyLiters = baseLiters + freeLiters;
-    const totalLitersForCycle = isFlowPlan ? '20,000 L' : `${(totalMonthlyLiters * selectedCycle.multiplier).toLocaleString()} L`;
     
+    const totalLitersForCycle = isFlowPlan
+        ? `${(planBaseCost / 2.5).toLocaleString()} L`
+        : isCustomPlan
+            ? `${(parseInt(customLiters || '0')).toLocaleString()} L`
+            : `${(totalMonthlyLiters * selectedCycle.multiplier).toLocaleString()} L`;
+
     const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
 
     const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
@@ -624,7 +633,7 @@ function ContractPageContent() {
         refillableGallons: rotationInfo.gallons > 0 ? `${rotationInfo.gallons}` : 'Dynamic',
         refillFrequency: finalPlan.refillFrequency,
         totalAmountDue: isCustomPlan ? "Usage-Based" : new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalAmount),
-        billingCycleLabel: isCustomPlan ? "Usage-Based" : selectedCycle.label,
+        billingCycleLabel: isFlowPlan ? 'Top-Up' : (isCustomPlan ? "Usage-Based" : selectedCycle.label),
         discount: discount,
         basePrice: subtotal,
         selectedAddons: { 'monthly-sanitation': sanitationFeeType === 'paid' },
@@ -641,8 +650,8 @@ function ContractPageContent() {
         addons,
         additionalDispenserCost: 0,
         additionalLiterCost: 0,
-        totalMonthlyLiters: isFlowPlan ? 20000 : totalMonthlyLiters,
-        totalLitersForCycle: isFlowPlan ? 20000 : (totalMonthlyLiters * selectedCycle.multiplier),
+        totalMonthlyLiters: isFlowPlan ? (planBaseCost / 2.5) : totalMonthlyLiters,
+        totalLitersForCycle: isFlowPlan ? (planBaseCost / 2.5) : (isCustomPlan ? parseInt(customLiters || '0') : (totalMonthlyLiters * selectedCycle.multiplier)),
         isOverflowPlan: isFlowPlan,
         clientId: generatedClientId,
         proposalId: generatedProposalId,
@@ -1041,8 +1050,8 @@ function ContractPageContent() {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="text-2xl font-bold">{finalPlan.liters} / mo</div>
-                                    {isFlowPlan && <p className="text-xs text-primary-foreground/80">Non-expiring, for all locations</p>}
+                                    <div className="text-2xl font-bold">{finalPlan.liters}</div>
+                                    {!isFlowPlan && <p className="text-xs text-primary-foreground/80">per month</p>}
                                 </>
                             )}
                         </CardContent>
@@ -1190,7 +1199,7 @@ function ContractPageContent() {
                         <div>
                             <p className="font-semibold">{summaryTitle}{!isFlowPlan && !isCustomPlan && ` (${finalPlanDetails.billingCycleLabel})`}</p>
                             <p className="text-2xl font-bold">
-                              {isFlowPlan ? currencyFormatter.format(50000) : (isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(finalPlanDetails.basePrice))}
+                              {isFlowPlan ? currencyFormatter.format(finalPlanDetails.planBaseCost) : (isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(finalPlanDetails.basePrice))}
                               {isFlowPlan ? <span className="text-sm font-normal text-muted-foreground"> Top-Up</span> : (!isCustomPlan ? <span className="text-sm font-normal text-muted-foreground"> / mo</span> : '')}
                             </p>
                         </div>
