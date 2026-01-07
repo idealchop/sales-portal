@@ -413,6 +413,7 @@ function ContractPageContent() {
   const dispensers = searchParams.get('dispensers');
   const containers = searchParams.get('containers');
   const locationsParam = searchParams.get('locations');
+  const pricePerLiterParam = searchParams.get('pricePerLiter');
   
   const locations = useMemo(() => {
     try {
@@ -560,7 +561,8 @@ function ContractPageContent() {
 
     if (plan.id === 'enterprise-overflow') {
       const topUpAmount = parseFloat(customCost || '50000');
-      const equivalentLiters = topUpAmount / 2.5;
+      const pricePerLiter = parseFloat(pricePerLiterParam || '2.5');
+      const equivalentLiters = topUpAmount / pricePerLiter;
       return {
         ...plan,
         monthlyFee: `₱${topUpAmount.toLocaleString()}`,
@@ -569,8 +571,7 @@ function ContractPageContent() {
             `${equivalentLiters.toLocaleString()} consumable liters.`,
             'Liters do not expire.',
             'Consumable across all locations.',
-            'Optional auto-top-up for seamless service.',
-            'Real-time balance and usage tracking.'
+            'Optional auto-top-up for seamless service.'
         ],
       };
     }
@@ -587,7 +588,7 @@ function ContractPageContent() {
         employees: getEmployees(finalLiters, clientType === 'household'),
         stations: clientType === 'household' ? getStations(finalLiters) : plan.stations,
     }
-  }, [plan, clientType, customCost]);
+  }, [plan, clientType, customCost, pricePerLiterParam]);
   
   const finalPlanDetails: FinalPlanDetails | null = useMemo(() => {
     if (!plan || !finalPlan) return null;
@@ -612,9 +613,11 @@ function ContractPageContent() {
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const totalMonthlyLiters = baseLiters + freeLiters;
+
+    const pricePerLiter = (customCost && customLiters) ? parseFloat(customCost) / parseInt(customLiters) : (parseFloat(pricePerLiterParam || '0'));
     
     const totalLitersForCycle = isFlowPlan
-        ? `${(planBaseCost / 2.5).toLocaleString()} L`
+        ? `${(planBaseCost / pricePerLiter).toLocaleString()} L`
         : isCustomPlan
             ? `${(parseInt(customLiters || '0')).toLocaleString()} L`
             : `${(totalMonthlyLiters * selectedCycle.multiplier).toLocaleString()} L`;
@@ -622,8 +625,6 @@ function ContractPageContent() {
     const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
 
     const summaryTitle = plan.name.includes("Plan") ? plan.name : `${plan.name} Plan`;
-
-    const pricePerLiter = (customCost && customLiters) ? parseFloat(customCost) / parseInt(customLiters) : 0;
 
     return {
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -650,8 +651,8 @@ function ContractPageContent() {
         addons,
         additionalDispenserCost: 0,
         additionalLiterCost: 0,
-        totalMonthlyLiters: isFlowPlan ? (planBaseCost / 2.5) : totalMonthlyLiters,
-        totalLitersForCycle: isFlowPlan ? (planBaseCost / 2.5) : (isCustomPlan ? parseInt(customLiters || '0') : (totalMonthlyLiters * selectedCycle.multiplier)),
+        totalMonthlyLiters: isFlowPlan ? (planBaseCost / pricePerLiter) : totalMonthlyLiters,
+        totalLitersForCycle: isFlowPlan ? (planBaseCost / pricePerLiter) : (isCustomPlan ? parseInt(customLiters || '0') : (totalMonthlyLiters * selectedCycle.multiplier)),
         isOverflowPlan: isFlowPlan,
         clientId: generatedClientId,
         proposalId: generatedProposalId,
@@ -662,11 +663,11 @@ function ContractPageContent() {
         address,
         clientType,
         signature: signatureData,
-        pricePerLiter: isCustomPlan ? pricePerLiter : undefined,
+        pricePerLiter: isCustomPlan || isFlowPlan ? pricePerLiter : undefined,
         dispensers: parseInt(dispensers || '0'),
         containers: parseInt(containers || '0'),
     };
-  }, [plan, finalPlan, billingCycle, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers]);
+  }, [plan, finalPlan, billingCycle, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee, generatedClientId, generatedProposalId, companyName, contactName, contactEmail, contactPhone, address, clientType, signatureData, customCost, customLiters, dispensers, containers, pricePerLiterParam]);
 
   const saveProposal = useCallback(async (status: 'draft' | 'accepted'): Promise<boolean> => {
     if (!finalPlanDetails || !firestore) {
@@ -1235,7 +1236,7 @@ function ContractPageContent() {
                         </>
                     )}
                     
-                    {!isCustomPlan && !isFlowPlan && (
+                    {!isFlowPlan && !isCustomPlan && (
                         <div className='space-y-2'>
                             <Label>Payment Schedule</Label>
                             <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>

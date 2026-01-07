@@ -501,16 +501,19 @@ function CustomPlanCalculator({
 
 function FlowPlanConfigurator({
   onCalculated,
+  allowPriceEdit = false,
 }: {
-  onCalculated: (values: { locations: { name: string; dispensers: number; containers: number }[], topUpAmount: number }) => void;
+  onCalculated: (values: { locations: { name: string; dispensers: number; containers: number }[], topUpAmount: number, pricePerLiter: number }) => void;
+  allowPriceEdit?: boolean;
 }) {
   const [locations, setLocations] = useState([{ name: '', dispensers: 1, containers: 5 }]);
   const [newLocationName, setNewLocationName] = useState('');
   const [topUpAmount, setTopUpAmount] = useState(50000);
+  const [pricePerLiter, setPricePerLiter] = useState(2.5);
 
   useEffect(() => {
-    onCalculated({ locations, topUpAmount });
-  }, [locations, topUpAmount, onCalculated]);
+    onCalculated({ locations, topUpAmount, pricePerLiter });
+  }, [locations, topUpAmount, pricePerLiter, onCalculated]);
 
   const handleUpdateLocation = (index: number, field: 'name' | 'dispensers' | 'containers', value: string | number) => {
     const newLocations = [...locations];
@@ -556,8 +559,21 @@ function FlowPlanConfigurator({
                         min="0"
                     />
                 </div>
+                 {allowPriceEdit && (
+                     <div className="space-y-2">
+                        <Label htmlFor="price-per-liter-overflow" className="text-sm font-medium text-primary-foreground/80">Price per Liter (₱)</Label>
+                        <Input 
+                            id="price-per-liter-overflow" 
+                            type="number" 
+                            value={pricePerLiter} 
+                            onChange={(e) => setPricePerLiter(parseFloat(e.target.value) || 0)} 
+                            className="bg-transparent border-primary-foreground/50 text-primary-foreground placeholder:text-primary-foreground/60"
+                            step="0.01"
+                        />
+                    </div>
+                 )}
                 <p className="text-xs text-center text-primary-foreground/80">
-                    Equivalent to <span className="font-bold">{(topUpAmount / 2.5).toLocaleString()} Liters</span> at ₱2.50/L
+                    Equivalent to <span className="font-bold">{(topUpAmount / pricePerLiter).toLocaleString(undefined, {maximumFractionDigits: 0})} Liters</span> at {currencyFormatter.format(pricePerLiter)}/L
                 </p>
                 <Separator className="bg-primary-foreground/20" />
                 {locations.map((location, index) => (
@@ -622,9 +638,9 @@ function PlansGrid({
     selectedPlan: string | null, 
     onSelectPlan: (planId: string) => void, 
     businessSize: BusinessSize | null,
-    customCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number, locations: any[] } | null,
+    customCalculatedValues: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number } | null,
     onCustomCalculated: (values: any) => void;
-    overflowCalculatedValues: { locations: { name: string; dispensers: number; containers: number; }[], topUpAmount: number } | null;
+    overflowCalculatedValues: { locations: { name: string; dispensers: number; containers: number; }[], topUpAmount: number, pricePerLiter: number } | null;
     onOverflowCalculated: (values: any) => void;
     smeCommercialCustomValues: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number } | null,
     onSmeCommercialCustomCalculated: (values: { totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number }) => void;
@@ -785,14 +801,18 @@ function PlansGrid({
                     </CardContent>
                     
                     {plan.id === 'enterprise-customized' && isSelected && (
-                        <FlowPlanConfigurator 
-                           onCalculated={onCustomCalculated}
-                        />
+                         <CustomPlanCalculator
+                            onCalculated={onCustomCalculated}
+                            title="Enterprise Customized Calculator"
+                            description="Set consumption and equipment needs to get an estimated monthly cost."
+                            minimumCost={30000}
+                         />
                     )}
                     
                     {plan.id === 'enterprise-overflow' && isSelected && (
                         <FlowPlanConfigurator 
                            onCalculated={onOverflowCalculated}
+                           allowPriceEdit={true}
                         />
                     )}
                     
@@ -1023,7 +1043,7 @@ export default function PlansPage() {
     const [selectedEnterpriseType, setSelectedEnterpriseType] = useState<EnterpriseType | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [customCalculatedValues, setCustomCalculatedValues] = useState<any>(null);
-    const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[], topUpAmount: number } | null>(null);
+    const [overflowCalculatedValues, setOverflowCalculatedValues] = useState<{ locations: { name: string; dispensers: number; containers: number; }[], topUpAmount: number, pricePerLiter: number } | null>(null);
     const [smeCommercialCustomValues, setSmeCommercialCustomValues] = useState<{ totalLiters: number, totalCost: number, deliveries: number, dispensers: number, containers: number, pricePerLiter: number } | null>(null);
     
     useEffect(() => {
@@ -1152,11 +1172,16 @@ export default function PlansPage() {
         }
 
         if (selectedPlan === 'enterprise-customized' && customCalculatedValues) {
-            params.set('locations', JSON.stringify(customCalculatedValues.locations));
+            params.set('liters', customCalculatedValues.totalLiters.toString());
+            params.set('cost', customCalculatedValues.totalCost.toString());
+            params.set('freq', customCalculatedValues.deliveries.toString());
+            params.set('dispensers', customCalculatedValues.dispensers.toString());
+            params.set('containers', customCalculatedValues.containers.toString());
         }
         if (selectedPlan === 'enterprise-overflow' && overflowCalculatedValues) {
             params.set('cost', overflowCalculatedValues.topUpAmount.toString());
             params.set('locations', JSON.stringify(overflowCalculatedValues.locations));
+            params.set('pricePerLiter', overflowCalculatedValues.pricePerLiter.toString());
         }
         if (selectedPlan === 'custom-plan' && smeCommercialCustomValues) {
             params.set('liters', smeCommercialCustomValues.totalLiters.toString());
