@@ -1195,11 +1195,13 @@ function ContractPageContent() {
                             </p>
                         </div>
                         {!isFlowPlan && !isCustomPlan && (
-                            <ul className="text-xs text-muted-foreground list-disc pl-5">
-                                <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
-                                {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
-                                <li>Refill Frequency: {finalPlan.refillFrequency}</li>
-                            </ul>
+                            <>
+                                <ul className="text-xs text-muted-foreground list-disc pl-5">
+                                    <li>Total Liters: {finalPlan.liters === 'Usage-Based' ? 'Usage-Based' : `${finalPlan.liters} / mo (includes 20% bonus)`}</li>
+                                    {finalPlan.inclusions && finalPlan.inclusions[0] && <li>{finalPlan.inclusions[0]}</li>}
+                                    <li>Refill Frequency: {finalPlan.refillFrequency}</li>
+                                </ul>
+                            </>
                         )}
                     </div>
 
@@ -1224,7 +1226,7 @@ function ContractPageContent() {
                         </>
                     )}
                     
-                    {!isCustomPlan && (
+                    {!isCustomPlan && !isFlowPlan && (
                         <div className='space-y-2'>
                             <Label>Payment Schedule</Label>
                             <RadioGroup value={billingCycle} onValueChange={setBillingCycle} className="space-y-1" disabled={isFlowPlan}>
