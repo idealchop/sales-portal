@@ -666,11 +666,8 @@ function PlansGrid({
     };
 
     let gridColsClass = 'lg:grid-cols-3';
-    if (businessSize === 'commercial') {
-        gridColsClass = 'md:grid-cols-2';
-    }
-     if (businessSize === 'sme' || businessSize === 'household') {
-        gridColsClass = 'md:grid-cols-2';
+    if (businessSize === 'commercial' || businessSize === 'sme' || businessSize === 'household' || businessSize === 'corporate') {
+        gridColsClass = 'lg:grid-cols-2';
     }
      if (businessSize === 'corporate') {
         gridColsClass = 'lg:grid-cols-2';
@@ -718,9 +715,10 @@ function PlansGrid({
         let inclusions = [...plan.inclusions];
 
         if (isCustom && customCalculatedValues) {
-             const totalDispensers = customCalculatedValues.locations.reduce((sum, loc) => sum + loc.dispensers, 0);
-            employees = `${customCalculatedValues.locations.length} Locations`;
-            stations = `${totalDispensers} Dispensers`;
+            monthlyFee = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(customCalculatedValues.totalCost);
+            liters = `${customCalculatedValues.totalLiters.toLocaleString()} L`;
+            const freq = deliveryFrequencies.find(f => f.value === customCalculatedValues.deliveries);
+            refillFrequency = freq ? freq.label : plan.refillFrequency;
         }
         
         if (isOverflow && overflowCalculatedValues) {
@@ -1097,11 +1095,11 @@ export default function PlansPage() {
     const renderPlans = () => {
         let plansToRender: Plan[] = [];
         let defaultPlanId = '';
-
+    
         if (selectedSize === 'enterprise' && selectedEnterpriseType) {
             if (selectedEnterpriseType === 'customized') {
-                 plansToRender = [flowPlans.find(p => p.id === 'enterprise-customized')!];
-                 defaultPlanId = 'enterprise-customized';
+                plansToRender = [flowPlans.find(p => p.id === 'enterprise-customized')!];
+                defaultPlanId = 'enterprise-customized';
             } else if (selectedEnterpriseType === 'flowing') {
                 plansToRender = [flowPlans.find(p => p.id === 'enterprise-overflow')!];
                 defaultPlanId = 'enterprise-overflow';
@@ -1113,44 +1111,46 @@ export default function PlansPage() {
                     defaultPlanId = 'household-family';
                     break;
                 case 'sme':
-                    plansToRender = [...smePlans, customSmeCommercialPlan];
-                    defaultPlanId = 'professional';
+                    plansToRender = [smePlans.find(p => p.id === 'micro')!, customSmeCommercialPlan];
+                    defaultPlanId = 'micro';
                     break;
                 case 'commercial':
-                    plansToRender = [...commercialPlans, customSmeCommercialPlan];
-                    defaultPlanId = 'pro';
+                    plansToRender = [commercialPlans.find(p => p.id === 'growth')!, customSmeCommercialPlan];
+                    defaultPlanId = 'growth';
                     break;
                 case 'corporate':
-                    plansToRender = [...corporatePlans, customSmeCommercialPlan];
-                    defaultPlanId = 'enterprise-plus';
+                    plansToRender = [corporatePlans.find(p => p.id === 'enterprise-basic')!, customSmeCommercialPlan];
+                    defaultPlanId = 'enterprise-basic';
                     break;
                 default:
                     return null;
             }
         }
-
+    
         if (!plansToRender || plansToRender.length === 0) return null;
-
-        return <PlansGrid 
-                    plans={plansToRender} 
-                    defaultPlan={defaultPlanId} 
-                    selectedPlan={selectedPlan} 
-                    onSelectPlan={handlePlanSelect} 
-                    businessSize={selectedSize}
-                    customCalculatedValues={customCalculatedValues}
-                    onCustomCalculated={handleCustomCalculated}
-                    overflowCalculatedValues={overflowCalculatedValues}
-                    onOverflowCalculated={handleOverflowCalculated}
-                    smeCommercialCustomValues={smeCommercialCustomValues}
-                    onSmeCommercialCustomCalculated={handleSmeCommercialCustomCalculated}
-                />;
+    
+        return (
+            <PlansGrid
+                plans={plansToRender}
+                defaultPlan={defaultPlanId}
+                selectedPlan={selectedPlan}
+                onSelectPlan={handlePlanSelect}
+                businessSize={selectedSize}
+                customCalculatedValues={customCalculatedValues}
+                onCustomCalculated={handleCustomCalculated}
+                overflowCalculatedValues={overflowCalculatedValues}
+                onOverflowCalculated={handleOverflowCalculated}
+                smeCommercialCustomValues={smeCommercialCustomValues}
+                onSmeCommercialCustomCalculated={handleSmeCommercialCustomCalculated}
+            />
+        );
     };
     
     const isNextDisabled = useMemo(() => {
         if (!selectedPlan) return true;
         if (selectedPlan === 'enterprise-customized') {
             if (!customCalculatedValues) return true;
-            return false;
+            return customCalculatedValues.totalCost < 30000;
         }
         if (selectedPlan === 'enterprise-overflow') {
             return !overflowCalculatedValues || overflowCalculatedValues.locations.length === 0 || overflowCalculatedValues.locations.some(l => !l.name) || overflowCalculatedValues.topUpAmount <= 0;
@@ -1190,6 +1190,7 @@ export default function PlansPage() {
             params.set('type', selectedSize || '');
             params.set('dispensers', smeCommercialCustomValues.dispensers.toString());
             params.set('containers', smeCommercialCustomValues.containers.toString());
+            params.set('pricePerLiter', smeCommercialCustomValues.pricePerLiter.toString());
         }
         return `/dashboard/proposals/new/contract?${params.toString()}`;
     };
