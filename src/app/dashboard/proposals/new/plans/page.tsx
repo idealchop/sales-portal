@@ -1111,15 +1111,15 @@ export default function PlansPage() {
                     defaultPlanId = 'household-family';
                     break;
                 case 'sme':
-                    plansToRender = [smePlans.find(p => p.id === 'micro')!, customSmeCommercialPlan];
+                    plansToRender = [...smePlans, customSmeCommercialPlan];
                     defaultPlanId = 'micro';
                     break;
                 case 'commercial':
-                    plansToRender = [commercialPlans.find(p => p.id === 'growth')!, customSmeCommercialPlan];
+                     plansToRender = [...commercialPlans, customSmeCommercialPlan];
                     defaultPlanId = 'growth';
                     break;
                 case 'corporate':
-                    plansToRender = [corporatePlans.find(p => p.id === 'enterprise-basic')!, customSmeCommercialPlan];
+                     plansToRender = [...corporatePlans.slice(0,3), customSmeCommercialPlan];
                     defaultPlanId = 'enterprise-basic';
                     break;
                 default:
