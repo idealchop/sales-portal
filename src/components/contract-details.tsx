@@ -29,7 +29,7 @@ export function ContractSection({
   );
 }
 
-export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycleLabel, totalAmountDue, selectedAddons, additionalDispensers, addons, isCustomPlan, pricePerLiter, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee } : { summaryTitle: string, finalPlan: any, baseLiters: number, billingCycleLabel: string, totalAmountDue: string, selectedAddons: any, additionalDispensers: {quantity: number, feeType: string, fee: number}, addons: any[], isCustomPlan: boolean, pricePerLiter: number, sanitationFeeType: string, sanitationFee: number, dispenserQuantity: number, dispenserFeeType: string, dispenserFee: number }) {
+export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycleLabel, totalAmountDue, selectedAddons, additionalDispensers, addons, isCustomPlan, pricePerLiter, sanitationFeeType, sanitationFee, dispenserQuantity, dispenserFeeType, dispenserFee, isOverflowPlan } : { summaryTitle: string, finalPlan: any, baseLiters: number, billingCycleLabel: string, totalAmountDue: string, selectedAddons: any, additionalDispensers: {quantity: number, feeType: string, fee: number}, addons: any[], isCustomPlan: boolean, pricePerLiter: number, sanitationFeeType: string, sanitationFee: number, dispenserQuantity: number, dispenserFeeType: string, dispenserFee: number, isOverflowPlan?: boolean }) {
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
     return (
@@ -53,7 +53,15 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
             <ContractSection title="3. Subscription Plans">
                 <ul className="list-disc pl-5 space-y-2">
                     <li><span className="font-semibold">Plan:</span> {summaryTitle}</li>
-                    {!isCustomPlan && <li><span className="font-semibold">Monthly Liters:</span> {finalPlan.liters} (includes {baseLiters * 0.2}L bonus)</li>}
+                    {isOverflowPlan ? (
+                        <>
+                            <li><span className="font-semibold">Initial Liters:</span> 20,000 Liters (from ₱50,000 top-up).</li>
+                            <li><span className="font-semibold">Consumption Rate:</span> ₱2.50 per liter.</li>
+                            <li><span className="font-semibold">Terms:</span> Consumable across all locations, non-expiring.</li>
+                        </>
+                    ) : !isCustomPlan ? (
+                        <li><span className="font-semibold">Monthly Liters:</span> {finalPlan.liters} (includes {baseLiters * 0.2}L bonus)</li>
+                    ) : null}
                     <li><span className="font-semibold">Billing Cycle:</span> {billingCycleLabel}</li>
                     <li>
                         <span className="font-semibold">Payment Term:</span> 
@@ -345,6 +353,7 @@ export type FinalPlanDetails = {
     additionalLiterCost: number;
     totalMonthlyLiters: number;
     totalLitersForCycle: number;
+    isOverflowPlan?: boolean;
     clientId?: string;
     proposalId?: string;
     companyName: string;
@@ -417,6 +426,7 @@ export function ContractDetails({
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const isCustomPlan = plan.id === 'custom-plan';
+    const isOverflowPlan = plan.id === 'enterprise-overflow';
     const pricePerLiter = source.pricePerLiter || 0;
 
     const dispenserFeeTypeLabel = source.additionalDispensers.feeType === 'monthly' ? 'Monthly Fee' : source.additionalDispensers.feeType === 'security' ? 'Security Deposit' : 'Free';
@@ -653,10 +663,16 @@ export function ContractDetails({
                     <div className="space-y-2 p-4 border rounded-lg">
                         <h4 className="font-semibold text-foreground">Base Plan: {summaryTitle}</h4>
                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">{isCustomPlan ? 'Price per Liter' : 'Monthly Cost'}</span>
+                            <span className="text-muted-foreground">{isCustomPlan ? 'Price per Liter' : (isOverflowPlan ? 'Initial Top-up' : 'Monthly Cost')}</span>
                             <span className="font-semibold">{isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(planBaseCost || source.basePrice || 0)}</span>
                         </div>
-                        {!isCustomPlan && (
+                        {isOverflowPlan && (
+                           <ul className="list-disc pl-5 text-xs text-muted-foreground">
+                                <li>Equivalent to 20,000 consumable liters at ₱2.50/L.</li>
+                                <li>Liters do not expire and are shared across all locations.</li>
+                           </ul>
+                        )}
+                        {!isCustomPlan && !isOverflowPlan && (
                             <>
                                 <Separator className="my-2"/>
                                 <h5 className="font-semibold text-foreground text-sm pt-2">Free Inclusions:</h5>
@@ -836,6 +852,7 @@ export function ContractDetails({
                                 selectedAddons={selectedAddons}
                                 addons={addons}
                                 isCustomPlan={isCustomPlan}
+                                isOverflowPlan={isOverflowPlan}
                                 pricePerLiter={pricePerLiter}
                                 sanitationFeeType={source.sanitationFeeType}
                                 sanitationFee={source.sanitationFee}

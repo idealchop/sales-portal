@@ -62,6 +62,7 @@ export type Client = {
   paymentHistory?: PaymentHistoryItem[];
   createdAt?: string;
   updatedAt?: string;
+  onboardingToken?: string;
 };
 
 export type Proposal = {
@@ -102,6 +103,7 @@ export type UserProfile = {
     photoURL?: string;
     onboardingCompleted: boolean;
     createdAt?: string;
+    location?: string;
 };
 
 export type Commission = {
@@ -127,6 +129,43 @@ export type Notification = {
 }
     
 
+export type FinalPlanDetails = {
+    date: string;
+    summaryTitle: string;
+    totalLiters: string;
+    employees: string;
+    refillableGallons: string;
+    refillFrequency: string;
+    totalAmountDue: string;
+    billingCycleLabel: string;
+    discount: number;
+    basePrice: number;
+    selectedAddons: { [key: string]: boolean };
+    sanitationFeeType: string;
+    sanitationFee: number;
+    additionalDispensers: { quantity: number; feeType: string; fee: number; };
+    plan: Plan;
+    finalPlan: any;
+    planBaseCost: number;
+    addons: any[];
+    additionalDispenserCost: number;
+    additionalLiterCost: number;
+    totalMonthlyLiters: number;
+    totalLitersForCycle: number;
+    isOverflowPlan?: boolean;
+    clientId?: string;
+    proposalId?: string;
+    companyName: string;
+    contactName: string;
+    contactEmail: string;
+    contactPhone: string;
+    address: string;
+    clientType?: 'household' | 'sme' | 'commercial' | 'corporate' | 'enterprise';
+    signature?: string;
+    pricePerLiter?: number;
+    dispensers?: number;
+    containers?: number;
+};
 
 
 

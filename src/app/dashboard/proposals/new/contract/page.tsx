@@ -561,8 +561,13 @@ function ContractPageContent() {
     if (plan.id === 'enterprise-overflow') {
       return {
         ...plan,
-        liters: 'Usage-Based',
-        inclusions: ['Pay only for what you use'],
+        liters: '20,000 L', // 50,000 PHP / 2.5 PHP/L
+        inclusions: [
+            '20,000 liters consumable across all locations.',
+            'Liters do not expire.',
+            'Optional auto-top-up for seamless service.',
+            'Real-time balance and usage tracking.'
+        ],
       };
     }
 
@@ -603,7 +608,7 @@ function ContractPageContent() {
     const baseLiters = parseInt(plan.liters.replace(/[^0-9]/g, '')) || 0;
     const freeLiters = baseLiters * 0.2;
     const totalMonthlyLiters = baseLiters + freeLiters;
-    const totalLitersForCycle = isFlowPlan ? 'Usage-Based' : `${(totalMonthlyLiters * selectedCycle.multiplier).toLocaleString()} L`;
+    const totalLitersForCycle = isFlowPlan ? '20,000 L' : `${(totalMonthlyLiters * selectedCycle.multiplier).toLocaleString()} L`;
     
     const rotationInfo = gallonRotationData[plan.id] || gallonRotationData['custom-plan'];
 
@@ -636,8 +641,9 @@ function ContractPageContent() {
         addons,
         additionalDispenserCost: 0,
         additionalLiterCost: 0,
-        totalMonthlyLiters,
-        totalLitersForCycle: isFlowPlan ? 0 : (totalMonthlyLiters * selectedCycle.multiplier),
+        totalMonthlyLiters: isFlowPlan ? 20000 : totalMonthlyLiters,
+        totalLitersForCycle: isFlowPlan ? 20000 : (totalMonthlyLiters * selectedCycle.multiplier),
+        isOverflowPlan: isFlowPlan,
         clientId: generatedClientId,
         proposalId: generatedProposalId,
         companyName,
@@ -1010,9 +1016,11 @@ function ContractPageContent() {
         <Card>
             <CardHeader>
                 <CardTitle>Plan Summary: {summaryTitle}</CardTitle>
-                <CardDescription>
-                    A summary of the selected subscription plan details.
-                    {!isFlowPlan && !isCustomPlan && " (Includes +20% free liters every month)"}
+                 <CardDescription>
+                    {isFlowPlan 
+                        ? 'Details for your usage-based Enterprise Overflow plan.'
+                        : `A summary of the selected subscription plan details. ${!isCustomPlan ? " (Includes +20% free liters every month)" : ""}`
+                    }
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1020,7 +1028,7 @@ function ContractPageContent() {
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
-                                {isFlowPlan ? 'Top-Up Amount' : (isCustomPlan ? 'Usage-Based' : 'Premium Liters Included')}
+                                {isFlowPlan ? 'Initial Liters' : (isCustomPlan ? 'Usage-Based' : 'Premium Liters Included')}
                             </CardTitle>
                             <Waves className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
@@ -1032,7 +1040,10 @@ function ContractPageContent() {
                                     <p className="text-xs text-primary-foreground/80">Est. {finalPlan.liters} / mo</p>
                                 </div>
                             ) : (
-                                <div className="text-2xl font-bold">{finalPlan.liters} / mo</div>
+                                <>
+                                    <div className="text-2xl font-bold">{finalPlan.liters} / mo</div>
+                                    {isFlowPlan && <p className="text-xs text-primary-foreground/80">Non-expiring, for all locations</p>}
+                                </>
                             )}
                         </CardContent>
                     </Card>
@@ -1047,7 +1058,7 @@ function ContractPageContent() {
                     </Card>
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{isFlowPlan ? 'Locations' : 'Free Refillable Gallons'}</CardTitle>
+                             <CardTitle className="text-sm font-medium">{isFlowPlan ? 'Locations' : 'Free Refillable Gallons'}</CardTitle>
                             <Package className="h-4 w-4 text-primary-foreground/70" />
                         </CardHeader>
                         <CardContent>
@@ -1266,5 +1277,3 @@ export default function ContractPage() {
         </React.Suspense>
     )
 }
-
-    
