@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -376,6 +375,7 @@ interface ContractDetailsProps {
     onSaveSignature?: (dataUrl: string) => void;
     onClearSignature?: () => void;
     isProposalIllustration?: boolean;
+    forPdf?: boolean;
 }
 
 export function ContractDetails({
@@ -385,6 +385,7 @@ export function ContractDetails({
     onSaveSignature,
     onClearSignature,
     isProposalIllustration = false,
+    forPdf = false,
 }: ContractDetailsProps) {
 
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -456,92 +457,96 @@ export function ContractDetails({
             
             <Separator />
 
-            <Card>
-                <div className="grid md:grid-cols-2 items-center">
-                    <div className="p-6">
-                        <CardHeader className="p-0 mb-4">
-                            <CardTitle>Welcome to Smart Refill, {client.companyName}</CardTitle>
-                            <CardDescription>Your Partner in Water Supply Automation</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <div className="space-y-4 text-muted-foreground">
-                                <p>
-                                    Thank you for choosing River Philippines. This proposal for {client.companyName} outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
-                                </p>
-                                <p>
-                                    We go beyond delivery—we provide a secure, high-quality hydration system that protects your team's health and optimizes your operational costs.
-                                </p>
-                            </div>
-                        </CardContent>
+            {!forPdf && (
+                <>
+                <Card>
+                    <div className="grid md:grid-cols-2 items-center">
+                        <div className="p-6">
+                            <CardHeader className="p-0 mb-4">
+                                <CardTitle>Welcome to Smart Refill, {client.companyName}</CardTitle>
+                                <CardDescription>Your Partner in Water Supply Automation</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <div className="space-y-4 text-muted-foreground">
+                                    <p>
+                                        Thank you for choosing River Philippines. This proposal for {client.companyName} outlines how our Smart Refill system guarantees your business 100% water security through DOH-compliant quality and automated reliability. We eliminate the risk of running dry while providing full digital visibility over your consumption.
+                                    </p>
+                                    <p>
+                                        We go beyond delivery—we provide a secure, high-quality hydration system that protects your team's health and optimizes your operational costs.
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </div>
+                         <div className="relative min-h-[250px] p-6">
+                            <Image 
+                                src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/River%20Mobile%2Flanding%20page%20image.png?alt=media&token=bce76780-73c9-4b4c-8e6f-83e5234d337a"
+                                alt="Smart Refill App on a phone"
+                                fill
+                                className="object-contain rounded-lg"
+                                data-ai-hint="app interface"
+                            />
+                        </div>
                     </div>
-                     <div className="relative min-h-[250px] p-6">
-                        <Image 
-                            src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/River%20Mobile%2Flanding%20page%20image.png?alt=media&token=bce76780-73c9-4b4c-8e6f-83e5234d337a"
-                            alt="Smart Refill App on a phone"
-                            fill
-                            className="object-contain rounded-lg"
-                            data-ai-hint="app interface"
-                        />
-                    </div>
-                </div>
-            </Card>
+                </Card>
 
-            <Card>
-                 <CardHeader>
-                    <CardTitle>What is Smart Refill?</CardTitle>
-                    <CardDescription>An overview of our value proposition.</CardDescription>
-                </CardHeader>
-                 <CardContent>
-                     <div className="space-y-4 text-sm text-muted-foreground">
-                        <p className="font-semibold text-foreground">
-                        Smart Refill is the Philippines’ first automated water refill system
-                        for businesses — built to make water supply safe, seamless, and
-                        scalable.
-                        </p>
-                        <p>
-                        We connect businesses directly to a nationwide network of verified and
-                        compliant local water refilling stations, ensuring every delivery is
-                        automatic, on time, and fully compliant with sanitation and water
-                        quality standards.
-                        </p>
-                    </div>
-                </CardContent>
-                <CardFooter className="p-6 bg-muted">
-                     <div className="w-full">
-                        <h3 className="font-semibold text-foreground text-base mb-4">Smart Refill powers your business with:</h3>
-                        <div className="grid sm:grid-cols-2 gap-4">
-                            <div className="flex items-start gap-3">
-                                <RefreshCwIcon className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                <div>
-                                    <span className="font-semibold text-foreground">Automated Refills</span>
-                                    <p className="text-xs text-muted-foreground">No more texts, calls, or manual orders.</p>
+                <Card>
+                     <CardHeader>
+                        <CardTitle>What is Smart Refill?</CardTitle>
+                        <CardDescription>An overview of our value proposition.</CardDescription>
+                    </CardHeader>
+                     <CardContent>
+                         <div className="space-y-4 text-sm text-muted-foreground">
+                            <p className="font-semibold text-foreground">
+                            Smart Refill is the Philippines’ first automated water refill system
+                            for businesses — built to make water supply safe, seamless, and
+                            scalable.
+                            </p>
+                            <p>
+                            We connect businesses directly to a nationwide network of verified and
+                            compliant local water refilling stations, ensuring every delivery is
+                            automatic, on time, and fully compliant with sanitation and water
+                            quality standards.
+                            </p>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="p-6 bg-muted">
+                         <div className="w-full">
+                            <h3 className="font-semibold text-foreground text-base mb-4">Smart Refill powers your business with:</h3>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="flex items-start gap-3">
+                                    <RefreshCwIcon className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                    <div>
+                                        <span className="font-semibold text-foreground">Automated Refills</span>
+                                        <p className="text-xs text-muted-foreground">No more texts, calls, or manual orders.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <Globe className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                <div>
-                                    <span className="font-semibold text-foreground">Nationwide Access</span>
-                                    <p className="text-xs text-muted-foreground">Refill anywhere in the Philippines with verified partners.</p>
+                                <div className="flex items-start gap-3">
+                                    <Globe className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                    <div>
+                                        <span className="font-semibold text-foreground">Nationwide Access</span>
+                                        <p className="text-xs text-muted-foreground">Refill anywhere in the Philippines with verified partners.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <LayoutDashboard className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                <div>
-                                    <span className="font-semibold text-foreground">Centralized Dashboard</span>
-                                    <p className="text-xs text-muted-foreground">Monitor water usage, billing, and deliveries in real time.</p>
+                                <div className="flex items-start gap-3">
+                                    <LayoutDashboard className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                    <div>
+                                        <span className="font-semibold text-foreground">Centralized Dashboard</span>
+                                        <p className="text-xs text-muted-foreground">Monitor water usage, billing, and deliveries in real time.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <ShieldCheck className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                <div>
-                                    <span className="font-semibold text-foreground">Compliance Assurance</span>
-                                    <p className="text-xs text-muted-foreground">Every refill meets sanitation and safety standards.</p>
+                                <div className="flex items-start gap-3">
+                                    <ShieldCheck className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                    <div>
+                                        <span className="font-semibold text-foreground">Compliance Assurance</span>
+                                        <p className="text-xs text-muted-foreground">Every refill meets sanitation and safety standards.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </CardFooter>
-            </Card>
+                    </CardFooter>
+                </Card>
+                </>
+            )}
 
 
             <div className="grid grid-cols-1 gap-6">
@@ -748,89 +753,93 @@ export function ContractDetails({
                 </Card>
             )}
             
-            <Card>
-              <CardHeader>
-                  <CardTitle>Included in Every Plan</CardTitle>
-                     <CardDescription>
-                        Every subscription plan includes full access to our growing network of partner perks.
-                    </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-6 sm:grid-cols-2">
-                  {inclusions.map((item) => (
-                  <div key={item.title} className="flex items-start gap-3">
-                      <div>{item.icon}</div>
-                      <div>
-                      <h3 className="font-semibold text-sm">{item.title}</h3>
-                      <p className="text-xs text-muted-foreground">
-                          {item.description}
-                      </p>
-                      </div>
-                  </div>
-                  ))}
-              </CardContent>
-              </Card>
-
-            <Card>
-              <CardHeader>
-                  <CardTitle>Partner Perks</CardTitle>
-                  <CardDescription>
-                  Enhance your subscription with exclusive benefits from our partners, included with every plan.
-                  </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-8 sm:grid-cols-2">
-                   {perks.map((perk) => (
-                        <div key={perk.partner} className="flex items-start gap-4">
-                            {perk.icon}
-                            <div className="space-y-1">
-                                <h3 className="font-semibold">{perk.partner}</h3>
-                                <p className="text-sm text-muted-foreground">{perk.description}</p>
-                                <p className="text-sm font-medium text-primary">{perk.benefit}</p>
-                            </div>
-                        </div>
-                    ))}
-              </CardContent>
-              <CardFooter>
-                     <div className="text-sm text-muted-foreground space-y-2">
-                       <p className="font-semibold text-foreground">Terms:</p>
-                       <ul className="list-disc list-inside space-y-1">
-                            <li>All employees of the subscribed company are eligible for these perks.</li>
-                            <li>To redeem, employees must present their company ID at partner establishments.</li>
-                       </ul>
-                    </div>
-                </CardFooter>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Frequently Asked Questions</CardTitle>
-                    <CardDescription>Common questions about the Smart Refill service.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid md:grid-cols-2 gap-6 items-start">
-                          <div className="relative aspect-video rounded-lg overflow-hidden">
-                              <Image 
-                                  src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales_Smartreill.png?alt=media&token=b55f3099-38a1-45f9-98d8-cd530fb7b427"
-                                  alt="Business professionals in a meeting"
-                                  fill
-                                  className="object-cover"
-                                  data-ai-hint="business meeting"
-                              />
+            {!forPdf && (
+                <>
+                <Card>
+                  <CardHeader>
+                      <CardTitle>Included in Every Plan</CardTitle>
+                         <CardDescription>
+                            Every subscription plan includes full access to our growing network of partner perks.
+                        </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-6 sm:grid-cols-2">
+                      {inclusions.map((item) => (
+                      <div key={item.title} className="flex items-start gap-3">
+                          <div>{item.icon}</div>
+                          <div>
+                          <h3 className="font-semibold text-sm">{item.title}</h3>
+                          <p className="text-xs text-muted-foreground">
+                              {item.description}
+                          </p>
                           </div>
-                          <Accordion type="single" collapsible defaultValue={faqData[0].question}>
-                              {faqData.map((item) => (
-                              <AccordionItem value={item.question} key={item.question}>
-                                  <AccordionTrigger className="text-base font-semibold text-left">
-                                  {item.question}
-                                  </AccordionTrigger>
-                                  <AccordionContent className="pb-6 text-muted-foreground">
-                                  {item.answer}
-                                  </AccordionContent>
-                              </AccordionItem>
-                              ))}
-                          </Accordion>
                       </div>
+                      ))}
                   </CardContent>
-            </Card>
+                  </Card>
+
+                  <Card>
+                  <CardHeader>
+                      <CardTitle>Partner Perks</CardTitle>
+                      <CardDescription>
+                      Enhance your subscription with exclusive benefits from our partners, included with every plan.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-8 sm:grid-cols-2">
+                       {perks.map((perk) => (
+                            <div key={perk.partner} className="flex items-start gap-4">
+                                {perk.icon}
+                                <div className="space-y-1">
+                                    <h3 className="font-semibold">{perk.partner}</h3>
+                                    <p className="text-sm text-muted-foreground">{perk.description}</p>
+                                    <p className="text-sm font-medium text-primary">{perk.benefit}</p>
+                                </div>
+                            </div>
+                        ))}
+                  </CardContent>
+                  <CardFooter>
+                         <div className="text-sm text-muted-foreground space-y-2">
+                           <p className="font-semibold text-foreground">Terms:</p>
+                           <ul className="list-disc list-inside space-y-1">
+                                <li>All employees of the subscribed company are eligible for these perks.</li>
+                                <li>To redeem, employees must present their company ID at partner establishments.</li>
+                           </ul>
+                        </div>
+                    </CardFooter>
+                  </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Frequently Asked Questions</CardTitle>
+                        <CardDescription>Common questions about the Smart Refill service.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid md:grid-cols-2 gap-6 items-start">
+                              <div className="relative aspect-video rounded-lg overflow-hidden">
+                                  <Image 
+                                      src="https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FSales_Smartreill.png?alt=media&token=b55f3099-38a1-45f9-98d8-cd530fb7b427"
+                                      alt="Business professionals in a meeting"
+                                      fill
+                                      className="object-cover"
+                                      data-ai-hint="business meeting"
+                                  />
+                              </div>
+                              <Accordion type="single" collapsible defaultValue={faqData[0].question}>
+                                  {faqData.map((item) => (
+                                  <AccordionItem value={item.question} key={item.question}>
+                                      <AccordionTrigger className="text-base font-semibold text-left">
+                                      {item.question}
+                                      </AccordionTrigger>
+                                      <AccordionContent className="pb-6 text-muted-foreground">
+                                      {item.answer}
+                                      </AccordionContent>
+                                  </AccordionItem>
+                                  ))}
+                              </Accordion>
+                          </div>
+                      </CardContent>
+                </Card>
+                </>
+            )}
 
 
             {!isProposalIllustration && (

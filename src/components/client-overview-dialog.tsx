@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -798,7 +797,7 @@ export function ClientOverviewDialog({
                                         <p className="font-semibold">{contactInfo.phone}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3 sm:col-span-2">
                                     <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
                                     <div className='flex-1'>
                                         <p className="text-xs text-muted-foreground">Address</p>
@@ -1120,6 +1119,8 @@ export function ClientOverviewDialog({
                                         finalPlanDetails={finalPlanDetails}
                                         isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
                                         signatureData={finalPlanDetails.signature}
+                                        isProposalIllustration={false}
+                                        forPdf={true}
                                     />
                                 </div>
                             </div>
@@ -1129,6 +1130,7 @@ export function ClientOverviewDialog({
                                         finalPlanDetails={finalPlanDetails}
                                         isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
                                         signatureData={finalPlanDetails.signature}
+                                        isProposalIllustration={true}
                                     />
                                 </div>
                             </ScrollArea>
@@ -1147,5 +1149,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-
-    
