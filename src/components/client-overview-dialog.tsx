@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Image from 'next/image';
@@ -309,6 +308,7 @@ export function ClientOverviewDialog({
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contractRef = useRef<HTMLDivElement>(null);
+  const pdfContractRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(null);
@@ -687,14 +687,15 @@ export function ClientOverviewDialog({
   }, [subscriptionInfo, contactInfo, client.id, selectedProposal?.id, currencyFormatter]);
 
   const handleDownloadPDF = async () => {
-    if (!contractRef.current || !finalPlanDetails) return;
+    if (!pdfContractRef.current || !finalPlanDetails) return;
 
     setIsDownloading(true);
     try {
-        const canvas = await html2canvas(contractRef.current, {
+        const canvas = await html2canvas(pdfContractRef.current, {
             scale: 2,
             useCORS: true,
             logging: false,
+            backgroundColor: '#ffffff'
         });
 
         const imgData = canvas.toDataURL('image/png');
@@ -705,7 +706,21 @@ export function ClientOverviewDialog({
         });
 
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`proposal-${finalPlanDetails.proposalId || 'download'}.pdf`);
+        
+        const totalPages = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(8);
+            pdf.setTextColor(150);
+            pdf.text(
+                `Page ${i} of ${totalPages} | Smart Refill Proposal for ${finalPlanDetails.companyName}`,
+                pdf.internal.pageSize.getWidth() / 2,
+                pdf.internal.pageSize.getHeight() - 10,
+                { align: 'center' }
+            );
+        }
+
+        pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.proposalId || 'download'}.pdf`);
         
         toast({
             title: "Download Complete",
@@ -1099,6 +1114,15 @@ export function ClientOverviewDialog({
                                     Between: River Tech Group, Inc. (“Provider”) and {client.companyName}.
                                 </DialogDescription>
                             </DialogHeader>
+                             <div style={{ position: 'absolute', left: '-9999px', width: '800px', padding: '2rem', background: 'white' }}>
+                                <div ref={pdfContractRef}>
+                                    <ContractDetails 
+                                        finalPlanDetails={finalPlanDetails}
+                                        isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
+                                        signatureData={finalPlanDetails.signature}
+                                    />
+                                </div>
+                            </div>
                             <ScrollArea className="h-[75vh] pr-6">
                                 <div ref={contractRef}>
                                     <ContractDetails 
@@ -1123,3 +1147,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
