@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -686,54 +687,71 @@ export function ClientOverviewDialog({
   }, [subscriptionInfo, contactInfo, client.id, selectedProposal?.id, currencyFormatter]);
 
   const handleDownloadPDF = async () => {
-    if (!pdfContractRef.current || !finalPlanDetails) return;
-
+    const element = pdfContractRef.current;
+    if (!element || !finalPlanDetails) return;
+  
     setIsDownloading(true);
     try {
-        const canvas = await html2canvas(pdfContractRef.current, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff'
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'px',
-            format: [canvas.width, canvas.height],
-        });
-
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        
-        const totalPages = pdf.internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            pdf.setPage(i);
-            pdf.setFontSize(8);
-            pdf.setTextColor(150);
-            pdf.text(
-                `Page ${i} of ${totalPages} | Smart Refill Proposal for ${finalPlanDetails.companyName}`,
-                pdf.internal.pageSize.getWidth() / 2,
-                pdf.internal.pageSize.getHeight() - 10,
-                { align: 'center' }
-            );
-        }
-
-        pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.proposalId || 'download'}.pdf`);
-        
-        toast({
-            title: "Download Complete",
-            description: "The proposal has been downloaded as a PDF.",
-        });
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+      });
+      
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+  
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      
+      const ratio = canvasWidth / pdfWidth;
+      const imgHeight = canvasHeight / ratio;
+  
+      let heightLeft = imgHeight;
+      let position = 0;
+  
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+  
+      while (heightLeft > 0) {
+        position = -pdfHeight * pdf.internal.getNumberOfPages();
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+      
+      const totalPages = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(150);
+        pdf.text(
+          `Page ${i} of ${totalPages} | Smart Refill Proposal for ${finalPlanDetails.companyName}`,
+          pdf.internal.pageSize.getWidth() / 2,
+          pdf.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+  
+      pdf.save(`Smart-Refill-Proposal-${finalPlanDetails.proposalId || 'download'}.pdf`);
+      
+      toast({
+        title: "Download Complete",
+        description: "The proposal has been downloaded as a PDF.",
+      });
     } catch (error) {
-        console.error("Error generating PDF: ", error);
-        toast({
-            variant: "destructive",
-            title: "Download Failed",
-            description: "There was a problem generating the PDF. Please try again.",
-        });
+      console.error("Error generating PDF: ", error);
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: "There was a problem generating the PDF. Please try again.",
+      });
     } finally {
-        setIsDownloading(false);
+      setIsDownloading(false);
     }
   };
 
@@ -1113,8 +1131,8 @@ export function ClientOverviewDialog({
                                     Between: River Tech Group, Inc. (“Provider”) and {client.companyName}.
                                 </DialogDescription>
                             </DialogHeader>
-                             <div style={{ position: 'absolute', left: '-9999px', width: '800px', padding: '2rem', background: 'white' }}>
-                                <div ref={pdfContractRef}>
+                            <div style={{ position: 'absolute', left: '-9999px', width: '800px' }}>
+                                <div ref={pdfContractRef} className="p-8 bg-white">
                                     <ContractDetails 
                                         finalPlanDetails={finalPlanDetails}
                                         isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
@@ -1149,3 +1167,5 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
+
+    
