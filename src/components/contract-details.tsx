@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -21,9 +22,9 @@ export function ContractSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-2">
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <div className="space-y-4 text-sm text-muted-foreground">{children}</div>
+    <div className="space-y-2 break-inside-avoid">
+      <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+      <div className="space-y-4 text-sm text-gray-700">{children}</div>
     </div>
   );
 }
@@ -125,11 +126,11 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
             <ContractSection title="8. Liability &amp; Health Safety">
                 <div className="space-y-4">
                     <div>
-                        <h4 className="font-semibold text-foreground">Water Quality Assurance</h4>
+                        <h4 className="font-semibold text-gray-800">Water Quality Assurance</h4>
                         <p>River Tech Group, Inc., through its Smart Refill network, ensures that all partner refill stations operate with valid permits and comply with the latest DOH, DENR, and FDA standards for potable water.</p>
                     </div>
                     <div>
-                        <h4 className="font-semibold text-foreground">Health-Related Incidents</h4>
+                        <h4 className="font-semibold text-gray-800">Health-Related Incidents</h4>
                         <p>In the unlikely event of a verified contamination or water-borne health issue directly attributable to the supplied water, Smart Refill shall:</p>
                         <ul className="list-disc pl-5 space-y-1 mt-2">
                             <li>Conduct an immediate quality investigation in coordination with the concerned partner refill station.</li>
@@ -138,7 +139,7 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                         </ul>
                     </div>
                     <div>
-                        <h4 className="font-semibold text-foreground">Limitation of Liability</h4>
+                        <h4 className="font-semibold text-gray-800">Limitation of Liability</h4>
                         <p>Smart Refill and River Tech Group, Inc. shall not be liable for:</p>
                          <ul className="list-disc pl-5 space-y-1 mt-2">
                             <li>Any injury, illness, or loss resulting from improper storage, handling, or dispensing of water after delivery to the Client.</li>
@@ -148,7 +149,7 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                         <p className="mt-2">The Provider’s total liability in any claim shall not exceed the total subscription amount paid by the Client within the past three (3) months preceding the incident.</p>
                     </div>
                      <div>
-                        <h4 className="font-semibold text-foreground">Client Responsibilities</h4>
+                        <h4 className="font-semibold text-gray-800">Client Responsibilities</h4>
                         <p>The Client agrees to maintain clean and safe dispenser locations, use only Smart Refill-approved bottles and dispensers, and promptly report any suspected quality issue to Smart Refill’s support channel for verification and corrective action.</p>
                     </div>
                 </div>
@@ -157,11 +158,11 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
             <ContractSection title="9. Subscription Renewal, Suspension, and Termination">
                 <div className="space-y-4">
                     <div>
-                        <h4 className="font-semibold text-foreground">9.1 Auto-Renewal</h4>
+                        <h4 className="font-semibold text-gray-800">9.1 Auto-Renewal</h4>
                         <p>All Smart Refill subscriptions automatically renew at the end of each billing cycle (monthly, quarterly, semi-annual, or annual) unless cancelled by the Client at least 30 days prior to renewal. Renewal will continue at the same plan tier and payment frequency unless modified in writing or via the Smart Refill platform.</p>
                     </div>
                     <div>
-                        <h4 className="font-semibold text-foreground">9.2 Cancellation by Client</h4>
+                        <h4 className="font-semibold text-gray-800">9.2 Cancellation by Client</h4>
                          <ul className="list-disc pl-5 space-y-1">
                             <li>The Client may cancel their subscription by providing written notice at least 30 days before the next billing cycle.</li>
                             <li>All prepaid amounts are non-refundable, and unused liters expire upon termination unless otherwise agreed in writing.</li>
@@ -169,7 +170,7 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                         </ul>
                     </div>
                     <div>
-                         <h4 className="font-semibold text-foreground">9.3 Suspension by Smart Refill</h4>
+                         <h4 className="font-semibold text-gray-800">9.3 Suspension by Smart Refill</h4>
                         <p>Smart Refill reserves the right to temporarily suspend services in the event of:</p>
                         <ul className="list-disc pl-5 space-y-1 mt-2">
                            <li>Non-payment or failed billing,</li>
@@ -180,7 +181,7 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                         <p className="mt-2">Service will resume once the Client resolves the issue and payment or compliance is restored.</p>
                     </div>
                     <div>
-                         <h4 className="font-semibold text-foreground">9.4 Termination by Smart Refill</h4>
+                         <h4 className="font-semibold text-gray-800">9.4 Termination by Smart Refill</h4>
                         <p>Smart Refill may terminate this Agreement:</p>
                         <ul className="list-disc pl-5 space-y-1 mt-2">
                             <li>For cause, with immediate effect, upon material breach by the Client (including non-payment, damage to equipment, or fraudulent activity); or</li>
@@ -189,7 +190,7 @@ export function ContractText({ summaryTitle, finalPlan, baseLiters, billingCycle
                          <p className="mt-2">Upon termination, all dispensers, bottles, or devices provided must be returned, and any remaining prepaid liters or balances shall be forfeited.</p>
                     </div>
                      <div>
-                        <h4 className="font-semibold text-foreground">9.6 Reactivation</h4>
+                        <h4 className="font-semibold text-gray-800">9.6 Reactivation</h4>
                         <p>A Client may reactivate a terminated or cancelled subscription anytime by subscribing to a new plan through the Smart Refill platform. Equipment and service fees may apply depending on previous plan tier and usage history.</p>
                     </div>
                 </div>
@@ -390,7 +391,6 @@ export function ContractDetails({
 
     const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
     
-    // Determine which data source to use
     let source: FinalPlanDetails | null = finalPlanDetails;
 
     if (!source) return <p>Contract details not available.</p>;
@@ -439,24 +439,239 @@ export function ContractDetails({
     const refillableGallons = isCustomPlan ? source.containers : source.refillableGallons;
     const dispensers = isCustomPlan ? source.dispensers : (rotationInfo?.gallons ? Math.ceil(rotationInfo.gallons / 5) : 1);
 
+    if (forPdf) {
+        return (
+             <div className="text-black bg-white font-sans">
+                <div className="text-center space-y-1 mb-8">
+                    <h2 className="text-2xl font-bold text-gray-800">River Tech Inc.</h2>
+                    <p className="text-xs text-gray-600">SEC. Registration ID: 2025080215620-07</p>
+                    <p className="text-xs text-gray-600">Filinvest Axis Tower 1 24th & 26th Flr, 304 Filinvest Ave, Alabang, Muntinlupa</p>
+                    <p className="text-xs text-gray-600">www.smartrefill.io | customer@smartrefill.io</p>
+                </div>
+                
+                <hr className="my-8"/>
+
+                <div className="mb-6">
+                    <h3 className="text-xl font-bold mb-4 border-b pb-2">Client Information</h3>
+                    <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm mt-4 text-gray-800">
+                         <div className="flex items-start gap-3">
+                            <Building className="h-5 w-5 text-gray-600 mt-1" />
+                            <div>
+                                <p className="text-xs text-gray-600">Company Name</p>
+                                <p className="font-semibold">{client.companyName || "N/A"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <User className="h-5 w-5 text-gray-600 mt-1" />
+                            <div>
+                                <p className="text-xs text-gray-600">Contact Person</p>
+                                <p className="font-semibold">{client.contactName || "N/A"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Mail className="h-5 w-5 text-gray-600 mt-1" />
+                            <div>
+                                <p className="text-xs text-gray-600">Email</p>
+                                <p className="font-semibold">{client.contactEmail || "N/A"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Phone className="h-5 w-5 text-gray-600 mt-1" />
+                            <div>
+                                <p className="text-xs text-gray-600">Phone</p>
+                                <p className="font-semibold">{client.contactPhone || "N/A"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3 col-span-2">
+                            <MapPin className="h-5 w-5 text-gray-600 mt-1" />
+                            <div>
+                                <p className="text-xs text-gray-600">Address</p>
+                                <p className="font-semibold">{client.address || "N/A"}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mb-6">
+                    <h3 className="text-xl font-bold mb-4 border-b pb-2">Plan Details: {summaryTitle}</h3>
+                     <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4 text-gray-800">
+                         <div className="flex items-start gap-3">
+                            <Waves className="h-5 w-5 text-gray-600" />
+                            <div>
+                                <p className="text-gray-600">Total Liters</p>
+                                <p className="font-semibold">{finalPlan.liters}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Users className="h-5 w-5 text-gray-600" />
+                            <div>
+                                <p className="text-gray-600">{source.clientType === 'household' ? 'Family' : 'Employees'}</p>
+                                <p className="font-semibold">{finalPlan.employees}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Package className="h-5 w-5 text-gray-600" />
+                            <div>
+                                <p className="text-gray-600">Rotation Containers</p>
+                                <p className="font-semibold">{refillableGallons} units</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Computer className="h-5 w-5 text-gray-600" />
+                            <div>
+                                <p className="text-gray-600">Dispensers</p>
+                                <p className="font-semibold">{dispensers} units</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <RefreshCcw className="h-5 w-5 text-gray-600" />
+                            <div>
+                                <p className="text-gray-600">Refill Frequency</p>
+                                <p className="font-semibold">{finalPlan.refillFrequency}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Ship className="h-5 w-5 text-gray-600" />
+                            <div>
+                                <p className="text-gray-600">Water Stations</p>
+                                <p className="font-semibold">{finalPlan.stations}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                 <div className="mb-6">
+                    <h3 className="text-xl font-bold mb-4 border-b pb-2">Subscription Summary &amp; Cost Breakdown</h3>
+                     <div className="space-y-4 mt-4 text-gray-800">
+                        <div className="space-y-2 p-4 border rounded-lg">
+                            <h4 className="font-semibold">Base Plan: {summaryTitle}</h4>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-600">{isCustomPlan ? 'Price per Liter' : (isOverflowPlan ? 'Initial Top-up' : 'Monthly Cost')}</span>
+                                <span className="font-semibold">{isCustomPlan ? `${currencyFormatter.format(pricePerLiter)}/L` : currencyFormatter.format(planBaseCost || source.basePrice || 0)}</span>
+                            </div>
+                            {!isCustomPlan && !isOverflowPlan && (
+                                <>
+                                    <hr className="my-2"/>
+                                    <h5 className="font-semibold text-sm pt-2">Free Inclusions:</h5>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-600 flex items-center gap-2">+20% Bonus Liters</span>
+                                        <span className="font-semibold">{freeLiters.toLocaleString()} L / mo</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-600 flex items-center gap-2">Automated Delivery &amp; Logistics</span>
+                                        <span className="font-semibold">Included</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-600 flex items-center gap-2">Monthly Sanitation &amp; Clean-up</span>
+                                        <span className="font-semibold">Included</span>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                        {(source.sanitationFeeType !== 'free' || source.additionalDispensers.quantity > 0) && (
+                            <div className="space-y-2 p-4 border rounded-lg">
+                                 <h4 className="font-semibold">Add-Ons</h4>
+                                 {source.sanitationFeeType === 'paid' && (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-600">Monthly Sanitation</span>
+                                        <span className="font-semibold">{currencyFormatter.format(source.sanitationFee)}</span>
+                                    </div>
+                                )}
+                                {Number(additionalDispensers) > 0 && (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-600">Additional Dispensers ({additionalDispensers}x) - {dispenserFeeTypeLabel}</span>
+                                        <span className="font-semibold">{dispensersCost > 0 ? currencyFormatter.format(dispensersCost) : 'Free'}</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        <hr className="my-4" />
+                        <div className="flex justify-between items-center font-bold text-lg p-4 bg-gray-100 rounded-lg">
+                            <span>{isCustomPlan ? 'Billed by Consumption' : 'Total Due'}</span>
+                            <span>{totalAmountDue}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {rotationInfo && (
+                    <div className="mb-6">
+                        <h3 className="text-xl font-bold mb-4 border-b pb-2">Gallon Rotation &amp; Handling Guide</h3>
+                        <div className="grid grid-cols-2 gap-6 items-center mt-4">
+                            <div className="space-y-2">
+                                <Label className="text-gray-600">Recommended Gallons for Rotation</Label>
+                                <p className="text-3xl font-bold">{refillableGallons} gallons</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-gray-600">Handling Notes</Label>
+                                <p className="text-sm text-gray-700">{rotationInfo.notes}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {!isProposalIllustration && (
+                    <div className="space-y-8 pt-8">
+                        <div className="mb-6 break-before-page">
+                            <h3 className="text-2xl font-bold mb-4 border-b pb-2">Smart Refill Water Supply Subscription Agreement</h3>
+                            <ContractText 
+                                summaryTitle={summaryTitle}
+                                finalPlan={finalPlan}
+                                baseLiters={baseLiters}
+                                billingCycleLabel={billingCycleLabel}
+                                totalAmountDue={totalAmountDue}
+                                selectedAddons={selectedAddons}
+                                addons={addons}
+                                isCustomPlan={isCustomPlan}
+                                isOverflowPlan={isOverflowPlan}
+                                pricePerLiter={pricePerLiter}
+                                sanitationFeeType={source.sanitationFeeType}
+                                sanitationFee={source.sanitationFee}
+                                dispenserQuantity={source.additionalDispensers.quantity}
+                                dispenserFeeType={source.additionalDispensers.feeType}
+                                dispenserFee={source.additionalDispensers.fee}
+                            />
+                        </div>
+                        <div className="mb-6 pt-8 break-before-page">
+                            <h3 className="text-2xl font-bold mb-4 border-b pb-2">Signatures</h3>
+                             <div className="space-y-4 pt-4">
+                                <p className="font-semibold">Client Representative (Subscriber)</p>
+                                <div className="grid grid-cols-2 gap-8 items-start">
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>Name</Label>
+                                            <p className="border-b pb-2">{client.contactName}</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Company</Label>
+                                            <p className="border-b pb-2">{client.companyName}</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Date</Label>
+                                            <p className="border-b pb-2">{date}</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Signature</Label>
+                                        {isSigned && source.signature ? (
+                                            <div className="w-full h-[150px] border-b flex items-center justify-center">
+                                                <Image src={source.signature} alt="Client Signature" width={250} height={125} className="object-contain" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-[150px] border-b"></div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+    
 
     return (
         <div className="space-y-6 p-2">
-            <div className="text-center space-y-1">
-                <h2 className="text-xl font-bold text-primary">River Tech Inc.</h2>
-                <p className="text-xs text-muted-foreground">
-                    SEC. Registration ID: 2025080215620-07
-                </p>
-                <p className="text-xs text-muted-foreground">
-                    Filinvest Axis Tower 1 24th & 26th Flr, 304 Filinvest Ave, Alabang, Muntinlupa
-                </p>
-                <p className="text-xs text-muted-foreground">
-                    www.smartrefill.io | customer@smartrefill.io
-                </p>
-            </div>
-            
-            <Separator />
-
             {!forPdf && (
                 <>
                 <Card>
@@ -919,3 +1134,4 @@ export function ContractDetails({
         </div>
     );
 }
+
