@@ -20,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot, Loader2, Receipt, User } from 'lucide-react';
+import { Phone, Mail, MapPin, Building, Briefcase, FileText, Users, GlassWater, RefreshCcw, Package, CheckCircle, Sparkles, Upload, FileCheck, Eye, CreditCard, MessageSquare, Save, Calendar, Clock, PlusCircle, Ship, Waves, HeartPulse, Coffee, Car, Computer, CalendarClock, RotateCw, Thermometer, Wrench, CircleHelp, Rocket, Bot, Loader2, Receipt, User, Download } from 'lucide-react';
 import type { Client, Remark, OnboardingStep, Proposal, UserProfile } from '@/lib/definitions';
 import { ContractDetails, type FinalPlanDetails } from '@/components/contract-details';
 import { Label } from './ui/label';
@@ -53,6 +53,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { addMonths, parseISO } from 'date-fns';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 const clientStatusStyles: { [key: string]: string } = {
@@ -306,6 +308,8 @@ export function ClientOverviewDialog({
   const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const contractRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null | undefined>(null);
   
@@ -681,6 +685,43 @@ export function ClientOverviewDialog({
       signature: subscriptionInfo.signature,
     };
   }, [subscriptionInfo, contactInfo, client.id, selectedProposal?.id, currencyFormatter]);
+
+  const handleDownloadPDF = async () => {
+    if (!contractRef.current || !finalPlanDetails) return;
+
+    setIsDownloading(true);
+    try {
+        const canvas = await html2canvas(contractRef.current, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [canvas.width, canvas.height],
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`proposal-${finalPlanDetails.proposalId || 'download'}.pdf`);
+        
+        toast({
+            title: "Download Complete",
+            description: "The proposal has been downloaded as a PDF.",
+        });
+    } catch (error) {
+        console.error("Error generating PDF: ", error);
+        toast({
+            variant: "destructive",
+            title: "Download Failed",
+            description: "There was a problem generating the PDF. Please try again.",
+        });
+    } finally {
+        setIsDownloading(false);
+    }
+  };
 
 
   return (
@@ -1058,13 +1099,21 @@ export function ClientOverviewDialog({
                                     Between: River Tech Group, Inc. (“Provider”) and {client.companyName}.
                                 </DialogDescription>
                             </DialogHeader>
-                            <ScrollArea className="h-[85vh] pr-6">
-                                <ContractDetails 
-                                    finalPlanDetails={finalPlanDetails}
-                                    isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
-                                    signatureData={finalPlanDetails.signature}
-                                />
+                            <ScrollArea className="h-[75vh] pr-6">
+                                <div ref={contractRef}>
+                                    <ContractDetails 
+                                        finalPlanDetails={finalPlanDetails}
+                                        isSigned={selectedProposal?.status === 'finalized' || selectedProposal?.status === 'accepted'}
+                                        signatureData={finalPlanDetails.signature}
+                                    />
+                                </div>
                             </ScrollArea>
+                            <DialogFooter>
+                                <Button onClick={handleDownloadPDF} disabled={isDownloading}>
+                                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                                    Download as PDF
+                                </Button>
+                            </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 )}
@@ -1074,4 +1123,3 @@ export function ClientOverviewDialog({
     </Dialog>
   );
 }
-

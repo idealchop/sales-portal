@@ -67,6 +67,43 @@ function SharedProposalContent() {
 
         fetchSharedProposal();
     }, [linkId, firestore]);
+
+    const handleDownloadPDF = async () => {
+        if (!proposalRef.current || !proposalDetails) return;
+
+        setIsDownloading(true);
+        try {
+            const canvas = await html2canvas(proposalRef.current, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height],
+            });
+
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save(`proposal-${proposalDetails.proposalId || 'download'}.pdf`);
+            
+            toast({
+                title: "Download Complete",
+                description: "The proposal has been downloaded as a PDF.",
+            });
+        } catch (error) {
+            console.error("Error generating PDF: ", error);
+            toast({
+                variant: "destructive",
+                title: "Download Failed",
+                description: "There was a problem generating the PDF. Please try again.",
+            });
+        } finally {
+            setIsDownloading(false);
+        }
+    };
     
     if (isLoading) {
         return (
@@ -95,26 +132,38 @@ function SharedProposalContent() {
             <div className="w-full max-w-4xl mx-auto space-y-4">
                  <Card>
                     <CardHeader>
-                        <CardTitle className="text-2xl font-bold">{proposalDetails.companyName}</CardTitle>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 gap-2 text-sm text-muted-foreground pt-1">
-                            {proposalDetails.proposalId && (
-                                <div className="flex items-center gap-2">
-                                    <FileText className="h-4 w-4" />
-                                    <span className="font-mono">ID: {proposalDetails.proposalId}</span>
+                        <div className="flex flex-col sm:flex-row justify-between items-start">
+                            <div>
+                                <CardTitle className="text-2xl font-bold">{proposalDetails.companyName}</CardTitle>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 gap-2 text-sm text-muted-foreground pt-1">
+                                    {proposalDetails.proposalId && (
+                                        <div className="flex items-center gap-2">
+                                            <FileText className="h-4 w-4" />
+                                            <span className="font-mono">ID: {proposalDetails.proposalId}</span>
+                                        </div>
+                                    )}
+                                    {proposalDetails.contactEmail && (
+                                        <div className="flex items-center gap-2">
+                                            <Mail className="h-4 w-4" />
+                                            <span>{proposalDetails.contactEmail}</span>
+                                        </div>
+                                    )}
+                                    {proposalDetails.date && (
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="h-4 w-4" />
+                                            <span>Created: {proposalDetails.date}</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                             {proposalDetails.contactEmail && (
-                                <div className="flex items-center gap-2">
-                                    <Mail className="h-4 w-4" />
-                                    <span>{proposalDetails.contactEmail}</span>
-                                </div>
-                            )}
-                             {proposalDetails.date && (
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>Created: {proposalDetails.date}</span>
-                                </div>
-                            )}
+                            </div>
+                            <Button onClick={handleDownloadPDF} disabled={isDownloading}>
+                                {isDownloading ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Download className="mr-2 h-4 w-4" />
+                                )}
+                                Download PDF
+                            </Button>
                         </div>
                     </CardHeader>
                 </Card>
