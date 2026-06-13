@@ -95,6 +95,19 @@ App Hosting runs the Next.js **standalone** server (`output: "standalone"` in `f
 
 One-time: in Firebase Console → App Hosting → backend settings, set **Root directory** to `frontend`, or use `firebase.json` at repo root (`apphosting.rootDir`).
 
+### Firebase Hosting (`river-tech.web.app`)
+
+Classic Hosting site **`river-tech`** is configured in root `firebase.json`. Static files in `frontend/public` are served from the CDN; all other routes rewrite to the App Hosting Cloud Run service **`feature`** (Next.js SSR + `/_next/static`).
+
+Deploy Hosting (after App Hosting backend `feature` is live):
+
+```bash
+npm run deploy:hosting
+# or: npx -y firebase-tools deploy --only hosting:river-tech --project aquaflow-management-suite
+```
+
+View at [https://river-tech.web.app](https://river-tech.web.app) after deploy.
+
 ## Secrets
 
 Production uses **Secret Manager** (same GCP project as SmartRefill: `aquaflow-management-suite`).

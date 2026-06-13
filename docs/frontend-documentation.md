@@ -80,8 +80,9 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 
 Config: `frontend/apphosting.yaml` (or root `apphosting.yaml` when building from monorepo root)
 
-- Build: `npm run build`
-- Run: `npm run start`
+- Build: `npm run build` (includes `prepare-standalone.mjs` for static assets)
+- Run: standalone server via App Hosting
+- Custom domain / Hosting site: `river-tech` → see root `firebase.json` hosting rewrites to Cloud Run `feature`
 - App Check: reCAPTCHA site key in env; debug token is local-only (`.env.local`)
 
 ## Testing

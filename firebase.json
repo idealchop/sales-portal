@@ -1,4 +1,22 @@
 {
+  "hosting": {
+    "site": "river-tech",
+    "public": "frontend/public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "feature",
+          "region": "asia-southeast1"
+        }
+      }
+    ]
+  },
   "apphosting": [
     {
       "backendId": "feature",
