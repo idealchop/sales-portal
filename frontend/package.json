@@ -18,7 +18,8 @@
     "test:bdd": "playwright test",
     "test:bdd:local": "npm run test:bdd:install && PLAYWRIGHT_SKIP_WEBSERVER=1 npm run test:bdd",
     "test:all:local": "npm run test:unit && npm run test:bdd:local",
-    "test:all": "npm run test && npm run test:bdd"
+    "test:all": "npm run test && npm run test:bdd",
+    "deploy:hosting": "cd .. && npx -y firebase-tools deploy --only hosting:river-tech --project aquaflow-management-suite"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
