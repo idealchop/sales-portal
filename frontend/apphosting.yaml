@@ -10,7 +10,8 @@ runConfig:
   cpu: 1
 
 scripts:
-  buildCommand: npm run build
+  # Re-install optional native bindings (lightningcss) — npm workspaces ignore frontend/.npmrc.
+  buildCommand: npm install --include=optional && npm run build
   runCommand: node .next/standalone/frontend/server.js
 
 env:

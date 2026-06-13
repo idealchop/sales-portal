@@ -19,7 +19,7 @@
   },
   "apphosting": [
     {
-      "backendId": "feature",
+      "backendId": "sales-portal",
       "rootDir": "frontend",
       "ignore": [
         "backend",

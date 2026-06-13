@@ -14,7 +14,7 @@ runConfig:
   cpu: 1
 
 scripts:
-  buildCommand: npm run build --prefix frontend
+  buildCommand: npm install --include=optional --prefix frontend && npm run build --prefix frontend
   runCommand: node frontend/.next/standalone/frontend/server.js
 
 env:
