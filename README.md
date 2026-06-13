@@ -74,6 +74,25 @@ npm run dev:api
 - **Backend (local)**: `backend/functions/.env` — Admin SDK credentials + SmartRefill API URL
 - **Production secrets**: Google Cloud Secret Manager — see [Secrets](#secrets) below
 
+## App Hosting (frontend deploy)
+
+Firebase App Hosting should build **only the Next.js app**, not the Cloud Functions backend.
+
+| Setting | Value |
+|---------|--------|
+| **Root directory** | `frontend` (recommended) |
+| **Config file** | `frontend/apphosting.yaml` |
+| **Node.js** | 22 (matches App Hosting buildpack) |
+
+If the backend is connected to the **repository root** (legacy), the root `apphosting.yaml` and npm workspace (`frontend/`) ensure `npm ci` installs frontend deps and `npm run build` runs `next build` — not the API `tsc` step.
+
+Root scripts:
+
+- `npm run build` — frontend only (App Hosting)
+- `npm run build:all` — backend + frontend (local/CI full stack)
+
+One-time: in Firebase Console → App Hosting → backend settings, set **Root directory** to `frontend`, or use `firebase.json` at repo root (`apphosting.rootDir`).
+
 ## Secrets
 
 Production uses **Secret Manager** (same GCP project as SmartRefill: `aquaflow-management-suite`).
