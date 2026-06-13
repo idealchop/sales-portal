@@ -1,16 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { FirebaseError } from "firebase/app";
-import { Eye, EyeOff, Loader2, Lock, ShieldAlert, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, ShieldAlert } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { WaterBackground } from "@/components/water-background";
 import { auth } from "@/lib/firebase/auth";
 import { apiClient, ApiError } from "@/lib/api-client";
 import {
@@ -18,9 +20,6 @@ import {
   recordLoginEvent,
   resolvePostLoginPath,
 } from "@/lib/auth-status";
-
-const MARKETING_IMAGE =
-  "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Sales%20Portal%2FMarketing%20Mats%2FSales_Mats_v3.png?alt=media&token=5e2fc62e-0082-4c37-9078-e1cf5e188635";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -30,7 +29,7 @@ const formSchema = z.object({
 type LoginFormValues = z.infer<typeof formSchema>;
 
 const inputClassName =
-  "h-11 w-full rounded-lg border border-[var(--border)] bg-white pl-10 pr-3 text-sm text-foreground outline-none transition placeholder:text-[var(--muted-foreground)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15";
+  "h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-foreground outline-none transition placeholder:text-zinc-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
 
 function resolveLoginAccessError(error: unknown): string {
   if (error instanceof ApiError) {
@@ -53,12 +52,39 @@ function resolveLoginAccessError(error: unknown): string {
   return "Could not verify Sales Portal access. Please try again.";
 }
 
+function BrandPanel() {
+  return (
+    <aside className="relative hidden w-1/2 flex-col bg-[#0a1628] lg:flex">
+      <div className="p-10 xl:p-12">
+        <div className="flex items-center gap-3">
+          <Logo variant="white" size={36} />
+          <span className="text-xl font-medium tracking-tight text-white lowercase">
+            river
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col justify-center px-10 pb-16 xl:px-16">
+        <h1 className="max-w-lg text-4xl font-bold leading-tight tracking-tight text-white xl:text-[2.75rem] xl:leading-[1.15]">
+          The platform to run{" "}
+          <span className="text-blue-400">essential needs</span> for business
+          workforce.
+        </h1>
+        <p className="mt-5 max-w-md text-lg text-zinc-400">
+          Simplifying how modern teams operate.
+        </p>
+      </div>
+    </aside>
+  );
+}
+
 export function LoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -85,6 +111,7 @@ export function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
     setAccessError(null);
+    setInfoMessage(null);
     apiClient.clearTokenCache();
 
     try {
@@ -126,45 +153,57 @@ export function LoginPage() {
     }
   };
 
+  async function handleForgotPassword() {
+    setAccessError(null);
+    setInfoMessage(null);
+
+    const email = form.getValues("email").trim();
+    if (!email) {
+      setAccessError("Enter your email address, then choose forgot password.");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setInfoMessage("Password reset email sent. Check your inbox.");
+    } catch (error) {
+      if (error instanceof FirebaseError && error.code === "auth/user-not-found") {
+        setInfoMessage("If an account exists for that email, a reset link was sent.");
+        return;
+      }
+      setAccessError("Could not send reset email. Please try again.");
+    }
+  }
+
   const isFormDisabled = isSubmitting || isCheckingSession;
 
   if (isCheckingSession) {
     return (
-      <div className="relative flex h-screen w-full items-center justify-center overflow-hidden">
-        <WaterBackground />
-        <div className="relative h-16 w-16 animate-spin rounded-full border-4 border-[var(--primary)]/20 border-t-[var(--primary)]" />
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden font-sans">
-      <WaterBackground />
+    <div className="flex min-h-screen font-sans">
+      <BrandPanel />
 
-      {/* Right — marketing illustration on light water wash */}
-      <div className="absolute inset-y-0 right-0 hidden w-1/2 md:block">
-        <div className="absolute inset-0 bg-gradient-to-l from-sky-50/30 to-transparent" />
-        <Image
-          src={MARKETING_IMAGE}
-          alt="Smart Refill — automating water refills for every facility and business size"
-          fill
-          className="object-contain p-8 lg:p-12"
-          priority
-        />
-      </div>
+      <main className="flex w-full flex-col justify-center bg-white px-8 py-12 sm:px-12 lg:w-1/2 lg:px-16 xl:px-24">
+        <div className="mx-auto w-full max-w-md">
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <Logo size={32} />
+            <span className="text-lg font-medium lowercase text-foreground">
+              river
+            </span>
+          </div>
 
-      {/* Login form — clean centered look */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center p-8 md:justify-start md:pl-[8vw]">
-        <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
-            <div className="mb-4 flex justify-center">
-              <Logo />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Smart Refill Sales Portal
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              Sign in
             </h1>
-            <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-              Please enter your credentials to log in.
+            <p className="mt-2 text-sm text-zinc-500">
+              Welcome back! Please enter your details.
             </p>
           </div>
 
@@ -175,51 +214,74 @@ export function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-            <fieldset disabled={isFormDisabled} className="grid gap-4">
+          {infoMessage && (
+            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+              {infoMessage}
+            </div>
+          )}
+
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5">
+            <fieldset disabled={isFormDisabled} className="grid gap-5">
               <div>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--muted-foreground)]" />
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    placeholder="Email Address"
-                    className={inputClassName}
-                    {...form.register("email")}
-                  />
-                </div>
+                <label
+                  htmlFor="login-email"
+                  className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-400"
+                >
+                  Email
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="name@company.com"
+                  className={inputClassName}
+                  {...form.register("email")}
+                />
                 {form.formState.errors.email && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p className="mt-1.5 text-sm text-red-600">
                     {form.formState.errors.email.message}
                   </p>
                 )}
               </div>
 
               <div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label
+                    htmlFor="login-password"
+                    className="text-xs font-medium uppercase tracking-wider text-zinc-400"
+                  >
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void handleForgotPassword()}
+                    className="text-xs font-medium uppercase tracking-wider text-blue-600 transition hover:text-blue-700"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--muted-foreground)]" />
                   <input
+                    id="login-password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    placeholder="Password"
+                    placeholder="••••••••"
                     className={`${inputClassName} pr-10`}
                     {...form.register("password")}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 transition hover:text-zinc-600"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? (
+                    {showPassword ?
                       <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
+                    : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
                 {form.formState.errors.password && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p className="mt-1.5 text-sm text-red-600">
                     {form.formState.errors.password.message}
                   </p>
                 )}
@@ -229,16 +291,21 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={isFormDisabled}
-              className="flex h-11 w-full items-center justify-center rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-sm font-bold text-white transition hover:from-[var(--primary-dark)] hover:to-[#36a6a0] disabled:opacity-60"
+              className="flex h-11 w-full items-center justify-center rounded-lg bg-blue-600 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
               {isFormDisabled && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Login Now
+              Sign in
             </button>
           </form>
+
+          <p className="mt-8 text-center text-xs uppercase tracking-wider text-zinc-400">
+            Need access?{" "}
+            <span className="text-zinc-500">Contact your administrator</span>
+          </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
