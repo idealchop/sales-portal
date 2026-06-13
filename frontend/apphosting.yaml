@@ -10,7 +10,7 @@ runConfig:
   cpu: 1
 
 scripts:
-  buildCommand: npm ci && npm run build
+  buildCommand: npm run build
   runCommand: node .next/standalone/frontend/server.js
 
 env:
