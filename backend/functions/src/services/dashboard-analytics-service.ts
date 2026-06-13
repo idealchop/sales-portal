@@ -1,4 +1,4 @@
-import type { Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import { db } from "../config/firebase-admin";
 import { SMARTREFILL_APP_ID } from "../constants/smartrefill";
 import { parseUserAgent } from "./parse-user-agent";
@@ -39,6 +39,10 @@ import {
   type ChartBusinessContext,
   type ChartTimeSeries,
 } from "./build-chart-time-series";
+import { mapWithConcurrency } from "../utils/map-with-concurrency";
+
+const BUSINESS_QUERY_CONCURRENCY = 20;
+const LOGIN_EVENT_QUERY_CONCURRENCY = 25;
 
 export { SMARTREFILL_APP_ID } from "../constants/smartrefill";
 
@@ -297,13 +301,16 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     { count: number; amount: number }
   >();
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const sixMonthsAgoTimestamp = Timestamp.fromDate(sixMonthsAgo);
   for (let i = 5; i >= 0; i -= 1) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     transactionVolumeByMonth.set(monthKey(d), { count: 0, amount: 0 });
   }
 
-  await Promise.all(
-    businessDocs.map(async (bizDoc) => {
+  await mapWithConcurrency(
+    businessDocs,
+    BUSINESS_QUERY_CONCURRENCY,
+    async (bizDoc) => {
       const data = bizDoc.data();
       const [customersCountSnap, subscriptionsSnap, transactionsSnap] =
         await Promise.all([
@@ -313,7 +320,11 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
             .orderBy("createdAt", "desc")
             .limit(20)
             .get(),
-          bizDoc.ref.collection("transactions").get(),
+          bizDoc.ref
+            .collection("transactions")
+            .where("createdAt", ">=", sixMonthsAgoTimestamp)
+            .select("createdAt", "totalAmount", "waterRefills")
+            .get(),
         ]);
 
       subscriptionsByBusiness.set(
@@ -488,7 +499,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
           }),
         );
       }
-    }),
+    },
   );
 
   const appFeedback = computeAppFeedback(feedbackEntries);
@@ -569,9 +580,20 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     users.add(userId);
   };
 
-  await Promise.all(
-    smartRefillUsers.map(async (userDoc) => {
-      const eventsSnap = await userDoc.ref.collection("login_events").get();
+  await mapWithConcurrency(
+    smartRefillUsers,
+    LOGIN_EVENT_QUERY_CONCURRENCY,
+    async (userDoc) => {
+      const eventsSnap = await userDoc.ref
+        .collection("login_events")
+        .where("calendarDayUtc", ">=", chartWindowKey)
+        .select(
+          "calendarDayUtc",
+          "timestamp",
+          "userAgent",
+          "appId",
+        )
+        .get();
       eventsSnap.docs.forEach((eventDoc) => {
         const event = eventDoc.data();
         if (String(event.appId || "") !== SMARTREFILL_APP_ID) return;
@@ -632,7 +654,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
           }
         }
       });
-    }),
+    },
   );
 
   const toUsageRows = (

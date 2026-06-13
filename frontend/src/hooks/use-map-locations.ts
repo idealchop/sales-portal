@@ -1,12 +1,10 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { apiClient } from "@/lib/api-client";
+import { fetchDashboardAnalytics } from "@/lib/dashboard/fetch-dashboard-analytics";
 import {
-  normalizeDashboardAnalytics,
   type ActiveOwner,
   type BusinessMapLocation,
-  type DashboardAnalytics,
 } from "@/lib/dashboard/analytics";
 
 export function useMapLocations(
@@ -38,10 +36,8 @@ export function useMapLocations(
     setIsRefreshing(true);
     setError(null);
     try {
-      const response = await apiClient.get<{ data: DashboardAnalytics }>(
-        "/dashboard/analytics",
-      );
-      const data = normalizeDashboardAnalytics(response.data);
+      const result = await fetchDashboardAnalytics({ force: true });
+      const data = result.data;
       setLocalState((current) => ({
         ...current,
         locations: data.businessLocations,

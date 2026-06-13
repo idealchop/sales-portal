@@ -8,6 +8,7 @@ Firebase project wrapper for **`salesPortalApi`** (Cloud Functions) and Firestor
 backend/
 ├── firebase.json           # Functions + emulator + env vars
 ├── firestore.rules         # Synced from smartrefill/frontend (canonical)
+├── storage.rules           # Synced from smartrefill/frontend (canonical)
 ├── deploy.sh               # Build, test, lint, deploy pipeline
 ├── secrets.env.example     # Secret Manager template
 ├── scripts/
@@ -51,9 +52,9 @@ npm run serve:local    # http://127.0.0.1:8071
 - [docs/testing-guide.md](../docs/testing-guide.md)
 - [functions/src/__tests__/README.md](./functions/src/__tests__/README.md)
 
-## Firestore
+## Firestore & Storage
 
-Canonical rules: **`smartrefill/frontend/firestore.rules`**
+Canonical rules: **`smartrefill/frontend/firestore.rules`**, **`smartrefill/frontend/storage.rules`**
 
 After editing canonical files:
 
@@ -66,8 +67,12 @@ npm run check:firestore
 Deploy rules (either repo after sync):
 
 ```bash
+# Firestore
 cd smartrefill/frontend
 npx -y firebase-tools deploy --only firestore:rules,firestore:indexes --project aquaflow-management-suite
+
+# Storage (when enabled)
+DEPLOY_STORAGE_RULES=1 ./deploy.sh   # from smartrefill/backend or sales-portal/backend
 ```
 
-Or: `DEPLOY_FIRESTORE=1 ./deploy.sh` from this directory.
+Sales Portal path reference: `storage.sales-portal.rules` (comments only).

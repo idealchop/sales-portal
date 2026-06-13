@@ -22,10 +22,10 @@ echo -e "${BLUE}🚀 Starting compilation and deployment for Sales Portal API...
 
 cd "${ROOT_DIR}"
 
-echo -e "${BLUE}📋 Syncing Firestore rules/indexes from smartrefill/frontend (canonical)...${NC}"
+echo -e "${BLUE}📋 Syncing Firestore + Storage rules from smartrefill/frontend (canonical)...${NC}"
 npm run sync:firestore
 
-echo -e "${BLUE}🔎 Verifying Firestore config matches smartrefill + sales-portal copies...${NC}"
+echo -e "${BLUE}🔎 Verifying Firestore + Storage config matches smartrefill + sales-portal copies...${NC}"
 npm run check:firestore
 
 cd "${FUNCTIONS_DIR}"
@@ -94,7 +94,7 @@ fi
 echo -e "${GREEN}✅ Deployment successful!${NC}"
 echo -e "${GREEN}   • functions:sales-portal-api (salesPortalApi, region asia-southeast1)${NC}"
 if [[ "${DEPLOY_FIRESTORE:-0}" == "1" ]]; then
-  echo -e "${GREEN}   • firestore:rules, firestore:indexes (riverdb)${NC}"
+  echo -e "${GREEN}   • firestore:rules, firestore:indexes, storage.rules (riverdb + smartrefill-singapore)${NC}"
 fi
 if [[ "${DEPLOY_STORAGE_RULES:-0}" == "1" ]]; then
   echo -e "${GREEN}   • storage rules${NC}"

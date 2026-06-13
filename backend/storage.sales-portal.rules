@@ -1,0 +1,17 @@
+// Sales Portal — Storage path blocks (reference only)
+//
+// Canonical merged rules live in:
+//   smartrefill/frontend/storage.rules
+//
+// Sync copies:
+//   cd smartrefill/backend && npm run sync:firestore
+//   cd sales-portal/backend && npm run sync:firestore
+//
+// Verify all copies match:
+//   cd sales-portal/backend && npm run check:firestore
+//
+// Sales Portal sections in the canonical file:
+//   - user-avatars/{userId} — read public; writes via salesPortalApi (Admin SDK)
+//   - sales_portal/marketing_mats — read public; auth write (legacy client upload)
+//   - Brand%20Logo — read public; curated assets
+//   - payment_proofs — auth read/write (legacy client upload)

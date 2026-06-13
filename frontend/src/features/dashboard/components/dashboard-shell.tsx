@@ -1,23 +1,50 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo";
 import { DashboardHeader } from "./dashboard-header";
 import { DashboardNav } from "./dashboard-nav";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useSalesProfile } from "@/hooks/use-sales-profile";
+import { prefetchDashboardAnalytics } from "@/lib/dashboard/fetch-dashboard-analytics";
 import { cn } from "@/lib/utils";
 import type { SalesPortalRole } from "@/lib/auth-status";
+import type { UserProfile } from "@/lib/definitions";
+
+function profileFromAuthStatus(
+  status: NonNullable<ReturnType<typeof useAuthGuard>["status"]>,
+): UserProfile {
+  return {
+    id: status.uid,
+    displayName:
+      status.salesProfile?.displayName ||
+      status.displayName ||
+      status.userProfile?.displayName ||
+      "User",
+    role: status.role ?? "sales",
+    phone: status.salesProfile?.phone || status.userProfile?.phone,
+    birthday: status.salesProfile?.birthday || status.userProfile?.birthday,
+    photoURL: status.salesProfile?.photoURL ?? status.userProfile?.photoURL,
+    email: status.email || status.userProfile?.email,
+  };
+}
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const { loading, status } = useAuthGuard("dashboard");
-  const { profile, loading: profileLoading } = useSalesProfile();
+  const { profile } = useSalesProfile();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const role = (status?.role || profile?.role || null) as SalesPortalRole | null;
+  useEffect(() => {
+    if (!loading && status) {
+      prefetchDashboardAnalytics();
+    }
+  }, [loading, status]);
 
-  if (loading || profileLoading || !status) {
+  const role = (status?.role || profile?.role || null) as SalesPortalRole | null;
+  const headerProfile = profile ?? (status ? profileFromAuthStatus(status) : null);
+
+  if (loading || !status) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--primary)]/20 border-t-[var(--primary)]" />
@@ -59,7 +86,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <DashboardHeader
-          profile={profile}
+          profile={headerProfile}
           role={role}
           onMenuClick={() => setMobileOpen(true)}
         />

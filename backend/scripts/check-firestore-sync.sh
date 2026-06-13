@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify firestore.rules + firestore.indexes.json match across smartrefill and sales-portal.
+# Verify firestore.rules, firestore.indexes.json, and storage.rules match across repos.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -8,6 +8,11 @@ SMARTREFILL_BACKEND="$(cd "$ROOT/../../smartrefill/backend" && pwd)"
 
 if [[ ! -f "$CANONICAL/firestore.rules" ]]; then
   echo "Error: canonical Firestore config not found at $CANONICAL"
+  exit 1
+fi
+
+if [[ ! -f "$CANONICAL/storage.rules" ]]; then
+  echo "Error: canonical Storage rules not found at $CANONICAL/storage.rules"
   exit 1
 fi
 
@@ -38,6 +43,10 @@ check_file "firestore.indexes.json" \
   "$SMARTREFILL_BACKEND/firestore.indexes.json" \
   "$ROOT/firestore.indexes.json"
 
+check_file "storage.rules" \
+  "$SMARTREFILL_BACKEND/storage.rules" \
+  "$ROOT/storage.rules"
+
 if [[ "$OUT_OF_SYNC" -ne 0 ]]; then
   echo ""
   echo "Fix:"
@@ -46,4 +55,4 @@ if [[ "$OUT_OF_SYNC" -ne 0 ]]; then
   exit 1
 fi
 
-echo "Firestore config in sync (smartrefill/frontend → smartrefill/backend + sales-portal/backend)."
+echo "Firestore + Storage config in sync (smartrefill/frontend → smartrefill/backend + sales-portal/backend)."
