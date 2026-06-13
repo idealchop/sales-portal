@@ -91,6 +91,8 @@ Root scripts:
 - `npm run build` — frontend only (App Hosting)
 - `npm run build:all` — backend + frontend (local/CI full stack)
 
+App Hosting runs the Next.js **standalone** server (`output: "standalone"` in `frontend/next.config.ts`). From the repo root the start path is `frontend/.next/standalone/frontend/server.js` (Cloud Run sets `PORT` automatically).
+
 One-time: in Firebase Console → App Hosting → backend settings, set **Root directory** to `frontend`, or use `firebase.json` at repo root (`apphosting.rootDir`).
 
 ## Secrets

@@ -10,8 +10,8 @@ runConfig:
   cpu: 1
 
 scripts:
-  buildCommand: npm run build
-  runCommand: npm run start -- -p $PORT -H 0.0.0.0
+  buildCommand: npm ci && npm run build
+  runCommand: node .next/standalone/frontend/server.js
 
 env:
   # --- PUBLIC FIREBASE CLIENT CONFIG (BUILD + RUNTIME) ---
@@ -22,7 +22,7 @@ env:
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: "aquaflow-management-suite.firebaseapp.com"
+    value: "river-tech.firebaseapp.com"
     availability:
       - BUILD
       - RUNTIME
