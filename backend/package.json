@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "scripts": {
+    "sync:firestore": "bash scripts/sync-firestore-config.sh",
+    "check:firestore": "bash scripts/check-firestore-sync.sh",
+    "check:secrets": "bash scripts/check-secrets.sh",
+    "secrets:set": "bash scripts/set-secrets.sh",
+    "secrets:dry-run": "bash scripts/set-secrets.sh --dry-run",
+    "test:bdd:local": "npm run sync:firestore && npm --prefix functions run build && npx -y firebase-tools emulators:exec --project aquaflow-management-suite --only \"functions,firestore,auth\" \"node seed-emulator.js && cd functions && npm run test:bdd\"",
+    "test:all:local": "npm --prefix functions run test && npm run test:bdd:local"
+  }
+}

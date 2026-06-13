@@ -1,0 +1,19 @@
+# secrets (use secrets.env.example as template)
+secrets.env
+
+# firebase / emulator
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+
+# compiled Cloud Functions output
+functions/lib/
+
+# testing
+functions/coverage/
+functions/test-results/
+functions/playwright-report/
+
+# env
+functions/.env
+functions/.env.*

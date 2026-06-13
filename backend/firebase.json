@@ -1,0 +1,56 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "sales-portal-api",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        ".env",
+        ".env.*",
+        "**/.env",
+        "**/.env.*"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ],
+      "runtime": "nodejs22",
+      "environmentVariables": {
+        "SALES_PORTAL_FIREBASE_PROJECT_ID": "aquaflow-management-suite",
+        "SALES_PORTAL_FIREBASE_STORAGE_BUCKET": "smartrefill-singapore",
+        "SALES_PORTAL_FIRESTORE_DB": "riverdb",
+        "SMARTREFILL_API_URL": "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/smartrefillV3Api"
+      }
+    }
+  ],
+  "firestore": {
+    "database": "riverdb",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001,
+      "host": "127.0.0.1"
+    },
+    "firestore": {
+      "port": 8080,
+      "host": "127.0.0.1"
+    },
+    "storage": {
+      "port": 9199,
+      "host": "127.0.0.1"
+    },
+    "ui": {
+      "enabled": true
+    }
+  }
+}

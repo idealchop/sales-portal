@@ -1,0 +1,52 @@
+import { describe, expect, it } from "vitest";
+import { mapOwnerSubscriptions } from "../../../services/map-owner-subscriptions";
+
+describe("mapOwnerSubscriptions", () => {
+  it("classifies current, future, and past rows", () => {
+    const now = Date.now();
+    const future = new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const past = new Date(now - 60 * 24 * 60 * 60 * 1000).toISOString();
+
+    const rows = mapOwnerSubscriptions([
+      {
+        id: "past-sub",
+        data: () => ({
+          planName: "Starter",
+          status: "superseded",
+          price: 0,
+          createdAt: { _seconds: Math.floor(new Date(past).getTime() / 1000) },
+        }),
+      },
+      {
+        id: "current-sub",
+        data: () => ({
+          planName: "Scale",
+          status: "active",
+          paymentStatus: "verified",
+          price: 1650,
+          billingCycle: "monthly",
+          createdAt: { _seconds: Math.floor(now / 1000) },
+          dates: { expiresAt: { _seconds: Math.floor((now + 86400000) / 1000) } },
+        }),
+      },
+      {
+        id: "future-sub",
+        data: () => ({
+          planName: "Scale",
+          status: "scheduled",
+          paymentStatus: "pending_verification",
+          price: 1949,
+          createdAt: { _seconds: Math.floor(now / 1000) },
+          dates: { activatesAt: { _seconds: Math.floor(new Date(future).getTime() / 1000) } },
+          metadata: { changeType: "downgrade", downgradeReasonCode: "too_expensive" },
+        }),
+      },
+    ]);
+
+    expect(rows.find((row) => row.id === "current-sub")?.timeline).toBe("current");
+    expect(rows.find((row) => row.id === "future-sub")?.timeline).toBe("future");
+    expect(rows.find((row) => row.id === "past-sub")?.timeline).toBe("past");
+    expect(rows.find((row) => row.id === "future-sub")?.needsApproval).toBe(true);
+    expect(rows.find((row) => row.id === "future-sub")?.isDowngrade).toBe(true);
+  });
+});

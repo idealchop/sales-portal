@@ -1,0 +1,118 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { DASHBOARD_NAV, type NavItem } from "@/features/dashboard/config/nav-items";
+import type { SalesPortalRole } from "@/lib/auth-status";
+
+function isItemActive(pathname: string, item: NavItem): boolean {
+  if (item.href === "/dashboard") {
+    return pathname === "/dashboard";
+  }
+  return pathname.startsWith(item.href);
+}
+
+export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
+  const pathname = usePathname();
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
+    {},
+  );
+
+  const items = DASHBOARD_NAV.filter(
+    (item) => role && item.roles.includes(role),
+  );
+
+  function toggleGroup(href: string) {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [href]: !(prev[href] ?? pathname.startsWith(href)),
+    }));
+  }
+
+  function isGroupExpanded(item: NavItem): boolean {
+    if (!item.children?.length) return false;
+    if (expandedGroups[item.href] !== undefined) {
+      return expandedGroups[item.href];
+    }
+    return pathname.startsWith(item.href);
+  }
+
+  return (
+    <nav className="space-y-1 p-3">
+      {items.map((item) => {
+        const hasChildren = Boolean(item.children?.length);
+        const groupExpanded = hasChildren && isGroupExpanded(item);
+        const childActive =
+          hasChildren &&
+          item.children!.some((child) => pathname.startsWith(child.href));
+        const isActive =
+          hasChildren ? childActive : isItemActive(pathname, item);
+        const Icon = item.icon;
+
+        return (
+          <div key={item.href}>
+            {hasChildren ?
+              <button
+                type="button"
+                onClick={() => toggleGroup(item.href)}
+                aria-expanded={groupExpanded}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  isActive ?
+                    "bg-[var(--primary)] text-white shadow-sm"
+                  : "text-zinc-600 hover:bg-teal-50 hover:text-teal-900",
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="flex-1 text-left">{item.label}</span>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition",
+                    groupExpanded && "rotate-180",
+                  )}
+                />
+              </button>
+            : <Link
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  isActive ?
+                    "bg-[var(--primary)] text-white shadow-sm"
+                  : "text-zinc-600 hover:bg-teal-50 hover:text-teal-900",
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{item.label}</span>
+              </Link>
+            }
+
+            {hasChildren && groupExpanded && (
+              <div className="ml-4 mt-1 space-y-0.5 border-l border-zinc-200 pl-3">
+                {item.children!.map((child) => {
+                  const childIsActive = pathname.startsWith(child.href);
+                  return (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      className={cn(
+                        "block rounded-md px-3 py-2 text-sm transition",
+                        childIsActive ?
+                          "bg-teal-50 font-medium text-teal-900"
+                        : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800",
+                      )}
+                    >
+                      {child.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </nav>
+  );
+}

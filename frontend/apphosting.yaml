@@ -1,0 +1,95 @@
+# Firebase App Hosting — Sales Portal (Next.js)
+# See: https://firebase.google.com/docs/app-hosting/configure
+
+kind: "AppStack"
+apiVersion: "v1"
+
+runConfig:
+  minInstances: 0
+  memoryMiB: 1024
+  cpu: 1
+
+scripts:
+  buildCommand: npm run build
+  runCommand: npm run start -- -p $PORT -H 0.0.0.0
+
+env:
+  # --- PUBLIC FIREBASE CLIENT CONFIG (BUILD + RUNTIME) ---
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyCbbvsSnCnK7L65WY7sZ5VKcaxu1HB_0aU"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "aquaflow-management-suite.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "aquaflow-management-suite"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "smartrefill-singapore"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "185761068269"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:185761068269:web:eb3498fcd1d5974897c8e4"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: "G-F49CW4NQ5K"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIRESTORE_DB
+    value: "riverdb"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_DEV
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    value: "6LcEChstAAAAAIdOxubP7nKKB6e7LMufXJe1R3lI"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SALES_PORTAL_API_URL
+    value: "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/salesPortalApi"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SMARTREFILL_API_URL
+    value: "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/smartrefillV3Api"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # --- SECRETS (Cloud Secret Manager) ---
+  - variable: NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN
+    secret: sales-portal-appcheck-debug-token
+    availability:
+      - BUILD
+      - RUNTIME

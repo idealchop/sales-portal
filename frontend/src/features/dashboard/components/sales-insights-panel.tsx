@@ -1,0 +1,402 @@
+"use client";
+
+import {
+  AlertTriangle,
+  ArrowUpCircle,
+  Briefcase,
+  CircleDollarSign,
+  Target,
+  TrendingUp,
+  UserPlus,
+} from "lucide-react";
+import { HorizontalBarChart } from "@/components/charts/distribution-chart";
+import { PaginatedList } from "@/components/paginated-list";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import type {
+  DashboardAnalytics,
+  SalesAction,
+  SalesActionType,
+} from "@/lib/dashboard/analytics";
+import { formatPhp } from "@/lib/format";
+
+const ACTION_PAGE_SIZE = 8;
+const LIST_PAGE_SIZE = 8;
+
+const ACTION_LABELS: Record<SalesActionType, string> = {
+  payment_pending: "Payment",
+  upgrade_opportunity: "Upsell",
+  low_engagement: "Adoption",
+  inactive: "Inactive",
+  onboarding_incomplete: "Onboarding",
+};
+
+const PRIORITY_STYLES: Record<SalesAction["priority"], string> = {
+  high: "bg-red-100 text-red-800",
+  medium: "bg-amber-100 text-amber-800",
+  low: "bg-zinc-100 text-zinc-700",
+};
+
+const HEALTH_LABELS = {
+  high: "Healthy",
+  medium: "Growing",
+  low: "At risk",
+} as const;
+
+function SalesStatCard({
+  title,
+  value,
+  subtitle,
+  icon,
+}: {
+  title: string;
+  value: string;
+  subtitle: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <Card className="border-[var(--border)] bg-gradient-to-br from-white to-teal-50/40">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-[var(--muted-foreground)]">
+              {title}
+            </p>
+            <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              {subtitle}
+            </p>
+          </div>
+          <div className="rounded-lg bg-white p-2 text-[var(--primary)] shadow-sm">
+            {icon}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function SalesInsightsPanel({
+  salesInsights,
+  proposalPipeline,
+}: {
+  salesInsights: DashboardAnalytics["salesInsights"];
+  proposalPipeline: DashboardAnalytics["proposalPipeline"];
+}) {
+  const healthTotal = salesInsights.workspaceHealth.reduce(
+    (sum, row) => sum + row.count,
+    0,
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">
+          Sales intelligence
+        </h2>
+        <p className="text-sm text-[var(--muted-foreground)]">
+          Prioritized actions, revenue signals, and pipeline health for your
+          team.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SalesStatCard
+          title="Estimated MRR"
+          value={formatPhp(salesInsights.estimatedMrr)}
+          subtitle={`${salesInsights.pendingPayments} pending payment verifications`}
+          icon={<CircleDollarSign className="h-5 w-5" />}
+        />
+        <SalesStatCard
+          title="Follow-ups needed"
+          value={salesInsights.salesActions.length.toLocaleString()}
+          subtitle={`${salesInsights.atRiskWorkspaces} at-risk workspaces`}
+          icon={<AlertTriangle className="h-5 w-5" />}
+        />
+        <SalesStatCard
+          title="Upsell opportunities"
+          value={salesInsights.upgradeOpportunities.toLocaleString()}
+          subtitle="Starter plans with high usage"
+          icon={<ArrowUpCircle className="h-5 w-5" />}
+        />
+        <SalesStatCard
+          title="New this month"
+          value={`+${salesInsights.newWorkspacesThisMonth}`}
+          subtitle={`${salesInsights.newSmartRefillUsersThisMonth} new SmartRefill users`}
+          icon={<UserPlus className="h-5 w-5" />}
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Priority action queue</CardTitle>
+            <CardDescription>
+              Workspaces that need sales outreach now.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {salesInsights.salesActions.length === 0 ? (
+              <p className="py-8 text-center text-sm text-[var(--muted-foreground)]">
+                No urgent actions — all workspaces look healthy.
+              </p>
+            ) : (
+              <PaginatedList
+                items={salesInsights.salesActions}
+                pageSize={ACTION_PAGE_SIZE}
+                className="space-y-3"
+                renderItem={(action) => (
+                  <div
+                    key={action.id}
+                    className="rounded-lg border border-[var(--border)] p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-foreground">
+                            {action.businessName}
+                          </p>
+                          <Badge className={PRIORITY_STYLES[action.priority]}>
+                            {action.priority}
+                          </Badge>
+                          <Badge>
+                            {ACTION_LABELS[action.actionType]}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-sm font-medium text-[var(--primary)]">
+                          {action.headline}
+                        </p>
+                        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                          {action.detail}
+                        </p>
+                        {action.ownerEmail && (
+                          <p className="mt-2 text-xs text-zinc-500">
+                            {action.ownerEmail}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right text-xs text-[var(--muted-foreground)]">
+                        {action.planName && <p>{action.planName}</p>}
+                        {action.customers !== undefined && (
+                          <p>{action.customers} customers</p>
+                        )}
+                        {action.transactionsLast30Days !== undefined && (
+                          <p>{action.transactionsLast30Days} tx / 30d</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Workspace health</CardTitle>
+              <CardDescription>Engagement tier across accounts.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {salesInsights.workspaceHealth.map((row) => {
+                const pct =
+                  healthTotal > 0 ?
+                    Math.round((row.count / healthTotal) * 100)
+                  : 0;
+                return (
+                  <div key={row.tier}>
+                    <div className="mb-1 flex justify-between text-sm">
+                      <span className="font-medium">
+                        {HEALTH_LABELS[row.tier]}
+                      </span>
+                      <span className="text-[var(--muted-foreground)]">
+                        {row.count} ({pct}%)
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
+                      <div
+                        className={`h-full rounded-full ${
+                          row.tier === "high" ?
+                            "bg-emerald-500"
+                          : row.tier === "medium" ?
+                            "bg-amber-400"
+                          : "bg-red-400"
+                        }`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-xs text-[var(--muted-foreground)]">
+                {salesInsights.inactiveWorkspaces} workspaces had zero
+                transactions in the last 30 days.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">MRR by plan</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {salesInsights.mrrByPlan.length === 0 ? (
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  No paid subscriptions yet.
+                </p>
+              ) : (
+                <PaginatedList
+                  items={salesInsights.mrrByPlan}
+                  pageSize={LIST_PAGE_SIZE}
+                  className="space-y-3"
+                  renderItem={(row) => (
+                    <div
+                      key={row.plan}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="font-medium">{row.plan}</span>
+                      <span className="text-[var(--muted-foreground)]">
+                        {formatPhp(row.mrr)} · {row.workspaces} ws
+                      </span>
+                    </div>
+                  )}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Payment status</CardTitle>
+            <CardDescription>
+              Subscription payment verification across workspaces.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {salesInsights.paymentStatusBreakdown.length > 0 ? (
+              <HorizontalBarChart
+                data={salesInsights.paymentStatusBreakdown.map((row) => ({
+                  status: row.status.replaceAll("_", " "),
+                  count: row.count,
+                }))}
+                labelKey="status"
+                valueKey="count"
+              />
+            ) : (
+              <p className="py-6 text-center text-sm text-[var(--muted-foreground)]">
+                No subscription payment data.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-[var(--primary)]" />
+              <div>
+                <CardTitle className="text-base">Proposal pipeline</CardTitle>
+                <CardDescription>
+                  Sales portal proposals and client mix.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-lg bg-zinc-50 p-3 text-center">
+                <p className="text-lg font-bold">
+                  {proposalPipeline.totalProposals}
+                </p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Proposals
+                </p>
+              </div>
+              <div className="rounded-lg bg-zinc-50 p-3 text-center">
+                <p className="text-lg font-bold">
+                  {proposalPipeline.totalClients}
+                </p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Clients
+                </p>
+              </div>
+              <div className="rounded-lg bg-zinc-50 p-3 text-center">
+                <p className="text-lg font-bold">
+                  {proposalPipeline.winRate}%
+                </p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Win rate
+                </p>
+              </div>
+              <div className="rounded-lg bg-zinc-50 p-3 text-center">
+                <p className="text-lg font-bold">
+                  {formatPhp(proposalPipeline.pipelineValue)}
+                </p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Pipeline
+                </p>
+              </div>
+            </div>
+
+            {proposalPipeline.byStatus.length > 0 ? (
+              <PaginatedList
+                items={proposalPipeline.byStatus}
+                pageSize={LIST_PAGE_SIZE}
+                className="space-y-2"
+                renderItem={(row) => (
+                  <div
+                    key={row.status}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span className="capitalize">{row.status}</span>
+                    <span className="text-[var(--muted-foreground)]">
+                      {row.count} · {formatPhp(row.value)}
+                    </span>
+                  </div>
+                )}
+              />
+            ) : (
+              <p className="text-sm text-[var(--muted-foreground)]">
+                No proposals yet — pipeline metrics will appear when your team
+                starts creating proposals.
+              </p>
+            )}
+
+            {proposalPipeline.clientsByType.length > 0 && (
+              <div className="mt-4 border-t border-[var(--border)] pt-4">
+                <p className="mb-2 flex items-center gap-1 text-sm font-medium">
+                  <Target className="h-4 w-4" />
+                  Clients by segment
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {proposalPipeline.clientsByType.map((row) => (
+                    <Badge key={row.type}>
+                      {row.type}: {row.count}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {proposalPipeline.acceptedValue > 0 && (
+              <p className="mt-4 flex items-center gap-1 text-sm text-emerald-700">
+                <TrendingUp className="h-4 w-4" />
+                {formatPhp(proposalPipeline.acceptedValue)} closed won
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

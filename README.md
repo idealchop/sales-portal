@@ -1,108 +1,181 @@
-# Smart Refill Sales Portal
+# Smart Refill Sales Portal (v2)
 
-Welcome to the Smart Refill Sales Portal, a comprehensive B2B sales management application designed to empower the sales team of Smart Refill. This tool provides everything a sales representative or manager needs to manage clients, create proposals, track commissions, and leverage AI to enhance productivity.
+Monorepo with a **separate backend API** and **Next.js frontend**, integrated with the shared SmartRefill platform (`aquaflow-management-suite` / `riverdb`).
 
-## ✨ Key Features
+**Documentation index:** [`docs/README.md`](docs/README.md) · **Agent guide:** [`AGENTS.md`](AGENTS.md)
 
-- **Personalized Dashboards**: Separate, tailored dashboards for sales executives, managers, and administrators, providing relevant KPIs and tools for each role.
-- **Client & Proposal Management**: A complete CRM to manage client information, track proposal statuses, and maintain a history of interactions.
-- **Automated Commission Tracking**: A robust system to calculate and track one-time, recurring, and manager-override commissions.
-- **AI-Powered Tools**:
-    - **Proposal Generation**: Create professional sales proposal drafts instantly using generative AI.
-    - **Content Studio**: Generate engaging social media posts, including captions and images, to boost marketing efforts.
-- **Onboarding Flow**: A seamless multi-step onboarding process for new sales representatives to set up their profiles and credentials.
-- **Sales Materials Library**: A centralized repository for all sales and marketing collateral, including brochures, presentations, and videos.
-- **Role-Based Access Control**: Secure access levels for Sales Executives, Sales Managers, and Admins, ensuring data privacy and appropriate permissions.
+## Structure
 
-## 🚀 Tech Stack
+```
+sales-portal/
+├── backend/                 # Firebase Cloud Functions API
+│   ├── firebase.json
+│   ├── firestore.rules
+│   └── functions/           # salesPortalApi Express gateway
+├── frontend/                # Next.js 16 App Router
+└── ../sales-portal-backup/  # Full backup of the legacy single-app repo
+```
 
-This project is built with a modern, scalable, and efficient tech stack:
+## Backend (`salesPortalApi`)
 
-- **Framework**: [Next.js](https://nextjs.org/) (with App Router)
-- **UI Library**: [React](https://react.dev/) & [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **UI Components**: [ShadCN UI](https://ui.shadcn.com/)
-- **Backend & Database**: [Firebase](https://firebase.google.com/) (Authentication, Firestore, Cloud Storage)
-- **Generative AI**: [Genkit (by Firebase)](https://firebase.google.com/docs/genkit)
-- **Charting**: [Recharts](https://recharts.org/)
+Cloud Functions API in `asia-southeast1`:
 
-## 🏁 Getting Started
+| Route | Description |
+|-------|-------------|
+| `GET /health` | Health check |
+| `GET /auth/status` | Validates Firebase Auth + `users.appAccess` (`sales-portal` + role) |
+| `GET /dashboard/analytics` | Platform analytics via Admin SDK |
+| `POST /dashboard/subscriptions/.../approve` | Subscription approval |
+| `POST /content-studio/generate` | AI social post generation |
+| `GET/POST /onboarding/*` | Onboarding flows |
+| `GET/PUT/DELETE /admin/*` | Admin users, data management, catalog |
+| `ALL /smartrefill/*` | Proxies to SmartRefill V3 API with the caller's ID token |
 
-Follow these steps to get the project running on your local machine.
+Full route catalog: [`docs/backend-documentation.md`](docs/backend-documentation.md)
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18 or later)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-
-### 1. Installation
-
-Clone the repository and install the dependencies:
+### Local API
 
 ```bash
+cd backend/functions
+cp .env.example .env
 npm install
+npm run serve:local   # http://127.0.0.1:8071
 ```
 
-### 2. Environment Variables
+## Frontend
 
-Create a `.env` file in the root of the project. You will need to provide the following API keys:
+Next.js 16 · React 19 · Tailwind CSS 4 · Firebase Auth client SDK.
 
-- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`: Your Google Maps Platform API key, required for address lookup and map features.
-- `GEMINI_API_KEY`: Your Google AI Gemini API key, required for the generative AI features.
+Login flow:
 
-Your `.env` file should look like this:
+1. Firebase `signInWithEmailAndPassword`
+2. `GET /auth/status` on Sales Portal API (double-checks Auth + riverdb `users.appAccess`)
+3. Redirect to dashboard or onboarding
 
-```
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
-GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-```
-
-### 3. Running the Development Server
-
-Start the Next.js development server:
+### Local frontend
 
 ```bash
-npm run dev
+cd frontend
+cp .env.example .env.local
+npm install
+npm run dev -- -p 9002
 ```
 
-The application will be available at `http://localhost:9002`.
+Or from repo root:
 
-## 📂 Project Structure
+```bash
+npm run dev:frontend
+npm run dev:api
+```
 
-The project follows a standard Next.js App Router structure:
+## Environment
 
--   `src/app/`: Contains all the routes and pages of the application.
-    -   `(auth)`: Routes for authentication (login).
-    -   `dashboard`: Protected routes for the main sales portal.
-    -   `admin`: Protected routes for the admin dashboard.
-    -   `onboarding`: Public routes for new user setup.
-    -   `proposal`: Public routes for creating and viewing proposals.
--   `src/components/`: Shared React components, including UI components from ShadCN.
--   `src/firebase/`: Firebase configuration, providers, and custom hooks (`useUser`, `useCollection`, etc.).
--   `src/ai/`: Contains all Genkit flows for AI-powered features.
--   `src/hooks/`: Custom React hooks for data fetching and business logic.
--   `src/lib/`: Utility functions, data definitions, and actions.
--   `docs/`: Contains the `backend.json` file which defines the data schema for Firestore.
--   `firestore.rules`: Security rules for the Firestore database.
+- **Frontend (local)**: `frontend/.env.local` — Firebase client config + API URLs
+- **Backend (local)**: `backend/functions/.env` — Admin SDK credentials + SmartRefill API URL
+- **Production secrets**: Google Cloud Secret Manager — see [Secrets](#secrets) below
 
-## 🔥 Firebase Integration
+## Secrets
 
-The application is deeply integrated with Firebase for its backend services.
+Production uses **Secret Manager** (same GCP project as SmartRefill: `aquaflow-management-suite`).
 
--   **Authentication**: Manages user sign-in and role-based access.
--   **Firestore**: Serves as the primary database for storing all application data, including clients, proposals, and user profiles. The data structure is defined in `docs/backend.json`.
--   **Cloud Storage**: Used to store user-uploaded files like profile pictures and payment proofs.
--   **Security Rules**: All access to Firestore and Storage is governed by the rules defined in `firestore.rules` and `storage.rules`, ensuring data security.
+| Secret | Used by | Notes |
+|--------|---------|-------|
+| `SALES_PORTAL_GEMINI_API_KEY` | `salesPortalApi` Cloud Function | Separate from SmartRefill `GEMINI_API_KEY`; Content Studio + AI features |
+| `sales-portal-appcheck-debug-token` | App Hosting (`frontend/apphosting.yaml`) | Optional; only if you need a debug token in hosted builds |
 
-## 🤖 AI Features with Genkit
+Non-secret runtime config for the API is in `backend/firebase.json` → `environmentVariables` (Firestore DB, SmartRefill API URL, storage bucket).
 
-The generative AI capabilities of this application are powered by **Genkit**, a framework from Firebase for building production-ready AI applications.
+### One-time setup
 
--   **AI Flows**: The core logic for AI features is defined as "flows" located in `src/ai/flows/`.
-    -   `generate-proposal-draft.ts`: Takes client needs and recommended plans to generate a complete, professional proposal draft.
-    -   `generate-social-post.ts`: Creates a social media post, including both an image (using Imagen) and a relevant caption (using Gemini).
--   **Configuration**: The Genkit setup and model configuration can be found in `src/ai/genkit.ts`.
+```bash
+cd backend
+cp secrets.env.example secrets.env   # fill SALES_PORTAL_GEMINI_API_KEY (and optional App Check token)
+npm run secrets:dry-run              # preview
+npm run secrets:set                  # upsert to Secret Manager (requires gcloud auth)
+cd backend && ./deploy.sh            # redeploy so salesPortalApi binds secrets
+```
 
----
+Alternatively, set the key via Firebase CLI (no global install — uses npx):
 
-This README provides a high-level overview of the Smart Refill Sales Portal. For more specific details, please refer to the source code and comments within the respective files.
+```bash
+npx -y firebase-tools functions:secrets:set SALES_PORTAL_GEMINI_API_KEY --project aquaflow-management-suite
+```
+
+### App Hosting
+
+`frontend/apphosting.yaml` defines public env vars and references `sales-portal-appcheck-debug-token` from Secret Manager. After creating that secret:
+
+```bash
+npx -y firebase-tools apphosting:secrets:grantaccess sales-portal-appcheck-debug-token \
+  --backend <BACKEND_ID> --project aquaflow-management-suite
+```
+
+Local dev does **not** use Secret Manager — keep using `.env` / `.env.local`.
+
+## Testing
+
+Three-layer QA protocol (unit → integration → BDD). See [`docs/testing-guide.md`](docs/testing-guide.md).
+
+```bash
+npm run test:unit              # Vitest — frontend + backend
+npm run test:unit:backend
+npm run test:unit:frontend
+npm run test:bdd:local         # emulators + Playwright (API + UI)
+npm run test:all:local         # unit + BDD
+```
+
+Manual QA: [`docs/frontend-test-cases.md`](docs/frontend-test-cases.md)
+
+## Firestore rules (`riverdb`)
+
+Sales Portal and SmartRefill share **`riverdb`**. The **canonical** rules and indexes are:
+
+**`smartrefill/frontend/firestore.rules`** and **`smartrefill/frontend/firestore.indexes.json`**
+
+(merged SmartRefill V3 + Sales Portal blocks).
+
+Keep copies in sync:
+
+```bash
+# After editing canonical files in smartrefill/frontend/
+cd smartrefill/backend && npm run sync:firestore
+cd sales-portal/backend && npm run sync:firestore
+cd sales-portal/backend && npm run check:firestore
+```
+
+Deploy Firestore (either repo after sync — same files):
+
+```bash
+cd smartrefill/frontend && firebase deploy --only firestore:rules,firestore:indexes
+```
+
+Sales Portal `./deploy.sh` runs sync + check automatically; use `DEPLOY_FIRESTORE=1` to include rules in that deploy.
+
+Local emulators:
+
+```bash
+cd backend && firebase emulators:start --only firestore
+```
+
+Reference snippet (Sales Portal–only paths): `backend/firestore.sales-portal.rules`.
+
+## Deploy
+
+```bash
+cd backend/functions
+npm run build
+npm run deploy
+```
+
+Deploy **functions only** from sales-portal (`npm run deploy` does not include Firestore rules unless
+you explicitly run `firebase deploy --only firestore:rules`).
+
+Frontend: deploy `frontend/` via Firebase App Hosting or your preferred Next.js host.
+
+## Legacy backup
+
+The previous single Next.js app (Genkit, direct Firestore hooks, etc.) is preserved at:
+
+**`../sales-portal-backup/`**
+
+Migrate features from there into `frontend/` and `backend/functions/` incrementally.

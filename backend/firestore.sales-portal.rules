@@ -1,0 +1,16 @@
+// Sales Portal — riverdb rule blocks (reference only)
+//
+// Canonical merged rules live in:
+//   smartrefill/frontend/firestore.rules
+//
+// Sync copies:
+//   cd smartrefill/backend && npm run sync:firestore
+//   cd sales-portal/backend && npm run sync:firestore
+//
+// Verify all copies match:
+//   cd sales-portal/backend && npm run check:firestore
+//
+// Sales Portal sections in the canonical file:
+//   - helpers: isSalesPortalAdmin, isSalesManager, isSalesManagerOf
+//   - users/{uid}/notifications
+//   - sales, counters, sales_materials, shareable_links, proposals, commissions, clients
