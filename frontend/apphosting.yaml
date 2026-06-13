@@ -86,10 +86,3 @@ env:
     availability:
       - BUILD
       - RUNTIME
-
-  # --- SECRETS (Cloud Secret Manager) ---
-  - variable: NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN
-    secret: sales-portal-appcheck-debug-token
-    availability:
-      - BUILD
-      - RUNTIME

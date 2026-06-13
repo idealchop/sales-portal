@@ -78,11 +78,11 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 
 ## App Hosting deploy
 
-Config: `frontend/apphosting.yaml`
+Config: `frontend/apphosting.yaml` (or root `apphosting.yaml` when building from monorepo root)
 
 - Build: `npm run build`
 - Run: `npm run start`
-- Secrets: `sales-portal-appcheck-debug-token` (optional)
+- App Check: reCAPTCHA site key in env; debug token is local-only (`.env.local`)
 
 ## Testing
 

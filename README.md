@@ -100,7 +100,8 @@ Production uses **Secret Manager** (same GCP project as SmartRefill: `aquaflow-m
 | Secret | Used by | Notes |
 |--------|---------|-------|
 | `SALES_PORTAL_GEMINI_API_KEY` | `salesPortalApi` Cloud Function | Separate from SmartRefill `GEMINI_API_KEY`; Content Studio + AI features |
-| `sales-portal-appcheck-debug-token` | App Hosting (`frontend/apphosting.yaml`) | Optional; only if you need a debug token in hosted builds |
+
+`NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN` is **local dev only** (see `frontend/.env.local`) — not used in App Hosting production builds (`NEXT_PUBLIC_DEV=false`).
 
 Non-secret runtime config for the API is in `backend/firebase.json` → `environmentVariables` (Firestore DB, SmartRefill API URL, storage bucket).
 
@@ -122,12 +123,7 @@ npx -y firebase-tools functions:secrets:set SALES_PORTAL_GEMINI_API_KEY --projec
 
 ### App Hosting
 
-`frontend/apphosting.yaml` defines public env vars and references `sales-portal-appcheck-debug-token` from Secret Manager. After creating that secret:
-
-```bash
-npx -y firebase-tools apphosting:secrets:grantaccess sales-portal-appcheck-debug-token \
-  --backend <BACKEND_ID> --project aquaflow-management-suite
-```
+`apphosting.yaml` (repo root or `frontend/`) defines public `NEXT_PUBLIC_*` env vars. Production App Check uses reCAPTCHA (`NEXT_PUBLIC_RECAPTCHA_SITE_KEY`); no App Check debug secret is required for hosted builds.
 
 Local dev does **not** use Secret Manager — keep using `.env` / `.env.local`.
 
