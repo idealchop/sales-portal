@@ -84,7 +84,7 @@ Firebase App Hosting should build **only the Next.js app**, not the Cloud Functi
 | **Config file** | `frontend/apphosting.yaml` |
 | **Node.js** | 22 (matches App Hosting buildpack) |
 
-If the backend is connected to the **repository root** (legacy), the root `apphosting.yaml` and npm workspace (`frontend/`) ensure `npm ci` installs frontend deps and `npm run build` runs `next build` — not the API `tsc` step.
+If the backend is connected to the **repository root** (legacy), root `apphosting.yaml` runs `npm ci --prefix frontend` so deps install from `frontend/package-lock.json` (App Hosting does not resolve npm workspaces at the monorepo root).
 
 Root scripts:
 

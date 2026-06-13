@@ -14,8 +14,8 @@ runConfig:
   cpu: 1
 
 scripts:
-  buildCommand: npm ci && npm run build
-  runCommand: npm run start -- -p $PORT -H 0.0.0.0
+  buildCommand: npm ci --prefix frontend && npm run build --prefix frontend
+  runCommand: npm run start --prefix frontend -- -p $PORT -H 0.0.0.0
 
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
