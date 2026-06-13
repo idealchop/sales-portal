@@ -95,9 +95,9 @@ App Hosting runs the Next.js **standalone** server (`output: "standalone"` in `f
 
 One-time: in Firebase Console → App Hosting → backend settings, set **Root directory** to `frontend`, or use `firebase.json` at repo root (`apphosting.rootDir`).
 
-### Firebase Hosting (`river-tech.web.app`)
+### Firebase Hosting (`sales-river-tech.web.app`)
 
-Classic Hosting site **`river-tech`** is configured in root `firebase.json`. Static files in `frontend/public` are served from the CDN; all other routes rewrite to the App Hosting Cloud Run service **`sales-portal`** (Next.js SSR + `/_next/static`).
+Classic Hosting site **`sales-river-tech`** is configured in root `firebase.json`. Static files in `frontend/public` are served from the CDN; all other routes rewrite to the App Hosting Cloud Run service **`sales-portal`** (Next.js SSR + `/_next/static`).
 
 **Prerequisite:** App Hosting must have a successful rollout first (creates the `sales-portal` Cloud Run service). If `deploy:hosting` fails with “Cloud Run service `sales-portal` does not exist”, fix the App Hosting build in Firebase Console → App Hosting → Rollouts, then retry.
 
@@ -105,12 +105,10 @@ Deploy Hosting (from **repo root** or `frontend/`):
 
 ```bash
 npm run deploy:hosting
-# runs: firebase deploy --only hosting:river-tech
+# runs: firebase deploy --only hosting:sales-river-tech
 ```
 
-View at [https://river-tech.web.app](https://river-tech.web.app) after deploy.
-
-Alternative: add `river-tech.web.app` as a **custom domain** on the App Hosting `sales-portal` backend (Firebase Console → App Hosting → Settings → Domains) instead of using Hosting rewrites.
+View at [https://sales-river-tech.web.app](https://sales-river-tech.web.app) after deploy.
 
 ## Secrets
 

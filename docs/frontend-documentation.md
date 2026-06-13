@@ -82,7 +82,7 @@ Config: `frontend/apphosting.yaml` (or root `apphosting.yaml` when building from
 
 - Build: `npm run build` (includes `prepare-standalone.mjs` for static assets)
 - Run: standalone server via App Hosting
-- Custom domain / Hosting site: `river-tech` → see root `firebase.json` hosting rewrites to Cloud Run `feature`
+- Hosting site: `sales-river-tech` → see root `firebase.json` hosting rewrites to Cloud Run `sales-portal`
 - App Check: reCAPTCHA site key in env; debug token is local-only (`.env.local`)
 
 ## Testing

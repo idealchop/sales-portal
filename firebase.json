@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "river-tech",
+    "site": "sales-river-tech",
     "public": "frontend/public",
     "ignore": [
       "firebase.json",
@@ -27,7 +27,8 @@
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log"
-      ]
+      ],
+      "alwaysDeployFromSource": true
     }
   ]
 }

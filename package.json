@@ -23,6 +23,6 @@
     "test:bdd:frontend": "npm run test:bdd:local --prefix frontend",
     "test:bdd:local": "bash scripts/test-bdd-local.sh",
     "test:all:local": "npm run test:unit && npm run test:bdd:local",
-    "deploy:hosting": "npx -y firebase-tools deploy --only hosting:river-tech --project aquaflow-management-suite"
+    "deploy:hosting": "npx -y firebase-tools deploy --only hosting:sales-river-tech --project aquaflow-management-suite"
   }
 }
