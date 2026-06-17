@@ -20,6 +20,10 @@ import { ListPagination } from "@/components/list-pagination";
 import { PaginatedList } from "@/components/paginated-list";
 import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
 import {
+  WORKSPACE_HEALTH_BADGE_STYLES,
+  formatWorkspaceHealthTier,
+} from "@/lib/dashboard/workspace-health";
+import {
   formatPaymentStatus,
   formatSubscriptionPeriod,
   formatSubscriptionStatus,
@@ -30,12 +34,6 @@ import type { DashboardAnalyticsRefresh } from "@/hooks/use-dashboard-analytics"
 
 const PAGE_SIZE = 8;
 const SUBSCRIPTION_PAGE_SIZE = 5;
-
-const HEALTH_STYLES: Record<ActiveOwner["healthTier"], string> = {
-  high: "bg-emerald-100 text-emerald-800",
-  medium: "bg-amber-100 text-amber-800",
-  low: "bg-red-100 text-red-800",
-};
 
 const TIMELINE_LABELS = {
   current: "Current",
@@ -222,8 +220,8 @@ function OwnerRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium text-foreground">{owner.businessName}</p>
-            <Badge className={HEALTH_STYLES[owner.healthTier]}>
-              {owner.healthTier}
+            <Badge className={WORKSPACE_HEALTH_BADGE_STYLES[owner.healthTier]}>
+              {formatWorkspaceHealthTier(owner.healthTier)}
             </Badge>
             {(owner.pendingApprovals ?? 0) > 0 && (
               <Badge className="bg-amber-100 text-amber-800">

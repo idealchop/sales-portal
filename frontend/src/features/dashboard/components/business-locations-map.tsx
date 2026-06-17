@@ -13,18 +13,15 @@ import {
 import { Button } from "@/components/ui/button";
 import type { BusinessMapLocation } from "@/lib/dashboard/analytics";
 import {
+  WORKSPACE_HEALTH_LABELS,
+} from "@/lib/dashboard/workspace-health";
+import {
   createMapMarkerIcon,
   isOwnerInactive,
   MAP_MARKER_LEGEND,
   resolveMapMarkerStyle,
 } from "@/lib/dashboard/map-marker-style";
 import "leaflet/dist/leaflet.css";
-
-const HEALTH_LABELS = {
-  high: "High health",
-  medium: "Medium health",
-  low: "Low health",
-} as const;
 
 function FitMapBounds({ locations }: { locations: BusinessMapLocation[] }) {
   const map = useMap();
@@ -141,7 +138,7 @@ function LocationAside({
           <dt className="text-zinc-500">Health</dt>
           <dd className="font-medium text-foreground">
             {location.healthTier ?
-              HEALTH_LABELS[location.healthTier]
+              WORKSPACE_HEALTH_LABELS[location.healthTier]
             : "—"}
           </dd>
           <dt className="text-zinc-500">Last active</dt>

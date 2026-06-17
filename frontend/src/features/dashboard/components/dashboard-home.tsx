@@ -6,7 +6,9 @@ import { AppFeedbackPanel } from "@/features/dashboard/components/app-feedback-p
 import { MetricCardsGrid } from "@/features/dashboard/components/metric-cards-grid";
 import { SalesInsightsPanel } from "@/features/dashboard/components/sales-insights-panel";
 import { AiInsightsCard } from "@/features/dashboard/components/ai-insights-card";
+import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
 import { NewJoinersPanel } from "@/features/dashboard/components/new-joiners-panel";
+import { PlatformSnapshotStrip } from "@/features/dashboard/components/platform-snapshot-strip";
 import { SubscriptionApprovalQueue } from "@/features/dashboard/components/subscription-approval-queue";
 import {
   Card,
@@ -39,7 +41,12 @@ function MetricsSkeleton() {
 
 export function DashboardHome() {
   const { profile } = useSalesProfile();
-  const { data, isLoading, isRefreshing, error, refresh } = useDashboardAnalytics();
+  const { data, isLoading, isRefreshing, error, computedAt, refresh } =
+    useDashboardAnalytics();
+
+  const role = profile?.role;
+  const canManageApprovals = role === "admin" || role === "manager";
+  const showProductFeedback = role === "admin";
 
   if (isLoading && !data) {
     return (
@@ -68,62 +75,63 @@ export function DashboardHome() {
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Platform Analytics
-          </h1>
-          <p className="mt-1 text-[var(--muted-foreground)]">
-            Welcome back, {profile?.displayName || "there"}. SmartRefill growth,
-            sales signals, and active owners.
-          </p>
-        </div>
-        {isRefreshing ? (
-          <p className="text-xs text-[var(--muted-foreground)]">
-            Refreshing analytics…
-          </p>
-        ) : null}
-      </div>
-
-      <MetricCardsGrid
-        title="Potential growth"
-        description="Where SmartRefill can grow on the platform."
-        metrics={growthSalesMetrics.growth}
+      <DashboardHeader
+        displayName={profile?.displayName}
+        role={role}
+        computedAt={computedAt}
+        isRefreshing={isRefreshing}
+        onRefresh={() => void refresh()}
       />
 
-      <MetricCardsGrid
-        title="Potential sales now"
-        description="Accounts to call — risk, upsell, and activity."
-        metrics={growthSalesMetrics.sales}
+      <PlatformSnapshotStrip
+        summary={data.summary}
+        salesInsights={data.salesInsights}
+        topBusinessesByCustomers={data.topBusinessesByCustomers}
       />
 
-      <AiInsightsCard insights={data.aiSalesInsights} />
-
-      <NewJoinersPanel
-        newJoiners={data.newJoiners}
-        role={profile?.role}
-        onRevoked={refresh}
-      />
+      {canManageApprovals ?
+        <SubscriptionApprovalQueue
+          owners={growthSalesMetrics.activeOwners}
+          canApprove
+          onRefresh={refresh}
+        />
+      : null}
 
       <SalesInsightsPanel
         salesInsights={data.salesInsights}
         proposalPipeline={data.proposalPipeline}
       />
 
-      <SubscriptionApprovalQueue
-        owners={growthSalesMetrics.activeOwners}
-        canApprove={profile?.role === "admin" || profile?.role === "manager"}
-        onRefresh={refresh}
+      <AiInsightsCard insights={data.aiSalesInsights} />
+
+      <MetricCardsGrid
+        title="Growth opportunities"
+        description="Where SmartRefill can expand — users, devices, conversion, and team upside. Rolling 30-day signals."
+        metrics={growthSalesMetrics.growth}
+      />
+
+      <MetricCardsGrid
+        title="Accounts to work now"
+        description="Revenue risk, upsell potential, re-engagement, and ranked call list. Rolling 30-day signals."
+        metrics={growthSalesMetrics.sales}
+      />
+
+      <NewJoinersPanel
+        newJoiners={data.newJoiners}
+        role={role}
+        onRevoked={refresh}
       />
 
       <WorkspaceMapOwnersSection
         locations={data.businessLocations}
         owners={growthSalesMetrics.activeOwners}
-        canApprove={profile?.role === "admin" || profile?.role === "manager"}
+        canApprove={canManageApprovals}
         onRefresh={refresh}
       />
 
-      <AppFeedbackPanel appFeedback={data.appFeedback} />
+      {showProductFeedback ?
+        <AppFeedbackPanel appFeedback={data.appFeedback} />
+      : null}
 
       <GrowthChartsSection data={data} />
     </div>

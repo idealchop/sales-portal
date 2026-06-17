@@ -5,6 +5,7 @@ import {
   ArrowUpCircle,
   Briefcase,
   CircleDollarSign,
+  Mail,
   Target,
   TrendingUp,
   UserPlus,
@@ -24,6 +25,9 @@ import type {
   SalesAction,
   SalesActionType,
 } from "@/lib/dashboard/analytics";
+import {
+  WORKSPACE_HEALTH_LABELS,
+} from "@/lib/dashboard/workspace-health";
 import { formatPhp } from "@/lib/format";
 
 const ACTION_PAGE_SIZE = 8;
@@ -42,12 +46,6 @@ const PRIORITY_STYLES: Record<SalesAction["priority"], string> = {
   medium: "bg-amber-100 text-amber-800",
   low: "bg-zinc-100 text-zinc-700",
 };
-
-const HEALTH_LABELS = {
-  high: "Healthy",
-  medium: "Growing",
-  low: "At risk",
-} as const;
 
 function SalesStatCard({
   title,
@@ -176,9 +174,13 @@ export function SalesInsightsPanel({
                           {action.detail}
                         </p>
                         {action.ownerEmail && (
-                          <p className="mt-2 text-xs text-zinc-500">
-                            {action.ownerEmail}
-                          </p>
+                          <a
+                            href={`mailto:${action.ownerEmail}?subject=${encodeURIComponent(`SmartRefill — ${action.businessName}`)}`}
+                            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:underline"
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            Email {action.ownerEmail}
+                          </a>
                         )}
                       </div>
                       <div className="text-right text-xs text-[var(--muted-foreground)]">
@@ -214,7 +216,7 @@ export function SalesInsightsPanel({
                   <div key={row.tier}>
                     <div className="mb-1 flex justify-between text-sm">
                       <span className="font-medium">
-                        {HEALTH_LABELS[row.tier]}
+                        {WORKSPACE_HEALTH_LABELS[row.tier]}
                       </span>
                       <span className="text-[var(--muted-foreground)]">
                         {row.count} ({pct}%)
@@ -263,7 +265,7 @@ export function SalesInsightsPanel({
                     >
                       <span className="font-medium">{row.plan}</span>
                       <span className="text-[var(--muted-foreground)]">
-                        {formatPhp(row.mrr)} · {row.workspaces} ws
+                        {formatPhp(row.mrr)} · {row.workspaces} workspaces
                       </span>
                     </div>
                   )}
