@@ -26,8 +26,8 @@ export const getDashboardAnalytics = async (
             }),
           },
           { uid, role },
-        )
-      : data;
+        ) :
+        data;
 
     res.set(
       "Cache-Control",

@@ -46,9 +46,9 @@ export async function filterDashboardAnalyticsForActor(
     totalClients: personalSales.totalClients,
     commissionsMtd: personalSales.commissionsMtd,
     scope:
-      actor.role === "admin" ? "platform"
-      : actor.role === "manager" ? "team"
-      : "personal",
+      actor.role === "admin" ? "platform" :
+        actor.role === "manager" ? "team" :
+          "personal",
   });
 
   if (actor.role === "admin") {

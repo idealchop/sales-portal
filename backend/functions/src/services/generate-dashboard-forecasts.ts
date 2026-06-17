@@ -1,6 +1,5 @@
 import { geminiGenerateJson } from "./ai/gemini-client";
-import type { ProposalPipeline } from "./compute-sales-insights";
-import type { SalesInsights } from "./compute-sales-insights";
+import type { ProposalPipeline, SalesInsights } from "./compute-sales-insights";
 import type { AiSalesInsightsResult } from "./generate-ai-sales-insights";
 
 export type DashboardForecastHorizon = "30d" | "60d" | "90d";

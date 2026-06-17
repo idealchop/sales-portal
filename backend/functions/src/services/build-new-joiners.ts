@@ -105,13 +105,13 @@ export function buildNewJoiners(input: {
           (data.userProfile as Record<string, unknown>) :
           {};
       const displayName =
-        typeof profile.displayName === "string" ? profile.displayName
-        : typeof data.displayName === "string" ? data.displayName
-        : undefined;
+        typeof profile.displayName === "string" ? profile.displayName :
+          typeof data.displayName === "string" ? data.displayName :
+            undefined;
       const email =
-        typeof profile.email === "string" ? profile.email
-        : typeof data.email === "string" ? data.email
-        : undefined;
+        typeof profile.email === "string" ? profile.email :
+          typeof data.email === "string" ? data.email :
+            undefined;
 
       return {
         id,

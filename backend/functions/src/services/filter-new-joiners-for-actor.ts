@@ -15,8 +15,8 @@ export async function filterNewJoinersForActor(
       teamKey ?
         newJoiners.salesReps.filter(
           (rep) => rep.team === teamKey || rep.id === actor.uid,
-        )
-      : newJoiners.salesReps.filter((rep) => rep.id === actor.uid);
+        ) :
+        newJoiners.salesReps.filter((rep) => rep.id === actor.uid);
 
     return {
       ...newJoiners,
