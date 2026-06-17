@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { ChartBreakdownDialog } from "@/features/dashboard/components/chart-breakdown-dialog";
 import { DateRangeFilter } from "@/features/dashboard/components/date-range-filter";
+import { AccessibleChartFrame } from "@/components/charts/chart-accessible-frame";
 import {
   BrowserMixChart,
   DeviceMixChart,
@@ -159,6 +160,18 @@ function ChartRenderer({ insight }: { insight: ChartInsight }) {
   }
 }
 
+function breakdownToAccessibleTable(
+  breakdown: ChartInsight["breakdown"],
+): { headers: string[]; rows: string[][] } {
+  return {
+    headers: ["Metric", "Value"],
+    rows: breakdown.map((row) => [
+      row.label,
+      row.detail ? `${row.value} (${row.detail})` : row.value,
+    ]),
+  };
+}
+
 function ChartInsightCard({
   insight,
   onBreakdown,
@@ -182,7 +195,13 @@ function ChartInsightCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-3 pb-4">
-        <ChartRenderer insight={insight} />
+        <AccessibleChartFrame
+          title={insight.title}
+          summary={`${insight.title}. ${insight.subtitle}`}
+          {...breakdownToAccessibleTable(insight.breakdown)}
+        >
+          <ChartRenderer insight={insight} />
+        </AccessibleChartFrame>
         <Button
           variant="ghost"
           size="sm"
