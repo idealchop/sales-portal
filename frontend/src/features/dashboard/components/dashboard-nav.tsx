@@ -16,7 +16,13 @@ function isItemActive(pathname: string, item: NavItem): boolean {
   return pathname.startsWith(item.href);
 }
 
-export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
+export function DashboardNav({
+  role,
+  onNavigate,
+}: {
+  role: SalesPortalRole | null;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {},
@@ -61,7 +67,7 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
                 onClick={() => toggleGroup(item.href)}
                 aria-expanded={groupExpanded}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition min-h-11",
                   isActive ?
                     "bg-[var(--primary)] text-white shadow-sm"
                   : "text-zinc-600 hover:bg-teal-50 hover:text-teal-900",
@@ -78,13 +84,14 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
               </button>
             : <Link
                 href={item.href}
+                onClick={onNavigate}
                 title={
                   item.maintenance ?
                     `${item.label} — coming soon`
                   : undefined
                 }
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition min-h-11",
                   isActive ?
                     "bg-[var(--primary)] text-white shadow-sm"
                   : "text-zinc-600 hover:bg-teal-50 hover:text-teal-900",
@@ -111,8 +118,9 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
                     <Link
                       key={child.href}
                       href={child.href}
+                      onClick={onNavigate}
                       className={cn(
-                        "block rounded-md px-3 py-2 text-sm transition",
+                        "block rounded-md px-3 py-2 text-sm transition min-h-11",
                         childIsActive ?
                           "bg-teal-50 font-medium text-teal-900"
                         : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800",
