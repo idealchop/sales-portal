@@ -11,6 +11,10 @@ import {
 import { computeBehavioralSalesMetrics } from "./compute-behavioral-sales-metrics";
 import type { AiSalesInsightsResult } from "./generate-ai-sales-insights";
 import {
+  generateDashboardForecasts,
+  type DashboardForecasts,
+} from "./generate-dashboard-forecasts";
+import {
   computeGrowthSalesMetrics,
   type GrowthSalesMetrics,
 } from "./compute-growth-sales-metrics";
@@ -118,6 +122,7 @@ export type DashboardAnalytics = {
   chartTimeSeries: ChartTimeSeries;
   chartBusinessContext: ChartBusinessContext[];
   aiSalesInsights: AiSalesInsightsResult;
+  dashboardForecasts: DashboardForecasts;
   newJoiners: NewJoinersSummary;
 };
 
@@ -794,6 +799,21 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     businessOwnerIds,
   });
 
+  const dashboardForecasts = await generateDashboardForecasts({
+    summary: {
+      smartRefillUsers: smartRefillUsers.length,
+      onboardedBusinesses,
+      totalBusinesses: businessDocs.length,
+      totalCustomers,
+      activeLoginUsers: activeUserIds.size,
+      transactionsLast30Days,
+      refillVolumeLast30Days,
+    },
+    salesInsights,
+    proposalPipeline,
+    aiSalesInsights: behavioral.aiSalesInsights,
+  });
+
   return {
     summary: {
       smartRefillUsers: smartRefillUsers.length,
@@ -854,6 +874,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     chartTimeSeries,
     chartBusinessContext,
     aiSalesInsights: behavioral.aiSalesInsights,
+    dashboardForecasts,
     newJoiners,
   };
 }

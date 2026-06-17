@@ -1,5 +1,6 @@
 import { buildPersonalSalesSummary } from "./build-personal-sales-summary";
 import { buildTodaysWorkInbox } from "./build-todays-work-inbox";
+import { reshapeForecastsForActor } from "./generate-dashboard-forecasts";
 import { listClients } from "./clients-service";
 import { computeProposalPipeline } from "./compute-sales-insights";
 import { listProposals } from "./proposals-service";
@@ -37,11 +38,25 @@ export async function filterDashboardAnalyticsForActor(
     pendingApprovalCount,
   });
 
+  const dashboardForecasts = reshapeForecastsForActor(data.dashboardForecasts, {
+    pipelineValue: personalSales.pipelineValue,
+    acceptedValue: personalSales.acceptedValue,
+    winRate: personalSales.winRate,
+    totalProposals: personalSales.totalProposals,
+    totalClients: personalSales.totalClients,
+    commissionsMtd: personalSales.commissionsMtd,
+    scope:
+      actor.role === "admin" ? "platform"
+      : actor.role === "manager" ? "team"
+      : "personal",
+  });
+
   if (actor.role === "admin") {
     return {
       ...data,
       personalSales,
       todaysWork,
+      dashboardForecasts,
       analyticsScope: "platform",
     };
   }
@@ -57,6 +72,7 @@ export async function filterDashboardAnalyticsForActor(
     proposalPipeline,
     personalSales,
     todaysWork,
+    dashboardForecasts,
     analyticsScope: actor.role === "manager" ? "team" : "personal",
   };
 }

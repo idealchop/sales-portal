@@ -3,7 +3,7 @@ import {
   type DashboardAnalytics,
 } from "@/lib/dashboard/analytics";
 
-const STORAGE_KEY = "sales-portal:dashboard-analytics:v1";
+const STORAGE_KEY = "sales-portal:dashboard-analytics:v2";
 const FRESH_TTL_MS = 60_000;
 const STALE_TTL_MS = 5 * 60_000;
 

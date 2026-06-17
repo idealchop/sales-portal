@@ -11,6 +11,7 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { BusinessMapLocation } from "@/lib/dashboard/analytics";
 import {
   WORKSPACE_HEALTH_LABELS,
@@ -99,6 +100,11 @@ function LocationAside({
             <p className="truncate font-semibold text-foreground">
               {location.name}
             </p>
+            {location.appLabel ?
+              <Badge className="mt-1 bg-teal-50 text-teal-800">
+                {location.appLabel}
+              </Badge>
+            : null}
           </div>
           <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
             {markerStyle.label}

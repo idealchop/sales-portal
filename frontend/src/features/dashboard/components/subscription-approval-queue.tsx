@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { SubscriptionReasonDialog } from "@/features/dashboard/components/subscription-reason-dialog";
+import { SubscriptionApprovalDetailDialog } from "@/features/dashboard/components/subscription-approval-detail-dialog";
 import {
   applyApprovedSubscription,
   approveSubscription,
@@ -42,6 +43,12 @@ export function SubscriptionApprovalQueue({
   const [reasonTarget, setReasonTarget] = useState<{
     subscription: OwnerSubscription;
     businessName: string;
+  } | null>(null);
+  const [detailTarget, setDetailTarget] = useState<{
+    businessId: string;
+    subscription: OwnerSubscription;
+    businessName: string;
+    ownerEmail?: string;
   } | null>(null);
 
   if (ownersSource !== owners) {
@@ -76,15 +83,15 @@ export function SubscriptionApprovalQueue({
 
   return (
     <>
-      <Card id="subscription-approvals">
+      <Card>
+        <div id="subscription-approvals">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <ClipboardCheck className="h-4 w-4" />
             Subscription approval queue
           </CardTitle>
           <CardDescription>
-            {queue.length} pending payment{queue.length === 1 ? "" : "s"} across
-            active owners
+            {queue.length} pending
           </CardDescription>
           {error ?
             <p className="text-sm text-red-600">{error}</p>
@@ -130,6 +137,20 @@ export function SubscriptionApprovalQueue({
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setDetailTarget({
+                        businessId: item.businessId,
+                        subscription,
+                        businessName: item.businessName,
+                        ownerEmail: item.ownerEmail,
+                      })
+                    }
+                  >
+                    View
+                  </Button>
                   {canApprove ?
                     <Button
                       size="sm"
@@ -160,7 +181,25 @@ export function SubscriptionApprovalQueue({
             );
           })}
         </CardContent>
+        </div>
       </Card>
+
+      {detailTarget ?
+        <SubscriptionApprovalDetailDialog
+          subscription={detailTarget.subscription}
+          businessName={detailTarget.businessName}
+          ownerEmail={detailTarget.ownerEmail}
+          canApprove={canApprove}
+          isApproving={approvingId === detailTarget.subscription.id}
+          onApprove={() =>
+            void handleApprove(
+              detailTarget.businessId,
+              detailTarget.subscription.id,
+            ).then(() => setDetailTarget(null))
+          }
+          onClose={() => setDetailTarget(null)}
+        />
+      : null}
 
       {reasonTarget ?
         <SubscriptionReasonDialog

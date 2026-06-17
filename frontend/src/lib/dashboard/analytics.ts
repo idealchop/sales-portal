@@ -59,6 +59,8 @@ export type BusinessMapLocation = {
   customers?: number;
   transactionsLast30Days?: number;
   lastActiveDay?: string;
+  appId?: string;
+  appLabel?: string;
 };
 
 export type OwnerSubscriptionTimeline = "past" | "current" | "future";
@@ -72,6 +74,9 @@ export type OwnerSubscription = {
   price: number;
   paymentStatus?: string;
   paymentReference?: string;
+  paymentMethod?: string;
+  receiptUrl?: string;
+  attachmentUrl?: string;
   timeline: OwnerSubscriptionTimeline;
   createdAt?: string;
   activatedAt?: string;
@@ -139,6 +144,7 @@ export type DashboardAnalytics = {
   chartTimeSeries: ChartTimeSeries;
   chartBusinessContext: ChartBusinessContext[];
   aiSalesInsights: AiSalesInsights;
+  dashboardForecasts: DashboardForecasts;
   newJoiners: NewJoinersSummary;
   personalSales?: PersonalSalesSummary;
   todaysWork?: TodaysWorkItem[];
@@ -293,6 +299,28 @@ export type AiSalesInsights = {
   aiEnabled: boolean;
 };
 
+export type DashboardForecastHorizon = "30d" | "60d" | "90d";
+
+export type DashboardForecastItem = {
+  id: string;
+  appId: "platform" | "smartrefill" | "sales-portal";
+  horizon: DashboardForecastHorizon;
+  metric: string;
+  current: string;
+  projected: string;
+  delta: string;
+  roiImpact: string;
+  action: string;
+  priority: "high" | "medium" | "low";
+};
+
+export type DashboardForecasts = {
+  platform: DashboardForecastItem[];
+  smartrefill: DashboardForecastItem[];
+  salesPortal: DashboardForecastItem[];
+  aiEnabled: boolean;
+};
+
 export type NewSalesRepJoiner = {
   id: string;
   displayName: string;
@@ -368,6 +396,13 @@ const EMPTY_PERSONAL_SALES: PersonalSalesSummary = {
   paidCommissionsMtd: 0,
   draftsNeedingAction: 0,
   sentAwaitingResponse: 0,
+};
+
+const EMPTY_DASHBOARD_FORECASTS: DashboardForecasts = {
+  platform: [],
+  smartrefill: [],
+  salesPortal: [],
+  aiEnabled: false,
 };
 
 const EMPTY_AI_SALES_INSIGHTS: AiSalesInsights = {
@@ -498,6 +533,7 @@ export function normalizeDashboardAnalytics(
       gettingStarted: biz.gettingStarted ?? {},
     })),
     aiSalesInsights: raw.aiSalesInsights ?? EMPTY_AI_SALES_INSIGHTS,
+    dashboardForecasts: raw.dashboardForecasts ?? EMPTY_DASHBOARD_FORECASTS,
     newJoiners: raw.newJoiners ?? EMPTY_NEW_JOINERS,
     personalSales: raw.personalSales ?? EMPTY_PERSONAL_SALES,
     todaysWork: raw.todaysWork ?? [],

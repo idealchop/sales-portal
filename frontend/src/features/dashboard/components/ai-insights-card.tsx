@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -119,19 +118,16 @@ export function AiInsightsCard({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
             <Sparkles className="h-4 w-4 text-teal-600" />
-            Account insights
+            AI · {totalAccounts}
           </CardTitle>
-          <Badge variant="secondary">
-            {safeInsights.aiEnabled ? "Gemini narratives" : "Rule-based ranking"}
+          <Badge className="bg-zinc-100 text-zinc-700">
+            {safeInsights.aiEnabled ? "Gemini" : "Rules"}
           </Badge>
         </div>
-        <CardDescription>
-          {summary || "AI-ranked accounts grouped by sales motion."}
-        </CardDescription>
         <div className="flex flex-wrap gap-2 pt-2">
           {TAB_CONFIG.map((item) => {
             const count = Array.isArray(safeInsights[item.listKey]) ?

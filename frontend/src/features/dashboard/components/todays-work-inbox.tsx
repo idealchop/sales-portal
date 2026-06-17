@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -27,25 +26,18 @@ const SOURCE_LABELS: Record<TodaysWorkItem["source"], string> = {
 
 export function TodaysWorkInbox({
   items,
+  embedded = false,
 }: {
   items: TodaysWorkItem[];
+  embedded?: boolean;
 }) {
-  if (items.length === 0) return null;
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <CheckCircle2 className="h-4 w-4 text-teal-600" />
-          Today&apos;s work
-        </CardTitle>
-        <CardDescription>
-          One ranked inbox — workspace outreach, AI priorities, approvals, and
-          your pipeline combined.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {items.map((item) => (
+  const list = (
+    <div className="space-y-3">
+      {items.length === 0 ?
+        <p className="py-6 text-center text-sm text-[var(--muted-foreground)]">
+          0 actions today
+        </p>
+      : items.map((item) => (
           <div
             key={item.id}
             className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-[var(--border)] p-4"
@@ -85,8 +77,23 @@ export function TodaysWorkInbox({
               <Sparkles className="h-4 w-4 shrink-0 text-teal-600" />
             : null}
           </div>
-        ))}
-      </CardContent>
+        ))
+      }
+    </div>
+  );
+
+  if (embedded) return list;
+  if (items.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
+          <CheckCircle2 className="h-4 w-4 text-teal-600" />
+          Today · {items.length}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{list}</CardContent>
     </Card>
   );
 }

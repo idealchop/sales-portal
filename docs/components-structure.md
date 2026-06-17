@@ -27,12 +27,24 @@ frontend/src/
 
 | Path | Purpose |
 |------|---------|
-| `components/dashboard-shell.tsx` | Layout + nav |
-| `components/dashboard-home.tsx` | Main analytics view |
-| `components/growth-charts-section.tsx` | Charts (Recharts) |
-| `components/sales-insights-panel.tsx` | AI insights |
-| `components/active-owners-panel.tsx` | Owner activity |
-| `config/nav-items.ts` | Sidebar navigation + role gates |
+| `config/dashboard-apps.ts` | App registry (platform, SmartRefill, Sales Portal) |
+| `config/nav-items.ts` | Sidebar navigation + role gates + dashboard children |
+| `components/dashboard-shell.tsx` | Layout, compact content column, analytics provider |
+| `components/dashboard-header.tsx` | Page title, refresh, user menu |
+| `components/platform-hub-dashboard.tsx` | Platform overview hub |
+| `components/smartrefill-dashboard.tsx` | SmartRefill app dashboard |
+| `components/sales-portal-dashboard.tsx` | Sales Portal app dashboard |
+| `components/hub-app-stats-section.tsx` | Hub KPI rollup + per-app cards |
+| `components/sales-portal-actions-joiners-section.tsx` | Actions \| New joiners tabs |
+| `components/dashboard-actions-forecast-section.tsx` | Hub Actions \| Forecast tabs |
+| `components/dashboard-insights-forecast-section.tsx` | App Insights \| Forecast tabs |
+| `components/dashboard-forecast-panel.tsx` | Paginated AI/rule-based forecasts |
+| `components/growth-charts-section.tsx` | Charts (Recharts), app-filtered |
+| `lib/app-chart-groups.ts` | Per-app chart kind lists (no overlap) |
+| `lib/sort-active-owners.ts` | Active owners priority sort + 5-row cap |
+| `components/sales-insights-panel.tsx` | Action queue, health, pipeline detail |
+| `components/active-owners-panel.tsx` | Owner list beside map |
+| `components/dashboard-home.tsx` | Legacy monolith (unused by routes) |
 
 ### `features/content-studio/`
 

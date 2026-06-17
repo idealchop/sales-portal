@@ -44,7 +44,12 @@ BDD helpers: `bdd/bdd-api.ts` (`API_PATH`).
 | `unit/services/compute-workspace-behavior.unit.test.ts` | Workspace behavior profiles |
 | `unit/services/count-smartrefill-user-roles.unit.test.ts` | User role counting |
 | `unit/services/generate-ai-sales-insights.unit.test.ts` | AI insights generation |
+| `unit/services/generate-dashboard-forecasts.unit.test.ts` | Dashboard forecasts + actor reshape |
 | `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline |
+| `unit/services/build-todays-work-inbox.unit.test.ts` | Today’s work inbox |
+| `unit/services/build-new-joiners.unit.test.ts` | New joiners |
+| `unit/services/filter-new-joiners-for-actor.unit.test.ts` | Role-scoped joiners |
+| `unit/services/sales-scope.unit.test.ts` | Sales actor scope |
 
 ## Integration tests
 
@@ -52,6 +57,7 @@ BDD helpers: `bdd/bdd-api.ts` (`API_PATH`).
 |------|-------|
 | `integration/health.integration.test.ts` | `GET /health` |
 | `integration/auth.integration.test.ts` | Auth middleware 401/403 |
+| `integration/admin-users.integration.test.ts` | Admin user routes |
 
 ## BDD specs
 
@@ -59,6 +65,8 @@ BDD helpers: `bdd/bdd-api.ts` (`API_PATH`).
 |------|--------------|
 | `bdd/health.spec.ts` | `GET /health` (emulator) |
 | `bdd/auth.spec.ts` | `GET /auth/status` (seeded sales user) |
+| `bdd/dashboard-analytics.spec.ts` | `GET /dashboard/analytics` — forecasts, scope, chart series |
+| `bdd/admin-users.spec.ts` | Admin user management |
 
 ## Manual QA cross-reference
 

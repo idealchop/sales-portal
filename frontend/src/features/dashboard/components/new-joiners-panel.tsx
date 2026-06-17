@@ -37,10 +37,12 @@ export function NewJoinersPanel({
   newJoiners,
   role,
   onRevoked,
+  embedded = false,
 }: {
   newJoiners?: NewJoinersSummary | null;
   role?: SalesPortalRole | null;
   onRevoked?: () => void;
+  embedded?: boolean;
 }) {
   const salesReps = newJoiners?.salesReps ?? [];
   const businesses = newJoiners?.businesses ?? [];
@@ -62,7 +64,7 @@ export function NewJoinersPanel({
   };
 
   const total = counts.salesReps + counts.businesses + counts.platformUsers;
-  if (total === 0) return null;
+  if (total === 0 && !embedded) return null;
 
   async function confirmRevoke() {
     if (!revokeTarget) return;
@@ -99,52 +101,49 @@ export function NewJoinersPanel({
     );
   }
 
-  return (
+  const content = (
     <>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <UserPlus className="h-4 w-4" />
-            New joiners
-          </CardTitle>
-          <CardDescription>
-            Recent sales reps, SmartRefill workspaces, and platform users.
-          </CardDescription>
-          <div className="flex flex-wrap gap-2 pt-2">
-            {showSalesReps ?
-              <Button
-                variant={view === "salesReps" ? "primary" : "outline"}
-                size="sm"
-                onClick={() => setView("salesReps")}
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Sales reps ({counts.salesReps})
-              </Button>
-            : null}
-            <Button
-              variant={view === "businesses" ? "primary" : "outline"}
-              size="sm"
-              onClick={() => setView("businesses")}
-            >
-              <Building2 className="mr-2 h-4 w-4" />
-              Businesses ({counts.businesses})
-            </Button>
-            <Button
-              variant={view === "platformUsers" ? "primary" : "outline"}
-              size="sm"
-              onClick={() => setView("platformUsers")}
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Platform users ({counts.platformUsers})
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {revokeError ?
-            <p className="text-sm text-red-600">{revokeError}</p>
-          : null}
+      <div className="flex flex-wrap gap-2">
+        {showSalesReps ?
+          <Button
+            variant={view === "salesReps" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setView("salesReps")}
+          >
+            <Users className="mr-2 h-4 w-4" />
+            Sales reps ({counts.salesReps})
+          </Button>
+        : null}
+        <Button
+          variant={view === "businesses" ? "primary" : "outline"}
+          size="sm"
+          onClick={() => setView("businesses")}
+        >
+          <Building2 className="mr-2 h-4 w-4" />
+          Businesses ({counts.businesses})
+        </Button>
+        <Button
+          variant={view === "platformUsers" ? "primary" : "outline"}
+          size="sm"
+          onClick={() => setView("platformUsers")}
+        >
+          <UserPlus className="mr-2 h-4 w-4" />
+          Platform users ({counts.platformUsers})
+        </Button>
+      </div>
 
-          {view === "salesReps" && showSalesReps ?
+      <div className="space-y-3">
+        {revokeError ?
+          <p className="text-sm text-red-600">{revokeError}</p>
+        : null}
+
+        {total === 0 ?
+          <p className="py-6 text-center text-sm text-[var(--muted-foreground)]">
+            0 new joiners
+          </p>
+        : null}
+
+        {view === "salesReps" && showSalesReps ?
             salesReps.length === 0 ?
               <p className="text-sm text-[var(--muted-foreground)]">
                 No recent sales reps in your scope.
@@ -256,8 +255,27 @@ export function NewJoinersPanel({
               ))
 
           : null}
-        </CardContent>
-      </Card>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {embedded ?
+        <div className="space-y-3">{content}</div>
+      : <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <UserPlus className="h-4 w-4" />
+              New joiners
+            </CardTitle>
+            <CardDescription>
+              Recent sales reps, SmartRefill workspaces, and platform users.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">{content}</CardContent>
+        </Card>
+      }
 
       {revokeTarget ?
         <RevokeAccessDialog

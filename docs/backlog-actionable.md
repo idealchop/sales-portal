@@ -101,6 +101,29 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | AB-43 | Admin/subscriptions UX pass — catalog search, bulk ops, empty states | ✅ Shipped |
 | AB-44 | Global date filter driving KPIs + charts consistently | ✅ Shipped |
 
+## Tier 11 — Multi-app dashboard hub ✅ (feature/SP-11)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-46 | App dashboard registry + sub-nav (Platform, SmartRefill, Sales Portal, future apps) | ✅ Shipped |
+| AB-47 | Platform hub — 2 KPIs per app, cross-app map, 4 charts per app, ROI insights | ✅ Shipped |
+| AB-48 | SmartRefill app dashboard — stats, map/actions, charts, analysis sections | ✅ Shipped |
+| AB-49 | Sales Portal app dashboard — stats, actions, charts, analysis sections | ✅ Shipped |
+| AB-50 | Sidebar + route wiring for `/dashboard`, `/dashboard/smartrefill`, `/dashboard/sales-portal` | ✅ Shipped |
+
+## Tier 12 — Dashboard intelligence & UX polish ✅ (feature/SP-11)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-51 | AI dashboard forecasts — Actions/Forecast (hub) and Insights/Forecast (apps), paginated | ✅ Shipped |
+| AB-52 | Compact dashboard layout (`max-w-5xl`, horizontal margins) | ✅ Shipped |
+| AB-53 | App-specific chart sets — SmartRefill usage/growth vs Sales Portal revenue/behavior | ✅ Shipped |
+| AB-54 | Expanded KPI strips — hub rollup, pipeline stages, product signals; deduped sales stats | ✅ Shipped |
+| AB-55 | Active owners — top 5, sort pending → at risk → healthy | ✅ Shipped |
+| AB-56 | Sales Portal Actions & New joiners tabs | ✅ Shipped |
+| AB-57 | Subscription approval View dialog + receipt/attachment preview | ✅ Shipped |
+| AB-58 | Docs + unit/BDD coverage for dashboard v2 contracts | ✅ Shipped |
+
 ---
 
 ## Changelog
@@ -118,3 +141,5 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | 2026-06-17 | Tier 8 (AB-36–38, AB-45) shipped on `feature/SP-8` |
 | 2026-06-17 | Tier 9 (AB-39–AB-41) shipped on `feature/SP-9` |
 | 2026-06-17 | Tier 10 (AB-42–AB-44) shipped on `feature/SP-10` |
+| 2026-06-17 | Tier 11 multi-app dashboard hub (AB-46–AB-50) shipped on `feature/SP-11` |
+| 2026-06-17 | Tier 12 dashboard intelligence & UX polish (AB-51–AB-58) shipped on `feature/SP-11` |

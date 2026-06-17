@@ -248,6 +248,90 @@ export function TransactionMixedChart({
   );
 }
 
+/** Top workspaces by end-customer count — scalability signal. */
+export function CustomerScaleChart({
+  data,
+}: {
+  data: { name: string; customers: number }[];
+}) {
+  if (data.length === 0) {
+    return <ChartEmpty message="No customer volume data yet." />;
+  }
+
+  const chartData = data.slice(0, 8).map((row) => ({
+    ...row,
+    label: row.name.length > 14 ? `${row.name.slice(0, 14)}…` : row.name,
+  }));
+
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart
+        data={chartData}
+        layout="vertical"
+        margin={{ top: 4, right: 12, left: 4, bottom: 0 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" horizontal={false} />
+        <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+        <YAxis
+          type="category"
+          dataKey="label"
+          tick={{ fontSize: 10 }}
+          width={88}
+        />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          formatter={(value) => [Number(value).toLocaleString(), "Customers"]}
+          labelFormatter={(_, payload) => payload?.[0]?.payload?.name ?? ""}
+        />
+        <Bar dataKey="customers" name="Customers" fill="#0d9488" radius={[0, 4, 4, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+/** Daily station GMV — revenue trend for sales forecasting. */
+export function RevenueTrendChart({
+  data,
+}: {
+  data: { date: string; amount: number }[];
+}) {
+  if (data.length === 0) {
+    return <ChartEmpty message="No revenue activity in this period." />;
+  }
+
+  const chartData = data.map((row) => ({
+    ...row,
+    label: row.date.length > 5 ? row.date.slice(5) : row.date,
+  }));
+
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" vertical={false} />
+        <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+        <YAxis
+          tick={{ fontSize: 10 }}
+          tickFormatter={(v) => `₱${Math.round(Number(v) / 1000)}k`}
+          width={44}
+        />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          formatter={(value) => [formatPhp(Number(value)), "GMV"]}
+          labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
+        />
+        <Line
+          type="monotone"
+          dataKey="amount"
+          name="GMV"
+          stroke="#7c3aed"
+          strokeWidth={2.5}
+          dot={{ r: 2, fill: "#7c3aed" }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
 /** MRR mix — donut shows share of revenue by plan. */
 export function MrrDonutChart({
   data,

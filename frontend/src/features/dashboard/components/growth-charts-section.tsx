@@ -16,6 +16,7 @@ import { DateRangeFilter } from "@/features/dashboard/components/date-range-filt
 import { AccessibleChartFrame } from "@/components/charts/chart-accessible-frame";
 import {
   BrowserMixChart,
+  CustomerScaleChart,
   DeviceMixChart,
   FeatureRadarChart,
   HealthPieChart,
@@ -24,6 +25,7 @@ import {
   OwnerSignupAreaChart,
   PaymentRadialChart,
   ProposalPipelineChart,
+  RevenueTrendChart,
   TransactionMixedChart,
   UsageGoalsChart,
   WorkspaceLineChart,
@@ -54,6 +56,12 @@ const CHART_TYPE_LABELS: Record<ChartInsight["kind"], string> = {
   "browser-mix": "Horizontal bar",
   "usage-goals": "Bar",
   "proposal-pipeline": "Stacked bar",
+  "customer-scale": "Horizontal bar",
+  "plan-distribution": "Pie",
+  "adoption-gaps": "Radar",
+  "revenue-trend": "Line",
+  "login-sales-cadence": "Area + line",
+  "new-logo-pipeline": "Line",
 };
 
 function ChartRenderer({ insight }: { insight: ChartInsight }) {
@@ -155,6 +163,48 @@ function ChartRenderer({ insight }: { insight: ChartInsight }) {
           }
         />
       );
+    case "customer-scale":
+      return (
+        <CustomerScaleChart
+          data={insight.chartData as { name: string; customers: number }[]}
+        />
+      );
+    case "plan-distribution":
+      return (
+        <HealthPieChart
+          data={insight.chartData as { name: string; count: number }[]}
+        />
+      );
+    case "adoption-gaps":
+      return (
+        <FeatureRadarChart
+          data={insight.chartData as { feature: string; rate: number }[]}
+        />
+      );
+    case "revenue-trend":
+      return (
+        <RevenueTrendChart
+          data={insight.chartData as { date: string; amount: number }[]}
+        />
+      );
+    case "login-sales-cadence":
+      return (
+        <LoginEngagementChart
+          data={
+            insight.chartData as {
+              date: string;
+              sessions: number;
+              uniqueUsers: number;
+            }[]
+          }
+        />
+      );
+    case "new-logo-pipeline":
+      return (
+        <WorkspaceLineChart
+          data={insight.chartData as { month?: string; date?: string; count: number }[]}
+        />
+      );
     default:
       return null;
   }
@@ -219,10 +269,22 @@ export function GrowthChartsSection({
   data,
   globalFilter: externalFilter,
   onGlobalFilterChange,
+  insightFilter,
+  title = "Growth & sales charts",
+  description = "Area, line, mixed, donut, radar, pie, and bar views — all charts follow the global period filter.",
+  pageSize = CHARTS_PAGE_SIZE,
+  hideDateFilter = false,
+  hideSectionHeader = false,
 }: {
   data: DashboardAnalytics;
   globalFilter?: DateRangeFilterState;
   onGlobalFilterChange?: (value: DateRangeFilterState) => void;
+  insightFilter?: (insights: ChartInsight[]) => ChartInsight[];
+  title?: string;
+  description?: string;
+  pageSize?: number;
+  hideDateFilter?: boolean;
+  hideSectionHeader?: boolean;
 }) {
   const [internalFilter, setInternalFilter] =
     useState<DateRangeFilterState>(DEFAULT_GLOBAL_FILTER);
@@ -235,10 +297,10 @@ export function GrowthChartsSection({
     [globalFilter],
   );
 
-  const insights = useMemo(
-    () => buildGrowthChartInsights(data, globalRange),
-    [data, globalRange],
-  );
+  const insights = useMemo(() => {
+    const built = buildGrowthChartInsights(data, globalRange);
+    return insightFilter ? insightFilter(built) : built;
+  }, [data, globalRange, insightFilter]);
 
   const {
     paginatedItems: paginatedInsights,
@@ -248,33 +310,34 @@ export function GrowthChartsSection({
     totalItems: chartsTotalItems,
   } = usePagination(
     insights,
-    CHARTS_PAGE_SIZE,
-    `${globalFilter.preset}-${insights.length}`,
+    pageSize,
+    `${globalFilter.preset}-${insights.length}-${pageSize}`,
   );
 
   return (
     <>
       <section className="space-y-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">
-              Growth & sales charts
-            </h2>
-            <p className="text-sm text-[var(--muted-foreground)]">
-              Area, line, mixed, donut, radar, pie, and bar views — all charts
-              follow the global period filter.
-            </p>
+        {!hideSectionHeader ?
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                {title}
+              </h2>
+              <p className="text-sm text-[var(--muted-foreground)]">
+                {description}
+              </p>
+            </div>
+            <div className="min-w-0 lg:max-w-xl">
+              {!externalFilter && !hideDateFilter ?
+                <DateRangeFilter
+                  variant="global"
+                  value={globalFilter}
+                  onChange={setGlobalFilter}
+                />
+              : null}
+            </div>
           </div>
-          <div className="min-w-0 lg:max-w-xl">
-            {!externalFilter ?
-              <DateRangeFilter
-                variant="global"
-                value={globalFilter}
-                onChange={setGlobalFilter}
-              />
-            : null}
-          </div>
-        </div>
+        : null}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {paginatedInsights.map((insight) => (
             <ChartInsightCard
@@ -288,7 +351,7 @@ export function GrowthChartsSection({
           page={chartsPage}
           totalPages={chartsTotalPages}
           totalItems={chartsTotalItems}
-          pageSize={CHARTS_PAGE_SIZE}
+          pageSize={pageSize}
           onPageChange={setChartsPage}
         />
       </section>

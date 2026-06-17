@@ -7,11 +7,13 @@ import {
   UserCheck,
   Users,
   Wallet,
+  AlertTriangle,
+  UserPlus,
+  Activity,
 } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -36,9 +38,9 @@ function SnapshotStat({
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
             {label}
           </p>
-          <p className="mt-1 text-xl font-bold text-foreground">{value}</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{value}</p>
           {hint ?
-            <p className="mt-1 text-xs text-[var(--muted-foreground)]">{hint}</p>
+            <p className="mt-1 text-xs tabular-nums text-[var(--muted-foreground)]">{hint}</p>
           : null}
         </div>
         <div className="rounded-lg bg-teal-50 p-2 text-teal-700">{icon}</div>
@@ -62,19 +64,12 @@ export function PlatformSnapshotStrip({
     : 0;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">Platform snapshot</h2>
-        <p className="text-sm text-[var(--muted-foreground)]">
-          Headline KPIs for the last 30 days unless noted.
-        </p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <SnapshotStat
-          label="SmartRefill users"
+          label="Users"
           value={summary.smartRefillUsers.toLocaleString()}
-          hint={`${summary.activeLoginUsers.toLocaleString()} active logins`}
+          hint={`${summary.activeLoginUsers.toLocaleString()} active · 30d`}
           icon={<Users className="h-4 w-4" />}
         />
         <SnapshotStat
@@ -84,40 +79,55 @@ export function PlatformSnapshotStrip({
           icon={<Building2 className="h-4 w-4" />}
         />
         <SnapshotStat
-          label="End customers"
+          label="Customers"
           value={summary.totalCustomers.toLocaleString()}
-          hint="Across all stations"
+          hint={`${summary.loginSessionsLast30Days.toLocaleString()} sessions`}
           icon={<UserCheck className="h-4 w-4" />}
         />
         <SnapshotStat
-          label="Estimated MRR"
+          label="MRR"
           value={formatPhp(salesInsights.estimatedMrr)}
-          hint={`${salesInsights.pendingPayments} pending payments`}
+          hint={`${salesInsights.pendingPayments} pending`}
           icon={<Wallet className="h-4 w-4" />}
         />
         <SnapshotStat
           label="Transactions"
           value={summary.transactionsLast30Days.toLocaleString()}
-          hint={`${summary.loginSessionsLast30Days.toLocaleString()} login sessions`}
+          hint="30d"
           icon={<Receipt className="h-4 w-4" />}
         />
         <SnapshotStat
-          label="Refill volume"
+          label="Refill vol."
           value={summary.refillVolumeLast30Days.toLocaleString()}
-          hint={
-            refillPerTx > 0 ? `~${refillPerTx} refills per transaction` : undefined
-          }
+          hint={refillPerTx > 0 ? `~${refillPerTx}/tx` : "30d"}
           icon={<Droplets className="h-4 w-4" />}
+        />
+        <SnapshotStat
+          label="New MTD"
+          value={`+${salesInsights.newSmartRefillUsersThisMonth}`}
+          hint={`+${salesInsights.newWorkspacesThisMonth} workspaces`}
+          icon={<UserPlus className="h-4 w-4" />}
+        />
+        <SnapshotStat
+          label="At-risk"
+          value={salesInsights.atRiskWorkspaces.toLocaleString()}
+          hint={`${salesInsights.inactiveWorkspaces} inactive`}
+          icon={<AlertTriangle className="h-4 w-4" />}
+        />
+        <SnapshotStat
+          label="Sessions"
+          value={summary.loginSessionsLast30Days.toLocaleString()}
+          hint={`${summary.topDevice} · ${summary.topBrowser}`}
+          icon={<Activity className="h-4 w-4" />}
         />
       </div>
 
       {topBusinessesByCustomers.length > 0 ?
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Top workspaces by customers</CardTitle>
-            <CardDescription>
-              Highest adoption — strong references for upsell and case studies.
-            </CardDescription>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide">
+              Top workspaces · customers
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -126,15 +136,13 @@ export function PlatformSnapshotStrip({
                   key={business.id}
                   className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] px-3 py-2.5"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      <span className="mr-2 text-xs text-[var(--muted-foreground)]">
-                        #{index + 1}
-                      </span>
-                      {business.name}
-                    </p>
-                  </div>
-                  <p className="shrink-0 text-sm font-semibold text-teal-800">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    <span className="mr-2 text-xs text-[var(--muted-foreground)]">
+                      #{index + 1}
+                    </span>
+                    {business.name}
+                  </p>
+                  <p className="shrink-0 text-sm font-semibold tabular-nums text-teal-800">
                     {business.customers.toLocaleString()}
                   </p>
                 </li>

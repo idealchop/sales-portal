@@ -9,9 +9,18 @@ import { cn } from "@/lib/utils";
 import { DASHBOARD_NAV, type NavItem } from "@/features/dashboard/config/nav-items";
 import type { SalesPortalRole } from "@/lib/auth-status";
 
+function isChildNavActive(pathname: string, childHref: string): boolean {
+  if (childHref === "/dashboard") return pathname === "/dashboard";
+  return pathname.startsWith(childHref);
+}
+
 function isItemActive(pathname: string, item: NavItem): boolean {
   if (item.href === "/dashboard") {
-    return pathname === "/dashboard";
+    return (
+      pathname === "/dashboard" ||
+      pathname.startsWith("/dashboard/smartrefill") ||
+      pathname.startsWith("/dashboard/sales-portal")
+    );
   }
   return pathname.startsWith(item.href);
 }
@@ -54,7 +63,7 @@ export function DashboardNav({
         const groupExpanded = hasChildren && isGroupExpanded(item);
         const childActive =
           hasChildren &&
-          item.children!.some((child) => pathname.startsWith(child.href));
+          item.children!.some((child) => isChildNavActive(pathname, child.href));
         const isActive =
           hasChildren ? childActive : isItemActive(pathname, item);
         const Icon = item.icon;
@@ -113,7 +122,7 @@ export function DashboardNav({
             {hasChildren && groupExpanded && (
               <div className="ml-4 mt-1 space-y-0.5 border-l border-zinc-200 pl-3">
                 {item.children!.map((child) => {
-                  const childIsActive = pathname.startsWith(child.href);
+                  const childIsActive = isChildNavActive(pathname, child.href);
                   return (
                     <Link
                       key={child.href}

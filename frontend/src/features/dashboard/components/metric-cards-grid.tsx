@@ -109,9 +109,11 @@ function inferVariant(metric: DashboardMetric): DashboardMetricVariant {
 function MetricCard({
   metric,
   onOpenBreakdown,
+  compact = false,
 }: {
   metric: DashboardMetric;
   onOpenBreakdown: (metric: DashboardMetric) => void;
+  compact?: boolean;
 }) {
   const variant = inferVariant(metric);
   const style = VARIANT_STYLES[variant];
@@ -149,12 +151,14 @@ function MetricCard({
             <CardTitle className="text-sm font-medium text-[var(--muted-foreground)]">
               {metric.title}
             </CardTitle>
-            <p className={cn("mt-1 text-3xl font-bold tracking-tight", style.accent)}>
+            <p className={cn("mt-1 text-3xl font-bold tabular-nums tracking-tight", style.accent)}>
               {metric.value}
             </p>
-            <CardDescription className="mt-1 text-xs leading-relaxed">
-              {metric.subtitle}
-            </CardDescription>
+            {!compact ?
+              <CardDescription className="mt-1 text-xs leading-relaxed">
+                {metric.subtitle}
+              </CardDescription>
+            : null}
           </div>
 
           {highlights.length > 0 && (
@@ -171,9 +175,11 @@ function MetricCard({
             </div>
           )}
 
-          <p className="text-xs font-medium text-[var(--primary)]">
-            View breakdown
-          </p>
+          {!compact ?
+            <p className="text-xs font-medium text-[var(--primary)]">
+              Breakdown
+            </p>
+          : null}
         </CardHeader>
       </button>
     </Card>
@@ -184,26 +190,35 @@ export function MetricCardsGrid({
   title,
   description,
   metrics,
+  compact = false,
 }: {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   metrics: DashboardMetric[];
+  compact?: boolean;
 }) {
   const [activeMetric, setActiveMetric] = useState<DashboardMetric | null>(null);
 
   return (
     <>
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-          <p className="text-sm text-[var(--muted-foreground)]">{description}</p>
-        </div>
+      <div className="space-y-3">
+        {title ?
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+              {title}
+            </h3>
+            {description ?
+              <p className="text-xs text-[var(--muted-foreground)]">{description}</p>
+            : null}
+          </div>
+        : null}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {metrics.map((metric) => (
             <MetricCard
               key={metric.id}
               metric={metric}
               onOpenBreakdown={setActiveMetric}
+              compact={compact}
             />
           ))}
         </div>

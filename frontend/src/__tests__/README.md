@@ -25,14 +25,23 @@ From repo root: `npm run test:unit:frontend` · `npm run test:bdd:local`
 
 | File | Cases |
 |------|-------|
-| `unit/features/dashboard/nav-items.test.ts` | Admin vs sales nav visibility (TC-AUTH-07, TC-AUTH-08) |
+| `unit/features/dashboard/nav-items.test.ts` | Role nav + multi-app dashboard children |
+| `unit/features/dashboard/resolve-dashboard-page-title.test.ts` | Shell header titles |
+| `unit/features/dashboard/app-chart-groups.test.ts` | SmartRefill vs Sales Portal chart kinds |
+| `unit/features/dashboard/forecast-items.test.ts` | Forecast slices per app |
+| `unit/features/dashboard/build-hub-app-stats.test.ts` | Hub KPI grouping |
+| `unit/features/dashboard/sort-active-owners.test.ts` | Active owners sort + 5-row cap |
+| `unit/features/dashboard/build-subscription-approval-queue.test.ts` | Approval queue rows |
+| `unit/lib/dashboard-analytics-normalize.test.ts` | API payload defaults |
+| `unit/lib/subscription-attachments.test.ts` | Receipt/attachment helpers |
 
 ## BDD specs
 
 | File | Cases |
 |------|-------|
 | `bdd/login.spec.ts` | Login page smoke (TC-AUTH-01) |
-| `bdd/dashboard.spec.ts` | Dashboard unauthenticated redirect (TC-DASH-01) |
+| `bdd/dashboard.spec.ts` | Hub + app dashboard unauthenticated redirect |
+| `bdd/mobile-nav.spec.ts` | Mobile nav smoke |
 
 Playwright projects: **Mobile Chrome** (320px) + **Desktop Chrome** (1280px).
 

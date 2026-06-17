@@ -42,7 +42,11 @@ Current coverage focuses on **dashboard analytics helpers**:
 - `compute-workspace-behavior.unit.test.ts`
 - `count-smartrefill-user-roles.unit.test.ts`
 - `generate-ai-sales-insights.unit.test.ts`
+- `generate-dashboard-forecasts.unit.test.ts` — fallback forecasts + `reshapeForecastsForActor`
 - `map-owner-subscriptions.unit.test.ts`
+- `build-todays-work-inbox.unit.test.ts`
+- `build-new-joiners.unit.test.ts`
+- `filter-new-joiners-for-actor.unit.test.ts`
 
 **Run:**
 
@@ -114,7 +118,7 @@ npm run test:bdd
 |------|--------|
 | `health.spec.ts` | `GET /health` |
 | `auth.spec.ts` | `/auth/status` with seeded user |
-| `dashboard-analytics.spec.ts` | `GET /dashboard/analytics` |
+| `dashboard-analytics.spec.ts` | `GET /dashboard/analytics` — forecasts, scope, chart series |
 | `admin-catalog.spec.ts` | Catalog CRUD |
 | `content-studio.spec.ts` | `POST /content-studio/generate` (requires Gemini key or mock) |
 
@@ -134,6 +138,10 @@ npm run test:unit
 **When to add:**
 
 - Nav/role filtering (`nav-items.test.ts`)
+- Per-app chart config (`app-chart-groups.test.ts`)
+- Forecast slices (`forecast-items.test.ts`, `generate-dashboard-forecasts.unit.test.ts`)
+- Active owners sort (`sort-active-owners.test.ts`)
+- Analytics normalize defaults (`dashboard-analytics-normalize.test.ts`)
 - Chart/breakdown formatters
 - Form validation schemas (zod)
 - API client error mapping
@@ -165,7 +173,7 @@ PLAYWRIGHT_SKIP_WEBSERVER=1 npm run test:bdd
 | Spec | Manual QA IDs |
 |------|---------------|
 | `login.spec.ts` | TC-AUTH-01, TC-AUTH-02 |
-| `dashboard.spec.ts` | TC-DASH-01 … |
+| `dashboard.spec.ts` | TC-DASH-01, TC-DASH-06, TC-DASH-07 — unauthenticated redirect for hub + app dashboards |
 | `content-studio.spec.ts` | TC-CS-01 … |
 | `admin-permissions.spec.ts` | TC-ADM-01 … |
 | `subscriptions-catalog.spec.ts` | TC-SUB-01 … |

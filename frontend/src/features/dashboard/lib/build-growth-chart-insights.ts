@@ -61,7 +61,13 @@ export type ChartInsightKind =
   | "device-mix"
   | "browser-mix"
   | "usage-goals"
-  | "proposal-pipeline";
+  | "proposal-pipeline"
+  | "customer-scale"
+  | "plan-distribution"
+  | "adoption-gaps"
+  | "revenue-trend"
+  | "login-sales-cadence"
+  | "new-logo-pipeline";
 
 export type ChartInsight = {
   id: string;
@@ -408,6 +414,52 @@ export function buildChartBreakdown(
           detail: `${row.count} proposals`,
         })),
       };
+    case "customer-scale":
+      return {
+        breakdown: data.topBusinessesByCustomers.map((row) => ({
+          label: row.name,
+          value: row.customers.toLocaleString(),
+        })),
+      };
+    case "plan-distribution":
+      return {
+        breakdown: data.planDistribution.map((row) => ({
+          label: row.name,
+          value: `${row.count}`,
+        })),
+      };
+    case "adoption-gaps": {
+      const gaps = computeFeatureAdoption(businesses)
+        .sort((a, b) => a.rate - b.rate)
+        .slice(0, 10);
+      return {
+        breakdown: gaps.map((row) => ({
+          label: featureLabel(row.feature),
+          value: `${row.rate}%`,
+          detail: `${row.completed}/${row.total} · upsell signal`,
+        })),
+      };
+    }
+    case "revenue-trend":
+      return {
+        breakdown: buildTransactionBreakdownRows(
+          chartTimeSeries.transactionsDaily,
+          range,
+          formatPhp,
+        ),
+      };
+    case "login-sales-cadence":
+      return {
+        breakdown: buildLoginBreakdownRows(chartTimeSeries.loginDaily, range),
+      };
+    case "new-logo-pipeline":
+      return {
+        breakdown: buildDailyBreakdownRows(
+          chartTimeSeries.workspacesDaily,
+          range,
+          "New workspaces",
+        ),
+      };
     default:
       return { breakdown: insight.breakdown, breakdownGroups: insight.breakdownGroups };
   }
@@ -458,12 +510,40 @@ export function buildGrowthChartInsights(
     chartTimeSeries.browserSessionsDaily,
     globalRange,
   );
+  const customerScale = data.topBusinessesByCustomers.slice(0, 10);
+  const customerTotal = customerScale.reduce((sum, row) => sum + row.customers, 0);
+  const adoptionGaps = [...features].sort((a, b) => a.rate - b.rate).slice(0, 8);
+  const lowestGap = adoptionGaps[0];
+  const revenueSeries = aggregateTransactionDaily(
+    chartTimeSeries.transactionsDaily,
+    globalRange,
+  ).map((row) => ({ date: row.date, amount: row.amount }));
+  const revenueTotal = revenueSeries.reduce((sum, row) => sum + row.amount, 0);
+  const planRows = data.planDistribution.filter((row) => row.count > 0);
 
   return [
     {
+      id: "customer-scale",
+      title: "Customer scale",
+      subtitle: `${summary.totalCustomers.toLocaleString()} total · top ${customerScale.length} ws · ${rangeLabel}`,
+      kind: "customer-scale",
+      chartData: customerScale.map((row) => ({
+        name: row.name,
+        customers: row.customers,
+      })),
+      breakdown: customerScale.map((row) => ({
+        label: row.name,
+        value: row.customers.toLocaleString(),
+        detail:
+          customerTotal > 0 ?
+            `${Math.round((row.customers / customerTotal) * 100)}% of top volume`
+          : undefined,
+      })),
+    },
+    {
       id: "owner-signups",
-      title: "Owner signups",
-      subtitle: `${ownerTotal} in period · ${rangeLabel}`,
+      title: "Owner acquisition",
+      subtitle: `${ownerTotal} new owners · ${rangeLabel}`,
       kind: "owner-growth",
       seriesKey: "ownerSignupsDaily",
       chartData: aggregateDailyCounts(
@@ -477,8 +557,8 @@ export function buildGrowthChartInsights(
     },
     {
       id: "workspace-growth",
-      title: "New workspaces",
-      subtitle: `${workspaceTotal} in period · ${rangeLabel}`,
+      title: "Workspace expansion",
+      subtitle: `${workspaceTotal} new workspaces · ${rangeLabel}`,
       kind: "workspace-growth",
       seriesKey: "workspacesDaily",
       chartData: aggregateDailyCounts(
@@ -492,7 +572,7 @@ export function buildGrowthChartInsights(
     },
     {
       id: "login-activity",
-      title: "Login activity",
+      title: "Daily active usage",
       subtitle: `${loginSessions.toLocaleString()} sessions · ${loginUsers} user-days · ${rangeLabel}`,
       kind: "login-activity",
       seriesKey: "loginDaily",
@@ -504,8 +584,8 @@ export function buildGrowthChartInsights(
     },
     {
       id: "transaction-volume",
-      title: "Station transactions",
-      subtitle: `${txTotals.count.toLocaleString()} tx · ${formatPhp(txTotals.amount)} · ${rangeLabel}`,
+      title: "Station throughput",
+      subtitle: `${txTotals.count.toLocaleString()} tx · ${formatPhp(txTotals.amount)} GMV · ${rangeLabel}`,
       kind: "transaction-volume",
       seriesKey: "transactionsDaily",
       chartData: aggregateTransactionDaily(
@@ -520,7 +600,7 @@ export function buildGrowthChartInsights(
     },
     {
       id: "mrr-by-plan",
-      title: "MRR by plan",
+      title: "MRR mix",
       subtitle: `${mrrPayload.subtitleParts.join(" · ")} · ${rangeLabel}`,
       kind: "mrr-by-plan",
       chartData: mrrPayload.chartData,
@@ -529,10 +609,10 @@ export function buildGrowthChartInsights(
     },
     {
       id: "feature-adoption",
-      title: "Feature adoption",
+      title: "In-app feature usage",
       subtitle: topFeature ?
-        `${topFeature.rate}% top · ${rangeLabel}`
-      : `Getting-started · ${rangeLabel}`,
+        `${featureLabel(topFeature.feature)} ${topFeature.rate}% · ${rangeLabel}`
+      : `Getting-started checklist · ${rangeLabel}`,
       kind: "feature-adoption",
       chartData: features.map((row) => ({
         feature: featureLabel(row.feature),
@@ -546,7 +626,7 @@ export function buildGrowthChartInsights(
     },
     {
       id: "workspace-health",
-      title: "Workspace health",
+      title: "Revenue at risk",
       subtitle: `${health.reduce((s, r) => s + r.count, 0)} workspaces · ${rangeLabel}`,
       kind: "workspace-health",
       chartData: health.map((row) => ({
@@ -560,7 +640,7 @@ export function buildGrowthChartInsights(
     },
     {
       id: "payment-status",
-      title: "Payment status",
+      title: "Payment recovery",
       subtitle: `${payments.reduce((s, r) => s + r.count, 0)} subscriptions · ${rangeLabel}`,
       kind: "payment-status",
       chartData: payments.map((row) => ({
@@ -598,8 +678,8 @@ export function buildGrowthChartInsights(
     },
     {
       id: "usage-goals",
-      title: "Usage goals",
-      subtitle: `${usageGoals.length} goals selected · ${rangeLabel}`,
+      title: "Owner usage intent",
+      subtitle: `${usageGoals.length} goals tracked · ${rangeLabel}`,
       kind: "usage-goals",
       chartData: usageGoals.slice(0, 8),
       breakdown: usageGoals.map((row) => ({
@@ -622,6 +702,76 @@ export function buildGrowthChartInsights(
         value: formatPhp(row.value),
         detail: `${row.count} proposals`,
       })),
+    },
+    {
+      id: "plan-distribution",
+      title: "Plan mix",
+      subtitle: `${planRows.reduce((s, r) => s + r.count, 0)} workspaces · ${rangeLabel}`,
+      kind: "plan-distribution",
+      chartData: planRows.map((row) => ({
+        name: row.name,
+        count: row.count,
+      })),
+      breakdown: planRows.map((row) => ({
+        label: row.name,
+        value: `${row.count}`,
+      })),
+    },
+    {
+      id: "adoption-gaps",
+      title: "Adoption gaps (upsell)",
+      subtitle: lowestGap ?
+        `${featureLabel(lowestGap.feature)} ${lowestGap.rate}% lowest · ${rangeLabel}`
+      : `Feature gaps · ${rangeLabel}`,
+      kind: "adoption-gaps",
+      chartData: adoptionGaps.map((row) => ({
+        feature: featureLabel(row.feature),
+        rate: row.rate,
+      })),
+      breakdown: adoptionGaps.map((row) => ({
+        label: featureLabel(row.feature),
+        value: `${row.rate}%`,
+        detail: `${row.completed}/${row.total} completed`,
+      })),
+    },
+    {
+      id: "revenue-trend",
+      title: "Station GMV trend",
+      subtitle: `${formatPhp(revenueTotal)} in period · ${rangeLabel}`,
+      kind: "revenue-trend",
+      chartData: revenueSeries,
+      breakdown: buildTransactionBreakdownRows(
+        chartTimeSeries.transactionsDaily,
+        globalRange,
+        formatPhp,
+      ),
+    },
+    {
+      id: "login-sales-cadence",
+      title: "Login cadence",
+      subtitle: `${loginUsers} active user-days · outreach windows · ${rangeLabel}`,
+      kind: "login-sales-cadence",
+      seriesKey: "loginDaily",
+      chartData: loginFiltered,
+      breakdown: buildLoginBreakdownRows(
+        chartTimeSeries.loginDaily,
+        globalRange,
+      ),
+    },
+    {
+      id: "new-logo-pipeline",
+      title: "New logo pipeline",
+      subtitle: `${workspaceTotal} workspaces created · ${rangeLabel}`,
+      kind: "new-logo-pipeline",
+      seriesKey: "workspacesDaily",
+      chartData: aggregateDailyCounts(
+        chartTimeSeries.workspacesDaily,
+        globalRange,
+      ),
+      breakdown: buildDailyBreakdownRows(
+        chartTimeSeries.workspacesDaily,
+        globalRange,
+      ),
     },
   ];
 }

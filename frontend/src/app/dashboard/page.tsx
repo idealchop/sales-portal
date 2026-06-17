@@ -1,5 +1,5 @@
-import { DashboardHome } from "@/features/dashboard/components/dashboard-home";
+import { PlatformHubDashboard } from "@/features/dashboard/components/platform-hub-dashboard";
 
 export default function DashboardPage() {
-  return <DashboardHome />;
+  return <PlatformHubDashboard />;
 }
