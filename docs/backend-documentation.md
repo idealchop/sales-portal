@@ -84,16 +84,30 @@ All routes are mounted at the function root (no `/api` prefix).
 
 ### Admin (`/admin`)
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `GET` | `/admin/users` | Admin | User list |
-| `POST` | `/admin/users` | Admin | Create user |
-| `PATCH` | `/admin/users/:uid/app-access` | Admin | Grant/revoke portal access |
-| `DELETE` | `/admin/users/:uid` | Admin | Delete user |
-| `GET` | `/admin/data-management` | Admin | Data management index |
-| `GET/PUT/DELETE` | `/admin/businesses/:businessId/documents` | Admin | Business Firestore docs |
-| `GET` | `/admin/catalog-collections/:collectionId` | Admin | Subscription catalog CRUD |
-| `PUT/DELETE` | `/admin/catalog-collections/:collectionId/:docId` | Admin | Catalog document ops |
+All admin routes require **Bearer token**, **sales-portal access**, and **`admin` role**.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/admin/users` | User list with `appAccess` summary |
+| `POST` | `/admin/users` | Create Firebase Auth user + profile |
+| `POST` | `/admin/users/bulk-delete` | Bulk delete users |
+| `PATCH` | `/admin/users/:uid/app-access` | Grant/revoke portal and product app access |
+| `GET` | `/admin/users/:uid/documents` | List Firestore documents for a user |
+| `PUT` | `/admin/users/:uid/documents` | Upsert user Firestore document |
+| `DELETE` | `/admin/users/:uid/documents` | Delete user Firestore document |
+| `DELETE` | `/admin/users/:uid/firestore-profile` | Delete user profile docs |
+| `DELETE` | `/admin/users/:uid` | Delete user (Auth + Firestore) |
+| `GET` | `/admin/data-management` | Businesses index for data management |
+| `GET` | `/admin/catalog-collections/:collectionId` | List subscription catalog docs |
+| `PUT` | `/admin/catalog-collections/:collectionId/documents` | Create/update catalog document |
+| `DELETE` | `/admin/catalog-collections/:collectionId/documents` | Delete catalog document |
+| `GET` | `/admin/businesses/:businessId/documents` | List business subcollection docs |
+| `GET` | `/admin/businesses/:businessId/transactions` | Business transactions |
+| `GET` | `/admin/businesses/:businessId/customers/:customerId/transactions` | Customer transactions |
+| `GET` | `/admin/businesses/:businessId/customers/:customerId/inventory-assignments` | Customer inventory assignments |
+| `PUT` | `/admin/businesses/:businessId/documents` | Upsert business document |
+| `DELETE` | `/admin/businesses/:businessId/documents` | Delete business document |
+| `DELETE` | `/admin/businesses/:businessId/firestore-tree` | Delete business Firestore subtree |
 
 See route files under `backend/functions/src/routes/`.
 
