@@ -64,6 +64,16 @@ export function useAdminUsers() {
     [],
   );
 
+  const revokeUserAccess = useCallback(async (uid: string) => {
+    const response = await apiClient.post<{ data: { user: AdminUserSummary } }>(
+      `/admin/users/${uid}/revoke-access`,
+    );
+    setUsers((current) =>
+      current.map((user) => (user.uid === uid ? response.data.user : user)),
+    );
+    return response.data.user;
+  }, []);
+
   const deleteUsers = useCallback(
     async (
       uids: string[],
@@ -134,6 +144,7 @@ export function useAdminUsers() {
     refresh: load,
     createUser,
     saveAppAccess,
+    revokeUserAccess,
     deleteUsers,
   };
 }

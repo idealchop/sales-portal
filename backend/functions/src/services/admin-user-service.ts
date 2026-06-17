@@ -479,6 +479,42 @@ export async function updateAdminUserAppAccess(
   return enriched;
 }
 
+export async function revokeAdminUserAccess(
+  uid: string,
+  actorUid: string,
+): Promise<AdminUserSummary> {
+  if (uid === actorUid) {
+    throw new Error("CANNOT_REVOKE_SELF");
+  }
+
+  const userRef = db.collection("users").doc(uid);
+  const userSnap = await userRef.get();
+  const existingData = userSnap.exists ? userSnap.data() ?? {} : {};
+  const currentAccess = normalizeAppAccess(existingData.appAccess);
+
+  if (currentAccess.length === 0) {
+    const authUser = await auth.getUser(uid).catch(() => null);
+    if (!authUser) {
+      throw new Error("USER_NOT_FOUND");
+    }
+    throw new Error("NO_APP_ACCESS");
+  }
+
+  const alreadyRevoked = currentAccess.every(
+    (entry) => entry.accessRevoked === true,
+  );
+  if (alreadyRevoked) {
+    throw new Error("ALREADY_REVOKED");
+  }
+
+  const revokedAccess = currentAccess.map((entry) => ({
+    ...entry,
+    accessRevoked: true,
+  }));
+
+  return updateAdminUserAppAccess(uid, revokedAccess);
+}
+
 export type DeleteAdminUserResult = {
   uid: string;
   deletedAuth: boolean;

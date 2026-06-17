@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Plus, Search, Settings2, Shield, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Search, Settings2, Shield, ShieldOff, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DeleteUserDialog } from "@/features/admin/components/delete-user-dialog";
+import { RevokeAccessDialog } from "@/features/admin/components/revoke-access-dialog";
 import { CopyableUserId } from "@/features/admin/components/copyable-user-id";
 import { UserFirestoreDocumentsPanel } from "@/features/admin/components/user-firestore-documents-panel";
 import { ListPagination } from "@/components/list-pagination";
@@ -141,6 +142,7 @@ function UserPermissionEditor({
   onSelect,
   onSave,
   onDelete,
+  onRevoke,
 }: {
   user: AdminUserSummary;
   expanded: boolean;
@@ -151,6 +153,7 @@ function UserPermissionEditor({
   onSelect: (checked: boolean) => void;
   onSave: (uid: string, appAccess: AdminAppAccessEntry[]) => Promise<unknown>;
   onDelete: () => void;
+  onRevoke: () => void;
 }) {
   const draftKey = `${user.uid}:${JSON.stringify(user.appAccess)}`;
   const [draft, setDraft] = useState(() => draftFromUserAppAccess(user.appAccess));
@@ -346,16 +349,30 @@ function UserPermissionEditor({
           }
         </div>
         {!isSelf && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="mt-1 shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
-            onClick={onDelete}
-            aria-label={`Delete ${userDisplayName(user)}`}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="mt-1 flex shrink-0 flex-col gap-1">
+            {status.tone === "active" && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                onClick={onRevoke}
+                aria-label={`Revoke access for ${userDisplayName(user)}`}
+              >
+                <ShieldOff className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+              onClick={onDelete}
+              aria-label={`Delete ${userDisplayName(user)}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
 
@@ -591,6 +608,7 @@ export function UserPermissionsPanel({
   currentUid,
   onSave,
   onDelete,
+  onRevoke,
 }: {
   users: AdminUserSummary[];
   isLoading: boolean;
@@ -604,6 +622,7 @@ export function UserPermissionsPanel({
     deleted: { uid: string }[];
     failed: { uid: string; reason: string }[];
   }>;
+  onRevoke: (uid: string) => Promise<unknown>;
 }) {
   const [query, setQuery] = useState("");
   const [accessFilter, setAccessFilter] = useState<AccessFilter>("all");
@@ -627,6 +646,9 @@ export function UserPermissionsPanel({
     total: number;
   } | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<AdminUserSummary | null>(null);
+  const [revoking, setRevoking] = useState(false);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
 
   function updateCardDisplay(next: AdminUserRowDisplay) {
     setCardDisplay(next);
@@ -745,6 +767,25 @@ export function UserPermissionsPanel({
     } finally {
       setDeleting(false);
       setDeleteProgress(null);
+    }
+  }
+
+  async function confirmRevoke() {
+    if (!revokeTarget) return;
+    setRevoking(true);
+    setRevokeError(null);
+    try {
+      await onRevoke(revokeTarget.uid);
+      if (expandedId === revokeTarget.uid) {
+        setExpandedId(null);
+      }
+      setRevokeTarget(null);
+    } catch (err) {
+      setRevokeError(
+        err instanceof Error ? err.message : "Could not revoke access.",
+      );
+    } finally {
+      setRevoking(false);
     }
   }
 
@@ -964,6 +1005,7 @@ export function UserPermissionsPanel({
         )}
         {error && <p className="text-sm text-red-600">{error}</p>}
         {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
+        {revokeError && <p className="text-sm text-red-600">{revokeError}</p>}
 
         {!isLoading && filtered.length === 0 && (
           <div className="rounded-lg border border-dashed border-zinc-200 px-4 py-10 text-center">
@@ -992,6 +1034,7 @@ export function UserPermissionsPanel({
               onSelect={(checked) => toggleSelectUser(user.uid, checked)}
               onSave={onSave}
               onDelete={() => setDeleteTargets([user])}
+              onRevoke={() => setRevokeTarget(user)}
             />
           ))}
         </div>
@@ -1018,6 +1061,18 @@ export function UserPermissionsPanel({
               }
             }}
             onConfirm={() => void confirmDelete()}
+          />
+        )}
+
+        {revokeTarget && (
+          <RevokeAccessDialog
+            displayName={userDisplayName(revokeTarget)}
+            email={revokeTarget.email}
+            revoking={revoking}
+            onClose={() => {
+              if (!revoking) setRevokeTarget(null);
+            }}
+            onConfirm={() => void confirmRevoke()}
           />
         )}
       </CardContent>

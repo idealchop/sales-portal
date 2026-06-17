@@ -99,7 +99,11 @@ export function DashboardHome() {
 
       <AiInsightsCard insights={data.aiSalesInsights} />
 
-      <NewJoinersPanel newJoiners={data.newJoiners} role={profile?.role} />
+      <NewJoinersPanel
+        newJoiners={data.newJoiners}
+        role={profile?.role}
+        onRevoked={refresh}
+      />
 
       <SalesInsightsPanel
         salesInsights={data.salesInsights}
