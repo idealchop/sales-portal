@@ -27,6 +27,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  CONTENT_STUDIO_BRAND_PRESETS,
   CONTENT_STUDIO_SUGGESTIONS,
   type GeneratedSocialPost,
 } from "@/features/content-studio/constants";
@@ -181,6 +182,23 @@ function InspirationPanel({
               </span>
             </button>
           ))}
+          <div className="space-y-2 border-t border-zinc-200/70 px-1 pt-3">
+            <p className="px-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+              Brand presets
+            </p>
+            <div className="flex flex-wrap gap-2 px-2 pb-1">
+              {CONTENT_STUDIO_BRAND_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => onSelect(preset.prompt)}
+                  className="rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-xs font-medium text-teal-800 hover:bg-teal-100"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

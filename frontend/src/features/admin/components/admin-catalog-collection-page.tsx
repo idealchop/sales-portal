@@ -33,6 +33,7 @@ export function AdminCatalogCollectionPage({
     useAdminCatalogCollection(collectionId, enabled);
 
   const [query, setQuery] = useState("");
+  const [activeOnly, setActiveOnly] = useState(false);
   const [viewDoc, setViewDoc] = useState<UserFirestoreDocumentRow | null>(null);
   const [editDoc, setEditDoc] = useState<UserFirestoreDocumentRow | null>(null);
   const [deleteDoc, setDeleteDoc] = useState<UserFirestoreDocumentRow | null>(null);
@@ -47,8 +48,9 @@ export function AdminCatalogCollectionPage({
 
   const filteredDocuments = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return documents;
     return documents.filter((doc) => {
+      if (activeOnly && !catalogDocumentActive(doc.data)) return false;
+      if (!normalized) return true;
       const haystack = [
         doc.documentId,
         catalogDocumentDisplayName(doc.data, doc.documentId),
@@ -60,7 +62,7 @@ export function AdminCatalogCollectionPage({
         .toLowerCase();
       return haystack.includes(normalized);
     });
-  }, [documents, query]);
+  }, [documents, query, activeOnly]);
 
   if (profileLoading || profile?.role !== "admin") {
     return (
@@ -94,25 +96,35 @@ export function AdminCatalogCollectionPage({
         </div>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by name, code, or id…"
-          className="h-10 w-full rounded-lg border border-[var(--border)] bg-white pl-9 pr-9 text-sm outline-none ring-[var(--primary)] focus:ring-2"
-        />
-        {query && (
-          <button
-            type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-600"
-            onClick={() => setQuery("")}
-            aria-label="Clear search"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-md flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by name, code, or id…"
+            className="h-10 w-full rounded-lg border border-[var(--border)] bg-white pl-9 pr-9 text-sm outline-none ring-[var(--primary)] focus:ring-2"
+          />
+          {query && (
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-600"
+              onClick={() => setQuery("")}
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant={activeOnly ? "primary" : "outline"}
+          onClick={() => setActiveOnly((current) => !current)}
+        >
+          {activeOnly ? "Active only" : "All statuses"}
+        </Button>
       </div>
 
       {error && (
@@ -131,6 +143,8 @@ export function AdminCatalogCollectionPage({
           <div className="px-6 py-16 text-center text-sm text-zinc-500">
             {documents.length === 0 ?
               "No documents in this collection yet."
+            : activeOnly ?
+              "No active documents match your filters."
             : "No documents match your search."}
           </div>
         : <div className="overflow-x-auto">

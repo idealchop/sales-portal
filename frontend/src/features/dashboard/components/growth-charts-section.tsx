@@ -215,9 +215,19 @@ function ChartInsightCard({
   );
 }
 
-export function GrowthChartsSection({ data }: { data: DashboardAnalytics }) {
-  const [globalFilter, setGlobalFilter] =
+export function GrowthChartsSection({
+  data,
+  globalFilter: externalFilter,
+  onGlobalFilterChange,
+}: {
+  data: DashboardAnalytics;
+  globalFilter?: DateRangeFilterState;
+  onGlobalFilterChange?: (value: DateRangeFilterState) => void;
+}) {
+  const [internalFilter, setInternalFilter] =
     useState<DateRangeFilterState>(DEFAULT_GLOBAL_FILTER);
+  const globalFilter = externalFilter ?? internalFilter;
+  const setGlobalFilter = onGlobalFilterChange ?? setInternalFilter;
   const [activeInsight, setActiveInsight] = useState<ChartInsight | null>(null);
 
   const globalRange = useMemo(
@@ -256,11 +266,13 @@ export function GrowthChartsSection({ data }: { data: DashboardAnalytics }) {
             </p>
           </div>
           <div className="min-w-0 lg:max-w-xl">
-            <DateRangeFilter
-              variant="global"
-              value={globalFilter}
-              onChange={setGlobalFilter}
-            />
+            {!externalFilter ?
+              <DateRangeFilter
+                variant="global"
+                value={globalFilter}
+                onChange={setGlobalFilter}
+              />
+            : null}
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

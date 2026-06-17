@@ -76,20 +76,30 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | AB-34 | Unified workspace health labels + email outreach on action queue | ✅ Shipped |
 | AB-35 | Clearer metric section titles and 30-day context copy | ✅ Shipped |
 
-## Tier 8 — Page revamps & sales scope (planned)
+## Tier 8 — Sales scope & command center ✅ (feature/SP-8)
 
 | ID | Item | Status |
 |----|------|--------|
-| AB-36 | Role-scoped dashboard API (territory/rep filtering) | 🔲 Planned |
-| AB-37 | Single “Today’s work” inbox (dedupe AI + sales actions + approvals) | 🔲 Planned |
-| AB-38 | Rep-centric home strip (my pipeline, commissions MTD, win rate) | 🔲 Planned |
-| AB-39 | Proposals page revamp — pipeline funnel, aging, quick actions | 🔲 Planned |
-| AB-40 | Commissions page revamp — payout forecast, status filters, export | 🔲 Planned |
-| AB-41 | My Team manager view — rep activity, quota progress, coaching cues | 🔲 Planned |
-| AB-42 | Content Studio polish — templates, history, brand presets | 🔲 Planned |
-| AB-43 | Admin/subscriptions UX pass — catalog search, bulk ops, empty states | 🔲 Planned |
-| AB-44 | Global date filter driving KPIs + charts consistently | 🔲 Planned |
-| AB-45 | Lightweight `/dashboard/sales-home` endpoint for rep-focused payload | 🔲 Planned |
+| AB-36 | Role-scoped dashboard API (territory/rep filtering) | ✅ Shipped |
+| AB-37 | Single “Today’s work” inbox (dedupe AI + sales actions + approvals) | ✅ Shipped |
+| AB-38 | Rep-centric home strip (my pipeline, commissions MTD, win rate) | ✅ Shipped |
+| AB-45 | Lightweight `/dashboard/sales-home` endpoint for rep-focused payload | ✅ Shipped |
+
+## Tier 9 — Sales workflow pages ✅ (feature/SP-9)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-39 | Proposals page revamp — pipeline funnel, aging, quick actions | ✅ Shipped |
+| AB-40 | Commissions page revamp — payout forecast, status filters, export | ✅ Shipped |
+| AB-41 | My Team manager view — rep activity, quota progress, coaching cues | ✅ Shipped |
+
+## Tier 10 — Platform polish ✅ (feature/SP-10)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-42 | Content Studio polish — templates, history, brand presets | ✅ Shipped |
+| AB-43 | Admin/subscriptions UX pass — catalog search, bulk ops, empty states | ✅ Shipped |
+| AB-44 | Global date filter driving KPIs + charts consistently | ✅ Shipped |
 
 ---
 
@@ -105,3 +115,6 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | 2026-06-17 | AB-25 new joiners panel + analytics crash fixes on `feature/SP-4` |
 | 2026-06-17 | Tier 6 (AB-26–AB-28) shipped on `feature/SP-5` |
 | 2026-06-17 | Tier 7 dashboard revamp (AB-29–AB-35) shipped on `feature/SP-6` |
+| 2026-06-17 | Tier 8 (AB-36–38, AB-45) shipped on `feature/SP-8` |
+| 2026-06-17 | Tier 9 (AB-39–AB-41) shipped on `feature/SP-9` |
+| 2026-06-17 | Tier 10 (AB-42–AB-44) shipped on `feature/SP-10` |
