@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BookCopy,
+  CircleDollarSign,
   CreditCard,
   FileText,
   LayoutDashboard,
@@ -32,21 +33,28 @@ export const DASHBOARD_NAV: NavItem[] = [
     label: "My Team",
     icon: Users,
     roles: ["manager"],
-    maintenance: true,
+    maintenance: false,
   },
   {
     href: "/dashboard/proposals",
     label: "Proposals & Clients",
     icon: FileText,
     roles: ["sales", "manager", "admin"],
-    maintenance: true,
+    maintenance: false,
+  },
+  {
+    href: "/dashboard/commissions",
+    label: "Commissions",
+    icon: CircleDollarSign,
+    roles: ["sales", "manager", "admin"],
+    maintenance: false,
   },
   {
     href: "/dashboard/materials",
     label: "Sales Materials",
     icon: BookCopy,
     roles: ["sales", "manager", "admin"],
-    maintenance: true,
+    maintenance: false,
   },
   {
     href: "/content-studio",

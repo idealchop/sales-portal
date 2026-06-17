@@ -25,15 +25,25 @@ describe("DASHBOARD_NAV role gates", () => {
   });
 
   it("marks maintenance routes for coming soon UI", () => {
-    const maintenanceHrefs = [
-      "/dashboard/my-team",
-      "/dashboard/proposals",
-      "/dashboard/materials",
-    ];
+    const maintenanceHrefs: string[] = [];
 
     for (const href of maintenanceHrefs) {
       const item = DASHBOARD_NAV.find((nav) => nav.href === href);
       expect(item?.maintenance).toBe(true);
+    }
+  });
+
+  it("ships Tier 3 sales workflow routes without maintenance", () => {
+    const liveHrefs = [
+      "/dashboard/proposals",
+      "/dashboard/commissions",
+      "/dashboard/my-team",
+      "/dashboard/materials",
+    ];
+
+    for (const href of liveHrefs) {
+      const item = DASHBOARD_NAV.find((nav) => nav.href === href);
+      expect(item?.maintenance).toBe(false);
     }
   });
 });

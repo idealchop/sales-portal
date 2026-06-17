@@ -1,5 +1,5 @@
-import { MaintenancePage } from "@/features/dashboard/components/maintenance-page";
+import { MaterialsPage } from "@/features/materials/components/materials-page";
 
-export default function MaterialsPage() {
-  return <MaintenancePage title="Sales Materials" />;
+export default function DashboardMaterialsPage() {
+  return <MaterialsPage />;
 }
