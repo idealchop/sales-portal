@@ -1,5 +1,5 @@
-import { MaintenancePage } from "@/features/dashboard/components/maintenance-page";
+import { MyTeamPage } from "@/features/my-team/components/my-team-page";
 
-export default function MyTeamPage() {
-  return <MaintenancePage title="My Team" />;
+export default function DashboardMyTeamPage() {
+  return <MyTeamPage />;
 }
