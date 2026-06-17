@@ -12,6 +12,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { SubscriptionReasonDialog } from "@/features/dashboard/components/subscription-reason-dialog";
+import {
+  applyApprovedSubscription,
+  approveSubscription,
+} from "@/features/dashboard/lib/approve-subscription";
 import { ListPagination } from "@/components/list-pagination";
 import { PaginatedList } from "@/components/paginated-list";
 import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
@@ -22,7 +26,6 @@ import {
 } from "@/lib/dashboard/subscription-labels";
 import { formatPhp } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { apiClient } from "@/lib/api-client";
 import type { DashboardAnalyticsRefresh } from "@/hooks/use-dashboard-analytics";
 
 const PAGE_SIZE = 8;
@@ -46,34 +49,6 @@ function formatSubscriptionLine(subscription: OwnerSubscription): string {
     return status;
   }
   return `${status} · ${formatPaymentStatus(subscription.paymentStatus)}`;
-}
-
-function applyApprovedSubscription(
-  owners: ActiveOwner[],
-  businessId: string,
-  subscriptionId: string,
-): ActiveOwner[] {
-  return owners.map((owner) => {
-    if (owner.id !== businessId) return owner;
-
-    const subscriptions = (owner.subscriptions ?? []).map((sub) =>
-      sub.id === subscriptionId ?
-        {
-          ...sub,
-          status: "approved",
-          paymentStatus: "approved",
-          needsApproval: false,
-        }
-      : sub,
-    );
-
-    return {
-      ...owner,
-      subscriptions,
-      pendingApprovals: subscriptions.filter((sub) => sub.needsApproval).length,
-      paymentStatus: "approved",
-    };
-  });
 }
 
 function SubscriptionRow({
@@ -344,9 +319,7 @@ export function ActiveOwnersPanel({
     setError(null);
     setApprovingId(subscriptionId);
     try {
-      await apiClient.post(
-        `/dashboard/subscriptions/${businessId}/${subscriptionId}/approve`,
-      );
+      await approveSubscription(businessId, subscriptionId);
       setLocalOwners((current) =>
         applyApprovedSubscription(current, businessId, subscriptionId),
       );
