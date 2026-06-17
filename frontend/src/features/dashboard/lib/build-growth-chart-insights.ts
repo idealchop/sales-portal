@@ -517,7 +517,10 @@ export function buildGrowthChartInsights(
   const revenueSeries = aggregateTransactionDaily(
     chartTimeSeries.transactionsDaily,
     globalRange,
-  ).map((row) => ({ date: row.date, amount: row.amount }));
+  ).map((row) => ({
+    date: "date" in row ? row.date : row.month,
+    amount: row.amount,
+  }));
   const revenueTotal = revenueSeries.reduce((sum, row) => sum + row.amount, 0);
   const planRows = data.planDistribution.filter((row) => row.count > 0);
 

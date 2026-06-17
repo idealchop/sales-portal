@@ -39,7 +39,9 @@ export function ProposalWizardPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [address, setAddress] = useState("");
 
-  const [selectedPlanId, setSelectedPlanId] = useState(PROPOSAL_PLANS[1].id);
+  const [selectedPlanId, setSelectedPlanId] = useState<
+    (typeof PROPOSAL_PLANS)[number]["id"]
+  >(PROPOSAL_PLANS[1].id);
   const [proposalTitle, setProposalTitle] = useState("");
   const [proposalNotes, setProposalNotes] = useState("");
 

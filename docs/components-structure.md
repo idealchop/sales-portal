@@ -44,7 +44,6 @@ frontend/src/
 | `lib/sort-active-owners.ts` | Active owners priority sort + 5-row cap |
 | `components/sales-insights-panel.tsx` | Action queue, health, pipeline detail |
 | `components/active-owners-panel.tsx` | Owner list beside map |
-| `components/dashboard-home.tsx` | Legacy monolith (unused by routes) |
 
 ### `features/content-studio/`
 

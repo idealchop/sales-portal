@@ -3,11 +3,12 @@
  * Run inside: firebase emulators:exec --only functions,firestore,auth
  */
 const path = require("path");
-const admin = require(path.join(__dirname, "functions/node_modules/firebase-admin"));
-const { getFirestore } = require(path.join(
-  __dirname,
-  "functions/node_modules/firebase-admin/firestore",
-));
+
+const functionsDir = path.join(__dirname, "functions");
+const admin = require(require.resolve("firebase-admin", { paths: [functionsDir] }));
+const { getFirestore } = require(
+  require.resolve("firebase-admin/firestore", { paths: [functionsDir] }),
+);
 
 const PROJECT_ID = "aquaflow-management-suite";
 const FIRESTORE_DB = "riverdb";

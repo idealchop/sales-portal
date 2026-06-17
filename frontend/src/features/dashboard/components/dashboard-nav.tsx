@@ -110,7 +110,6 @@ export function DashboardNav({
                 <span className="flex-1">{item.label}</span>
                 {item.maintenance ?
                   <Badge
-                    variant="secondary"
                     className="shrink-0 border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide text-amber-800"
                   >
                     Soon

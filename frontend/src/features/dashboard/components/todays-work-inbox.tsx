@@ -48,7 +48,7 @@ export function TodaysWorkInbox({
                 <Badge className={PRIORITY_STYLES[item.priority]}>
                   {item.priority}
                 </Badge>
-                <Badge variant="secondary">{SOURCE_LABELS[item.source]}</Badge>
+                <Badge className="bg-zinc-100 text-zinc-700">{SOURCE_LABELS[item.source]}</Badge>
               </div>
               <p className="mt-1 text-sm text-[var(--muted-foreground)]">
                 {item.subtitle}
