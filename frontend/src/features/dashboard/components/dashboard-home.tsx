@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { WorkspaceMapOwnersSection } from "@/features/dashboard/components/workspace-map-owners-section";
 import { AppFeedbackPanel } from "@/features/dashboard/components/app-feedback-panel";
 import { MetricCardsGrid } from "@/features/dashboard/components/metric-cards-grid";
+import { SalesInsightsPanel } from "@/features/dashboard/components/sales-insights-panel";
 import {
   Card,
   CardContent,
@@ -91,6 +92,11 @@ export function DashboardHome() {
         title="Potential sales now"
         description="Accounts to call — risk, upsell, and activity."
         metrics={growthSalesMetrics.sales}
+      />
+
+      <SalesInsightsPanel
+        salesInsights={data.salesInsights}
+        proposalPipeline={data.proposalPipeline}
       />
 
       <WorkspaceMapOwnersSection
