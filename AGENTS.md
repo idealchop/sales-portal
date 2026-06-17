@@ -1,12 +1,21 @@
 # Sales Portal — Agent guide
 
-Monorepo for Smart Refill **Sales Portal v2** (internal sales/analytics tool).
+Monorepo for Smart Refill **Sales Portal v2** (internal multi-app sales and analytics hub).
 
 ## Start here
 
 Read the documentation index before implementing features:
 
 **[`docs/README.md`](docs/README.md)**
+
+Product backlog: **[`docs/backlog-actionable.md`](docs/backlog-actionable.md)** · Agent workflow: **[`docs/agent-workflow.md`](docs/agent-workflow.md)**
+
+| Skill | Use for |
+|-------|---------|
+| `sales-portal-feature-agent` | AB items on `feature/SP-{tier}`; one commit per AB |
+| `sales-portal-code-review-agent` | Review, quality gate, merge to `dev` |
+
+**Base branch:** `dev` · **Feature branches:** `feature/SP-1` … `feature/SP-4`
 
 ## Repository map
 

@@ -23,6 +23,7 @@
     "test:bdd:frontend": "npm run test:bdd:local --prefix frontend",
     "test:bdd:local": "bash scripts/test-bdd-local.sh",
     "test:all:local": "npm run test:unit && npm run test:bdd:local",
+    "quality-gate": "bash scripts/sp-quality-gate.sh",
     "deploy:hosting": "npx -y firebase-tools deploy --only hosting:sales-river-tech --project aquaflow-management-suite"
   }
 }

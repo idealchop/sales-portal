@@ -68,13 +68,16 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 
 | Path | Role | Status |
 |------|------|--------|
-| `/dashboard` | sales, manager, admin | Live |
+| `/dashboard` | sales, manager, admin | Live — platform analytics (SmartRefill metrics today) |
+| `/dashboard/settings` | sales, manager, admin | Live — read-only profile |
 | `/content-studio` | sales, manager, admin | Live |
 | `/subscriptions/*` | admin | Live (catalog CRUD) |
 | `/admin/permissions` | admin | Live |
 | `/admin/data-management` | admin | Live |
-| `/dashboard/proposals` | sales+ | Maintenance placeholder |
-| `/dashboard/my-team` | manager | Maintenance placeholder |
+| `/dashboard/proposals` | sales+ | Maintenance (nav shows “Soon”) |
+| `/dashboard/proposals/new` | sales+ | Maintenance |
+| `/dashboard/materials` | sales+ | Maintenance (nav shows “Soon”) |
+| `/dashboard/my-team` | manager | Maintenance (nav shows “Soon”) |
 
 ## App Hosting deploy
 

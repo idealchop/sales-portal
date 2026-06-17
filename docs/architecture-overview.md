@@ -1,6 +1,25 @@
 # Architecture overview
 
-Sales Portal v2 is a **monorepo** with a dedicated Next.js frontend and a Firebase Cloud Functions API (`salesPortalApi`). It reads shared platform data from SmartRefill’s Firestore database (`riverdb`) and proxies authenticated calls to the SmartRefill V3 API where needed.
+Sales Portal v2 is a **monorepo** with a dedicated Next.js frontend and a Firebase Cloud Functions API (`salesPortalApi`). It is River’s **internal sales and platform operations hub** — not a SmartRefill-only tool. It reads shared platform data from Firestore (`riverdb`) and integrates product apps over time; **SmartRefill is the first integrated app**.
+
+## Platform model (multi-app)
+
+- **Identity:** Firebase Auth + `users/{uid}` in `riverdb`
+- **Access:** `users.appAccess` array — one entry per app (`sales-portal`, `smartrefill`, future apps)
+- **Sales Portal roles:** `sales`, `manager`, `admin` (app id `sales-portal`)
+- **Product apps:** Each app has its own API integration (e.g. `ALL /smartrefill/*` proxy today)
+
+```mermaid
+flowchart TB
+  SP[Sales Portal UI + salesPortalApi]
+  FS[(riverdb)]
+  SR[SmartRefill — live]
+  Future[Future apps]
+  SP --> FS
+  SP --> SR
+  SP -.-> Future
+  SR --> FS
+```
 
 ## System diagram
 

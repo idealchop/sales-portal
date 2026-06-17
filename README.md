@@ -1,6 +1,6 @@
 # Smart Refill Sales Portal (v2)
 
-Monorepo with a **separate backend API** and **Next.js frontend**, integrated with the shared SmartRefill platform (`aquaflow-management-suite` / `riverdb`).
+Monorepo with a **separate backend API** and **Next.js frontend**, integrated with the shared River platform (`aquaflow-management-suite` / `riverdb`). Sales Portal is an **internal multi-app sales hub**; SmartRefill is the first product app integrated.
 
 **Documentation index:** [`docs/README.md`](docs/README.md) · **Agent guide:** [`AGENTS.md`](AGENTS.md)
 

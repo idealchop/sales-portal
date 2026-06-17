@@ -14,6 +14,8 @@ Single source of truth for architecture, development, testing, and deployment.
 | [frontend-documentation.md](./frontend-documentation.md) | Next.js App Router, features, env vars, App Hosting |
 | [components-structure.md](./components-structure.md) | Feature folders, shared UI, navigation |
 | [testing-guide.md](./testing-guide.md) | **QA protocol** — unit, integration, BDD (FE + BE) |
+| [backlog-actionable.md](./backlog-actionable.md) | **AB-01…AB-24** — implementation-ready backlog |
+| [agent-workflow.md](./agent-workflow.md) | Feature + code review agents, `dev` branch model |
 
 ## QA & testing
 
@@ -50,7 +52,10 @@ npm run test:unit:backend
 npm run test:unit:frontend
 
 # Full local QA (unit + BDD with emulators)
-npm run test:all:local
+npm run test:all:local         # unit + BDD
+
+# Pre-merge quality gate
+npm run quality-gate
 
 # Deploy API
 cd backend && ./deploy.sh
