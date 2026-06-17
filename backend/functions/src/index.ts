@@ -7,6 +7,7 @@ import dashboardRoutes from "./routes/dashboard-routes";
 import onboardingRoutes from "./routes/onboarding-routes";
 import smartrefillRoutes from "./routes/smartrefill-routes";
 import adminRoutes from "./routes/admin-routes";
+import salesWorkflowRoutes from "./routes/sales-workflow-routes";
 import contentStudioRoutes from "./routes/content-studio-routes";
 import { SALES_PORTAL_FUNCTION_SECRETS } from "./config/function-secrets";
 
@@ -39,6 +40,7 @@ app.use("/content-studio", contentStudioRoutes);
 app.use("/onboarding", onboardingRoutes);
 app.use("/smartrefill", smartrefillRoutes);
 app.use("/admin", adminRoutes);
+app.use("/", salesWorkflowRoutes);
 
 const api = express();
 api.use("/", app);
