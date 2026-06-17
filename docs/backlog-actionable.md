@@ -17,9 +17,15 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | AB-05 | Remove legacy Firestore hooks | ✅ Shipped |
 | AB-06 | Platform docs + route status | ✅ Shipped |
 
-## Tier 2 — Foundation (feature/SP-2)
+## Tier 2 — Foundation ✅ (feature/SP-2)
 
-AB-07 auth integration tests · AB-08 emulator seed · AB-09 dashboard BDD · AB-10 backend route docs · AB-11 chart a11y
+| ID | Item | Status |
+|----|------|--------|
+| AB-07 | Auth integration tests | ✅ Shipped |
+| AB-08 | Emulator seed users | ✅ Shipped |
+| AB-09 | Dashboard BDD smoke + auth API BDD | ✅ Shipped |
+| AB-10 | Backend route docs | ✅ Shipped |
+| AB-11 | Chart screen-reader summaries | ✅ Shipped |
 
 ## Tier 3 — Sales workflow MVP (feature/SP-3)
 
@@ -39,3 +45,4 @@ Full item detail (what / why / how / where): see git history on `feature/SP-1` o
 |------|--------|
 | 2026-06-17 | Initial backlog created |
 | 2026-06-17 | Tier 1 (AB-01–AB-06) shipped on `feature/SP-1` |
+| 2026-06-17 | Tier 2 (AB-07–AB-11) shipped on `feature/SP-2` |

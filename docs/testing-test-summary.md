@@ -24,7 +24,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | Test file | Covers | Manual QA |
 |-----------|--------|-----------|
 | `integration/health.integration.test.ts` ✅ | `GET /health` | — |
-| `integration/auth.integration.test.ts` 🔲 | `/auth/status` auth errors | TC-AUTH-04, TC-NEG-01 |
+| `integration/auth.integration.test.ts` ✅ | `/auth/status` auth errors | TC-AUTH-04, TC-NEG-01 |
 | `integration/dashboard.integration.test.ts` 🔲 | Analytics route guards | TC-DASH-01, TC-NEG-02 |
 | `integration/admin-catalog.integration.test.ts` 🔲 | Catalog CRUD routes | TC-SUB-02 … TC-SUB-06 |
 | `integration/content-studio.integration.test.ts` 🔲 | Generate route validation | TC-CS-03 |
@@ -36,7 +36,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | Test file | Covers | Manual QA |
 |-----------|--------|-----------|
 | `bdd/health.spec.ts` ✅ | Emulator health endpoint | — |
-| `bdd/auth.spec.ts` 🔲 | Seeded user auth status | TC-AUTH-05 … TC-AUTH-08 |
+| `bdd/auth.spec.ts` ✅ | Seeded user auth status | TC-AUTH-05 … TC-AUTH-08 |
 | `bdd/dashboard-analytics.spec.ts` 🔲 | Full analytics JSON contract | TC-DASH-01 |
 | `bdd/admin-catalog.spec.ts` 🔲 | Catalog lifecycle | TC-SUB-* |
 | `bdd/content-studio.spec.ts` 🔲 | Generate flow | TC-CS-02 |
@@ -60,7 +60,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | Test file | Covers | Manual QA |
 |-----------|--------|-----------|
 | `bdd/login.spec.ts` ✅ | Login page renders | TC-AUTH-01 |
-| `bdd/dashboard.spec.ts` 🔲 | Dashboard smoke (authenticated) | TC-DASH-01 |
+| `bdd/dashboard.spec.ts` ✅ | Dashboard smoke (unauthenticated redirect) | TC-DASH-01 |
 | `bdd/content-studio.spec.ts` 🔲 | Content studio form | TC-CS-01 |
 | `bdd/subscriptions-catalog.spec.ts` 🔲 | Admin catalog pages | TC-SUB-01 |
 | `bdd/admin-permissions.spec.ts` 🔲 | Permissions UI | TC-ADM-01, TC-ADM-02 |

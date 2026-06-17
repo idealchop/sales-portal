@@ -51,12 +51,14 @@ BDD helpers: `bdd/bdd-api.ts` (`API_PATH`).
 | File | Route |
 |------|-------|
 | `integration/health.integration.test.ts` | `GET /health` |
+| `integration/auth.integration.test.ts` | Auth middleware 401/403 |
 
 ## BDD specs
 
 | File | Route / flow |
 |------|--------------|
 | `bdd/health.spec.ts` | `GET /health` (emulator) |
+| `bdd/auth.spec.ts` | `GET /auth/status` (seeded sales user) |
 
 ## Manual QA cross-reference
 

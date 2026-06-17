@@ -32,6 +32,7 @@ From repo root: `npm run test:unit:frontend` · `npm run test:bdd:local`
 | File | Cases |
 |------|-------|
 | `bdd/login.spec.ts` | Login page smoke (TC-AUTH-01) |
+| `bdd/dashboard.spec.ts` | Dashboard unauthenticated redirect (TC-DASH-01) |
 
 Playwright projects: **Mobile Chrome** (320px) + **Desktop Chrome** (1280px).
 
