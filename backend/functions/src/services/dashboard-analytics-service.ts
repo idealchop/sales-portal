@@ -41,6 +41,7 @@ import {
   type ChartTimeSeries,
 } from "./build-chart-time-series";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
+import { buildNewJoiners, type NewJoinersSummary } from "./build-new-joiners";
 
 const BUSINESS_QUERY_CONCURRENCY = 20;
 const LOGIN_EVENT_QUERY_CONCURRENCY = 25;
@@ -117,6 +118,7 @@ export type DashboardAnalytics = {
   chartTimeSeries: ChartTimeSeries;
   chartBusinessContext: ChartBusinessContext[];
   aiSalesInsights: AiSalesInsightsResult;
+  newJoiners: NewJoinersSummary;
 };
 
 function toDate(value: unknown): Date | null {
@@ -205,13 +207,14 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [usersSnap, businessesSnap, proposalsSnap, clientsSnap, appsFeedbackSnap] =
+  const [usersSnap, businessesSnap, proposalsSnap, clientsSnap, appsFeedbackSnap, salesSnap] =
     await Promise.all([
       db.collection("users").get(),
       db.collection("businesses").get(),
       db.collection("proposals").get(),
       db.collection("clients").get(),
       db.collection("apps_feedback").get(),
+      db.collection("sales").get(),
     ]);
 
   const smartRefillUsers = usersSnap.docs.filter((doc) =>
@@ -781,6 +784,16 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     browserSessionsDaily: flattenDailyUsage(chartBrowserSessions),
   };
 
+  const newJoiners = buildNewJoiners({
+    salesDocs: salesSnap.docs,
+    recentBusinesses,
+    smartRefillUsers: smartRefillUsers.map((doc) => ({
+      id: doc.id,
+      data: doc.data(),
+    })),
+    businessOwnerIds,
+  });
+
   return {
     summary: {
       smartRefillUsers: smartRefillUsers.length,
@@ -841,5 +854,6 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     chartTimeSeries,
     chartBusinessContext,
     aiSalesInsights: behavioral.aiSalesInsights,
+    newJoiners,
   };
 }

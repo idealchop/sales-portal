@@ -139,6 +139,7 @@ export type DashboardAnalytics = {
   chartTimeSeries: ChartTimeSeries;
   chartBusinessContext: ChartBusinessContext[];
   aiSalesInsights: AiSalesInsights;
+  newJoiners: NewJoinersSummary;
 };
 
 export type BreakdownRow = {
@@ -289,6 +290,45 @@ export type AiSalesInsights = {
   aiEnabled: boolean;
 };
 
+export type NewSalesRepJoiner = {
+  id: string;
+  displayName: string;
+  email?: string;
+  role?: string;
+  team?: string;
+  onboardingComplete: boolean;
+  joinedAt: string | null;
+};
+
+export type NewBusinessJoiner = {
+  id: string;
+  name: string;
+  ownerEmail?: string;
+  planName?: string;
+  onboardingComplete: boolean;
+  joinedAt: string | null;
+};
+
+export type NewPlatformUserJoiner = {
+  id: string;
+  displayName?: string;
+  email?: string;
+  role: string;
+  joinedAt: string | null;
+};
+
+export type NewJoinersSummary = {
+  salesReps: NewSalesRepJoiner[];
+  businesses: NewBusinessJoiner[];
+  platformUsers: NewPlatformUserJoiner[];
+};
+
+const EMPTY_NEW_JOINERS: NewJoinersSummary = {
+  salesReps: [],
+  businesses: [],
+  platformUsers: [],
+};
+
 const EMPTY_AI_SALES_INSIGHTS: AiSalesInsights = {
   revenueChurnRiskSummary: "",
   growthOpportunitySummary: "",
@@ -417,5 +457,6 @@ export function normalizeDashboardAnalytics(
       gettingStarted: biz.gettingStarted ?? {},
     })),
     aiSalesInsights: raw.aiSalesInsights ?? EMPTY_AI_SALES_INSIGHTS,
+    newJoiners: raw.newJoiners ?? EMPTY_NEW_JOINERS,
   };
 }

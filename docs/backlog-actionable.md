@@ -50,6 +50,12 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | AB-23 | AI sales insights card | ✅ Shipped |
 | AB-24 | Tier 4 BDD specs | ✅ Shipped |
 
+## Tier 5 — Onboarding visibility (feature/SP-4)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-25 | New joiners panel (sales reps, businesses, platform users) | ✅ Shipped |
+
 ---
 
 ## Changelog
@@ -61,3 +67,4 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | 2026-06-17 | Tier 2 (AB-07–AB-11) shipped on `feature/SP-2` |
 | 2026-06-17 | Tier 3 (AB-12–AB-19) shipped on `feature/SP-3` |
 | 2026-06-17 | Tier 4 (AB-20–AB-24) shipped on `feature/SP-4` |
+| 2026-06-17 | AB-25 new joiners panel + analytics crash fixes on `feature/SP-4` |

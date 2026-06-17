@@ -6,6 +6,7 @@ import { AppFeedbackPanel } from "@/features/dashboard/components/app-feedback-p
 import { MetricCardsGrid } from "@/features/dashboard/components/metric-cards-grid";
 import { SalesInsightsPanel } from "@/features/dashboard/components/sales-insights-panel";
 import { AiInsightsCard } from "@/features/dashboard/components/ai-insights-card";
+import { NewJoinersPanel } from "@/features/dashboard/components/new-joiners-panel";
 import { SubscriptionApprovalQueue } from "@/features/dashboard/components/subscription-approval-queue";
 import {
   Card,
@@ -97,6 +98,8 @@ export function DashboardHome() {
       />
 
       <AiInsightsCard insights={data.aiSalesInsights} />
+
+      <NewJoinersPanel newJoiners={data.newJoiners} role={profile?.role} />
 
       <SalesInsightsPanel
         salesInsights={data.salesInsights}
