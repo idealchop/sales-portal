@@ -40,11 +40,15 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | AB-18 | Manager My Team page | ✅ Shipped |
 | AB-19 | Sales materials library | ✅ Shipped |
 
-## Tier 4 — Admin & polish (feature/SP-4)
+## Tier 4 — Admin & polish ✅ (feature/SP-4)
 
-AB-20–AB-24 subscription queue, bulk delete, mobile nav, AI insights card, BDD specs
-
-Full item detail (what / why / how / where): see git history on `feature/SP-1` or expand this file as tiers ship.
+| ID | Item | Status |
+|----|------|--------|
+| AB-20 | Subscription approval queue | ✅ Shipped |
+| AB-21 | Admin bulk delete API wiring | ✅ Shipped |
+| AB-22 | Dashboard mobile nav polish | ✅ Shipped |
+| AB-23 | AI sales insights card | ✅ Shipped |
+| AB-24 | Tier 4 BDD specs | ✅ Shipped |
 
 ---
 
@@ -56,3 +60,4 @@ Full item detail (what / why / how / where): see git history on `feature/SP-1` o
 | 2026-06-17 | Tier 1 (AB-01–AB-06) shipped on `feature/SP-1` |
 | 2026-06-17 | Tier 2 (AB-07–AB-11) shipped on `feature/SP-2` |
 | 2026-06-17 | Tier 3 (AB-12–AB-19) shipped on `feature/SP-3` |
+| 2026-06-17 | Tier 4 (AB-20–AB-24) shipped on `feature/SP-4` |
