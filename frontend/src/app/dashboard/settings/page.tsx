@@ -1,5 +1,5 @@
-import { MaintenancePage } from "@/features/dashboard/components/maintenance-page";
+import { SettingsPage } from "@/features/dashboard/components/settings-page";
 
-export default function SettingsPage() {
-  return <MaintenancePage title="Settings" />;
+export default function DashboardSettingsPage() {
+  return <SettingsPage />;
 }
