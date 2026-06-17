@@ -17,6 +17,7 @@ import {
   getAdminUserDocuments,
   getAdminUsers,
   patchAdminUserAppAccess,
+  postRevokeAdminUserAccess,
   postAdminUser,
   putAdminUserDocument,
   putAdminCatalogCollectionDocument,
@@ -60,6 +61,7 @@ router.delete(
 );
 router.post("/users", postAdminUser);
 router.post("/users/bulk-delete", deleteAdminUsersBulk);
+router.post("/users/:uid/revoke-access", postRevokeAdminUserAccess);
 router.patch("/users/:uid/app-access", patchAdminUserAppAccess);
 router.get("/users/:uid/documents", getAdminUserDocuments);
 router.put("/users/:uid/documents", putAdminUserDocument);

@@ -11,7 +11,11 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { BusinessMapLocation } from "@/lib/dashboard/analytics";
+import {
+  WORKSPACE_HEALTH_LABELS,
+} from "@/lib/dashboard/workspace-health";
 import {
   createMapMarkerIcon,
   isOwnerInactive,
@@ -19,12 +23,6 @@ import {
   resolveMapMarkerStyle,
 } from "@/lib/dashboard/map-marker-style";
 import "leaflet/dist/leaflet.css";
-
-const HEALTH_LABELS = {
-  high: "High health",
-  medium: "Medium health",
-  low: "Low health",
-} as const;
 
 function FitMapBounds({ locations }: { locations: BusinessMapLocation[] }) {
   const map = useMap();
@@ -102,6 +100,11 @@ function LocationAside({
             <p className="truncate font-semibold text-foreground">
               {location.name}
             </p>
+            {location.appLabel ?
+              <Badge className="mt-1 bg-teal-50 text-teal-800">
+                {location.appLabel}
+              </Badge>
+            : null}
           </div>
           <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
             {markerStyle.label}
@@ -141,7 +144,7 @@ function LocationAside({
           <dt className="text-zinc-500">Health</dt>
           <dd className="font-medium text-foreground">
             {location.healthTier ?
-              HEALTH_LABELS[location.healthTier]
+              WORKSPACE_HEALTH_LABELS[location.healthTier]
             : "—"}
           </dd>
           <dt className="text-zinc-500">Last active</dt>

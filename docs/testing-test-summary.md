@@ -15,7 +15,11 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/services/compute-workspace-behavior.unit.test.ts` | Churn/growth/re-engagement profiles | TC-DASH-01 |
 | `unit/services/count-smartrefill-user-roles.unit.test.ts` | Owner/admin/rider counts | TC-DASH-01 |
 | `unit/services/generate-ai-sales-insights.unit.test.ts` | AI insight payload shaping | TC-DASH-01 |
-| `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline mapping | TC-DASH-05 |
+| `unit/services/generate-dashboard-forecasts.unit.test.ts` ✅ | Fallback forecasts + actor reshape | TC-DASH-08 |
+| `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline mapping | TC-DASH-05, TC-DASH-09 |
+| `unit/services/build-todays-work-inbox.unit.test.ts` | Today’s work dedupe | TC-DASH-07 |
+| `unit/services/build-new-joiners.unit.test.ts` | New joiners aggregation | TC-DASH-07 |
+| `unit/services/filter-new-joiners-for-actor.unit.test.ts` | Role-scoped joiners | TC-DASH-07 |
 
 ---
 
@@ -37,7 +41,8 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 |-----------|--------|-----------|
 | `bdd/health.spec.ts` ✅ | Emulator health endpoint | — |
 | `bdd/auth.spec.ts` ✅ | Seeded user auth status | TC-AUTH-05 … TC-AUTH-08 |
-| `bdd/dashboard-analytics.spec.ts` 🔲 | Full analytics JSON contract | TC-DASH-01 |
+| `bdd/dashboard-analytics.spec.ts` ✅ | Analytics JSON contract + role scope + forecasts | TC-DASH-01, TC-DASH-07, TC-DASH-08 |
+| `bdd/admin-users.spec.ts` ✅ | Admin user routes | TC-ADM-01 |
 | `bdd/admin-catalog.spec.ts` 🔲 | Catalog lifecycle | TC-SUB-* |
 | `bdd/content-studio.spec.ts` 🔲 | Generate flow | TC-CS-02 |
 
@@ -49,7 +54,15 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 
 | Test file | Covers | Manual QA |
 |-----------|--------|-----------|
-| `unit/features/dashboard/nav-items.test.ts` ✅ | Role-based nav config | TC-AUTH-07, TC-AUTH-08, TC-NAV-02 |
+| `unit/features/dashboard/nav-items.test.ts` ✅ | Role-based nav + dashboard children | TC-AUTH-07, TC-NAV-02, TC-DASH-06 |
+| `unit/features/dashboard/resolve-dashboard-page-title.test.ts` ✅ | Shell header titles per route | TC-DASH-06, TC-DASH-07 |
+| `unit/features/dashboard/app-chart-groups.test.ts` ✅ | Non-overlapping per-app chart kinds | TC-DASH-06, TC-DASH-07 |
+| `unit/features/dashboard/forecast-items.test.ts` ✅ | Forecast slice per app | TC-DASH-08 |
+| `unit/features/dashboard/build-hub-app-stats.test.ts` ✅ | Hub KPI grouping | TC-DASH-01 |
+| `unit/features/dashboard/sort-active-owners.test.ts` ✅ | Owner sort + 5-row cap | TC-DASH-10 |
+| `unit/features/dashboard/build-subscription-approval-queue.test.ts` ✅ | Approval queue rows | TC-DASH-05, TC-DASH-09 |
+| `unit/lib/dashboard-analytics-normalize.test.ts` ✅ | `newJoiners`, `dashboardForecasts` defaults | TC-DASH-01 |
+| `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |
 | `unit/lib/auth-status.test.ts` 🔲 | Post-login path resolution | TC-AUTH-05, TC-AUTH-06 |
 | `unit/lib/bff-url.test.ts` 🔲 | Dev/prod API URL selection | — |
 
@@ -60,7 +73,8 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | Test file | Covers | Manual QA |
 |-----------|--------|-----------|
 | `bdd/login.spec.ts` ✅ | Login page renders | TC-AUTH-01 |
-| `bdd/dashboard.spec.ts` ✅ | Dashboard smoke (unauthenticated redirect) | TC-DASH-01 |
+| `bdd/dashboard.spec.ts` ✅ | Dashboard routes unauthenticated redirect | TC-DASH-01, TC-DASH-06, TC-DASH-07 |
+| `bdd/mobile-nav.spec.ts` ✅ | Mobile nav smoke | TC-NAV-03 |
 | `bdd/content-studio.spec.ts` 🔲 | Content studio form | TC-CS-01 |
 | `bdd/subscriptions-catalog.spec.ts` 🔲 | Admin catalog pages | TC-SUB-01 |
 | `bdd/admin-permissions.spec.ts` 🔲 | Permissions UI | TC-ADM-01, TC-ADM-02 |
@@ -71,9 +85,9 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 
 ## Coverage priorities (next)
 
-1. Backend integration tests for `auth-middleware` (401/403)
-2. Backend BDD with `seed-emulator.js` sales-portal users
-3. Frontend BDD login → dashboard with test credentials / E2E bypass
+1. Authenticated frontend BDD for dashboard tabs (Actions/Forecast, Actions/Joiners) with seeded emulator user
+2. Backend integration tests for `auth-middleware` (401/403) on `/dashboard/analytics`
+3. Chart breakdown formatter unit tests
 4. Content Studio integration test with mocked Gemini client
 
 Update this file when adding or renaming test files.

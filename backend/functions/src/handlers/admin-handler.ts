@@ -7,6 +7,7 @@ import {
   deleteAdminUsers,
   listAdminUsers,
   updateAdminUserAppAccess,
+  revokeAdminUserAccess,
   type AdminAppAccessEntry,
 } from "../services/admin-user-service";
 import { listDataManagementOverview } from "../services/admin-data-management-service";
@@ -128,6 +129,52 @@ export const patchAdminUserAppAccess = async (
     }
     logger.error("Failed to update user app access", { error, uid });
     res.status(500).json({ error: "Failed to update permissions." });
+  }
+};
+
+export const postRevokeAdminUserAccess = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const uid = String(req.params.uid || "");
+  const actorUid = req.user?.uid;
+
+  if (!uid) {
+    res.status(400).json({ error: "User id is required." });
+    return;
+  }
+  if (!actorUid) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const user = await revokeAdminUserAccess(uid, actorUid);
+    res.json({ data: { user } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "CANNOT_REVOKE_SELF") {
+      res.status(400).json({ error: "You cannot revoke your own access." });
+      return;
+    }
+    if (message === "USER_NOT_FOUND") {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    if (message === "NO_APP_ACCESS") {
+      res.status(400).json({ error: "User has no app access to revoke." });
+      return;
+    }
+    if (message === "ALREADY_REVOKED") {
+      res.status(400).json({ error: "User access is already revoked." });
+      return;
+    }
+    if (message.startsWith("Invalid") || message.startsWith("SmartRefill")) {
+      res.status(400).json({ error: message });
+      return;
+    }
+    logger.error("Failed to revoke user app access", { error, uid });
+    res.status(500).json({ error: "Failed to revoke access." });
   }
 };
 

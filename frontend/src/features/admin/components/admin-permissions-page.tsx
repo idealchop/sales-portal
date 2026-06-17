@@ -13,7 +13,7 @@ export function AdminPermissionsPage() {
   const router = useRouter();
   const { profile, loading: profileLoading } = useSalesProfile();
   const { uid: currentUid } = useAuthUid();
-  const { users, isLoading, error, createUser, saveAppAccess, deleteUsers } =
+  const { users, isLoading, error, createUser, saveAppAccess, revokeUserAccess, deleteUsers } =
     useAdminUsers();
 
   useEffect(() => {
@@ -58,6 +58,7 @@ export function AdminPermissionsPage() {
         error={error}
         currentUid={currentUid}
         onSave={saveAppAccess}
+        onRevoke={revokeUserAccess}
         onDelete={deleteUsers}
       />
     </div>

@@ -9,14 +9,29 @@ import { cn } from "@/lib/utils";
 import { DASHBOARD_NAV, type NavItem } from "@/features/dashboard/config/nav-items";
 import type { SalesPortalRole } from "@/lib/auth-status";
 
+function isChildNavActive(pathname: string, childHref: string): boolean {
+  if (childHref === "/dashboard") return pathname === "/dashboard";
+  return pathname.startsWith(childHref);
+}
+
 function isItemActive(pathname: string, item: NavItem): boolean {
   if (item.href === "/dashboard") {
-    return pathname === "/dashboard";
+    return (
+      pathname === "/dashboard" ||
+      pathname.startsWith("/dashboard/smartrefill") ||
+      pathname.startsWith("/dashboard/sales-portal")
+    );
   }
   return pathname.startsWith(item.href);
 }
 
-export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
+export function DashboardNav({
+  role,
+  onNavigate,
+}: {
+  role: SalesPortalRole | null;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {},
@@ -48,7 +63,7 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
         const groupExpanded = hasChildren && isGroupExpanded(item);
         const childActive =
           hasChildren &&
-          item.children!.some((child) => pathname.startsWith(child.href));
+          item.children!.some((child) => isChildNavActive(pathname, child.href));
         const isActive =
           hasChildren ? childActive : isItemActive(pathname, item);
         const Icon = item.icon;
@@ -61,7 +76,7 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
                 onClick={() => toggleGroup(item.href)}
                 aria-expanded={groupExpanded}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition min-h-11",
                   isActive ?
                     "bg-[var(--primary)] text-white shadow-sm"
                   : "text-zinc-600 hover:bg-teal-50 hover:text-teal-900",
@@ -78,13 +93,14 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
               </button>
             : <Link
                 href={item.href}
+                onClick={onNavigate}
                 title={
                   item.maintenance ?
                     `${item.label} — coming soon`
                   : undefined
                 }
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition min-h-11",
                   isActive ?
                     "bg-[var(--primary)] text-white shadow-sm"
                   : "text-zinc-600 hover:bg-teal-50 hover:text-teal-900",
@@ -94,7 +110,6 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
                 <span className="flex-1">{item.label}</span>
                 {item.maintenance ?
                   <Badge
-                    variant="secondary"
                     className="shrink-0 border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide text-amber-800"
                   >
                     Soon
@@ -106,13 +121,14 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
             {hasChildren && groupExpanded && (
               <div className="ml-4 mt-1 space-y-0.5 border-l border-zinc-200 pl-3">
                 {item.children!.map((child) => {
-                  const childIsActive = pathname.startsWith(child.href);
+                  const childIsActive = isChildNavActive(pathname, child.href);
                   return (
                     <Link
                       key={child.href}
                       href={child.href}
+                      onClick={onNavigate}
                       className={cn(
-                        "block rounded-md px-3 py-2 text-sm transition",
+                        "block rounded-md px-3 py-2 text-sm transition min-h-11",
                         childIsActive ?
                           "bg-teal-50 font-medium text-teal-900"
                         : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800",

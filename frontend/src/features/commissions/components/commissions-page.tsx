@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -20,6 +22,8 @@ type MonthlyPayout = {
   paidAmount: number;
   commissions: Commission[];
 };
+
+type StatusFilter = "all" | "pending" | "paid";
 
 function monthKey(createdAt: string) {
   const date = new Date(createdAt);
@@ -68,33 +72,88 @@ function groupCommissionsByMonth(commissions: Commission[]): MonthlyPayout[] {
     .sort((a, b) => b.month.localeCompare(a.month));
 }
 
+function exportCommissionsCsv(commissions: Commission[]) {
+  const header = ["date", "description", "type", "status", "amount"];
+  const rows = commissions.map((row) => [
+    row.createdAt.slice(0, 10),
+    `"${row.description.replaceAll('"', '""')}"`,
+    row.type,
+    row.status,
+    String(row.amount),
+  ]);
+  const csv = [header.join(","), ...rows.map((row) => row.join(","))].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `commissions-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export function CommissionsPage() {
   const { commissions, isLoading, error } = useCommissions();
-  const payouts = useMemo(() => groupCommissionsByMonth(commissions), [commissions]);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  const filtered = useMemo(() => {
+    if (statusFilter === "all") return commissions;
+    return commissions.filter((row) => row.status === statusFilter);
+  }, [commissions, statusFilter]);
+
+  const payouts = useMemo(
+    () => groupCommissionsByMonth(filtered),
+    [filtered],
+  );
 
   const totals = useMemo(() => {
-    const pending = commissions
+    const pending = filtered
       .filter((row) => row.status === "pending")
       .reduce((sum, row) => sum + row.amount, 0);
-    const paid = commissions
+    const paid = filtered
       .filter((row) => row.status === "paid")
       .reduce((sum, row) => sum + row.amount, 0);
     return { pending, paid, total: pending + paid };
-  }, [commissions]);
+  }, [filtered]);
+
+  const forecastPending = totals.pending;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Commissions</h1>
-        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-          Track pending and paid commission earnings by payout month.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Commissions</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+            Filter by status, export records, and track payout forecast.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={commissions.length === 0}
+          onClick={() => exportCommissionsCsv(filtered)}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="flex flex-wrap gap-2">
+        {(["all", "pending", "paid"] as const).map((value) => (
+          <Button
+            key={value}
+            size="sm"
+            variant={statusFilter === value ? "primary" : "outline"}
+            onClick={() => setStatusFilter(value)}
+          >
+            {value === "all" ? "All" : value.charAt(0).toUpperCase() + value.slice(1)}
+          </Button>
+        ))}
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total earned</CardDescription>
+            <CardDescription>Total (filtered)</CardDescription>
             <CardTitle>{formatPhp(totals.total)}</CardTitle>
           </CardHeader>
         </Card>
@@ -110,6 +169,12 @@ export function CommissionsPage() {
             <CardTitle>{formatPhp(totals.paid)}</CardTitle>
           </CardHeader>
         </Card>
+        <Card className="border-teal-100 bg-teal-50/40">
+          <CardHeader className="pb-2">
+            <CardDescription>Forecast (pending)</CardDescription>
+            <CardTitle>{formatPhp(forecastPending)}</CardTitle>
+          </CardHeader>
+        </Card>
       </div>
 
       {isLoading ?
@@ -119,7 +184,7 @@ export function CommissionsPage() {
       : payouts.length === 0 ?
         <Card>
           <CardContent className="py-8 text-center text-sm text-[var(--muted-foreground)]">
-            No commissions recorded yet.
+            No commissions match this filter.
           </CardContent>
         </Card>
       : payouts.map((payout) => (

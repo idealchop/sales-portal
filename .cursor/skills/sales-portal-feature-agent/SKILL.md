@@ -30,5 +30,11 @@ Implements items from [`docs/backlog-actionable.md`](../../../docs/backlog-actio
 | 2 | `feature/SP-2` | AB-07 … AB-11 |
 | 3 | `feature/SP-3` | AB-12 … AB-19 |
 | 4 | `feature/SP-4` | AB-20 … AB-24 |
+| 5 | `feature/SP-4` | AB-25 |
+| 6 | `feature/SP-5` | AB-26 … AB-28 |
+| 7 | `feature/SP-6` | AB-29 … AB-35 |
+| 8 | `feature/SP-8` | AB-36 … AB-38, AB-45 |
+| 9 | `feature/SP-9` | AB-39 … AB-41 |
+| 10 | `feature/SP-10` | AB-42 … AB-44 |
 
 See [`docs/agent-workflow.md`](../../../docs/agent-workflow.md) for full workflow.

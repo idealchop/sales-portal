@@ -3,9 +3,8 @@
 import {
   AlertTriangle,
   ArrowUpCircle,
-  Briefcase,
   CircleDollarSign,
-  Target,
+  Mail,
   TrendingUp,
   UserPlus,
 } from "lucide-react";
@@ -15,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -24,6 +22,9 @@ import type {
   SalesAction,
   SalesActionType,
 } from "@/lib/dashboard/analytics";
+import {
+  WORKSPACE_HEALTH_LABELS,
+} from "@/lib/dashboard/workspace-health";
 import { formatPhp } from "@/lib/format";
 
 const ACTION_PAGE_SIZE = 8;
@@ -42,12 +43,6 @@ const PRIORITY_STYLES: Record<SalesAction["priority"], string> = {
   medium: "bg-amber-100 text-amber-800",
   low: "bg-zinc-100 text-zinc-700",
 };
-
-const HEALTH_LABELS = {
-  high: "Healthy",
-  medium: "Growing",
-  low: "At risk",
-} as const;
 
 function SalesStatCard({
   title,
@@ -68,8 +63,8 @@ function SalesStatCard({
             <p className="text-sm font-medium text-[var(--muted-foreground)]">
               {title}
             </p>
-            <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
-            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+            <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{value}</p>
+            <p className="mt-1 text-xs tabular-nums text-[var(--muted-foreground)]">
               {subtitle}
             </p>
           </div>
@@ -85,9 +80,13 @@ function SalesStatCard({
 export function SalesInsightsPanel({
   salesInsights,
   proposalPipeline,
+  embedded = false,
+  hideStatCards = false,
 }: {
   salesInsights: DashboardAnalytics["salesInsights"];
   proposalPipeline: DashboardAnalytics["proposalPipeline"];
+  embedded?: boolean;
+  hideStatCards?: boolean;
 }) {
   const healthTotal = salesInsights.workspaceHealth.reduce(
     (sum, row) => sum + row.count,
@@ -95,56 +94,53 @@ export function SalesInsightsPanel({
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">
-          Sales intelligence
-        </h2>
-        <p className="text-sm text-[var(--muted-foreground)]">
-          Prioritized actions, revenue signals, and pipeline health for your
-          team.
-        </p>
-      </div>
+    <div className="space-y-4">
+      {!embedded ?
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+          Platform sales
+        </h3>
+      : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SalesStatCard
-          title="Estimated MRR"
-          value={formatPhp(salesInsights.estimatedMrr)}
-          subtitle={`${salesInsights.pendingPayments} pending payment verifications`}
-          icon={<CircleDollarSign className="h-5 w-5" />}
-        />
-        <SalesStatCard
-          title="Follow-ups needed"
-          value={salesInsights.salesActions.length.toLocaleString()}
-          subtitle={`${salesInsights.atRiskWorkspaces} at-risk workspaces`}
-          icon={<AlertTriangle className="h-5 w-5" />}
-        />
-        <SalesStatCard
-          title="Upsell opportunities"
-          value={salesInsights.upgradeOpportunities.toLocaleString()}
-          subtitle="Starter plans with high usage"
-          icon={<ArrowUpCircle className="h-5 w-5" />}
-        />
-        <SalesStatCard
-          title="New this month"
-          value={`+${salesInsights.newWorkspacesThisMonth}`}
-          subtitle={`${salesInsights.newSmartRefillUsersThisMonth} new SmartRefill users`}
-          icon={<UserPlus className="h-5 w-5" />}
-        />
-      </div>
+      {!hideStatCards ?
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <SalesStatCard
+            title="MRR"
+            value={formatPhp(salesInsights.estimatedMrr)}
+            subtitle={`${salesInsights.pendingPayments} pending`}
+            icon={<CircleDollarSign className="h-5 w-5" />}
+          />
+          <SalesStatCard
+            title="Follow-ups"
+            value={salesInsights.salesActions.length.toLocaleString()}
+            subtitle={`${salesInsights.atRiskWorkspaces} at-risk`}
+            icon={<AlertTriangle className="h-5 w-5" />}
+          />
+          <SalesStatCard
+            title="Upsell"
+            value={salesInsights.upgradeOpportunities.toLocaleString()}
+            subtitle="high-usage Starter"
+            icon={<ArrowUpCircle className="h-5 w-5" />}
+          />
+          <SalesStatCard
+            title="New MTD"
+            value={`+${salesInsights.newWorkspacesThisMonth}`}
+            subtitle={`+${salesInsights.newSmartRefillUsersThisMonth} users`}
+            icon={<UserPlus className="h-5 w-5" />}
+          />
+        </div>
+      : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Priority action queue</CardTitle>
-            <CardDescription>
-              Workspaces that need sales outreach now.
-            </CardDescription>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide">
+              Action queue · {salesInsights.salesActions.length}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {salesInsights.salesActions.length === 0 ? (
               <p className="py-8 text-center text-sm text-[var(--muted-foreground)]">
-                No urgent actions — all workspaces look healthy.
+                0 actions
               </p>
             ) : (
               <PaginatedList
@@ -176,9 +172,13 @@ export function SalesInsightsPanel({
                           {action.detail}
                         </p>
                         {action.ownerEmail && (
-                          <p className="mt-2 text-xs text-zinc-500">
-                            {action.ownerEmail}
-                          </p>
+                          <a
+                            href={`mailto:${action.ownerEmail}?subject=${encodeURIComponent(`SmartRefill — ${action.businessName}`)}`}
+                            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:underline"
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            Email {action.ownerEmail}
+                          </a>
                         )}
                       </div>
                       <div className="text-right text-xs text-[var(--muted-foreground)]">
@@ -200,9 +200,10 @@ export function SalesInsightsPanel({
 
         <div className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Workspace health</CardTitle>
-              <CardDescription>Engagement tier across accounts.</CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide">
+                Health · {healthTotal}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {salesInsights.workspaceHealth.map((row) => {
@@ -214,7 +215,7 @@ export function SalesInsightsPanel({
                   <div key={row.tier}>
                     <div className="mb-1 flex justify-between text-sm">
                       <span className="font-medium">
-                        {HEALTH_LABELS[row.tier]}
+                        {WORKSPACE_HEALTH_LABELS[row.tier]}
                       </span>
                       <span className="text-[var(--muted-foreground)]">
                         {row.count} ({pct}%)
@@ -235,16 +236,17 @@ export function SalesInsightsPanel({
                   </div>
                 );
               })}
-              <p className="text-xs text-[var(--muted-foreground)]">
-                {salesInsights.inactiveWorkspaces} workspaces had zero
-                transactions in the last 30 days.
+              <p className="text-xs tabular-nums text-[var(--muted-foreground)]">
+                {salesInsights.inactiveWorkspaces} inactive · 30d
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">MRR by plan</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide">
+                MRR by plan
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {salesInsights.mrrByPlan.length === 0 ? (
@@ -263,7 +265,7 @@ export function SalesInsightsPanel({
                     >
                       <span className="font-medium">{row.plan}</span>
                       <span className="text-[var(--muted-foreground)]">
-                        {formatPhp(row.mrr)} · {row.workspaces} ws
+                        {formatPhp(row.mrr)} · {row.workspaces} workspaces
                       </span>
                     </div>
                   )}
@@ -276,11 +278,10 @@ export function SalesInsightsPanel({
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Payment status</CardTitle>
-            <CardDescription>
-              Subscription payment verification across workspaces.
-            </CardDescription>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide">
+              Payments
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {salesInsights.paymentStatusBreakdown.length > 0 ? (
@@ -301,16 +302,10 @@ export function SalesInsightsPanel({
         </Card>
 
         <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-[var(--primary)]" />
-              <div>
-                <CardTitle className="text-base">Proposal pipeline</CardTitle>
-                <CardDescription>
-                  Sales portal proposals and client mix.
-                </CardDescription>
-              </div>
-            </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide">
+              Pipeline · {proposalPipeline.totalProposals}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -366,18 +361,12 @@ export function SalesInsightsPanel({
                 )}
               />
             ) : (
-              <p className="text-sm text-[var(--muted-foreground)]">
-                No proposals yet — pipeline metrics will appear when your team
-                starts creating proposals.
-              </p>
+              <p className="text-sm text-[var(--muted-foreground)]">0 proposals</p>
             )}
 
             {proposalPipeline.clientsByType.length > 0 && (
               <div className="mt-4 border-t border-[var(--border)] pt-4">
-                <p className="mb-2 flex items-center gap-1 text-sm font-medium">
-                  <Target className="h-4 w-4" />
-                  Clients by segment
-                </p>
+                <p className="mb-2 text-sm font-medium">Segments</p>
                 <div className="flex flex-wrap gap-2">
                   {proposalPipeline.clientsByType.map((row) => (
                     <Badge key={row.type}>

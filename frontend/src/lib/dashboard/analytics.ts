@@ -59,6 +59,8 @@ export type BusinessMapLocation = {
   customers?: number;
   transactionsLast30Days?: number;
   lastActiveDay?: string;
+  appId?: string;
+  appLabel?: string;
 };
 
 export type OwnerSubscriptionTimeline = "past" | "current" | "future";
@@ -72,6 +74,9 @@ export type OwnerSubscription = {
   price: number;
   paymentStatus?: string;
   paymentReference?: string;
+  paymentMethod?: string;
+  receiptUrl?: string;
+  attachmentUrl?: string;
   timeline: OwnerSubscriptionTimeline;
   createdAt?: string;
   activatedAt?: string;
@@ -138,6 +143,12 @@ export type DashboardAnalytics = {
   growthSalesMetrics: GrowthSalesMetrics;
   chartTimeSeries: ChartTimeSeries;
   chartBusinessContext: ChartBusinessContext[];
+  aiSalesInsights: AiSalesInsights;
+  dashboardForecasts: DashboardForecasts;
+  newJoiners: NewJoinersSummary;
+  personalSales?: PersonalSalesSummary;
+  todaysWork?: TodaysWorkItem[];
+  analyticsScope?: AnalyticsScope;
 };
 
 export type BreakdownRow = {
@@ -269,6 +280,143 @@ export type ProposalPipeline = {
   clientsByType: { type: string; count: number }[];
 };
 
+export type AiSalesAccountInsight = {
+  businessName: string;
+  recommendedAction: string;
+  reason: string;
+  priority: "high" | "medium" | "low";
+};
+
+export type AiSalesInsights = {
+  revenueChurnRiskSummary: string;
+  growthOpportunitySummary: string;
+  behavioralReengagementSummary: string;
+  priorityActionsSummary: string;
+  revenueChurnRisk: AiSalesAccountInsight[];
+  growthOpportunities: AiSalesAccountInsight[];
+  behavioralReengagement: AiSalesAccountInsight[];
+  priorityActions: AiSalesAccountInsight[];
+  aiEnabled: boolean;
+};
+
+export type DashboardForecastHorizon = "30d" | "60d" | "90d";
+
+export type DashboardForecastItem = {
+  id: string;
+  appId: "platform" | "smartrefill" | "sales-portal";
+  horizon: DashboardForecastHorizon;
+  metric: string;
+  current: string;
+  projected: string;
+  delta: string;
+  roiImpact: string;
+  action: string;
+  priority: "high" | "medium" | "low";
+};
+
+export type DashboardForecasts = {
+  platform: DashboardForecastItem[];
+  smartrefill: DashboardForecastItem[];
+  salesPortal: DashboardForecastItem[];
+  aiEnabled: boolean;
+};
+
+export type NewSalesRepJoiner = {
+  id: string;
+  displayName: string;
+  email?: string;
+  role?: string;
+  team?: string;
+  onboardingComplete: boolean;
+  joinedAt: string | null;
+};
+
+export type NewBusinessJoiner = {
+  id: string;
+  name: string;
+  ownerEmail?: string;
+  planName?: string;
+  onboardingComplete: boolean;
+  joinedAt: string | null;
+};
+
+export type NewPlatformUserJoiner = {
+  id: string;
+  displayName?: string;
+  email?: string;
+  role: string;
+  joinedAt: string | null;
+};
+
+export type NewJoinersSummary = {
+  salesReps: NewSalesRepJoiner[];
+  businesses: NewBusinessJoiner[];
+  platformUsers: NewPlatformUserJoiner[];
+};
+
+export type PersonalSalesSummary = {
+  totalProposals: number;
+  totalClients: number;
+  pipelineValue: number;
+  acceptedValue: number;
+  winRate: number;
+  commissionsMtd: number;
+  pendingCommissions: number;
+  paidCommissionsMtd: number;
+  draftsNeedingAction: number;
+  sentAwaitingResponse: number;
+};
+
+export type TodaysWorkItem = {
+  id: string;
+  source: "sales_action" | "ai_insight" | "approval" | "proposal";
+  priority: "high" | "medium" | "low";
+  title: string;
+  subtitle: string;
+  email?: string;
+  href?: string;
+};
+
+export type AnalyticsScope = "platform" | "team" | "personal";
+
+const EMPTY_NEW_JOINERS: NewJoinersSummary = {
+  salesReps: [],
+  businesses: [],
+  platformUsers: [],
+};
+
+const EMPTY_PERSONAL_SALES: PersonalSalesSummary = {
+  totalProposals: 0,
+  totalClients: 0,
+  pipelineValue: 0,
+  acceptedValue: 0,
+  winRate: 0,
+  commissionsMtd: 0,
+  pendingCommissions: 0,
+  paidCommissionsMtd: 0,
+  draftsNeedingAction: 0,
+  sentAwaitingResponse: 0,
+};
+
+const EMPTY_DASHBOARD_FORECASTS: DashboardForecasts = {
+  platform: [],
+  smartrefill: [],
+  salesPortal: [],
+  aiEnabled: false,
+};
+
+const EMPTY_AI_SALES_INSIGHTS: AiSalesInsights = {
+  revenueChurnRiskSummary: "",
+  growthOpportunitySummary: "",
+  behavioralReengagementSummary: "",
+  priorityActionsSummary: "",
+  revenueChurnRisk: [],
+  growthOpportunities: [],
+  behavioralReengagement: [],
+  priorityActions: [],
+  aiEnabled: false,
+};
+
 const EMPTY_SALES_INSIGHTS: SalesInsights = {
   estimatedMrr: 0,
   pendingPayments: 0,
@@ -384,5 +532,11 @@ export function normalizeDashboardAnalytics(
       usageGoals: biz.usageGoals ?? [],
       gettingStarted: biz.gettingStarted ?? {},
     })),
+    aiSalesInsights: raw.aiSalesInsights ?? EMPTY_AI_SALES_INSIGHTS,
+    dashboardForecasts: raw.dashboardForecasts ?? EMPTY_DASHBOARD_FORECASTS,
+    newJoiners: raw.newJoiners ?? EMPTY_NEW_JOINERS,
+    personalSales: raw.personalSales ?? EMPTY_PERSONAL_SALES,
+    todaysWork: raw.todaysWork ?? [],
+    analyticsScope: raw.analyticsScope,
   };
 }

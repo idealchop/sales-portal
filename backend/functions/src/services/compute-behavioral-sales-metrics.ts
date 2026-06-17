@@ -15,6 +15,7 @@ import { isPaymentPending, isUpgradeOpportunity } from "./compute-sales-insights
 import {
   aiInsightsToBreakdownRows,
   generateAiSalesInsights,
+  type AiSalesInsightsResult,
 } from "./generate-ai-sales-insights";
 import type { SmartRefillUserRecord } from "./build-user-growth-breakdown";
 import { SMARTREFILL_APP_ID } from "../constants/smartrefill";
@@ -84,7 +85,10 @@ export async function computeBehavioralSalesMetrics(input: {
   businessOwnerIds: Set<string>;
   activeWindowStartKey: string;
   todayKey: string;
-}): Promise<DashboardMetric[]> {
+}): Promise<{
+  sales: DashboardMetric[];
+  aiSalesInsights: AiSalesInsightsResult;
+}> {
   const {
     businesses,
     ownerLastActive,
@@ -310,5 +314,5 @@ export async function computeBehavioralSalesMetrics(input: {
     },
   ];
 
-  return sales;
+  return { sales, aiSalesInsights: aiInsights };
 }

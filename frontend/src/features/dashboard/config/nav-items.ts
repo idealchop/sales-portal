@@ -27,6 +27,11 @@ export const DASHBOARD_NAV: NavItem[] = [
     icon: LayoutDashboard,
     roles: ["sales", "manager", "admin"],
     maintenance: false,
+    children: [
+      { href: "/dashboard", label: "Platform overview" },
+      { href: "/dashboard/smartrefill", label: "SmartRefill" },
+      { href: "/dashboard/sales-portal", label: "Sales Portal" },
+    ],
   },
   {
     href: "/dashboard/my-team",

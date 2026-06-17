@@ -2,9 +2,11 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { DashboardHeader } from "./dashboard-header";
 import { DashboardNav } from "./dashboard-nav";
+import { DashboardAnalyticsProvider } from "@/features/dashboard/components/dashboard-analytics-context";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useSalesProfile } from "@/hooks/use-sales-profile";
 import { prefetchDashboardAnalytics } from "@/lib/dashboard/fetch-dashboard-analytics";
@@ -33,7 +35,14 @@ function profileFromAuthStatus(
 export function DashboardShell({ children }: { children: ReactNode }) {
   const { loading, status } = useAuthGuard("dashboard");
   const { profile } = useSalesProfile();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
+
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    if (mobileOpen) setMobileOpen(false);
+  }
 
   useEffect(() => {
     if (!loading && status) {
@@ -77,7 +86,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <DashboardNav role={role} />
+          <DashboardNav role={role} onNavigate={() => setMobileOpen(false)} />
         </div>
         <div className="border-t border-[var(--border)] p-4 text-xs text-zinc-400">
           v2.0
@@ -85,14 +94,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <DashboardHeader
-          profile={headerProfile}
-          role={role}
-          onMenuClick={() => setMobileOpen(true)}
-        />
-        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto w-full max-w-7xl">{children}</div>
-        </main>
+        <DashboardAnalyticsProvider>
+          <DashboardHeader
+            profile={headerProfile}
+            role={role}
+            onMenuClick={() => setMobileOpen((open) => !open)}
+          />
+          <main className="flex-1 overflow-auto px-4 py-3 sm:px-8 sm:py-4 lg:px-12 lg:py-5 xl:px-16">
+            <div className="mx-auto w-full max-w-5xl">{children}</div>
+          </main>
+        </DashboardAnalyticsProvider>
       </div>
     </div>
   );

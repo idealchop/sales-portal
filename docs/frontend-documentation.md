@@ -36,7 +36,10 @@ frontend/src/app/
 ├── page.tsx                    # Redirect to login or dashboard
 ├── login/
 ├── onboarding/
-├── dashboard/                  # Main analytics shell
+├── dashboard/                  # Multi-app analytics shell
+│   ├── page.tsx                # Platform hub
+│   ├── smartrefill/            # SmartRefill app dashboard
+│   └── sales-portal/           # Sales Portal app dashboard
 ├── content-studio/
 ├── subscriptions/              # Admin catalog (plans, addons, vouchers)
 └── admin/                      # Permissions, data management
@@ -72,7 +75,9 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 
 | Path | Role | Status |
 |------|------|--------|
-| `/dashboard` | sales, manager, admin | Live — platform analytics (SmartRefill metrics today) |
+| `/dashboard` | sales, manager, admin | Live — platform hub (rollup KPIs, map, per-app charts, ROI) |
+| `/dashboard/smartrefill` | sales, manager, admin | Live — product usage KPIs, map, SmartRefill charts, insights/forecast |
+| `/dashboard/sales-portal` | sales, manager, admin | Live — rep KPIs, actions/joiners tabs, revenue charts, insights/forecast |
 | `/dashboard/settings` | sales, manager, admin | Live — read-only profile |
 | `/content-studio` | sales, manager, admin | Live |
 | `/subscriptions/*` | admin | Live (catalog CRUD) |

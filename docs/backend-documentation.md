@@ -59,7 +59,7 @@ All routes are mounted at the function root (no `/api` prefix).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload |
+| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes `dashboardForecasts`, `personalSales`, `todaysWork`) |
 | `POST` | `/dashboard/subscriptions/:businessId/:subscriptionId/approve` | Portal | Approve pending subscription |
 
 ### Content Studio (`/content-studio`)
@@ -113,6 +113,8 @@ All admin routes require **Bearer token**, **sales-portal access**, and **`admin
 | `GET` | `/admin/users` | User list with `appAccess` summary |
 | `POST` | `/admin/users` | Create Firebase Auth user + profile |
 | `POST` | `/admin/users/bulk-delete` | Bulk delete users |
+| `POST` | `/admin/users/:uid/revoke-access` | Revoke all app access for a user |
+| `GET` | `/dashboard/sales-home` | Lightweight rep-focused dashboard payload |
 | `PATCH` | `/admin/users/:uid/app-access` | Grant/revoke portal and product app access |
 | `GET` | `/admin/users/:uid/documents` | List Firestore documents for a user |
 | `PUT` | `/admin/users/:uid/documents` | Upsert user Firestore document |

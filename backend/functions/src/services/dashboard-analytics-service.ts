@@ -9,6 +9,11 @@ import {
   type AppFeedbackSummary,
 } from "./compute-app-feedback";
 import { computeBehavioralSalesMetrics } from "./compute-behavioral-sales-metrics";
+import type { AiSalesInsightsResult } from "./generate-ai-sales-insights";
+import {
+  generateDashboardForecasts,
+  type DashboardForecasts,
+} from "./generate-dashboard-forecasts";
 import {
   computeGrowthSalesMetrics,
   type GrowthSalesMetrics,
@@ -40,6 +45,7 @@ import {
   type ChartTimeSeries,
 } from "./build-chart-time-series";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
+import { buildNewJoiners, type NewJoinersSummary } from "./build-new-joiners";
 
 const BUSINESS_QUERY_CONCURRENCY = 20;
 const LOGIN_EVENT_QUERY_CONCURRENCY = 25;
@@ -115,6 +121,9 @@ export type DashboardAnalytics = {
   growthSalesMetrics: GrowthSalesMetrics;
   chartTimeSeries: ChartTimeSeries;
   chartBusinessContext: ChartBusinessContext[];
+  aiSalesInsights: AiSalesInsightsResult;
+  dashboardForecasts: DashboardForecasts;
+  newJoiners: NewJoinersSummary;
 };
 
 function toDate(value: unknown): Date | null {
@@ -203,13 +212,14 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [usersSnap, businessesSnap, proposalsSnap, clientsSnap, appsFeedbackSnap] =
+  const [usersSnap, businessesSnap, proposalsSnap, clientsSnap, appsFeedbackSnap, salesSnap] =
     await Promise.all([
       db.collection("users").get(),
       db.collection("businesses").get(),
       db.collection("proposals").get(),
       db.collection("clients").get(),
       db.collection("apps_feedback").get(),
+      db.collection("sales").get(),
     ]);
 
   const smartRefillUsers = usersSnap.docs.filter((doc) =>
@@ -738,7 +748,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     subscriptionsByBusiness,
   });
 
-  const sales = await computeBehavioralSalesMetrics({
+  const behavioral = await computeBehavioralSalesMetrics({
     businesses: businessSnapshots,
     ownerLastActive,
     smartRefillUserRecords,
@@ -749,7 +759,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
 
   const growthSalesMetrics: GrowthSalesMetrics = {
     growth,
-    sales,
+    sales: behavioral.sales,
     activeOwners,
   };
 
@@ -778,6 +788,31 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     deviceSessionsDaily: flattenDailyUsage(chartDeviceSessions),
     browserSessionsDaily: flattenDailyUsage(chartBrowserSessions),
   };
+
+  const newJoiners = buildNewJoiners({
+    salesDocs: salesSnap.docs,
+    recentBusinesses,
+    smartRefillUsers: smartRefillUsers.map((doc) => ({
+      id: doc.id,
+      data: doc.data(),
+    })),
+    businessOwnerIds,
+  });
+
+  const dashboardForecasts = await generateDashboardForecasts({
+    summary: {
+      smartRefillUsers: smartRefillUsers.length,
+      onboardedBusinesses,
+      totalBusinesses: businessDocs.length,
+      totalCustomers,
+      activeLoginUsers: activeUserIds.size,
+      transactionsLast30Days,
+      refillVolumeLast30Days,
+    },
+    salesInsights,
+    proposalPipeline,
+    aiSalesInsights: behavioral.aiSalesInsights,
+  });
 
   return {
     summary: {
@@ -838,5 +873,8 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     growthSalesMetrics,
     chartTimeSeries,
     chartBusinessContext,
+    aiSalesInsights: behavioral.aiSalesInsights,
+    dashboardForecasts,
+    newJoiners,
   };
 }

@@ -40,11 +40,89 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | AB-18 | Manager My Team page | ✅ Shipped |
 | AB-19 | Sales materials library | ✅ Shipped |
 
-## Tier 4 — Admin & polish (feature/SP-4)
+## Tier 4 — Admin & polish ✅ (feature/SP-4)
 
-AB-20–AB-24 subscription queue, bulk delete, mobile nav, AI insights card, BDD specs
+| ID | Item | Status |
+|----|------|--------|
+| AB-20 | Subscription approval queue | ✅ Shipped |
+| AB-21 | Admin bulk delete API wiring | ✅ Shipped |
+| AB-22 | Dashboard mobile nav polish | ✅ Shipped |
+| AB-23 | AI sales insights card | ✅ Shipped |
+| AB-24 | Tier 4 BDD specs | ✅ Shipped |
 
-Full item detail (what / why / how / where): see git history on `feature/SP-1` or expand this file as tiers ship.
+## Tier 5 — Onboarding visibility ✅ (feature/SP-4)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-25 | New joiners panel (sales reps, businesses, platform users) | ✅ Shipped |
+
+## Tier 6 — Access control & contracts ✅ (feature/SP-5)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-26 | Revoke access quick action (dashboard + admin permissions) | ✅ Shipped |
+| AB-27 | newJoiners analytics BDD + role filter unit tests | ✅ Shipped |
+| AB-28 | Frontend analytics normalize test for newJoiners | ✅ Shipped |
+
+## Tier 7 — Dashboard revamp & UX polish (feature/SP-6)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-29 | Role-based dashboard header + refresh + data-as-of timestamp | ✅ Shipped |
+| AB-30 | Platform snapshot KPI strip + top workspaces leaderboard | ✅ Shipped |
+| AB-31 | Reorder dashboard — actions & intelligence before deep charts | ✅ Shipped |
+| AB-32 | Tabbed account insights (priority, churn, growth, re-engage) | ✅ Shipped |
+| AB-33 | Role-aware sections (approvals, product feedback) | ✅ Shipped |
+| AB-34 | Unified workspace health labels + email outreach on action queue | ✅ Shipped |
+| AB-35 | Clearer metric section titles and 30-day context copy | ✅ Shipped |
+
+## Tier 8 — Sales scope & command center ✅ (feature/SP-8)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-36 | Role-scoped dashboard API (territory/rep filtering) | ✅ Shipped |
+| AB-37 | Single “Today’s work” inbox (dedupe AI + sales actions + approvals) | ✅ Shipped |
+| AB-38 | Rep-centric home strip (my pipeline, commissions MTD, win rate) | ✅ Shipped |
+| AB-45 | Lightweight `/dashboard/sales-home` endpoint for rep-focused payload | ✅ Shipped |
+
+## Tier 9 — Sales workflow pages ✅ (feature/SP-9)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-39 | Proposals page revamp — pipeline funnel, aging, quick actions | ✅ Shipped |
+| AB-40 | Commissions page revamp — payout forecast, status filters, export | ✅ Shipped |
+| AB-41 | My Team manager view — rep activity, quota progress, coaching cues | ✅ Shipped |
+
+## Tier 10 — Platform polish ✅ (feature/SP-10)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-42 | Content Studio polish — templates, history, brand presets | ✅ Shipped |
+| AB-43 | Admin/subscriptions UX pass — catalog search, bulk ops, empty states | ✅ Shipped |
+| AB-44 | Global date filter driving KPIs + charts consistently | ✅ Shipped |
+
+## Tier 11 — Multi-app dashboard hub ✅ (feature/SP-11)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-46 | App dashboard registry + sub-nav (Platform, SmartRefill, Sales Portal, future apps) | ✅ Shipped |
+| AB-47 | Platform hub — 2 KPIs per app, cross-app map, 4 charts per app, ROI insights | ✅ Shipped |
+| AB-48 | SmartRefill app dashboard — stats, map/actions, charts, analysis sections | ✅ Shipped |
+| AB-49 | Sales Portal app dashboard — stats, actions, charts, analysis sections | ✅ Shipped |
+| AB-50 | Sidebar + route wiring for `/dashboard`, `/dashboard/smartrefill`, `/dashboard/sales-portal` | ✅ Shipped |
+
+## Tier 12 — Dashboard intelligence & UX polish ✅ (feature/SP-11)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-51 | AI dashboard forecasts — Actions/Forecast (hub) and Insights/Forecast (apps), paginated | ✅ Shipped |
+| AB-52 | Compact dashboard layout (`max-w-5xl`, horizontal margins) | ✅ Shipped |
+| AB-53 | App-specific chart sets — SmartRefill usage/growth vs Sales Portal revenue/behavior | ✅ Shipped |
+| AB-54 | Expanded KPI strips — hub rollup, pipeline stages, product signals; deduped sales stats | ✅ Shipped |
+| AB-55 | Active owners — top 5, sort pending → at risk → healthy | ✅ Shipped |
+| AB-56 | Sales Portal Actions & New joiners tabs | ✅ Shipped |
+| AB-57 | Subscription approval View dialog + receipt/attachment preview | ✅ Shipped |
+| AB-58 | Docs + unit/BDD coverage for dashboard v2 contracts | ✅ Shipped |
 
 ---
 
@@ -56,3 +134,12 @@ Full item detail (what / why / how / where): see git history on `feature/SP-1` o
 | 2026-06-17 | Tier 1 (AB-01–AB-06) shipped on `feature/SP-1` |
 | 2026-06-17 | Tier 2 (AB-07–AB-11) shipped on `feature/SP-2` |
 | 2026-06-17 | Tier 3 (AB-12–AB-19) shipped on `feature/SP-3` |
+| 2026-06-17 | Tier 4 (AB-20–AB-24) shipped on `feature/SP-4` |
+| 2026-06-17 | AB-25 new joiners panel + analytics crash fixes on `feature/SP-4` |
+| 2026-06-17 | Tier 6 (AB-26–AB-28) shipped on `feature/SP-5` |
+| 2026-06-17 | Tier 7 dashboard revamp (AB-29–AB-35) shipped on `feature/SP-6` |
+| 2026-06-17 | Tier 8 (AB-36–38, AB-45) shipped on `feature/SP-8` |
+| 2026-06-17 | Tier 9 (AB-39–AB-41) shipped on `feature/SP-9` |
+| 2026-06-17 | Tier 10 (AB-42–AB-44) shipped on `feature/SP-10` |
+| 2026-06-17 | Tier 11 multi-app dashboard hub (AB-46–AB-50) shipped on `feature/SP-11` |
+| 2026-06-17 | Tier 12 dashboard intelligence & UX polish (AB-51–AB-58) shipped on `feature/SP-11` |

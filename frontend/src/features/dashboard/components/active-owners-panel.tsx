@@ -12,9 +12,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { SubscriptionReasonDialog } from "@/features/dashboard/components/subscription-reason-dialog";
-import { ListPagination } from "@/components/list-pagination";
+import { SubscriptionApprovalDetailDialog } from "@/features/dashboard/components/subscription-approval-detail-dialog";
+import {
+  applyApprovedSubscription,
+  approveSubscription,
+} from "@/features/dashboard/lib/approve-subscription";
+import {
+  ACTIVE_OWNERS_LIST_LIMIT,
+  activeOwnersForList,
+} from "@/features/dashboard/lib/sort-active-owners";
 import { PaginatedList } from "@/components/paginated-list";
 import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
+import {
+  WORKSPACE_HEALTH_BADGE_STYLES,
+  formatWorkspaceHealthTier,
+} from "@/lib/dashboard/workspace-health";
 import {
   formatPaymentStatus,
   formatSubscriptionPeriod,
@@ -22,17 +34,9 @@ import {
 } from "@/lib/dashboard/subscription-labels";
 import { formatPhp } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { apiClient } from "@/lib/api-client";
 import type { DashboardAnalyticsRefresh } from "@/hooks/use-dashboard-analytics";
 
-const PAGE_SIZE = 8;
 const SUBSCRIPTION_PAGE_SIZE = 5;
-
-const HEALTH_STYLES: Record<ActiveOwner["healthTier"], string> = {
-  high: "bg-emerald-100 text-emerald-800",
-  medium: "bg-amber-100 text-amber-800",
-  low: "bg-red-100 text-red-800",
-};
 
 const TIMELINE_LABELS = {
   current: "Current",
@@ -48,49 +52,29 @@ function formatSubscriptionLine(subscription: OwnerSubscription): string {
   return `${status} · ${formatPaymentStatus(subscription.paymentStatus)}`;
 }
 
-function applyApprovedSubscription(
-  owners: ActiveOwner[],
-  businessId: string,
-  subscriptionId: string,
-): ActiveOwner[] {
-  return owners.map((owner) => {
-    if (owner.id !== businessId) return owner;
-
-    const subscriptions = (owner.subscriptions ?? []).map((sub) =>
-      sub.id === subscriptionId ?
-        {
-          ...sub,
-          status: "approved",
-          paymentStatus: "approved",
-          needsApproval: false,
-        }
-      : sub,
-    );
-
-    return {
-      ...owner,
-      subscriptions,
-      pendingApprovals: subscriptions.filter((sub) => sub.needsApproval).length,
-      paymentStatus: "approved",
-    };
-  });
-}
-
 function SubscriptionRow({
   subscription,
   businessId,
   businessName,
+  ownerEmail,
   canApprove,
   onApprove,
   onViewReason,
+  onViewDetail,
   approvingId,
 }: {
   subscription: OwnerSubscription;
   businessId: string;
   businessName: string;
+  ownerEmail?: string;
   canApprove: boolean;
   onApprove: (businessId: string, subscriptionId: string) => void;
   onViewReason: (subscription: OwnerSubscription, businessName: string) => void;
+  onViewDetail: (
+    subscription: OwnerSubscription,
+    businessName: string,
+    ownerEmail?: string,
+  ) => void;
   approvingId: string | null;
 }) {
   const showReason = subscription.isDowngrade || subscription.isCancellation;
@@ -121,6 +105,18 @@ function SubscriptionRow({
       </div>
 
       <div className="mt-2 flex flex-wrap gap-2">
+        {subscription.needsApproval && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8"
+            onClick={() =>
+              onViewDetail(subscription, businessName, ownerEmail)
+            }
+          >
+            View
+          </Button>
+        )}
         {subscription.needsApproval && canApprove && (
           <Button
             size="sm"
@@ -154,18 +150,26 @@ function SubscriptionGroup({
   items,
   businessId,
   businessName,
+  ownerEmail,
   canApprove,
   onApprove,
   onViewReason,
+  onViewDetail,
   approvingId,
 }: {
   label: string;
   items: OwnerSubscription[];
   businessId: string;
   businessName: string;
+  ownerEmail?: string;
   canApprove: boolean;
   onApprove: (businessId: string, subscriptionId: string) => void;
   onViewReason: (subscription: OwnerSubscription, businessName: string) => void;
+  onViewDetail: (
+    subscription: OwnerSubscription,
+    businessName: string,
+    ownerEmail?: string,
+  ) => void;
   approvingId: string | null;
 }) {
   return (
@@ -184,9 +188,11 @@ function SubscriptionGroup({
             subscription={subscription}
             businessId={businessId}
             businessName={businessName}
+            ownerEmail={ownerEmail}
             canApprove={canApprove}
             onApprove={onApprove}
             onViewReason={onViewReason}
+            onViewDetail={onViewDetail}
             approvingId={approvingId}
           />
         )}
@@ -202,6 +208,7 @@ function OwnerRow({
   canApprove,
   onApprove,
   onViewReason,
+  onViewDetail,
   approvingId,
 }: {
   owner: ActiveOwner;
@@ -210,6 +217,11 @@ function OwnerRow({
   canApprove: boolean;
   onApprove: (businessId: string, subscriptionId: string) => void;
   onViewReason: (subscription: OwnerSubscription, businessName: string) => void;
+  onViewDetail: (
+    subscription: OwnerSubscription,
+    businessName: string,
+    ownerEmail?: string,
+  ) => void;
   approvingId: string | null;
 }) {
   const subscriptions = useMemo(
@@ -247,8 +259,8 @@ function OwnerRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium text-foreground">{owner.businessName}</p>
-            <Badge className={HEALTH_STYLES[owner.healthTier]}>
-              {owner.healthTier}
+            <Badge className={WORKSPACE_HEALTH_BADGE_STYLES[owner.healthTier]}>
+              {formatWorkspaceHealthTier(owner.healthTier)}
             </Badge>
             {(owner.pendingApprovals ?? 0) > 0 && (
               <Badge className="bg-amber-100 text-amber-800">
@@ -290,9 +302,13 @@ function OwnerRow({
                 items={group.items}
                 businessId={owner.id}
                 businessName={owner.businessName}
+                ownerEmail={owner.ownerEmail}
                 canApprove={canApprove}
                 onApprove={onApprove}
                 onViewReason={onViewReason}
+                onViewDetail={(subscription, businessName, ownerEmail) =>
+                  onViewDetail(subscription, businessName, ownerEmail)
+                }
                 approvingId={approvingId}
               />
             ))
@@ -315,25 +331,28 @@ export function ActiveOwnersPanel({
   const [localOwners, setLocalOwners] = useState(owners);
   const [ownersSource, setOwnersSource] = useState(owners);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [ownersPage, setOwnersPage] = useState(1);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [reasonTarget, setReasonTarget] = useState<{
     subscription: OwnerSubscription;
     businessName: string;
+  } | null>(null);
+  const [detailTarget, setDetailTarget] = useState<{
+    businessId: string;
+    subscription: OwnerSubscription;
+    businessName: string;
+    ownerEmail?: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (ownersSource !== owners) {
     setOwnersSource(owners);
     setLocalOwners(owners);
-    setOwnersPage(1);
   }
 
-  const totalPages = Math.max(1, Math.ceil(localOwners.length / PAGE_SIZE));
-  const paginatedOwners = useMemo(() => {
-    const start = (ownersPage - 1) * PAGE_SIZE;
-    return localOwners.slice(start, start + PAGE_SIZE);
-  }, [localOwners, ownersPage]);
+  const displayedOwners = useMemo(
+    () => activeOwnersForList(localOwners),
+    [localOwners],
+  );
 
   const pendingTotal = localOwners.reduce(
     (sum, owner) => sum + (owner.pendingApprovals ?? 0),
@@ -344,9 +363,7 @@ export function ActiveOwnersPanel({
     setError(null);
     setApprovingId(subscriptionId);
     try {
-      await apiClient.post(
-        `/dashboard/subscriptions/${businessId}/${subscriptionId}/approve`,
-      );
+      await approveSubscription(businessId, subscriptionId);
       setLocalOwners((current) =>
         applyApprovedSubscription(current, businessId, subscriptionId),
       );
@@ -366,8 +383,8 @@ export function ActiveOwnersPanel({
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Active owners</CardTitle>
           <CardDescription>
-            {localOwners.length} owners · {pendingTotal} pending approvals · tap to
-            see plans
+            {displayedOwners.length} shown · {localOwners.length} total ·{" "}
+            {pendingTotal} pending
           </CardDescription>
           {error && (
             <p className="text-sm text-red-600">{error}</p>
@@ -380,7 +397,7 @@ export function ActiveOwnersPanel({
             </p>
           ) : (
             <>
-              {paginatedOwners.map((owner) => (
+              {displayedOwners.map((owner) => (
                 <OwnerRow
                   key={owner.id}
                   owner={owner}
@@ -395,21 +412,49 @@ export function ActiveOwnersPanel({
                   onViewReason={(subscription, businessName) =>
                     setReasonTarget({ subscription, businessName })
                   }
+                  onViewDetail={(subscription, businessName, ownerEmail) =>
+                    setDetailTarget({
+                      businessId: owner.id,
+                      subscription,
+                      businessName,
+                      ownerEmail,
+                    })
+                  }
                   approvingId={approvingId}
                 />
               ))}
 
-              <ListPagination
-                page={ownersPage}
-                totalPages={totalPages}
-                totalItems={localOwners.length}
-                pageSize={PAGE_SIZE}
-                onPageChange={setOwnersPage}
-              />
+              {localOwners.length > ACTIVE_OWNERS_LIST_LIMIT ?
+                <p className="text-center text-xs text-[var(--muted-foreground)]">
+                  +{localOwners.length - ACTIVE_OWNERS_LIST_LIMIT} more on map
+                </p>
+              : null}
             </>
           )}
         </CardContent>
       </Card>
+
+      <SubscriptionApprovalDetailDialog
+        subscription={detailTarget?.subscription ?? null}
+        businessName={detailTarget?.businessName}
+        ownerEmail={detailTarget?.ownerEmail}
+        canApprove={canApprove}
+        isApproving={
+          detailTarget ?
+            approvingId === detailTarget.subscription.id
+          : false
+        }
+        onApprove={
+          detailTarget ?
+            () =>
+              void handleApprove(
+                detailTarget.businessId,
+                detailTarget.subscription.id,
+              ).then(() => setDetailTarget(null))
+          : undefined
+        }
+        onClose={() => setDetailTarget(null)}
+      />
 
       <SubscriptionReasonDialog
         subscription={reasonTarget?.subscription ?? null}

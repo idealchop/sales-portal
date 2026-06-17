@@ -64,6 +64,16 @@ export function useAdminUsers() {
     [],
   );
 
+  const revokeUserAccess = useCallback(async (uid: string) => {
+    const response = await apiClient.post<{ data: { user: AdminUserSummary } }>(
+      `/admin/users/${uid}/revoke-access`,
+    );
+    setUsers((current) =>
+      current.map((user) => (user.uid === uid ? response.data.user : user)),
+    );
+    return response.data.user;
+  }, []);
+
   const deleteUsers = useCallback(
     async (
       uids: string[],
@@ -72,33 +82,57 @@ export function useAdminUsers() {
       const unique = [...new Set(uids.filter(Boolean))];
       if (unique.length === 0) return { deleted: [], failed: [] };
 
-      const deleted: {
-        uid: string;
-        deletedAuth: boolean;
-        deletedProfile: boolean;
-      }[] = [];
-      const failed: { uid: string; reason: string }[] = [];
-
       onProgress?.(0, unique.length);
 
-      for (let index = 0; index < unique.length; index += 1) {
-        const uid = unique[index];
+      if (unique.length === 1) {
+        const uid = unique[0];
         try {
           await apiClient.delete(`/admin/users/${uid}`);
-          deleted.push({ uid, deletedAuth: true, deletedProfile: true });
+          setUsers((current) => current.filter((user) => user.uid !== uid));
+          onProgress?.(1, 1);
+          return {
+            deleted: [{ uid, deletedAuth: true, deletedProfile: true }],
+            failed: [],
+          };
         } catch (err) {
-          failed.push({
-            uid,
-            reason: err instanceof ApiError ? err.message : "Delete failed.",
-          });
+          return {
+            deleted: [],
+            failed: [
+              {
+                uid,
+                reason: err instanceof ApiError ? err.message : "Delete failed.",
+              },
+            ],
+          };
         }
-        onProgress?.(index + 1, unique.length);
       }
 
-      const deletedUids = new Set(deleted.map((row) => row.uid));
-      setUsers((current) => current.filter((user) => !deletedUids.has(user.uid)));
+      try {
+        const response = await apiClient.post<{
+          data: {
+            deleted: {
+              uid: string;
+              deletedAuth: boolean;
+              deletedProfile: boolean;
+            }[];
+            failed: { uid: string; reason: string }[];
+          };
+        }>("/admin/users/bulk-delete", { uids: unique });
 
-      return { deleted, failed };
+        const { deleted, failed } = response.data;
+        const deletedUids = new Set(deleted.map((row) => row.uid));
+        setUsers((current) => current.filter((user) => !deletedUids.has(user.uid)));
+        onProgress?.(unique.length, unique.length);
+        return { deleted, failed };
+      } catch (err) {
+        return {
+          deleted: [],
+          failed: unique.map((uid) => ({
+            uid,
+            reason: err instanceof ApiError ? err.message : "Bulk delete failed.",
+          })),
+        };
+      }
     },
     [],
   );
@@ -110,6 +144,7 @@ export function useAdminUsers() {
     refresh: load,
     createUser,
     saveAppAccess,
+    revokeUserAccess,
     deleteUsers,
   };
 }

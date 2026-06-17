@@ -46,4 +46,14 @@ describe("DASHBOARD_NAV role gates", () => {
       expect(item?.maintenance).toBe(false);
     }
   });
+
+  it("exposes multi-app dashboard children under Dashboard nav", () => {
+    const dashboard = DASHBOARD_NAV.find((item) => item.href === "/dashboard");
+
+    expect(dashboard?.children?.map((child) => child.href)).toEqual([
+      "/dashboard",
+      "/dashboard/smartrefill",
+      "/dashboard/sales-portal",
+    ]);
+  });
 });

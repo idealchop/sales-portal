@@ -11,6 +11,9 @@ export type OwnerSubscription = {
   price: number;
   paymentStatus?: string;
   paymentReference?: string;
+  paymentMethod?: string;
+  receiptUrl?: string;
+  attachmentUrl?: string;
   timeline: OwnerSubscriptionTimeline;
   createdAt?: string;
   activatedAt?: string;
@@ -103,6 +106,12 @@ export function mapOwnerSubscriptions(
         typeof data.paymentReference === "string" ?
           data.paymentReference :
           undefined,
+      paymentMethod:
+        typeof data.paymentMethod === "string" ? data.paymentMethod : undefined,
+      receiptUrl:
+        typeof data.receiptUrl === "string" ? data.receiptUrl : undefined,
+      attachmentUrl:
+        typeof data.attachmentUrl === "string" ? data.attachmentUrl : undefined,
       timeline: "past" as OwnerSubscriptionTimeline,
       createdAt: toIso(data.createdAt),
       activatedAt: toIso(dates.activatedAt),

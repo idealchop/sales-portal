@@ -18,7 +18,13 @@ dev                          ← integration base (merge target)
  └── feature/SP-1            ← Tier 1 (AB-01…AB-06)
  └── feature/SP-2            ← Tier 2 (AB-07…AB-11)
  └── feature/SP-3            ← Tier 3 (AB-12…AB-19)
- └── feature/SP-4            ← Tier 4 (AB-20…AB-24)
+ └── feature/SP-4            ← Tier 4 (AB-20…AB-24) + AB-25
+ └── feature/SP-5            ← Tier 6 (AB-26…AB-28)
+ └── feature/SP-6            ← Tier 7 (AB-29…AB-35)
+ └── feature/SP-8            ← Tier 8 (AB-36…AB-38, AB-45)
+ └── feature/SP-9            ← Tier 9 (AB-39…AB-41)
+ └── feature/SP-10           ← Tier 10 (AB-42…AB-44)
+ └── feature/SP-11           ← Tier 11–12 (AB-46…AB-58) multi-app hub + dashboard v2
 ```
 
 | Branch | Purpose |

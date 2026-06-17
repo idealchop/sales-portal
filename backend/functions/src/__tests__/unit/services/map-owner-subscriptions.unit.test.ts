@@ -49,4 +49,25 @@ describe("mapOwnerSubscriptions", () => {
     expect(rows.find((row) => row.id === "future-sub")?.needsApproval).toBe(true);
     expect(rows.find((row) => row.id === "future-sub")?.isDowngrade).toBe(true);
   });
+
+  it("maps payment proof fields from subscription documents", () => {
+    const rows = mapOwnerSubscriptions([
+      {
+        id: "proof-sub",
+        data: () => ({
+          planName: "Scale",
+          status: "pending",
+          paymentStatus: "pending_verification",
+          paymentReference: "PAY-123",
+          paymentMethod: "gcash",
+          receiptUrl: "https://example.com/receipt.jpg",
+          price: 1650,
+        }),
+      },
+    ]);
+
+    expect(rows[0]?.paymentReference).toBe("PAY-123");
+    expect(rows[0]?.paymentMethod).toBe("gcash");
+    expect(rows[0]?.receiptUrl).toBe("https://example.com/receipt.jpg");
+  });
 });
