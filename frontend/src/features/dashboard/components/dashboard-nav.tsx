@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DASHBOARD_NAV, type NavItem } from "@/features/dashboard/config/nav-items";
 import type { SalesPortalRole } from "@/lib/auth-status";
@@ -77,6 +78,11 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
               </button>
             : <Link
                 href={item.href}
+                title={
+                  item.maintenance ?
+                    `${item.label} — coming soon`
+                  : undefined
+                }
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
                   isActive ?
@@ -85,7 +91,15 @@ export function DashboardNav({ role }: { role: SalesPortalRole | null }) {
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
+                <span className="flex-1">{item.label}</span>
+                {item.maintenance ?
+                  <Badge
+                    variant="secondary"
+                    className="shrink-0 border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide text-amber-800"
+                  >
+                    Soon
+                  </Badge>
+                : null}
               </Link>
             }
 

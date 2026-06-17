@@ -23,4 +23,17 @@ describe("DASHBOARD_NAV role gates", () => {
 
     expect(myTeam?.roles).toEqual(["manager"]);
   });
+
+  it("marks maintenance routes for coming soon UI", () => {
+    const maintenanceHrefs = [
+      "/dashboard/my-team",
+      "/dashboard/proposals",
+      "/dashboard/materials",
+    ];
+
+    for (const href of maintenanceHrefs) {
+      const item = DASHBOARD_NAV.find((nav) => nav.href === href);
+      expect(item?.maintenance).toBe(true);
+    }
+  });
 });
