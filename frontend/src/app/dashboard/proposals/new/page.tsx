@@ -1,5 +1,5 @@
-import { MaintenancePage } from "@/features/dashboard/components/maintenance-page";
+import { ProposalWizardPage } from "@/features/proposals/components/proposal-wizard-page";
 
 export default function NewProposalPage() {
-  return <MaintenancePage title="Create Proposal" />;
+  return <ProposalWizardPage />;
 }

@@ -7,6 +7,7 @@ export type Client = {
   contactName: string;
   contactEmail?: string;
   contactPhone?: string;
+  address?: string;
   status?: string;
   clientType?: "household" | "sme" | "commercial" | "corporate" | "enterprise";
 };
