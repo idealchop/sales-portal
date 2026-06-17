@@ -138,6 +138,7 @@ export type DashboardAnalytics = {
   growthSalesMetrics: GrowthSalesMetrics;
   chartTimeSeries: ChartTimeSeries;
   chartBusinessContext: ChartBusinessContext[];
+  aiSalesInsights: AiSalesInsights;
 };
 
 export type BreakdownRow = {
@@ -269,6 +270,37 @@ export type ProposalPipeline = {
   clientsByType: { type: string; count: number }[];
 };
 
+export type AiSalesAccountInsight = {
+  businessName: string;
+  recommendedAction: string;
+  reason: string;
+  priority: "high" | "medium" | "low";
+};
+
+export type AiSalesInsights = {
+  revenueChurnRiskSummary: string;
+  growthOpportunitySummary: string;
+  behavioralReengagementSummary: string;
+  priorityActionsSummary: string;
+  revenueChurnRisk: AiSalesAccountInsight[];
+  growthOpportunities: AiSalesAccountInsight[];
+  behavioralReengagement: AiSalesAccountInsight[];
+  priorityActions: AiSalesAccountInsight[];
+  aiEnabled: boolean;
+};
+
+const EMPTY_AI_SALES_INSIGHTS: AiSalesInsights = {
+  revenueChurnRiskSummary: "",
+  growthOpportunitySummary: "",
+  behavioralReengagementSummary: "",
+  priorityActionsSummary: "",
+  revenueChurnRisk: [],
+  growthOpportunities: [],
+  behavioralReengagement: [],
+  priorityActions: [],
+  aiEnabled: false,
+};
+
 const EMPTY_SALES_INSIGHTS: SalesInsights = {
   estimatedMrr: 0,
   pendingPayments: 0,
@@ -384,5 +416,6 @@ export function normalizeDashboardAnalytics(
       usageGoals: biz.usageGoals ?? [],
       gettingStarted: biz.gettingStarted ?? {},
     })),
+    aiSalesInsights: raw.aiSalesInsights ?? EMPTY_AI_SALES_INSIGHTS,
   };
 }

@@ -9,6 +9,7 @@ import {
   type AppFeedbackSummary,
 } from "./compute-app-feedback";
 import { computeBehavioralSalesMetrics } from "./compute-behavioral-sales-metrics";
+import type { AiSalesInsightsResult } from "./generate-ai-sales-insights";
 import {
   computeGrowthSalesMetrics,
   type GrowthSalesMetrics,
@@ -115,6 +116,7 @@ export type DashboardAnalytics = {
   growthSalesMetrics: GrowthSalesMetrics;
   chartTimeSeries: ChartTimeSeries;
   chartBusinessContext: ChartBusinessContext[];
+  aiSalesInsights: AiSalesInsightsResult;
 };
 
 function toDate(value: unknown): Date | null {
@@ -738,7 +740,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     subscriptionsByBusiness,
   });
 
-  const sales = await computeBehavioralSalesMetrics({
+  const behavioral = await computeBehavioralSalesMetrics({
     businesses: businessSnapshots,
     ownerLastActive,
     smartRefillUserRecords,
@@ -749,7 +751,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
 
   const growthSalesMetrics: GrowthSalesMetrics = {
     growth,
-    sales,
+    sales: behavioral.sales,
     activeOwners,
   };
 
@@ -838,5 +840,6 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     growthSalesMetrics,
     chartTimeSeries,
     chartBusinessContext,
+    aiSalesInsights: behavioral.aiSalesInsights,
   };
 }

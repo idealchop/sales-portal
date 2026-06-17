@@ -5,6 +5,8 @@ import { WorkspaceMapOwnersSection } from "@/features/dashboard/components/works
 import { AppFeedbackPanel } from "@/features/dashboard/components/app-feedback-panel";
 import { MetricCardsGrid } from "@/features/dashboard/components/metric-cards-grid";
 import { SalesInsightsPanel } from "@/features/dashboard/components/sales-insights-panel";
+import { AiInsightsCard } from "@/features/dashboard/components/ai-insights-card";
+import { SubscriptionApprovalQueue } from "@/features/dashboard/components/subscription-approval-queue";
 import {
   Card,
   CardContent,
@@ -94,9 +96,17 @@ export function DashboardHome() {
         metrics={growthSalesMetrics.sales}
       />
 
+      <AiInsightsCard insights={data.aiSalesInsights} />
+
       <SalesInsightsPanel
         salesInsights={data.salesInsights}
         proposalPipeline={data.proposalPipeline}
+      />
+
+      <SubscriptionApprovalQueue
+        owners={growthSalesMetrics.activeOwners}
+        canApprove={profile?.role === "admin" || profile?.role === "manager"}
+        onRefresh={refresh}
       />
 
       <WorkspaceMapOwnersSection
