@@ -76,6 +76,28 @@ All routes are mounted at the function root (no `/api` prefix).
 | `POST` | `/onboarding/avatar` | Portal | Avatar upload |
 | `POST` | `/onboarding/complete` | Portal | Complete onboarding profile |
 
+### Sales workflow
+
+Portal routes require **Bearer token**, **sales-portal access**, and role-scoped data (`sales`, `manager`, or `admin`). Public proposal links are unauthenticated.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/proposals` | Portal | List proposals (role-scoped) |
+| `POST` | `/proposals` | Portal | Create proposal |
+| `GET` | `/proposals/:proposalId` | Portal | Get proposal |
+| `PATCH` | `/proposals/:proposalId` | Portal | Update proposal |
+| `POST` | `/proposals/:proposalId/share` | Portal | Create shareable link |
+| `GET` | `/clients` | Portal | List clients (role-scoped) |
+| `POST` | `/clients` | Portal | Create client |
+| `PATCH` | `/clients/:clientId` | Portal | Update client |
+| `GET` | `/commissions` | Portal | List commissions (role-scoped) |
+| `GET` | `/sales/team` | Portal | Manager team summary |
+| `GET` | `/sales-materials` | Portal | List sales materials |
+| `POST` | `/sales-materials` | Admin | Create material |
+| `PATCH` | `/sales-materials/:materialId` | Admin | Update material |
+| `DELETE` | `/sales-materials/:materialId` | Admin | Delete material |
+| `GET` | `/public/proposals/:linkId` | — | Public proposal + client view |
+
 ### SmartRefill proxy (`/smartrefill`)
 
 | Method | Path | Auth | Description |

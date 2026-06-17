@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canAccessOwner } from "../../services/sales-scope";
+import { canAccessOwner } from "../../../services/sales-scope";
 
 describe("sales-scope", () => {
   it("allows admin to access any owner", () => {

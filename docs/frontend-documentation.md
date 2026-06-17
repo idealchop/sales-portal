@@ -51,6 +51,10 @@ Business UI lives under `src/features/`:
 | `auth/` | `/login` | Login form + auth status |
 | `onboarding/` | `/onboarding/*` | Setup wizard |
 | `dashboard/` | `/dashboard/*` | Analytics, charts, insights |
+| `proposals/` | `/dashboard/proposals/*`, `/proposal/view/*` | Proposals, clients, wizard, public share |
+| `commissions/` | `/dashboard/commissions` | Commission earnings and payouts |
+| `my-team/` | `/dashboard/my-team` | Manager team summary |
+| `materials/` | `/dashboard/materials` | Sales materials library |
 | `content-studio/` | `/content-studio` | AI social content |
 | `admin/` | `/admin/*` | Permissions, data management, catalog |
 
@@ -74,10 +78,12 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | `/subscriptions/*` | admin | Live (catalog CRUD) |
 | `/admin/permissions` | admin | Live |
 | `/admin/data-management` | admin | Live |
-| `/dashboard/proposals` | sales+ | Maintenance (nav shows “Soon”) |
-| `/dashboard/proposals/new` | sales+ | Maintenance |
-| `/dashboard/materials` | sales+ | Maintenance (nav shows “Soon”) |
-| `/dashboard/my-team` | manager | Maintenance (nav shows “Soon”) |
+| `/dashboard/proposals` | sales+ | Live — proposals & clients list |
+| `/dashboard/proposals/new` | sales+ | Live — create proposal wizard |
+| `/proposal/view/[linkId]` | — | Live — public shareable proposal |
+| `/dashboard/commissions` | sales+ | Live — commissions & monthly payouts |
+| `/dashboard/materials` | sales+ | Live — materials library (admin CRUD) |
+| `/dashboard/my-team` | manager | Live — team performance summary |
 
 ## App Hosting deploy
 

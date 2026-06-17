@@ -27,9 +27,18 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | AB-10 | Backend route docs | ✅ Shipped |
 | AB-11 | Chart screen-reader summaries | ✅ Shipped |
 
-## Tier 3 — Sales workflow MVP (feature/SP-3)
+## Tier 3 — Sales workflow MVP ✅ (feature/SP-3)
 
-AB-12–AB-19 proposals, clients, wizard, share links, commissions, my-team, materials
+| ID | Item | Status |
+|----|------|--------|
+| AB-12 | Sales workflow BFF API | ✅ Shipped |
+| AB-13 | Proposals list page | ✅ Shipped |
+| AB-14 | Clients list hook + tab | ✅ Shipped |
+| AB-15 | Create proposal wizard | ✅ Shipped |
+| AB-16 | Shareable public proposal links | ✅ Shipped |
+| AB-17 | Commissions list + payout view | ✅ Shipped |
+| AB-18 | Manager My Team page | ✅ Shipped |
+| AB-19 | Sales materials library | ✅ Shipped |
 
 ## Tier 4 — Admin & polish (feature/SP-4)
 
@@ -46,3 +55,4 @@ Full item detail (what / why / how / where): see git history on `feature/SP-1` o
 | 2026-06-17 | Initial backlog created |
 | 2026-06-17 | Tier 1 (AB-01–AB-06) shipped on `feature/SP-1` |
 | 2026-06-17 | Tier 2 (AB-07–AB-11) shipped on `feature/SP-2` |
+| 2026-06-17 | Tier 3 (AB-12–AB-19) shipped on `feature/SP-3` |

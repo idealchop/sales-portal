@@ -109,8 +109,8 @@ export async function createClient(
     input.status && VALID_STATUSES.has(input.status) ? input.status : "pending";
   const clientType =
     input.clientType && VALID_TYPES.has(input.clientType) ?
-      input.clientType
-    : "sme";
+      input.clientType :
+      "sme";
 
   const ref = db.collection("clients").doc();
   const payload = {

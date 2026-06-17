@@ -25,8 +25,8 @@ function normalizeMaterial(
 ): SalesMaterialRecord {
   const serialized = serializeDoc<SalesMaterialRecord>(id, data);
   const type = VALID_TYPES.has(serialized.type as SalesMaterialRecord["type"]) ?
-    (serialized.type as SalesMaterialRecord["type"])
-  : "link";
+    (serialized.type as SalesMaterialRecord["type"]) :
+    "link";
   return {
     ...serialized,
     title: String(serialized.title ?? "Untitled"),

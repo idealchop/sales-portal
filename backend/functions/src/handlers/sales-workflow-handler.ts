@@ -11,7 +11,6 @@ import {
 } from "../services/proposals-service";
 import {
   createClient,
-  getClient,
   listClients,
   updateClient,
 } from "../services/clients-service";
@@ -35,25 +34,25 @@ function actorFromRequest(req: AuthenticatedRequest) {
 function mapServiceError(res: Response, error: unknown) {
   const code = error instanceof Error ? error.message : "INTERNAL";
   switch (code) {
-    case "NOT_FOUND":
-      res.status(404).json({ error: "Resource not found." });
-      return;
-    case "FORBIDDEN":
-    case "CLIENT_FORBIDDEN":
-      res.status(403).json({ error: "You do not have access to this resource." });
-      return;
-    case "CLIENT_ID_REQUIRED":
-    case "CLIENT_FIELDS_REQUIRED":
-    case "MATERIAL_FIELDS_REQUIRED":
-    case "INVALID_STATUS":
-    case "INVALID_TYPE":
-      res.status(400).json({ error: code });
-      return;
-    case "CLIENT_NOT_FOUND":
-      res.status(404).json({ error: "Client not found." });
-      return;
-    default:
-      res.status(500).json({ error: "Internal Server Error" });
+  case "NOT_FOUND":
+    res.status(404).json({ error: "Resource not found." });
+    return;
+  case "FORBIDDEN":
+  case "CLIENT_FORBIDDEN":
+    res.status(403).json({ error: "You do not have access to this resource." });
+    return;
+  case "CLIENT_ID_REQUIRED":
+  case "CLIENT_FIELDS_REQUIRED":
+  case "MATERIAL_FIELDS_REQUIRED":
+  case "INVALID_STATUS":
+  case "INVALID_TYPE":
+    res.status(400).json({ error: code });
+    return;
+  case "CLIENT_NOT_FOUND":
+    res.status(404).json({ error: "Client not found." });
+    return;
+  default:
+    res.status(500).json({ error: "Internal Server Error" });
   }
 }
 

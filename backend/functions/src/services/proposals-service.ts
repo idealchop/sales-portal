@@ -45,8 +45,8 @@ function normalizeProposal(
     ...serialized,
     amount: Number(serialized.amount ?? 0),
     status: (VALID_STATUSES.has(serialized.status as ProposalStatus) ?
-      serialized.status
-    : "draft") as ProposalStatus,
+      serialized.status :
+      "draft") as ProposalStatus,
   };
 }
 
