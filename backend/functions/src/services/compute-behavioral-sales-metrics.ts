@@ -314,5 +314,5 @@ export async function computeBehavioralSalesMetrics(input: {
     },
   ];
 
-  return { sales, aiSalesInsights };
+  return { sales, aiSalesInsights: aiInsights };
 }

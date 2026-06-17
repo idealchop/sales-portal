@@ -1,4 +1,7 @@
-import type { DashboardAnalytics } from "@/lib/dashboard/analytics";
+import {
+  normalizeDashboardAnalytics,
+  type DashboardAnalytics,
+} from "@/lib/dashboard/analytics";
 
 const STORAGE_KEY = "sales-portal:dashboard-analytics:v1";
 const FRESH_TTL_MS = 60_000;
@@ -47,7 +50,7 @@ export function readDashboardAnalyticsCache(): ClientDashboardCache | null {
   if (ageMs > STALE_TTL_MS) return null;
 
   return {
-    data: entry.data,
+    data: normalizeDashboardAnalytics(entry.data),
     computedAt: entry.computedAt,
     isFresh: ageMs <= FRESH_TTL_MS,
     isStale: ageMs > FRESH_TTL_MS,

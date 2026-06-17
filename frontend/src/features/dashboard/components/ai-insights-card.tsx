@@ -17,11 +17,26 @@ const PRIORITY_STYLES = {
   low: "bg-zinc-100 text-zinc-700",
 } as const;
 
-export function AiInsightsCard({ insights }: { insights: AiSalesInsights }) {
-  const actions = insights.priorityActions.slice(0, 5);
+export function AiInsightsCard({
+  insights,
+}: {
+  insights?: AiSalesInsights | null;
+}) {
+  const safeInsights = insights ?? {
+    revenueChurnRiskSummary: "",
+    growthOpportunitySummary: "",
+    behavioralReengagementSummary: "",
+    priorityActionsSummary: "",
+    revenueChurnRisk: [],
+    growthOpportunities: [],
+    behavioralReengagement: [],
+    priorityActions: [],
+    aiEnabled: false,
+  };
+  const actions = safeInsights.priorityActions.slice(0, 5);
   const summary =
-    insights.priorityActionsSummary ||
-    insights.growthOpportunitySummary ||
+    safeInsights.priorityActionsSummary ||
+    safeInsights.growthOpportunitySummary ||
     "No AI insights available yet.";
 
   return (
@@ -33,7 +48,7 @@ export function AiInsightsCard({ insights }: { insights: AiSalesInsights }) {
             AI sales insights
           </CardTitle>
           <Badge variant="secondary">
-            {insights.aiEnabled ? "Gemini" : "Auto-ranked"}
+            {safeInsights.aiEnabled ? "Gemini" : "Auto-ranked"}
           </Badge>
         </div>
         <CardDescription>{summary}</CardDescription>
