@@ -19,6 +19,10 @@ test.describe("salesPortalApi dashboard analytics", () => {
     expect(Array.isArray(body.data.growthSalesMetrics.growth)).toBe(true);
     expect(body.data.aiSalesInsights).toBeTruthy();
     expect(typeof body.data.aiSalesInsights.aiEnabled).toBe("boolean");
+    expect(body.data.newJoiners).toBeTruthy();
+    expect(Array.isArray(body.data.newJoiners.salesReps)).toBe(true);
+    expect(Array.isArray(body.data.newJoiners.businesses)).toBe(true);
+    expect(Array.isArray(body.data.newJoiners.platformUsers)).toBe(true);
   });
 
   test("GET /dashboard/analytics returns 401 without token", async ({

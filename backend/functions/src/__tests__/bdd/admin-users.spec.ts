@@ -30,3 +30,12 @@ test.describe("salesPortalApi admin users bulk delete", () => {
     expect(res.status()).toBe(401);
   });
 });
+
+test.describe("salesPortalApi admin revoke access", () => {
+  test("POST /admin/users/:uid/revoke-access returns 401 without token", async ({
+    request,
+  }) => {
+    const res = await request.post(`${API_PATH}/admin/users/some-uid/revoke-access`);
+    expect(res.status()).toBe(401);
+  });
+});
