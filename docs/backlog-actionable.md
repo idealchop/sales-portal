@@ -56,13 +56,40 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 |----|------|--------|
 | AB-25 | New joiners panel (sales reps, businesses, platform users) | ✅ Shipped |
 
-## Tier 6 — Access control & contracts (feature/SP-5)
+## Tier 6 — Access control & contracts ✅ (feature/SP-5)
 
 | ID | Item | Status |
 |----|------|--------|
 | AB-26 | Revoke access quick action (dashboard + admin permissions) | ✅ Shipped |
 | AB-27 | newJoiners analytics BDD + role filter unit tests | ✅ Shipped |
 | AB-28 | Frontend analytics normalize test for newJoiners | ✅ Shipped |
+
+## Tier 7 — Dashboard revamp & UX polish (feature/SP-6)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-29 | Role-based dashboard header + refresh + data-as-of timestamp | ✅ Shipped |
+| AB-30 | Platform snapshot KPI strip + top workspaces leaderboard | ✅ Shipped |
+| AB-31 | Reorder dashboard — actions & intelligence before deep charts | ✅ Shipped |
+| AB-32 | Tabbed account insights (priority, churn, growth, re-engage) | ✅ Shipped |
+| AB-33 | Role-aware sections (approvals, product feedback) | ✅ Shipped |
+| AB-34 | Unified workspace health labels + email outreach on action queue | ✅ Shipped |
+| AB-35 | Clearer metric section titles and 30-day context copy | ✅ Shipped |
+
+## Tier 8 — Page revamps & sales scope (planned)
+
+| ID | Item | Status |
+|----|------|--------|
+| AB-36 | Role-scoped dashboard API (territory/rep filtering) | 🔲 Planned |
+| AB-37 | Single “Today’s work” inbox (dedupe AI + sales actions + approvals) | 🔲 Planned |
+| AB-38 | Rep-centric home strip (my pipeline, commissions MTD, win rate) | 🔲 Planned |
+| AB-39 | Proposals page revamp — pipeline funnel, aging, quick actions | 🔲 Planned |
+| AB-40 | Commissions page revamp — payout forecast, status filters, export | 🔲 Planned |
+| AB-41 | My Team manager view — rep activity, quota progress, coaching cues | 🔲 Planned |
+| AB-42 | Content Studio polish — templates, history, brand presets | 🔲 Planned |
+| AB-43 | Admin/subscriptions UX pass — catalog search, bulk ops, empty states | 🔲 Planned |
+| AB-44 | Global date filter driving KPIs + charts consistently | 🔲 Planned |
+| AB-45 | Lightweight `/dashboard/sales-home` endpoint for rep-focused payload | 🔲 Planned |
 
 ---
 
@@ -77,3 +104,4 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | 2026-06-17 | Tier 4 (AB-20–AB-24) shipped on `feature/SP-4` |
 | 2026-06-17 | AB-25 new joiners panel + analytics crash fixes on `feature/SP-4` |
 | 2026-06-17 | Tier 6 (AB-26–AB-28) shipped on `feature/SP-5` |
+| 2026-06-17 | Tier 7 dashboard revamp (AB-29–AB-35) shipped on `feature/SP-6` |

@@ -20,6 +20,8 @@ dev                          ← integration base (merge target)
  └── feature/SP-3            ← Tier 3 (AB-12…AB-19)
  └── feature/SP-4            ← Tier 4 (AB-20…AB-24) + AB-25
  └── feature/SP-5            ← Tier 6 (AB-26…AB-28)
+ └── feature/SP-6            ← Tier 7 (AB-29…AB-35)
+ └── feature/SP-7            ← Tier 8 (AB-36…AB-45, planned)
 ```
 
 | Branch | Purpose |
