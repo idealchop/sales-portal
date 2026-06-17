@@ -1,5 +1,5 @@
 import express from "express";
-import { getDashboardAnalytics } from "../handlers/dashboard-handler";
+import { getDashboardAnalytics, getDashboardSalesHome } from "../handlers/dashboard-handler";
 import { postApproveSubscription } from "../handlers/subscription-approval-handler";
 import {
   requireSalesPortalAccess,
@@ -13,6 +13,13 @@ router.get(
   validateFirebaseIdToken,
   requireSalesPortalAccess,
   getDashboardAnalytics,
+);
+
+router.get(
+  "/sales-home",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  getDashboardSalesHome,
 );
 
 router.post(

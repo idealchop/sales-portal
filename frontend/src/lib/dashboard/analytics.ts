@@ -140,6 +140,9 @@ export type DashboardAnalytics = {
   chartBusinessContext: ChartBusinessContext[];
   aiSalesInsights: AiSalesInsights;
   newJoiners: NewJoinersSummary;
+  personalSales?: PersonalSalesSummary;
+  todaysWork?: TodaysWorkItem[];
+  analyticsScope?: AnalyticsScope;
 };
 
 export type BreakdownRow = {
@@ -323,10 +326,48 @@ export type NewJoinersSummary = {
   platformUsers: NewPlatformUserJoiner[];
 };
 
+export type PersonalSalesSummary = {
+  totalProposals: number;
+  totalClients: number;
+  pipelineValue: number;
+  acceptedValue: number;
+  winRate: number;
+  commissionsMtd: number;
+  pendingCommissions: number;
+  paidCommissionsMtd: number;
+  draftsNeedingAction: number;
+  sentAwaitingResponse: number;
+};
+
+export type TodaysWorkItem = {
+  id: string;
+  source: "sales_action" | "ai_insight" | "approval" | "proposal";
+  priority: "high" | "medium" | "low";
+  title: string;
+  subtitle: string;
+  email?: string;
+  href?: string;
+};
+
+export type AnalyticsScope = "platform" | "team" | "personal";
+
 const EMPTY_NEW_JOINERS: NewJoinersSummary = {
   salesReps: [],
   businesses: [],
   platformUsers: [],
+};
+
+const EMPTY_PERSONAL_SALES: PersonalSalesSummary = {
+  totalProposals: 0,
+  totalClients: 0,
+  pipelineValue: 0,
+  acceptedValue: 0,
+  winRate: 0,
+  commissionsMtd: 0,
+  pendingCommissions: 0,
+  paidCommissionsMtd: 0,
+  draftsNeedingAction: 0,
+  sentAwaitingResponse: 0,
 };
 
 const EMPTY_AI_SALES_INSIGHTS: AiSalesInsights = {
@@ -458,5 +499,8 @@ export function normalizeDashboardAnalytics(
     })),
     aiSalesInsights: raw.aiSalesInsights ?? EMPTY_AI_SALES_INSIGHTS,
     newJoiners: raw.newJoiners ?? EMPTY_NEW_JOINERS,
+    personalSales: raw.personalSales ?? EMPTY_PERSONAL_SALES,
+    todaysWork: raw.todaysWork ?? [],
+    analyticsScope: raw.analyticsScope,
   };
 }

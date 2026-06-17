@@ -7,8 +7,15 @@ import { MetricCardsGrid } from "@/features/dashboard/components/metric-cards-gr
 import { SalesInsightsPanel } from "@/features/dashboard/components/sales-insights-panel";
 import { AiInsightsCard } from "@/features/dashboard/components/ai-insights-card";
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
+import {
+  DashboardDateFilterProvider,
+  useDashboardDateFilter,
+} from "@/features/dashboard/components/dashboard-date-filter-context";
+import { DashboardGlobalDateFilter } from "@/features/dashboard/components/dashboard-global-date-filter";
 import { NewJoinersPanel } from "@/features/dashboard/components/new-joiners-panel";
+import { PersonalSalesStrip } from "@/features/dashboard/components/personal-sales-strip";
 import { PlatformSnapshotStrip } from "@/features/dashboard/components/platform-snapshot-strip";
+import { TodaysWorkInbox } from "@/features/dashboard/components/todays-work-inbox";
 import { SubscriptionApprovalQueue } from "@/features/dashboard/components/subscription-approval-queue";
 import {
   Card,
@@ -40,6 +47,15 @@ function MetricsSkeleton() {
 }
 
 export function DashboardHome() {
+  return (
+    <DashboardDateFilterProvider>
+      <DashboardHomeContent />
+    </DashboardDateFilterProvider>
+  );
+}
+
+function DashboardHomeContent() {
+  const { globalFilter, setGlobalFilter } = useDashboardDateFilter();
   const { profile } = useSalesProfile();
   const { data, isLoading, isRefreshing, error, computedAt, refresh } =
     useDashboardAnalytics();
@@ -83,11 +99,22 @@ export function DashboardHome() {
         onRefresh={() => void refresh()}
       />
 
-      <PlatformSnapshotStrip
-        summary={data.summary}
-        salesInsights={data.salesInsights}
-        topBusinessesByCustomers={data.topBusinessesByCustomers}
+      <DashboardGlobalDateFilter />
+
+      <PersonalSalesStrip
+        personalSales={data.personalSales!}
+        analyticsScope={data.analyticsScope}
       />
+
+      <TodaysWorkInbox items={data.todaysWork ?? []} />
+
+      {role === "admin" || role === "manager" ?
+        <PlatformSnapshotStrip
+          summary={data.summary}
+          salesInsights={data.salesInsights}
+          topBusinessesByCustomers={data.topBusinessesByCustomers}
+        />
+      : null}
 
       {canManageApprovals ?
         <SubscriptionApprovalQueue
@@ -133,7 +160,11 @@ export function DashboardHome() {
         <AppFeedbackPanel appFeedback={data.appFeedback} />
       : null}
 
-      <GrowthChartsSection data={data} />
+      <GrowthChartsSection
+        data={data}
+        globalFilter={globalFilter}
+        onGlobalFilterChange={setGlobalFilter}
+      />
     </div>
   );
 }
