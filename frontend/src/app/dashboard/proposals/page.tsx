@@ -1,5 +1,5 @@
-import { MaintenancePage } from "@/features/dashboard/components/maintenance-page";
+import { ProposalsPage } from "@/features/proposals/components/proposals-page";
 
-export default function ProposalsPage() {
-  return <MaintenancePage title="Proposals & Clients" />;
+export default function DashboardProposalsPage() {
+  return <ProposalsPage />;
 }
