@@ -32,7 +32,7 @@ export function useDashboardAnalytics() {
       .catch(() => {
         if (cancelled) return;
         if (!readDashboardAnalyticsCache()) {
-          setError("Unable to load SmartRefill analytics.");
+          setError("Unable to load platform analytics.");
           setData(null);
         }
         setIsLoading(false);
@@ -55,7 +55,7 @@ export function useDashboardAnalytics() {
       setError(null);
     } catch {
       if (!options?.silent && !readDashboardAnalyticsCache()) {
-        setError("Unable to load SmartRefill analytics.");
+        setError("Unable to load platform analytics.");
         setData(null);
       }
     } finally {

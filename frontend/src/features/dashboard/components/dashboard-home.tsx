@@ -68,11 +68,11 @@ export function DashboardHome() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            SmartRefill Analytics
+            Platform Analytics
           </h1>
           <p className="mt-1 text-[var(--muted-foreground)]">
-            Welcome back, {profile?.displayName || "there"}. Growth, sales, and
-            active owners.
+            Welcome back, {profile?.displayName || "there"}. SmartRefill growth,
+            sales signals, and active owners.
           </p>
         </div>
         {isRefreshing ? (
@@ -84,7 +84,7 @@ export function DashboardHome() {
 
       <MetricCardsGrid
         title="Potential growth"
-        description="Where SmartRefill can grow."
+        description="Where SmartRefill can grow on the platform."
         metrics={growthSalesMetrics.growth}
       />
 
