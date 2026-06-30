@@ -95,6 +95,20 @@ export type OwnerSubscription = {
   isCancellation: boolean;
 };
 
+export type CommunityChannelUsageBilling = {
+  periodKey: string;
+  platformMessengerIntake: number;
+  platformWhatsappIntake: number;
+  stationAcceptsTotal: number;
+  communityEnrolledStations: number;
+  stationsReportingAccepts: number;
+  topStationsByAccepts: Array<{
+    businessId: string;
+    businessName: string;
+    accepts: number;
+  }>;
+};
+
 export type CommunityDispatchMetrics = {
   intakeToday: number;
   intakeLast7Days: number;
@@ -152,6 +166,7 @@ export type DashboardAnalytics = {
   }[];
   businessLocations: BusinessMapLocation[];
   communityDispatchMetrics: CommunityDispatchMetrics;
+  communityChannelUsage: CommunityChannelUsageBilling;
   salesInsights: SalesInsights;
   proposalPipeline: ProposalPipeline;
   appFeedback: AppFeedbackSummary;
@@ -394,6 +409,16 @@ export type TodaysWorkItem = {
 
 export type AnalyticsScope = "platform" | "team" | "personal";
 
+const EMPTY_COMMUNITY_CHANNEL_USAGE: CommunityChannelUsageBilling = {
+  periodKey: "",
+  platformMessengerIntake: 0,
+  platformWhatsappIntake: 0,
+  stationAcceptsTotal: 0,
+  communityEnrolledStations: 0,
+  stationsReportingAccepts: 0,
+  topStationsByAccepts: [],
+};
+
 const EMPTY_COMMUNITY_DISPATCH_METRICS: CommunityDispatchMetrics = {
   intakeToday: 0,
   intakeLast7Days: 0,
@@ -542,6 +567,8 @@ export function normalizeDashboardAnalytics(
     businessLocations: raw.businessLocations ?? [],
     communityDispatchMetrics:
       raw.communityDispatchMetrics ?? EMPTY_COMMUNITY_DISPATCH_METRICS,
+    communityChannelUsage:
+      raw.communityChannelUsage ?? EMPTY_COMMUNITY_CHANNEL_USAGE,
     salesInsights: raw.salesInsights ?? EMPTY_SALES_INSIGHTS,
     proposalPipeline: raw.proposalPipeline ?? EMPTY_PROPOSAL_PIPELINE,
     appFeedback: raw.appFeedback ?? EMPTY_APP_FEEDBACK,

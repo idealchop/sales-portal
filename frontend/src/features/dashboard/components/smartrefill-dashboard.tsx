@@ -9,6 +9,7 @@ import { PlatformSnapshotStrip } from "@/features/dashboard/components/platform-
 import { SubscriptionApprovalQueue } from "@/features/dashboard/components/subscription-approval-queue";
 import { CommunityDispatchQueue } from "@/features/dashboard/components/community-dispatch-queue";
 import { CommunityDispatchMetricsStrip } from "@/features/dashboard/components/community-dispatch-metrics-strip";
+import { CommunityChannelUsageStrip } from "@/features/dashboard/components/community-channel-usage-strip";
 import { AppChartsGrid } from "@/features/dashboard/components/app-charts-grid";
 import { DashboardInsightsForecastSection } from "@/features/dashboard/components/dashboard-insights-forecast-section";
 import { DashboardSection } from "@/features/dashboard/components/dashboard-section";
@@ -55,6 +56,7 @@ function SmartRefillDashboardContent({
         {canManageApprovals ?
           <>
             <CommunityDispatchMetricsStrip metrics={data.communityDispatchMetrics} />
+            <CommunityChannelUsageStrip usage={data.communityChannelUsage} />
             <CommunityDispatchQueue
               communityStations={data.businessLocations}
               onRefresh={refresh}

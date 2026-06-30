@@ -51,6 +51,11 @@ import {
   loadPendingCommunityOfferCounts,
   type CommunityDispatchMetrics,
 } from "./community-dispatch-ops-service";
+import {
+  readPlatformCommunityChannelUsage,
+  aggregateStationCommunityAccepts,
+  type CommunityChannelUsageBilling,
+} from "./community-channel-usage-service";
 
 const BUSINESS_QUERY_CONCURRENCY = 20;
 const LOGIN_EVENT_QUERY_CONCURRENCY = 25;
@@ -124,6 +129,7 @@ export type DashboardAnalytics = {
     pendingCommunityOffers?: number;
   }[];
   communityDispatchMetrics: CommunityDispatchMetrics;
+  communityChannelUsage: CommunityChannelUsageBilling;
   salesInsights: SalesInsights;
   proposalPipeline: ProposalPipeline;
   appFeedback: AppFeedbackSummary;
@@ -230,6 +236,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     salesSnap,
     pendingCommunityOffers,
     communityDispatchMetrics,
+    platformChannelUsage,
   ] = await Promise.all([
     db.collection("users").get(),
     db.collection("businesses").get(),
@@ -239,7 +246,16 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     db.collection("sales").get(),
     loadPendingCommunityOfferCounts(),
     computeCommunityDispatchMetrics(),
+    readPlatformCommunityChannelUsage(),
   ]);
+
+  const communityChannelUsage: CommunityChannelUsageBilling = {
+    ...platformChannelUsage,
+    ...aggregateStationCommunityAccepts(
+      businessesSnap.docs,
+      platformChannelUsage.periodKey,
+    ),
+  };
 
   const smartRefillUsers = usersSnap.docs.filter((doc) =>
     hasSmartRefillAccess(doc.data().appAccess),
@@ -900,6 +916,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
         loc.ownerId ? ownerLastActive.get(loc.ownerId) : undefined,
     })),
     communityDispatchMetrics,
+    communityChannelUsage,
     salesInsights,
     proposalPipeline,
     appFeedback,
