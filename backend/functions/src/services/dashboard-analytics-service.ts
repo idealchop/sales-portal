@@ -46,6 +46,11 @@ import {
 } from "./build-chart-time-series";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
 import { buildNewJoiners, type NewJoinersSummary } from "./build-new-joiners";
+import {
+  computeCommunityDispatchMetrics,
+  loadPendingCommunityOfferCounts,
+  type CommunityDispatchMetrics,
+} from "./community-dispatch-ops-service";
 
 const BUSINESS_QUERY_CONCURRENCY = 20;
 const LOGIN_EVENT_QUERY_CONCURRENCY = 25;
@@ -114,7 +119,11 @@ export type DashboardAnalytics = {
     customers: number;
     transactionsLast30Days: number;
     lastActiveDay?: string;
+    communityDispatchEnabled?: boolean;
+    communityPublicName?: string;
+    pendingCommunityOffers?: number;
   }[];
+  communityDispatchMetrics: CommunityDispatchMetrics;
   salesInsights: SalesInsights;
   proposalPipeline: ProposalPipeline;
   appFeedback: AppFeedbackSummary;
@@ -212,15 +221,25 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [usersSnap, businessesSnap, proposalsSnap, clientsSnap, appsFeedbackSnap, salesSnap] =
-    await Promise.all([
-      db.collection("users").get(),
-      db.collection("businesses").get(),
-      db.collection("proposals").get(),
-      db.collection("clients").get(),
-      db.collection("apps_feedback").get(),
-      db.collection("sales").get(),
-    ]);
+  const [
+    usersSnap,
+    businessesSnap,
+    proposalsSnap,
+    clientsSnap,
+    appsFeedbackSnap,
+    salesSnap,
+    pendingCommunityOffers,
+    communityDispatchMetrics,
+  ] = await Promise.all([
+    db.collection("users").get(),
+    db.collection("businesses").get(),
+    db.collection("proposals").get(),
+    db.collection("clients").get(),
+    db.collection("apps_feedback").get(),
+    db.collection("sales").get(),
+    loadPendingCommunityOfferCounts(),
+    computeCommunityDispatchMetrics(),
+  ]);
 
   const smartRefillUsers = usersSnap.docs.filter((doc) =>
     hasSmartRefillAccess(doc.data().appAccess),
@@ -439,6 +458,16 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
       });
 
       if (coords) {
+        const communityDispatch =
+          data.communityDispatch && typeof data.communityDispatch === "object" ?
+            (data.communityDispatch as Record<string, unknown>) :
+            {};
+        const communityEnabled = communityDispatch.enabled === true;
+        const communityPublicName =
+          typeof communityDispatch.publicName === "string" ?
+            communityDispatch.publicName.trim() :
+            undefined;
+
         businessLocations.push({
           id: bizDoc.id,
           name: businessName,
@@ -453,6 +482,9 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
           healthTier,
           customers,
           transactionsLast30Days: businessTx30,
+          communityDispatchEnabled: communityEnabled,
+          communityPublicName: communityPublicName || undefined,
+          pendingCommunityOffers: pendingCommunityOffers.get(bizDoc.id) ?? 0,
         });
       }
 
@@ -867,6 +899,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
       lastActiveDay:
         loc.ownerId ? ownerLastActive.get(loc.ownerId) : undefined,
     })),
+    communityDispatchMetrics,
     salesInsights,
     proposalPipeline,
     appFeedback,

@@ -7,6 +7,8 @@ import { AiInsightsCard } from "@/features/dashboard/components/ai-insights-card
 import { ProductSignalsStrip } from "@/features/dashboard/components/product-signals-strip";
 import { PlatformSnapshotStrip } from "@/features/dashboard/components/platform-snapshot-strip";
 import { SubscriptionApprovalQueue } from "@/features/dashboard/components/subscription-approval-queue";
+import { CommunityDispatchQueue } from "@/features/dashboard/components/community-dispatch-queue";
+import { CommunityDispatchMetricsStrip } from "@/features/dashboard/components/community-dispatch-metrics-strip";
 import { AppChartsGrid } from "@/features/dashboard/components/app-charts-grid";
 import { DashboardInsightsForecastSection } from "@/features/dashboard/components/dashboard-insights-forecast-section";
 import { DashboardSection } from "@/features/dashboard/components/dashboard-section";
@@ -51,11 +53,18 @@ function SmartRefillDashboardContent({
 
       <DashboardSection id="smartrefill-map" title="Map & actions">
         {canManageApprovals ?
-          <SubscriptionApprovalQueue
-            owners={growthSalesMetrics.activeOwners}
-            canApprove
-            onRefresh={refresh}
-          />
+          <>
+            <CommunityDispatchMetricsStrip metrics={data.communityDispatchMetrics} />
+            <CommunityDispatchQueue
+              communityStations={data.businessLocations}
+              onRefresh={refresh}
+            />
+            <SubscriptionApprovalQueue
+              owners={growthSalesMetrics.activeOwners}
+              canApprove
+              onRefresh={refresh}
+            />
+          </>
         : null}
         <WorkspaceMapOwnersSection
           locations={data.businessLocations}

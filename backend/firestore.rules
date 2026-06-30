@@ -157,6 +157,12 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Public portal track — lat/lng only, keyed by order referenceId (API writes).
+      match /portal_track_live/{referenceId} {
+        allow read: if true;
+        allow write: if false;
+      }
+
       // All other subcollections (audit_logs, subscriptions, payment_info,
       // notifications, chat_sessions, ai_tool_runs, expenses, …) — API / Admin SDK only.
       match /{subcollection}/{docId}/{nested=**} {
@@ -177,6 +183,17 @@ service cloud.firestore {
     match /apps/{appId} {
       allow read: if isSignedIn();
       allow write: if false;
+
+      match /whats_new/{releaseId} {
+        allow read: if isSignedIn();
+        allow create, update: if isSignedIn()
+          && releaseId.matches('^\\d{4}-\\d{2}-\\d{2}$')
+          && request.resource.data.publishedAt is string
+          && request.resource.data.title is string
+          && request.resource.data.summary is string
+          && request.resource.data.items is list;
+        allow delete: if isSuperAdmin();
+      }
     }
 
     match /subscription_plans/{planId} {
@@ -287,6 +304,23 @@ service cloud.firestore {
     match /apps_feedback/{feedbackId} {
       allow read: if isSuperAdmin();
       allow write: if false;
+    }
+
+    // CP-05 — community Page dispatch intake (API / Admin SDK only)
+    match /community_dispatch_requests/{requestId} {
+      allow read, write: if false;
+    }
+
+    match /community_messenger_sessions/{psid} {
+      allow read, write: if false;
+    }
+
+    match /dispatch_offers/{offerId} {
+      allow read, write: if false;
+    }
+
+    match /platform/{docId} {
+      allow read, write: if false;
     }
 
     match /deliveryTrackers/{docId} {

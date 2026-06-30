@@ -61,6 +61,9 @@ export type BusinessMapLocation = {
   lastActiveDay?: string;
   appId?: string;
   appLabel?: string;
+  communityDispatchEnabled?: boolean;
+  communityPublicName?: string;
+  pendingCommunityOffers?: number;
 };
 
 export type OwnerSubscriptionTimeline = "past" | "current" | "future";
@@ -90,6 +93,17 @@ export type OwnerSubscription = {
   needsApproval: boolean;
   isDowngrade: boolean;
   isCancellation: boolean;
+};
+
+export type CommunityDispatchMetrics = {
+  intakeToday: number;
+  intakeLast7Days: number;
+  openCount: number;
+  acceptedCount: number;
+  acceptRatePercent: number | null;
+  avgAcceptMinutes: number | null;
+  escalatedCount: number;
+  topStations: Array<{ businessId: string; businessName: string; accepts: number }>;
 };
 
 export type DashboardAnalytics = {
@@ -137,6 +151,7 @@ export type DashboardAnalytics = {
     customers: number;
   }[];
   businessLocations: BusinessMapLocation[];
+  communityDispatchMetrics: CommunityDispatchMetrics;
   salesInsights: SalesInsights;
   proposalPipeline: ProposalPipeline;
   appFeedback: AppFeedbackSummary;
@@ -379,6 +394,17 @@ export type TodaysWorkItem = {
 
 export type AnalyticsScope = "platform" | "team" | "personal";
 
+const EMPTY_COMMUNITY_DISPATCH_METRICS: CommunityDispatchMetrics = {
+  intakeToday: 0,
+  intakeLast7Days: 0,
+  openCount: 0,
+  acceptedCount: 0,
+  acceptRatePercent: null,
+  avgAcceptMinutes: null,
+  escalatedCount: 0,
+  topStations: [],
+};
+
 const EMPTY_NEW_JOINERS: NewJoinersSummary = {
   salesReps: [],
   businesses: [],
@@ -514,6 +540,8 @@ export function normalizeDashboardAnalytics(
     recentBusinesses: raw.recentBusinesses ?? [],
     topBusinessesByCustomers: raw.topBusinessesByCustomers ?? [],
     businessLocations: raw.businessLocations ?? [],
+    communityDispatchMetrics:
+      raw.communityDispatchMetrics ?? EMPTY_COMMUNITY_DISPATCH_METRICS,
     salesInsights: raw.salesInsights ?? EMPTY_SALES_INSIGHTS,
     proposalPipeline: raw.proposalPipeline ?? EMPTY_PROPOSAL_PIPELINE,
     appFeedback: raw.appFeedback ?? EMPTY_APP_FEEDBACK,

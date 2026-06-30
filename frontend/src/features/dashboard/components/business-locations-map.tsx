@@ -151,6 +151,17 @@ function LocationAside({
           <dd className="font-medium text-foreground">
             {location.lastActiveDay || "—"}
           </dd>
+          {location.communityDispatchEnabled ?
+            <>
+              <dt className="text-zinc-500">Community</dt>
+              <dd className="font-medium text-foreground">
+                {location.communityPublicName || "Enrolled"}
+                {(location.pendingCommunityOffers ?? 0) > 0 ?
+                  ` · ${location.pendingCommunityOffers} pending offer${location.pendingCommunityOffers === 1 ? "" : "s"}`
+                : ""}
+              </dd>
+            </>
+          : null}
         </dl>
 
         {location.ownerEmail && (

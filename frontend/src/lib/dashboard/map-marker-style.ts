@@ -64,39 +64,65 @@ export function resolveMapMarkerStyle(
   );
 }
 
-function markerHtml(color: string): string {
+function markerHtml(color: string, badgeCount?: number): string {
+  const badge =
+    badgeCount && badgeCount > 0 ?
+      `<span style="
+        position:absolute;
+        top:-4px;
+        right:-4px;
+        min-width:18px;
+        height:18px;
+        padding:0 5px;
+        border-radius:9999px;
+        background:#dc2626;
+        color:#fff;
+        font-size:11px;
+        font-weight:700;
+        line-height:18px;
+        text-align:center;
+        border:2px solid #fff;
+        box-shadow:0 2px 6px rgba(15,23,42,0.25);
+      ">${badgeCount > 9 ? "9+" : badgeCount}</span>`
+    : "";
+
   return `
-    <div style="
-      width: 36px;
-      height: 36px;
-      border-radius: 9999px;
-      background: ${color};
-      border: 2.5px solid #fff;
-      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.28);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    ">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 10.5 12 3l9 7.5" />
-        <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1V9.5" />
-      </svg>
+    <div style="position:relative;width:36px;height:36px;">
+      <div style="
+        width: 36px;
+        height: 36px;
+        border-radius: 9999px;
+        background: ${color};
+        border: 2.5px solid #fff;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5 12 3l9 7.5" />
+          <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1V9.5" />
+        </svg>
+      </div>
+      ${badge}
     </div>
   `;
 }
 
 export function createMapMarkerIcon(location: BusinessMapLocation): L.DivIcon {
   const { color } = resolveMapMarkerStyle(location);
-  const cached = MARKER_CACHE.get(color);
+  const pending = location.pendingCommunityOffers ?? 0;
+  const cacheKey = `${color}:${pending}`;
+  const cached = MARKER_CACHE.get(cacheKey);
   if (cached) return cached;
 
   const icon = L.divIcon({
     className: "sr-map-marker",
-    html: markerHtml(color),
+    html: markerHtml(color, pending),
     iconSize: [36, 36],
     iconAnchor: [18, 36],
     popupAnchor: [0, -34],
   });
-  MARKER_CACHE.set(color, icon);
+  MARKER_CACHE.set(cacheKey, icon);
   return icon;
 }
