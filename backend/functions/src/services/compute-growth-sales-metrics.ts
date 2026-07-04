@@ -112,6 +112,7 @@ export function computeGrowthSalesMetrics(input: {
   monthStart: Date;
   activeWindowStartKey: string;
   subscriptionsByBusiness: Map<string, OwnerSubscription[]>;
+  virtualStaffCounts: { admins: number; riders: number };
 }): { growth: DashboardMetric[]; activeOwners: ActiveOwner[] } {
   const {
     businesses,
@@ -132,6 +133,7 @@ export function computeGrowthSalesMetrics(input: {
     monthStart,
     activeWindowStartKey,
     subscriptionsByBusiness,
+    virtualStaffCounts,
   } = input;
 
   const ownerGrowthLastTwo = ownerUserGrowth.slice(-2);
@@ -299,7 +301,7 @@ export function computeGrowthSalesMetrics(input: {
       title: "Team expansion upside",
       variant: "engagement",
       value: `${userGrowthSignals.soloOwnerWorkspaces}`,
-      subtitle: `${userGrowthSignals.workspacesWithoutAdmin} missing admin · ${userGrowthSignals.workspacesWithoutRider} missing rider`,
+      subtitle: `${virtualStaffCounts.admins.toLocaleString()} staff-admin · ${virtualStaffCounts.riders.toLocaleString()} staff-rider · ${userGrowthSignals.workspacesWithoutAdmin} missing admin · ${userGrowthSignals.workspacesWithoutRider} missing rider`,
       highlights: [
         {
           label: "Solo-owner workspaces",

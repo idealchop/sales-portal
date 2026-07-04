@@ -48,7 +48,10 @@ export const apiClient = {
 
   async get<T>(path: string): Promise<T> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_URL}${path}`, { headers });
+    const res = await fetch(`${API_URL}${path}`, {
+      headers,
+      cache: "no-store",
+    });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new ApiError(

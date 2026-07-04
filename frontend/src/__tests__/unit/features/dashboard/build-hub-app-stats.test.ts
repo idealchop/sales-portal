@@ -21,6 +21,18 @@ function minimalAnalytics(
       topBrowser: "Chrome",
       transactionsLast30Days: 200,
       refillVolumeLast30Days: 180,
+      totalTransactions: 2500,
+      transactionBreakdown: { walkIn: 800, directSale: 600, orders: 1100 },
+      customerBreakdown: { active: 95, deactivated: 5 },
+      userRoleCounts: { owners: 6, admins: 2, riders: 2 },
+      virtualStaffCounts: { admins: 1, riders: 1 },
+      businessTierCounts: { scale: 2, grow: 3, starter: 4, free: 1 },
+      totalInventory: 1305,
+      inventoryBreakdown: {
+        generalStock: 36,
+        kit: 120,
+        container: { shell: 50, round: 99, slim: 1000 },
+      },
     },
     userGrowth: [],
     businessGrowth: [],
@@ -91,6 +103,16 @@ function minimalAnalytics(
       aiEnabled: false,
     },
     newJoiners: { salesReps: [], businesses: [], platformUsers: [] },
+    platformAlerts: {
+      items: [],
+      counts: {
+        demo_inquiry: 0,
+        new_user_registration: 0,
+        subscription_change: 0,
+        subscription_expiring_soon: 0,
+        subscription_grace_period: 0,
+      },
+    },
     ...overrides,
   } as DashboardAnalytics;
 }

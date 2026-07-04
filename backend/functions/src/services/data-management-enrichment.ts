@@ -1,6 +1,7 @@
 import { db } from "../config/firebase-admin";
 import {
   normalizeSmartRefillStaffSubRole,
+  resolveMemberStaffSubRole,
   type SmartRefillStaffSubRole,
 } from "../constants/smartrefill";
 import { mapOwnerSubscriptions } from "./map-owner-subscriptions";
@@ -101,7 +102,7 @@ export function buildMemberCountsByBusiness(
     if (String(memberData.role || "").trim().toLowerCase() === "owner") continue;
     if (memberData.isActive === false) continue;
 
-    const staffRole = normalizeSmartRefillStaffSubRole(memberData.role);
+    const staffRole = resolveMemberStaffSubRole(memberData as Record<string, unknown>);
     if (!staffRole) continue;
 
     const bucket = counts.get(businessId) ?? { admins: 0, riders: 0 };
@@ -210,7 +211,7 @@ export function listStaffMemberCandidates(
     if (memberId === business.ownerId) continue;
     if (String(memberData.role || "").trim().toLowerCase() === "owner") continue;
 
-    const staffRole = normalizeSmartRefillStaffSubRole(memberData.role);
+    const staffRole = resolveMemberStaffSubRole(memberData as Record<string, unknown>);
     if (!staffRole) continue;
 
     rows.push({ memberId, memberData, businessId, staffRole });

@@ -31,7 +31,7 @@ export const getDashboardAnalytics = async (
 
     res.set(
       "Cache-Control",
-      "private, max-age=60, stale-while-revalidate=300",
+      "private, no-store, no-cache, must-revalidate",
     );
     res.json({ data: payload, meta });
   } catch (error) {
@@ -67,7 +67,7 @@ export const getDashboardSalesHome = async (
 
     res.set(
       "Cache-Control",
-      "private, max-age=60, stale-while-revalidate=300",
+      "private, no-store, no-cache, must-revalidate",
     );
     res.json({
       data: {

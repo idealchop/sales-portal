@@ -3,23 +3,16 @@ import {
   normalizeDashboardAnalytics,
   type DashboardAnalytics,
 } from "@/lib/dashboard/analytics";
-import {
-  readDashboardAnalyticsCache,
-  writeDashboardAnalyticsCache,
-} from "@/lib/dashboard/analytics-cache";
 
 type DashboardAnalyticsResponse = {
   data: DashboardAnalytics;
   meta?: {
     computedAt?: string;
-    cached?: boolean;
-    stale?: boolean;
   };
 };
 
 export type DashboardAnalyticsFetchResult = {
   data: DashboardAnalytics;
-  fromCache: boolean;
   computedAt: string;
 };
 
@@ -31,44 +24,15 @@ async function requestDashboardAnalytics(): Promise<DashboardAnalyticsFetchResul
   );
   const data = normalizeDashboardAnalytics(response.data);
   const computedAt = response.meta?.computedAt ?? new Date().toISOString();
-  writeDashboardAnalyticsCache(data, computedAt);
-  return { data, fromCache: false, computedAt };
+  return { data, computedAt };
 }
 
-export async function fetchDashboardAnalytics(options?: {
-  force?: boolean;
-}): Promise<DashboardAnalyticsFetchResult> {
-  if (!options?.force) {
-    const cached = readDashboardAnalyticsCache();
-    if (cached?.isFresh) {
-      return {
-        data: cached.data,
-        fromCache: true,
-        computedAt: cached.computedAt,
-      };
-    }
-
-    if (cached?.isStale) {
-      if (!inFlight) {
-        inFlight = requestDashboardAnalytics().finally(() => {
-          inFlight = null;
-        });
-      }
-      void inFlight;
-      return {
-        data: cached.data,
-        fromCache: true,
-        computedAt: cached.computedAt,
-      };
-    }
-  }
-
+export async function fetchDashboardAnalytics(): Promise<DashboardAnalyticsFetchResult> {
   if (!inFlight) {
     inFlight = requestDashboardAnalytics().finally(() => {
       inFlight = null;
     });
   }
-
   return inFlight;
 }
 

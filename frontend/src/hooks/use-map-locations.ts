@@ -36,7 +36,7 @@ export function useMapLocations(
     setIsRefreshing(true);
     setError(null);
     try {
-      const result = await fetchDashboardAnalytics({ force: true });
+      const result = await fetchDashboardAnalytics();
       const data = result.data;
       setLocalState((current) => ({
         ...current,

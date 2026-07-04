@@ -1,5 +1,6 @@
 import express from "express";
 import { getDashboardAnalytics, getDashboardSalesHome } from "../handlers/dashboard-handler";
+import { patchPlatformAlertContactHandler } from "../handlers/platform-alert-contact-handler";
 import { postApproveSubscription } from "../handlers/subscription-approval-handler";
 import {
   getCommunityDispatchRequestById,
@@ -26,6 +27,13 @@ router.get(
   validateFirebaseIdToken,
   requireSalesPortalAccess,
   getDashboardSalesHome,
+);
+
+router.patch(
+  "/platform-alerts/:alertId/contact",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  patchPlatformAlertContactHandler,
 );
 
 router.post(

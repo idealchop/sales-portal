@@ -301,7 +301,21 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /platform_alert_contacts/{alertId} {
+      allow read, write: if false;
+    }
+
     match /apps_feedback/{feedbackId} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+
+    match /feature_ratings/{ratingId} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+
+    match /platform_features/{featureId} {
       allow read: if isSuperAdmin();
       allow write: if false;
     }
@@ -313,6 +327,22 @@ service cloud.firestore {
 
     match /community_messenger_sessions/{psid} {
       allow read, write: if false;
+    }
+
+    match /delivery_messenger_chats/{threadId} {
+      allow read, write: if false;
+
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /community_messenger_inquiry_threads/{threadId} {
+      allow read, write: if false;
+
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
     }
 
     match /dispatch_offers/{offerId} {

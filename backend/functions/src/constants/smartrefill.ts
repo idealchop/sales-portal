@@ -44,6 +44,25 @@ export function isValidSmartRefillStaffSubRole(role: string): boolean {
   return (SMARTREFILL_STAFF_SUB_ROLES as readonly string[]).includes(normalized);
 }
 
+/** Resolve admin/rider seat from a workspace member document. */
+export function resolveMemberStaffSubRole(
+  memberData: Record<string, unknown>,
+): SmartRefillStaffSubRole | undefined {
+  const directRole = normalizeSmartRefillStaffSubRole(memberData.role);
+  if (directRole === "admin") return "admin";
+
+  const normalizedRole = String(memberData.role ?? "")
+    .trim()
+    .toLowerCase();
+  if (normalizedRole === "staff") {
+    const fromSubRole = normalizeSmartRefillStaffSubRole(memberData.staffSubRole);
+    if (fromSubRole) return fromSubRole;
+  }
+
+  if (directRole === "rider") return "rider";
+  return undefined;
+}
+
 /** Legacy member / appAccess values map to admin or rider seats. */
 export function normalizeSmartRefillStaffSubRole(
   role?: unknown,
