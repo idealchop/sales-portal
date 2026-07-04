@@ -396,32 +396,39 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     BUSINESS_QUERY_CONCURRENCY,
     async (bizDoc) => {
       const data = bizDoc.data();
-      const [customersCountSnap, deactivatedCustomersSnap, subscriptionsSnap, transactionsSnap, walkInCountSnap, directSaleCountSnap, orderCountSnap] =
-        await Promise.all([
-          bizDoc.ref.collection("customers").count().get(),
-          bizDoc.ref
-            .collection("customers")
-            .where("status", "in", ["inactive", "archived"])
-            .count()
-            .get(),
-          bizDoc.ref
-            .collection("subscriptions")
-            .orderBy("createdAt", "desc")
-            .limit(20)
-            .get(),
-          bizDoc.ref
-            .collection("transactions")
-            .where("createdAt", ">=", sixMonthsAgoTimestamp)
-            .select("createdAt", "totalAmount", "waterRefills")
-            .get(),
-          bizDoc.ref.collection("transactions").where("type", "==", "walkin").count().get(),
-          bizDoc.ref.collection("transactions").where("type", "==", "direct_sale").count().get(),
-          bizDoc.ref
-            .collection("transactions")
-            .where("type", "in", ["delivery", "collection"])
-            .count()
-            .get(),
-        ]);
+      const [
+        customersCountSnap,
+        deactivatedCustomersSnap,
+        subscriptionsSnap,
+        transactionsSnap,
+        walkInCountSnap,
+        directSaleCountSnap,
+        orderCountSnap,
+      ] = await Promise.all([
+        bizDoc.ref.collection("customers").count().get(),
+        bizDoc.ref
+          .collection("customers")
+          .where("status", "in", ["inactive", "archived"])
+          .count()
+          .get(),
+        bizDoc.ref
+          .collection("subscriptions")
+          .orderBy("createdAt", "desc")
+          .limit(20)
+          .get(),
+        bizDoc.ref
+          .collection("transactions")
+          .where("createdAt", ">=", sixMonthsAgoTimestamp)
+          .select("createdAt", "totalAmount", "waterRefills")
+          .get(),
+        bizDoc.ref.collection("transactions").where("type", "==", "walkin").count().get(),
+        bizDoc.ref.collection("transactions").where("type", "==", "direct_sale").count().get(),
+        bizDoc.ref
+          .collection("transactions")
+          .where("type", "in", ["delivery", "collection"])
+          .count()
+          .get(),
+      ]);
 
       subscriptionsByBusiness.set(
         bizDoc.id,
