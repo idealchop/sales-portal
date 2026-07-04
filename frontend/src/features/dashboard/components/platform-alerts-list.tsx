@@ -135,7 +135,7 @@ function PlatformAlertRow({
           : null}
           {item.businessId ?
             <Link
-              href={businessInfoPath(item.businessId)}
+              href={businessInfoPath(item.businessId, "/dashboard#smartrefill-alerts")}
               className="text-xs font-medium text-teal-700 hover:underline"
             >
               Open workspace →
@@ -152,7 +152,7 @@ function PlatformAlertRow({
           <Button
             type="button"
             size="sm"
-            variant={contactStatus === "need_contact" ? "default" : "outline"}
+            variant={contactStatus === "need_contact" ? "primary" : "outline"}
             disabled={isSaving}
             onClick={() => onContactStatusChange(item.id, "need_contact")}
             className={cn(
@@ -165,7 +165,7 @@ function PlatformAlertRow({
           <Button
             type="button"
             size="sm"
-            variant={contactStatus === "contacted" ? "default" : "outline"}
+            variant={contactStatus === "contacted" ? "primary" : "outline"}
             disabled={isSaving}
             onClick={() => onContactStatusChange(item.id, "contacted")}
             className={cn(
