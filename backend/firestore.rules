@@ -99,6 +99,12 @@ service cloud.firestore {
       return userProfile.team == managerTeamName;
     }
 
+    function hasSalesPortalAccess() {
+      return isSuperAdmin()
+        || isSalesPortalAdmin()
+        || exists(/databases/$(database)/documents/sales/$(request.auth.uid));
+    }
+
     // -------------------------------------------------------------------------
     // users/{uid} — SmartRefill profile + Sales Portal notifications
     // -------------------------------------------------------------------------
@@ -290,6 +296,12 @@ service cloud.firestore {
           );
         allow write: if isSignedIn();
       }
+    }
+
+    // Sales Portal — cached dashboard analytics snapshot (Admin SDK writes only)
+    match /sales_portal_dashboard_analytics/{docId} {
+      allow read: if hasSalesPortalAccess();
+      allow write: if false;
     }
 
     // -------------------------------------------------------------------------
