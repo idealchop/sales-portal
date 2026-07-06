@@ -1,4 +1,5 @@
 import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
+import { isTestAccountOwner } from "@/lib/dashboard/test-account-filters";
 
 export type SubscriptionChangeKind =
   | "upgrade"
@@ -96,6 +97,8 @@ export function buildUserSubscriptionsList(
   const items: UserSubscriptionListItem[] = [];
 
   for (const owner of owners) {
+    if (isTestAccountOwner(owner)) continue;
+
     const subscription = pickLatestSubscription(owner.subscriptions ?? []);
     if (!subscription) continue;
 

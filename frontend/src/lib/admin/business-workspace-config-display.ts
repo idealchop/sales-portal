@@ -160,7 +160,7 @@ function readCatalogEntries(value: unknown, groupKey: string): CatalogEntry[] {
     if (typeof entry === "string") {
       const id = entry.trim();
       return {
-        key: `${groupKey}-${id || index}`,
+        key: `${groupKey}-${index}-${id || "item"}`,
         label: humanizeToken(id) || `Item ${index + 1}`,
       };
     }
@@ -172,7 +172,7 @@ function readCatalogEntries(value: unknown, groupKey: string): CatalogEntry[] {
         name && id && name !== id ? `${name} (${id})`
         : name || id || `Item ${index + 1}`;
       return {
-        key: `${groupKey}-${id || name || index}`,
+        key: `${groupKey}-${index}-${id || name || "item"}`,
         label,
       };
     }
@@ -284,7 +284,7 @@ export function parseCatalogSection(data: Record<string, unknown>): {
       "inventory",
     ),
     usageGoals: usageGoalIds.map((id, index) => ({
-      key: `goal-${id || index}`,
+      key: `goal-${index}-${id || "item"}`,
       label: USAGE_GOAL_LABELS[id] ?? humanizeToken(id),
     })),
   };

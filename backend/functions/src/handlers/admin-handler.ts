@@ -18,6 +18,7 @@ import {
   listBusinessTransactions,
   listCustomerTransactions,
   listCustomerInventoryAssignments,
+  bulkUpdateCustomerStatus,
   updateBusinessFirestoreDocument,
 } from "../services/admin-business-documents-service";
 import {
@@ -31,6 +32,7 @@ import {
   listCatalogCollectionDocuments,
   upsertCatalogCollectionDocument,
 } from "../services/admin-catalog-collection-service";
+import { normalizeAuthAccountTagInput } from "../services/auth-account-tag";
 
 export const getAdminUsers = async (
   _req: AuthenticatedRequest,
@@ -103,7 +105,10 @@ export const patchAdminUserAppAccess = async (
   res: Response,
 ) => {
   const uid = String(req.params.uid || "");
-  const body = req.body as { appAccess?: AdminAppAccessEntry[] };
+  const body = req.body as {
+    appAccess?: AdminAppAccessEntry[];
+    authAccountTag?: unknown;
+  };
 
   if (!uid) {
     res.status(400).json({ error: "User id is required." });
@@ -114,8 +119,16 @@ export const patchAdminUserAppAccess = async (
     return;
   }
 
+  const authAccountTag = normalizeAuthAccountTagInput(body.authAccountTag);
+  if (body.authAccountTag !== undefined && authAccountTag === undefined) {
+    res.status(400).json({ error: "authAccountTag must be \"test\" or null." });
+    return;
+  }
+
   try {
-    const user = await updateAdminUserAppAccess(uid, body.appAccess);
+    const user = await updateAdminUserAppAccess(uid, body.appAccess, {
+      ...(authAccountTag !== undefined ? { authAccountTag } : {}),
+    });
     res.json({ data: { user } });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -424,6 +437,61 @@ export const putAdminBusinessDocument = async (
       businessId,
     });
     res.status(500).json({ error: "Failed to update document." });
+  }
+};
+
+export const patchAdminCustomerBulkStatus = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const businessId = String(req.params.businessId || "");
+  const body = req.body as { customerIds?: unknown; status?: unknown };
+
+  if (!businessId) {
+    res.status(400).json({ error: "Business id is required." });
+    return;
+  }
+  if (!Array.isArray(body.customerIds) || body.customerIds.length === 0) {
+    res.status(400).json({ error: "At least one customer id is required." });
+    return;
+  }
+  if (body.status !== "active" && body.status !== "inactive") {
+    res.status(400).json({ error: "Status must be active or inactive." });
+    return;
+  }
+
+  const customerIds = body.customerIds
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (customerIds.length === 0) {
+    res.status(400).json({ error: "At least one customer id is required." });
+    return;
+  }
+
+  try {
+    const documents = await bulkUpdateCustomerStatus(
+      businessId,
+      customerIds,
+      body.status,
+    );
+    res.json({ data: { documents } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "NO_CUSTOMER_IDS" || message === "INVALID_STATUS") {
+      res.status(400).json({ error: "Invalid bulk customer status request." });
+      return;
+    }
+    if (message === "NO_CUSTOMERS_FOUND") {
+      res.status(404).json({ error: "No matching customers were found." });
+      return;
+    }
+    logger.error("Failed to bulk update customer status", {
+      error,
+      businessId,
+    });
+    res.status(500).json({ error: "Failed to update customer status." });
   }
 };
 

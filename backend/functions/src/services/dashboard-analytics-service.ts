@@ -26,6 +26,11 @@ import {
 } from "./compute-role-active-times";
 import { countActiveUsersByRole, countSmartRefillUserRoles, filterOwnerSmartRefillUsers, resolveSmartRefillUserRole } from "./count-smartrefill-user-roles";
 import {
+  collectTestAccountOwnerIds,
+  isTestAccountOwnerId,
+  readFirestoreAuthAccountTag,
+} from "./auth-account-tag";
+import {
   computeProposalPipeline,
   computeSalesInsights,
   countGettingStartedDone,
@@ -147,6 +152,7 @@ export type DashboardAnalytics = {
     onboardingComplete: boolean;
     planName?: string;
     planCode?: string;
+    billingCycle?: string;
     healthTier: "high" | "medium" | "low";
     customers: number;
     transactionsLast30Days: number;
@@ -154,6 +160,7 @@ export type DashboardAnalytics = {
     communityDispatchEnabled?: boolean;
     communityPublicName?: string;
     pendingCommunityOffers?: number;
+    authAccountTag?: "test" | null;
   }[];
   communityDispatchMetrics: CommunityDispatchMetrics;
   communityChannelUsage: CommunityChannelUsageBilling;
@@ -301,6 +308,14 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
       .map((doc) => doc.data().ownerId)
       .filter((ownerId): ownerId is string => typeof ownerId === "string"),
   );
+  const userDocs = usersSnap.docs.map((doc) => ({
+    id: doc.id,
+    data: doc.data(),
+  }));
+  const testAccountOwnerIds = collectTestAccountOwnerIds(userDocs);
+  const authAccountTagByUserId = new Map(
+    userDocs.map((doc) => [doc.id, readFirestoreAuthAccountTag(doc.data)]),
+  );
 
   const ownerSmartRefillUsers = filterOwnerSmartRefillUsers(
     smartRefillUsers.map((doc) => ({ id: doc.id, data: doc.data() })),
@@ -439,6 +454,10 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
           })),
         ),
       );
+      const mappedSubscriptions = subscriptionsByBusiness.get(bizDoc.id) ?? [];
+      const currentSubscription = mappedSubscriptions.find(
+        (sub) => sub.timeline === "current",
+      );
 
       const customers = customersCountSnap.data().count;
       const deactivated = deactivatedCustomersSnap.data().count;
@@ -549,7 +568,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
         gettingStartedCompleted: countGettingStartedDone(gettingStarted),
       });
 
-      if (coords) {
+      if (coords && !isTestAccountOwnerId(ownerId, testAccountOwnerIds)) {
         const communityDispatch =
           data.communityDispatch && typeof data.communityDispatch === "object" ?
             (data.communityDispatch as Record<string, unknown>) :
@@ -571,6 +590,9 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
           onboardingComplete,
           planName,
           planCode,
+          billingCycle: currentSubscription?.billingCycle,
+          authAccountTag:
+            ownerId ? authAccountTagByUserId.get(ownerId) ?? null : null,
           healthTier,
           customers,
           transactionsLast30Days: businessTx30,
@@ -853,6 +875,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
   const { growth, activeOwners } = computeGrowthSalesMetrics({
     businesses: businessSnapshots,
     ownerLastActive,
+    testAccountOwnerIds,
     ownerUserGrowth: buildMonthlySeries(ownerUserGrowthDates),
     businessGrowth: buildMonthlySeries(businessGrowthDates),
     totalCustomers,
@@ -958,28 +981,29 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     businessNamesById,
     now,
   });
-  const alertContactStatuses = await getPlatformAlertContactStatuses(
-    builtPlatformAlerts.items.map((item) => item.id),
-  );
+  const [alertContactStatuses, dashboardForecasts] = await Promise.all([
+    getPlatformAlertContactStatuses(
+      builtPlatformAlerts.items.map((item) => item.id),
+    ),
+    generateDashboardForecasts({
+      summary: {
+        smartRefillUsers: smartRefillUsers.length,
+        onboardedBusinesses,
+        totalBusinesses: businessDocs.length,
+        totalCustomers,
+        activeLoginUsers: activeUserIds.size,
+        transactionsLast30Days,
+        refillVolumeLast30Days,
+      },
+      salesInsights,
+      proposalPipeline,
+      aiSalesInsights: behavioral.aiSalesInsights,
+    }),
+  ]);
   const platformAlerts = attachContactStatusToAlerts(
     builtPlatformAlerts,
     alertContactStatuses,
   );
-
-  const dashboardForecasts = await generateDashboardForecasts({
-    summary: {
-      smartRefillUsers: smartRefillUsers.length,
-      onboardedBusinesses,
-      totalBusinesses: businessDocs.length,
-      totalCustomers,
-      activeLoginUsers: activeUserIds.size,
-      transactionsLast30Days,
-      refillVolumeLast30Days,
-    },
-    salesInsights,
-    proposalPipeline,
-    aiSalesInsights: behavioral.aiSalesInsights,
-  });
 
   return {
     summary: {
@@ -1044,11 +1068,13 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     ),
     recentBusinesses: recentBusinesses.slice(0, 8),
     topBusinessesByCustomers: topBusinessesByCustomers.slice(0, 6),
-    businessLocations: businessLocations.map((loc) => ({
-      ...loc,
-      lastActiveDay:
-        loc.ownerId ? ownerLastActive.get(loc.ownerId) : undefined,
-    })),
+    businessLocations: businessLocations
+      .filter((loc) => !isTestAccountOwnerId(loc.ownerId, testAccountOwnerIds))
+      .map((loc) => ({
+        ...loc,
+        lastActiveDay:
+          loc.ownerId ? ownerLastActive.get(loc.ownerId) : undefined,
+      })),
     communityDispatchMetrics,
     communityChannelUsage,
     salesInsights,

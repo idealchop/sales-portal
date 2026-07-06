@@ -7,6 +7,7 @@ export type AdminUserRowDisplay = {
   email: boolean;
   statusBadge: boolean;
   authOnlyBadge: boolean;
+  testAccountBadge: boolean;
   permissions: boolean;
   lastSignIn: boolean;
   registered: boolean;
@@ -18,6 +19,7 @@ export const DEFAULT_ADMIN_USER_ROW_DISPLAY: AdminUserRowDisplay = {
   email: true,
   statusBadge: true,
   authOnlyBadge: true,
+  testAccountBadge: true,
   permissions: true,
   lastSignIn: true,
   registered: true,
@@ -32,6 +34,7 @@ export const ADMIN_USER_CARD_DISPLAY_OPTIONS: {
   { key: "email", label: "Email" },
   { key: "statusBadge", label: "Access status" },
   { key: "authOnlyBadge", label: "Auth-only badge" },
+  { key: "testAccountBadge", label: "Test account badge" },
   { key: "permissions", label: "App permissions (list)" },
   { key: "lastSignIn", label: "Last sign-in (Auth)" },
   { key: "registered", label: "Registered (Auth created)" },

@@ -28,9 +28,12 @@ import {
   formatWorkspaceHealthTier,
 } from "@/lib/dashboard/workspace-health";
 import {
+  formatBillingCycleLabel,
   formatPaymentStatus,
   formatSubscriptionPeriod,
   formatSubscriptionStatus,
+  formatTrialDaysRemaining,
+  isTrialBillingCycle,
 } from "@/lib/dashboard/subscription-labels";
 import { formatPhp } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -78,6 +81,11 @@ function SubscriptionRow({
   approvingId: string | null;
 }) {
   const showReason = subscription.isDowngrade || subscription.isCancellation;
+  const isFreeTrial = isTrialBillingCycle(subscription.billingCycle);
+  const billingCycleLabel = formatBillingCycleLabel(subscription.billingCycle);
+  const trialDaysRemaining = isFreeTrial ?
+    formatTrialDaysRemaining(subscription.expiresAt)
+  : null;
 
   return (
     <div className="rounded-lg border border-zinc-100 bg-white px-3 py-2.5">
@@ -85,10 +93,15 @@ function SubscriptionRow({
         <div className="min-w-0">
           <p className="font-medium text-foreground">
             {subscription.planName}
-            {subscription.billingCycle ?
+            {billingCycleLabel ?
               <span className="ml-1.5 text-xs font-normal text-[var(--muted-foreground)]">
-                · {subscription.billingCycle}
+                · {billingCycleLabel}
               </span>
+            : null}
+            {trialDaysRemaining ?
+              <Badge className="ml-1.5 bg-sky-50 font-normal text-sky-800">
+                {trialDaysRemaining}
+              </Badge>
             : null}
           </p>
           <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">

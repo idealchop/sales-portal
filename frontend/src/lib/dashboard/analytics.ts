@@ -64,6 +64,8 @@ export type BusinessMapLocation = {
   communityDispatchEnabled?: boolean;
   communityPublicName?: string;
   pendingCommunityOffers?: number;
+  billingCycle?: string;
+  authAccountTag?: "test" | null;
 };
 
 export type OwnerSubscriptionTimeline = "past" | "current" | "future";
@@ -260,6 +262,7 @@ export type ActiveOwner = {
   monthlyRevenue: number;
   subscriptions?: OwnerSubscription[];
   pendingApprovals?: number;
+  authAccountTag?: "test" | null;
 };
 
 export type GrowthSalesMetrics = {

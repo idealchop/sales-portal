@@ -41,7 +41,7 @@ function DashboardAnalyticsShellContent({
   children: (ctx: DashboardViewContext) => ReactNode;
 }) {
   const { profile } = useSalesProfile();
-  const { data, isLoading, isRefreshing, error, computedAt, refresh } =
+  const { data, isLoading, isRefreshing, isStale, error, computedAt, refresh } =
     useDashboardAnalyticsContext();
 
   if (isLoading && !data) {
@@ -65,6 +65,14 @@ function DashboardAnalyticsShellContent({
   return (
     <div className="flex flex-col gap-4">
       <DashboardAppNav />
+
+      {(isStale || isRefreshing) && (
+        <p className="text-xs text-zinc-500">
+          {isRefreshing ?
+            "Refreshing platform analytics…"
+          : "Showing cached analytics — fetching latest…"}
+        </p>
+      )}
 
       <DashboardGlobalDateFilter />
 

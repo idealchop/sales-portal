@@ -64,11 +64,17 @@ function CustomerBadgeList({ badges }: { badges: CustomerListBadge[] }) {
 
 export function BusinessCustomerListRow({
   doc,
+  selected = false,
+  selectionEnabled = false,
+  onToggleSelect,
   onView,
   onEdit,
   onRemove,
 }: {
   doc: UserFirestoreDocumentRow;
+  selected?: boolean;
+  selectionEnabled?: boolean;
+  onToggleSelect?: () => void;
   onView: () => void;
   onEdit: () => void;
   onRemove: () => void;
@@ -77,6 +83,18 @@ export function BusinessCustomerListRow({
 
   return (
     <div className="flex items-start gap-3 border-b border-zinc-100 bg-white px-4 py-4 last:border-b-0 transition hover:bg-zinc-50/60">
+      {selectionEnabled && (
+        <label className="mt-3 flex shrink-0 items-center">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            onClick={(event) => event.stopPropagation()}
+            aria-label={`Select ${customer.name}`}
+            className="h-4 w-4 rounded border-zinc-300 text-teal-600 focus:ring-teal-500"
+          />
+        </label>
+      )}
       <button
         type="button"
         onClick={onView}

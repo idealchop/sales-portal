@@ -67,6 +67,7 @@ export type ActiveOwner = {
   monthlyRevenue: number;
   subscriptions: OwnerSubscription[];
   pendingApprovals: number;
+  authAccountTag?: "test" | null;
 };
 
 export type GrowthSalesMetrics = {
@@ -113,10 +114,12 @@ export function computeGrowthSalesMetrics(input: {
   activeWindowStartKey: string;
   subscriptionsByBusiness: Map<string, OwnerSubscription[]>;
   virtualStaffCounts: { admins: number; riders: number };
+  testAccountOwnerIds?: ReadonlySet<string>;
 }): { growth: DashboardMetric[]; activeOwners: ActiveOwner[] } {
   const {
     businesses,
     ownerLastActive,
+    testAccountOwnerIds,
     ownerUserGrowth,
     smartRefillUsers,
     smartRefillUserRecords,
@@ -355,6 +358,8 @@ export function computeGrowthSalesMetrics(input: {
         monthlyRevenue: b.price,
         subscriptions,
         pendingApprovals: subscriptions.filter((sub) => sub.needsApproval).length,
+        authAccountTag:
+          b.ownerId && testAccountOwnerIds?.has(b.ownerId) ? "test" : null,
       };
     })
     .sort((a, b) => {

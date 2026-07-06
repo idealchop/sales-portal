@@ -29,6 +29,7 @@ export type DataManagementLinkRow = {
   activeSubscription?: DataManagementActiveSubscription;
   status: DataManagementLinkStatus;
   staffRole?: DataManagementStaffRole;
+  lastSignInAt?: string | null;
 };
 
 export type DataManagementOverview = {
@@ -146,8 +147,19 @@ function resolveBusinessForOwner(
   return businesses.find((business) => business.ownerId === userId);
 }
 
+function authMetadataToIso(value?: string | null): string | null {
+  if (!value || !value.trim()) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
 function sortRows(rows: DataManagementLinkRow[]): DataManagementLinkRow[] {
   return [...rows].sort((a, b) => {
+    const signInDiff =
+      (b.lastSignInAt ? Date.parse(b.lastSignInAt) : 0) -
+      (a.lastSignInAt ? Date.parse(a.lastSignInAt) : 0);
+    if (signInDiff !== 0) return signInDiff;
+
     const statusOrder: Record<DataManagementLinkStatus, number> = {
       linked: 0,
       no_business: 1,
@@ -165,23 +177,29 @@ function sortRows(rows: DataManagementLinkRow[]): DataManagementLinkRow[] {
 }
 
 async function enrichRowsFromAuth(rows: DataManagementLinkRow[]): Promise<void> {
-  const needsAuth = rows.filter(
-    (row) =>
-      row.userId &&
-      (!row.userEmail || !row.userDisplayName || !row.userPhotoURL),
-  );
-  if (needsAuth.length === 0) return;
+  const userIds = [
+    ...new Set(
+      rows
+        .map((row) => row.userId)
+        .filter((userId): userId is string => Boolean(userId)),
+    ),
+  ];
+  if (userIds.length === 0) return;
 
   await Promise.all(
-    needsAuth.map(async (row) => {
-      const userId = row.userId;
-      if (!userId) return;
+    userIds.map(async (userId) => {
       const authUser = await auth.getUser(userId).catch(() => null);
       if (!authUser) return;
-      row.userEmail = row.userEmail || authUser.email || undefined;
-      row.userDisplayName =
-        row.userDisplayName || authUser.displayName || undefined;
-      row.userPhotoURL = row.userPhotoURL || authUser.photoURL || undefined;
+
+      const lastSignInAt = authMetadataToIso(authUser.metadata.lastSignInTime);
+      for (const row of rows) {
+        if (row.userId !== userId) continue;
+        row.lastSignInAt = lastSignInAt;
+        row.userEmail = row.userEmail || authUser.email || undefined;
+        row.userDisplayName =
+          row.userDisplayName || authUser.displayName || undefined;
+        row.userPhotoURL = row.userPhotoURL || authUser.photoURL || undefined;
+      }
     }),
   );
 }

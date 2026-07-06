@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSection } from "@/features/dashboard/components/dashboard-section";
 import type { BusinessMapLocation, DashboardAnalytics } from "@/lib/dashboard/analytics";
+import { enrichMapLocations } from "@/lib/dashboard/enrich-map-locations";
 import { DASHBOARD_APPS } from "@/features/dashboard/config/dashboard-apps";
 
 const BusinessLocationsMap = dynamic(
@@ -33,8 +34,14 @@ export function CombinedAppsMapSection({
   isRefreshing?: boolean;
 }) {
   const locations = useMemo(
-    () => withAppLabels(data.businessLocations),
-    [data.businessLocations],
+    () =>
+      withAppLabels(
+        enrichMapLocations(
+          data.businessLocations,
+          data.growthSalesMetrics.activeOwners,
+        ),
+      ),
+    [data.businessLocations, data.growthSalesMetrics.activeOwners],
   );
 
   return (

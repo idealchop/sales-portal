@@ -31,8 +31,8 @@ const DEFAULT_URL_STATE: DataManagementUrlState = {
   status: "all",
   staffRole: "all",
   subscription: DATA_MANAGEMENT_SUBSCRIPTION_FILTER_ALL,
-  sortBy: "user",
-  sortOrder: "asc",
+  sortBy: "lastSignIn",
+  sortOrder: "desc",
   page: 1,
   pageSize: DEFAULT_DATA_MANAGEMENT_PAGE_SIZE,
 };
@@ -48,23 +48,24 @@ function parsePageSize(value: string | null): DataManagementPageSize {
 function parseSort(
   value: string | null,
 ): Pick<DataManagementUrlState, "sortBy" | "sortOrder"> {
-  const [sortBy, sortOrder] = (value ?? "user:asc").split(":");
+  const [sortBy, sortOrder] = (value ?? "lastSignIn:desc").split(":");
   const validSortBy: DataManagementSortBy[] = [
     "user",
     "business",
     "status",
     "role",
+    "lastSignIn",
   ];
   const validSortOrder: DataManagementSortOrder[] = ["asc", "desc"];
   return {
     sortBy:
       validSortBy.includes(sortBy as DataManagementSortBy) ?
         (sortBy as DataManagementSortBy)
-      : "user",
+      : "lastSignIn",
     sortOrder:
       validSortOrder.includes(sortOrder as DataManagementSortOrder) ?
         (sortOrder as DataManagementSortOrder)
-      : "asc",
+      : "desc",
   };
 }
 
@@ -105,7 +106,7 @@ export function buildDataManagementSearchParams(
   if (state.subscription !== DATA_MANAGEMENT_SUBSCRIPTION_FILTER_ALL) {
     params.set("subscription", state.subscription);
   }
-  if (state.sortBy !== "user" || state.sortOrder !== "asc") {
+  if (state.sortBy !== "lastSignIn" || state.sortOrder !== "desc") {
     params.set("sort", `${state.sortBy}:${state.sortOrder}`);
   }
   if (state.page > 1) params.set("page", String(state.page));

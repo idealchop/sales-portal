@@ -1,7 +1,8 @@
 "use client";
 
-import { FileJson, LayoutGrid, List, Search } from "lucide-react";
+import { FileJson, LayoutGrid, List, Loader2, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { ListPagination } from "@/components/list-pagination";
 import { CustomerDetailDialog } from "@/features/admin/components/customer-detail-dialog";
 import { DeleteFirestoreDocDialog } from "@/features/admin/components/delete-firestore-doc-dialog";
@@ -69,6 +70,7 @@ import {
 import {
   sortCustomerDocuments,
 } from "@/lib/admin/customer-list-display";
+import { bulkUpdateCustomerStatus } from "@/lib/admin/bulk-update-customer-status";
 import {
   sortInventoryDocuments,
 } from "@/lib/admin/inventory-list-display";
@@ -164,6 +166,10 @@ export function BusinessSubcollectionListSection({
   const [deleteDoc, setDeleteDoc] = useState<UserFirestoreDocumentRow | null>(
     null,
   );
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const canBulkUpdateCustomers = isCustomerList && Boolean(businessId);
   if (documentsSource !== initialDocuments) {
     setDocumentsSource(initialDocuments);
     setDocuments(initialDocuments);
@@ -276,6 +282,90 @@ export function BusinessSubcollectionListSection({
   async function handleDelete(path: string) {
     await onRemoveDocument(path);
     setDocuments((current) => current.filter((row) => row.path !== path));
+    setSelectedPaths((current) => {
+      if (!current.has(path)) return current;
+      const next = new Set(current);
+      next.delete(path);
+      return next;
+    });
+  }
+
+  const paginatedPaths = useMemo(
+    () => paginatedItems.map((doc) => doc.path),
+    [paginatedItems],
+  );
+  const allPageSelected =
+    canBulkUpdateCustomers &&
+    paginatedPaths.length > 0 &&
+    paginatedPaths.every((path) => selectedPaths.has(path));
+  const somePageSelected =
+    canBulkUpdateCustomers &&
+    paginatedPaths.some((path) => selectedPaths.has(path));
+
+  function toggleCustomerSelection(path: string) {
+    setSelectedPaths((current) => {
+      const next = new Set(current);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAllOnPage() {
+    setSelectedPaths((current) => {
+      const next = new Set(current);
+      if (allPageSelected) {
+        for (const path of paginatedPaths) {
+          next.delete(path);
+        }
+      } else {
+        for (const path of paginatedPaths) {
+          next.add(path);
+        }
+      }
+      return next;
+    });
+  }
+
+  function clearCustomerSelection() {
+    setSelectedPaths(new Set());
+  }
+
+  async function handleBulkCustomerStatus(status: "active" | "inactive") {
+    if (!businessId || selectedPaths.size === 0) return;
+
+    setBulkUpdating(true);
+    setBulkError(null);
+
+    try {
+      const customerIds = documents
+        .filter((doc) => selectedPaths.has(doc.path))
+        .map((doc) => doc.documentId);
+      const updatedDocuments = await bulkUpdateCustomerStatus(
+        businessId,
+        customerIds,
+        status,
+      );
+      const updatedByPath = new Map(
+        updatedDocuments.map((doc) => [doc.path, doc]),
+      );
+      setDocuments((current) =>
+        current.map((row) => updatedByPath.get(row.path) ?? row),
+      );
+      setSelectedDoc((current) =>
+        current && updatedByPath.has(current.path) ?
+          updatedByPath.get(current.path)!
+        : current,
+      );
+      clearCustomerSelection();
+    } catch {
+      setBulkError("Unable to update customer status.");
+    } finally {
+      setBulkUpdating(false);
+    }
   }
 
   return (
@@ -404,6 +494,50 @@ export function BusinessSubcollectionListSection({
             ` (${documents.length} total)`
           : ""}
         </p>
+
+        {canBulkUpdateCustomers && selectedPaths.size > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-teal-100 bg-teal-50/60 px-3 py-2.5">
+            <span className="text-sm font-medium text-zinc-700">
+              {selectedPaths.size} selected
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={bulkUpdating}
+              onClick={() => void handleBulkCustomerStatus("active")}
+            >
+              Set active
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={bulkUpdating}
+              onClick={() => void handleBulkCustomerStatus("inactive")}
+            >
+              Deactivate
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={bulkUpdating}
+              onClick={clearCustomerSelection}
+            >
+              Clear
+            </Button>
+            {bulkUpdating && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Updating…
+              </span>
+            )}
+            {bulkError && (
+              <span className="text-xs text-red-600">{bulkError}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {filtered.length === 0 ?
@@ -422,10 +556,33 @@ export function BusinessSubcollectionListSection({
         />
       : isCustomerList ?
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          {canBulkUpdateCustomers && paginatedItems.length > 0 && (
+            <div className="flex items-center gap-3 border-b border-zinc-100 bg-zinc-50/80 px-4 py-3">
+              <label className="flex items-center gap-2 text-sm text-zinc-600">
+                <input
+                  type="checkbox"
+                  checked={allPageSelected}
+                  ref={(input) => {
+                    if (input) {
+                      input.indeterminate =
+                        somePageSelected && !allPageSelected;
+                    }
+                  }}
+                  onChange={toggleSelectAllOnPage}
+                  aria-label="Select all customers on this page"
+                  className="h-4 w-4 rounded border-zinc-300 text-teal-600 focus:ring-teal-500"
+                />
+                Select page
+              </label>
+            </div>
+          )}
           {paginatedItems.map((doc) => (
             <BusinessCustomerListRow
               key={doc.path}
               doc={doc}
+              selectionEnabled={canBulkUpdateCustomers}
+              selected={selectedPaths.has(doc.path)}
+              onToggleSelect={() => toggleCustomerSelection(doc.path)}
               onView={() => openView(doc)}
               onEdit={() => openEdit(doc)}
               onRemove={() => openRemove(doc)}

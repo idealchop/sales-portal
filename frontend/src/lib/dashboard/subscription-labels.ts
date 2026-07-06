@@ -47,8 +47,44 @@ function isStarterPlan(subscription: {
   return code === "starter" || name === "starter";
 }
 
+export function isTrialBillingCycle(billingCycle?: string): boolean {
+  return billingCycle === "trial";
+}
+
 function isTrialPlan(subscription: { billingCycle?: string }): boolean {
-  return subscription.billingCycle === "trial";
+  return isTrialBillingCycle(subscription.billingCycle);
+}
+
+export function formatBillingCycleLabel(billingCycle?: string): string | undefined {
+  if (!billingCycle) return undefined;
+  if (billingCycle === "trial") return "Free Trial";
+  return billingCycle.replaceAll("_", " ");
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function startOfLocalDay(value: Date): Date {
+  const day = new Date(value);
+  day.setHours(0, 0, 0, 0);
+  return day;
+}
+
+export function formatTrialDaysRemaining(
+  expiresAt?: string,
+  referenceDate: Date = new Date(),
+): string | null {
+  if (!expiresAt) return null;
+
+  const expiresDay = startOfLocalDay(new Date(expiresAt));
+  const today = startOfLocalDay(referenceDate);
+  const daysLeft = Math.round(
+    (expiresDay.getTime() - today.getTime()) / MS_PER_DAY,
+  );
+
+  if (daysLeft < 0) return "Trial ended";
+  if (daysLeft === 0) return "Last day of trial";
+  if (daysLeft === 1) return "1 day left";
+  return `${daysLeft} days left`;
 }
 
 export function formatSubscriptionPeriod(subscription: {

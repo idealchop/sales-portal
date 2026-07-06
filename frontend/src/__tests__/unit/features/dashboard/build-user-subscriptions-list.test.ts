@@ -379,4 +379,44 @@ describe("buildUserSubscriptionsList", () => {
     expect(filterUserSubscriptionsList(items, "pending")).toHaveLength(1);
     expect(filterUserSubscriptionsList(items, "renewal")).toHaveLength(1);
   });
+
+  it("excludes owners tagged with authAccountTag test", () => {
+    const items = buildUserSubscriptionsList([
+      {
+        ...owner("live", [
+          {
+            id: "live-sub",
+            planName: "Scale",
+            status: "active",
+            price: 999,
+            timeline: "current",
+            cancelAtPeriodEnd: false,
+            needsApproval: false,
+            isDowngrade: false,
+            isCancellation: false,
+          },
+        ]),
+        authAccountTag: null,
+      },
+      {
+        ...owner("test", [
+          {
+            id: "test-sub",
+            planName: "Scale",
+            status: "active",
+            price: 999,
+            timeline: "current",
+            cancelAtPeriodEnd: false,
+            needsApproval: false,
+            isDowngrade: false,
+            isCancellation: false,
+          },
+        ]),
+        authAccountTag: "test",
+      },
+    ]);
+
+    expect(items).toHaveLength(1);
+    expect(items[0]?.businessId).toBe("live");
+  });
 });

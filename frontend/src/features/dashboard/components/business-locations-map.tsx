@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import { Maximize2, Minimize2, RefreshCw, X } from "lucide-react";
 import {
@@ -18,10 +18,15 @@ import {
 } from "@/lib/dashboard/workspace-health";
 import {
   createMapMarkerIcon,
+  filterLocationsByMapMarkerTiers,
   isOwnerInactive,
   MAP_MARKER_LEGEND,
+  countLocationsByMapMarkerTier,
   resolveMapMarkerStyle,
+  resolveMapMarkerTier,
+  type MapMarkerTier,
 } from "@/lib/dashboard/map-marker-style";
+import { cn } from "@/lib/utils";
 import "leaflet/dist/leaflet.css";
 
 function FitMapBounds({ locations }: { locations: BusinessMapLocation[] }) {
@@ -49,22 +54,58 @@ function MapClickDismiss({ onDismiss }: { onDismiss: () => void }) {
   return null;
 }
 
-function MapLegend() {
+function MapLegend({
+  visibleTiers,
+  tierCounts,
+  onToggleTier,
+}: {
+  visibleTiers: Set<MapMarkerTier>;
+  tierCounts: Record<MapMarkerTier, number>;
+  onToggleTier: (tier: MapMarkerTier) => void;
+}) {
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-zinc-100 bg-zinc-50/80 px-4 py-3">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-zinc-100 bg-zinc-50/80 px-4 py-3">
       <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
         Legend
       </span>
-      {MAP_MARKER_LEGEND.map((entry) => (
-        <div key={entry.tier} className="flex items-center gap-2">
-          <span
-            className="inline-flex h-4 w-4 shrink-0 rounded-full ring-2 ring-white"
-            style={{ backgroundColor: entry.color }}
-            aria-hidden
-          />
-          <span className="text-xs text-zinc-600">{entry.label}</span>
-        </div>
-      ))}
+      {MAP_MARKER_LEGEND.map((entry) => {
+        const active = visibleTiers.has(entry.tier);
+        return (
+          <button
+            key={entry.tier}
+            type="button"
+            aria-pressed={active}
+            aria-label={`${active ? "Hide" : "Show"} ${entry.label} markers`}
+            onClick={() => onToggleTier(entry.tier)}
+            className={cn(
+              "flex items-center gap-2 rounded-full px-2 py-1 text-left transition",
+              active ?
+                "bg-white ring-1 ring-zinc-200"
+              : "opacity-45 hover:opacity-70",
+            )}
+          >
+            <span
+              className={cn(
+                "inline-flex h-4 w-4 shrink-0 rounded-full ring-2 ring-white",
+                !active && "grayscale",
+              )}
+              style={{ backgroundColor: entry.color }}
+              aria-hidden
+            />
+            <span
+              className={cn(
+                "text-xs text-zinc-600",
+                !active && "line-through decoration-zinc-400",
+              )}
+            >
+              {entry.label}
+              <span className="ml-1 tabular-nums text-zinc-400">
+                {tierCounts[entry.tier]}
+              </span>
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -197,6 +238,37 @@ export function BusinessLocationsMap({
   const shellRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<BusinessMapLocation | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [visibleTiers, setVisibleTiers] = useState<Set<MapMarkerTier>>(
+    () => new Set(MAP_MARKER_LEGEND.map((entry) => entry.tier)),
+  );
+
+  const tierCounts = useMemo(
+    () => countLocationsByMapMarkerTier(locations),
+    [locations],
+  );
+  const visibleLocations = useMemo(
+    () => filterLocationsByMapMarkerTiers(locations, visibleTiers),
+    [locations, visibleTiers],
+  );
+
+  const toggleLegendTier = useCallback((tier: MapMarkerTier) => {
+    setVisibleTiers((current) => {
+      const next = new Set(current);
+      if (next.has(tier)) {
+        next.delete(tier);
+      } else {
+        next.add(tier);
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+    if (!visibleTiers.has(resolveMapMarkerTier(selected))) {
+      setSelected(null);
+    }
+  }, [selected, visibleTiers]);
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -221,7 +293,7 @@ export function BusinessLocationsMap({
 
   const displayedLocation =
     selected ?
-      locations.find((location) => location.id === selected.id) ?? null
+      visibleLocations.find((location) => location.id === selected.id) ?? null
     : null;
 
   if (locations.length === 0) {
@@ -232,10 +304,18 @@ export function BusinessLocationsMap({
     );
   }
 
-  const center: [number, number] = [
-    locations.reduce((sum, item) => sum + item.lat, 0) / locations.length,
-    locations.reduce((sum, item) => sum + item.lng, 0) / locations.length,
-  ];
+  const center: [number, number] =
+    visibleLocations.length > 0 ?
+      [
+        visibleLocations.reduce((sum, item) => sum + item.lat, 0) /
+          visibleLocations.length,
+        visibleLocations.reduce((sum, item) => sum + item.lng, 0) /
+          visibleLocations.length,
+      ]
+    : [
+        locations.reduce((sum, item) => sum + item.lat, 0) / locations.length,
+        locations.reduce((sum, item) => sum + item.lng, 0) / locations.length,
+      ];
 
   return (
     <div
@@ -245,11 +325,11 @@ export function BusinessLocationsMap({
       <div className="relative">
         <MapContainer
           center={
-            locations.length === 1 ?
-              [locations[0].lat, locations[0].lng]
+            visibleLocations.length === 1 ?
+              [visibleLocations[0].lat, visibleLocations[0].lng]
             : center
           }
-          zoom={locations.length === 1 ? 13 : 8}
+          zoom={visibleLocations.length === 1 ? 13 : 8}
           className="h-[min(68vh,560px)] min-h-[420px] w-full"
           scrollWheelZoom
         >
@@ -257,9 +337,9 @@ export function BusinessLocationsMap({
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <FitMapBounds locations={locations} />
+          <FitMapBounds locations={visibleLocations} />
           <MapClickDismiss onDismiss={() => setSelected(null)} />
-          {locations.map((location) => (
+          {visibleLocations.map((location) => (
             <Marker
               key={location.id}
               position={[location.lat, location.lng]}
@@ -312,7 +392,11 @@ export function BusinessLocationsMap({
         )}
       </div>
 
-      <MapLegend />
+      <MapLegend
+        visibleTiers={visibleTiers}
+        tierCounts={tierCounts}
+        onToggleTier={toggleLegendTier}
+      />
     </div>
   );
 }

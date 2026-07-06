@@ -30,9 +30,12 @@ import {
 import { usePagination } from "@/hooks/use-pagination";
 import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
 import {
+  formatBillingCycleLabel,
   formatPaymentStatus,
   formatSubscriptionPeriod,
   formatSubscriptionStatus,
+  formatTrialDaysRemaining,
+  isTrialBillingCycle,
 } from "@/lib/dashboard/subscription-labels";
 import { formatPhp } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -97,6 +100,11 @@ function UserSubscriptionRow({
   const { subscription, businessName, ownerEmail } = item;
   const showReason = subscription.isDowngrade || subscription.isCancellation;
   const isExpired = isSubscriptionExpiredByDate(subscription);
+  const isFreeTrial = isTrialBillingCycle(subscription.billingCycle);
+  const billingCycleLabel = formatBillingCycleLabel(subscription.billingCycle);
+  const trialDaysRemaining = isFreeTrial ?
+    formatTrialDaysRemaining(subscription.expiresAt)
+  : null;
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-[var(--border)] p-4">
@@ -114,6 +122,11 @@ function UserSubscriptionRow({
           : <Badge className="border-zinc-200 bg-white font-normal text-zinc-600">
               {TIMELINE_LABELS[subscription.timeline]}
             </Badge>}
+          {isFreeTrial && trialDaysRemaining ?
+            <Badge className="bg-sky-50 font-normal text-sky-800">
+              {trialDaysRemaining}
+            </Badge>
+          : null}
           <Badge
             className={cn(
               "font-normal",
@@ -128,7 +141,7 @@ function UserSubscriptionRow({
         </div>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           {subscription.planName}
-          {subscription.billingCycle ? ` · ${subscription.billingCycle}` : ""} ·{" "}
+          {billingCycleLabel ? ` · ${billingCycleLabel}` : ""} ·{" "}
           {formatSubscriptionStatus(subscription.status)}
           {subscription.paymentStatus ?
             ` · ${formatPaymentStatus(subscription.paymentStatus)}`

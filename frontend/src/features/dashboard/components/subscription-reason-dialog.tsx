@@ -5,9 +5,12 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OwnerSubscription } from "@/lib/dashboard/analytics";
 import {
+  formatBillingCycleLabel,
   formatDowngradeReason,
   formatPaymentStatus,
   formatSubscriptionStatus,
+  formatTrialDaysRemaining,
+  isTrialBillingCycle,
 } from "@/lib/dashboard/subscription-labels";
 import { formatPhp } from "@/lib/format";
 
@@ -122,7 +125,17 @@ export function SubscriptionReasonDialog({
             </div>
             <div className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2">
               <p className="font-medium text-foreground">Billing</p>
-              <p>{subscription.billingCycle || "—"}</p>
+              <p>
+                {formatBillingCycleLabel(subscription.billingCycle) || "—"}
+                {isTrialBillingCycle(subscription.billingCycle) ?
+                  (() => {
+                    const daysLeft = formatTrialDaysRemaining(
+                      subscription.expiresAt,
+                    );
+                    return daysLeft ? ` · ${daysLeft}` : "";
+                  })()
+                : ""}
+              </p>
             </div>
           </div>
 

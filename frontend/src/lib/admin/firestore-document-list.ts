@@ -62,6 +62,13 @@ export function subcollectionFilterOptions(
       { value: "cancelled", label: "Cancelled" },
     ];
   }
+  if (collectionId === "customers") {
+    return [
+      { value: "all", label: "All statuses" },
+      { value: "active", label: "Active" },
+      { value: "inactive", label: "Deactivated" },
+    ];
+  }
   return [{ value: "all", label: "All" }];
 }
 
@@ -83,6 +90,16 @@ export function matchesSubcollectionFilter(
       return status === "cancelled" || status === "canceled";
     }
     return status === filter;
+  }
+
+  if (collectionId === "customers") {
+    const status = String(doc.data.status || "").trim().toLowerCase();
+    if (filter === "inactive") {
+      return status === "inactive" || status === "archived";
+    }
+    if (filter === "active") {
+      return status !== "inactive" && status !== "archived";
+    }
   }
 
   return true;

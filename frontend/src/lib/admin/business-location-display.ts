@@ -71,6 +71,7 @@ export function buildBusinessMapLocation(input: {
     onboardingComplete: input.data.onboardingComplete === true,
     planName: input.activeSubscription?.planName,
     planCode: input.activeSubscription?.planCode,
+    billingCycle: input.activeSubscription?.billingCycle,
     lastActiveDay: today,
   };
 }

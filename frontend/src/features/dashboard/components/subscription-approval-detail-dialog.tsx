@@ -7,10 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { OwnerSubscription } from "@/lib/dashboard/analytics";
 import {
+  formatBillingCycleLabel,
   formatDowngradeReason,
   formatPaymentStatus,
   formatSubscriptionPeriod,
   formatSubscriptionStatus,
+  formatTrialDaysRemaining,
+  isTrialBillingCycle,
 } from "@/lib/dashboard/subscription-labels";
 import {
   formatPaymentMethod,
@@ -215,7 +218,15 @@ export function SubscriptionApprovalDetailDialog({
             />
             <DetailField
               label="Billing"
-              value={subscription.billingCycle || "—"}
+              value={(() => {
+                const label =
+                  formatBillingCycleLabel(subscription.billingCycle) || "—";
+                if (!isTrialBillingCycle(subscription.billingCycle)) {
+                  return label;
+                }
+                const daysLeft = formatTrialDaysRemaining(subscription.expiresAt);
+                return daysLeft ? `${label} · ${daysLeft}` : label;
+              })()}
             />
             <DetailField
               label="Method"

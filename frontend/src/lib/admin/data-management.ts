@@ -33,6 +33,8 @@ export type DataManagementLinkRow = {
   status: DataManagementLinkStatus;
   /** Present on staff rows (admin or rider). */
   staffRole?: DataManagementStaffRole;
+  /** Firebase Auth last sign-in for the linked user, when available. */
+  lastSignInAt?: string | null;
 };
 
 export type DataManagementOverview = {
@@ -84,7 +86,12 @@ export function formatActiveSubscriptionTitle(
   return [subscription.planName, ...subscription.addonNames].join(" · ");
 }
 
-export type DataManagementSortBy = "user" | "business" | "status" | "role";
+export type DataManagementSortBy =
+  | "user"
+  | "business"
+  | "status"
+  | "role"
+  | "lastSignIn";
 export type DataManagementSortOrder = "asc" | "desc";
 
 export type DataManagementSortOption = {
@@ -94,6 +101,8 @@ export type DataManagementSortOption = {
 };
 
 export const DATA_MANAGEMENT_SORT_OPTIONS: DataManagementSortOption[] = [
+  { sortBy: "lastSignIn", order: "desc", label: "Last sign-in (newest)" },
+  { sortBy: "lastSignIn", order: "asc", label: "Last sign-in (oldest)" },
   { sortBy: "user", order: "asc", label: "User (A → Z)" },
   { sortBy: "user", order: "desc", label: "User (Z → A)" },
   { sortBy: "business", order: "asc", label: "Business (A → Z)" },
@@ -262,6 +271,28 @@ export function sortDataManagementRows(
           (a.staffRole ? STAFF_ROLE_SORT_ORDER[a.staffRole] : 99) -
           (b.staffRole ? STAFF_ROLE_SORT_ORDER[b.staffRole] : 99);
         break;
+      case "lastSignIn": {
+        const ta = a.lastSignInAt ? Date.parse(a.lastSignInAt) : null;
+        const tb = b.lastSignInAt ? Date.parse(b.lastSignInAt) : null;
+        if (ta === null && tb === null) {
+          cmp = 0;
+        } else if (ta === null) {
+          cmp = 1;
+        } else if (tb === null) {
+          cmp = -1;
+        } else {
+          cmp = order === "desc" ? tb - ta : ta - tb;
+        }
+        if (cmp !== 0) {
+          return cmp;
+        }
+        cmp = dataManagementUserLabel(a).localeCompare(
+          dataManagementUserLabel(b),
+          undefined,
+          { sensitivity: "base" },
+        );
+        return cmp;
+      }
     }
 
     if (cmp === 0) {
