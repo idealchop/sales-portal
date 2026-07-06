@@ -359,7 +359,7 @@ export function computeGrowthSalesMetrics(input: {
         subscriptions,
         pendingApprovals: subscriptions.filter((sub) => sub.needsApproval).length,
         authAccountTag:
-          b.ownerId && testAccountOwnerIds?.has(b.ownerId) ? "test" : null,
+          b.ownerId && testAccountOwnerIds?.has(b.ownerId) ? "test" as const : null,
       };
     })
     .sort((a, b) => {
