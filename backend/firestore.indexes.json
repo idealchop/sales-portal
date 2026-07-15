@@ -321,16 +321,16 @@
       ]
     },
     {
-      "collectionGroup": "training_videos",
+      "collectionGroup": "posts",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "category",
+          "fieldPath": "kind",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "status",
-          "order": "ASCENDING"
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
         }
       ]
     }
