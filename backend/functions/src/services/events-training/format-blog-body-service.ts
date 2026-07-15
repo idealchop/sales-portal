@@ -25,18 +25,18 @@ function localFormatFallback(body: string): string {
   const trimmed = body.replace(/\r\n/g, "\n").trim();
   if (!trimmed) return "";
 
-  const plain = /<\/?[a-z][\s\S]*>/i.test(trimmed)
-    ? trimmed
-        .replace(/<\s*br\s*\/?>/gi, "\n")
-        .replace(/<\/\s*(p|div|h[1-6]|li|blockquote)\s*>/gi, "\n\n")
-        .replace(/<[^>]+>/g, "")
-        .replace(/&nbsp;/g, " ")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim()
-    : trimmed;
+  const plain = /<\/?[a-z][\s\S]*>/i.test(trimmed) ?
+    trimmed
+      .replace(/<\s*br\s*\/?>/gi, "\n")
+      .replace(/<\/\s*(p|div|h[1-6]|li|blockquote)\s*>/gi, "\n\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim() :
+    trimmed;
 
   let parts = plain
     .split(/\n\s*\n/)

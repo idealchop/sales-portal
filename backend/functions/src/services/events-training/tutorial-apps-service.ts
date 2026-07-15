@@ -14,7 +14,7 @@ export type TutorialAppOption = {
  * Prefer each product’s primary app mark (not generic icons).
  */
 const FALLBACK_APP_LOGOS: Record<string, string> = {
-  smartrefill:
+  "smartrefill":
     "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2FAsset%2022.png?alt=media&token=f7458efe-afd7-4006-862e-40c8d524c080",
   "sales-portal":
     "https://firebasestorage.googleapis.com/v0/b/smartrefill-singapore/o/Brand%20Logo%2FLogo%20icon%203.0.png?alt=media&token=72c29968-78bb-4c40-9f86-1ea63d9f49e0",

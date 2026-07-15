@@ -253,9 +253,9 @@ export async function issueCertification(input: {
   const courseName = webinar.name;
   const speaker = webinar.speaker;
   const eventStartsAt = webinar.startsAt;
-  const eventDateLabel = eventStartsAt
-    ? formatCertificateIssueDate(new Date(eventStartsAt))
-    : formatCertificateIssueDate();
+  const eventDateLabel = eventStartsAt ?
+    formatCertificateIssueDate(new Date(eventStartsAt)) :
+    formatCertificateIssueDate();
 
   const appId = await resolvePublishAppId(input.appId || webinar.appId);
   const app = await getTutorialApp(appId);

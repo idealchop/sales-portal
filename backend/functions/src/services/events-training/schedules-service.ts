@@ -12,7 +12,7 @@ import {
   SCHEDULE_KINDS,
   SCHEDULE_PURPOSES,
   SCHEDULE_TARGET_TYPES,
-} from "../../constants/events-training";
+  EVENTS_TRAINING_COLLECTIONS } from "../../constants/events-training";
 import { toIsoString } from "../sales-serializer";
 import {
   composeWebinarScheduleMessage,
@@ -21,7 +21,6 @@ import {
   type ComposedWebinarScheduleMessage,
   type SchedulePurpose as ComposerPurpose,
 } from "./schedule-message-composer";
-import { EVENTS_TRAINING_COLLECTIONS } from "../../constants/events-training";
 import {
   eventsTrainingRoot,
   schedulesCollection,

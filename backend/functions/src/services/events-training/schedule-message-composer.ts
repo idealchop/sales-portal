@@ -219,7 +219,7 @@ export function composeWebinarScheduleMessage(input: {
     certLine,
     description ? `\n${description.slice(0, 180)}` : null,
     "",
-    `Register / join in Smart Refill:`,
+    "Register / join in Smart Refill:",
     registerUrl,
   ]
     .filter((line) => line != null)

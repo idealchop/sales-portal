@@ -146,9 +146,9 @@ export async function buildCertificateSvg(
   });
   const [qrDataUrl, logoDataUrl] = await Promise.all([
     buildQrDataUrl(verifyUrl),
-    input.logoDataUrl?.startsWith("data:image/")
-      ? Promise.resolve(input.logoDataUrl)
-      : fetchLogoDataUrl(input.logoUrl),
+    input.logoDataUrl?.startsWith("data:image/") ?
+      Promise.resolve(input.logoDataUrl) :
+      fetchLogoDataUrl(input.logoUrl),
   ]);
   const logoMark = buildLogoMarkSvg({
     logoDataUrl,

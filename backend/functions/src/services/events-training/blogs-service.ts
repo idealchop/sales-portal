@@ -39,17 +39,17 @@ export type WrsBlogRecord = {
 };
 
 function parseStatus(value: unknown): BlogStatus {
-  return BLOG_STATUSES.includes(value as BlogStatus)
-    ? (value as BlogStatus)
-    : "draft";
+  return BLOG_STATUSES.includes(value as BlogStatus) ?
+    (value as BlogStatus) :
+    "draft";
 }
 
 function normalizeVisibility(raw: unknown): VideoVisibility {
   if (raw === "members" || raw === "subscription") return "private";
   return typeof raw === "string" &&
-    (VIDEO_VISIBILITY as readonly string[]).includes(raw)
-    ? (raw as VideoVisibility)
-    : "public";
+    (VIDEO_VISIBILITY as readonly string[]).includes(raw) ?
+    (raw as VideoVisibility) :
+    "public";
 }
 
 function resolveAllowAllMembers(
@@ -59,9 +59,9 @@ function resolveAllowAllMembers(
   if (typeof data.allowAllMembers === "boolean") return data.allowAllMembers;
   if (data.visibility === "members") return true;
   if (visibility !== "private") return false;
-  const plans = Array.isArray(data.allowedPlanCodes)
-    ? data.allowedPlanCodes
-    : [];
+  const plans = Array.isArray(data.allowedPlanCodes) ?
+    data.allowedPlanCodes :
+    [];
   return plans.length === 0;
 }
 
@@ -99,23 +99,23 @@ function resolveAccess(
     0,
     Math.floor(
       Number(
-        input.priceCents !== undefined
-          ? input.priceCents
-          : (current?.priceCents ?? 0),
+        input.priceCents !== undefined ?
+          input.priceCents :
+          (current?.priceCents ?? 0),
       ) || 0,
     ),
   );
-  const allowedPlanCodes = Array.isArray(input.allowedPlanCodes)
-    ? input.allowedPlanCodes.map(String)
-    : Array.isArray(current?.allowedPlanCodes)
-      ? current.allowedPlanCodes.map(String)
-      : [];
+  const allowedPlanCodes = Array.isArray(input.allowedPlanCodes) ?
+    input.allowedPlanCodes.map(String) :
+    Array.isArray(current?.allowedPlanCodes) ?
+      current.allowedPlanCodes.map(String) :
+      [];
   const allowAllMembers =
-    typeof input.allowAllMembers === "boolean"
-      ? input.allowAllMembers
-      : typeof current?.allowAllMembers === "boolean"
-        ? current.allowAllMembers
-        : true;
+    typeof input.allowAllMembers === "boolean" ?
+      input.allowAllMembers :
+      typeof current?.allowAllMembers === "boolean" ?
+        current.allowAllMembers :
+        true;
 
   if (visibility === "public") {
     return {
@@ -184,9 +184,9 @@ function resolveAuthorName(data: Record<string, unknown>): string {
 function mapBlog(id: string, data: Record<string, unknown>): WrsBlogRecord {
   const visibility = normalizeVisibility(data.visibility);
   const appId =
-    typeof data.appId === "string" && data.appId.trim()
-      ? data.appId.trim()
-      : "smartrefill";
+    typeof data.appId === "string" && data.appId.trim() ?
+      data.appId.trim() :
+      "smartrefill";
   return {
     id,
     title: String(data.title ?? ""),
@@ -200,9 +200,9 @@ function mapBlog(id: string, data: Record<string, unknown>): WrsBlogRecord {
     visibility,
     priceCents: Number(data.priceCents) || 0,
     currency: typeof data.currency === "string" ? data.currency : "PHP",
-    allowedPlanCodes: Array.isArray(data.allowedPlanCodes)
-      ? data.allowedPlanCodes.map(String)
-      : [],
+    allowedPlanCodes: Array.isArray(data.allowedPlanCodes) ?
+      data.allowedPlanCodes.map(String) :
+      [],
     allowAllMembers: resolveAllowAllMembers(data, visibility),
     featured: data.featured === true,
     publishedAt: toIsoString(data.publishedAt),
@@ -271,9 +271,9 @@ export async function createWrsBlog(
     allowAllMembers: access.allowAllMembers,
     featured: input.featured === true,
     unlockPrice:
-      access.visibility === "premium"
-        ? Math.round((access.priceCents / 100) * 100) / 100
-        : null,
+      access.visibility === "premium" ?
+        Math.round((access.priceCents / 100) * 100) / 100 :
+        null,
     publishedAt: status === "published" ? now : null,
     archivedAt: status === "archived" ? now : null,
     tags: input.tags ?? [],
@@ -346,9 +346,9 @@ export async function updateWrsBlog(
     patch.allowedPlanCodes = access.allowedPlanCodes;
     patch.allowAllMembers = access.allowAllMembers;
     patch.unlockPrice =
-      access.visibility === "premium"
-        ? Math.round((access.priceCents / 100) * 100) / 100
-        : null;
+      access.visibility === "premium" ?
+        Math.round((access.priceCents / 100) * 100) / 100 :
+        null;
   }
 
   if (input.slug !== undefined) {

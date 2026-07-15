@@ -352,17 +352,17 @@ export async function getEventsTrainingAnalytics(
   );
   // Fall back to catalog purchaseCount when period unlocks have no videoId.
   const topVideosByPurchasesResolved =
-    topVideosByPurchases.length > 0
-      ? topVideosByPurchases
-      : rankContentByCount(
-          videos.map((v) => ({
-            key: String(v.id),
-            label: String(v.name || "").trim() || "Untitled video",
-            count: Number(v.purchaseCount) || 0,
-            category: videoCategoryLabel(String(v.category || "other")),
-          })),
-          5,
-        );
+    topVideosByPurchases.length > 0 ?
+      topVideosByPurchases :
+      rankContentByCount(
+        videos.map((v) => ({
+          key: String(v.id),
+          label: String(v.name || "").trim() || "Untitled video",
+          count: Number(v.purchaseCount) || 0,
+          category: videoCategoryLabel(String(v.category || "other")),
+        })),
+        5,
+      );
 
   const topWebinarsByRegistrations = rankContentByCount(
     [...regsByWebinar.entries()].map(([eventId, count]) => ({

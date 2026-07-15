@@ -30,7 +30,7 @@ describe("certificate-template", () => {
     expect(svg).toContain("skill unlocked");
     expect(svg).toContain("AWARDED TO");
     expect(svg).toContain("text-anchor=\"middle\"");
-    expect(svg).toContain('href="data:image/png;base64,');
+    expect(svg).toContain("href=\"data:image/png;base64,");
     expect(svg).not.toMatch(/Smart\s*Refill/i);
   });
 
@@ -49,7 +49,7 @@ describe("certificate-template", () => {
   it("escapes XML special characters in fields", async () => {
     const svg = await buildCertificateSvg({
       appLabel: "A & B",
-      recipientName: 'Tom <"Tester">',
+      recipientName: "Tom <\"Tester\">",
       courseName: "Ops & Safety",
       speaker: "A & B Host",
       issuedAtLabel: "July 16, 2026",
