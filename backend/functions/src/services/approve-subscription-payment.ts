@@ -32,7 +32,7 @@ export async function approveSubscriptionPayment(input: {
 
   await ref.update({
     status: "approved",
-    paymentStatus: "approved",
+    paymentStatus: "verified",
     updatedAt: FieldValue.serverTimestamp(),
   });
 

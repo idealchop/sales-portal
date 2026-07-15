@@ -20,6 +20,8 @@ export type PlatformAlert = {
   businessId?: string;
   businessName?: string;
   contactStatus?: PlatformAlertContactStatus;
+  /** True until a sales user acknowledges the alert (any contact action). */
+  isNew?: boolean;
 };
 
 export type PlatformAlertsSummary = {
@@ -127,7 +129,9 @@ function resolveCurrentSubscription(
   );
 }
 
-function countByKind(items: PlatformAlert[]): Record<PlatformAlertKind, number> {
+export function countPlatformAlertsByKind(
+  items: PlatformAlert[],
+): Record<PlatformAlertKind, number> {
   const counts = { ...EMPTY_COUNTS };
   for (const item of items) {
     counts[item.kind] += 1;
@@ -244,6 +248,6 @@ export function buildPlatformAlerts(input: {
 
   return {
     items: sorted,
-    counts: countByKind(sorted),
+    counts: countPlatformAlertsByKind(sorted),
   };
 }

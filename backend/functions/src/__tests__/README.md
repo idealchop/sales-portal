@@ -50,6 +50,12 @@ BDD helpers: `bdd/bdd-api.ts` (`API_PATH`).
 | `unit/services/build-new-joiners.unit.test.ts` | New joiners |
 | `unit/services/filter-new-joiners-for-actor.unit.test.ts` | Role-scoped joiners |
 | `unit/services/sales-scope.unit.test.ts` | Sales actor scope |
+| `unit/services/events-training-playback.unit.test.ts` | Playback URL / iframe normalize |
+| `unit/services/events-training-visibility.unit.test.ts` | Video visibility enums |
+| `unit/services/events-training-ops.unit.test.ts` | Registration + analytics helpers |
+| `unit/services/webinar-promotion-automation.unit.test.ts` | Auto promotion milestone channels |
+| `unit/services/schedule-message-composer.unit.test.ts` | Email/Meta caption composer |
+| `unit/services/meta-page-publish.unit.test.ts` | Facebook Page Graph publish helper |
 
 ## Integration tests
 

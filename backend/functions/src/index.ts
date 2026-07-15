@@ -9,6 +9,7 @@ import smartrefillRoutes from "./routes/smartrefill-routes";
 import adminRoutes from "./routes/admin-routes";
 import salesWorkflowRoutes from "./routes/sales-workflow-routes";
 import contentStudioRoutes from "./routes/content-studio-routes";
+import eventsTrainingRoutes from "./routes/events-training-routes";
 import { SALES_PORTAL_FUNCTION_SECRETS } from "./config/function-secrets";
 
 const app = express();
@@ -37,6 +38,7 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/content-studio", contentStudioRoutes);
+app.use("/events-training", eventsTrainingRoutes);
 app.use("/onboarding", onboardingRoutes);
 app.use("/smartrefill", smartrefillRoutes);
 app.use("/admin", adminRoutes);
@@ -54,3 +56,5 @@ export const salesPortalApi = onRequest(
   },
   api,
 );
+
+export { eventsTrainingPromotionDelivery } from "./jobs/events-training-promotion-delivery";

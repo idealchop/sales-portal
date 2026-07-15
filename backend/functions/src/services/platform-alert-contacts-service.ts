@@ -1,8 +1,9 @@
 import { FieldPath } from "firebase-admin/firestore";
 import { db, FieldValue } from "../config/firebase-admin";
-import type {
-  PlatformAlert,
-  PlatformAlertsSummary,
+import {
+  countPlatformAlertsByKind,
+  type PlatformAlert,
+  type PlatformAlertsSummary,
 } from "./build-platform-alerts";
 
 export type PlatformAlertContactStatus = "need_contact" | "contacted";
@@ -38,12 +39,17 @@ export function attachContactStatusToAlerts(
   summary: PlatformAlertsSummary,
   statuses: Map<string, PlatformAlertContactStatus>,
 ): PlatformAlertsSummary {
-  return {
-    ...summary,
-    items: summary.items.map((item) => ({
+  const items = summary.items
+    .map((item) => ({
       ...item,
       contactStatus: statuses.get(item.id) ?? "need_contact",
-    })),
+      isNew: !statuses.has(item.id),
+    }))
+    .filter((item) => item.contactStatus !== "contacted");
+
+  return {
+    items,
+    counts: countPlatformAlertsByKind(items),
   };
 }
 

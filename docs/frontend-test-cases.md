@@ -60,6 +60,25 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 
 ---
 
+## TC-ET — Events & Training (manager/admin)
+
+| ID | Role | Steps | Expected |
+|----|------|-------|----------|
+| TC-ET-01 | manager | Open `/events-training` | Overview shows analytics + attention cards |
+| TC-ET-02 | manager | Create video with YouTube embed paste | Saves normalized embed URL; thumbnail optional |
+| TC-ET-02b | manager | Open `/events-training/tutorials` and create tutorial | Saves with category `tutorial`; list scoped to tutorials |
+| TC-ET-02c | manager | Search / filter / page tutorials list | Status chips, app/provider filters, rows control, and pagination work |
+| TC-ET-03 | manager | Set video visibility `premium` without price | Validation error — price required |
+| TC-ET-04 | manager | Set visibility `private` + select plans / all members | Saves access rules |
+| TC-ET-05 | manager | `/events-training/registrations` accept pending | Status accepted; join link when available |
+| TC-ET-06 | manager | `/events-training/schedules` create N-days-before | Schedule listed enabled |
+| TC-ET-07 | manager | `/events-training/moderation` hide comment | Comment status `hidden` |
+| TC-ET-08 | manager | `/events-training/certifications` issue + revoke | Issued then revoked |
+| TC-ET-09 | manager | `/events-training/analytics` period 30 | Summary cards load |
+| TC-ET-10 | sales | Navigate to `/events-training` | Nav hidden or redirected |
+
+---
+
 ## TC-SUB — Subscriptions catalog (admin)
 
 | ID | Role | Steps | Expected |

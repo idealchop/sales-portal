@@ -27,6 +27,7 @@ Cloud Functions API in `asia-southeast1`:
 | `GET /dashboard/analytics` | Platform analytics via Admin SDK |
 | `POST /dashboard/subscriptions/.../approve` | Subscription approval |
 | `POST /content-studio/generate` | AI social post generation |
+| `GET/POST/PATCH/DELETE /events-training/*` | Events & Training CMS + ops (manager/admin) |
 | `GET/POST /onboarding/*` | Onboarding flows |
 | `GET/PUT/DELETE /admin/*` | Admin users, data management, catalog |
 | `ALL /smartrefill/*` | Proxies to SmartRefill V3 API with the caller's ID token |
@@ -61,7 +62,13 @@ npm install
 npm run dev -- -p 9002
 ```
 
-Or from repo root:
+Or from repo root (both servers in one terminal):
+
+```bash
+npm run dev:local
+```
+
+Or separately:
 
 ```bash
 npm run dev:frontend
@@ -116,7 +123,9 @@ Production uses **Secret Manager** (same GCP project as SmartRefill: `aquaflow-m
 
 | Secret | Used by | Notes |
 |--------|---------|-------|
-| `SALES_PORTAL_GEMINI_API_KEY` | `salesPortalApi` Cloud Function | Separate from SmartRefill `GEMINI_API_KEY`; Content Studio + AI features |
+| `SALES_PORTAL_GEMINI_API_KEY` | `salesPortalApi` | Separate from SmartRefill `GEMINI_API_KEY`; Content Studio + AI features |
+| `META_COMMUNITY_PAGE_ACCESS_TOKEN` | `salesPortalApi`, `eventsTrainingPromotionDelivery` | Shared with SmartRefill; Page token with `pages_manage_posts` for webinar automation |
+| `META_COMMUNITY_PAGE_ID` | `salesPortalApi`, `eventsTrainingPromotionDelivery` | River community Facebook Page id (same as Messenger) |
 
 `NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN` is **local dev only** (see `frontend/.env.local`) — not used in App Hosting production builds (`NEXT_PUBLIC_DEV=false`).
 

@@ -94,6 +94,16 @@ function buildContactStatusMap(items: PlatformAlert[]) {
   ) as Record<string, PlatformAlertContactStatus>;
 }
 
+function decrementKindCount(
+  counts: Record<PlatformAlertKind, number>,
+  kind: PlatformAlertKind,
+): Record<PlatformAlertKind, number> {
+  return {
+    ...counts,
+    [kind]: Math.max(0, counts[kind] - 1),
+  };
+}
+
 function PlatformAlertRow({
   item,
   contactStatus,
@@ -109,10 +119,26 @@ function PlatformAlertRow({
   ) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-[var(--border)] p-4">
+    <div
+      className={cn(
+        "flex flex-wrap items-start justify-between gap-3 rounded-lg border p-4",
+        item.isNew ?
+          "border-teal-300 bg-teal-50/40"
+        : "border-[var(--border)]",
+      )}
+    >
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
+          {item.isNew ?
+            <span
+              className="h-2 w-2 shrink-0 rounded-full bg-teal-500"
+              aria-hidden
+            />
+          : null}
           <p className="font-medium text-foreground">{item.title}</p>
+          {item.isNew ?
+            <Badge className="bg-teal-600 text-white">New</Badge>
+          : null}
           <Badge className={KIND_STYLES[item.kind]}>
             {KIND_LABELS[item.kind]}
           </Badge>
@@ -192,29 +218,35 @@ export function PlatformAlertsList({
   const [pageSize, setPageSize] = useState<AlertsPageSize>(
     DEFAULT_ALERTS_PAGE_SIZE,
   );
+  const [visibleItems, setVisibleItems] = useState(items);
+  const [visibleCounts, setVisibleCounts] = useState(counts);
   const [contactStatusById, setContactStatusById] = useState<
     Record<string, PlatformAlertContactStatus>
   >(() => buildContactStatusMap(items));
   const [itemsSource, setItemsSource] = useState(items);
+  const [countsSource, setCountsSource] = useState(counts);
   const [savingAlertId, setSavingAlertId] = useState<string | null>(null);
   const [contactError, setContactError] = useState<string | null>(null);
 
-  if (itemsSource !== items) {
+  if (itemsSource !== items || countsSource !== counts) {
     setItemsSource(items);
+    setCountsSource(counts);
+    setVisibleItems(items);
+    setVisibleCounts(counts);
     setContactStatusById(buildContactStatusMap(items));
   }
 
   const filteredItems = useMemo(() => {
-    if (kindFilter === "all") return items;
-    return items.filter((item) => item.kind === kindFilter);
-  }, [items, kindFilter]);
+    if (kindFilter === "all") return visibleItems;
+    return visibleItems.filter((item) => item.kind === kindFilter);
+  }, [visibleItems, kindFilter]);
 
   const resetKey = `${kindFilter}:${pageSize}`;
   const { paginatedItems, page, setPage, totalPages, totalItems } =
     usePagination(filteredItems, pageSize, resetKey);
 
   const headerCount =
-    kindFilter === "all" ? items.length : filteredItems.length;
+    kindFilter === "all" ? visibleItems.length : filteredItems.length;
 
   async function handleContactStatusChange(
     alertId: string,
@@ -223,9 +255,29 @@ export function PlatformAlertsList({
     const previousStatus = contactStatusById[alertId] ?? "need_contact";
     if (previousStatus === status) return;
 
+    const alertItem = visibleItems.find((item) => item.id === alertId);
+    if (!alertItem) return;
+
     setContactError(null);
     setSavingAlertId(alertId);
     setContactStatusById((current) => ({ ...current, [alertId]: status }));
+
+    if (status === "contacted") {
+      setVisibleItems((current) =>
+        current.filter((item) => item.id !== alertId),
+      );
+      setVisibleCounts((current) =>
+        decrementKindCount(current, alertItem.kind),
+      );
+    } else {
+      setVisibleItems((current) =>
+        current.map((item) =>
+          item.id === alertId ?
+            { ...item, isNew: false, contactStatus: status }
+          : item,
+        ),
+      );
+    }
 
     try {
       await updatePlatformAlertContactStatus(alertId, status);
@@ -234,13 +286,15 @@ export function PlatformAlertsList({
         ...current,
         [alertId]: previousStatus,
       }));
+      setVisibleItems(items);
+      setVisibleCounts(counts);
       setContactError("Could not save contact status. Try again.");
     } finally {
       setSavingAlertId(null);
     }
   }
 
-  if (items.length === 0) {
+  if (visibleItems.length === 0) {
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -304,7 +358,7 @@ export function PlatformAlertsList({
                 : "bg-white text-zinc-600",
               )}
             >
-              {items.length}
+              {visibleItems.length}
             </span>
           </button>
           {ALERT_KIND_ORDER.map((kind) => {
@@ -329,7 +383,7 @@ export function PlatformAlertsList({
                     : "bg-white/80 text-inherit",
                   )}
                 >
-                  {counts[kind]}
+                  {visibleCounts[kind]}
                 </span>
               </button>
             );

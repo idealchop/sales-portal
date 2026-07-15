@@ -92,7 +92,7 @@ else
 fi
 
 echo -e "${GREEN}✅ Deployment successful!${NC}"
-echo -e "${GREEN}   • functions:sales-portal-api (salesPortalApi, region asia-southeast1)${NC}"
+echo -e "${GREEN}   • functions:sales-portal-api (salesPortalApi + eventsTrainingPromotionDelivery, asia-southeast1)${NC}"
 if [[ "${DEPLOY_FIRESTORE:-0}" == "1" ]]; then
   echo -e "${GREEN}   • firestore:rules, firestore:indexes, storage.rules (riverdb + smartrefill-singapore)${NC}"
 fi

@@ -32,6 +32,8 @@ done
 # Keep in sync with functions/src/config/function-secrets.ts
 REQUIRED_SECRETS=(
   "SALES_PORTAL_GEMINI_API_KEY"
+  "META_COMMUNITY_PAGE_ACCESS_TOKEN"
+  "META_COMMUNITY_PAGE_ID"
 )
 
 GCLOUD=(gcloud --project="$PROJECT_ID")

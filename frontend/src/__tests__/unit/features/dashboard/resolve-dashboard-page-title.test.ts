@@ -16,4 +16,35 @@ describe("resolveDashboardPageTitle", () => {
     );
     expect(resolveDashboardPageTitle("/dashboard/settings")).toBe("Settings");
   });
+
+  it("resolves Events & Training routes", () => {
+    expect(resolveDashboardPageTitle("/events-training")).toBe("Overview");
+    expect(resolveDashboardPageTitle("/events-training/blogs")).toBe(
+      "Articles",
+    );
+    expect(resolveDashboardPageTitle("/events-training/videos")).toBe(
+      "Stories",
+    );
+    expect(resolveDashboardPageTitle("/events-training/tutorials")).toBe(
+      "Tutorials",
+    );
+    expect(resolveDashboardPageTitle("/events-training/webinars")).toBe(
+      "Webinars",
+    );
+    expect(resolveDashboardPageTitle("/events-training/registrations")).toBe(
+      "Registrations",
+    );
+    expect(resolveDashboardPageTitle("/events-training/schedules")).toBe(
+      "Schedules",
+    );
+    expect(resolveDashboardPageTitle("/events-training/moderation")).toBe(
+      "Moderation",
+    );
+    expect(resolveDashboardPageTitle("/events-training/certifications")).toBe(
+      "Certifications",
+    );
+    expect(resolveDashboardPageTitle("/events-training/analytics")).toBe(
+      "Analytics",
+    );
+  });
 });

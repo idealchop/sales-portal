@@ -33,6 +33,8 @@ https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/salesPortal
 | `SALES_PORTAL_FIRESTORE_DB` | `firebase.json` / `.env` | `riverdb` |
 | `SMARTREFILL_API_URL` | `firebase.json` / `.env` | Proxy target |
 | `SALES_PORTAL_GEMINI_API_KEY` | Secret Manager (prod) / `.env` (local) | AI features |
+| `META_COMMUNITY_PAGE_ACCESS_TOKEN` | Secret Manager (shared with SmartRefill) | Graph publish + local override |
+| `META_COMMUNITY_PAGE_ID` | Secret Manager (shared with SmartRefill) | Community Facebook Page id |
 | `SALES_PORTAL_FIREBASE_CLIENT_EMAIL` | `.env` (local only) | Admin SDK |
 | `SALES_PORTAL_FIREBASE_PRIVATE_KEY` | `.env` (local only) | Admin SDK |
 
@@ -98,6 +100,31 @@ Portal routes require **Bearer token**, **sales-portal access**, and role-scoped
 | `DELETE` | `/sales-materials/:materialId` | Admin | Delete material |
 | `GET` | `/public/proposals/:linkId` | — | Public proposal + client view |
 
+### Events & Training (`/events-training`)
+
+Manager/admin CMS + ops for Smart Refill Resources (shared `apps/smartrefill/*` on `riverdb`). Full detail: [`events-training.md`](./events-training.md).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET/POST/PATCH/DELETE` | `/events-training/webinars` | Live webinar CRUD |
+| `GET/POST/PATCH/DELETE` | `/events-training/videos` | Training videos (`category` identity: `wrs_stories` \| `webinar` \| `tutorial`; `?category=` filter) |
+| `GET` | `/events-training/apps` | List apps for tutorial targeting (`apps` collection) |
+| `GET/POST/PATCH/DELETE` | `/events-training/blogs` | WRS blog CMS |
+| `POST` | `/events-training/upload` | Image upload (poster/thumbnail/hero) |
+| `GET` | `/events-training/registrations` | List registrants (`eventId`, `status`) |
+| `POST` | `/events-training/registrations/:id/accept` | Accept registration |
+| `POST` | `/events-training/registrations/:id/decline` | Decline registration |
+| `GET/POST/PATCH/DELETE` | `/events-training/schedules` | Schedule rows + automated promotions |
+| `GET/PUT/POST` | `/events-training/webinars/:id/automation` | Install / pause / preview Meta+email plan |
+
+**Scheduled job:** `eventsTrainingPromotionDelivery` (every 5 minutes) fires due automation schedules and publishes queued `meta_post_log` captions to the Facebook Page. See [`events-training.md`](./events-training.md).
+| `GET/PATCH` | `/events-training/videos/:id/comments` | Moderate video comments |
+| `GET/PATCH` | `/events-training/blogs/:id/comments` | Moderate blog comments |
+| `GET/PATCH` | `/events-training/videos/:id/questions` | Answer / close Q&A |
+| `GET/POST` | `/events-training/certifications` | List / issue certificates |
+| `POST` | `/events-training/certifications/:id/revoke` | Revoke certificate |
+| `GET` | `/events-training/analytics` | Ops analytics summary |
+
 ### SmartRefill proxy (`/smartrefill`)
 
 | Method | Path | Auth | Description |
@@ -141,6 +168,7 @@ See route files under `backend/functions/src/routes/`.
 |------------|------|---------|
 | `validateFirebaseIdToken` | `middleware/auth-middleware.ts` | Verifies Bearer token |
 | `requireSalesPortalAccess` | same | Ensures `appAccess.sales-portal` |
+| `requireManagerOrAdminRole` | `middleware/require-admin.ts` | Manager/admin gates (Events & Training) |
 | `requireAdminRole` | admin routes | Admin-only gates |
 | Global rate limit | `index.ts` | 3000 req / 15 min (skipped in emulator) |
 

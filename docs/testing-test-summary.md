@@ -20,6 +20,9 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/services/build-todays-work-inbox.unit.test.ts` | Today’s work dedupe | TC-DASH-07 |
 | `unit/services/build-new-joiners.unit.test.ts` | New joiners aggregation | TC-DASH-07 |
 | `unit/services/filter-new-joiners-for-actor.unit.test.ts` | Role-scoped joiners | TC-DASH-07 |
+| `unit/services/events-training-playback.unit.test.ts` ✅ | YouTube / iframe playback normalize | Events & Training videos |
+| `unit/services/events-training-visibility.unit.test.ts` ✅ | Visibility enum (`public`/`premium`/`private`) | Events & Training videos |
+| `unit/services/events-training-ops.unit.test.ts` ✅ | Registration transitions, capacity, analytics period clamp | Registrations / analytics |
 
 ---
 
@@ -54,8 +57,8 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 
 | Test file | Covers | Manual QA |
 |-----------|--------|-----------|
-| `unit/features/dashboard/nav-items.test.ts` ✅ | Role-based nav + dashboard children | TC-AUTH-07, TC-NAV-02, TC-DASH-06 |
-| `unit/features/dashboard/resolve-dashboard-page-title.test.ts` ✅ | Shell header titles per route | TC-DASH-06, TC-DASH-07 |
+| `unit/features/dashboard/nav-items.test.ts` ✅ | Role-based nav + dashboard children + Events & Training | TC-AUTH-07, TC-NAV-02, TC-DASH-06, TC-ET-10 |
+| `unit/features/dashboard/resolve-dashboard-page-title.test.ts` ✅ | Shell header titles per route | TC-DASH-06, TC-DASH-07, TC-ET-* |
 | `unit/features/dashboard/app-chart-groups.test.ts` ✅ | Non-overlapping per-app chart kinds | TC-DASH-06, TC-DASH-07 |
 | `unit/features/dashboard/forecast-items.test.ts` ✅ | Forecast slice per app | TC-DASH-08 |
 | `unit/features/dashboard/build-hub-app-stats.test.ts` ✅ | Hub KPI grouping | TC-DASH-01 |

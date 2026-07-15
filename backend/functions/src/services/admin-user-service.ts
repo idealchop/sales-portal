@@ -506,8 +506,8 @@ export async function updateAdminUserAppAccess(
     hasRiverDbProfile: true,
     authAccountTag:
       options?.authAccountTag !== undefined ?
-        options.authAccountTag
-      : readAuthAccountTag(await auth.getUser(uid), data),
+        options.authAccountTag :
+        readAuthAccountTag(await auth.getUser(uid), data),
   });
 
   const [enriched] = await enrichUsersWithSmartRefillStaffSubRoles([summary]);

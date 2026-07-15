@@ -16,6 +16,7 @@ Single source of truth for architecture, development, testing, and deployment.
 | [testing-guide.md](./testing-guide.md) | **QA protocol** — unit, integration, BDD (FE + BE) |
 | [backlog-actionable.md](./backlog-actionable.md) | **AB-01…AB-58** — implementation-ready backlog |
 | [agent-workflow.md](./agent-workflow.md) | Feature + code review agents, `dev` branch model |
+| [events-training.md](./events-training.md) | Events & Training CMS + ops (registrations, schedules, moderation, certs, analytics) |
 
 ## QA & testing
 
@@ -43,8 +44,9 @@ Test layout READMEs (run commands):
 
 ```bash
 # Dev
-npm run dev:frontend          # Next.js :9002
-npm run dev:api               # salesPortalApi local :8071
+npm run dev:local             # frontend + API in one terminal (:9002 + :8071)
+npm run dev:frontend          # Next.js :9002 only
+npm run dev:api               # salesPortalApi local :8071 only
 
 # Unit tests
 npm run test:unit             # FE + BE Vitest

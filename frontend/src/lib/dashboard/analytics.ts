@@ -432,6 +432,7 @@ export type PlatformAlert = {
   businessId?: string;
   businessName?: string;
   contactStatus?: PlatformAlertContactStatus;
+  isNew?: boolean;
 };
 
 export type PlatformAlertsSummary = {
