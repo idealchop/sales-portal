@@ -11,20 +11,24 @@ Sales Portal CMS and ops for Smart Refill Resources content and webinar event ma
 
 ## UI routes
 
-Information architecture (compact tab bar + sidebar): **Overview → Needs attention → Create & manage → Settings**.
+### Content (Phases 1–2 CMS)
 
-| Group | Route | Purpose |
+| Route | Purpose |
+|-------|---------|
+| `/events-training/blogs` | WRS Blog articles CMS → `/resources/blogs` |
+| `/events-training/videos` | WRS Stories + webinar recordings (URL/embed, visibility, pricing) |
+| `/events-training/tutorials` | Video tutorials CMS — App picker looks up Firestore `apps` (`GET /events-training/apps`); multi-select **Pages** from `apps/{id}.tutorialPages` or Smart Refill defaults |
+| `/events-training/webinars` | Live webinar events CRUD |
+
+### Ops (Phases 3–8 — Sales Portal scope)
+
+| Phase | Route | Purpose |
 |-------|-------|---------|
-| Overview | `/events-training` | Landing — registration + moderation to-dos, charts, and breakdowns |
-| Overview | `/events-training/analytics` | Same analytics panel (deep-link / focused view) |
-| Needs attention | `/events-training/registrations` | Registrant queue — accept / decline |
-| Needs attention | `/events-training/moderation` | Comment moderate + Q&A answer |
-| Create & manage | `/events-training/webinars` | Live webinar events CRUD (+ publish `appId` from `apps`, link recording) |
-| Create & manage | `/events-training/videos` | Stories + webinar recordings (publish `appId` from `apps`, visibility, pricing) |
-| Create & manage | `/events-training/blogs` | Articles (WRS Blog) — status, visibility, publish `appId`, live HTML preview → `/resources/blogs` |
-| Create & manage | `/events-training/tutorials` | Video tutorials CMS — App picker (`GET /events-training/apps`); pages from `apps/{id}.tutorialPages` or defaults |
-| Create & manage | `/events-training/certifications` | Webinar certificate templates (enable for attendees; optional manual issue) |
-| Settings | `/events-training/schedules` | Automated Meta + email promotion plan (installed on webinar publish) |
+| 3 / 6 | `/events-training/registrations` | Registrant queue — accept / decline / delete |
+| 5 | `/events-training/schedules` | Automated email promotion plan |
+| 6 | `/events-training/moderation` | Comment/Q&A moderate, answer, delete |
+| 7 | `/events-training/certifications` | Issue / revoke / list certificates |
+| 8 | `/events-training/analytics` | 7 / 30 / 90-day summary |
 
 Member registration, PayMongo premium unlock, private quotas, Brevo email delivery, notification job runners, and public Resources landings live in **SmartRefill** (not this repo).
 
@@ -51,64 +55,51 @@ Member registration, PayMongo premium unlock, private quotas, Brevo email delive
 | `GET` | `/webinars/:webinarId/registrations` | Registrants for one event |
 | `POST` | `/registrations/:id/accept` | Accept (+ capacity check) |
 | `POST` | `/registrations/:id/decline` | Decline |
-| `POST` | `/registrations/:id/attendance` | Set `attended` \| `no_show` \| `cleared` (attended auto-issues cert when template enabled) |
+| `DELETE` | `/registrations/:id` | Permanently delete sign-up (adjusts `registrationCount` for pending/accepted) |
+| `POST` | `/registrations/:id/attendance` | Set `attended` \| `no_show` \| `cleared` |
 
-**CMS UX:** **To do** lists pending sign-ups across webinars with search, per-row Accept/Decline, and bulk Accept/Decline selected. Accepted rows expose join-link open/copy.
+**CMS UX:** **To do** lists pending sign-ups across webinars with search, per-row Accept/Decline/Delete, and bulk Accept/Decline selected. Accepted / declined / cancelled rows expose Delete. Destructive actions use an in-app confirm dialog (not `window.confirm`). Accepted rows expose join-link open/copy.
 
 ### Schedules (automated promotions)
 
-Publishing a webinar **installs an automation plan** (no manual posting):
+Publishing a webinar **installs an email automation plan**:
 
-| When | Meta community | Email members |
-|------|----------------|---------------|
-| On publish | Yes | Yes (all members) |
-| Weekly until event | Yes | Yes |
-| 7 days before | Yes | Yes |
-| 3 days before | Yes | Yes |
-| 2 days before | Yes | — |
-| 1 day before | Yes | Yes |
-| 1 hour before | Yes | Yes (registrants) |
-| On-going (at start) | Yes | Yes (registrants) |
+| When | Email |
+|------|-------|
+| On publish | Yes (all members) |
+| Weekly until event | Yes |
+| 7 / 3 / 1 days before | Yes |
+| 1 hour before | Yes (registrants) |
+| On-going (at start) | Yes (registrants) |
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/webinars/:id/automation` | View installed plan + next/last run |
-| `POST` | `/webinars/:id/automation/install` | Install/refresh plan (`fireImmediate` queues publish Meta+email) |
-| `PUT` | `/webinars/:id/automation` | Pause / resume all automated milestones |
-| `POST` | `/webinars/:id/automation/preview` | Preview composed copy for a milestone |
-| `GET/POST/PATCH/DELETE` | `/schedules` | Low-level schedule rows (auto milestones use `automated: true`) |
+| `GET` | `/webinars/:id/automation` | View installed plan |
+| `POST` | `/webinars/:id/automation/install` | Install/refresh (`fireImmediate` queues publish email) |
+| `PUT` | `/webinars/:id/automation` | Pause / resume |
+| `POST` | `/webinars/:id/automation/preview` | Preview email copy |
+| `GET/POST/PATCH/DELETE` | `/schedules` | Low-level schedule rows |
 
-Messages include poster, details, Smart Refill register URL, seats left, and certificate.
-
-**Delivery (Cloud Scheduler job `eventsTrainingPromotionDelivery`, every 5 minutes):**
-
-1. Fire due rows in `events_training_schedules` → enqueue Meta captions (+ email queue docs)
-2. Publish `meta_post_log` docs with `status: queued` to the community Facebook Page via Graph API (`/{page-id}/feed` or `/photos`)
-
-Requires Secret Manager: `META_COMMUNITY_PAGE_ACCESS_TOKEN` + `META_COMMUNITY_PAGE_ID` (shared with SmartRefill; token needs `pages_manage_posts`). Email queue docs are written for a future Brevo sender; Meta Page publish is live once secrets are bound.
+Jobs land in `events_training_email_queue`. Scheduler `eventsTrainingPromotionDelivery` (every 5 minutes) fires due milestones.
 
 ### Moderation
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `/moderation/inbox` | Cross-content queue: all video/blog comments + video Q&A (with parent titles) |
-| `GET/PATCH` | `/videos/:id/comments` · `/comments/:commentId` | List / set `visible` \| `hidden` \| `flagged` |
-| `GET/PATCH` | `/blogs/:id/comments` · `/comments/:commentId` | Same for blogs |
-| `GET/PATCH` | `/videos/:id/questions` · `/questions/:questionId` | List / answer / status |
+| `GET/PATCH/DELETE` | `/videos/:id/comments` · `/comments/:commentId` | List / set `visible` \| `hidden` \| `flagged` / permanently delete |
+| `GET/PATCH/DELETE` | `/blogs/:id/comments` · `/comments/:commentId` | Same for blogs |
+| `GET/PATCH/DELETE` | `/videos/:id/questions` · `/questions/:questionId` | List / answer / status / permanently delete |
 
-**CMS UX:** Default **To do** lists unanswered member questions + flagged comments from every video (SmartRefill `training_video_engagement/.../posts`). **All comments** / **All questions** browse the full queues — no per-video picker.
+**CMS UX:** Default **To do** lists unanswered member questions + flagged comments from every video (SmartRefill `training_video_engagement/.../posts`). **All comments** / **All questions** browse the full queues — no per-video picker. Delete removes engagement posts (or blog comment docs) and uses the shared confirm dialog.
 
 ### Certifications & analytics
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET/POST` | `/certifications` | List / manually issue webinar certificates (`targetType` is always `webinar_event`) |
-| `POST` | `/certifications/preview` | SVG preview (webinar name, speaker, event date) |
+| `GET/POST` | `/certifications` | List / issue |
 | `POST` | `/certifications/:certId/revoke` | Revoke |
-| `PUT` | `/webinars/:webinarId/certificate-template` | Enable / disable `certificationEnabled` for attendee claims |
-
-Certificates are **webinar-only templates**: pick a webinar; the SVG shows webinar name, speaker, and when it happened (from `startsAt`), plus branding for a Firestore `apps/{appId}`. Enabling the template sets `certificationEnabled`. When ops mark a registrant **Attended** (or a member joins / finishes the linked recording), a certificate is **issued automatically** into `training_certifications` and synced to the member’s `webinar_certificates` claim. Manual issue still uploads SVG to Storage as `certificateUrl`.
-| `GET` | `/analytics?periodDays=` | Summary + series/breakdowns + rankings (top views, comments, unlocks, regs by webinar; clamp 1–90) |
+| `GET` | `/analytics?periodDays=` | Summary (clamp 1–90) |
 
 ---
 
@@ -152,7 +143,7 @@ Default origin is `https://app.smartrefill.io`. Guests can open **Public + publi
 | Field | Values | Notes |
 |-------|--------|-------|
 | **`category`** | `wrs_stories` \| `webinar` \| **`tutorial`** | **Discriminator** — video tutorials always persist `category: "tutorial"` |
-| `appId` | e.g. `smartrefill` | Publish target from Firestore `apps` (stories, recordings, webinars, tutorials) |
+| `appId` | e.g. `smartrefill` | Required for tutorials (target app from `apps` collection) |
 | `appPages` | string[] | Required for tutorials (pages within that app) |
 | `status` | `draft` \| `published` \| `archived` | Tutorials list query: `category == tutorial` |
 

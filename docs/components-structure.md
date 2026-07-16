@@ -57,6 +57,7 @@ Manager/admin CMS + ops for Smart Refill Resources. Detail: [`events-training.md
 | Area | Purpose |
 |------|---------|
 | `components/*-admin-page.tsx` | Overview, analytics, registrations, moderation, webinars, videos, blogs, tutorials, certifications, schedules |
+| `components/confirm-delete-dialog.tsx` | Shared in-app destructive confirm (replaces `window.confirm`) |
 | `components/events-training-shell.tsx` | Compact grouped tab bar: Overview → Attention → Create → Schedules |
 | `lib/events-training-nav.ts` | Shared IA + sidebar children |
 | `lib/events-training-api.ts` | Authenticated API wrappers |

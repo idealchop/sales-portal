@@ -12,7 +12,7 @@ import {
   SCHEDULE_KINDS,
   SCHEDULE_PURPOSES,
   SCHEDULE_TARGET_TYPES,
-  EVENTS_TRAINING_COLLECTIONS } from "../../constants/events-training";
+} from "../../constants/events-training";
 import { toIsoString } from "../sales-serializer";
 import {
   composeWebinarScheduleMessage,
@@ -22,7 +22,6 @@ import {
   type SchedulePurpose as ComposerPurpose,
 } from "./schedule-message-composer";
 import {
-  eventsTrainingRoot,
   schedulesCollection,
   webinarsCollection,
 } from "./events-training-db";
@@ -73,8 +72,6 @@ function mapSchedule(id: string, data: Record<string, unknown>): ScheduleRecord 
         (SCHEDULE_CHANNELS as readonly string[]).includes(c),
       ) :
     [];
-  const metaChannel =
-    data.metaChannel === true || channels.includes("meta");
   return {
     id,
     targetType: parseEnum(data.targetType, SCHEDULE_TARGET_TYPES, "webinar_event"),
@@ -84,14 +81,12 @@ function mapSchedule(id: string, data: Record<string, unknown>): ScheduleRecord 
     fixedAt: toIsoString(data.fixedAt),
     weekday: data.weekday == null ? null : Number(data.weekday),
     daysBefore: data.daysBefore == null ? null : Number(data.daysBefore),
-    channels: metaChannel && !channels.includes("meta") ?
-      [...channels, "meta"] :
-      channels,
+    channels: channels.length > 0 ? channels : (["email"] as ScheduleChannel[]),
     audience: parseEnum(data.audience, SCHEDULE_AUDIENCES, "registrants"),
     messageTemplate: String(data.messageTemplate ?? ""),
     emailTemplateKey:
       typeof data.emailTemplateKey === "string" ? data.emailTemplateKey : null,
-    metaChannel,
+    metaChannel: false,
     enabled: data.enabled !== false,
     nextRunAt: toIsoString(data.nextRunAt),
     lastRunAt: toIsoString(data.lastRunAt),
@@ -101,16 +96,17 @@ function mapSchedule(id: string, data: Record<string, unknown>): ScheduleRecord 
 }
 
 function normalizeChannels(input?: string[], metaChannel?: boolean): ScheduleChannel[] {
+  // metaChannel is ignored — Meta Page posting was removed from Sales Portal.
+  void metaChannel;
+  const allowed = new Set(
+    (SCHEDULE_CHANNELS as readonly string[]).filter((c) => c !== "meta"),
+  );
   const channels = Array.isArray(input) ?
     input
       .map(String)
-      .filter((c): c is ScheduleChannel =>
-        (SCHEDULE_CHANNELS as readonly string[]).includes(c),
-      ) :
+      .filter((c): c is ScheduleChannel => allowed.has(c)) :
     (["email"] as ScheduleChannel[]);
-  const wantsMeta = metaChannel === true || channels.includes("meta");
-  if (wantsMeta && !channels.includes("meta")) channels.push("meta");
-  return channels;
+  return channels.length > 0 ? channels : (["email"] as ScheduleChannel[]);
 }
 
 export type UpsertScheduleInput = {
@@ -192,7 +188,7 @@ export async function createSchedule(
     audience,
     messageTemplate: input.messageTemplate?.trim() ?? "",
     emailTemplateKey: input.emailTemplateKey?.trim() || null,
-    metaChannel: channels.includes("meta"),
+    metaChannel: false,
     enabled: input.enabled !== false,
     nextRunAt: null,
     lastRunAt: null,
@@ -250,7 +246,7 @@ export async function updateSchedule(
       input.metaChannel ?? current.metaChannel,
     );
     patch.channels = channels;
-    patch.metaChannel = channels.includes("meta");
+    patch.metaChannel = false;
   }
   if (input.audience !== undefined) {
     patch.audience = parseEnum(input.audience, SCHEDULE_AUDIENCES, "registrants");
@@ -324,44 +320,4 @@ export async function previewWebinarScheduleMessage(input: {
     };
   }
   return composed;
-}
-
-/** Persist a composed Meta caption for delivery runners to pick up. */
-export async function queueMetaCommunityPost(input: {
-  webinarId: string;
-  purpose: SchedulePurpose;
-  scheduleId?: string | null;
-  actorUid: string;
-}): Promise<{ id: string; caption: string; registerUrl: string }> {
-  const preview = await previewWebinarScheduleMessage({
-    webinarId: input.webinarId,
-    purpose: input.purpose,
-  });
-  const ref = eventsTrainingRoot()
-    .collection(EVENTS_TRAINING_COLLECTIONS.metaPostLog)
-    .doc();
-  const now = FieldValue.serverTimestamp();
-  await ref.set({
-    webinarId: input.webinarId.trim(),
-    purpose: input.purpose,
-    scheduleId: input.scheduleId?.trim() || null,
-    caption: preview.metaCaption,
-    subject: preview.subject,
-    registerUrl: preview.registerUrl,
-    posterUrl: preview.posterUrl,
-    seatsRemaining: preview.seatsRemaining,
-    capacity: preview.capacity,
-    certificationEnabled: preview.certificationEnabled,
-    status: "queued",
-    channel: "meta_community_page",
-    createdByUid: input.actorUid,
-    createdAt: now,
-    updatedAt: now,
-    postedAt: null,
-  });
-  return {
-    id: ref.id,
-    caption: preview.metaCaption,
-    registerUrl: preview.registerUrl,
-  };
 }

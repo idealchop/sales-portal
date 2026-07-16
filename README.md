@@ -124,8 +124,6 @@ Production uses **Secret Manager** (same GCP project as SmartRefill: `aquaflow-m
 | Secret | Used by | Notes |
 |--------|---------|-------|
 | `SALES_PORTAL_GEMINI_API_KEY` | `salesPortalApi` | Separate from SmartRefill `GEMINI_API_KEY`; Content Studio + AI features |
-| `META_COMMUNITY_PAGE_ACCESS_TOKEN` | `salesPortalApi`, `eventsTrainingPromotionDelivery` | Shared with SmartRefill; Page token with `pages_manage_posts` for webinar automation |
-| `META_COMMUNITY_PAGE_ID` | `salesPortalApi`, `eventsTrainingPromotionDelivery` | River community Facebook Page id (same as Messenger) |
 
 `NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN` is **local dev only** (see `frontend/.env.local`) — not used in App Hosting production builds (`NEXT_PUBLIC_DEV=false`).
 

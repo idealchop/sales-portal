@@ -146,6 +146,10 @@ export const apiClient = {
         payload.code,
       );
     }
-    return res.json() as Promise<T>;
+    // 204 / empty body — common for DELETE handlers
+    if (res.status === 204) return undefined as T;
+    const text = await res.text();
+    if (!text.trim()) return undefined as T;
+    return JSON.parse(text) as T;
   },
 };

@@ -15,24 +15,12 @@ import { ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import {
   createWebinar,
-  fetchTrainingVideos,
-  fetchTutorialApps,
   formatPricePesos,
   parsePricePesosToCents,
-  updateTrainingVideo,
   updateWebinar,
   uploadEventsTrainingImage,
 } from "../lib/events-training-api";
-import type {
-  TrainingVideoRecord,
-  TutorialAppOption,
-  WebinarRecord,
-  WebinarStatus,
-} from "../lib/events-training-types";
-import {
-  TUTORIAL_TARGET_APPS,
-  tutorialTargetAppLabel,
-} from "../lib/events-training-types";
+import type { WebinarRecord, WebinarStatus } from "../lib/events-training-types";
 import {
   inferPrivateAudience,
   privateAudienceAccess,
@@ -99,7 +87,6 @@ function emptyForm(): Partial<WebinarRecord> {
     timezone: "Asia/Manila",
     posterUrl: null,
     status: "draft",
-    appId: "smartrefill",
     visibility: "private",
     priceCents: 0,
     currency: "PHP",
@@ -191,24 +178,9 @@ export function WebinarFormDialog({
   const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recordings, setRecordings] = useState<TrainingVideoRecord[]>([]);
-  const [recordingsLoading, setRecordingsLoading] = useState(false);
-  const [apps, setApps] = useState<TutorialAppOption[]>([
-    ...TUTORIAL_TARGET_APPS,
-  ]);
-  const [appsLoading, setAppsLoading] = useState(false);
 
   const editingId = initial?.id ?? null;
   const status = (form.status ?? "draft") as WebinarStatus;
-  const defaultAppId = apps[0]?.id ?? "smartrefill";
-  const publishAppId = form.appId?.trim() || defaultAppId;
-  const selectedApp =
-    apps.find((app) => app.id === publishAppId) ??
-    ({
-      id: publishAppId,
-      label: tutorialTargetAppLabel(publishAppId, apps),
-      pages: [],
-    } satisfies TutorialAppOption);
   const scheduleSummary = formatScheduleSummary(
     form.startsAt ?? null,
     form.endsAt ?? null,
@@ -216,31 +188,8 @@ export function WebinarFormDialog({
 
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
-    setAppsLoading(true);
-    void fetchTutorialApps()
-      .then((rows) => {
-        if (!cancelled && rows.length > 0) setApps(rows);
-      })
-      .catch(() => {
-        /* keep fallback apps */
-      })
-      .finally(() => {
-        if (!cancelled) setAppsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || appsLoading) return;
-    const nextDefault = apps[0]?.id ?? "smartrefill";
     if (initial) {
-      setForm({
-        ...initial,
-        appId: initial.appId?.trim() || nextDefault,
-      });
+      setForm({ ...initial });
       setTags(initial.tags ?? []);
       setCapacityInput(
         initial.capacity != null && Number.isFinite(initial.capacity)
@@ -260,7 +209,7 @@ export function WebinarFormDialog({
           initial.certificationEnabled,
       );
     } else {
-      setForm({ ...emptyForm(), appId: nextDefault });
+      setForm(emptyForm());
       setTags([]);
       setCapacityInput("");
       setAudience("all");
@@ -269,29 +218,7 @@ export function WebinarFormDialog({
     }
     setTagDraft("");
     setError(null);
-  }, [open, initial, apps, appsLoading]);
-
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    setRecordingsLoading(true);
-    void fetchTrainingVideos({ category: "webinar" })
-      .then((rows) => {
-        if (cancelled) return;
-        setRecordings(
-          [...rows].sort((a, b) => a.name.localeCompare(b.name)),
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setRecordings([]);
-      })
-      .finally(() => {
-        if (!cancelled) setRecordingsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
+  }, [open, initial]);
 
   function applyAudience(next: WebinarAudience) {
     setAudience(next);
@@ -381,41 +308,22 @@ export function WebinarFormDialog({
     setSubmitting(true);
     setError(null);
     const access = accessFromAudience(audience, priceCents);
-    const previousLinkedVideoId = initial?.linkedVideoId ?? null;
-    const nextLinkedVideoId = form.linkedVideoId?.trim() || null;
     const payload = {
       ...form,
       ...access,
-      appId: publishAppId,
       tags,
       capacity,
       joinLink: (form.joinLink ?? "").trim() || null,
-      linkedVideoId: nextLinkedVideoId,
       timezone: form.timezone || "Asia/Manila",
       currency: "PHP",
     };
 
     try {
-      const saved = editingId
-        ? await updateWebinar(editingId, payload)
-        : await createWebinar(payload);
-
-      if (previousLinkedVideoId && previousLinkedVideoId !== nextLinkedVideoId) {
-        const previous = recordings.find(
-          (row) => row.id === previousLinkedVideoId,
-        );
-        if (!previous || previous.webinarEventId === saved.id) {
-          await updateTrainingVideo(previousLinkedVideoId, {
-            webinarEventId: null,
-          });
-        }
+      if (editingId) {
+        await updateWebinar(editingId, payload);
+      } else {
+        await createWebinar(payload);
       }
-      if (nextLinkedVideoId) {
-        await updateTrainingVideo(nextLinkedVideoId, {
-          webinarEventId: saved.id,
-        });
-      }
-
       await onSaved();
       onClose();
     } catch (err) {
@@ -424,8 +332,6 @@ export function WebinarFormDialog({
           setError("Premium webinars need a price in PHP.");
         } else if (err.message === "PRIVATE_ACCESS_REQUIRED") {
           setError("Choose who can register for this webinar.");
-        } else if (err.message === "PUBLISH_APP_REQUIRED") {
-          setError("Choose a valid app from the catalog to publish to.");
         } else {
           setError(err.message || "Unable to save webinar.");
         }
@@ -759,97 +665,14 @@ export function WebinarFormDialog({
                 Shared with accepted registrants after you publish.
               </p>
             </div>
-            <div>
-              <label className={labelClassName} htmlFor="webinar-recording">
-                Recording (optional)
-              </label>
-              <select
-                id="webinar-recording"
-                className={inputClassName}
-                value={form.linkedVideoId ?? ""}
-                disabled={recordingsLoading || submitting}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    linkedVideoId: e.target.value || null,
-                  }))
-                }
-              >
-                <option value="">
-                  {recordingsLoading
-                    ? "Loading recordings…"
-                    : "No recording linked"}
-                </option>
-                {recordings.map((video) => (
-                  <option key={video.id} value={video.id}>
-                    {video.name}
-                    {video.status !== "published" ? ` (${video.status})` : ""}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Publish the recording under Stories first, mark it as a recorded
-                webinar, then link it here (or from the story form).
-              </p>
-            </div>
-          </section>
-
-          <section className="space-y-3 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h4 className="text-sm font-semibold text-foreground">
-                  Publishes to
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  Choose the product app from Firestore{" "}
-                  <code className="rounded bg-white px-1">apps</code>.
-                </p>
-              </div>
-              {apps.length > 1 ? (
-                <select
-                  className={cn(inputClassName, "h-9 w-auto min-w-[10rem]")}
-                  value={publishAppId}
-                  disabled={appsLoading || submitting}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, appId: e.target.value }))
-                  }
-                >
-                  {apps.map((app) => (
-                    <option key={app.id} value={app.id}>
-                      {app.label}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <Badge className="border-teal-200 bg-white text-teal-800">
-                  {appsLoading ? "Loading…" : selectedApp.label}
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-foreground">
-              {selectedApp.label} live webinars{" "}
-              <code className="rounded-md bg-white px-1.5 py-0.5 text-xs text-zinc-600 ring-1 ring-zinc-200">
-                {publishAppId === "smartrefill"
-                  ? "/resources/webinars"
-                  : `apps/${publishAppId}`}
-              </code>
-            </p>
           </section>
 
           <section className="space-y-3">
             <div>
               <h4 className="text-sm font-semibold text-foreground">Status</h4>
               <p className="text-xs text-muted-foreground">
-                Published webinars appear in {selectedApp.label}
-                {publishAppId === "smartrefill" ? (
-                  <>
-                    {" "}
-                    on{" "}
-                    <code className="rounded bg-zinc-100 px-1">
-                      /resources/webinars
-                    </code>
-                  </>
-                ) : null}
+                Published webinars appear on{" "}
+                <code className="rounded bg-zinc-100 px-1">/resources/webinars</code>
                 .
               </p>
             </div>

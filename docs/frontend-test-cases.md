@@ -71,8 +71,10 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-ET-03 | manager | Set video visibility `premium` without price | Validation error — price required |
 | TC-ET-04 | manager | Set visibility `private` + select plans / all members | Saves access rules |
 | TC-ET-05 | manager | `/events-training/registrations` accept pending | Status accepted; join link when available |
-| TC-ET-06 | manager | `/events-training/schedules` create N-days-before | Schedule listed enabled |
+| TC-ET-05b | manager | Delete a registration (confirm dialog) | Row removed; count adjusted for pending/accepted |
+| TC-ET-06 | manager | `/events-training/schedules` open published webinar automation | Email timeline shown; Meta channels absent |
 | TC-ET-07 | manager | `/events-training/moderation` hide comment | Comment status `hidden` |
+| TC-ET-07b | manager | Delete comment / question (confirm dialog) | Item removed from inbox |
 | TC-ET-08 | manager | `/events-training/certifications` issue + revoke | Issued then revoked |
 | TC-ET-09 | manager | `/events-training/analytics` period 30 | Summary cards load |
 | TC-ET-10 | sales | Navigate to `/events-training` | Nav hidden or redirected |

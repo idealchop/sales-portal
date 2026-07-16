@@ -23,6 +23,7 @@ import {
 import { WebinarFormDialog } from "./webinar-form-dialog";
 import { WebinarRegistrantsDialog } from "./webinar-registrants-dialog";
 import { WebinarStatusPicker } from "./webinar-status-picker";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 
 function formatSchedule(startsAt: string | null): string {
   if (!startsAt) return "No schedule";
@@ -65,6 +66,7 @@ export function WebinarsAdminPage() {
     useState<WebinarRecord | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<WebinarRecord | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -126,9 +128,11 @@ export function WebinarsAdminPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!window.confirm("Delete this webinar?")) return;
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
     setSubmitting(true);
+    setError(null);
     try {
       await deleteWebinar(id);
       if (editingItem?.id === id) closeForm();
@@ -136,6 +140,7 @@ export function WebinarsAdminPage() {
       await load();
     } catch {
       setError("Unable to delete webinar.");
+      throw new Error("Unable to delete webinar.");
     } finally {
       setSubmitting(false);
     }
@@ -306,7 +311,7 @@ export function WebinarsAdminPage() {
                           size="sm"
                           variant="ghost"
                           disabled={submitting}
-                          onClick={() => void handleDelete(item.id)}
+                          onClick={() => setDeleteTarget(item)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -331,6 +336,17 @@ export function WebinarsAdminPage() {
         <WebinarRegistrantsDialog
           webinar={registrantsWebinar}
           onClose={() => setRegistrantsWebinar(null)}
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <ConfirmDeleteDialog
+          title="Delete this webinar?"
+          itemLabel={deleteTarget.name}
+          description="This removes the webinar from Resources. Related registrations and promotion schedules will no longer be managed from this event."
+          confirmLabel="Delete webinar"
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDeleteConfirm}
         />
       ) : null}
     </div>

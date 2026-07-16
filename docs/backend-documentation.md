@@ -33,8 +33,6 @@ https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/salesPortal
 | `SALES_PORTAL_FIRESTORE_DB` | `firebase.json` / `.env` | `riverdb` |
 | `SMARTREFILL_API_URL` | `firebase.json` / `.env` | Proxy target |
 | `SALES_PORTAL_GEMINI_API_KEY` | Secret Manager (prod) / `.env` (local) | AI features |
-| `META_COMMUNITY_PAGE_ACCESS_TOKEN` | Secret Manager (shared with SmartRefill) | Graph publish + local override |
-| `META_COMMUNITY_PAGE_ID` | Secret Manager (shared with SmartRefill) | Community Facebook Page id |
 | `SALES_PORTAL_FIREBASE_CLIENT_EMAIL` | `.env` (local only) | Admin SDK |
 | `SALES_PORTAL_FIREBASE_PRIVATE_KEY` | `.env` (local only) | Admin SDK |
 
@@ -114,16 +112,17 @@ Manager/admin CMS + ops for Smart Refill Resources (shared `apps/smartrefill/*` 
 | `GET` | `/events-training/registrations` | List registrants (`eventId`, `status`) |
 | `POST` | `/events-training/registrations/:id/accept` | Accept registration |
 | `POST` | `/events-training/registrations/:id/decline` | Decline registration |
-| `GET/POST/PATCH/DELETE` | `/events-training/schedules` | Schedule rows + automated promotions |
-| `GET/PUT/POST` | `/events-training/webinars/:id/automation` | Install / pause / preview Meta+email plan |
-
-**Scheduled job:** `eventsTrainingPromotionDelivery` (every 5 minutes) fires due automation schedules and publishes queued `meta_post_log` captions to the Facebook Page. See [`events-training.md`](./events-training.md).
-| `GET/PATCH` | `/events-training/videos/:id/comments` | Moderate video comments |
-| `GET/PATCH` | `/events-training/blogs/:id/comments` | Moderate blog comments |
-| `GET/PATCH` | `/events-training/videos/:id/questions` | Answer / close Q&A |
+| `DELETE` | `/events-training/registrations/:id` | Permanently delete registration |
+| `GET/POST/PATCH/DELETE` | `/events-training/schedules` | Schedule rows + automated email promotions |
+| `GET/PUT/POST` | `/events-training/webinars/:id/automation` | Install / pause / preview email promotion plan |
+| `GET/PATCH/DELETE` | `/events-training/videos/:id/comments` | Moderate or delete video comments |
+| `GET/PATCH/DELETE` | `/events-training/blogs/:id/comments` | Moderate or delete blog comments |
+| `GET/PATCH/DELETE` | `/events-training/videos/:id/questions` | Answer / close / delete Q&A |
 | `GET/POST` | `/events-training/certifications` | List / issue certificates |
 | `POST` | `/events-training/certifications/:id/revoke` | Revoke certificate |
 | `GET` | `/events-training/analytics` | Ops analytics summary |
+
+**Scheduled job:** `eventsTrainingPromotionDelivery` (every 5 minutes) fires due automation schedules and enqueues email. See [`events-training.md`](./events-training.md).
 
 ### SmartRefill proxy (`/smartrefill`)
 

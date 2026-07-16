@@ -2,7 +2,6 @@ import { FieldValue } from "firebase-admin/firestore";
 import type { RegistrationStatus } from "../../constants/events-training";
 import { REGISTRATION_STATUSES } from "../../constants/events-training";
 import { toIsoString } from "../sales-serializer";
-import { awardCertificateForAttendance } from "./certifications-service";
 import {
   registrationsCollection,
   webinarsCollection,
@@ -259,20 +258,28 @@ export async function setRegistrationAttendance(
     );
   }
 
-  if (attendanceStatus === "attended") {
-    await awardCertificateForAttendance({
-      userId: current.userId,
-      businessId: current.businessId,
-      email: current.email,
-      eventId: current.eventId,
-      issuedBy: opsUid,
-    });
-  }
-
   const eventJoinLink = await getEventJoinLink(current.eventId);
   const updated = await ref.get();
   return withJoinLink(
     mapRegistration(updated.id, updated.data() ?? {}),
     eventJoinLink,
   );
+}
+
+export async function deleteRegistration(
+  registrationId: string,
+): Promise<void> {
+  const ref = registrationsCollection().doc(registrationId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new Error("REGISTRATION_NOT_FOUND");
+
+  const current = mapRegistration(snap.id, snap.data() ?? {});
+  await ref.delete();
+
+  // registrationCount tracks pending + accepted sign-ups on the webinar.
+  if (current.status === "pending" || current.status === "accepted") {
+    await webinarsCollection()
+      .doc(current.eventId)
+      .set({ registrationCount: FieldValue.increment(-1) }, { merge: true });
+  }
 }

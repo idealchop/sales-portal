@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Bell,
   Check,
-  Globe,
   Loader2,
   Mail,
   Megaphone,
@@ -33,7 +32,6 @@ import type {
 
 const CHANNEL_LABEL: Record<string, string> = {
   email: "Email",
-  meta: "Meta",
   in_app: "In-app",
   push: "Push",
 };
@@ -160,7 +158,7 @@ export function SchedulesAdminPage() {
       setPlan(data);
       setSuccess(
         fireImmediate
-          ? "Automation installed. Publish announcement was queued for Meta + email."
+          ? "Automation installed. Publish announcement was queued for email."
           : "Automation plan refreshed for this webinar.",
       );
     } catch (err) {
@@ -226,9 +224,9 @@ export function SchedulesAdminPage() {
       <div>
         <h2 className="text-lg font-semibold">Automated promotions</h2>
         <p className="mt-0.5 max-w-2xl text-sm text-muted-foreground">
-          When you publish a webinar, we automatically queue a Meta community
-          post and member email, then schedule weekly reminders and a countdown
-          (7d · 3d · 2d Meta · 1d · 1h · on-going). No manual posting.
+          When you publish a webinar, we automatically queue member emails, then
+          schedule weekly reminders and a countdown (7d · 3d · 1d · 1h ·
+          on-going). No manual scheduling.
         </p>
       </div>
 
@@ -345,7 +343,7 @@ export function SchedulesAdminPage() {
             <div className="rounded-2xl border border-dashed py-10 text-center">
               <p className="font-medium">No automation plan yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Install the automatic Meta + email timeline for this webinar.
+                Install the automatic email timeline for this webinar.
               </p>
               <Button
                 type="button"
@@ -393,16 +391,10 @@ export function SchedulesAdminPage() {
 
               <div className="rounded-2xl border border-teal-100 bg-teal-50/40 px-4 py-3 text-xs text-teal-950">
                 <p className="font-semibold">What runs automatically</p>
-                <ul className="mt-2 grid gap-1 sm:grid-cols-2">
-                  <li className="flex items-center gap-2">
-                    <Globe className="h-3.5 w-3.5" />
-                    Meta: publish, weekly, 7d, 3d, 2d, 1d, 1h, on-going
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5" />
-                    Email: publish, weekly, 7d, 3d, 1d, 1h, on-going
-                  </li>
-                </ul>
+                <p className="mt-2 flex items-center gap-2">
+                  <Mail className="h-3.5 w-3.5" />
+                  Email: publish, weekly, 7d, 3d, 1d, 1h, on-going
+                </p>
               </div>
 
               <ol className="space-y-3">
@@ -484,16 +476,6 @@ export function SchedulesAdminPage() {
                                   {preview.emailBody}
                                 </pre>
                               </div>
-                              {item.channels.includes("meta") ? (
-                                <div>
-                                  <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700">
-                                    Meta caption
-                                  </p>
-                                  <pre className="mt-1 max-h-36 overflow-auto whitespace-pre-wrap text-xs text-zinc-700">
-                                    {preview.metaCaption}
-                                  </pre>
-                                </div>
-                              ) : null}
                             </div>
                           )}
                         </div>

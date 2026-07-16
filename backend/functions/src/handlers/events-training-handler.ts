@@ -21,6 +21,8 @@ import {
 import { uploadEventsTrainingImage } from "../services/events-training/events-training-upload-service";
 import {
   answerQuestion,
+  deleteComment,
+  deleteQuestion,
   listBlogComments,
   listModerationInbox,
   listQuestions,
@@ -31,6 +33,7 @@ import {
 import {
   acceptRegistration,
   declineRegistration,
+  deleteRegistration,
   listRegistrations,
   setRegistrationAttendance,
 } from "../services/events-training/registrations-service";
@@ -39,7 +42,6 @@ import {
   deleteSchedule,
   listSchedules,
   previewWebinarScheduleMessage,
-  queueMetaCommunityPost,
   updateSchedule,
 } from "../services/events-training/schedules-service";
 import {
@@ -551,6 +553,18 @@ export async function postDeclineRegistrationHandler(
   }
 }
 
+export async function deleteRegistrationHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    await deleteRegistration(req.params.registrationId);
+    res.status(204).send();
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
 export async function postRegistrationAttendanceHandler(
   req: AuthenticatedRequest,
   res: Response,
@@ -668,38 +682,6 @@ export async function postSchedulePreviewHandler(
   }
 }
 
-export async function postScheduleMetaQueueHandler(
-  req: AuthenticatedRequest,
-  res: Response,
-) {
-  const actor = actorFromRequest(req);
-  if (!actor) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  try {
-    const body = req.body as {
-      webinarId?: string;
-      purpose?: string;
-      scheduleId?: string;
-    };
-    const purpose = String(body.purpose || "new_webinar");
-    const data = await queueMetaCommunityPost({
-      webinarId: String(body.webinarId ?? ""),
-      purpose: purpose as
-        | "new_webinar"
-        | "upcoming_webinar"
-        | "ongoing_webinar"
-        | "reminder",
-      scheduleId: body.scheduleId,
-      actorUid: actor.uid,
-    });
-    res.status(201).json({ data });
-  } catch (error) {
-    mapServiceError(res, error);
-  }
-}
-
 export async function getWebinarAutomationHandler(
   req: AuthenticatedRequest,
   res: Response,
@@ -768,7 +750,6 @@ export async function postWebinarAutomationPreviewHandler(
         | "weekly"
         | "d7"
         | "d3"
-        | "d2"
         | "d1"
         | "h1"
         | "ongoing",
@@ -823,6 +804,18 @@ export async function patchVideoCommentHandler(
   }
 }
 
+export async function deleteVideoCommentHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    await deleteComment("video", req.params.videoId, req.params.commentId);
+    res.status(204).send();
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
 export async function getBlogCommentsHandler(
   req: AuthenticatedRequest,
   res: Response,
@@ -850,6 +843,18 @@ export async function patchBlogCommentHandler(
       status,
     );
     res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
+export async function deleteBlogCommentHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    await deleteComment("blog", req.params.blogId, req.params.commentId);
+    res.status(204).send();
   } catch (error) {
     mapServiceError(res, error);
   }
@@ -896,6 +901,18 @@ export async function patchVideoQuestionHandler(
         status ?? "closed",
       );
     res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
+export async function deleteVideoQuestionHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    await deleteQuestion(req.params.videoId, req.params.questionId);
+    res.status(204).send();
   } catch (error) {
     mapServiceError(res, error);
   }

@@ -18,11 +18,14 @@ import {
   getWebinarRegistrationsHandler,
   getWebinarsHandler,
   patchBlogCommentHandler,
+  deleteBlogCommentHandler,
   patchBlogHandler,
   patchScheduleHandler,
   patchVideoCommentHandler,
+  deleteVideoCommentHandler,
   patchVideoHandler,
   patchVideoQuestionHandler,
+  deleteVideoQuestionHandler,
   patchWebinarHandler,
   postAcceptRegistrationHandler,
   postBlogHandler,
@@ -31,11 +34,11 @@ import {
   postCertificationHandler,
   putWebinarCertificateTemplateHandler,
   postDeclineRegistrationHandler,
+  deleteRegistrationHandler,
   postRegistrationAttendanceHandler,
   postRevokeCertificationHandler,
   postScheduleHandler,
   postSchedulePreviewHandler,
-  postScheduleMetaQueueHandler,
   getWebinarAutomationHandler,
   postWebinarAutomationInstallHandler,
   putWebinarAutomationEnabledHandler,
@@ -72,8 +75,13 @@ router.patch("/videos/:videoId", patchVideoHandler);
 router.delete("/videos/:videoId", deleteVideoHandler);
 router.get("/videos/:videoId/comments", getVideoCommentsHandler);
 router.patch("/videos/:videoId/comments/:commentId", patchVideoCommentHandler);
+router.delete("/videos/:videoId/comments/:commentId", deleteVideoCommentHandler);
 router.get("/videos/:videoId/questions", getVideoQuestionsHandler);
 router.patch("/videos/:videoId/questions/:questionId", patchVideoQuestionHandler);
+router.delete(
+  "/videos/:videoId/questions/:questionId",
+  deleteVideoQuestionHandler,
+);
 
 router.get("/blogs", getBlogsHandler);
 router.post("/blogs", postBlogHandler);
@@ -82,10 +90,12 @@ router.patch("/blogs/:blogId", patchBlogHandler);
 router.delete("/blogs/:blogId", deleteBlogHandler);
 router.get("/blogs/:blogId/comments", getBlogCommentsHandler);
 router.patch("/blogs/:blogId/comments/:commentId", patchBlogCommentHandler);
+router.delete("/blogs/:blogId/comments/:commentId", deleteBlogCommentHandler);
 
 router.get("/registrations", getRegistrationsHandler);
 router.post("/registrations/:registrationId/accept", postAcceptRegistrationHandler);
 router.post("/registrations/:registrationId/decline", postDeclineRegistrationHandler);
+router.delete("/registrations/:registrationId", deleteRegistrationHandler);
 router.post(
   "/registrations/:registrationId/attendance",
   postRegistrationAttendanceHandler,
@@ -95,7 +105,6 @@ router.get("/moderation/inbox", getModerationInboxHandler);
 
 router.get("/schedules", getSchedulesHandler);
 router.post("/schedules/preview", postSchedulePreviewHandler);
-router.post("/schedules/meta-queue", postScheduleMetaQueueHandler);
 router.post("/schedules", postScheduleHandler);
 router.patch("/schedules/:scheduleId", patchScheduleHandler);
 router.delete("/schedules/:scheduleId", deleteScheduleHandler);

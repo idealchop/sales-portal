@@ -86,6 +86,7 @@ import { TutorialFormDialog } from "./tutorial-form-dialog";
 import { StoryFormDialog } from "./story-form-dialog";
 import { VideoDetailDialog } from "./video-detail-dialog";
 import { VideoStatusPicker } from "./video-status-picker";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 
 type SourceMode = "url" | "embed";
 
@@ -235,6 +236,9 @@ export function VideosAdminPage({ lockedCategory }: VideosAdminPageProps = {}) {
   const [tagDraft, setTagDraft] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<TrainingVideoRecord | null>(
+    null,
+  );
   const [sourceMode, setSourceMode] = useState<SourceMode>("url");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -598,9 +602,11 @@ export function VideosAdminPage({ lockedCategory }: VideosAdminPageProps = {}) {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!window.confirm("Delete this video?")) return;
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
     setSubmitting(true);
+    setError(null);
     try {
       await deleteTrainingVideo(id);
       if (editingId === id) closeForm();
@@ -608,6 +614,7 @@ export function VideosAdminPage({ lockedCategory }: VideosAdminPageProps = {}) {
       await load();
     } catch {
       setError("Unable to delete video.");
+      throw new Error("Unable to delete video.");
     } finally {
       setSubmitting(false);
     }
@@ -1709,7 +1716,7 @@ export function VideosAdminPage({ lockedCategory }: VideosAdminPageProps = {}) {
                           type="button"
                           size="sm"
                           variant="ghost"
-                          onClick={() => void handleDelete(item.id)}
+                          onClick={() => setDeleteTarget(item)}
                           disabled={submitting}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -1742,6 +1749,17 @@ export function VideosAdminPage({ lockedCategory }: VideosAdminPageProps = {}) {
               ? openDedicatedEdit(viewingItem)
               : startEdit(viewingItem)
           }
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <ConfirmDeleteDialog
+          title="Delete this video?"
+          itemLabel={deleteTarget.name}
+          description="This removes the video from Resources. Comments and engagement on this item will no longer be available in the CMS."
+          confirmLabel="Delete video"
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDeleteConfirm}
         />
       ) : null}
     </div>

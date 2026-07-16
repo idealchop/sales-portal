@@ -9,6 +9,7 @@ import {
   Loader2,
   RefreshCw,
   Search,
+  Trash2,
   UserRoundX,
   Users,
   X,
@@ -20,6 +21,7 @@ import { useSalesProfile } from "@/hooks/use-sales-profile";
 import {
   acceptRegistration,
   declineRegistration,
+  deleteRegistration,
   fetchRegistrations,
   fetchWebinars,
 } from "../lib/events-training-api";
@@ -27,6 +29,7 @@ import type {
   RegistrationRecord,
   WebinarRecord,
 } from "../lib/events-training-types";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 
 type View = "pending" | "accepted" | "declined" | "cancelled" | "all";
 
@@ -63,6 +66,10 @@ export function RegistrationsAdminPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [bulkDeclineCount, setBulkDeclineCount] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RegistrationRecord | null>(
+    null,
+  );
 
   const webinarById = useMemo(() => {
     const map = new Map<string, WebinarRecord>();
@@ -200,13 +207,14 @@ export function RegistrationsAdminPage() {
       items.some((row) => row.id === id && row.status === "pending"),
     );
     if (ids.length === 0) return;
-    if (
-      action === "decline" &&
-      !window.confirm(`Decline ${ids.length} registration(s)?`)
-    ) {
+    if (action === "decline") {
+      setBulkDeclineCount(ids.length);
       return;
     }
+    await runBulkAction("accept", ids);
+  }
 
+  async function runBulkAction(action: "accept" | "decline", ids: string[]) {
     setBulkBusy(true);
     setError(null);
     const results = await Promise.allSettled(
@@ -228,14 +236,48 @@ export function RegistrationsAdminPage() {
           return next ? { ...row, ...next } : row;
         }),
       );
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        for (const id of succeeded.keys()) next.delete(id);
+        return next;
+      });
     }
-    setSelectedIds(new Set());
+
     if (succeeded.size < ids.length) {
       setError(
-        `Updated ${succeeded.size} of ${ids.length}. Some registrations could not be changed.`,
+        `Updated ${succeeded.size} of ${ids.length}. Some requests failed — try again.`,
       );
     }
     setBulkBusy(false);
+  }
+
+  async function handleBulkDeclineConfirm() {
+    const ids = [...selectedIds].filter((id) =>
+      items.some((row) => row.id === id && row.status === "pending"),
+    );
+    if (ids.length === 0) return;
+    await runBulkAction("decline", ids);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setBusyId(id);
+    setError(null);
+    try {
+      await deleteRegistration(id);
+      setItems((current) => current.filter((row) => row.id !== id));
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
+    } catch {
+      setError("Unable to delete registration.");
+      throw new Error("Unable to delete registration.");
+    } finally {
+      setBusyId(null);
+    }
   }
 
   async function copyJoinLink(item: RegistrationRecord) {
@@ -583,8 +625,32 @@ export function RegistrationsAdminPage() {
                             <UserRoundX className="mr-1.5 h-3.5 w-3.5" />
                             Decline
                           </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="rounded-full text-destructive hover:bg-red-50 hover:text-red-700"
+                            disabled={busyId === item.id || bulkBusy}
+                            onClick={() => setDeleteTarget(item)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
-                      ) : null}
+                      ) : (
+                        <div className="flex shrink-0 flex-wrap gap-1.5 lg:justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="rounded-full text-destructive hover:bg-red-50 hover:text-red-700"
+                            disabled={busyId === item.id || bulkBusy}
+                            onClick={() => setDeleteTarget(item)}
+                          >
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            Delete
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </li>
                 );
@@ -593,6 +659,29 @@ export function RegistrationsAdminPage() {
           ) : null}
         </div>
       </section>
+
+      {bulkDeclineCount != null ? (
+        <ConfirmDeleteDialog
+          title="Decline selected registrations?"
+          itemLabel={`${bulkDeclineCount} pending registration${bulkDeclineCount === 1 ? "" : "s"}`}
+          description="Declined members will not receive an accept / join link for these webinars."
+          confirmLabel="Decline selected"
+          busyLabel="Declining…"
+          onClose={() => setBulkDeclineCount(null)}
+          onConfirm={handleBulkDeclineConfirm}
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <ConfirmDeleteDialog
+          title="Delete this registration?"
+          itemLabel={deleteTarget.email || deleteTarget.userId}
+          description="This permanently removes the sign-up record. Prefer Decline for pending requests if you only want to reject them."
+          confirmLabel="Delete registration"
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDeleteConfirm}
+        />
+      ) : null}
     </div>
   );
 }

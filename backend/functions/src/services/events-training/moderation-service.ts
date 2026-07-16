@@ -311,6 +311,32 @@ export async function moderateComment(
   return mapEngagementComment(updated.id, updated.data() ?? {});
 }
 
+export async function deleteComment(
+  kind: ContentParentKind,
+  parentId: string,
+  commentId: string,
+): Promise<void> {
+  if (kind === "blog") {
+    const ref = blogCommentsCollection(parentId).doc(commentId);
+    const snap = await ref.get();
+    // Idempotent: already gone counts as success for CMS cleanup.
+    if (!snap.exists) return;
+    await ref.delete();
+    return;
+  }
+
+  // Engagement posts can outlive the training_videos parent doc — delete by
+  // post id without requiring the video catalog row.
+  const ref = videoEngagementPostsCollection(parentId).doc(commentId);
+  const snap = await ref.get();
+  if (!snap.exists) return;
+  const data = snap.data() ?? {};
+  if (data.kind && data.kind !== "comment") {
+    throw new Error("COMMENT_NOT_FOUND");
+  }
+  await ref.delete();
+}
+
 export async function answerQuestion(
   videoId: string,
   questionId: string,
@@ -362,6 +388,21 @@ export async function setQuestionStatus(
   });
   const updated = await ref.get();
   return mapEngagementQuestion(updated.id, updated.data() ?? {});
+}
+
+export async function deleteQuestion(
+  videoId: string,
+  questionId: string,
+): Promise<void> {
+  const ref = videoEngagementPostsCollection(videoId).doc(questionId);
+  const snap = await ref.get();
+  // Idempotent: already gone counts as success for CMS cleanup.
+  if (!snap.exists) return;
+  const data = snap.data() ?? {};
+  if (data.kind && data.kind !== "question") {
+    throw new Error("QUESTION_NOT_FOUND");
+  }
+  await ref.delete();
 }
 
 /**

@@ -1,16 +1,12 @@
 /**
- * Delivery runners for webinar promotion automation:
- * 1) Publish queued Meta community Page posts
- * 2) Fire due automated schedules → enqueue Meta (+ email queue stub)
+ * Delivery runner for webinar promotion automation:
+ * Fire due automated schedules → enqueue email notifications.
  */
 
 import {
   FieldValue,
   Timestamp,
-  type QueryDocumentSnapshot,
 } from "firebase-admin/firestore";
-import { db } from "../../config/firebase-admin";
-import { EVENTS_TRAINING_COLLECTIONS } from "../../constants/events-training";
 import type { SchedulePurpose } from "../../constants/events-training";
 import { toIsoString } from "../sales-serializer";
 import {
@@ -22,117 +18,19 @@ import {
   schedulesCollection,
   webinarsCollection,
 } from "./events-training-db";
-import { publishMetaCommunityPagePost } from "./meta-page-publish-service";
 import {
   WEBINAR_PROMOTION_MILESTONES,
-  type PromotionMilestoneKey,
 } from "./webinar-promotion-automation";
-
-export type MetaQueueProcessResult = {
-  attempted: number;
-  posted: number;
-  failed: number;
-  skipped: number;
-};
 
 export type DueScheduleProcessResult = {
   scanned: number;
   fired: number;
-  metaQueued: number;
   emailQueued: number;
   errors: number;
 };
 
-function metaPostLogCollection() {
-  return eventsTrainingRoot().collection(
-    EVENTS_TRAINING_COLLECTIONS.metaPostLog,
-  );
-}
-
 function emailQueueCollection() {
   return eventsTrainingRoot().collection("events_training_email_queue");
-}
-
-async function claimQueuedMetaPost(
-  doc: QueryDocumentSnapshot,
-): Promise<boolean> {
-  return db.runTransaction(async (tx) => {
-    const fresh = await tx.get(doc.ref);
-    if (!fresh.exists) return false;
-    const status = String(fresh.data()?.status || "");
-    if (status !== "queued") return false;
-    tx.set(
-      doc.ref,
-      {
-        status: "posting",
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
-    return true;
-  });
-}
-
-/** Drain `meta_post_log` docs with status=queued and publish to Facebook Page. */
-export async function processQueuedMetaCommunityPosts(
-  limit = 20,
-): Promise<MetaQueueProcessResult> {
-  const snap = await metaPostLogCollection()
-    .where("status", "==", "queued")
-    .limit(Math.max(1, Math.min(limit, 50)))
-    .get();
-
-  let posted = 0;
-  let failed = 0;
-  let skipped = 0;
-
-  for (const doc of snap.docs) {
-    const claimed = await claimQueuedMetaPost(doc);
-    if (!claimed) {
-      skipped += 1;
-      continue;
-    }
-
-    const data = doc.data() ?? {};
-    const caption = String(data.caption || "").trim();
-    const result = await publishMetaCommunityPagePost({
-      message: caption,
-      link:
-        typeof data.registerUrl === "string" ? data.registerUrl : null,
-      photoUrl: typeof data.posterUrl === "string" ? data.posterUrl : null,
-    });
-
-    if (result.ok) {
-      posted += 1;
-      await doc.ref.set(
-        {
-          status: "posted",
-          metaPostId: result.postId,
-          postedAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-          error: null,
-        },
-        { merge: true },
-      );
-    } else {
-      failed += 1;
-      await doc.ref.set(
-        {
-          status: "failed",
-          error: result.reason,
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
-    }
-  }
-
-  return {
-    attempted: snap.size,
-    posted,
-    failed,
-    skipped,
-  };
 }
 
 function milestoneDef(key: string) {
@@ -151,7 +49,6 @@ function computeNextRunAfterFire(input: {
     const next = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     return next < start ? next : null;
   }
-  // One-shot milestones do not repeat.
   return null;
 }
 
@@ -182,45 +79,8 @@ async function queueEmailFromSchedule(input: {
   return ref.id;
 }
 
-async function queueMetaFromSchedule(input: {
-  webinarId: string;
-  purpose: SchedulePurpose;
-  milestoneKey: string;
-  caption: string;
-  subject: string;
-  registerUrl: string;
-  posterUrl: string | null;
-  seatsRemaining: number | null;
-  capacity: number | null;
-  certificationEnabled: boolean;
-  scheduleId: string;
-}): Promise<string> {
-  const ref = metaPostLogCollection().doc();
-  const now = FieldValue.serverTimestamp();
-  await ref.set({
-    webinarId: input.webinarId,
-    purpose: input.purpose,
-    milestoneKey: input.milestoneKey,
-    scheduleId: input.scheduleId,
-    caption: input.caption,
-    subject: input.subject,
-    registerUrl: input.registerUrl,
-    posterUrl: input.posterUrl,
-    seatsRemaining: input.seatsRemaining,
-    capacity: input.capacity,
-    certificationEnabled: input.certificationEnabled,
-    status: "queued",
-    channel: "meta_community_page",
-    createdByUid: "system:events-training-delivery",
-    createdAt: now,
-    updatedAt: now,
-    postedAt: null,
-  });
-  return ref.id;
-}
-
 /**
- * Find due automated schedules, enqueue channel jobs, advance nextRunAt.
+ * Find due automated schedules, enqueue email jobs, advance nextRunAt.
  */
 export async function processDueAutomatedSchedules(
   limit = 40,
@@ -232,7 +92,6 @@ export async function processDueAutomatedSchedules(
     .get();
 
   let fired = 0;
-  let metaQueued = 0;
   let emailQueued = 0;
   let errors = 0;
 
@@ -246,8 +105,18 @@ export async function processDueAutomatedSchedules(
     if (!webinarId || !milestoneKey) continue;
 
     const def = milestoneDef(milestoneKey);
-    if (!def) continue;
-    // Immediate publish is handled at install time.
+    if (!def) {
+      // Retired milestones (e.g. Meta-only d2) — clear so they stop re-firing.
+      await doc.ref.set(
+        {
+          nextRunAt: null,
+          enabled: false,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      continue;
+    }
     if (milestoneKey === "publish") {
       await doc.ref.set(
         {
@@ -299,23 +168,6 @@ export async function processDueAutomatedSchedules(
         (row.channels as string[]) :
         def.channels;
 
-      if (channels.includes("meta")) {
-        await queueMetaFromSchedule({
-          webinarId,
-          purpose: def.purpose,
-          milestoneKey: milestoneKey as PromotionMilestoneKey,
-          caption: composed.metaCaption,
-          subject: composed.subject,
-          registerUrl: composed.registerUrl,
-          posterUrl: composed.posterUrl,
-          seatsRemaining: composed.seatsRemaining,
-          capacity: composed.capacity,
-          certificationEnabled: composed.certificationEnabled,
-          scheduleId: doc.id,
-        });
-        metaQueued += 1;
-      }
-
       if (channels.includes("email")) {
         await queueEmailFromSchedule({
           webinarId,
@@ -351,18 +203,15 @@ export async function processDueAutomatedSchedules(
   return {
     scanned: snap.size,
     fired,
-    metaQueued,
     emailQueued,
     errors,
   };
 }
 
-/** Run both delivery phases (schedules first, then Meta publish). */
+/** Run due schedule delivery (email queue). */
 export async function runEventsTrainingPromotionDelivery(): Promise<{
   schedules: DueScheduleProcessResult;
-  meta: MetaQueueProcessResult;
 }> {
   const schedules = await processDueAutomatedSchedules();
-  const meta = await processQueuedMetaCommunityPosts();
-  return { schedules, meta };
+  return { schedules };
 }

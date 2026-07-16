@@ -260,7 +260,7 @@ export type SchedulePurpose =
   | "ongoing_webinar"
   | "reminder";
 
-export type ScheduleChannel = "email" | "in_app" | "push" | "meta";
+export type ScheduleChannel = "email" | "in_app" | "push";
 
 export type ScheduleTargetType = "webinar_event" | "training_video";
 
@@ -270,6 +270,7 @@ export type ComposedWebinarScheduleMessage = {
   purpose: SchedulePurpose;
   subject: string;
   emailBody: string;
+  /** @deprecated Kept for API compatibility; unused after Meta removal. */
   metaCaption: string;
   registerUrl: string;
   posterUrl: string | null;
@@ -517,14 +518,12 @@ export const SCHEDULE_CHANNELS: ScheduleChannel[] = [
   "email",
   "in_app",
   "push",
-  "meta",
 ];
 
 export const SCHEDULE_CHANNEL_LABELS: Record<ScheduleChannel, string> = {
   email: "Email",
   in_app: "In-app",
   push: "Push",
-  meta: "Meta community page",
 };
 
 export const SCHEDULE_TARGET_TYPES: ScheduleTargetType[] = [

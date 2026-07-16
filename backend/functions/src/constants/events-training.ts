@@ -9,7 +9,6 @@ export const EVENTS_TRAINING_COLLECTIONS = {
   videoPurchases: "video_purchases",
   privateAccessUsage: "private_access_usage",
   trainingCertifications: "training_certifications",
-  metaPostLog: "meta_post_log",
   /** Member likes / comments / questions (SmartRefill). */
   trainingVideoEngagement: "training_video_engagement",
 } as const;
@@ -102,7 +101,7 @@ export const SCHEDULE_PURPOSES = [
   "reminder",
 ] as const;
 
-export const SCHEDULE_CHANNELS = ["email", "in_app", "push", "meta"] as const;
+export const SCHEDULE_CHANNELS = ["email", "in_app", "push"] as const;
 
 export const SCHEDULE_TARGET_TYPES = [
   "webinar_event",

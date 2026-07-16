@@ -1,11 +1,10 @@
 /**
- * Auto promotion plan for published webinars.
+ * Auto promotion plan for published webinars (email + in-app / push).
  *
  * On publish:
- *  - Meta community post + email to members (immediate)
+ *  - Email members immediately
  *  - Weekly reminders until the event
- *  - Countdown: Meta 7d / 3d / 2d / 1d / 1h + ongoing
- *               Email 7d / 3d / 1d / 1h + ongoing
+ *  - Countdown email: 7d / 3d / 1d / 1h + ongoing at start
  */
 
 import {
@@ -13,7 +12,6 @@ import {
   Timestamp,
   type QueryDocumentSnapshot,
 } from "firebase-admin/firestore";
-import { EVENTS_TRAINING_COLLECTIONS } from "../../constants/events-training";
 import type {
   ScheduleAudience,
   ScheduleChannel,
@@ -35,7 +33,6 @@ export type PromotionMilestoneKey =
   | "weekly"
   | "d7"
   | "d3"
-  | "d2"
   | "d1"
   | "h1"
   | "ongoing";
@@ -54,14 +51,14 @@ export type PromotionMilestoneDef = {
     | { kind: "at_start" };
 };
 
-/** Canonical automated plan (Meta vs email differ on the 2-day slot). */
+/** Canonical automated email plan. */
 export const WEBINAR_PROMOTION_MILESTONES: PromotionMilestoneDef[] = [
   {
     key: "publish",
     label: "On publish",
     purpose: "new_webinar",
     audience: "all_members",
-    channels: ["email", "meta", "in_app"],
+    channels: ["email", "in_app"],
     timing: { kind: "immediate" },
   },
   {
@@ -69,7 +66,7 @@ export const WEBINAR_PROMOTION_MILESTONES: PromotionMilestoneDef[] = [
     label: "Weekly reminder",
     purpose: "upcoming_webinar",
     audience: "all_members",
-    channels: ["email", "meta", "in_app"],
+    channels: ["email", "in_app"],
     timing: { kind: "weekly" },
   },
   {
@@ -77,7 +74,7 @@ export const WEBINAR_PROMOTION_MILESTONES: PromotionMilestoneDef[] = [
     label: "7 days before",
     purpose: "upcoming_webinar",
     audience: "all_members",
-    channels: ["email", "meta", "in_app"],
+    channels: ["email", "in_app"],
     timing: { kind: "days_before", days: 7 },
   },
   {
@@ -85,23 +82,15 @@ export const WEBINAR_PROMOTION_MILESTONES: PromotionMilestoneDef[] = [
     label: "3 days before",
     purpose: "upcoming_webinar",
     audience: "all_members",
-    channels: ["email", "meta", "in_app"],
+    channels: ["email", "in_app"],
     timing: { kind: "days_before", days: 3 },
-  },
-  {
-    key: "d2",
-    label: "2 days before",
-    purpose: "upcoming_webinar",
-    audience: "all_members",
-    channels: ["meta"],
-    timing: { kind: "days_before", days: 2 },
   },
   {
     key: "d1",
     label: "1 day before",
     purpose: "reminder",
     audience: "all_members",
-    channels: ["email", "meta", "in_app"],
+    channels: ["email", "in_app"],
     timing: { kind: "days_before", days: 1 },
   },
   {
@@ -109,7 +98,7 @@ export const WEBINAR_PROMOTION_MILESTONES: PromotionMilestoneDef[] = [
     label: "1 hour before",
     purpose: "reminder",
     audience: "registrants",
-    channels: ["email", "meta", "in_app", "push"],
+    channels: ["email", "in_app", "push"],
     timing: { kind: "hours_before", hours: 1 },
   },
   {
@@ -117,7 +106,7 @@ export const WEBINAR_PROMOTION_MILESTONES: PromotionMilestoneDef[] = [
     label: "On-going (at start)",
     purpose: "ongoing_webinar",
     audience: "registrants",
-    channels: ["email", "meta", "in_app", "push"],
+    channels: ["email", "in_app", "push"],
     timing: { kind: "at_start" },
   },
 ];
@@ -226,45 +215,6 @@ async function queueEmailNotification(input: {
   return ref.id;
 }
 
-async function queueMetaPost(input: {
-  webinarId: string;
-  purpose: SchedulePurpose;
-  milestoneKey: string;
-  actorUid: string;
-  caption: string;
-  registerUrl: string;
-  posterUrl: string | null;
-  seatsRemaining: number | null;
-  capacity: number | null;
-  certificationEnabled: boolean;
-  subject: string;
-}): Promise<string> {
-  const ref = eventsTrainingRoot()
-    .collection(EVENTS_TRAINING_COLLECTIONS.metaPostLog)
-    .doc();
-  const now = FieldValue.serverTimestamp();
-  await ref.set({
-    webinarId: input.webinarId,
-    purpose: input.purpose,
-    milestoneKey: input.milestoneKey,
-    scheduleId: null,
-    caption: input.caption,
-    subject: input.subject,
-    registerUrl: input.registerUrl,
-    posterUrl: input.posterUrl,
-    seatsRemaining: input.seatsRemaining,
-    capacity: input.capacity,
-    certificationEnabled: input.certificationEnabled,
-    status: "queued",
-    channel: "meta_community_page",
-    createdByUid: input.actorUid,
-    createdAt: now,
-    updatedAt: now,
-    postedAt: null,
-  });
-  return ref.id;
-}
-
 function webinarComposerInput(
   webinarId: string,
   data: Record<string, unknown>,
@@ -347,7 +297,7 @@ async function upsertMilestoneSchedule(input: {
     audience: input.milestone.audience,
     messageTemplate: "",
     emailTemplateKey: `webinar-${input.milestone.key}`,
-    metaChannel: input.milestone.channels.includes("meta"),
+    metaChannel: false,
     enabled: input.automationEnabled,
     nextRunAt: nextRun ? Timestamp.fromDate(nextRun) : null,
     updatedBy: { uid: input.actor.uid, email: input.actor.email ?? "" },
@@ -376,7 +326,7 @@ async function upsertMilestoneSchedule(input: {
 export async function installWebinarPromotionAutomation(input: {
   webinarId: string;
   actor: { uid: string; email?: string };
-  /** When true, enqueue immediate Meta + email for the publish milestone. */
+  /** When true, enqueue immediate email for the publish milestone. */
   fireImmediate?: boolean;
 }): Promise<WebinarAutomationPlan> {
   const webinarId = input.webinarId.trim();
@@ -402,6 +352,9 @@ export async function installWebinarPromotionAutomation(input: {
     { merge: true },
   );
 
+  const activeKeys = new Set(
+    WEBINAR_PROMOTION_MILESTONES.map((milestone) => milestone.key),
+  );
   for (const milestone of WEBINAR_PROMOTION_MILESTONES) {
     await upsertMilestoneSchedule({
       webinarId,
@@ -412,6 +365,19 @@ export async function installWebinarPromotionAutomation(input: {
     });
   }
 
+  // Drop obsolete automated rows (e.g. retired Meta-only d2 milestone).
+  const existing = await listSchedulesForWebinar(webinarId);
+  await Promise.all(
+    existing
+      .filter((doc) => {
+        const row = doc.data() ?? {};
+        if (row.automated !== true) return false;
+        const key = String(row.milestoneKey || "");
+        return !key || !activeKeys.has(key as PromotionMilestoneKey);
+      })
+      .map((doc) => doc.ref.delete()),
+  );
+
   if (
     input.fireImmediate &&
     status === "published" &&
@@ -420,21 +386,6 @@ export async function installWebinarPromotionAutomation(input: {
     const publishMilestone = WEBINAR_PROMOTION_MILESTONES.find(
       (m) => m.key === "publish",
     )!;
-    if (publishMilestone.channels.includes("meta")) {
-      await queueMetaPost({
-        webinarId,
-        purpose: publishMilestone.purpose,
-        milestoneKey: "publish",
-        actorUid: input.actor.uid,
-        caption: composedBase.metaCaption,
-        registerUrl: composedBase.registerUrl,
-        posterUrl: composedBase.posterUrl,
-        seatsRemaining: composedBase.seatsRemaining,
-        capacity: composedBase.capacity,
-        certificationEnabled: composedBase.certificationEnabled,
-        subject: composedBase.subject,
-      });
-    }
     if (publishMilestone.channels.includes("email")) {
       await queueEmailNotification({
         webinarId,

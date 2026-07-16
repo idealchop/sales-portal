@@ -21,6 +21,7 @@ import {
   privateAudienceLabel,
 } from "../lib/private-audience";
 import { BlogFormDialog } from "./blog-form-dialog";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { VideoStatusPicker } from "./video-status-picker";
 
 function visibilityLabel(item: WrsBlogRecord): string {
@@ -48,6 +49,7 @@ export function BlogsAdminPage() {
   const [editingItem, setEditingItem] = useState<WrsBlogRecord | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<WrsBlogRecord | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -106,15 +108,18 @@ export function BlogsAdminPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!window.confirm("Delete this article?")) return;
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
     setSubmitting(true);
+    setError(null);
     try {
       await deleteWrsBlog(id);
       if (editingItem?.id === id) closeForm();
       await load();
     } catch {
       setError("Unable to delete article.");
+      throw new Error("Unable to delete article.");
     } finally {
       setSubmitting(false);
     }
@@ -261,7 +266,7 @@ export function BlogsAdminPage() {
                           size="sm"
                           variant="ghost"
                           disabled={submitting}
-                          onClick={() => void handleDelete(item.id)}
+                          onClick={() => setDeleteTarget(item)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -281,6 +286,17 @@ export function BlogsAdminPage() {
         onClose={closeForm}
         onSaved={load}
       />
+
+      {deleteTarget ? (
+        <ConfirmDeleteDialog
+          title="Delete this article?"
+          itemLabel={deleteTarget.title}
+          description="This removes the article from Resources. This action cannot be undone."
+          confirmLabel="Delete article"
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDeleteConfirm}
+        />
+      ) : null}
     </div>
   );
 }

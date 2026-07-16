@@ -243,12 +243,12 @@ export function composeWebinarScheduleMessage(input: {
 
 export function defaultChannelsForPurpose(
   purpose: SchedulePurpose,
-): Array<"email" | "in_app" | "push" | "meta"> {
+): Array<"email" | "in_app" | "push"> {
   switch (purpose) {
   case "new_webinar":
-    return ["email", "meta", "in_app"];
+    return ["email", "in_app"];
   case "upcoming_webinar":
-    return ["email", "meta", "in_app"];
+    return ["email", "in_app"];
   case "ongoing_webinar":
     return ["email", "in_app", "push"];
   case "reminder":

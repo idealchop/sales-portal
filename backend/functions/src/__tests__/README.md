@@ -54,8 +54,7 @@ BDD helpers: `bdd/bdd-api.ts` (`API_PATH`).
 | `unit/services/events-training-visibility.unit.test.ts` | Video visibility enums |
 | `unit/services/events-training-ops.unit.test.ts` | Registration + analytics helpers |
 | `unit/services/webinar-promotion-automation.unit.test.ts` | Auto promotion milestone channels |
-| `unit/services/schedule-message-composer.unit.test.ts` | Email/Meta caption composer |
-| `unit/services/meta-page-publish.unit.test.ts` | Facebook Page Graph publish helper |
+| `unit/services/schedule-message-composer.unit.test.ts` | Email caption composer |
 
 ## Integration tests
 

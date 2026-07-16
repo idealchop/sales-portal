@@ -170,6 +170,10 @@ export async function declineRegistration(registrationId: string) {
   return res.data;
 }
 
+export async function deleteRegistration(registrationId: string) {
+  await apiClient.delete(`/events-training/registrations/${registrationId}`);
+}
+
 export async function setRegistrationAttendance(
   registrationId: string,
   attendanceStatus: "attended" | "no_show" | "cleared",
@@ -227,17 +231,6 @@ export async function previewScheduleMessage(input: {
     "/events-training/schedules/preview",
     input,
   );
-  return res.data;
-}
-
-export async function queueScheduleMetaPost(input: {
-  webinarId: string;
-  purpose: SchedulePurpose;
-  scheduleId?: string;
-}) {
-  const res = await apiClient.post<{
-    data: { id: string; caption: string; registerUrl: string };
-  }>("/events-training/schedules/meta-queue", input);
   return res.data;
 }
 
@@ -348,6 +341,18 @@ export async function moderateBlogComment(
   return res.data;
 }
 
+export async function deleteVideoComment(videoId: string, commentId: string) {
+  await apiClient.delete(
+    `/events-training/videos/${encodeURIComponent(videoId)}/comments/${encodeURIComponent(commentId)}`,
+  );
+}
+
+export async function deleteBlogComment(blogId: string, commentId: string) {
+  await apiClient.delete(
+    `/events-training/blogs/${encodeURIComponent(blogId)}/comments/${encodeURIComponent(commentId)}`,
+  );
+}
+
 export async function fetchVideoQuestions(videoId: string) {
   const res = await apiClient.get<{ data: QuestionRecord[] }>(
     `/events-training/videos/${videoId}/questions`,
@@ -365,6 +370,12 @@ export async function updateVideoQuestion(
     input,
   );
   return res.data;
+}
+
+export async function deleteVideoQuestion(videoId: string, questionId: string) {
+  await apiClient.delete(
+    `/events-training/videos/${encodeURIComponent(videoId)}/questions/${encodeURIComponent(questionId)}`,
+  );
 }
 
 export async function fetchCertifications(params?: {

@@ -10,13 +10,18 @@ import {
   MessageSquareText,
   RefreshCw,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ApiError } from "@/lib/api-client";
 import { useSalesProfile } from "@/hooks/use-sales-profile";
 import {
+  deleteBlogComment,
+  deleteVideoComment,
+  deleteVideoQuestion,
   fetchModerationInbox,
   moderateBlogComment,
   moderateVideoComment,
@@ -30,6 +35,7 @@ import type {
   QuestionStatus,
 } from "../lib/events-training-types";
 import { textareaClassName } from "../lib/form-styles";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 
 type View = "todo" | "questions" | "comments";
 
@@ -86,6 +92,11 @@ export function ModerationAdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<
+    | { type: "comment"; item: ModerationCommentItem }
+    | { type: "question"; item: ModerationQuestionItem }
+    | null
+  >(null);
 
   const loadInbox = useCallback(async () => {
     setLoading(true);
@@ -298,6 +309,69 @@ export function ModerationAdminPage() {
     }
   }
 
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    const { type, item } = deleteTarget;
+    setBusyId(item.id);
+    setError(null);
+    try {
+      if (type === "comment") {
+        if (item.contentKind === "blog") {
+          await deleteBlogComment(item.contentId, item.id);
+        } else {
+          await deleteVideoComment(item.contentId, item.id);
+        }
+        setInbox((current) => {
+          if (!current) return current;
+          const comments = current.comments.filter(
+            (row) =>
+              !(row.id === item.id && row.contentId === item.contentId),
+          );
+          return {
+            ...current,
+            comments,
+            counts: {
+              ...current.counts,
+              comments: comments.length,
+              flaggedComments: comments.filter((c) => c.status === "flagged")
+                .length,
+            },
+          };
+        });
+      } else {
+        await deleteVideoQuestion(item.contentId, item.id);
+        setInbox((current) => {
+          if (!current) return current;
+          const questions = current.questions.filter(
+            (row) =>
+              !(row.id === item.id && row.contentId === item.contentId),
+          );
+          return {
+            ...current,
+            questions,
+            counts: {
+              ...current.counts,
+              questions: questions.length,
+              openQuestions: questions.filter((q) => q.status === "open")
+                .length,
+            },
+          };
+        });
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiError && err.message.trim()
+          ? err.message
+          : type === "comment"
+            ? "Unable to delete comment."
+            : "Unable to delete question.";
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function renderQuestionCard(item: ModerationQuestionItem, emphasize: boolean) {
     const key = `${item.contentId}:${item.id}`;
     return (
@@ -403,6 +477,17 @@ export function ModerationAdminPage() {
               Mark closed
             </Button>
           ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="rounded-full text-destructive hover:bg-red-50 hover:text-red-700"
+            disabled={busyId === item.id}
+            onClick={() => setDeleteTarget({ type: "question", item })}
+          >
+            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+            Delete
+          </Button>
         </div>
       </li>
     );
@@ -467,6 +552,17 @@ export function ModerationAdminPage() {
                 </Button>
               );
             })}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-destructive hover:bg-red-50 hover:text-red-700"
+              disabled={busyId === item.id}
+              onClick={() => setDeleteTarget({ type: "comment", item })}
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Delete
+            </Button>
           </div>
         </div>
       </li>
@@ -684,6 +780,27 @@ export function ModerationAdminPage() {
           ) : null}
         </div>
       </section>
+
+      {deleteTarget ? (
+        <ConfirmDeleteDialog
+          title={
+            deleteTarget.type === "comment"
+              ? "Delete this comment?"
+              : "Delete this question?"
+          }
+          itemLabel={deleteTarget.item.text}
+          description={
+            deleteTarget.type === "comment"
+              ? "This permanently removes the comment from Resources. This cannot be undone."
+              : "This permanently removes the question (and any answer) from Resources. This cannot be undone."
+          }
+          confirmLabel={
+            deleteTarget.type === "comment" ? "Delete comment" : "Delete question"
+          }
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDeleteConfirm}
+        />
+      ) : null}
     </div>
   );
 }

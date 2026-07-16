@@ -4,8 +4,7 @@ import { SALES_PORTAL_FUNCTION_SECRETS } from "../config/function-secrets";
 import { runEventsTrainingPromotionDelivery } from "../services/events-training/events-training-delivery-service";
 
 /**
- * Every 5 minutes: fire due webinar promotion schedules, then publish
- * queued Meta community Page posts.
+ * Every 5 minutes: fire due webinar promotion schedules and enqueue emails.
  */
 export const eventsTrainingPromotionDelivery = onSchedule(
   {
@@ -18,12 +17,7 @@ export const eventsTrainingPromotionDelivery = onSchedule(
   },
   async () => {
     const result = await runEventsTrainingPromotionDelivery();
-    if (
-      result.schedules.fired > 0 ||
-      result.meta.posted > 0 ||
-      result.meta.failed > 0 ||
-      result.schedules.errors > 0
-    ) {
+    if (result.schedules.fired > 0 || result.schedules.errors > 0) {
       logger.info("eventsTrainingPromotionDelivery complete", result);
     }
   },

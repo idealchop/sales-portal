@@ -23,6 +23,8 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/services/events-training-playback.unit.test.ts` ✅ | YouTube / iframe playback normalize | Events & Training videos |
 | `unit/services/events-training-visibility.unit.test.ts` ✅ | Visibility enum (`public`/`premium`/`private`) | Events & Training videos |
 | `unit/services/events-training-ops.unit.test.ts` ✅ | Registration transitions, capacity, analytics period clamp | Registrations / analytics |
+| `unit/services/webinar-promotion-automation.unit.test.ts` ✅ | Email-only promotion milestones | Schedules / automation |
+| `unit/services/schedule-message-composer.unit.test.ts` ✅ | Email caption composer | Schedules preview |
 
 ---
 
