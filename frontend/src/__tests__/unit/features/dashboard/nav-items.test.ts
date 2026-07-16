@@ -56,4 +56,23 @@ describe("DASHBOARD_NAV role gates", () => {
       "/dashboard/sales-portal",
     ]);
   });
+
+  it("exposes Events & Training for manager/admin with ops children", () => {
+    const events = DASHBOARD_NAV.find((item) => item.href === "/events-training");
+
+    expect(events?.roles).toEqual(["manager", "admin"]);
+    expect(events?.maintenance).toBe(false);
+    expect(events?.children?.map((child) => child.href)).toEqual([
+      "/events-training",
+      "/events-training/analytics",
+      "/events-training/registrations",
+      "/events-training/moderation",
+      "/events-training/webinars",
+      "/events-training/videos",
+      "/events-training/blogs",
+      "/events-training/tutorials",
+      "/events-training/certifications",
+      "/events-training/schedules",
+    ]);
+  });
 });

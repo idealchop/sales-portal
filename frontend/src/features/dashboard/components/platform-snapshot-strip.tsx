@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  Building2,
-  Droplets,
-  Receipt,
-  UserCheck,
-  Users,
-  Wallet,
-  AlertTriangle,
-  UserPlus,
-  Activity,
-} from "lucide-react";
+import { Building2, Package, Receipt, UserCheck, UserRound, Users } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -18,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { DashboardAnalytics } from "@/lib/dashboard/analytics";
-import { formatPhp } from "@/lib/format";
+import { resolvePlatformKpiSummary } from "@/features/dashboard/lib/resolve-platform-kpi-breakdowns";
 
 function SnapshotStat({
   label,
@@ -50,75 +40,60 @@ function SnapshotStat({
 }
 
 export function PlatformSnapshotStrip({
-  summary,
-  salesInsights,
+  data,
   topBusinessesByCustomers,
 }: {
-  summary: DashboardAnalytics["summary"];
-  salesInsights: DashboardAnalytics["salesInsights"];
+  data: Pick<
+    DashboardAnalytics,
+    "summary" | "growthSalesMetrics" | "chartBusinessContext"
+  >;
   topBusinessesByCustomers: DashboardAnalytics["topBusinessesByCustomers"];
 }) {
-  const refillPerTx =
-    summary.transactionsLast30Days > 0 ?
-      Math.round(summary.refillVolumeLast30Days / summary.transactionsLast30Days)
-    : 0;
+  const s = resolvePlatformKpiSummary(data);
+  const virtualStaffTotal = s.virtualStaffCounts.admins + s.virtualStaffCounts.riders;
+  const containerTotal =
+    s.inventoryBreakdown.container.shell +
+    s.inventoryBreakdown.container.round +
+    s.inventoryBreakdown.container.slim;
 
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <SnapshotStat
-          label="Users"
-          value={summary.smartRefillUsers.toLocaleString()}
-          hint={`${summary.activeLoginUsers.toLocaleString()} active · 30d`}
-          icon={<Users className="h-4 w-4" />}
-        />
-        <SnapshotStat
-          label="Workspaces"
-          value={summary.totalBusinesses.toLocaleString()}
-          hint={`${summary.onboardedBusinesses.toLocaleString()} onboarded`}
-          icon={<Building2 className="h-4 w-4" />}
-        />
-        <SnapshotStat
           label="Customers"
-          value={summary.totalCustomers.toLocaleString()}
-          hint={`${summary.loginSessionsLast30Days.toLocaleString()} sessions`}
+          value={s.totalCustomers.toLocaleString()}
+          hint={`${s.customerBreakdown.active.toLocaleString()} active · ${s.customerBreakdown.deactivated.toLocaleString()} deactivated`}
           icon={<UserCheck className="h-4 w-4" />}
         />
         <SnapshotStat
-          label="MRR"
-          value={formatPhp(salesInsights.estimatedMrr)}
-          hint={`${salesInsights.pendingPayments} pending`}
-          icon={<Wallet className="h-4 w-4" />}
+          label="Users"
+          value={s.smartRefillUsers.toLocaleString()}
+          hint={`${s.userRoleCounts.owners.toLocaleString()} owners · ${s.userRoleCounts.admins.toLocaleString()} staff-admin · ${s.userRoleCounts.riders.toLocaleString()} staff-rider`}
+          icon={<Users className="h-4 w-4" />}
+        />
+        <SnapshotStat
+          label="Staff records"
+          value={virtualStaffTotal.toLocaleString()}
+          hint={`${s.virtualStaffCounts.admins.toLocaleString()} staff-admin · ${s.virtualStaffCounts.riders.toLocaleString()} staff-rider · no login`}
+          icon={<UserRound className="h-4 w-4" />}
+        />
+        <SnapshotStat
+          label="Businesses"
+          value={s.totalBusinesses.toLocaleString()}
+          hint={`${s.businessTierCounts.scale.toLocaleString()} scale · ${s.businessTierCounts.grow.toLocaleString()} grow · ${s.businessTierCounts.starter.toLocaleString()} starter · ${s.businessTierCounts.free.toLocaleString()} free`}
+          icon={<Building2 className="h-4 w-4" />}
         />
         <SnapshotStat
           label="Transactions"
-          value={summary.transactionsLast30Days.toLocaleString()}
-          hint="30d"
+          value={s.totalTransactions.toLocaleString()}
+          hint={`${s.transactionBreakdown.walkIn.toLocaleString()} walk-in · ${s.transactionBreakdown.directSale.toLocaleString()} direct sale · ${s.transactionBreakdown.orders.toLocaleString()} orders`}
           icon={<Receipt className="h-4 w-4" />}
         />
         <SnapshotStat
-          label="Refill vol."
-          value={summary.refillVolumeLast30Days.toLocaleString()}
-          hint={refillPerTx > 0 ? `~${refillPerTx}/tx` : "30d"}
-          icon={<Droplets className="h-4 w-4" />}
-        />
-        <SnapshotStat
-          label="New MTD"
-          value={`+${salesInsights.newSmartRefillUsersThisMonth}`}
-          hint={`+${salesInsights.newWorkspacesThisMonth} workspaces`}
-          icon={<UserPlus className="h-4 w-4" />}
-        />
-        <SnapshotStat
-          label="At-risk"
-          value={salesInsights.atRiskWorkspaces.toLocaleString()}
-          hint={`${salesInsights.inactiveWorkspaces} inactive`}
-          icon={<AlertTriangle className="h-4 w-4" />}
-        />
-        <SnapshotStat
-          label="Sessions"
-          value={summary.loginSessionsLast30Days.toLocaleString()}
-          hint={`${summary.topDevice} · ${summary.topBrowser}`}
-          icon={<Activity className="h-4 w-4" />}
+          label="Inventory"
+          value={s.totalInventory.toLocaleString()}
+          hint={`${s.inventoryBreakdown.generalStock.toLocaleString()} general stock · ${s.inventoryBreakdown.kit.toLocaleString()} kit · ${containerTotal.toLocaleString()} container (${s.inventoryBreakdown.container.shell.toLocaleString()} shell · ${s.inventoryBreakdown.container.round.toLocaleString()} round · ${s.inventoryBreakdown.container.slim.toLocaleString()} slim)`}
+          icon={<Package className="h-4 w-4" />}
         />
       </div>
 

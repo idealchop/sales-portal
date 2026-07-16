@@ -50,6 +50,23 @@ frontend/src/
 - `components/content-studio-page.tsx` — generate social posts/images
 - `constants.ts` — tone/platform options
 
+### `features/events-training/`
+
+Manager/admin CMS + ops for Smart Refill Resources. Detail: [`events-training.md`](./events-training.md).
+
+| Area | Purpose |
+|------|---------|
+| `components/*-admin-page.tsx` | Overview, analytics, registrations, moderation, webinars, videos, blogs, tutorials, certifications, schedules |
+| `components/confirm-delete-dialog.tsx` | Shared in-app destructive confirm (replaces `window.confirm`) |
+| `components/events-training-shell.tsx` | Compact grouped tab bar: Overview → Attention → Create → Schedules |
+| `lib/events-training-nav.ts` | Shared IA + sidebar children |
+| `lib/events-training-api.ts` | Authenticated API wrappers |
+| `lib/events-training-types.ts` | Shared FE types + enums |
+| `lib/playback-input.ts` | YouTube embed / URL normalize |
+| `lib/form-styles.ts` | Shared form class names |
+
+App routes: `app/events-training/page.tsx` (overview) + `{analytics,registrations,moderation,webinars,videos,blogs,tutorials,certifications,schedules}/page.tsx`.
+
 ### `features/admin/`
 
 Large admin surface for permissions and Firestore data management:

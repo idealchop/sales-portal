@@ -26,6 +26,7 @@ Copy from `.env.example` → `.env.local`:
 | `NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN` | Local App Check debug token |
 | `NEXT_PUBLIC_SALES_PORTAL_API_URL_DEV` | Default `http://127.0.0.1:8071` |
 | `NEXT_PUBLIC_SMARTREFILL_API_URL_DEV` | SmartRefill emulator/prod URL |
+| `NEXT_PUBLIC_SMARTREFILL_APP_URL` | Smart Refill public origin for Resources share links (default `https://app.smartrefill.io`) |
 
 Production values are in **`frontend/apphosting.yaml`** (Firebase App Hosting).
 
@@ -59,6 +60,7 @@ Business UI lives under `src/features/`:
 | `my-team/` | `/dashboard/my-team` | Manager team summary |
 | `materials/` | `/dashboard/materials` | Sales materials library |
 | `content-studio/` | `/content-studio` | AI social content |
+| `events-training/` | `/events-training/*` | Resources CMS + webinar ops (manager/admin) |
 | `admin/` | `/admin/*` | Permissions, data management, catalog |
 
 Navigation config: `features/dashboard/config/nav-items.ts` (`DASHBOARD_NAV`).
@@ -80,6 +82,7 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | `/dashboard/sales-portal` | sales, manager, admin | Live — rep KPIs, actions/joiners tabs, revenue charts, insights/forecast |
 | `/dashboard/settings` | sales, manager, admin | Live — read-only profile |
 | `/content-studio` | sales, manager, admin | Live |
+| `/events-training/*` | manager, admin | Live — overview, analytics, registrations, moderation, webinars, stories, articles, tutorials, certs, schedules |
 | `/subscriptions/*` | admin | Live (catalog CRUD) |
 | `/admin/permissions` | admin | Live |
 | `/admin/data-management` | admin | Live |

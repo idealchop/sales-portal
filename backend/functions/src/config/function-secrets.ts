@@ -1,6 +1,6 @@
 /**
- * Secret Manager ids bound on `salesPortalApi` (see src/index.ts).
- * Values are injected as env vars at runtime on Cloud Functions — never commit them.
+ * Secret Manager ids bound on `salesPortalApi` + promotion delivery jobs
+ * (see src/index.ts). Values are injected as env vars at runtime — never commit them.
  *
  * Separate from SmartRefill's `GEMINI_API_KEY` on the same GCP project.
  */

@@ -4,12 +4,14 @@ import {
   CircleDollarSign,
   CreditCard,
   FileText,
+  GraduationCap,
   LayoutDashboard,
   Megaphone,
   ShieldCheck,
   Users,
 } from "lucide-react";
 import type { SalesPortalRole } from "@/lib/auth-status";
+import { EVENTS_TRAINING_SIDEBAR_CHILDREN } from "@/features/events-training/lib/events-training-nav";
 
 export type NavItem = {
   href: string;
@@ -67,6 +69,14 @@ export const DASHBOARD_NAV: NavItem[] = [
     icon: Megaphone,
     roles: ["sales", "manager", "admin"],
     maintenance: false,
+  },
+  {
+    href: "/events-training",
+    label: "Events & Training",
+    icon: GraduationCap,
+    roles: ["manager", "admin"],
+    maintenance: false,
+    children: [...EVENTS_TRAINING_SIDEBAR_CHILDREN],
   },
   {
     href: "/subscriptions",

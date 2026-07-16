@@ -67,6 +67,7 @@ export type ActiveOwner = {
   monthlyRevenue: number;
   subscriptions: OwnerSubscription[];
   pendingApprovals: number;
+  authAccountTag?: "test" | null;
 };
 
 export type GrowthSalesMetrics = {
@@ -112,10 +113,13 @@ export function computeGrowthSalesMetrics(input: {
   monthStart: Date;
   activeWindowStartKey: string;
   subscriptionsByBusiness: Map<string, OwnerSubscription[]>;
+  virtualStaffCounts: { admins: number; riders: number };
+  testAccountOwnerIds?: ReadonlySet<string>;
 }): { growth: DashboardMetric[]; activeOwners: ActiveOwner[] } {
   const {
     businesses,
     ownerLastActive,
+    testAccountOwnerIds,
     ownerUserGrowth,
     smartRefillUsers,
     smartRefillUserRecords,
@@ -132,6 +136,7 @@ export function computeGrowthSalesMetrics(input: {
     monthStart,
     activeWindowStartKey,
     subscriptionsByBusiness,
+    virtualStaffCounts,
   } = input;
 
   const ownerGrowthLastTwo = ownerUserGrowth.slice(-2);
@@ -299,7 +304,7 @@ export function computeGrowthSalesMetrics(input: {
       title: "Team expansion upside",
       variant: "engagement",
       value: `${userGrowthSignals.soloOwnerWorkspaces}`,
-      subtitle: `${userGrowthSignals.workspacesWithoutAdmin} missing admin · ${userGrowthSignals.workspacesWithoutRider} missing rider`,
+      subtitle: `${virtualStaffCounts.admins.toLocaleString()} staff-admin · ${virtualStaffCounts.riders.toLocaleString()} staff-rider · ${userGrowthSignals.workspacesWithoutAdmin} missing admin · ${userGrowthSignals.workspacesWithoutRider} missing rider`,
       highlights: [
         {
           label: "Solo-owner workspaces",
@@ -353,6 +358,8 @@ export function computeGrowthSalesMetrics(input: {
         monthlyRevenue: b.price,
         subscriptions,
         pendingApprovals: subscriptions.filter((sub) => sub.needsApproval).length,
+        authAccountTag:
+          b.ownerId && testAccountOwnerIds?.has(b.ownerId) ? "test" as const : null,
       };
     })
     .sort((a, b) => {

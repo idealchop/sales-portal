@@ -77,6 +77,8 @@ service cloud.firestore {
         'riders',
         'members',
         'team_invites',
+        'analytics_daily',
+        'analytics_snapshots',
       ];
     }
 
@@ -97,6 +99,12 @@ service cloud.firestore {
       let userProfile = get(/databases/$(database)/documents/sales/$(userId)).data;
       let managerTeamName = managerProfile.location + " (" + managerProfile.displayName + ")";
       return userProfile.team == managerTeamName;
+    }
+
+    function hasSalesPortalAccess() {
+      return isSuperAdmin()
+        || isSalesPortalAdmin()
+        || exists(/databases/$(database)/documents/sales/$(request.auth.uid));
     }
 
     // -------------------------------------------------------------------------
@@ -193,6 +201,12 @@ service cloud.firestore {
           && request.resource.data.summary is string
           && request.resource.data.items is list;
         allow delete: if isSuperAdmin();
+      }
+
+      // Sales Portal CMS — in-app video tutorials (category: tutorial). Writes via Sales Portal Admin SDK.
+      match /training_videos/{videoId} {
+        allow read: if isSignedIn();
+        allow write: if false;
       }
     }
 
@@ -292,6 +306,12 @@ service cloud.firestore {
       }
     }
 
+    // Sales Portal — cached dashboard analytics snapshot (Admin SDK writes only)
+    match /sales_portal_dashboard_analytics/{docId} {
+      allow read: if hasSalesPortalAccess();
+      allow write: if false;
+    }
+
     // -------------------------------------------------------------------------
     // Root collections — API / Admin SDK writes only
     // -------------------------------------------------------------------------
@@ -306,6 +326,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /feature_ratings/{ratingId} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+
+    match /platform_features/{featureId} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+
     // CP-05 — community Page dispatch intake (API / Admin SDK only)
     match /community_dispatch_requests/{requestId} {
       allow read, write: if false;
@@ -313,6 +343,22 @@ service cloud.firestore {
 
     match /community_messenger_sessions/{psid} {
       allow read, write: if false;
+    }
+
+    match /delivery_messenger_chats/{threadId} {
+      allow read, write: if false;
+
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /community_messenger_inquiry_threads/{threadId} {
+      allow read, write: if false;
+
+      match /messages/{messageId} {
+        allow read, write: if false;
+      }
     }
 
     match /dispatch_offers/{offerId} {

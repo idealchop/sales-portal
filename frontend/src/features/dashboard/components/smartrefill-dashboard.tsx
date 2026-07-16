@@ -2,13 +2,13 @@
 
 import { WorkspaceMapOwnersSection } from "@/features/dashboard/components/workspace-map-owners-section";
 import { AppFeedbackPanel } from "@/features/dashboard/components/app-feedback-panel";
-import { MetricCardsGrid } from "@/features/dashboard/components/metric-cards-grid";
 import { AiInsightsCard } from "@/features/dashboard/components/ai-insights-card";
-import { ProductSignalsStrip } from "@/features/dashboard/components/product-signals-strip";
 import { PlatformSnapshotStrip } from "@/features/dashboard/components/platform-snapshot-strip";
-import { SubscriptionApprovalQueue } from "@/features/dashboard/components/subscription-approval-queue";
+import { PlatformAlertsList } from "@/features/dashboard/components/platform-alerts-list";
+import { UserSubscriptionsList } from "@/features/dashboard/components/user-subscriptions-list";
 import { CommunityDispatchQueue } from "@/features/dashboard/components/community-dispatch-queue";
 import { CommunityDispatchMetricsStrip } from "@/features/dashboard/components/community-dispatch-metrics-strip";
+import { CommunityChannelUsageStrip } from "@/features/dashboard/components/community-channel-usage-strip";
 import { AppChartsGrid } from "@/features/dashboard/components/app-charts-grid";
 import { DashboardInsightsForecastSection } from "@/features/dashboard/components/dashboard-insights-forecast-section";
 import { DashboardSection } from "@/features/dashboard/components/dashboard-section";
@@ -17,6 +17,7 @@ import {
   useDashboardViewFilter,
 } from "@/features/dashboard/components/dashboard-analytics-shell";
 import { getDashboardApp } from "@/features/dashboard/config/dashboard-apps";
+import { buildUserSubscriptionsList } from "@/features/dashboard/lib/build-user-subscriptions-list";
 import type { DashboardViewContext } from "@/features/dashboard/components/dashboard-analytics-shell";
 
 function SmartRefillDashboardContent({
@@ -29,39 +30,50 @@ function SmartRefillDashboardContent({
   const showProductFeedback = role === "admin";
   const { growthSalesMetrics } = data;
   const app = getDashboardApp("smartrefill")!;
-  const isLead = role === "admin" || role === "manager";
-  const kpiCount =
-    9 +
-    (isLead ? 4 : 0) +
-    growthSalesMetrics.growth.length +
-    growthSalesMetrics.sales.length;
+  const kpiCount = 6;
+  const subscriptionItems = buildUserSubscriptionsList(
+    growthSalesMetrics.activeOwners,
+  );
 
   return (
     <>
       <DashboardSection id="smartrefill-stats" title="KPIs" count={kpiCount}>
         <PlatformSnapshotStrip
-          summary={data.summary}
-          salesInsights={data.salesInsights}
+          data={data}
           topBusinessesByCustomers={data.topBusinessesByCustomers}
         />
-        {isLead ?
-          <ProductSignalsStrip data={data} />
-        : null}
-        <MetricCardsGrid metrics={growthSalesMetrics.growth} compact />
-        <MetricCardsGrid metrics={growthSalesMetrics.sales} compact />
+      </DashboardSection>
+
+      <DashboardSection
+        id="smartrefill-alerts"
+        title="Alerts"
+        count={data.platformAlerts.items.length}
+      >
+        <PlatformAlertsList
+          items={data.platformAlerts.items}
+          counts={data.platformAlerts.counts}
+        />
+      </DashboardSection>
+
+      <DashboardSection
+        id="smartrefill-subscriptions"
+        title="User subscriptions"
+        count={subscriptionItems.length}
+      >
+        <UserSubscriptionsList
+          owners={growthSalesMetrics.activeOwners}
+          canApprove={canManageApprovals}
+          onRefresh={refresh}
+        />
       </DashboardSection>
 
       <DashboardSection id="smartrefill-map" title="Map & actions">
         {canManageApprovals ?
           <>
             <CommunityDispatchMetricsStrip metrics={data.communityDispatchMetrics} />
+            <CommunityChannelUsageStrip usage={data.communityChannelUsage} />
             <CommunityDispatchQueue
               communityStations={data.businessLocations}
-              onRefresh={refresh}
-            />
-            <SubscriptionApprovalQueue
-              owners={growthSalesMetrics.activeOwners}
-              canApprove
               onRefresh={refresh}
             />
           </>

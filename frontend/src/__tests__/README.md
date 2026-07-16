@@ -25,8 +25,8 @@ From repo root: `npm run test:unit:frontend` · `npm run test:bdd:local`
 
 | File | Cases |
 |------|-------|
-| `unit/features/dashboard/nav-items.test.ts` | Role nav + multi-app dashboard children |
-| `unit/features/dashboard/resolve-dashboard-page-title.test.ts` | Shell header titles |
+| `unit/features/dashboard/nav-items.test.ts` | Role nav + multi-app dashboard + Events & Training children |
+| `unit/features/dashboard/resolve-dashboard-page-title.test.ts` | Shell header titles incl. Events & Training |
 | `unit/features/dashboard/app-chart-groups.test.ts` | SmartRefill vs Sales Portal chart kinds |
 | `unit/features/dashboard/forecast-items.test.ts` | Forecast slices per app |
 | `unit/features/dashboard/build-hub-app-stats.test.ts` | Hub KPI grouping |

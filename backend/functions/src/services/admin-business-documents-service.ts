@@ -264,6 +264,54 @@ function toDocumentRow(
   };
 }
 
+const BULK_CUSTOMER_STATUS_BATCH_SIZE = 400;
+
+export async function bulkUpdateCustomerStatus(
+  businessId: string,
+  customerIds: string[],
+  status: "active" | "inactive",
+): Promise<BusinessFirestoreDocumentRow[]> {
+  const uniqueIds = [
+    ...new Set(customerIds.map((id) => id.trim()).filter(Boolean)),
+  ];
+  if (uniqueIds.length === 0) {
+    throw new Error("NO_CUSTOMER_IDS");
+  }
+  if (status !== "active" && status !== "inactive") {
+    throw new Error("INVALID_STATUS");
+  }
+
+  const refs = uniqueIds.map((customerId) =>
+    db
+      .collection("businesses")
+      .doc(businessId)
+      .collection("customers")
+      .doc(customerId),
+  );
+  const snaps = await db.getAll(...refs);
+  const existing = snaps.filter((snap) => snap.exists);
+  if (existing.length === 0) {
+    throw new Error("NO_CUSTOMERS_FOUND");
+  }
+
+  for (let index = 0; index < existing.length; index += BULK_CUSTOMER_STATUS_BATCH_SIZE) {
+    const chunk = existing.slice(index, index + BULK_CUSTOMER_STATUS_BATCH_SIZE);
+    const batch = db.batch();
+    for (const snap of chunk) {
+      batch.update(snap.ref, {
+        status,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+  }
+
+  const updatedSnaps = await db.getAll(...existing.map((snap) => snap.ref));
+  return updatedSnaps
+    .filter((snap) => snap.exists)
+    .map((snap) => toDocumentRow(snap.ref.path, businessId, snap.data()));
+}
+
 export async function updateBusinessFirestoreDocument(
   businessId: string,
   path: string,

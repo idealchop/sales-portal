@@ -15,6 +15,11 @@ import {
   syncSmartRefillMemberForStaff,
 } from "./smartrefill-member-service";
 import {
+  type AuthAccountTag,
+  readAuthAccountTag,
+  syncAuthAccountTag,
+} from "./auth-account-tag";
+import {
   isValidSalesPortalRole,
   SALES_PORTAL_APP_ID,
 } from "./sales-portal-access";
@@ -41,6 +46,7 @@ export type AdminUserSummary = {
   /** Firebase Auth last sign-in time (`metadata.lastSignInTime`). */
   lastSignInAt?: string | null;
   hasRiverDbProfile: boolean;
+  authAccountTag?: AuthAccountTag | null;
 };
 
 function normalizeSmartRefillAccessEntry(
@@ -216,6 +222,7 @@ function buildUserSummaryFromAuth(
     createdAt: hasRiverDbProfile ? toIso(firestoreData?.createdAt) : null,
     ...authTimestampsFromUser(authUser),
     hasRiverDbProfile,
+    authAccountTag: readAuthAccountTag(authUser, firestoreData),
   };
 }
 
@@ -238,6 +245,7 @@ async function buildUserSummaryFromFirestoreOnly(
       authTimestampsFromUser(authUser) :
       { registeredAt: null, lastSignInAt: null }),
     hasRiverDbProfile: true,
+    authAccountTag: readAuthAccountTag(authUser, data),
   };
 }
 
@@ -287,6 +295,7 @@ async function enrichUserSummary(user: AdminUserSummary): Promise<AdminUserSumma
       displayName: user.displayName || authUser.displayName || undefined,
       registeredAt: authTimes.registeredAt,
       lastSignInAt: authTimes.lastSignInAt,
+      authAccountTag: readAuthAccountTag(authUser),
     };
   }
 
@@ -342,6 +351,7 @@ export async function createAdminUser(input: {
 export async function updateAdminUserAppAccess(
   uid: string,
   appAccessInput: AdminAppAccessEntry[],
+  options?: { authAccountTag?: AuthAccountTag | null },
 ): Promise<AdminUserSummary> {
   const userRef = db.collection("users").doc(uid);
   const userSnap = await userRef.get();
@@ -409,18 +419,31 @@ export async function updateAdminUserAppAccess(
       throw new Error("USER_NOT_FOUND");
     }
 
-    await userRef.set({
-      email: authUser.email ?? "",
-      displayName: authUser.displayName ?? "",
-      appAccess: normalized,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    if (normalized.length > 0) {
+      await userRef.set({
+        email: authUser.email ?? "",
+        displayName: authUser.displayName ?? "",
+        appAccess: normalized,
+        ...(options?.authAccountTag === "test" ? { authAccountTag: "test" } : {}),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
   } else {
-    await userRef.update({
+    const profilePatch: Record<string, unknown> = {
       appAccess: normalized,
       updatedAt: FieldValue.serverTimestamp(),
-    });
+    };
+    if (options?.authAccountTag === "test") {
+      profilePatch.authAccountTag = "test";
+    } else if (options?.authAccountTag === null) {
+      profilePatch.authAccountTag = FieldValue.delete();
+    }
+    await userRef.update(profilePatch);
+  }
+
+  if (options?.authAccountTag !== undefined) {
+    await syncAuthAccountTag(uid, options.authAccountTag);
   }
 
   if (smartRefillSaved) {
@@ -462,7 +485,15 @@ export async function updateAdminUserAppAccess(
     await deactivateSmartRefillMember(previousSmartRefill.businessId, uid);
   }
 
-  const data = (await userRef.get()).data() ?? {};
+  const refreshedSnap = await userRef.get();
+  if (!refreshedSnap.exists) {
+    const authUser = await auth.getUser(uid);
+    const summary = buildUserSummaryFromAuth(authUser);
+    const [enriched] = await enrichUsersWithSmartRefillStaffSubRoles([summary]);
+    return enriched;
+  }
+
+  const data = refreshedSnap.data() ?? {};
   const summary = await enrichUserSummary({
     uid,
     email: typeof data.email === "string" ? data.email : undefined,
@@ -473,6 +504,10 @@ export async function updateAdminUserAppAccess(
     appAccess: normalizeAppAccess(normalized),
     createdAt: toIso(data.createdAt),
     hasRiverDbProfile: true,
+    authAccountTag:
+      options?.authAccountTag !== undefined ?
+        options.authAccountTag :
+        readAuthAccountTag(await auth.getUser(uid), data),
   });
 
   const [enriched] = await enrichUsersWithSmartRefillStaffSubRoles([summary]);

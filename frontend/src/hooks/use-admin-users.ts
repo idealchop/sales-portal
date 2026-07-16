@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/lib/api-client";
-import type { AdminAppAccessEntry, AdminUserSummary } from "@/lib/admin/users";
+import type {
+  AdminAppAccessEntry,
+  AdminUserPermissionsInput,
+  AdminUserSummary,
+} from "@/lib/admin/users";
 import { sortAdminUsers } from "@/features/admin/lib/user-display";
 
 export function useAdminUsers() {
@@ -49,10 +53,10 @@ export function useAdminUsers() {
   );
 
   const saveAppAccess = useCallback(
-    async (uid: string, appAccess: AdminAppAccessEntry[]) => {
+    async (uid: string, input: AdminUserPermissionsInput) => {
       const response = await apiClient.patch<{ data: { user: AdminUserSummary } }>(
         `/admin/users/${uid}/app-access`,
-        { appAccess },
+        input,
       );
       setUsers((current) =>
         current.map((user) =>

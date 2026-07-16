@@ -98,6 +98,32 @@ Portal routes require **Bearer token**, **sales-portal access**, and role-scoped
 | `DELETE` | `/sales-materials/:materialId` | Admin | Delete material |
 | `GET` | `/public/proposals/:linkId` | — | Public proposal + client view |
 
+### Events & Training (`/events-training`)
+
+Manager/admin CMS + ops for Smart Refill Resources (shared `apps/smartrefill/*` on `riverdb`). Full detail: [`events-training.md`](./events-training.md).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET/POST/PATCH/DELETE` | `/events-training/webinars` | Live webinar CRUD |
+| `GET/POST/PATCH/DELETE` | `/events-training/videos` | Training videos (`category` identity: `wrs_stories` \| `webinar` \| `tutorial`; `?category=` filter) |
+| `GET` | `/events-training/apps` | List apps for tutorial targeting (`apps` collection) |
+| `GET/POST/PATCH/DELETE` | `/events-training/blogs` | WRS blog CMS |
+| `POST` | `/events-training/upload` | Image upload (poster/thumbnail/hero) |
+| `GET` | `/events-training/registrations` | List registrants (`eventId`, `status`) |
+| `POST` | `/events-training/registrations/:id/accept` | Accept registration |
+| `POST` | `/events-training/registrations/:id/decline` | Decline registration |
+| `DELETE` | `/events-training/registrations/:id` | Permanently delete registration |
+| `GET/POST/PATCH/DELETE` | `/events-training/schedules` | Schedule rows + automated email promotions |
+| `GET/PUT/POST` | `/events-training/webinars/:id/automation` | Install / pause / preview email promotion plan |
+| `GET/PATCH/DELETE` | `/events-training/videos/:id/comments` | Moderate or delete video comments |
+| `GET/PATCH/DELETE` | `/events-training/blogs/:id/comments` | Moderate or delete blog comments |
+| `GET/PATCH/DELETE` | `/events-training/videos/:id/questions` | Answer / close / delete Q&A |
+| `GET/POST` | `/events-training/certifications` | List / issue certificates |
+| `POST` | `/events-training/certifications/:id/revoke` | Revoke certificate |
+| `GET` | `/events-training/analytics` | Ops analytics summary |
+
+**Scheduled job:** `eventsTrainingPromotionDelivery` (every 5 minutes) fires due automation schedules and enqueues email. See [`events-training.md`](./events-training.md).
+
 ### SmartRefill proxy (`/smartrefill`)
 
 | Method | Path | Auth | Description |
@@ -141,6 +167,7 @@ See route files under `backend/functions/src/routes/`.
 |------------|------|---------|
 | `validateFirebaseIdToken` | `middleware/auth-middleware.ts` | Verifies Bearer token |
 | `requireSalesPortalAccess` | same | Ensures `appAccess.sales-portal` |
+| `requireManagerOrAdminRole` | `middleware/require-admin.ts` | Manager/admin gates (Events & Training) |
 | `requireAdminRole` | admin routes | Admin-only gates |
 | Global rate limit | `index.ts` | 3000 req / 15 min (skipped in emulator) |
 

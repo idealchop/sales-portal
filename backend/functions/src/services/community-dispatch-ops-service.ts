@@ -318,12 +318,16 @@ export async function computeCommunityDispatchMetrics(): Promise<CommunityDispat
   const acceptedOffersSnap = await db
     .collection(OFFERS)
     .where("status", "==", "accepted")
-    .where("updatedAt", ">=", Timestamp.fromDate(since))
     .get();
 
+  const sinceMs = since.getTime();
   const acceptCounts = new Map<string, number>();
   for (const doc of acceptedOffersSnap.docs) {
-    const businessId = String(doc.data().businessId ?? "");
+    const data = doc.data();
+    const updated = toDate(data.updatedAt);
+    if (!updated || updated.getTime() < sinceMs) continue;
+
+    const businessId = String(data.businessId ?? "");
     if (!businessId) continue;
     acceptCounts.set(businessId, (acceptCounts.get(businessId) ?? 0) + 1);
   }

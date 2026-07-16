@@ -32,6 +32,11 @@ export type OwnerSubscription = {
 function toIso(value: unknown): string | undefined {
   if (!value) return undefined;
   if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
+    return undefined;
+  }
   if (typeof value === "object" && value !== null && "_seconds" in value) {
     const seconds = Number((value as { _seconds?: number })._seconds);
     if (Number.isFinite(seconds)) {
@@ -46,6 +51,16 @@ function toIso(value: unknown): string | undefined {
 
 function isPastStatus(status: string): boolean {
   return ["superseded", "expired", "cancelled", "canceled"].includes(status);
+}
+
+function isExpiredByDate(
+  row: { expiresAt?: string; status: string },
+  now: number,
+): boolean {
+  if (!row.expiresAt) return false;
+  const expiresMs = new Date(row.expiresAt).getTime();
+  if (Number.isNaN(expiresMs) || expiresMs >= now) return false;
+  return row.status !== "grace_period";
 }
 
 function needsApprovalRow(data: Record<string, unknown>): boolean {
@@ -150,7 +165,8 @@ export function mapOwnerSubscriptions(
     (row) =>
       !isPastStatus(row.status) &&
       row.status !== "scheduled" &&
-      !(row._activatesMs > now),
+      !(row._activatesMs > now) &&
+      !isExpiredByDate(row, now),
   );
   if (currentCandidate) currentId = currentCandidate.id;
   else if (futureCandidate) currentId = futureCandidate.id;
@@ -160,7 +176,9 @@ export function mapOwnerSubscriptions(
     const subscription = withoutSortFields(row);
     let timeline: OwnerSubscriptionTimeline = "past";
 
-    if (subscription.id === currentId && subscription.status !== "scheduled") {
+    if (isExpiredByDate(subscription, now) || isPastStatus(subscription.status)) {
+      timeline = "past";
+    } else if (subscription.id === currentId && subscription.status !== "scheduled") {
       timeline = "current";
     } else if (
       subscription.status === "scheduled" ||

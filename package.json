@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "npm run dev --prefix frontend",
+    "dev:local": "bash scripts/dev-local.sh",
     "dev:frontend": "npm run dev --prefix frontend -- -p 9002",
     "dev:api": "npm run serve:local --prefix backend/functions",
     "build": "npm run build --prefix frontend",

@@ -48,7 +48,10 @@ export const apiClient = {
 
   async get<T>(path: string): Promise<T> {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_URL}${path}`, { headers });
+    const res = await fetch(`${API_URL}${path}`, {
+      headers,
+      cache: "no-store",
+    });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new ApiError(
@@ -143,6 +146,10 @@ export const apiClient = {
         payload.code,
       );
     }
-    return res.json() as Promise<T>;
+    // 204 / empty body — common for DELETE handlers
+    if (res.status === 204) return undefined as T;
+    const text = await res.text();
+    if (!text.trim()) return undefined as T;
+    return JSON.parse(text) as T;
   },
 };

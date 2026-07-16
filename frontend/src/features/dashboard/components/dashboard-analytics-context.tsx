@@ -9,6 +9,7 @@ type DashboardAnalyticsContextValue = {
   data: DashboardAnalytics | null;
   isLoading: boolean;
   isRefreshing: boolean;
+  isStale: boolean;
   error: string | null;
   computedAt: string | null;
   refresh: DashboardAnalyticsRefresh;

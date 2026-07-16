@@ -1,5 +1,6 @@
 import L from "leaflet";
 import type { BusinessMapLocation } from "@/lib/dashboard/analytics";
+import { isTrialBillingCycle } from "@/lib/dashboard/subscription-labels";
 
 export type MapMarkerTier =
   | "scale"
@@ -18,7 +19,7 @@ export const MAP_MARKER_LEGEND: MapMarkerStyle[] = [
   { tier: "scale", color: "#6B7F5E", label: "Scale" },
   { tier: "growth", color: "#059669", label: "Growth" },
   { tier: "starter", color: "#F59E0B", label: "Starter" },
-  { tier: "free-trial", color: "#EA580C", label: "Free trial" },
+  { tier: "free-trial", color: "#EA580C", label: "Free Trial" },
   { tier: "inactive", color: "#9CA3AF", label: "Inactive 7d+" },
 ];
 
@@ -43,13 +44,14 @@ export function resolveMapMarkerTier(
 ): MapMarkerTier {
   if (isOwnerInactive(location.lastActiveDay)) return "inactive";
 
+  if (isTrialBillingCycle(location.billingCycle)) return "free-trial";
+
   const plan = `${location.planCode || ""} ${location.planName || ""}`
     .trim()
     .toLowerCase();
 
   if (plan.includes("scale")) return "scale";
   if (plan.includes("growth")) return "growth";
-  if (plan.includes("trial") || plan.includes("free")) return "free-trial";
   if (plan.includes("starter")) return "starter";
 
   return "starter";
@@ -61,6 +63,30 @@ export function resolveMapMarkerStyle(
   const tier = resolveMapMarkerTier(location);
   return (
     MAP_MARKER_LEGEND.find((entry) => entry.tier === tier) ?? MAP_MARKER_LEGEND[2]
+  );
+}
+
+export function countLocationsByMapMarkerTier(
+  locations: BusinessMapLocation[],
+): Record<MapMarkerTier, number> {
+  const counts = Object.fromEntries(
+    MAP_MARKER_LEGEND.map((entry) => [entry.tier, 0]),
+  ) as Record<MapMarkerTier, number>;
+
+  for (const location of locations) {
+    counts[resolveMapMarkerTier(location)] += 1;
+  }
+
+  return counts;
+}
+
+export function filterLocationsByMapMarkerTiers(
+  locations: BusinessMapLocation[],
+  visibleTiers: ReadonlySet<MapMarkerTier>,
+): BusinessMapLocation[] {
+  if (visibleTiers.size === 0) return [];
+  return locations.filter((location) =>
+    visibleTiers.has(resolveMapMarkerTier(location)),
   );
 }
 

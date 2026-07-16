@@ -26,6 +26,11 @@ import {
 } from "./compute-role-active-times";
 import { countActiveUsersByRole, countSmartRefillUserRoles, filterOwnerSmartRefillUsers, resolveSmartRefillUserRole } from "./count-smartrefill-user-roles";
 import {
+  collectTestAccountOwnerIds,
+  isTestAccountOwnerId,
+  readFirestoreAuthAccountTag,
+} from "./auth-account-tag";
+import {
   computeProposalPipeline,
   computeSalesInsights,
   countGettingStartedDone,
@@ -46,11 +51,35 @@ import {
 } from "./build-chart-time-series";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
 import { buildNewJoiners, type NewJoinersSummary } from "./build-new-joiners";
+import { buildPlatformAlerts, type PlatformAlertsSummary } from "./build-platform-alerts";
+import {
+  attachContactStatusToAlerts,
+  getPlatformAlertContactStatuses,
+} from "./platform-alert-contacts-service";
 import {
   computeCommunityDispatchMetrics,
   loadPendingCommunityOfferCounts,
   type CommunityDispatchMetrics,
 } from "./community-dispatch-ops-service";
+import {
+  readPlatformCommunityChannelUsage,
+  aggregateStationCommunityAccepts,
+  type CommunityChannelUsageBilling,
+} from "./community-channel-usage-service";
+import {
+  aggregatePlatformInventory,
+  classifyBusinessTier,
+  countVirtualStaffRecords,
+  emptyBusinessTierCounts,
+  emptyTransactionBreakdown,
+  sumInventoryBreakdown,
+  type BusinessTierCounts,
+  type CustomerStatusBreakdown,
+  type InventoryBreakdown,
+  type TransactionBreakdown,
+  type VirtualStaffCounts,
+} from "./compute-platform-kpi-breakdowns";
+import type { SmartRefillUserRoleCounts } from "./count-smartrefill-user-roles";
 
 const BUSINESS_QUERY_CONCURRENCY = 20;
 const LOGIN_EVENT_QUERY_CONCURRENCY = 25;
@@ -81,6 +110,14 @@ export type DashboardAnalytics = {
     topBrowser: string;
     transactionsLast30Days: number;
     refillVolumeLast30Days: number;
+    totalTransactions: number;
+    transactionBreakdown: TransactionBreakdown;
+    customerBreakdown: CustomerStatusBreakdown;
+    userRoleCounts: Pick<SmartRefillUserRoleCounts, "owners" | "admins" | "riders">;
+    virtualStaffCounts: VirtualStaffCounts;
+    businessTierCounts: BusinessTierCounts;
+    totalInventory: number;
+    inventoryBreakdown: InventoryBreakdown;
   };
   userGrowth: { month: string; count: number }[];
   businessGrowth: { month: string; count: number }[];
@@ -115,6 +152,7 @@ export type DashboardAnalytics = {
     onboardingComplete: boolean;
     planName?: string;
     planCode?: string;
+    billingCycle?: string;
     healthTier: "high" | "medium" | "low";
     customers: number;
     transactionsLast30Days: number;
@@ -122,8 +160,10 @@ export type DashboardAnalytics = {
     communityDispatchEnabled?: boolean;
     communityPublicName?: string;
     pendingCommunityOffers?: number;
+    authAccountTag?: "test" | null;
   }[];
   communityDispatchMetrics: CommunityDispatchMetrics;
+  communityChannelUsage: CommunityChannelUsageBilling;
   salesInsights: SalesInsights;
   proposalPipeline: ProposalPipeline;
   appFeedback: AppFeedbackSummary;
@@ -133,6 +173,7 @@ export type DashboardAnalytics = {
   aiSalesInsights: AiSalesInsightsResult;
   dashboardForecasts: DashboardForecasts;
   newJoiners: NewJoinersSummary;
+  platformAlerts: PlatformAlertsSummary;
 };
 
 function toDate(value: unknown): Date | null {
@@ -224,22 +265,38 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
   const [
     usersSnap,
     businessesSnap,
+    ridersSnap,
+    inventoryItemsSnap,
+    inquiriesSnap,
     proposalsSnap,
     clientsSnap,
     appsFeedbackSnap,
     salesSnap,
     pendingCommunityOffers,
     communityDispatchMetrics,
+    platformChannelUsage,
   ] = await Promise.all([
     db.collection("users").get(),
     db.collection("businesses").get(),
+    db.collectionGroup("riders").get(),
+    db.collectionGroup("inventory_items").get(),
+    db.collection("inquiries").orderBy("createdAt", "desc").limit(50).get(),
     db.collection("proposals").get(),
     db.collection("clients").get(),
     db.collection("apps_feedback").get(),
     db.collection("sales").get(),
     loadPendingCommunityOfferCounts(),
     computeCommunityDispatchMetrics(),
+    readPlatformCommunityChannelUsage(),
   ]);
+
+  const communityChannelUsage: CommunityChannelUsageBilling = {
+    ...platformChannelUsage,
+    ...aggregateStationCommunityAccepts(
+      businessesSnap.docs,
+      platformChannelUsage.periodKey,
+    ),
+  };
 
   const smartRefillUsers = usersSnap.docs.filter((doc) =>
     hasSmartRefillAccess(doc.data().appAccess),
@@ -250,6 +307,14 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     businessDocs
       .map((doc) => doc.data().ownerId)
       .filter((ownerId): ownerId is string => typeof ownerId === "string"),
+  );
+  const userDocs = usersSnap.docs.map((doc) => ({
+    id: doc.id,
+    data: doc.data(),
+  }));
+  const testAccountOwnerIds = collectTestAccountOwnerIds(userDocs);
+  const authAccountTagByUserId = new Map(
+    userDocs.map((doc) => [doc.id, readFirestoreAuthAccountTag(doc.data)]),
   );
 
   const ownerSmartRefillUsers = filterOwnerSmartRefillUsers(
@@ -322,6 +387,11 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     mapPlatformFeedbackDoc(doc.id, doc.data() as Record<string, unknown>),
   );
   let totalCustomers = 0;
+  let activeCustomers = 0;
+  let deactivatedCustomers = 0;
+  const businessTierCounts = emptyBusinessTierCounts();
+  const transactionBreakdown = emptyTransactionBreakdown();
+  let totalTransactions = 0;
   let transactionsLast30Days = 0;
   let refillVolumeLast30Days = 0;
   const transactionDailyRows: Array<{ date: Date; amount: number }> = [];
@@ -341,20 +411,39 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     BUSINESS_QUERY_CONCURRENCY,
     async (bizDoc) => {
       const data = bizDoc.data();
-      const [customersCountSnap, subscriptionsSnap, transactionsSnap] =
-        await Promise.all([
-          bizDoc.ref.collection("customers").count().get(),
-          bizDoc.ref
-            .collection("subscriptions")
-            .orderBy("createdAt", "desc")
-            .limit(20)
-            .get(),
-          bizDoc.ref
-            .collection("transactions")
-            .where("createdAt", ">=", sixMonthsAgoTimestamp)
-            .select("createdAt", "totalAmount", "waterRefills")
-            .get(),
-        ]);
+      const [
+        customersCountSnap,
+        deactivatedCustomersSnap,
+        subscriptionsSnap,
+        transactionsSnap,
+        walkInCountSnap,
+        directSaleCountSnap,
+        orderCountSnap,
+      ] = await Promise.all([
+        bizDoc.ref.collection("customers").count().get(),
+        bizDoc.ref
+          .collection("customers")
+          .where("status", "in", ["inactive", "archived"])
+          .count()
+          .get(),
+        bizDoc.ref
+          .collection("subscriptions")
+          .orderBy("createdAt", "desc")
+          .limit(20)
+          .get(),
+        bizDoc.ref
+          .collection("transactions")
+          .where("createdAt", ">=", sixMonthsAgoTimestamp)
+          .select("createdAt", "totalAmount", "waterRefills")
+          .get(),
+        bizDoc.ref.collection("transactions").where("type", "==", "walkin").count().get(),
+        bizDoc.ref.collection("transactions").where("type", "==", "direct_sale").count().get(),
+        bizDoc.ref
+          .collection("transactions")
+          .where("type", "in", ["delivery", "collection"])
+          .count()
+          .get(),
+      ]);
 
       subscriptionsByBusiness.set(
         bizDoc.id,
@@ -365,9 +454,24 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
           })),
         ),
       );
+      const mappedSubscriptions = subscriptionsByBusiness.get(bizDoc.id) ?? [];
+      const currentSubscription = mappedSubscriptions.find(
+        (sub) => sub.timeline === "current",
+      );
 
       const customers = customersCountSnap.data().count;
+      const deactivated = deactivatedCustomersSnap.data().count;
       totalCustomers += customers;
+      deactivatedCustomers += deactivated;
+      activeCustomers += Math.max(0, customers - deactivated);
+
+      const walkIn = walkInCountSnap.data().count;
+      const directSale = directSaleCountSnap.data().count;
+      const orders = orderCountSnap.data().count;
+      transactionBreakdown.walkIn += walkIn;
+      transactionBreakdown.directSale += directSale;
+      transactionBreakdown.orders += orders;
+      totalTransactions += walkIn + directSale + orders;
       topBusinessesByCustomers.push({
         id: bizDoc.id,
         name: String(data.name || "Unnamed business"),
@@ -393,6 +497,13 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
           planCounts.set(planName, (planCounts.get(planName) || 0) + 1);
         }
       }
+
+      const businessTier = classifyBusinessTier(
+        planName,
+        planCode,
+        subscriptionStatus,
+      );
+      businessTierCounts[businessTier] += 1;
 
       const businessName = String(data.name || "Unnamed business");
       const ownerId =
@@ -457,7 +568,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
         gettingStartedCompleted: countGettingStartedDone(gettingStarted),
       });
 
-      if (coords) {
+      if (coords && !isTestAccountOwnerId(ownerId, testAccountOwnerIds)) {
         const communityDispatch =
           data.communityDispatch && typeof data.communityDispatch === "object" ?
             (data.communityDispatch as Record<string, unknown>) :
@@ -479,6 +590,9 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
           onboardingComplete,
           planName,
           planCode,
+          billingCycle: currentSubscription?.billingCycle,
+          authAccountTag:
+            ownerId ? authAccountTagByUserId.get(ownerId) ?? null : null,
           healthTier,
           customers,
           transactionsLast30Days: businessTx30,
@@ -728,6 +842,24 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     businessOwnerIds,
   );
 
+  const usersById = new Set(usersSnap.docs.map((doc) => doc.id));
+  const businessById = new Map(
+    businessDocs.map((doc) => [
+      doc.id,
+      {
+        ownerId:
+          typeof doc.data().ownerId === "string" ? doc.data().ownerId : undefined,
+      },
+    ]),
+  );
+  const virtualStaffCounts = countVirtualStaffRecords(
+    ridersSnap,
+    businessById,
+    usersById,
+  );
+  const inventoryBreakdown = aggregatePlatformInventory(inventoryItemsSnap);
+  const totalInventory = sumInventoryBreakdown(inventoryBreakdown);
+
   const activeLoginUsersByRole = countActiveUsersByRole(
     activeUserIds,
     smartRefillUsers.map((doc) => ({ id: doc.id, data: doc.data() })),
@@ -743,6 +875,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
   const { growth, activeOwners } = computeGrowthSalesMetrics({
     businesses: businessSnapshots,
     ownerLastActive,
+    testAccountOwnerIds,
     ownerUserGrowth: buildMonthlySeries(ownerUserGrowthDates),
     businessGrowth: buildMonthlySeries(businessGrowthDates),
     totalCustomers,
@@ -778,6 +911,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     monthStart,
     activeWindowStartKey: thirtyDayKey,
     subscriptionsByBusiness,
+    virtualStaffCounts,
   });
 
   const behavioral = await computeBehavioralSalesMetrics({
@@ -831,20 +965,45 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     businessOwnerIds,
   });
 
-  const dashboardForecasts = await generateDashboardForecasts({
-    summary: {
-      smartRefillUsers: smartRefillUsers.length,
-      onboardedBusinesses,
-      totalBusinesses: businessDocs.length,
-      totalCustomers,
-      activeLoginUsers: activeUserIds.size,
-      transactionsLast30Days,
-      refillVolumeLast30Days,
-    },
-    salesInsights,
-    proposalPipeline,
-    aiSalesInsights: behavioral.aiSalesInsights,
+  const businessNamesById = new Map(
+    businessDocs.map((doc) => [
+      doc.id,
+      String(doc.data().name || "Unnamed business"),
+    ]),
+  );
+  const builtPlatformAlerts = buildPlatformAlerts({
+    inquiries: inquiriesSnap.docs.map((doc) => ({
+      id: doc.id,
+      data: doc.data() as Record<string, unknown>,
+    })),
+    newJoiners,
+    subscriptionsByBusiness,
+    businessNamesById,
+    now,
   });
+  const [alertContactStatuses, dashboardForecasts] = await Promise.all([
+    getPlatformAlertContactStatuses(
+      builtPlatformAlerts.items.map((item) => item.id),
+    ),
+    generateDashboardForecasts({
+      summary: {
+        smartRefillUsers: smartRefillUsers.length,
+        onboardedBusinesses,
+        totalBusinesses: businessDocs.length,
+        totalCustomers,
+        activeLoginUsers: activeUserIds.size,
+        transactionsLast30Days,
+        refillVolumeLast30Days,
+      },
+      salesInsights,
+      proposalPipeline,
+      aiSalesInsights: behavioral.aiSalesInsights,
+    }),
+  ]);
+  const platformAlerts = attachContactStatusToAlerts(
+    builtPlatformAlerts,
+    alertContactStatuses,
+  );
 
   return {
     summary: {
@@ -858,6 +1017,21 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
       topBrowser: browserUsage[0]?.name || "—",
       transactionsLast30Days,
       refillVolumeLast30Days,
+      totalTransactions,
+      transactionBreakdown,
+      customerBreakdown: {
+        active: activeCustomers,
+        deactivated: deactivatedCustomers,
+      },
+      userRoleCounts: {
+        owners: userRoleCounts.owners,
+        admins: userRoleCounts.admins,
+        riders: userRoleCounts.riders,
+      },
+      virtualStaffCounts,
+      businessTierCounts,
+      totalInventory,
+      inventoryBreakdown,
     },
     userGrowth: buildMonthlySeries(ownerUserGrowthDates),
     businessGrowth: buildMonthlySeries(businessGrowthDates),
@@ -894,12 +1068,15 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     ),
     recentBusinesses: recentBusinesses.slice(0, 8),
     topBusinessesByCustomers: topBusinessesByCustomers.slice(0, 6),
-    businessLocations: businessLocations.map((loc) => ({
-      ...loc,
-      lastActiveDay:
-        loc.ownerId ? ownerLastActive.get(loc.ownerId) : undefined,
-    })),
+    businessLocations: businessLocations
+      .filter((loc) => !isTestAccountOwnerId(loc.ownerId, testAccountOwnerIds))
+      .map((loc) => ({
+        ...loc,
+        lastActiveDay:
+          loc.ownerId ? ownerLastActive.get(loc.ownerId) : undefined,
+      })),
     communityDispatchMetrics,
+    communityChannelUsage,
     salesInsights,
     proposalPipeline,
     appFeedback,
@@ -909,5 +1086,6 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     aiSalesInsights: behavioral.aiSalesInsights,
     dashboardForecasts,
     newJoiners,
+    platformAlerts,
   };
 }

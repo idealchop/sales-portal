@@ -64,6 +64,8 @@ export type BusinessMapLocation = {
   communityDispatchEnabled?: boolean;
   communityPublicName?: string;
   pendingCommunityOffers?: number;
+  billingCycle?: string;
+  authAccountTag?: "test" | null;
 };
 
 export type OwnerSubscriptionTimeline = "past" | "current" | "future";
@@ -95,6 +97,20 @@ export type OwnerSubscription = {
   isCancellation: boolean;
 };
 
+export type CommunityChannelUsageBilling = {
+  periodKey: string;
+  platformMessengerIntake: number;
+  platformWhatsappIntake: number;
+  stationAcceptsTotal: number;
+  communityEnrolledStations: number;
+  stationsReportingAccepts: number;
+  topStationsByAccepts: Array<{
+    businessId: string;
+    businessName: string;
+    accepts: number;
+  }>;
+};
+
 export type CommunityDispatchMetrics = {
   intakeToday: number;
   intakeLast7Days: number;
@@ -118,6 +134,31 @@ export type DashboardAnalytics = {
     topBrowser: string;
     transactionsLast30Days: number;
     refillVolumeLast30Days: number;
+    totalTransactions: number;
+    transactionBreakdown: {
+      walkIn: number;
+      directSale: number;
+      orders: number;
+    };
+    customerBreakdown: { active: number; deactivated: number };
+    userRoleCounts: { owners: number; admins: number; riders: number };
+    virtualStaffCounts: { admins: number; riders: number };
+    businessTierCounts: {
+      scale: number;
+      grow: number;
+      starter: number;
+      free: number;
+    };
+    totalInventory: number;
+    inventoryBreakdown: {
+      generalStock: number;
+      kit: number;
+      container: {
+        shell: number;
+        round: number;
+        slim: number;
+      };
+    };
   };
   userGrowth: { month: string; count: number }[];
   businessGrowth: { month: string; count: number }[];
@@ -152,6 +193,7 @@ export type DashboardAnalytics = {
   }[];
   businessLocations: BusinessMapLocation[];
   communityDispatchMetrics: CommunityDispatchMetrics;
+  communityChannelUsage: CommunityChannelUsageBilling;
   salesInsights: SalesInsights;
   proposalPipeline: ProposalPipeline;
   appFeedback: AppFeedbackSummary;
@@ -161,6 +203,7 @@ export type DashboardAnalytics = {
   aiSalesInsights: AiSalesInsights;
   dashboardForecasts: DashboardForecasts;
   newJoiners: NewJoinersSummary;
+  platformAlerts: PlatformAlertsSummary;
   personalSales?: PersonalSalesSummary;
   todaysWork?: TodaysWorkItem[];
   analyticsScope?: AnalyticsScope;
@@ -219,6 +262,7 @@ export type ActiveOwner = {
   monthlyRevenue: number;
   subscriptions?: OwnerSubscription[];
   pendingApprovals?: number;
+  authAccountTag?: "test" | null;
 };
 
 export type GrowthSalesMetrics = {
@@ -369,6 +413,33 @@ export type NewJoinersSummary = {
   platformUsers: NewPlatformUserJoiner[];
 };
 
+export type PlatformAlertKind =
+  | "demo_inquiry"
+  | "new_user_registration"
+  | "subscription_change"
+  | "subscription_expiring_soon"
+  | "subscription_grace_period";
+
+export type PlatformAlertContactStatus = "need_contact" | "contacted";
+
+export type PlatformAlert = {
+  id: string;
+  kind: PlatformAlertKind;
+  title: string;
+  subtitle: string;
+  occurredAt: string | null;
+  email?: string;
+  businessId?: string;
+  businessName?: string;
+  contactStatus?: PlatformAlertContactStatus;
+  isNew?: boolean;
+};
+
+export type PlatformAlertsSummary = {
+  items: PlatformAlert[];
+  counts: Record<PlatformAlertKind, number>;
+};
+
 export type PersonalSalesSummary = {
   totalProposals: number;
   totalClients: number;
@@ -394,6 +465,16 @@ export type TodaysWorkItem = {
 
 export type AnalyticsScope = "platform" | "team" | "personal";
 
+const EMPTY_COMMUNITY_CHANNEL_USAGE: CommunityChannelUsageBilling = {
+  periodKey: "",
+  platformMessengerIntake: 0,
+  platformWhatsappIntake: 0,
+  stationAcceptsTotal: 0,
+  communityEnrolledStations: 0,
+  stationsReportingAccepts: 0,
+  topStationsByAccepts: [],
+};
+
 const EMPTY_COMMUNITY_DISPATCH_METRICS: CommunityDispatchMetrics = {
   intakeToday: 0,
   intakeLast7Days: 0,
@@ -409,6 +490,17 @@ const EMPTY_NEW_JOINERS: NewJoinersSummary = {
   salesReps: [],
   businesses: [],
   platformUsers: [],
+};
+
+const EMPTY_PLATFORM_ALERTS: PlatformAlertsSummary = {
+  items: [],
+  counts: {
+    demo_inquiry: 0,
+    new_user_registration: 0,
+    subscription_change: 0,
+    subscription_expiring_soon: 0,
+    subscription_grace_period: 0,
+  },
 };
 
 const EMPTY_PERSONAL_SALES: PersonalSalesSummary = {
@@ -505,25 +597,69 @@ type PartialDashboardAnalytics = Partial<DashboardAnalytics> & {
   }>;
 };
 
+type PartialDashboardSummary = Partial<DashboardAnalytics["summary"]> & {
+  activeUsersLast30Days?: number;
+};
+
+export function normalizeDashboardSummary(
+  summary?: PartialDashboardSummary | null,
+): DashboardAnalytics["summary"] {
+  return {
+    smartRefillUsers: summary?.smartRefillUsers ?? 0,
+    onboardedBusinesses: summary?.onboardedBusinesses ?? 0,
+    totalBusinesses: summary?.totalBusinesses ?? 0,
+    totalCustomers: summary?.totalCustomers ?? 0,
+    activeLoginUsers:
+      summary?.activeLoginUsers ?? summary?.activeUsersLast30Days ?? 0,
+    loginSessionsLast30Days: summary?.loginSessionsLast30Days ?? 0,
+    topDevice: summary?.topDevice ?? "—",
+    topBrowser: summary?.topBrowser ?? "—",
+      transactionsLast30Days: summary?.transactionsLast30Days ?? 0,
+      refillVolumeLast30Days: summary?.refillVolumeLast30Days ?? 0,
+      totalTransactions:
+        summary?.totalTransactions ?? summary?.transactionsLast30Days ?? 0,
+      transactionBreakdown: {
+        walkIn: summary?.transactionBreakdown?.walkIn ?? 0,
+        directSale: summary?.transactionBreakdown?.directSale ?? 0,
+        orders: summary?.transactionBreakdown?.orders ?? 0,
+      },
+      customerBreakdown: {
+      active: summary?.customerBreakdown?.active ?? summary?.totalCustomers ?? 0,
+      deactivated: summary?.customerBreakdown?.deactivated ?? 0,
+    },
+    userRoleCounts: {
+      owners: summary?.userRoleCounts?.owners ?? 0,
+      admins: summary?.userRoleCounts?.admins ?? 0,
+      riders: summary?.userRoleCounts?.riders ?? 0,
+    },
+    virtualStaffCounts: {
+      admins: summary?.virtualStaffCounts?.admins ?? 0,
+      riders: summary?.virtualStaffCounts?.riders ?? 0,
+    },
+    businessTierCounts: {
+      scale: summary?.businessTierCounts?.scale ?? 0,
+      grow: summary?.businessTierCounts?.grow ?? 0,
+      starter: summary?.businessTierCounts?.starter ?? 0,
+      free: summary?.businessTierCounts?.free ?? 0,
+    },
+    totalInventory: summary?.totalInventory ?? 0,
+    inventoryBreakdown: {
+      generalStock: summary?.inventoryBreakdown?.generalStock ?? 0,
+      kit: summary?.inventoryBreakdown?.kit ?? 0,
+      container: {
+        shell: summary?.inventoryBreakdown?.container?.shell ?? 0,
+        round: summary?.inventoryBreakdown?.container?.round ?? 0,
+        slim: summary?.inventoryBreakdown?.container?.slim ?? 0,
+      },
+    },
+  };
+}
+
 export function normalizeDashboardAnalytics(
   raw: PartialDashboardAnalytics,
 ): DashboardAnalytics {
-  const summary = raw.summary;
-
   return {
-    summary: {
-      smartRefillUsers: summary?.smartRefillUsers ?? 0,
-      onboardedBusinesses: summary?.onboardedBusinesses ?? 0,
-      totalBusinesses: summary?.totalBusinesses ?? 0,
-      totalCustomers: summary?.totalCustomers ?? 0,
-      activeLoginUsers:
-        summary?.activeLoginUsers ?? summary?.activeUsersLast30Days ?? 0,
-      loginSessionsLast30Days: summary?.loginSessionsLast30Days ?? 0,
-      topDevice: summary?.topDevice ?? "—",
-      topBrowser: summary?.topBrowser ?? "—",
-      transactionsLast30Days: summary?.transactionsLast30Days ?? 0,
-      refillVolumeLast30Days: summary?.refillVolumeLast30Days ?? 0,
-    },
+    summary: normalizeDashboardSummary(raw.summary),
     userGrowth: raw.userGrowth ?? [],
     businessGrowth: raw.businessGrowth ?? [],
     dailyActiveUsers: (raw.dailyActiveUsers ?? []).map((row) => ({
@@ -542,6 +678,8 @@ export function normalizeDashboardAnalytics(
     businessLocations: raw.businessLocations ?? [],
     communityDispatchMetrics:
       raw.communityDispatchMetrics ?? EMPTY_COMMUNITY_DISPATCH_METRICS,
+    communityChannelUsage:
+      raw.communityChannelUsage ?? EMPTY_COMMUNITY_CHANNEL_USAGE,
     salesInsights: raw.salesInsights ?? EMPTY_SALES_INSIGHTS,
     proposalPipeline: raw.proposalPipeline ?? EMPTY_PROPOSAL_PIPELINE,
     appFeedback: raw.appFeedback ?? EMPTY_APP_FEEDBACK,
@@ -563,6 +701,7 @@ export function normalizeDashboardAnalytics(
     aiSalesInsights: raw.aiSalesInsights ?? EMPTY_AI_SALES_INSIGHTS,
     dashboardForecasts: raw.dashboardForecasts ?? EMPTY_DASHBOARD_FORECASTS,
     newJoiners: raw.newJoiners ?? EMPTY_NEW_JOINERS,
+    platformAlerts: raw.platformAlerts ?? EMPTY_PLATFORM_ALERTS,
     personalSales: raw.personalSales ?? EMPTY_PERSONAL_SALES,
     todaysWork: raw.todaysWork ?? [],
     analyticsScope: raw.analyticsScope,

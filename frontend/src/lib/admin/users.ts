@@ -8,6 +8,8 @@ export type AdminAppAccessEntry = {
   onboardingComplete?: boolean;
 };
 
+export type AuthAccountTag = "test";
+
 export type AdminUserSummary = {
   uid: string;
   email?: string;
@@ -17,6 +19,12 @@ export type AdminUserSummary = {
   registeredAt?: string | null;
   lastSignInAt?: string | null;
   hasRiverDbProfile: boolean;
+  authAccountTag?: AuthAccountTag | null;
+};
+
+export type AdminUserPermissionsInput = {
+  appAccess: AdminAppAccessEntry[];
+  authAccountTag: AuthAccountTag | null;
 };
 
 export const SMARTREFILL_ROLE_OPTIONS = [

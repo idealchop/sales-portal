@@ -10,8 +10,11 @@ import { DASHBOARD_NAV, type NavItem } from "@/features/dashboard/config/nav-ite
 import type { SalesPortalRole } from "@/lib/auth-status";
 
 function isChildNavActive(pathname: string, childHref: string): boolean {
-  if (childHref === "/dashboard") return pathname === "/dashboard";
-  return pathname.startsWith(childHref);
+  // Index routes that are prefixes of sibling pages must match exactly.
+  if (childHref === "/dashboard" || childHref === "/events-training") {
+    return pathname === childHref;
+  }
+  return pathname === childHref || pathname.startsWith(`${childHref}/`);
 }
 
 function isItemActive(pathname: string, item: NavItem): boolean {

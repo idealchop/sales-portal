@@ -50,6 +50,7 @@ import {
   smartRefillRoleSelectValue,
   smartRefillStaffSubRoleSelectValue,
   type AdminAppAccessEntry,
+  type AdminUserPermissionsInput,
   type AdminUserSummary,
 } from "@/lib/admin/users";
 
@@ -77,7 +78,15 @@ const STATUS_STYLES = {
   none: "bg-zinc-100 text-zinc-600",
   active: "bg-emerald-50 text-emerald-700",
   revoked: "bg-amber-50 text-amber-700",
-};
+} as const;
+
+function TestAccountBadge() {
+  return (
+    <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+      Test account
+    </span>
+  );
+}
 
 function UserAvatar({ user, isSelf }: { user: AdminUserSummary; isSelf?: boolean }) {
   return (
@@ -151,12 +160,15 @@ function UserPermissionEditor({
   isSelf: boolean;
   onToggle: () => void;
   onSelect: (checked: boolean) => void;
-  onSave: (uid: string, appAccess: AdminAppAccessEntry[]) => Promise<unknown>;
+  onSave: (uid: string, input: AdminUserPermissionsInput) => Promise<unknown>;
   onDelete: () => void;
   onRevoke: () => void;
 }) {
-  const draftKey = `${user.uid}:${JSON.stringify(user.appAccess)}`;
+  const draftKey = `${user.uid}:${JSON.stringify(user.appAccess)}:${user.authAccountTag ?? "none"}`;
   const [draft, setDraft] = useState(() => draftFromUserAppAccess(user.appAccess));
+  const [draftTestAccount, setDraftTestAccount] = useState(
+    () => user.authAccountTag === "test",
+  );
   const [draftKeyState, setDraftKeyState] = useState(draftKey);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,6 +178,7 @@ function UserPermissionEditor({
   if (draftKeyState !== draftKey) {
     setDraftKeyState(draftKey);
     setDraft(draftFromUserAppAccess(user.appAccess));
+    setDraftTestAccount(user.authAccountTag === "test");
     setSaved(false);
     setError(null);
   }
@@ -193,7 +206,10 @@ function UserPermissionEditor({
     setSaving(true);
     setError(null);
     try {
-      await onSave(user.uid, draft);
+      await onSave(user.uid, {
+        appAccess: draft,
+        authAccountTag: draftTestAccount ? "test" : null,
+      });
       setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save changes.");
@@ -247,6 +263,9 @@ function UserPermissionEditor({
                     <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700">
                       Auth only
                     </span>
+                  )}
+                  {rowDisplay.testAccountBadge && user.authAccountTag === "test" && (
+                    <TestAccountBadge />
                   )}
                   {rowDisplay.statusBadge && (
                     <span
@@ -306,6 +325,9 @@ function UserPermissionEditor({
                       <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700">
                         Auth only
                       </span>
+                    )}
+                    {rowDisplay.testAccountBadge && user.authAccountTag === "test" && (
+                      <TestAccountBadge />
                     )}
                     {rowDisplay.statusBadge && (
                       <span
@@ -384,6 +406,28 @@ function UserPermissionEditor({
               Saving app access will create their profile automatically.
             </p>
           )}
+
+          <section className="mb-4 rounded-lg border border-zinc-200 bg-white p-4">
+            <p className="text-sm font-medium text-foreground">
+              Authentication account
+            </p>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              Tags this Firebase Auth login for QA and internal testing.
+            </p>
+            <label className="mt-3 flex items-center gap-2 text-sm text-zinc-700">
+              <input
+                type="checkbox"
+                checked={draftTestAccount}
+                onChange={(event) => {
+                  setDraftTestAccount(event.target.checked);
+                  setSaved(false);
+                }}
+                className="h-4 w-4 rounded border-zinc-300"
+              />
+              Test account
+            </label>
+          </section>
+
           <div className="mb-4 flex flex-wrap gap-2">
             {user.appAccess.length > 0 ?
               user.appAccess.map((entry, index) => (
@@ -614,7 +658,7 @@ export function UserPermissionsPanel({
   isLoading: boolean;
   error: string | null;
   currentUid: string | null;
-  onSave: (uid: string, appAccess: AdminAppAccessEntry[]) => Promise<unknown>;
+  onSave: (uid: string, input: AdminUserPermissionsInput) => Promise<unknown>;
   onDelete: (
     uids: string[],
     onProgress?: (completed: number, total: number) => void,
@@ -626,8 +670,8 @@ export function UserPermissionsPanel({
 }) {
   const [query, setQuery] = useState("");
   const [accessFilter, setAccessFilter] = useState<AccessFilter>("all");
-  const [sortBy, setSortBy] = useState<AdminUserSortBy>("name");
-  const [sortOrder, setSortOrder] = useState<AdminUserSortOrder>("asc");
+  const [sortBy, setSortBy] = useState<AdminUserSortBy>("lastSignIn");
+  const [sortOrder, setSortOrder] = useState<AdminUserSortOrder>("desc");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [cardDisplay, setCardDisplay] = useState<AdminUserRowDisplay>(() =>
     loadAdminUserCardDisplay(),

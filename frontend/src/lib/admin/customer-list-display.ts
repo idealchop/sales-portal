@@ -70,6 +70,15 @@ export function customerInitials(name: string): string {
     .toUpperCase();
 }
 
+export type CustomerProfileStatus = "active" | "inactive";
+
+export function parseCustomerProfileStatus(
+  data: Record<string, unknown>,
+): CustomerProfileStatus {
+  const status = readString(data.status).toLowerCase();
+  return status === "inactive" || status === "archived" ? "inactive" : "active";
+}
+
 export function parseCustomerListRow(
   doc: UserFirestoreDocumentRow,
 ): ParsedCustomerListRow {
@@ -78,7 +87,7 @@ export function parseCustomerListRow(
   const phone = readString(data.phone);
   const address = readString(data.address) || "Location unspecified";
   const status = readString(data.status).toLowerCase();
-  const isActive = status !== "inactive";
+  const isActive = parseCustomerProfileStatus(data) === "active";
 
   const isDeliveryEnabled = data.isDeliveryEnabled === true;
   const isCollectionEnabled = data.isCollectionEnabled === true;

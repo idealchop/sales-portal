@@ -12,6 +12,7 @@ import {
   getAdminCustomerTransactions,
   getAdminCustomerInventoryAssignments,
   getAdminCatalogCollection,
+  patchAdminCustomerBulkStatus,
   putAdminBusinessDocument,
   getAdminDataManagement,
   getAdminUserDocuments,
@@ -52,6 +53,10 @@ router.get(
 router.get(
   "/businesses/:businessId/customers/:customerId/inventory-assignments",
   getAdminCustomerInventoryAssignments,
+);
+router.patch(
+  "/businesses/:businessId/customers/bulk-status",
+  patchAdminCustomerBulkStatus,
 );
 router.put("/businesses/:businessId/documents", putAdminBusinessDocument);
 router.delete("/businesses/:businessId/documents", deleteAdminBusinessDocument);
