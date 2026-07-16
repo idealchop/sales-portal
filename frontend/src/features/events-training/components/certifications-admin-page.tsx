@@ -9,18 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSalesProfile } from "@/hooks/use-sales-profile";
 import {
   fetchCertifications,
-  fetchTrainingVideos,
   fetchWebinars,
   issueCertification,
   revokeCertification,
 } from "../lib/events-training-api";
 import type {
-  CertTargetType,
   CertificationRecord,
-  TrainingVideoRecord,
   WebinarRecord,
 } from "../lib/events-training-types";
-import { CERT_TARGET_TYPES } from "../lib/events-training-types";
 import { inputClassName, labelClassName } from "../lib/form-styles";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 
@@ -29,7 +25,6 @@ export function CertificationsAdminPage() {
   const { profile, loading: profileLoading } = useSalesProfile();
   const [items, setItems] = useState<CertificationRecord[]>([]);
   const [webinars, setWebinars] = useState<WebinarRecord[]>([]);
-  const [videos, setVideos] = useState<TrainingVideoRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -39,7 +34,7 @@ export function CertificationsAdminPage() {
   );
   const [userId, setUserId] = useState("");
   const [businessId, setBusinessId] = useState("");
-  const [targetType, setTargetType] = useState<CertTargetType>("training_video");
+  const [recipientName, setRecipientName] = useState("");
   const [targetId, setTargetId] = useState("");
   const [title, setTitle] = useState("");
   const [certificateUrl, setCertificateUrl] = useState("");
@@ -47,14 +42,12 @@ export function CertificationsAdminPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [certs, events, vids] = await Promise.all([
+      const [certs, events] = await Promise.all([
         fetchCertifications(),
         fetchWebinars(),
-        fetchTrainingVideos(),
       ]);
       setItems(certs);
       setWebinars(events);
-      setVideos(vids);
     } catch {
       setError("Unable to load certifications.");
     } finally {
@@ -72,8 +65,8 @@ export function CertificationsAdminPage() {
   }, [load, profile?.role, profileLoading, router]);
 
   async function handleIssue() {
-    if (!userId.trim() || !targetId.trim() || !title.trim()) {
-      setError("User ID, target, and title are required.");
+    if (!userId.trim() || !recipientName.trim() || !targetId.trim()) {
+      setError("User ID, recipient name, and webinar are required.");
       return;
     }
     setSubmitting(true);
@@ -82,14 +75,16 @@ export function CertificationsAdminPage() {
       await issueCertification({
         userId: userId.trim(),
         businessId: businessId.trim() || undefined,
-        targetType,
+        recipientName: recipientName.trim(),
+        targetType: "webinar_event",
         targetId,
-        title: title.trim(),
+        title: title.trim() || undefined,
         certificateUrl: certificateUrl.trim() || null,
       });
       setFormOpen(false);
       setUserId("");
       setBusinessId("");
+      setRecipientName("");
       setTargetId("");
       setTitle("");
       setCertificateUrl("");
@@ -116,15 +111,13 @@ export function CertificationsAdminPage() {
     }
   }
 
-  const targets = targetType === "webinar_event" ? webinars : videos;
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Certifications</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Manually issue or revoke optional training certificates.
+            Manually issue or revoke webinar certificates.
           </p>
         </div>
         {!formOpen ? (
@@ -157,6 +150,15 @@ export function CertificationsAdminPage() {
               />
             </div>
             <div>
+              <label className={labelClassName}>Recipient name</label>
+              <input
+                className={inputClassName}
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                placeholder="Name printed on certificate"
+              />
+            </div>
+            <div>
               <label className={labelClassName}>Business ID (optional)</label>
               <input
                 className={inputClassName}
@@ -165,31 +167,14 @@ export function CertificationsAdminPage() {
               />
             </div>
             <div>
-              <label className={labelClassName}>Target type</label>
-              <select
-                className={inputClassName}
-                value={targetType}
-                onChange={(e) => {
-                  setTargetType(e.target.value as CertTargetType);
-                  setTargetId("");
-                }}
-              >
-                {CERT_TARGET_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClassName}>Target</label>
+              <label className={labelClassName}>Webinar</label>
               <select
                 className={inputClassName}
                 value={targetId}
                 onChange={(e) => setTargetId(e.target.value)}
               >
                 <option value="">Select…</option>
-                {targets.map((t) => (
+                {webinars.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
@@ -197,11 +182,12 @@ export function CertificationsAdminPage() {
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className={labelClassName}>Certificate title</label>
+              <label className={labelClassName}>Certificate title (optional)</label>
               <input
                 className={inputClassName}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                placeholder="Defaults to webinar name"
               />
             </div>
             <div className="sm:col-span-2">
@@ -210,6 +196,7 @@ export function CertificationsAdminPage() {
                 className={inputClassName}
                 value={certificateUrl}
                 onChange={(e) => setCertificateUrl(e.target.value)}
+                placeholder="Leave blank to generate from template"
               />
             </div>
             <div className="flex gap-2 sm:col-span-2">
@@ -253,7 +240,8 @@ export function CertificationsAdminPage() {
                 <div>
                   <p className="font-medium">{item.title}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {item.userId} · {item.targetType}/{item.targetId}
+                    {item.recipientName || item.userId} · {item.targetType}/
+                    {item.targetId}
                     {item.issuedAt
                       ? ` · ${new Date(item.issuedAt).toLocaleDateString("en-PH", {
                           timeZone: "Asia/Manila",
