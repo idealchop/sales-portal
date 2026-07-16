@@ -543,7 +543,4 @@ export const SCHEDULE_AUDIENCE_LABELS: Record<ScheduleAudience, string> = {
   purchasers: "Purchasers",
 };
 
-export const CERT_TARGET_TYPES: CertTargetType[] = [
-  "training_video",
-  "webinar_event",
-];
+export const CERT_TARGET_TYPES: CertTargetType[] = ["webinar_event"];

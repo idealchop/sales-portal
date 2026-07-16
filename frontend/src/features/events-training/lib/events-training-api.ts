@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api-client";
 import type {
   CertificationRecord,
+  CertTargetType,
   CommentRecord,
   CommentStatus,
   ComposedWebinarScheduleMessage,
@@ -394,19 +395,20 @@ export async function fetchCertifications(params?: {
   return res.data;
 }
 
-export async function issueCertification(
-  input: Partial<CertificationRecord> & {
-    userId: string;
-    targetId: string;
-    recipientName: string;
-    title?: string;
-    appId?: string;
-    targetType?: "webinar_event";
-  },
-) {
+export async function issueCertification(input: {
+  userId: string;
+  businessId?: string;
+  targetId: string;
+  recipientName: string;
+  title?: string;
+  appId?: string;
+  certificateUrl?: string | null;
+  /** Ignored — certificates are webinar-only. */
+  targetType?: CertTargetType;
+}) {
   const res = await apiClient.post<{ data: CertificationRecord }>(
     "/events-training/certifications",
-    { ...input, targetType: "webinar_event" },
+    { ...input, targetType: "webinar_event" as const },
   );
   return res.data;
 }
