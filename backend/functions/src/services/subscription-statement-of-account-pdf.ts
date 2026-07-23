@@ -192,8 +192,8 @@ export function buildSubscriptionStatementPdf(
 
           const planLabel =
             line.planCode ?
-              `${line.planName} (${line.planCode})`
-            : line.planName;
+              `${line.planName} (${line.planCode})` :
+              line.planName;
 
           doc
             .fontSize(10)

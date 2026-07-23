@@ -78,7 +78,7 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | Path | Role | Status |
 |------|------|--------|
 | `/dashboard` | sales, manager, admin | Live — platform hub (rollup KPIs, map, per-app charts, ROI) |
-| `/dashboard/smartrefill` | sales, manager, admin | Live — product usage KPIs, map, SmartRefill charts, insights/forecast |
+| `/dashboard/smartrefill` | sales, manager, admin | Live — ops tabs: Attention (alerts + inactive owners), Subscriptions, Field ops (map/community), Analytics (KPIs, signals, charts) |
 | `/dashboard/sales-portal` | sales, manager, admin | Live — rep KPIs, actions/joiners tabs, revenue charts, insights/forecast |
 | `/dashboard/settings` | sales, manager, admin | Live — read-only profile |
 | `/content-studio` | sales, manager, admin | Live |

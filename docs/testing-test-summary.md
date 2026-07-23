@@ -17,6 +17,8 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/services/generate-ai-sales-insights.unit.test.ts` | AI insight payload shaping | TC-DASH-01 |
 | `unit/services/generate-dashboard-forecasts.unit.test.ts` ✅ | Fallback forecasts + actor reshape | TC-DASH-08 |
 | `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline mapping | TC-DASH-05, TC-DASH-09 |
+| `unit/services/build-platform-alerts.unit.test.ts` ✅ | Demo / new-user / subscription alerts | TC-DASH-13 |
+| `unit/services/inactive-owner-contacts.unit.test.ts` ✅ | Attach `lastContactedAt` to owners | TC-DASH-14 |
 | `unit/services/build-todays-work-inbox.unit.test.ts` | Today’s work dedupe | TC-DASH-07 |
 | `unit/services/build-new-joiners.unit.test.ts` | New joiners aggregation | TC-DASH-07 |
 | `unit/services/filter-new-joiners-for-actor.unit.test.ts` | Role-scoped joiners | TC-DASH-07 |
@@ -64,7 +66,11 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/features/dashboard/app-chart-groups.test.ts` ✅ | Non-overlapping per-app chart kinds | TC-DASH-06, TC-DASH-07 |
 | `unit/features/dashboard/forecast-items.test.ts` ✅ | Forecast slice per app | TC-DASH-08 |
 | `unit/features/dashboard/build-hub-app-stats.test.ts` ✅ | Hub KPI grouping | TC-DASH-01 |
-| `unit/features/dashboard/sort-active-owners.test.ts` ✅ | Owner sort + 5-row cap | TC-DASH-10 |
+| `unit/features/dashboard/sort-active-owners.test.ts` ✅ | Inactive sort + list cap | TC-DASH-10 |
+| `unit/features/dashboard/inactive-owner-contact.test.ts` ✅ | 7-day Contact cooldown | TC-DASH-14 |
+| `unit/lib/email/new-user-welcome-template.test.ts` ✅ | New-user outreach mailto | TC-DASH-13 |
+| `unit/lib/email/demo-inquiry-template.test.ts` ✅ | Demo-inquiry outreach mailto | TC-DASH-13 |
+| `unit/lib/email/inactive-owner-template.test.ts` ✅ | Inactive-owner outreach mailto | TC-DASH-14 |
 | `unit/features/dashboard/build-subscription-approval-queue.test.ts` ✅ | Approval queue rows | TC-DASH-05, TC-DASH-09 |
 | `unit/lib/dashboard-analytics-normalize.test.ts` ✅ | `newJoiners`, `dashboardForecasts` defaults | TC-DASH-01 |
 | `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |

@@ -57,6 +57,10 @@ import {
   getPlatformAlertContactStatuses,
 } from "./platform-alert-contacts-service";
 import {
+  attachInactiveOwnerContactedAt,
+  getInactiveOwnerContactedAt,
+} from "./inactive-owner-contacts-service";
+import {
   computeCommunityDispatchMetrics,
   loadPendingCommunityOfferCounts,
   type CommunityDispatchMetrics,
@@ -981,29 +985,38 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     businessNamesById,
     now,
   });
-  const [alertContactStatuses, dashboardForecasts] = await Promise.all([
-    getPlatformAlertContactStatuses(
-      builtPlatformAlerts.items.map((item) => item.id),
-    ),
-    generateDashboardForecasts({
-      summary: {
-        smartRefillUsers: smartRefillUsers.length,
-        onboardedBusinesses,
-        totalBusinesses: businessDocs.length,
-        totalCustomers,
-        activeLoginUsers: activeUserIds.size,
-        transactionsLast30Days,
-        refillVolumeLast30Days,
-      },
-      salesInsights,
-      proposalPipeline,
-      aiSalesInsights: behavioral.aiSalesInsights,
-    }),
-  ]);
+  const [alertContactStatuses, inactiveOwnerContactedAt, dashboardForecasts] =
+    await Promise.all([
+      getPlatformAlertContactStatuses(
+        builtPlatformAlerts.items.map((item) => item.id),
+      ),
+      getInactiveOwnerContactedAt(activeOwners.map((owner) => owner.id)),
+      generateDashboardForecasts({
+        summary: {
+          smartRefillUsers: smartRefillUsers.length,
+          onboardedBusinesses,
+          totalBusinesses: businessDocs.length,
+          totalCustomers,
+          activeLoginUsers: activeUserIds.size,
+          transactionsLast30Days,
+          refillVolumeLast30Days,
+        },
+        salesInsights,
+        proposalPipeline,
+        aiSalesInsights: behavioral.aiSalesInsights,
+      }),
+    ]);
   const platformAlerts = attachContactStatusToAlerts(
     builtPlatformAlerts,
     alertContactStatuses,
   );
+  const growthSalesMetricsWithContacts: GrowthSalesMetrics = {
+    ...growthSalesMetrics,
+    activeOwners: attachInactiveOwnerContactedAt(
+      activeOwners,
+      inactiveOwnerContactedAt,
+    ),
+  };
 
   return {
     summary: {
@@ -1080,7 +1093,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     salesInsights,
     proposalPipeline,
     appFeedback,
-    growthSalesMetrics,
+    growthSalesMetrics: growthSalesMetricsWithContacts,
     chartTimeSeries,
     chartBusinessContext,
     aiSalesInsights: behavioral.aiSalesInsights,

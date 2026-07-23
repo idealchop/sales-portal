@@ -140,7 +140,9 @@ npm run test:unit
 - Nav/role filtering (`nav-items.test.ts`)
 - Per-app chart config (`app-chart-groups.test.ts`)
 - Forecast slices (`forecast-items.test.ts`, `generate-dashboard-forecasts.unit.test.ts`)
-- Active owners sort (`sort-active-owners.test.ts`)
+- Active / inactive owners sort (`sort-active-owners.test.ts`)
+- Inactive owner contact cooldown (`inactive-owner-contact.test.ts`)
+- Outreach email templates (`lib/email/*.test.ts`)
 - Analytics normalize defaults (`dashboard-analytics-normalize.test.ts`)
 - Chart/breakdown formatters
 - Form validation schemas (zod)

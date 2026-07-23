@@ -106,7 +106,12 @@ describe("buildPlatformAlerts", () => {
     expect(summary.counts.subscription_grace_period).toBe(1);
 
     expect(
-      summary.items.some((item) => item.kind === "demo_inquiry" && item.email === "demo@example.com"),
+      summary.items.some(
+        (item) =>
+          item.kind === "demo_inquiry" &&
+          item.email === "demo@example.com" &&
+          item.businessName === "Pureflow",
+      ),
     ).toBe(true);
     expect(
       summary.items.some((item) => item.kind === "subscription_expiring_soon" && item.businessId === "biz-expiring"),

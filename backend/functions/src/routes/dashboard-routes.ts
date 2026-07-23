@@ -1,6 +1,7 @@
 import express from "express";
 import { getDashboardAnalytics, getDashboardSalesHome } from "../handlers/dashboard-handler";
 import { patchPlatformAlertContactHandler } from "../handlers/platform-alert-contact-handler";
+import { patchInactiveOwnerContactHandler } from "../handlers/inactive-owner-contact-handler";
 import {
   getSubscriptionOfficialReceipt,
   getSubscriptionStatement,
@@ -38,6 +39,13 @@ router.patch(
   validateFirebaseIdToken,
   requireSalesPortalAccess,
   patchPlatformAlertContactHandler,
+);
+
+router.patch(
+  "/inactive-owners/:businessId/contact",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  patchInactiveOwnerContactHandler,
 );
 
 router.post(

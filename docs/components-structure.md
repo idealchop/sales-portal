@@ -32,7 +32,11 @@ frontend/src/
 | `components/dashboard-shell.tsx` | Layout, compact content column, analytics provider |
 | `components/dashboard-header.tsx` | Page title, refresh, user menu |
 | `components/platform-hub-dashboard.tsx` | Platform overview hub |
-| `components/smartrefill-dashboard.tsx` | SmartRefill app dashboard |
+| `components/smartrefill-dashboard.tsx` | SmartRefill ops dashboard (Attention / Subscriptions / Field / Analytics tabs) |
+| `components/smartrefill-ops-health-strip.tsx` | Clickable support/maintenance snapshot tiles |
+| `components/smartrefill-maintenance-signals.tsx` | Workspace health + payment status bars |
+| `components/platform-alerts-list.tsx` | Alert queue; Contact opens outreach mailto + dismisses |
+| `components/active-owners-panel.tsx` | Inactive owners (7d+); Contact + expand-all link |
 | `components/sales-portal-dashboard.tsx` | Sales Portal app dashboard |
 | `components/hub-app-stats-section.tsx` | Hub KPI rollup + per-app cards |
 | `components/sales-portal-actions-joiners-section.tsx` | Actions \| New joiners tabs |
@@ -41,9 +45,11 @@ frontend/src/
 | `components/dashboard-forecast-panel.tsx` | Paginated AI/rule-based forecasts |
 | `components/growth-charts-section.tsx` | Charts (Recharts), app-filtered |
 | `lib/app-chart-groups.ts` | Per-app chart kind lists (no overlap) |
-| `lib/sort-active-owners.ts` | Active owners priority sort + 5-row cap |
+| `lib/sort-active-owners.ts` | Inactive owners (7d+ no login) sort + 10-row cap (expandable) |
+| `lib/inactive-owner-contact.ts` | 7-day Contact button cooldown helper |
+| `lib/email/*` | Outreach mailto templates (new user, demo inquiry, inactive owner) + BCC |
 | `components/sales-insights-panel.tsx` | Action queue, health, pipeline detail |
-| `components/active-owners-panel.tsx` | Owner list beside map |
+| `components/workspace-map-owners-section.tsx` | Station map (optional inactive panel) |
 
 ### `features/content-studio/`
 

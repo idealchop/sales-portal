@@ -90,8 +90,8 @@ export function formatBusinessAddressForPdf(
   if (b) return b;
   const c =
     typeof biz.stationAddress === "string" ?
-      biz.stationAddress.trim()
-    : formatLocationLikeValue(biz.stationAddress);
+      biz.stationAddress.trim() :
+      formatLocationLikeValue(biz.stationAddress);
   return c || "";
 }
 

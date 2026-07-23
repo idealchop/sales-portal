@@ -64,6 +64,8 @@ export type ActiveOwner = {
   onboardingComplete: boolean;
   address?: string;
   lastActiveDay?: string;
+  /** ISO timestamp of last outreach contact; used for 7-day Contact button cooldown. */
+  lastContactedAt?: string | null;
   monthlyRevenue: number;
   subscriptions: OwnerSubscription[];
   pendingApprovals: number;

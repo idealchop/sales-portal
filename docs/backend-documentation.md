@@ -59,7 +59,9 @@ All routes are mounted at the function root (no `/api` prefix).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes `dashboardForecasts`, `personalSales`, `todaysWork`) |
+| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes `dashboardForecasts`, `personalSales`, `todaysWork`, `lastContactedAt` on owners) |
+| `PATCH` | `/dashboard/platform-alerts/:alertId/contact` | Portal | Mark platform alert contacted (removes from open alerts) |
+| `PATCH` | `/dashboard/inactive-owners/:businessId/contact` | Portal | Record inactive-owner outreach timestamp (7-day Contact cooldown) |
 | `POST` | `/dashboard/subscriptions/:businessId/:subscriptionId/approve` | Portal | Approve pending subscription |
 | `GET` | `/dashboard/subscriptions/:businessId/:subscriptionId/official-receipt` | Portal | Official Receipt PDF (single paid period) |
 | `GET` | `/dashboard/subscriptions/:businessId/statement` | Portal | Statement of account PDF (all paid periods) |

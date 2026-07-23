@@ -166,6 +166,7 @@ export function buildPlatformAlerts(input: {
       }`,
       occurredAt: toIso(data.createdAt),
       email: typeof data.email === "string" ? data.email : undefined,
+      businessName,
     });
   }
 

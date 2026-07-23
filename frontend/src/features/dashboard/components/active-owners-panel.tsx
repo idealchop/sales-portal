@@ -18,9 +18,13 @@ import {
   approveSubscription,
 } from "@/features/dashboard/lib/approve-subscription";
 import {
-  ACTIVE_OWNERS_LIST_LIMIT,
-  activeOwnersForList,
+  INACTIVE_OWNERS_LIST_LIMIT,
+  filterInactiveOwners,
+  inactiveOwnersForList,
+  sortInactiveOwners,
 } from "@/features/dashboard/lib/sort-active-owners";
+import { shouldShowInactiveOwnerContactButton } from "@/features/dashboard/lib/inactive-owner-contact";
+import { recordInactiveOwnerContact } from "@/features/dashboard/lib/record-inactive-owner-contact";
 import { PaginatedList } from "@/components/paginated-list";
 import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
 import {
@@ -35,9 +39,11 @@ import {
   formatTrialDaysRemaining,
   isTrialBillingCycle,
 } from "@/lib/dashboard/subscription-labels";
+import { openInactiveOwnerOutreachEmail } from "@/lib/email/inactive-owner-template";
 import { formatPhp } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DashboardAnalyticsRefresh } from "@/hooks/use-dashboard-analytics";
+import { ApiError } from "@/lib/api-client";
 
 const SUBSCRIPTION_PAGE_SIZE = 5;
 
@@ -223,6 +229,8 @@ function OwnerRow({
   onViewReason,
   onViewDetail,
   approvingId,
+  contactingId,
+  onContact,
 }: {
   owner: ActiveOwner;
   expanded: boolean;
@@ -236,6 +244,8 @@ function OwnerRow({
     ownerEmail?: string,
   ) => void;
   approvingId: string | null;
+  contactingId: string | null;
+  onContact: (owner: ActiveOwner) => void;
 }) {
   const subscriptions = useMemo(
     () => owner.subscriptions ?? [],
@@ -256,40 +266,55 @@ function OwnerRow({
       .filter((group) => group.items.length > 0);
   }, [subscriptions]);
 
+  const showContact = shouldShowInactiveOwnerContactButton(owner);
+
   return (
     <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-white">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-zinc-50"
-      >
-        <ChevronDown
-          className={cn(
-            "mt-0.5 h-4 w-4 shrink-0 text-[var(--muted-foreground)] transition",
-            expanded && "rotate-180",
-          )}
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium text-foreground">{owner.businessName}</p>
-            <Badge className={WORKSPACE_HEALTH_BADGE_STYLES[owner.healthTier]}>
-              {formatWorkspaceHealthTier(owner.healthTier)}
-            </Badge>
-            {(owner.pendingApprovals ?? 0) > 0 && (
-              <Badge className="bg-amber-100 text-amber-800">
-                {owner.pendingApprovals} pending
-              </Badge>
+      <div className="flex w-full items-start gap-2 px-4 py-3">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex min-w-0 flex-1 items-start gap-3 text-left transition hover:opacity-90"
+        >
+          <ChevronDown
+            className={cn(
+              "mt-0.5 h-4 w-4 shrink-0 text-[var(--muted-foreground)] transition",
+              expanded && "rotate-180",
             )}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium text-foreground">{owner.businessName}</p>
+              <Badge className={WORKSPACE_HEALTH_BADGE_STYLES[owner.healthTier]}>
+                {formatWorkspaceHealthTier(owner.healthTier)}
+              </Badge>
+              {(owner.pendingApprovals ?? 0) > 0 && (
+                <Badge className="bg-amber-100 text-amber-800">
+                  {owner.pendingApprovals} pending
+                </Badge>
+              )}
+            </div>
+            <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
+              {owner.planName || "—"} · {owner.customers} customers ·{" "}
+              {owner.transactionsLast30Days} tx/30d
+              {owner.monthlyRevenue > 0 ?
+                ` · ${formatPhp(owner.monthlyRevenue)}`
+              : ""}
+            </p>
           </div>
-          <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
-            {owner.planName || "—"} · {owner.customers} customers ·{" "}
-            {owner.transactionsLast30Days} tx/30d
-            {owner.monthlyRevenue > 0 ?
-              ` · ${formatPhp(owner.monthlyRevenue)}`
-            : ""}
-          </p>
-        </div>
-      </button>
+        </button>
+        {showContact ?
+          <Button
+            type="button"
+            size="sm"
+            className="mt-0.5 shrink-0 bg-amber-600 text-white hover:bg-amber-700"
+            disabled={contactingId === owner.id}
+            onClick={() => onContact(owner)}
+          >
+            {contactingId === owner.id ? "Sending…" : "Contact"}
+          </Button>
+        : null}
+      </div>
 
       {expanded && (
         <div className="space-y-4 border-t border-zinc-100 bg-zinc-50/60 px-4 py-3">
@@ -345,6 +370,7 @@ export function ActiveOwnersPanel({
   const [ownersSource, setOwnersSource] = useState(owners);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [contactingId, setContactingId] = useState<string | null>(null);
   const [reasonTarget, setReasonTarget] = useState<{
     subscription: OwnerSubscription;
     businessName: string;
@@ -356,18 +382,32 @@ export function ActiveOwnersPanel({
     ownerEmail?: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAllInactive, setShowAllInactive] = useState(false);
 
   if (ownersSource !== owners) {
     setOwnersSource(owners);
     setLocalOwners(owners);
   }
 
-  const displayedOwners = useMemo(
-    () => activeOwnersForList(localOwners),
+  const inactiveOwners = useMemo(
+    () => sortInactiveOwners(filterInactiveOwners(localOwners)),
     [localOwners],
   );
 
-  const pendingTotal = localOwners.reduce(
+  const hiddenCount = Math.max(
+    0,
+    inactiveOwners.length - INACTIVE_OWNERS_LIST_LIMIT,
+  );
+
+  const displayedOwners = useMemo(
+    () =>
+      showAllInactive ?
+        inactiveOwners
+      : inactiveOwnersForList(localOwners),
+    [localOwners, inactiveOwners, showAllInactive],
+  );
+
+  const pendingTotal = inactiveOwners.reduce(
     (sum, owner) => sum + (owner.pendingApprovals ?? 0),
     0,
   );
@@ -390,23 +430,50 @@ export function ActiveOwnersPanel({
     }
   }
 
+  async function handleContact(owner: ActiveOwner) {
+    if (!owner.ownerEmail?.trim()) return;
+    setError(null);
+    setContactingId(owner.id);
+    openInactiveOwnerOutreachEmail({
+      email: owner.ownerEmail,
+      businessName: owner.businessName,
+    });
+    try {
+      const { contactedAt } = await recordInactiveOwnerContact(owner.id);
+      setLocalOwners((current) =>
+        current.map((item) =>
+          item.id === owner.id ? { ...item, lastContactedAt: contactedAt } : item,
+        ),
+      );
+      void onRefresh?.({ silent: true });
+    } catch (err) {
+      setError(
+        err instanceof ApiError ?
+          err.message
+        : "Could not save contact. Email may still have opened.",
+      );
+    } finally {
+      setContactingId(null);
+    }
+  }
+
   return (
     <>
       <Card className="h-full">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Active owners</CardTitle>
+          <CardTitle className="text-base">Inactive owners</CardTitle>
           <CardDescription>
-            {displayedOwners.length} shown · {localOwners.length} total ·{" "}
-            {pendingTotal} pending
+            No login in 7+ days · {displayedOwners.length} shown ·{" "}
+            {inactiveOwners.length} inactive · {pendingTotal} pending
           </CardDescription>
           {error && (
             <p className="text-sm text-red-600">{error}</p>
           )}
         </CardHeader>
         <CardContent className="space-y-3">
-          {localOwners.length === 0 ? (
+          {inactiveOwners.length === 0 ? (
             <p className="py-8 text-center text-sm text-[var(--muted-foreground)]">
-              No active owners in the last 30 days.
+              No inactive owners — everyone logged in within the last 7 days.
             </p>
           ) : (
             <>
@@ -434,13 +501,23 @@ export function ActiveOwnersPanel({
                     })
                   }
                   approvingId={approvingId}
+                  contactingId={contactingId}
+                  onContact={(target) => void handleContact(target)}
                 />
               ))}
 
-              {localOwners.length > ACTIVE_OWNERS_LIST_LIMIT ?
-                <p className="text-center text-xs text-[var(--muted-foreground)]">
-                  +{localOwners.length - ACTIVE_OWNERS_LIST_LIMIT} more on map
-                </p>
+              {hiddenCount > 0 ?
+                <div className="border-t border-zinc-100 pt-3 text-center">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-teal-700 underline-offset-2 hover:underline"
+                    onClick={() => setShowAllInactive((current) => !current)}
+                  >
+                    {showAllInactive ?
+                      `Show fewer (top ${INACTIVE_OWNERS_LIST_LIMIT})`
+                    : `+${hiddenCount} more inactive — show all`}
+                  </button>
+                </div>
               : null}
             </>
           )}

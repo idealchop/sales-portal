@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Bell, Mail } from "lucide-react";
+import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,7 @@ import { ListPagination } from "@/components/list-pagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { updatePlatformAlertContactStatus } from "@/features/dashboard/lib/platform-alert-contact";
 import { businessInfoPath } from "@/lib/admin/data-management-url-state";
+import { openPlatformAlertOutreachEmail } from "@/lib/email/platform-alert-outreach";
 import { cn } from "@/lib/utils";
 import type {
   PlatformAlert,
@@ -106,12 +107,10 @@ function decrementKindCount(
 
 function PlatformAlertRow({
   item,
-  contactStatus,
   isSaving,
   onContactStatusChange,
 }: {
   item: PlatformAlert;
-  contactStatus: PlatformAlertContactStatus;
   isSaving: boolean;
   onContactStatusChange: (
     alertId: string,
@@ -149,59 +148,31 @@ function PlatformAlertRow({
         <p className="mt-1 text-xs text-[var(--muted-foreground)]">
           {formatOccurredAt(item.occurredAt)}
         </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {item.email ?
-            <a
-              href={`mailto:${item.email}`}
-              className="inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:underline"
-            >
-              <Mail className="h-3.5 w-3.5" />
-              Email
-            </a>
-          : null}
-          {item.businessId ?
+        {item.businessId ?
+          <div className="mt-2 flex flex-wrap gap-2">
             <Link
               href={businessInfoPath(item.businessId, "/dashboard#smartrefill-alerts")}
               className="text-xs font-medium text-teal-700 hover:underline"
             >
               Open workspace →
             </Link>
-          : null}
-        </div>
+          </div>
+        : null}
       </div>
 
-      <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-          Contact status
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={contactStatus === "need_contact" ? "primary" : "outline"}
-            disabled={isSaving}
-            onClick={() => onContactStatusChange(item.id, "need_contact")}
-            className={cn(
-              contactStatus === "need_contact" &&
-                "bg-amber-600 text-white hover:bg-amber-700",
-            )}
-          >
-            Need to contact
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={contactStatus === "contacted" ? "primary" : "outline"}
-            disabled={isSaving}
-            onClick={() => onContactStatusChange(item.id, "contacted")}
-            className={cn(
-              contactStatus === "contacted" &&
-                "bg-emerald-600 text-white hover:bg-emerald-700",
-            )}
-          >
-            Already contacted
-          </Button>
-        </div>
+      <div className="flex shrink-0 items-start">
+        <Button
+          type="button"
+          size="sm"
+          disabled={isSaving}
+          onClick={() => {
+            openPlatformAlertOutreachEmail(item);
+            onContactStatusChange(item.id, "contacted");
+          }}
+          className="bg-amber-600 text-white hover:bg-amber-700"
+        >
+          Contact
+        </Button>
       </div>
     </div>
   );
@@ -408,7 +379,6 @@ export function PlatformAlertsList({
                 <PlatformAlertRow
                   key={item.id}
                   item={item}
-                  contactStatus={contactStatusById[item.id] ?? "need_contact"}
                   isSaving={savingAlertId === item.id}
                   onContactStatusChange={handleContactStatusChange}
                 />
