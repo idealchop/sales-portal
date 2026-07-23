@@ -7,6 +7,7 @@ import {
   buildOutreachMailto,
   escapeHtmlForEmail,
   firstNameFromDisplay,
+  openOutreachMailto,
 } from "@/lib/email/outreach-email-shared";
 
 /** @deprecated Prefer OUTREACH_EMAIL_FROM */
@@ -200,8 +201,10 @@ export function openInactiveOwnerOutreachEmail(options: {
 }): void {
   const email = options.email?.trim();
   if (!email || typeof window === "undefined") return;
-  window.location.href = buildInactiveOwnerMailto(email, {
-    recipientName: options.recipientName,
-    businessName: options.businessName,
-  });
+  openOutreachMailto(
+    buildInactiveOwnerMailto(email, {
+      recipientName: options.recipientName,
+      businessName: options.businessName,
+    }),
+  );
 }

@@ -15,7 +15,10 @@ import { ListPagination } from "@/components/list-pagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { updatePlatformAlertContactStatus } from "@/features/dashboard/lib/platform-alert-contact";
 import { businessInfoPath } from "@/lib/admin/data-management-url-state";
-import { openPlatformAlertOutreachEmail } from "@/lib/email/platform-alert-outreach";
+import {
+  buildPlatformAlertOutreachMailto,
+  openPlatformAlertOutreachEmail,
+} from "@/lib/email/platform-alert-outreach";
 import { cn } from "@/lib/utils";
 import type {
   PlatformAlert,
@@ -161,18 +164,21 @@ function PlatformAlertRow({
       </div>
 
       <div className="flex shrink-0 items-start">
-        <Button
-          type="button"
-          size="sm"
-          disabled={isSaving}
-          onClick={() => {
-            openPlatformAlertOutreachEmail(item);
-            onContactStatusChange(item.id, "contacted");
-          }}
-          className="bg-amber-600 text-white hover:bg-amber-700"
-        >
-          Contact
-        </Button>
+        {buildPlatformAlertOutreachMailto(item) ?
+          <Button
+            type="button"
+            size="sm"
+            disabled={isSaving}
+            onClick={() => {
+              const opened = openPlatformAlertOutreachEmail(item);
+              if (!opened) return;
+              onContactStatusChange(item.id, "contacted");
+            }}
+            className="bg-amber-600 text-white hover:bg-amber-700"
+          >
+            Contact
+          </Button>
+        : null}
       </div>
     </div>
   );

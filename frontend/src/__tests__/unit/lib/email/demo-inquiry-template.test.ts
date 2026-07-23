@@ -67,7 +67,14 @@ describe("platform-alert-outreach", () => {
       buildPlatformAlertOutreachMailto({
         ...demo,
         kind: "subscription_change",
+        email: undefined,
       }),
     ).toBeNull();
+    expect(
+      buildPlatformAlertOutreachMailto({
+        ...demo,
+        kind: "subscription_change",
+      }),
+    ).toContain("mailto:maria@example.com");
   });
 });

@@ -33,11 +33,26 @@ export function buildOutreachMailto(options: {
   subject: string;
   body: string;
 }): string {
-  const params = new URLSearchParams({
-    subject: options.subject,
-    body: options.body,
-    bcc: OUTREACH_EMAIL_BCC.join(","),
-    from: OUTREACH_EMAIL_FROM,
-  });
-  return `mailto:${options.toEmail}?${params.toString()}`;
+  // Keep commas between BCC addresses unencoded — URLSearchParams turns "," into
+  // "%2C", which many mail clients treat as one invalid address.
+  const query = [
+    `subject=${encodeURIComponent(options.subject)}`,
+    `body=${encodeURIComponent(options.body)}`,
+    `bcc=${OUTREACH_EMAIL_BCC.map((address) => encodeURIComponent(address)).join(",")}`,
+    `from=${encodeURIComponent(OUTREACH_EMAIL_FROM)}`,
+  ].join("&");
+  return `mailto:${options.toEmail}?${query}`;
 }
+
+/** Opens a mailto without navigating the SPA away (so list updates still run). */
+export function openOutreachMailto(href: string): void {
+  if (typeof window === "undefined" || !href.startsWith("mailto:")) return;
+  const anchor = document.createElement("a");
+  anchor.href = href;
+  anchor.rel = "noopener noreferrer";
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
