@@ -47,6 +47,8 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-DASH-08 | any | Platform hub Actions \| Forecast tabs | Paginated forecast rows; actions inbox |
 | TC-DASH-09 | admin | Subscription approval **View** | Detail dialog + receipt/attachment preview |
 | TC-DASH-10 | admin | Active owners list | Top 5 rows; pending before at-risk before healthy |
+| TC-DASH-11 | any | Subscription list **Print OR** | Paid history row opens Official Receipt PDF / print dialog |
+| TC-DASH-12 | any | Subscription list **Print statement** | SOA PDF lists all paid periods for that business |
 
 ---
 

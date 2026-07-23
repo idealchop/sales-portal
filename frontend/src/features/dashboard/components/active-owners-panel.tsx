@@ -449,6 +449,7 @@ export function ActiveOwnersPanel({
 
       <SubscriptionApprovalDetailDialog
         subscription={detailTarget?.subscription ?? null}
+        businessId={detailTarget?.businessId}
         businessName={detailTarget?.businessName}
         ownerEmail={detailTarget?.ownerEmail}
         canApprove={canApprove}

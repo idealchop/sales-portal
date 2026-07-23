@@ -4,7 +4,10 @@ import {
   countActiveSubscriptions,
   countUserSubscriptionsByFilter,
   filterUserSubscriptionsList,
+  isPendingPaymentSubscription,
+  isRecentlyPaidSubscription,
   pickLatestSubscription,
+  resolvePaymentIndicators,
   resolveSubscriptionChangeKind,
 } from "@/features/dashboard/lib/build-user-subscriptions-list";
 import type { ActiveOwner } from "@/lib/dashboard/analytics";
@@ -24,7 +27,7 @@ const owner = (
 });
 
 describe("buildUserSubscriptionsList", () => {
-  it("includes only the latest subscription record per business by createdAt", () => {
+  it("includes only the latest active subscription summary per business", () => {
     const items = buildUserSubscriptionsList([
       owner("b1", [
         {
@@ -67,8 +70,14 @@ describe("buildUserSubscriptionsList", () => {
     ]);
 
     expect(items).toHaveLength(1);
+    // Newest active (future scheduled counts as active) wins over older current.
     expect(items[0]?.subscription.id).toBe("future");
     expect(items[0]?.activeSubscriptionCount).toBe(2);
+    expect(items[0]?.history.map((sub) => sub.id)).toEqual([
+      "future",
+      "current",
+      "past",
+    ]);
   });
 
   it("prefers a newer renewal over an expired current plan", () => {
@@ -210,12 +219,12 @@ describe("buildUserSubscriptionsList", () => {
     ).toBe(1);
   });
 
-  it("sorts businesses by latest subscription activity", () => {
+  it("sorts businesses by latest active plan tier Scale → Grow → Scale trial", () => {
     const items = buildUserSubscriptionsList([
-      owner("older", [
+      owner("trial", [
         {
-          id: "old-sub",
-          planName: "Starter",
+          id: "scale-trial",
+          planName: "Scale",
           status: "active",
           price: 0,
           timeline: "current",
@@ -223,13 +232,58 @@ describe("buildUserSubscriptionsList", () => {
           needsApproval: false,
           isDowngrade: false,
           isCancellation: false,
-          createdAt: "2026-05-01T00:00:00.000Z",
+          billingCycle: "trial",
+          createdAt: "2026-07-03T00:00:00.000Z",
         },
       ]),
-      owner("newer", [
+      owner("grow", [
         {
-          id: "new-sub",
+          id: "grow-sub",
+          planName: "Grow",
+          planCode: "grow",
+          status: "active",
+          price: 950,
+          timeline: "current",
+          cancelAtPeriodEnd: false,
+          needsApproval: false,
+          isDowngrade: false,
+          isCancellation: false,
+          billingCycle: "monthly",
+          createdAt: "2026-07-02T00:00:00.000Z",
+        },
+      ]),
+      owner("scale", [
+        {
+          id: "scale-sub",
           planName: "Scale",
+          planCode: "scale",
+          status: "active",
+          price: 1650,
+          timeline: "current",
+          cancelAtPeriodEnd: false,
+          needsApproval: false,
+          isDowngrade: false,
+          isCancellation: false,
+          billingCycle: "monthly",
+          createdAt: "2026-07-01T00:00:00.000Z",
+        },
+      ]),
+    ]);
+
+    expect(items.map((item) => item.businessId)).toEqual([
+      "scale",
+      "grow",
+      "trial",
+    ]);
+  });
+
+  it("sorts businesses by latest subscription activity within the same plan tier", () => {
+    const items = buildUserSubscriptionsList([
+      owner("older", [
+        {
+          id: "old-sub",
+          planName: "Scale",
+          planCode: "scale",
           status: "active",
           price: 999,
           timeline: "current",
@@ -237,6 +291,23 @@ describe("buildUserSubscriptionsList", () => {
           needsApproval: false,
           isDowngrade: false,
           isCancellation: false,
+          billingCycle: "monthly",
+          createdAt: "2026-05-01T00:00:00.000Z",
+        },
+      ]),
+      owner("newer", [
+        {
+          id: "new-sub",
+          planName: "Scale",
+          planCode: "scale",
+          status: "active",
+          price: 999,
+          timeline: "current",
+          cancelAtPeriodEnd: false,
+          needsApproval: false,
+          isDowngrade: false,
+          isCancellation: false,
+          billingCycle: "monthly",
           createdAt: "2026-07-01T00:00:00.000Z",
         },
       ]),
@@ -418,5 +489,121 @@ describe("buildUserSubscriptionsList", () => {
 
     expect(items).toHaveLength(1);
     expect(items[0]?.businessId).toBe("live");
+  });
+
+  it("flags pending payment and recently paid subscriptions", () => {
+    const now = new Date("2026-07-23T12:00:00.000Z").getTime();
+
+    expect(
+      isPendingPaymentSubscription({
+        id: "p",
+        planName: "Grow",
+        status: "pending",
+        price: 950,
+        timeline: "current",
+        cancelAtPeriodEnd: false,
+        needsApproval: true,
+        isDowngrade: false,
+        isCancellation: false,
+        paymentStatus: "pending_verification",
+      }),
+    ).toBe(true);
+
+    expect(
+      isRecentlyPaidSubscription(
+        {
+          id: "paid",
+          planName: "Grow",
+          status: "active",
+          price: 950,
+          timeline: "current",
+          cancelAtPeriodEnd: false,
+          needsApproval: false,
+          isDowngrade: false,
+          isCancellation: false,
+          paymentStatus: "verified",
+          createdAt: "2026-07-20T00:00:00.000Z",
+        },
+        now,
+      ),
+    ).toBe(true);
+
+    const indicators = resolvePaymentIndicators(
+      [
+        {
+          id: "pending",
+          planName: "Scale",
+          status: "pending",
+          price: 1650,
+          timeline: "future",
+          cancelAtPeriodEnd: false,
+          needsApproval: true,
+          isDowngrade: false,
+          isCancellation: false,
+          paymentStatus: "pending_verification",
+          createdAt: "2026-07-22T00:00:00.000Z",
+        },
+        {
+          id: "paid",
+          planName: "Grow",
+          status: "active",
+          price: 950,
+          timeline: "current",
+          cancelAtPeriodEnd: false,
+          needsApproval: false,
+          isDowngrade: false,
+          isCancellation: false,
+          paymentStatus: "verified",
+          createdAt: "2026-07-20T00:00:00.000Z",
+        },
+      ],
+      now,
+    );
+
+    expect(indicators.hasPendingPayment).toBe(true);
+    expect(indicators.justPaid).toBe(false);
+
+    const items = buildUserSubscriptionsList(
+      [
+        owner("pending-biz", [
+          {
+            id: "pending",
+            planName: "Grow",
+            status: "pending",
+            price: 950,
+            timeline: "current",
+            cancelAtPeriodEnd: false,
+            needsApproval: true,
+            isDowngrade: false,
+            isCancellation: false,
+            paymentStatus: "pending_verification",
+            createdAt: "2026-07-22T00:00:00.000Z",
+          },
+        ]),
+        owner("paid-biz", [
+          {
+            id: "paid",
+            planName: "Scale",
+            planCode: "scale",
+            status: "active",
+            price: 1650,
+            timeline: "current",
+            cancelAtPeriodEnd: false,
+            needsApproval: false,
+            isDowngrade: false,
+            isCancellation: false,
+            paymentStatus: "verified",
+            billingCycle: "monthly",
+            createdAt: "2026-07-21T00:00:00.000Z",
+          },
+        ]),
+      ],
+      now,
+    );
+
+    expect(items.find((i) => i.businessId === "pending-biz")?.hasPendingPayment).toBe(
+      true,
+    );
+    expect(items.find((i) => i.businessId === "paid-biz")?.justPaid).toBe(true);
   });
 });
