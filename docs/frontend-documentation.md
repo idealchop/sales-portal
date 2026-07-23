@@ -101,6 +101,7 @@ Config: `frontend/apphosting.yaml` (or root `apphosting.yaml` when building from
 - Run: standalone server via App Hosting
 - Hosting site: `sales-river-tech` → see root `firebase.json` hosting rewrites to Cloud Run `sales-portal`
 - App Check: reCAPTCHA site key in env; debug token is local-only (`.env.local`)
+- Cache: HTML responses use `no-store` (see `frontend/next.config.ts`) so deploys do not leave browsers on deleted `/_next/static` chunks; hashed assets stay immutable
 
 ## Testing
 

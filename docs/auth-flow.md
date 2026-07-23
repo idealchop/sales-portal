@@ -64,7 +64,16 @@ Admins manage portal access at **`/admin/permissions`**:
 
 ## App Check (production)
 
-Frontend uses reCAPTCHA v3 + Firebase App Check. Local dev may set `NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN` (register in Firebase Console).
+Frontend uses reCAPTCHA v3 + Firebase App Check (`NEXT_PUBLIC_RECAPTCHA_SITE_KEY`). Local dev may set `NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN` (register in Firebase Console).
+
+**Hosting domains that must stay allowlisted:**
+
+| Config | Domains |
+|--------|---------|
+| Firebase Auth → Authorized domains | `sales-river-tech.web.app`, `sales-river-tech.firebaseapp.com`, `sales-portal--aquaflow-management-suite.asia-southeast1.hosted.app` |
+| reCAPTCHA Enterprise key `sales-portal` (`6LcEChst…`) allowed domains | same three (+ `localhost`) |
+
+If Auth logs `appCheck/recaptcha-error` or the browser reports a CORS failure on `/auth/status` from a new host, add that host to **both** lists above (CORS on the API already reflects any origin; the browser often mislabels Auth/App Check failures as CORS).
 
 ## Manual QA
 
