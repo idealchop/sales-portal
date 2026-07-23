@@ -13,12 +13,8 @@ import {
 } from "@/components/ui/card";
 import { ListPagination } from "@/components/list-pagination";
 import { usePagination } from "@/hooks/use-pagination";
-import { updatePlatformAlertContactStatus } from "@/features/dashboard/lib/platform-alert-contact";
+import { contactPlatformAlert } from "@/features/dashboard/lib/platform-alert-contact";
 import { businessInfoPath } from "@/lib/admin/data-management-url-state";
-import {
-  buildPlatformAlertOutreachMailto,
-  openPlatformAlertOutreachEmail,
-} from "@/lib/email/platform-alert-outreach";
 import { cn } from "@/lib/utils";
 import type {
   PlatformAlert,
@@ -111,14 +107,11 @@ function decrementKindCount(
 function PlatformAlertRow({
   item,
   isSaving,
-  onContactStatusChange,
+  onContact,
 }: {
   item: PlatformAlert;
   isSaving: boolean;
-  onContactStatusChange: (
-    alertId: string,
-    status: PlatformAlertContactStatus,
-  ) => void;
+  onContact: (item: PlatformAlert) => void;
 }) {
   return (
     <div
@@ -164,19 +157,15 @@ function PlatformAlertRow({
       </div>
 
       <div className="flex shrink-0 items-start">
-        {buildPlatformAlertOutreachMailto(item) ?
+        {item.email?.trim() ?
           <Button
             type="button"
             size="sm"
             disabled={isSaving}
-            onClick={() => {
-              const opened = openPlatformAlertOutreachEmail(item);
-              if (!opened) return;
-              onContactStatusChange(item.id, "contacted");
-            }}
+            onClick={() => onContact(item)}
             className="bg-amber-600 text-white hover:bg-amber-700"
           >
-            Contact
+            {isSaving ? "Sending…" : "Contact"}
           </Button>
         : null}
       </div>
@@ -225,47 +214,30 @@ export function PlatformAlertsList({
   const headerCount =
     kindFilter === "all" ? visibleItems.length : filteredItems.length;
 
-  async function handleContactStatusChange(
-    alertId: string,
-    status: PlatformAlertContactStatus,
-  ) {
-    const previousStatus = contactStatusById[alertId] ?? "need_contact";
-    if (previousStatus === status) return;
-
-    const alertItem = visibleItems.find((item) => item.id === alertId);
-    if (!alertItem) return;
+  async function handleContact(item: PlatformAlert) {
+    if (!item.email?.trim()) return;
 
     setContactError(null);
-    setSavingAlertId(alertId);
-    setContactStatusById((current) => ({ ...current, [alertId]: status }));
-
-    if (status === "contacted") {
-      setVisibleItems((current) =>
-        current.filter((item) => item.id !== alertId),
-      );
-      setVisibleCounts((current) =>
-        decrementKindCount(current, alertItem.kind),
-      );
-    } else {
-      setVisibleItems((current) =>
-        current.map((item) =>
-          item.id === alertId ?
-            { ...item, isNew: false, contactStatus: status }
-          : item,
-        ),
-      );
-    }
+    setSavingAlertId(item.id);
+    setContactStatusById((current) => ({
+      ...current,
+      [item.id]: "contacted",
+    }));
+    setVisibleItems((current) => current.filter((row) => row.id !== item.id));
+    setVisibleCounts((current) => decrementKindCount(current, item.kind));
 
     try {
-      await updatePlatformAlertContactStatus(alertId, status);
+      await contactPlatformAlert(item);
     } catch {
       setContactStatusById((current) => ({
         ...current,
-        [alertId]: previousStatus,
+        [item.id]: "need_contact",
       }));
       setVisibleItems(items);
       setVisibleCounts(counts);
-      setContactError("Could not save contact status. Try again.");
+      setContactError(
+        "Could not send email via Brevo. Alert was kept in the list.",
+      );
     } finally {
       setSavingAlertId(null);
     }
@@ -386,7 +358,7 @@ export function PlatformAlertsList({
                   key={item.id}
                   item={item}
                   isSaving={savingAlertId === item.id}
-                  onContactStatusChange={handleContactStatusChange}
+                  onContact={(target) => void handleContact(target)}
                 />
               ))}
             </div>

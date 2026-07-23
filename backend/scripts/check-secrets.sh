@@ -32,6 +32,7 @@ done
 # Keep in sync with functions/src/config/function-secrets.ts
 REQUIRED_SECRETS=(
   "SALES_PORTAL_GEMINI_API_KEY"
+  "SMARTREFILL_BREVO_API_KEY"
 )
 
 GCLOUD=(gcloud --project="$PROJECT_ID")

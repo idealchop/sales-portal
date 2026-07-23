@@ -12,6 +12,7 @@ import {
 } from "react-leaflet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { recordInactiveOwnerContact } from "@/features/dashboard/lib/record-inactive-owner-contact";
 import type { BusinessMapLocation } from "@/lib/dashboard/analytics";
 import {
   WORKSPACE_HEALTH_LABELS,
@@ -26,6 +27,7 @@ import {
   resolveMapMarkerTier,
   type MapMarkerTier,
 } from "@/lib/dashboard/map-marker-style";
+import { ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import "leaflet/dist/leaflet.css";
 
@@ -119,14 +121,30 @@ function LocationAside({
 }) {
   const markerStyle = resolveMapMarkerStyle(location);
   const inactive = isOwnerInactive(location.lastActiveDay);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
 
-  function handleHowAreYou() {
-    if (!location.ownerEmail) return;
-    const subject = encodeURIComponent("How are you?");
-    const body = encodeURIComponent(
-      `Hi ${location.name},\n\nHow are things going with SmartRefill? Let us know if you need any help.\n`,
-    );
-    window.location.href = `mailto:${location.ownerEmail}?subject=${subject}&body=${body}`;
+  async function handleHowAreYou() {
+    if (!location.ownerEmail?.trim() || sending || sent) return;
+    setSendError(null);
+    setSending(true);
+    try {
+      await recordInactiveOwnerContact({
+        businessId: location.id,
+        toEmail: location.ownerEmail.trim(),
+        businessName: location.name,
+      });
+      setSent(true);
+    } catch (err) {
+      setSendError(
+        err instanceof ApiError ?
+          err.message
+        : "Could not send email via Brevo. Try again.",
+      );
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -213,13 +231,18 @@ function LocationAside({
           {location.onboardingComplete ? "Onboarded" : "Setup in progress"}
         </p>
 
+        {sendError ?
+          <p className="text-xs text-red-600" role="alert">
+            {sendError}
+          </p>
+        : null}
         <Button
           size="sm"
           className="h-9 w-full"
-          disabled={!location.ownerEmail}
-          onClick={handleHowAreYou}
+          disabled={!location.ownerEmail || sending || sent}
+          onClick={() => void handleHowAreYou()}
         >
-          How are you?
+          {sent ? "Sent" : sending ? "Sending…" : "How are you?"}
         </Button>
       </div>
     </aside>

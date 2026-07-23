@@ -42,7 +42,6 @@ import {
   formatTrialDaysRemaining,
   isTrialBillingCycle,
 } from "@/lib/dashboard/subscription-labels";
-import { openInactiveOwnerOutreachEmail } from "@/lib/email/inactive-owner-template";
 import { formatPhp } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DashboardAnalyticsRefresh } from "@/hooks/use-dashboard-analytics";
@@ -448,12 +447,12 @@ export function ActiveOwnersPanel({
         : item,
       ),
     );
-    openInactiveOwnerOutreachEmail({
-      email: owner.ownerEmail,
-      businessName: owner.businessName,
-    });
     try {
-      const { contactedAt } = await recordInactiveOwnerContact(owner.id);
+      const { contactedAt } = await recordInactiveOwnerContact({
+        businessId: owner.id,
+        toEmail: owner.ownerEmail.trim(),
+        businessName: owner.businessName,
+      });
       setLocalOwners((current) =>
         current.map((item) =>
           item.id === owner.id ?
@@ -462,10 +461,17 @@ export function ActiveOwnersPanel({
         ),
       );
     } catch (err) {
+      setLocalOwners((current) =>
+        current.map((item) =>
+          item.id === owner.id ?
+            { ...item, lastContactedAt: owner.lastContactedAt ?? null }
+          : item,
+        ),
+      );
       setError(
         err instanceof ApiError ?
           err.message
-        : "Could not save contact. Email may still have opened.",
+        : "Could not send email via Brevo. Try again.",
       );
     } finally {
       setContactingId(null);

@@ -124,6 +124,7 @@ Production uses **Secret Manager** (same GCP project as SmartRefill: `aquaflow-m
 | Secret | Used by | Notes |
 |--------|---------|-------|
 | `SALES_PORTAL_GEMINI_API_KEY` | `salesPortalApi` | Separate from SmartRefill `GEMINI_API_KEY`; Content Studio + AI features |
+| `SMARTREFILL_BREVO_API_KEY` | `salesPortalApi` | Shared SmartRefill Brevo key; Contact / map outreach transactional email |
 
 `NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN` is **local dev only** (see `frontend/.env.local`) — not used in App Hosting production builds (`NEXT_PUBLIC_DEV=false`).
 

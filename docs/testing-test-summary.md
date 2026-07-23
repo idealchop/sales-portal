@@ -68,9 +68,9 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/features/dashboard/build-hub-app-stats.test.ts` ✅ | Hub KPI grouping | TC-DASH-01 |
 | `unit/features/dashboard/sort-active-owners.test.ts` ✅ | Inactive sort + list cap | TC-DASH-10 |
 | `unit/features/dashboard/inactive-owner-contact.test.ts` ✅ | 7-day Contact cooldown | TC-DASH-14 |
-| `unit/lib/email/new-user-welcome-template.test.ts` ✅ | New-user outreach mailto | TC-DASH-13 |
-| `unit/lib/email/demo-inquiry-template.test.ts` ✅ | Demo-inquiry outreach mailto | TC-DASH-13 |
-| `unit/lib/email/inactive-owner-template.test.ts` ✅ | Inactive-owner outreach mailto | TC-DASH-14 |
+| `unit/lib/email/new-user-welcome-template.test.ts` ✅ | New-user outreach template copy | TC-DASH-13 |
+| `unit/lib/email/demo-inquiry-template.test.ts` ✅ | Demo-inquiry outreach template copy | TC-DASH-13 |
+| `unit/lib/email/inactive-owner-template.test.ts` ✅ | Inactive-owner outreach template copy | TC-DASH-14 |
 | `unit/features/dashboard/build-subscription-approval-queue.test.ts` ✅ | Approval queue rows | TC-DASH-05, TC-DASH-09 |
 | `unit/lib/dashboard-analytics-normalize.test.ts` ✅ | `newJoiners`, `dashboardForecasts` defaults | TC-DASH-01 |
 | `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |

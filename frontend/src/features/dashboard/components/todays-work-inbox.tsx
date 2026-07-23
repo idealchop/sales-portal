@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Mail, Sparkles } from "lucide-react";
+import { CheckCircle2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { BrevoOutreachButton } from "@/features/dashboard/components/brevo-outreach-button";
 import type { TodaysWorkItem } from "@/lib/dashboard/analytics";
 
 const PRIORITY_STYLES = {
@@ -55,13 +56,12 @@ export function TodaysWorkInbox({
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {item.email ?
-                  <a
-                    href={`mailto:${item.email}?subject=${encodeURIComponent(`SmartRefill — ${item.title}`)}`}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:underline"
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    Email owner
-                  </a>
+                  <BrevoOutreachButton
+                    toEmail={item.email}
+                    recipientName={item.title}
+                    subtitle={item.subtitle}
+                    label="Email owner"
+                  />
                 : null}
                 {item.href ?
                   <Link

@@ -35,8 +35,8 @@ frontend/src/
 | `components/smartrefill-dashboard.tsx` | SmartRefill ops dashboard (Attention / Subscriptions / Field / Analytics tabs) |
 | `components/smartrefill-ops-health-strip.tsx` | Clickable support/maintenance snapshot tiles |
 | `components/smartrefill-maintenance-signals.tsx` | Workspace health + payment status bars |
-| `components/platform-alerts-list.tsx` | Alert queue; Contact opens outreach mailto + dismisses |
-| `components/active-owners-panel.tsx` | Inactive owners (7d+); Contact + expand-all link |
+| `components/platform-alerts-list.tsx` | Alert queue; Contact sends Brevo outreach + dismisses |
+| `components/active-owners-panel.tsx` | Inactive owners (7d+); Contact sends Brevo miss-you + 7d cooldown |
 | `components/sales-portal-dashboard.tsx` | Sales Portal app dashboard |
 | `components/hub-app-stats-section.tsx` | Hub KPI rollup + per-app cards |
 | `components/sales-portal-actions-joiners-section.tsx` | Actions \| New joiners tabs |
@@ -47,7 +47,7 @@ frontend/src/
 | `lib/app-chart-groups.ts` | Per-app chart kind lists (no overlap) |
 | `lib/sort-active-owners.ts` | Inactive owners (7d+ no login) sort + 10-row cap (expandable) |
 | `lib/inactive-owner-contact.ts` | 7-day Contact button cooldown helper |
-| `lib/email/*` | Outreach mailto templates (new user, demo inquiry, inactive owner) + BCC |
+| `lib/email/*` | Legacy mailto template builders (preview/tests); live send is Brevo via API |
 | `components/sales-insights-panel.tsx` | Action queue, health, pipeline detail |
 | `components/workspace-map-owners-section.tsx` | Station map (optional inactive panel) |
 

@@ -2,6 +2,7 @@ import express from "express";
 import { getDashboardAnalytics, getDashboardSalesHome } from "../handlers/dashboard-handler";
 import { patchPlatformAlertContactHandler } from "../handlers/platform-alert-contact-handler";
 import { patchInactiveOwnerContactHandler } from "../handlers/inactive-owner-contact-handler";
+import { postOutreachSendHandler } from "../handlers/outreach-send-handler";
 import {
   getSubscriptionOfficialReceipt,
   getSubscriptionStatement,
@@ -46,6 +47,13 @@ router.patch(
   validateFirebaseIdToken,
   requireSalesPortalAccess,
   patchInactiveOwnerContactHandler,
+);
+
+router.post(
+  "/outreach/send",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  postOutreachSendHandler,
 );
 
 router.post(

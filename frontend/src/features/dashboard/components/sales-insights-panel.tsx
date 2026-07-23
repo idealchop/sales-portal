@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   ArrowUpCircle,
   CircleDollarSign,
-  Mail,
   TrendingUp,
   UserPlus,
 } from "lucide-react";
@@ -17,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { BrevoOutreachButton } from "@/features/dashboard/components/brevo-outreach-button";
 import type {
   DashboardAnalytics,
   SalesAction,
@@ -172,13 +172,13 @@ export function SalesInsightsPanel({
                           {action.detail}
                         </p>
                         {action.ownerEmail && (
-                          <a
-                            href={`mailto:${action.ownerEmail}?subject=${encodeURIComponent(`SmartRefill — ${action.businessName}`)}`}
-                            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:underline"
-                          >
-                            <Mail className="h-3.5 w-3.5" />
-                            Email {action.ownerEmail}
-                          </a>
+                          <BrevoOutreachButton
+                            toEmail={action.ownerEmail}
+                            businessName={action.businessName}
+                            subtitle={action.headline}
+                            label={`Email ${action.ownerEmail}`}
+                            className="mt-2"
+                          />
                         )}
                       </div>
                       <div className="text-right text-xs text-[var(--muted-foreground)]">
