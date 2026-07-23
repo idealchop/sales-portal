@@ -23,7 +23,10 @@ import {
   inactiveOwnersForList,
   sortInactiveOwners,
 } from "@/features/dashboard/lib/sort-active-owners";
-import { shouldShowInactiveOwnerContactButton } from "@/features/dashboard/lib/inactive-owner-contact";
+import {
+  mergeOwnersPreservingContact,
+  shouldShowInactiveOwnerContactButton,
+} from "@/features/dashboard/lib/inactive-owner-contact";
 import { recordInactiveOwnerContact } from "@/features/dashboard/lib/record-inactive-owner-contact";
 import { PaginatedList } from "@/components/paginated-list";
 import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
@@ -386,7 +389,9 @@ export function ActiveOwnersPanel({
 
   if (ownersSource !== owners) {
     setOwnersSource(owners);
-    setLocalOwners(owners);
+    setLocalOwners((previous) =>
+      mergeOwnersPreservingContact(owners, previous),
+    );
   }
 
   const inactiveOwners = useMemo(
@@ -432,8 +437,17 @@ export function ActiveOwnersPanel({
 
   async function handleContact(owner: ActiveOwner) {
     if (!owner.ownerEmail?.trim()) return;
+    const optimisticAt = new Date().toISOString();
     setError(null);
     setContactingId(owner.id);
+    // Hide Contact immediately; reappears after 7 days if still inactive.
+    setLocalOwners((current) =>
+      current.map((item) =>
+        item.id === owner.id ?
+          { ...item, lastContactedAt: optimisticAt }
+        : item,
+      ),
+    );
     openInactiveOwnerOutreachEmail({
       email: owner.ownerEmail,
       businessName: owner.businessName,
@@ -442,10 +456,11 @@ export function ActiveOwnersPanel({
       const { contactedAt } = await recordInactiveOwnerContact(owner.id);
       setLocalOwners((current) =>
         current.map((item) =>
-          item.id === owner.id ? { ...item, lastContactedAt: contactedAt } : item,
+          item.id === owner.id ?
+            { ...item, lastContactedAt: contactedAt }
+          : item,
         ),
       );
-      void onRefresh?.({ silent: true });
     } catch (err) {
       setError(
         err instanceof ApiError ?

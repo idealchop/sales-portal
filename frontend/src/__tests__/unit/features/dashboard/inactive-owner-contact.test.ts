@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { shouldShowInactiveOwnerContactButton } from "@/features/dashboard/lib/inactive-owner-contact";
+import {
+  mergeOwnersPreservingContact,
+  shouldShowInactiveOwnerContactButton,
+} from "@/features/dashboard/lib/inactive-owner-contact";
 
 describe("shouldShowInactiveOwnerContactButton", () => {
   const now = new Date("2026-07-23T12:00:00.000Z");
@@ -41,5 +44,25 @@ describe("shouldShowInactiveOwnerContactButton", () => {
         now,
       ),
     ).toBe(true);
+  });
+});
+
+describe("mergeOwnersPreservingContact", () => {
+  it("keeps newer local lastContactedAt when refresh is stale", () => {
+    const merged = mergeOwnersPreservingContact(
+      [
+        {
+          id: "biz-1",
+          lastContactedAt: null,
+        },
+      ],
+      [
+        {
+          id: "biz-1",
+          lastContactedAt: "2026-07-23T12:00:00.000Z",
+        },
+      ],
+    );
+    expect(merged[0]?.lastContactedAt).toBe("2026-07-23T12:00:00.000Z");
   });
 });
