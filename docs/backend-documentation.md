@@ -61,6 +61,8 @@ All routes are mounted at the function root (no `/api` prefix).
 |--------|------|------|-------------|
 | `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes `dashboardForecasts`, `personalSales`, `todaysWork`) |
 | `POST` | `/dashboard/subscriptions/:businessId/:subscriptionId/approve` | Portal | Approve pending subscription |
+| `GET` | `/dashboard/subscriptions/:businessId/:subscriptionId/official-receipt` | Portal | Official Receipt PDF (single paid period) |
+| `GET` | `/dashboard/subscriptions/:businessId/statement` | Portal | Statement of account PDF (all paid periods) |
 
 ### Content Studio (`/content-studio`)
 

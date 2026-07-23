@@ -187,6 +187,7 @@ export function SubscriptionApprovalQueue({
       {detailTarget ?
         <SubscriptionApprovalDetailDialog
           subscription={detailTarget.subscription}
+          businessId={detailTarget.businessId}
           businessName={detailTarget.businessName}
           ownerEmail={detailTarget.ownerEmail}
           canApprove={canApprove}

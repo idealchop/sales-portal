@@ -46,6 +46,23 @@ export const apiClient = {
     tokenExpiresAt = 0;
   },
 
+  async getBlob(path: string): Promise<Blob> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}${path}`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new ApiError(
+        res.status,
+        body.error || res.statusText,
+        body.code,
+      );
+    }
+    return res.blob();
+  },
+
   async get<T>(path: string): Promise<T> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_URL}${path}`, {

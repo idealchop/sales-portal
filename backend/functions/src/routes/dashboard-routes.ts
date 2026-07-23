@@ -1,7 +1,11 @@
 import express from "express";
 import { getDashboardAnalytics, getDashboardSalesHome } from "../handlers/dashboard-handler";
 import { patchPlatformAlertContactHandler } from "../handlers/platform-alert-contact-handler";
-import { postApproveSubscription } from "../handlers/subscription-approval-handler";
+import {
+  getSubscriptionOfficialReceipt,
+  getSubscriptionStatement,
+  postApproveSubscription,
+} from "../handlers/subscription-approval-handler";
 import {
   getCommunityDispatchRequestById,
   getCommunityDispatchRequests,
@@ -41,6 +45,20 @@ router.post(
   validateFirebaseIdToken,
   requireSalesPortalAccess,
   postApproveSubscription,
+);
+
+router.get(
+  "/subscriptions/:businessId/statement",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  getSubscriptionStatement,
+);
+
+router.get(
+  "/subscriptions/:businessId/:subscriptionId/official-receipt",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  getSubscriptionOfficialReceipt,
 );
 
 router.get(

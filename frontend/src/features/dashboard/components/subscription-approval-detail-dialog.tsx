@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ExternalLink, FileText, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  printSubscriptionOfficialReceipt,
+  subscriptionEligibleForOfficialReceipt,
+} from "@/features/dashboard/lib/subscription-official-receipt";
 import type { OwnerSubscription } from "@/lib/dashboard/analytics";
 import {
   formatBillingCycleLabel,
@@ -95,6 +99,7 @@ function AttachmentPreview({
 
 export function SubscriptionApprovalDetailDialog({
   subscription,
+  businessId,
   businessName,
   ownerEmail,
   canApprove,
@@ -103,6 +108,7 @@ export function SubscriptionApprovalDetailDialog({
   onClose,
 }: {
   subscription: OwnerSubscription | null;
+  businessId?: string;
   businessName?: string;
   ownerEmail?: string;
   canApprove?: boolean;
@@ -110,6 +116,9 @@ export function SubscriptionApprovalDetailDialog({
   onApprove?: () => void;
   onClose: () => void;
 }) {
+  const [printing, setPrinting] = useState(false);
+  const [printError, setPrintError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!subscription) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -130,6 +139,26 @@ export function SubscriptionApprovalDetailDialog({
     subscription.isDowngrade &&
     (subscription.downgradeReasonCode || subscription.downgradeReasonDetail);
   const showCancel = subscription.isCancellation;
+  const canPrintOr =
+    Boolean(businessId) && subscriptionEligibleForOfficialReceipt(subscription);
+
+  async function handlePrintOr() {
+    if (!businessId || !subscription) return;
+    const subscriptionId = subscription.id;
+    setPrintError(null);
+    setPrinting(true);
+    try {
+      await printSubscriptionOfficialReceipt(businessId, subscriptionId);
+    } catch (err) {
+      setPrintError(
+        err instanceof Error ?
+          err.message
+        : "Could not print Official Receipt.",
+      );
+    } finally {
+      setPrinting(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
@@ -266,9 +295,23 @@ export function SubscriptionApprovalDetailDialog({
         </div>
 
         <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-zinc-100 px-5 py-4">
+          {printError ?
+            <p className="mr-auto w-full text-sm text-red-600 sm:w-auto">
+              {printError}
+            </p>
+          : null}
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
+          {canPrintOr ?
+            <Button
+              variant="outline"
+              disabled={printing}
+              onClick={() => void handlePrintOr()}
+            >
+              {printing ? "Preparing…" : "Print OR"}
+            </Button>
+          : null}
           {canApprove && onApprove ?
             <Button disabled={isApproving} onClick={onApprove}>
               {isApproving ? "Approving…" : "Approve"}
