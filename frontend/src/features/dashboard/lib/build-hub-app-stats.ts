@@ -14,10 +14,6 @@ export function buildHubAppStats(data: DashboardAnalytics): HubAppStat[] {
   const pipeline = data.proposalPipeline;
   const sales = data.salesInsights;
   const summary = data.summary;
-  const refillPerTx =
-    summary.transactionsLast30Days > 0 ?
-      Math.round(summary.refillVolumeLast30Days / summary.transactionsLast30Days)
-    : 0;
   const sentCount =
     pipeline.byStatus.find((row) => row.status === "sent")?.count ?? 0;
   const draftCount =
@@ -34,70 +30,56 @@ export function buildHubAppStats(data: DashboardAnalytics): HubAppStat[] {
     {
       appId: "platform",
       appLabel: "Platform",
-      label: "Est. MRR",
+      label: "Est. monthly revenue",
       value: formatPhp(sales.estimatedMrr),
-      hint: `${sales.pendingPayments} pending pay`,
+      hint: `${sales.pendingPayments} pending payments`,
     },
     {
       appId: "platform",
       appLabel: "Platform",
-      label: "At-risk",
+      label: "At-risk stations",
       value: sales.atRiskWorkspaces.toLocaleString(),
-      hint: `${sales.inactiveWorkspaces} inactive`,
+      hint: `${sales.inactiveWorkspaces} quiet`,
     },
     {
       appId: "platform",
       appLabel: "Platform",
-      label: "Upsell queue",
+      label: "Upgrade-ready",
       value: sales.upgradeOpportunities.toLocaleString(),
       hint: `${sales.salesActions.length} follow-ups`,
     },
     {
       appId: "smartrefill",
       appLabel: "SmartRefill",
-      label: "Users",
-      value: summary.smartRefillUsers.toLocaleString(),
-      hint: `${summary.activeLoginUsers.toLocaleString()} active · 30d`,
-    },
-    {
-      appId: "smartrefill",
-      appLabel: "SmartRefill",
-      label: "Workspaces",
+      label: "Stations",
       value: summary.totalBusinesses.toLocaleString(),
       hint: `${summary.onboardedBusinesses.toLocaleString()} onboarded`,
     },
     {
       appId: "smartrefill",
       appLabel: "SmartRefill",
-      label: "Transactions",
+      label: "Active users",
+      value: summary.activeLoginUsers.toLocaleString(),
+      hint: `${summary.smartRefillUsers.toLocaleString()} total users`,
+    },
+    {
+      appId: "smartrefill",
+      appLabel: "SmartRefill",
+      label: "Txs (30d)",
       value: summary.transactionsLast30Days.toLocaleString(),
       hint: `${summary.totalCustomers.toLocaleString()} customers`,
     },
     {
       appId: "smartrefill",
       appLabel: "SmartRefill",
-      label: "Refill vol.",
-      value: summary.refillVolumeLast30Days.toLocaleString(),
-      hint: refillPerTx > 0 ? `~${refillPerTx}/tx · 30d` : "30d",
-    },
-    {
-      appId: "smartrefill",
-      appLabel: "SmartRefill",
       label: "New MTD",
-      value: `+${sales.newSmartRefillUsersThisMonth}`,
-      hint: `+${sales.newWorkspacesThisMonth} workspaces`,
-    },
-    {
-      appId: "smartrefill",
-      appLabel: "SmartRefill",
-      label: "Top device",
-      value: summary.topDevice,
-      hint: summary.topBrowser,
+      value: `+${sales.newWorkspacesThisMonth}`,
+      hint: `+${sales.newSmartRefillUsersThisMonth} users`,
     },
     {
       appId: "sales-portal",
       appLabel: "Sales Portal",
-      label: "Pipeline",
+      label: "Open pipeline",
       value: formatPhp(personal?.pipelineValue ?? pipeline.pipelineValue),
       hint: `${personal?.totalProposals ?? pipeline.totalProposals} proposals`,
     },
@@ -121,37 +103,6 @@ export function buildHubAppStats(data: DashboardAnalytics): HubAppStat[] {
       label: "Commissions MTD",
       value: formatPhp(personal?.commissionsMtd ?? 0),
       hint: formatPhp(personal?.pendingCommissions ?? 0) + " pending",
-    },
-    {
-      appId: "sales-portal",
-      appLabel: "Sales Portal",
-      label: "Closed won",
-      value: formatPhp(personal?.acceptedValue ?? pipeline.acceptedValue),
-      hint: formatPhp(personal?.paidCommissionsMtd ?? 0) + " paid MTD",
-    },
-    {
-      appId: "sales-portal",
-      appLabel: "Sales Portal",
-      label: "Open actions",
-      value: String(
-        (personal?.draftsNeedingAction ?? draftCount) +
-          (personal?.sentAwaitingResponse ?? sentCount),
-      ),
-      hint: `${personal?.draftsNeedingAction ?? draftCount} drafts`,
-    },
-    {
-      appId: "future-app",
-      appLabel: "Future apps",
-      label: "Integrations",
-      value: "—",
-      hint: "More platform apps coming soon",
-    },
-    {
-      appId: "future-app",
-      appLabel: "Future apps",
-      label: "Cross-app ROI",
-      value: "—",
-      hint: "Unified metrics when apps launch",
     },
   ];
 }

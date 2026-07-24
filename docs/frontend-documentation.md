@@ -38,9 +38,10 @@ frontend/src/app/
 ├── login/
 ├── onboarding/
 ├── dashboard/                  # Multi-app analytics shell
-│   ├── page.tsx                # Platform hub
-│   ├── smartrefill/            # SmartRefill app dashboard
-│   └── sales-portal/           # Sales Portal app dashboard
+│   ├── page.tsx                # Platform hub (all-apps KPIs)
+│   ├── smartrefill/            # SmartRefill ops dashboard
+│   ├── smartrefill-old/        # Legacy SmartRefill (`prod-smartrefill`) triage
+│   └── sales-portal/           # Sales market position + scorecard
 ├── content-studio/
 ├── subscriptions/              # Admin catalog (plans, addons, vouchers)
 └── admin/                      # Permissions, data management
@@ -77,9 +78,10 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 
 | Path | Role | Status |
 |------|------|--------|
-| `/dashboard` | sales, manager, admin | Live — platform hub (rollup KPIs, map, per-app charts, ROI) |
+| `/dashboard` | sales, manager, admin | Live — all-apps KPIs + performance overview (production accounts only) |
 | `/dashboard/smartrefill` | sales, manager, admin | Live — ops tabs: Attention (alerts + inactive owners), Subscriptions, Field ops (map/community), Analytics (KPIs, signals, charts) |
-| `/dashboard/sales-portal` | sales, manager, admin | Live — rep KPIs, actions/joiners tabs, revenue charts, insights/forecast |
+| `/dashboard/smartrefill-old` | sales, manager, admin | Live — legacy station triage / contact (Brevo) / ignore; bulk actions |
+| `/dashboard/sales-portal` | sales, manager, admin | Live — market position (+ plan mix), proactive outlook, scorecard, sales reports, account signals |
 | `/dashboard/settings` | sales, manager, admin | Live — read-only profile |
 | `/content-studio` | sales, manager, admin | Live |
 | `/events-training/*` | manager, admin | Live — overview, analytics, registrations, moderation, webinars, stories, articles, tutorials, certs, schedules |

@@ -31,6 +31,7 @@ https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/salesPortal
 |----------|--------|---------|
 | `SALES_PORTAL_FIREBASE_PROJECT_ID` | `firebase.json` / `.env` | GCP project |
 | `SALES_PORTAL_FIRESTORE_DB` | `firebase.json` / `.env` | `riverdb` |
+| `SALES_PORTAL_LEGACY_FIRESTORE_DB` | `.env` (optional) | `prod-smartrefill` — SmartRefill (legacy) dashboard |
 | `SMARTREFILL_API_URL` | `firebase.json` / `.env` | Proxy target |
 | `SALES_PORTAL_GEMINI_API_KEY` | Secret Manager (prod) / `.env` (local) | AI features |
 | `SMARTREFILL_BREVO_API_KEY` | Secret Manager (shared with SmartRefill) | Transactional outreach email (Contact / How are you?) |
@@ -60,7 +61,16 @@ All routes are mounted at the function root (no `/api` prefix).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes `dashboardForecasts`, `personalSales`, `todaysWork`, `lastContactedAt` on owners) |
+| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes `dashboardForecasts`, `personalSales`, `todaysWork`, `lastContactedAt` on owners). **Excludes** owners with `authAccountTag: "test"` from station/user/login/MRR KPIs |
+| `GET` | `/dashboard/smartrefill-old/analytics` | Portal | Legacy SmartRefill ops from `prod-smartrefill` (stations + charts) |
+| `GET` | `/dashboard/smartrefill-old/stations/:stationId` | Portal | Legacy station customers + paginated deliveries |
+| `POST` | `/dashboard/smartrefill-old/stations/:stationId/ignore` | Portal | Mark legacy station ignored (moves to Contacted / Ignored) |
+| `POST` | `/dashboard/smartrefill-old/stations/:stationId/contact` | Portal | Send `legacy_station` Brevo email (BCC usual), then mark contacted (15-day cooldown → Triage; ignored stays handled) |
+| `POST` | `/dashboard/smartrefill-old/stations/:stationId/restore` | Portal | Clear contacted/ignored and return station to Triage |
+| `POST` | `/dashboard/smartrefill-old/stations/bulk-delete` | Manager/Admin | Bulk delete up to 50 legacy stations from `prod-smartrefill` |
+| `POST` | `/dashboard/smartrefill-old/stations/bulk-ignore` | Portal | Bulk mark up to 50 legacy stations ignored |
+| `POST` | `/dashboard/smartrefill-old/stations/bulk-contact` | Portal | Bulk Brevo outreach + mark contacted (up to 50) |
+| `DELETE` | `/dashboard/smartrefill-old/stations/:stationId` | Manager/Admin | Permanently delete station + subcollections from `prod-smartrefill` |
 | `PATCH` | `/dashboard/platform-alerts/:alertId/contact` | Portal | Send alert outreach via Brevo (`support@riverph.com` + BCC), then mark contacted |
 | `PATCH` | `/dashboard/inactive-owners/:businessId/contact` | Portal | Send inactive-owner outreach via Brevo, then record timestamp (7-day Contact cooldown) |
 | `POST` | `/dashboard/outreach/send` | Portal | Send Brevo outreach only (generic / named templates; no contact cooldown write) |
@@ -147,7 +157,7 @@ All admin routes require **Bearer token**, **sales-portal access**, and **`admin
 | `POST` | `/admin/users/bulk-delete` | Bulk delete users |
 | `POST` | `/admin/users/:uid/revoke-access` | Revoke all app access for a user |
 | `GET` | `/dashboard/sales-home` | Lightweight rep-focused dashboard payload |
-| `PATCH` | `/admin/users/:uid/app-access` | Grant/revoke portal and product app access |
+| `PATCH` | `/admin/users/:uid/app-access` | Grant/revoke portal and product app access; optional `authAccountTag: "test" \| null` (test accounts excluded from analytics) |
 | `GET` | `/admin/users/:uid/documents` | List Firestore documents for a user |
 | `PUT` | `/admin/users/:uid/documents` | Upsert user Firestore document |
 | `DELETE` | `/admin/users/:uid/documents` | Delete user Firestore document |
@@ -166,6 +176,12 @@ All admin routes require **Bearer token**, **sales-portal access**, and **`admin
 | `DELETE` | `/admin/businesses/:businessId/firestore-tree` | Delete business Firestore subtree |
 
 See route files under `backend/functions/src/routes/`.
+
+## Analytics notes
+
+- **`dashboard-analytics-service`** builds `GET /dashboard/analytics`. It collects test owner UIDs via `collectTestAccountOwnerIds` (`auth-account-tag.ts`) and filters them out of business loops, user/login aggregates, virtual staff, growth metrics, forecasts, and map locations.
+- **`legacy-smartrefill-analytics-service`** + `legacy-smartrefill-station-actions` power `/dashboard/smartrefill-old/*` against Firestore `prod-smartrefill`.
+- Frontend defense-in-depth also skips `authAccountTag === "test"` in plan mix, chart filters, maps, and subscription lists.
 
 ## Middleware
 

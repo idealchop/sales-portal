@@ -41,6 +41,8 @@ Current coverage focuses on **dashboard analytics helpers**:
 - `compute-role-active-times.unit.test.ts`
 - `compute-workspace-behavior.unit.test.ts`
 - `count-smartrefill-user-roles.unit.test.ts`
+- `auth-account-tag.test.ts` — test-account tag helpers
+- `legacy-smartrefill-helpers.unit.test.ts` / `legacy-station-triage.unit.test.ts`
 - `generate-ai-sales-insights.unit.test.ts`
 - `generate-dashboard-forecasts.unit.test.ts` — fallback forecasts + `reshapeForecastsForActor`
 - `map-owner-subscriptions.unit.test.ts`
@@ -139,6 +141,8 @@ npm run test:unit
 
 - Nav/role filtering (`nav-items.test.ts`)
 - Per-app chart config (`app-chart-groups.test.ts`)
+- Sales market report / plan mix (`build-sales-market-report.test.ts`)
+- Test-account exclusion (`filter-chart-series`, `resolve-platform-kpi-breakdowns`, map enrich)
 - Forecast slices (`forecast-items.test.ts`, `generate-dashboard-forecasts.unit.test.ts`)
 - Active / inactive owners sort (`sort-active-owners.test.ts`)
 - Inactive owner contact cooldown (`inactive-owner-contact.test.ts`)

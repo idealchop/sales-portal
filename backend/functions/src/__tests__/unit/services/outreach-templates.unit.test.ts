@@ -33,6 +33,22 @@ describe("buildOutreachEmailByKind", () => {
     expect(email.brevoTag).toBe("sales_portal_inactive_owner");
   });
 
+  it("builds legacy-station check-in / upgrade outreach", () => {
+    const email = buildOutreachEmailByKind("legacy_station", {
+      recipientName: "Juan Dela Cruz",
+      businessName: "Aqua Clear Station",
+    });
+    expect(email.subject).toContain("Juan");
+    expect(email.html).toContain("Aqua Clear Station");
+    expect(email.html).toContain("dating Smart Refill system");
+    expect(email.html).toContain("chat support sa smartrefill.io");
+    expect(email.text).toContain("mag-upgrade");
+    expect(email.text).toContain(
+      `Para mag-schedule, reply sa email na ito, or email ${OUTREACH_SENDER.email}.`,
+    );
+    expect(email.brevoTag).toBe("sales_portal_legacy_station");
+  });
+
   it("falls back to generic follow-up", () => {
     const email = buildOutreachEmailByKind("generic", {
       subtitle: "subscription expiring soon",

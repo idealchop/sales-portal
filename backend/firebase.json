@@ -21,6 +21,7 @@
         "SALES_PORTAL_FIREBASE_PROJECT_ID": "aquaflow-management-suite",
         "SALES_PORTAL_FIREBASE_STORAGE_BUCKET": "smartrefill-singapore",
         "SALES_PORTAL_FIRESTORE_DB": "riverdb",
+        "SALES_PORTAL_LEGACY_FIRESTORE_DB": "prod-smartrefill",
         "SMARTREFILL_API_URL": "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/smartrefillV3Api"
       }
     }

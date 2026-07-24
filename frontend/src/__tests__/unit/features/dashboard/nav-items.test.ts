@@ -53,6 +53,7 @@ describe("DASHBOARD_NAV role gates", () => {
     expect(dashboard?.children?.map((child) => child.href)).toEqual([
       "/dashboard",
       "/dashboard/smartrefill",
+      "/dashboard/smartrefill-old",
       "/dashboard/sales-portal",
     ]);
   });

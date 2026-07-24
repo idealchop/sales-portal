@@ -25,6 +25,12 @@ const firestoreDatabaseId =
 export const db = getFirestore(app, firestoreDatabaseId);
 db.settings({ ignoreUndefinedProperties: true });
 
+/** Legacy SmartRefill production database (pre-riverdb). */
+const legacyFirestoreDatabaseId =
+  process.env.SALES_PORTAL_LEGACY_FIRESTORE_DB || "prod-smartrefill";
+export const prodSmartrefillDb = getFirestore(app, legacyFirestoreDatabaseId);
+prodSmartrefillDb.settings({ ignoreUndefinedProperties: true });
+
 export const auth = admin.auth(app);
 export const storage = admin.storage(app);
 export { FieldValue, Timestamp } from "firebase-admin/firestore";

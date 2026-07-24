@@ -48,26 +48,32 @@ export function PersonalSalesStrip({
 }) {
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-3">
         <Link
           href="/dashboard/proposals"
           className="text-xs font-medium text-teal-700 hover:underline"
         >
-          Proposals →
+          Open proposals →
+        </Link>
+        <Link
+          href="/dashboard/commissions"
+          className="text-xs font-medium text-teal-700 hover:underline"
+        >
+          Open commissions →
         </Link>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatTile
-          label="Pipeline"
+          label="Open pipeline"
           value={formatPhp(personalSales.pipelineValue)}
-          hint={`${personalSales.totalProposals} · ${personalSales.totalClients} clients`}
+          hint={`${personalSales.totalProposals} proposals · ${personalSales.totalClients} clients`}
           icon={<Briefcase className="h-4 w-4" />}
         />
         <StatTile
           label="Win rate"
           value={`${personalSales.winRate}%`}
-          hint={formatPhp(personalSales.acceptedValue)}
+          hint={`${formatPhp(personalSales.acceptedValue)} closed won`}
           icon={<Percent className="h-4 w-4" />}
         />
         <StatTile
@@ -77,7 +83,7 @@ export function PersonalSalesStrip({
           icon={<TrendingUp className="h-4 w-4" />}
         />
         <StatTile
-          label="Commissions"
+          label="Commissions MTD"
           value={formatPhp(personalSales.commissionsMtd)}
           hint={`${formatPhp(personalSales.pendingCommissions)} pending`}
           icon={<CircleDollarSign className="h-4 w-4" />}
@@ -85,15 +91,15 @@ export function PersonalSalesStrip({
         <StatTile
           label="Paid MTD"
           value={formatPhp(personalSales.paidCommissionsMtd)}
-          hint={formatPhp(personalSales.pendingCommissions) + " open"}
+          hint={`${formatPhp(personalSales.pendingCommissions)} still open`}
           icon={<CircleDollarSign className="h-4 w-4" />}
         />
         <StatTile
-          label="Open actions"
+          label="Needs attention"
           value={String(
             personalSales.draftsNeedingAction + personalSales.sentAwaitingResponse,
           )}
-          hint={`${personalSales.draftsNeedingAction} drafts · ${personalSales.sentAwaitingResponse} sent`}
+          hint={`${personalSales.draftsNeedingAction} drafts · ${personalSales.sentAwaitingResponse} awaiting reply`}
           icon={<Send className="h-4 w-4" />}
         />
       </div>

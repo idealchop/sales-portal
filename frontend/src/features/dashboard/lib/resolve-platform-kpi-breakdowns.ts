@@ -68,6 +68,7 @@ export function deriveBusinessTierCounts(
 ): TierCounts {
   const counts: TierCounts = { scale: 0, grow: 0, starter: 0, free: 0 };
   for (const business of businesses) {
+    if (business.authAccountTag === "test") continue;
     counts[classifyBusinessTier(business.planName, business.planCode, business.price)] += 1;
   }
   return counts;

@@ -37,6 +37,8 @@ export type ChartBusinessContext = {
   transactionsLast30Days: number;
   usageGoals: string[];
   gettingStarted: Record<string, boolean>;
+  ownerId?: string;
+  authAccountTag?: "test" | null;
 };
 
 export const CHART_SERIES_DAYS = 365;

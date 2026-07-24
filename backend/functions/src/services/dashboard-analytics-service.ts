@@ -321,8 +321,22 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     userDocs.map((doc) => [doc.id, readFirestoreAuthAccountTag(doc.data)]),
   );
 
+  /** Production users/workspaces only — never include authAccountTag=test in KPIs. */
+  const productionSmartRefillUsers = smartRefillUsers.filter(
+    (doc) => !testAccountOwnerIds.has(doc.id),
+  );
+  const productionSmartRefillUserCount = productionSmartRefillUsers.length;
+
+  const analyticsBusinessDocs = businessDocs.filter((doc) => {
+    const ownerId = doc.data().ownerId;
+    return !isTestAccountOwnerId(
+      typeof ownerId === "string" ? ownerId : undefined,
+      testAccountOwnerIds,
+    );
+  });
+
   const ownerSmartRefillUsers = filterOwnerSmartRefillUsers(
-    smartRefillUsers.map((doc) => ({ id: doc.id, data: doc.data() })),
+    productionSmartRefillUsers.map((doc) => ({ id: doc.id, data: doc.data() })),
     businessOwnerIds,
   );
 
@@ -335,16 +349,18 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     return createdAt !== null && createdAt >= monthStart;
   }).length;
 
-  const newAllSmartRefillUsersThisMonth = smartRefillUsers.filter((doc) => {
-    const createdAt = toDate(doc.data().createdAt);
-    return createdAt !== null && createdAt >= monthStart;
-  }).length;
+  const newAllSmartRefillUsersThisMonth = productionSmartRefillUsers.filter(
+    (doc) => {
+      const createdAt = toDate(doc.data().createdAt);
+      return createdAt !== null && createdAt >= monthStart;
+    },
+  ).length;
 
-  const businessGrowthDates = businessDocs
+  const businessGrowthDates = analyticsBusinessDocs
     .map((doc) => toDate(doc.data().createdAt))
     .filter((d): d is Date => d !== null);
 
-  const onboardedBusinesses = businessDocs.filter((doc) =>
+  const onboardedBusinesses = analyticsBusinessDocs.filter((doc) =>
     isTruthyFlag(doc.data().onboardingComplete),
   ).length;
 
@@ -354,7 +370,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     featureTotals.set(feature, { completed: 0, total: 0 });
   });
 
-  businessDocs.forEach((doc) => {
+  analyticsBusinessDocs.forEach((doc) => {
     const data = doc.data();
     const goals = Array.isArray(data.usageGoals) ? data.usageGoals : [];
     goals.forEach((goal: unknown) => {
@@ -411,7 +427,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
   }
 
   await mapWithConcurrency(
-    businessDocs,
+    analyticsBusinessDocs,
     BUSINESS_QUERY_CONCURRENCY,
     async (bizDoc) => {
       const data = bizDoc.data();
@@ -486,6 +502,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
       let planCode: string | undefined;
       let subscriptionStatus: string | undefined;
       let paymentStatus: string | undefined;
+      let billingCycle: string | undefined;
       let price = 0;
       if (!subscriptionsSnap.empty) {
         const sub = subscriptionsSnap.docs[0].data();
@@ -496,6 +513,8 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
           typeof sub.status === "string" ? sub.status : undefined;
         paymentStatus =
           typeof sub.paymentStatus === "string" ? sub.paymentStatus : undefined;
+        billingCycle =
+          typeof sub.billingCycle === "string" ? sub.billingCycle : undefined;
         price = Number(sub.price || 0);
         if (sub.status === "active") {
           planCounts.set(planName, (planCounts.get(planName) || 0) + 1);
@@ -506,6 +525,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
         planName,
         planCode,
         subscriptionStatus,
+        { billingCycle, price },
       );
       businessTierCounts[businessTier] += 1;
 
@@ -616,6 +636,9 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
         price,
         customers,
         transactionsLast30Days: businessTx30,
+        ownerId,
+        authAccountTag:
+          ownerId ? authAccountTagByUserId.get(ownerId) ?? null : null,
         usageGoals: Array.isArray(data.usageGoals) ?
           data.usageGoals.map(String) :
           [],
@@ -741,7 +764,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
   };
 
   await mapWithConcurrency(
-    smartRefillUsers,
+    productionSmartRefillUsers,
     LOGIN_EVENT_QUERY_CONCURRENCY,
     async (userDoc) => {
       const eventsSnap = await userDoc.ref
@@ -842,13 +865,13 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     }));
 
   const userRoleCounts = countSmartRefillUserRoles(
-    smartRefillUsers.map((doc) => ({ id: doc.id, data: doc.data() })),
+    productionSmartRefillUsers.map((doc) => ({ id: doc.id, data: doc.data() })),
     businessOwnerIds,
   );
 
   const usersById = new Set(usersSnap.docs.map((doc) => doc.id));
   const businessById = new Map(
-    businessDocs.map((doc) => [
+    analyticsBusinessDocs.map((doc) => [
       doc.id,
       {
         ownerId:
@@ -866,11 +889,11 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
 
   const activeLoginUsersByRole = countActiveUsersByRole(
     activeUserIds,
-    smartRefillUsers.map((doc) => ({ id: doc.id, data: doc.data() })),
+    productionSmartRefillUsers.map((doc) => ({ id: doc.id, data: doc.data() })),
     businessOwnerIds,
   );
 
-  const smartRefillUserRecords = smartRefillUsers.map((doc) => ({
+  const smartRefillUserRecords = productionSmartRefillUsers.map((doc) => ({
     id: doc.id,
     data: doc.data(),
     createdAt: toDate(doc.data().createdAt),
@@ -883,7 +906,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     ownerUserGrowth: buildMonthlySeries(ownerUserGrowthDates),
     businessGrowth: buildMonthlySeries(businessGrowthDates),
     totalCustomers,
-    smartRefillUsers: smartRefillUsers.length,
+    smartRefillUsers: productionSmartRefillUserCount,
     smartRefillUserRecords,
     userRoleCounts,
     activeLoginUsers: activeUserIds.size,
@@ -962,7 +985,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
   const newJoiners = buildNewJoiners({
     salesDocs: salesSnap.docs,
     recentBusinesses,
-    smartRefillUsers: smartRefillUsers.map((doc) => ({
+    smartRefillUsers: productionSmartRefillUsers.map((doc) => ({
       id: doc.id,
       data: doc.data(),
     })),
@@ -970,7 +993,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
   });
 
   const businessNamesById = new Map(
-    businessDocs.map((doc) => [
+    analyticsBusinessDocs.map((doc) => [
       doc.id,
       String(doc.data().name || "Unnamed business"),
     ]),
@@ -993,9 +1016,9 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
       getInactiveOwnerContactedAt(activeOwners.map((owner) => owner.id)),
       generateDashboardForecasts({
         summary: {
-          smartRefillUsers: smartRefillUsers.length,
+          smartRefillUsers: productionSmartRefillUserCount,
           onboardedBusinesses,
-          totalBusinesses: businessDocs.length,
+          totalBusinesses: analyticsBusinessDocs.length,
           totalCustomers,
           activeLoginUsers: activeUserIds.size,
           transactionsLast30Days,
@@ -1020,9 +1043,9 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
 
   return {
     summary: {
-      smartRefillUsers: smartRefillUsers.length,
+      smartRefillUsers: productionSmartRefillUserCount,
       onboardedBusinesses,
-      totalBusinesses: businessDocs.length,
+      totalBusinesses: analyticsBusinessDocs.length,
       totalCustomers,
       activeLoginUsers: activeUserIds.size,
       loginSessionsLast30Days,

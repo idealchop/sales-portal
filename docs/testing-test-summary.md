@@ -14,6 +14,10 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/services/compute-role-active-times.unit.test.ts` | Role active time buckets | TC-DASH-01 |
 | `unit/services/compute-workspace-behavior.unit.test.ts` | Churn/growth/re-engagement profiles | TC-DASH-01 |
 | `unit/services/count-smartrefill-user-roles.unit.test.ts` | Owner/admin/rider counts | TC-DASH-01 |
+| `unit/auth-account-tag.test.ts` ✅ | `authAccountTag` read/collect; test-owner id set | TC-DASH-15 |
+| `unit/services/legacy-smartrefill-helpers.unit.test.ts` ✅ | Legacy station helpers / triage status | TC-DASH-16 |
+| `unit/services/legacy-station-triage.unit.test.ts` ✅ | Contacted 15-day cooldown vs ignored forever | TC-DASH-16 |
+| `unit/services/outreach-templates.unit.test.ts` ✅ | Brevo templates incl. `legacy_station` | TC-DASH-13, TC-DASH-16 |
 | `unit/services/generate-ai-sales-insights.unit.test.ts` | AI insight payload shaping | TC-DASH-01 |
 | `unit/services/generate-dashboard-forecasts.unit.test.ts` ✅ | Fallback forecasts + actor reshape | TC-DASH-08 |
 | `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline mapping | TC-DASH-05, TC-DASH-09 |
@@ -66,11 +70,17 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/features/dashboard/app-chart-groups.test.ts` ✅ | Non-overlapping per-app chart kinds | TC-DASH-06, TC-DASH-07 |
 | `unit/features/dashboard/forecast-items.test.ts` ✅ | Forecast slice per app | TC-DASH-08 |
 | `unit/features/dashboard/build-hub-app-stats.test.ts` ✅ | Hub KPI grouping | TC-DASH-01 |
+| `unit/features/dashboard/build-sales-market-report.test.ts` ✅ | Plan mix / ideals; excludes test stations | TC-DASH-07, TC-DASH-15 |
+| `unit/features/dashboard/resolve-platform-kpi-breakdowns.test.ts` ✅ | Tier derivation; skips test-tagged contexts | TC-DASH-15 |
+| `unit/features/dashboard/filter-chart-series.test.ts` ✅ | Range filters drop `authAccountTag=test` | TC-DASH-15 |
+| `unit/lib/enrich-map-locations.test.ts` ✅ | Map pins exclude test accounts | TC-DASH-04, TC-DASH-15 |
+| `unit/features/dashboard/build-user-subscriptions-list.test.ts` ✅ | Subscription list excludes test owners | TC-DASH-15 |
 | `unit/features/dashboard/sort-active-owners.test.ts` ✅ | Inactive sort + list cap | TC-DASH-10 |
 | `unit/features/dashboard/inactive-owner-contact.test.ts` ✅ | 7-day Contact cooldown | TC-DASH-14 |
 | `unit/lib/email/new-user-welcome-template.test.ts` ✅ | New-user outreach template copy | TC-DASH-13 |
 | `unit/lib/email/demo-inquiry-template.test.ts` ✅ | Demo-inquiry outreach template copy | TC-DASH-13 |
 | `unit/lib/email/inactive-owner-template.test.ts` ✅ | Inactive-owner outreach template copy | TC-DASH-14 |
+| `unit/lib/email/legacy-station-template.test.ts` ✅ | Legacy station contact template copy | TC-DASH-16 |
 | `unit/features/dashboard/build-subscription-approval-queue.test.ts` ✅ | Approval queue rows | TC-DASH-05, TC-DASH-09 |
 | `unit/lib/dashboard-analytics-normalize.test.ts` ✅ | `newJoiners`, `dashboardForecasts` defaults | TC-DASH-01 |
 | `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |

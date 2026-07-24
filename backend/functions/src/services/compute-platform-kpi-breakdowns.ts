@@ -153,11 +153,25 @@ export function classifyBusinessTier(
   planName?: string,
   planCode?: string,
   subscriptionStatus?: string,
+  options?: { billingCycle?: string | null; price?: number | null },
 ): BusinessPlanTier {
   const hasActiveSub = subscriptionStatus === "active";
   const key = `${planCode || ""} ${planName || ""}`.trim().toLowerCase();
+  const billingCycle = String(options?.billingCycle || "").toLowerCase();
+  const priceRaw = options?.price;
+  const price =
+    typeof priceRaw === "number" ? priceRaw : Number(priceRaw ?? NaN);
+  const isTrial =
+    billingCycle === "trial" ||
+    key.includes("trial") ||
+    key.includes("free");
+  // Starter is the free tier in SmartRefill catalog; unpaid/zero-price is not a win.
+  const isUnpaid = !Number.isFinite(price) || price <= 0;
+  const isFreeStarter = key.includes("starter") && isUnpaid;
 
-  if (!hasActiveSub || !key || key.includes("free")) return "free";
+  if (!hasActiveSub || !key || isTrial || isUnpaid || isFreeStarter) {
+    return "free";
+  }
   if (key.includes("scale")) return "scale";
   if (key.includes("growth") || key.includes("grow")) return "grow";
   if (key.includes("starter")) return "starter";

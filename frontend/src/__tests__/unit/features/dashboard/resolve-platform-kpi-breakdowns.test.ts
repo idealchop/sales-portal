@@ -119,4 +119,36 @@ describe("resolvePlatformKpiSummary", () => {
       ]),
     ).toEqual({ scale: 1, grow: 0, starter: 1, free: 0 });
   });
+
+  it("skips authAccountTag=test businesses when deriving tiers", () => {
+    expect(
+      deriveBusinessTierCounts([
+        {
+          id: "live",
+          createdAt: null,
+          healthTier: "high",
+          planName: "Grow",
+          planCode: "grow",
+          price: 1499,
+          customers: 1,
+          transactionsLast30Days: 1,
+          usageGoals: [],
+          gettingStarted: {},
+        },
+        {
+          id: "test",
+          createdAt: null,
+          healthTier: "high",
+          planName: "Scale",
+          planCode: "scale",
+          price: 4999,
+          customers: 99,
+          transactionsLast30Days: 99,
+          authAccountTag: "test",
+          usageGoals: [],
+          gettingStarted: {},
+        },
+      ]),
+    ).toEqual({ scale: 0, grow: 1, starter: 0, free: 0 });
+  });
 });

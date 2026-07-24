@@ -37,20 +37,22 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 
 | ID | Role | Steps | Expected |
 |----|------|-------|----------|
-| TC-DASH-01 | any | Open `/dashboard` | Metrics load; no console errors |
+| TC-DASH-01 | any | Open `/dashboard` | All-apps KPIs + performance overview; no console errors |
 | TC-DASH-02 | any | Change date range filter | Charts/metrics update |
 | TC-DASH-03 | any | Open metric breakdown dialog | Breakdown rows render |
-| TC-DASH-04 | any | Business locations map | Pins load for businesses with coords |
+| TC-DASH-04 | any | Business locations map | Pins load for businesses with coords; no test-account pins |
 | TC-DASH-05 | admin | Approve pending subscription | Approval succeeds; UI refreshes |
 | TC-DASH-06 | any | Open `/dashboard/smartrefill` | Tabs: Attention, Subscriptions, Field ops, Analytics |
-| TC-DASH-07 | any | Open `/dashboard/sales-portal` | Personal KPIs, actions/joiners tabs, revenue charts |
-| TC-DASH-08 | any | Platform hub Actions \| Forecast tabs | Paginated forecast rows; actions inbox |
+| TC-DASH-07 | any | Open `/dashboard/sales-portal` | Market position + plan mix, proactive outlook, scorecard, reports |
+| TC-DASH-08 | any | Platform hub Actions \| Forecast tabs | Paginated forecast rows; actions inbox (if shown) |
 | TC-DASH-09 | admin | Subscription approval **View** | Detail dialog + receipt/attachment preview |
 | TC-DASH-10 | admin | Inactive owners list | Top 10 inactive (7d+); expand link shows remainder; Contact hides 7d |
 | TC-DASH-11 | any | Subscription list **Print OR** | Paid history row opens Official Receipt PDF / print dialog |
 | TC-DASH-12 | any | Subscription list **Print statement** | SOA PDF lists all paid periods for that business |
 | TC-DASH-13 | admin | Alert **Contact** (new user / demo) | Sends Brevo email (From support@ + BCC); alert leaves open queue |
 | TC-DASH-14 | admin | Inactive owner **Contact** | Sends Brevo miss-you email + BCC; button hidden for 7 days |
+| TC-DASH-15 | admin | Tag owner as **Test account** in Permissions | After analytics refresh, owner’s stations/users absent from Platform/Sales KPIs, plan mix, and maps |
+| TC-DASH-16 | any | Open `/dashboard/smartrefill-old` | Triage / Contacted-Ignored; Contact sends Brevo; Ignore moves queue; bulk actions up to 50 |
 
 ---
 

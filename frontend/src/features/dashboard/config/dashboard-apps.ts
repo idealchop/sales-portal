@@ -1,7 +1,11 @@
-import { Briefcase, Droplets, LayoutGrid } from "lucide-react";
+import { Archive, Briefcase, Droplets, LayoutGrid } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export type DashboardAppId = "platform" | "smartrefill" | "sales-portal";
+export type DashboardAppId =
+  | "platform"
+  | "smartrefill"
+  | "smartrefill-old"
+  | "sales-portal";
 
 export type DashboardAppStatus = "live" | "coming_soon";
 
@@ -19,9 +23,9 @@ export type DashboardAppDefinition = {
 export const DASHBOARD_APPS: DashboardAppDefinition[] = [
   {
     id: "platform",
-    label: "Platform overview",
+    label: "All apps",
     shortLabel: "All apps",
-    description: "Combined KPIs, maps, and ROI across every integrated product.",
+    description: "KPIs and a simple performance overview across every product.",
     href: "/dashboard",
     icon: LayoutGrid,
     status: "live",
@@ -38,10 +42,22 @@ export const DASHBOARD_APPS: DashboardAppDefinition[] = [
     accentClass: "bg-teal-50 text-teal-800",
   },
   {
+    id: "smartrefill-old",
+    label: "SmartRefill (legacy)",
+    shortLabel: "SR legacy",
+    description:
+      "Triage and outreach for stations still on the older Smart Refill database.",
+    href: "/dashboard/smartrefill-old",
+    icon: Archive,
+    status: "live",
+    accentClass: "bg-amber-50 text-amber-900",
+  },
+  {
     id: "sales-portal",
     label: "Sales Portal",
-    shortLabel: "Sales Portal",
-    description: "Pipeline, commissions, proposals, and rep performance.",
+    shortLabel: "Sales",
+    description:
+      "Market position, proactive outlook, pipeline scorecard, and sales reports.",
     href: "/dashboard/sales-portal",
     icon: Briefcase,
     status: "live",

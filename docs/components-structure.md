@@ -31,15 +31,22 @@ frontend/src/
 | `config/nav-items.ts` | Sidebar navigation + role gates + dashboard children |
 | `components/dashboard-shell.tsx` | Layout, compact content column, analytics provider |
 | `components/dashboard-header.tsx` | Page title, refresh, user menu |
-| `components/platform-hub-dashboard.tsx` | Platform overview hub |
+| `components/platform-hub-dashboard.tsx` | All-apps hub: sales snapshot + simple per-app performance overview |
+| `components/platform-apps-overview.tsx` | App KPI cards with performance blurbs and deep links |
 | `components/smartrefill-dashboard.tsx` | SmartRefill ops dashboard (Attention / Subscriptions / Field / Analytics tabs) |
+| `components/smartrefill-old-dashboard.tsx` | Legacy SmartRefill ops from `prod-smartrefill`: triage / contacted-ignored queues (contact sends Brevo; contacted returns to triage after 15 days; ignored stays) |
 | `components/smartrefill-ops-health-strip.tsx` | Clickable support/maintenance snapshot tiles |
 | `components/smartrefill-maintenance-signals.tsx` | Workspace health + payment status bars |
 | `components/platform-alerts-list.tsx` | Alert queue; Contact sends Brevo outreach + dismisses |
 | `components/active-owners-panel.tsx` | Inactive owners (7d+); Contact sends Brevo miss-you + 7d cooldown |
-| `components/sales-portal-dashboard.tsx` | Sales Portal app dashboard |
-| `components/hub-app-stats-section.tsx` | Hub KPI rollup + per-app cards |
-| `components/sales-portal-actions-joiners-section.tsx` | Actions \| New joiners tabs |
+| `components/sales-portal-dashboard.tsx` | Sales: market position, proactive outlook, scorecard, reports |
+| `components/sales-market-position-section.tsx` | Market position metrics + plan mix bars; proactive scoreboard |
+| `lib/build-sales-market-report.ts` | Derives market share, expansion upside, projected wins from analytics (excludes `authAccountTag=test`) |
+| `lib/filter-chart-series.ts` | Date-range chart filters; drops test-tagged businesses |
+| `lib/resolve-platform-kpi-breakdowns.ts` | Tier/role KPI fallbacks; skips test-tagged chart contexts |
+| `components/sales-portal-shortcuts.tsx` | Quick links to proposals, commissions, materials, SmartRefill leads |
+| `components/hub-app-stats-section.tsx` | Alias → `PlatformAppsOverview` |
+| `components/sales-portal-actions-joiners-section.tsx` | Legacy Actions \| New joiners tabs (superseded by sales workspace sections) |
 | `components/dashboard-actions-forecast-section.tsx` | Hub Actions \| Forecast tabs |
 | `components/dashboard-insights-forecast-section.tsx` | App Insights \| Forecast tabs |
 | `components/dashboard-forecast-panel.tsx` | Paginated AI/rule-based forecasts |
@@ -50,6 +57,8 @@ frontend/src/
 | `lib/email/*` | Legacy mailto template builders (preview/tests); live send is Brevo via API |
 | `components/sales-insights-panel.tsx` | Action queue, health, pipeline detail |
 | `components/workspace-map-owners-section.tsx` | Station map (optional inactive panel) |
+
+Shared dashboard helpers under `src/lib/dashboard/`: `test-account-filters.ts`, `enrich-map-locations.ts`, analytics types.
 
 ### `features/content-studio/`
 

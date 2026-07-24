@@ -14,22 +14,23 @@ const SMARTREFILL_CHART_KINDS: ChartInsightKind[] = [
   "workspace-growth",
 ];
 
-/** Revenue, pipeline, and sales-oriented behavior signals — Sales Portal only. */
+/** Revenue, pipeline, market mix, and sales reports — Sales Portal only. */
 const SALES_PORTAL_CHART_KINDS: ChartInsightKind[] = [
-  "proposal-pipeline",
   "mrr-by-plan",
-  "revenue-trend",
-  "payment-status",
-  "workspace-health",
   "plan-distribution",
+  "revenue-trend",
+  "proposal-pipeline",
+  "workspace-health",
+  "payment-status",
+  "new-logo-pipeline",
   "adoption-gaps",
   "login-sales-cadence",
-  "new-logo-pipeline",
 ];
 
 export const APP_CHART_KINDS: Record<DashboardAppId, ChartInsightKind[]> = {
   platform: [],
   smartrefill: SMARTREFILL_CHART_KINDS,
+  "smartrefill-old": [],
   "sales-portal": SALES_PORTAL_CHART_KINDS,
 };
 

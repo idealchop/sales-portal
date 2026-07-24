@@ -51,41 +51,41 @@ export function SalesKpiStrip({
   return (
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       <KpiTile
-        label="MRR"
+        label="Est. monthly revenue"
         value={formatPhp(salesInsights.estimatedMrr)}
-        hint={`${salesInsights.pendingPayments} pending`}
+        hint={`${salesInsights.pendingPayments} pending payments`}
         icon={<CircleDollarSign className="h-3.5 w-3.5" />}
       />
       <KpiTile
-        label="Follow-ups"
+        label="Owners to contact"
         value={salesInsights.salesActions.length.toLocaleString()}
         hint={`${salesInsights.atRiskWorkspaces} at-risk`}
         icon={<AlertTriangle className="h-3.5 w-3.5" />}
       />
       <KpiTile
-        label="Upsell"
+        label="Upgrade-ready"
         value={salesInsights.upgradeOpportunities.toLocaleString()}
-        hint="high-usage Starter"
+        hint="high-usage Starter plans"
         icon={<ArrowUpCircle className="h-3.5 w-3.5" />}
       />
       <KpiTile
-        label="New MTD"
+        label="New stations MTD"
         value={`+${salesInsights.newWorkspacesThisMonth}`}
         hint={`+${salesInsights.newSmartRefillUsersThisMonth} users`}
         icon={<UserPlus className="h-3.5 w-3.5" />}
       />
       <KpiTile
-        label="Inactive"
+        label="Quiet stations"
         value={salesInsights.inactiveWorkspaces.toLocaleString()}
         hint={`${healthHigh} healthy`}
         icon={<UserMinus className="h-3.5 w-3.5" />}
       />
       <KpiTile
-        label="Paid plans"
+        label="Paying stations"
         value={salesInsights.mrrByPlan
           .reduce((sum, row) => sum + row.workspaces, 0)
           .toLocaleString()}
-        hint={`${salesInsights.mrrByPlan.length} tiers`}
+        hint={`${salesInsights.mrrByPlan.length} plan tiers`}
         icon={<Zap className="h-3.5 w-3.5" />}
       />
     </div>

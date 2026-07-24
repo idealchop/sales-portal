@@ -52,7 +52,12 @@ New users with portal access but incomplete onboarding:
 Admins manage portal access at **`/admin/permissions`**:
 
 - `PATCH /admin/users/:uid/app-access` — grant/revoke roles
+- Optional **Test account** flag (`authAccountTag: "test"`) — synced to Firestore `users/{uid}` and Auth custom claims
 - Bulk user management under `/admin`
+
+### Test accounts (`authAccountTag: "test"`)
+
+Owners tagged as test are **excluded from dashboard analytics KPIs** (stations, users, logins, MRR, plan mix, maps, growth metrics). Tag staging/QA owners in Permissions so production Sales/Platform numbers stay clean. Clear the flag (`null`) to include them again; refresh analytics cache after changes.
 
 ## Frontend helpers
 

@@ -36,7 +36,7 @@ export function TodaysWorkInbox({
     <div className="space-y-3">
       {items.length === 0 ?
         <p className="py-6 text-center text-sm text-[var(--muted-foreground)]">
-          0 actions today
+          You&apos;re clear for now — no high-priority sales follow-ups today.
         </p>
       : items.map((item) => (
           <div

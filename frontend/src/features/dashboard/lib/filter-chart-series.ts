@@ -110,6 +110,7 @@ export function filterBusinessesInRange(
 ): ChartBusinessContext[] {
   const endKey = dayKey(range.end);
   return businesses.filter((biz) => {
+    if (biz.authAccountTag === "test") return false;
     if (!biz.createdAt) return true;
     return biz.createdAt.slice(0, 10) <= endKey;
   });

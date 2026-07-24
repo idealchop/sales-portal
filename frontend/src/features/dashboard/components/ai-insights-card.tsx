@@ -64,9 +64,9 @@ function InsightList({ items }: { items: AiSalesAccountInsight[] }) {
 
   return (
     <div className="space-y-3">
-      {visible.map((action) => (
+      {visible.map((action, index) => (
         <div
-          key={`${action.businessName}-${action.recommendedAction}`}
+          key={`${index}-${action.businessName}-${action.priority}-${action.recommendedAction}`}
           className="rounded-lg border border-[var(--border)] p-3"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">

@@ -51,7 +51,9 @@ export function CombinedAppsMapSection({
       count={locations.length}
     >
       <div className="mb-2 flex flex-wrap gap-2">
-        {DASHBOARD_APPS.filter((app) => app.id !== "platform").map((app) => (
+        {DASHBOARD_APPS.filter(
+          (app) => app.id !== "platform" && app.id !== "smartrefill-old",
+        ).map((app) => (
           <Badge key={app.id} className={app.accentClass}>
             {app.shortLabel}
             {app.id === "smartrefill" ? ` ${locations.length}` : ""}

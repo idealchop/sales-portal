@@ -1,5 +1,17 @@
 import express from "express";
 import { getDashboardAnalytics, getDashboardSalesHome } from "../handlers/dashboard-handler";
+import {
+  getLegacySmartRefillAnalyticsHandler,
+  getLegacySmartRefillStationDetailHandler,
+  postLegacySmartRefillStationIgnoreHandler,
+  postLegacySmartRefillStationContactHandler,
+  postLegacySmartRefillStationRestoreHandler,
+  deleteLegacySmartRefillStationHandler,
+  postLegacySmartRefillStationsBulkDeleteHandler,
+  postLegacySmartRefillStationsBulkIgnoreHandler,
+  postLegacySmartRefillStationsBulkContactHandler,
+} from "../handlers/legacy-smartrefill-analytics-handler";
+import { requireManagerOrAdminRole } from "../middleware/require-admin";
 import { patchPlatformAlertContactHandler } from "../handlers/platform-alert-contact-handler";
 import { patchInactiveOwnerContactHandler } from "../handlers/inactive-owner-contact-handler";
 import { postOutreachSendHandler } from "../handlers/outreach-send-handler";
@@ -33,6 +45,71 @@ router.get(
   validateFirebaseIdToken,
   requireSalesPortalAccess,
   getDashboardSalesHome,
+);
+
+router.get(
+  "/smartrefill-old/analytics",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  getLegacySmartRefillAnalyticsHandler,
+);
+
+router.post(
+  "/smartrefill-old/stations/bulk-delete",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  requireManagerOrAdminRole,
+  postLegacySmartRefillStationsBulkDeleteHandler,
+);
+
+router.post(
+  "/smartrefill-old/stations/bulk-ignore",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  postLegacySmartRefillStationsBulkIgnoreHandler,
+);
+
+router.post(
+  "/smartrefill-old/stations/bulk-contact",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  postLegacySmartRefillStationsBulkContactHandler,
+);
+
+router.get(
+  "/smartrefill-old/stations/:stationId",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  getLegacySmartRefillStationDetailHandler,
+);
+
+router.post(
+  "/smartrefill-old/stations/:stationId/ignore",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  postLegacySmartRefillStationIgnoreHandler,
+);
+
+router.post(
+  "/smartrefill-old/stations/:stationId/contact",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  postLegacySmartRefillStationContactHandler,
+);
+
+router.post(
+  "/smartrefill-old/stations/:stationId/restore",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  postLegacySmartRefillStationRestoreHandler,
+);
+
+router.delete(
+  "/smartrefill-old/stations/:stationId",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  requireManagerOrAdminRole,
+  deleteLegacySmartRefillStationHandler,
 );
 
 router.patch(

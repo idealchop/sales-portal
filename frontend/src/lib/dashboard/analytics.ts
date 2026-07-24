@@ -42,6 +42,8 @@ export type ChartBusinessContext = {
   transactionsLast30Days: number;
   usageGoals: string[];
   gettingStarted: Record<string, boolean>;
+  ownerId?: string;
+  authAccountTag?: "test" | null;
 };
 
 export type BusinessMapLocation = {

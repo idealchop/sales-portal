@@ -47,8 +47,8 @@ function wrapHtml(input: {
             </a>
           </td>
         </tr>
-      </table>`
-    : "";
+      </table>` :
+      "";
 
   return `<!DOCTYPE html>
 <html lang="fil">
@@ -113,8 +113,8 @@ export function buildNewUserOutreachEmail(
   const name = firstNameFromDisplay(input.recipientName);
   const businessName = input.businessName?.trim();
   const subject = name ?
-      `Kumusta po, ${name} — paano na ang Smart Refill ninyo?`
-    : "Kumusta po — paano na ang Smart Refill ninyo?";
+    `Kumusta po, ${name} — paano na ang Smart Refill ninyo?` :
+    "Kumusta po — paano na ang Smart Refill ninyo?";
   const paragraphs = [
     "Kumusta po! Mula po ito sa River Support ng Smart Refill.",
     "Gusto lang namin kayong kamustahin regarding sa paggamit ninyo ng app so far.",
@@ -183,8 +183,8 @@ export function buildDemoInquiryOutreachEmail(
   const name = firstNameFromDisplay(input.recipientName);
   const businessName = input.businessName?.trim();
   const subject = name ?
-      `Kumusta po, ${name} — tungkol sa Smart Refill demo ninyo`
-    : "Kumusta po — tungkol sa Smart Refill demo ninyo";
+    `Kumusta po, ${name} — tungkol sa Smart Refill demo ninyo` :
+    "Kumusta po — tungkol sa Smart Refill demo ninyo";
   const paragraphs = [
     "Kumusta po! Mula po ito sa River Support ng Smart Refill.",
     "Salamat po sa interest ninyo — nakatanggap kami ng demo inquiry ninyo, and gusto naming i-follow up.",
@@ -245,8 +245,8 @@ export function buildInactiveOwnerOutreachEmail(
   const businessName = input.businessName?.trim() || "";
   const name = person || businessName;
   const subject = name ?
-      `Kumusta po, ${name} — namimiss namin kayo sa Smart Refill`
-    : "Kumusta po — namimiss namin kayo sa Smart Refill";
+    `Kumusta po, ${name} — namimiss namin kayo sa Smart Refill` :
+    "Kumusta po — namimiss namin kayo sa Smart Refill";
   const paragraphs = [
     "Kumusta po! Mula po ito sa River Support ng Smart Refill.",
     "Gusto lang namin kayong kamustahin and mag-check in — how are you right now?",
@@ -273,8 +273,8 @@ export function buildInactiveOwnerOutreachEmail(
     "",
     "Namimiss po namin kayo sa app.",
     businessName ?
-      `\nLalo na for ${businessName} — hoping everything is going smoothly.\n`
-    : "",
+      `\nLalo na for ${businessName} — hoping everything is going smoothly.\n` :
+      "",
     "We’d love to see you continue using Smart Refill. If may issue, reach out via chat support.",
     "",
     `Reply or email ${OUTREACH_SENDER.email}.`,
@@ -309,8 +309,8 @@ export function buildGenericAlertOutreachEmail(
   const name = firstNameFromDisplay(input.recipientName);
   const subtitle = input.subtitle?.trim() || "your Smart Refill account";
   const subject = name ?
-      `Kumusta po, ${name} — follow-up from Smart Refill`
-    : "Kumusta po — follow-up from Smart Refill";
+    `Kumusta po, ${name} — follow-up from Smart Refill` :
+    "Kumusta po — follow-up from Smart Refill";
   const paragraphs = [
     "Kumusta po! Mula po ito sa River Support ng Smart Refill.",
     `Gusto lang naming i-follow up regarding: ${escapeHtmlForEmail(subtitle)}.`,
@@ -346,10 +346,93 @@ export function buildGenericAlertOutreachEmail(
   };
 }
 
+/** Outreach for stations still on the legacy Smart Refill (prod-smartrefill) roster. */
+export function buildLegacyStationOutreachEmail(
+  input: OutreachPersonalization = {},
+): OutreachEmailPayload {
+  const person = firstNameFromDisplay(input.recipientName);
+  const businessName = input.businessName?.trim() || "";
+  const name = person || businessName;
+  const subject = name ?
+    `Kumusta po, ${name} — update tungkol sa Smart Refill station ninyo` :
+    "Kumusta po — update tungkol sa Smart Refill station ninyo";
+
+  const paragraphs = [
+    "Kumusta po! Mula po ito sa River Support ng Smart Refill.",
+    "Gusto lang namin kayong kamustahin — paano na po ang refill station ninyo?",
+  ];
+  if (businessName) {
+    paragraphs.push(
+      `Nakita namin ang profile ninyo for <strong style="color:#0f172a;">${escapeHtmlForEmail(businessName)}</strong> sa dating Smart Refill system.`,
+    );
+  } else {
+    paragraphs.push(
+      "Nakita namin ang profile ninyo sa dating Smart Refill system.",
+    );
+  }
+  paragraphs.push(
+    "May bagong version na po ang Smart Refill — mas madali ang customers, deliveries, at reports. Gusto naming i-check in kung interested kayo mag-upgrade or mag-continue with us.",
+    "Libre po naming i-walkthrough ang updated Smart Refill through a short call (around 15–20 minutes). Doon natin tingnan ang setup ninyo and answer any questions live.",
+    "Pwede niyo rin po kaming hingan ng help or mag-inquire anytime through the chat support sa smartrefill.io — nandiyan po ang team para tumulong.",
+    `Para mag-schedule, pwede po kayong mag-reply sa email na ito, or email kami sa ${OUTREACH_SENDER.email}.`,
+    "Maraming salamat po — looking forward to chatting with you!",
+  );
+
+  const textLines = [
+    greetingLine(name),
+    "",
+    "Kumusta po! Mula po ito sa River Support ng Smart Refill.",
+    "",
+    "Gusto lang namin kayong kamustahin — paano na po ang refill station ninyo?",
+    "",
+  ];
+  if (businessName) {
+    textLines.push(
+      `Nakita namin ang profile ninyo for ${businessName} sa dating Smart Refill system.`,
+      "",
+    );
+  } else {
+    textLines.push(
+      "Nakita namin ang profile ninyo sa dating Smart Refill system.",
+      "",
+    );
+  }
+  textLines.push(
+    "May bagong version na po ang Smart Refill — mas madali ang customers, deliveries, at reports. Gusto naming i-check in kung interested kayo mag-upgrade or mag-continue with us.",
+    "",
+    "Libre po naming i-walkthrough ang updated Smart Refill through a short call (around 15–20 minutes).",
+    "",
+    "Pwede niyo rin po kaming hingan ng help or mag-inquire anytime through the chat support sa smartrefill.io.",
+    "",
+    `Para mag-schedule, reply sa email na ito, or email ${OUTREACH_SENDER.email}.`,
+    "",
+    "Maraming salamat po!",
+    "",
+    "Warm regards,",
+    "River Support Team",
+    OUTREACH_SENDER.email,
+  );
+
+  return {
+    subject,
+    html: wrapHtml({
+      subject,
+      eyebrow: "Station check-in",
+      greeting: escapeHtmlForEmail(greetingLine(name)),
+      paragraphs,
+      ctaLabel: "Mag-reply sa support",
+      ctaMailtoSubject: "Gusto po naming mag-usap tungkol sa Smart Refill station namin",
+    }),
+    text: textLines.join("\n"),
+    brevoTag: "sales_portal_legacy_station",
+  };
+}
+
 export type OutreachTemplateKind =
   | "new_user_registration"
   | "demo_inquiry"
   | "inactive_owner"
+  | "legacy_station"
   | "generic";
 
 export function buildOutreachEmailByKind(
@@ -363,6 +446,8 @@ export function buildOutreachEmailByKind(
     return buildDemoInquiryOutreachEmail(input);
   case "inactive_owner":
     return buildInactiveOwnerOutreachEmail(input);
+  case "legacy_station":
+    return buildLegacyStationOutreachEmail(input);
   default:
     return buildGenericAlertOutreachEmail(input);
   }

@@ -22,12 +22,16 @@ const GrowthChartsSection = dynamic(
 export function AppChartsGrid({
   appId,
   appLabel,
+  title,
+  description,
   data,
   globalFilter,
   onGlobalFilterChange,
 }: {
   appId: DashboardAppId;
   appLabel?: string;
+  title?: string;
+  description?: string;
   data: DashboardAnalytics;
   globalFilter: DateRangeFilterState;
   onGlobalFilterChange?: (value: DateRangeFilterState) => void;
@@ -44,12 +48,14 @@ export function AppChartsGrid({
 
   if (kinds.length === 0) return null;
 
-  const sectionTitle = appLabel ? `${appLabel} charts` : "Charts";
+  const sectionTitle =
+    title ?? (appLabel ? `${appLabel} charts` : "Charts");
 
   return (
     <DashboardSection
       id={`${appId}-charts`}
       title={sectionTitle}
+      description={description}
       count={kinds.length}
     >
       <GrowthChartsSection

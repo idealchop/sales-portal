@@ -4,6 +4,7 @@ import {
   countHubLiveStats,
   groupHubStatsByApp,
 } from "@/features/dashboard/lib/build-hub-app-stats";
+import { buildAppPerformanceOverview } from "@/features/dashboard/lib/build-app-performance-overview";
 import type { DashboardAnalytics } from "@/lib/dashboard/analytics";
 
 function minimalAnalytics(
@@ -118,17 +119,30 @@ function minimalAnalytics(
 }
 
 describe("buildHubAppStats", () => {
-  it("groups stats by app including platform rollup", () => {
+  it("groups focused sales KPIs by app", () => {
     const grouped = groupHubStatsByApp(buildHubAppStats(minimalAnalytics()));
 
     expect(grouped.get("platform")?.length).toBe(4);
-    expect(grouped.get("smartrefill")?.length).toBe(6);
-    expect(grouped.get("sales-portal")?.length).toBe(6);
+    expect(grouped.get("smartrefill")?.length).toBe(4);
+    expect(grouped.get("sales-portal")?.length).toBe(4);
+    expect(grouped.has("future-app")).toBe(false);
   });
 
-  it("counts live stats excluding future-app placeholders", () => {
+  it("counts live stats", () => {
     const stats = buildHubAppStats(minimalAnalytics());
-    expect(countHubLiveStats(stats)).toBe(16);
-    expect(stats.some((row) => row.appId === "future-app")).toBe(true);
+    expect(countHubLiveStats(stats)).toBe(12);
+  });
+});
+
+describe("buildAppPerformanceOverview", () => {
+  it("returns a short performance read for each live app", () => {
+    const rows = buildAppPerformanceOverview(minimalAnalytics());
+    expect(rows.map((row) => row.appId)).toEqual([
+      "smartrefill",
+      "sales-portal",
+      "smartrefill-old",
+    ]);
+    expect(rows[0]?.headline).toContain("stations");
+    expect(rows[1]?.headline.toLowerCase()).toContain("pipeline");
   });
 });

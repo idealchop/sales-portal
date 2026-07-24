@@ -333,6 +333,7 @@ export function computeGrowthSalesMetrics(input: {
 
   const activeOwners: ActiveOwner[] = businesses
     .filter((b) => {
+      if (b.ownerId && testAccountOwnerIds?.has(b.ownerId)) return false;
       const lastActive = b.ownerId ?
         ownerLastActive.get(b.ownerId) :
         undefined;

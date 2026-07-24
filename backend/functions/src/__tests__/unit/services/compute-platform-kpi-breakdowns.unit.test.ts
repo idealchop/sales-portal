@@ -9,11 +9,34 @@ import {
 } from "../../../services/compute-platform-kpi-breakdowns";
 
 describe("classifyBusinessTier", () => {
-  it("maps active subscriptions to scale, grow, starter, or free", () => {
-    expect(classifyBusinessTier("Scale Plan", "scale", "active")).toBe("scale");
-    expect(classifyBusinessTier("Growth", "growth", "active")).toBe("grow");
-    expect(classifyBusinessTier("Starter", "starter", "active")).toBe("starter");
-    expect(classifyBusinessTier("Free tier", "free", "active")).toBe("free");
+  it("maps paid active subscriptions to scale, grow, or starter", () => {
+    expect(
+      classifyBusinessTier("Scale Plan", "scale", "active", { price: 2499 }),
+    ).toBe("scale");
+    expect(
+      classifyBusinessTier("Growth", "growth", "active", { price: 1499 }),
+    ).toBe("grow");
+    expect(
+      classifyBusinessTier("Starter", "starter", "active", { price: 499 }),
+    ).toBe("starter");
+  });
+
+  it("treats free trial, zero-price, and free starter as free — not Scale/Grow wins", () => {
+    expect(
+      classifyBusinessTier("Scale", "scale", "active", {
+        billingCycle: "trial",
+        price: 0,
+      }),
+    ).toBe("free");
+    expect(
+      classifyBusinessTier("Scale Plan", "scale", "active", { price: 0 }),
+    ).toBe("free");
+    expect(
+      classifyBusinessTier("Starter", "starter", "active", { price: 0 }),
+    ).toBe("free");
+    expect(classifyBusinessTier("Free tier", "free", "active", { price: 0 })).toBe(
+      "free",
+    );
     expect(classifyBusinessTier(undefined, undefined, "cancelled")).toBe("free");
   });
 });

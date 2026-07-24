@@ -3,8 +3,11 @@ import { resolveDashboardPageTitle } from "@/features/dashboard/lib/resolve-dash
 
 describe("resolveDashboardPageTitle", () => {
   it("resolves dashboard app routes", () => {
-    expect(resolveDashboardPageTitle("/dashboard")).toBe("Platform overview");
+    expect(resolveDashboardPageTitle("/dashboard")).toBe("All apps");
     expect(resolveDashboardPageTitle("/dashboard/smartrefill")).toBe("SmartRefill");
+    expect(resolveDashboardPageTitle("/dashboard/smartrefill-old")).toBe(
+      "SmartRefill (legacy)",
+    );
     expect(resolveDashboardPageTitle("/dashboard/sales-portal")).toBe(
       "Sales Portal",
     );
