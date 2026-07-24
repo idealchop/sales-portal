@@ -375,7 +375,7 @@ export async function getLegacyStationFlag(
 
 export async function getLegacyStationFlagsMap(): Promise<
   Map<string, LegacyStationFlag>
-> {
+  > {
   const snap = await db.collection(FLAGS_COLLECTION).get();
   const flags = new Map<string, LegacyStationFlag>();
   const nowMs = Date.now();

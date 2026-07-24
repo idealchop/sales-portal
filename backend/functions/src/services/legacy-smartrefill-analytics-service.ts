@@ -308,8 +308,8 @@ async function loadLeads(): Promise<{
       phone: String(data.phone || "").trim() || null,
       businessName: String(data.businessName || "").trim() || null,
       subtitle: data.requestedDate ?
-          `Requested demo date: ${String(data.requestedDate)}`
-        : "Demo request",
+        `Requested demo date: ${String(data.requestedDate)}` :
+        "Demo request",
       status: null,
       occurredAt: toIso(data.submittedAt),
     });
