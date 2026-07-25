@@ -4,7 +4,7 @@
   "description": "Sales Portal API — Cloud Functions gateway with SmartRefill integration",
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && mkdir -p lib/data && cp -R src/data/. lib/data/",
     "watch": "tsc -w",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",

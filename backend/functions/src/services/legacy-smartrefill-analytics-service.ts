@@ -2,6 +2,10 @@ import { Timestamp } from "firebase-admin/firestore";
 import { prodSmartrefillDb } from "../config/firebase-admin";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
 import {
+  findLegacyAuthUser,
+  getLegacyAuthUsers,
+} from "./legacy-auth-users";
+import {
   getLegacyStationFlag,
   getLegacyStationFlagsMap,
   type LegacyStationTriageStatus,
@@ -28,6 +32,10 @@ export type LegacySmartRefillStation = {
   bottlesTotal: number;
   unpaidTotal: number;
   lastDeliveryAt: string | null;
+  /** ISO last Firebase Auth sign-in from sr-legacy-users export, when known. */
+  lastSignedInAt: string | null;
+  /** True when row comes from Auth export only (no Firestore profile/main). */
+  authOnly: boolean;
   triageStatus: LegacyStationTriageStatus;
   contactedAt: string | null;
   ignoredAt: string | null;
@@ -94,6 +102,8 @@ export type LegacySmartRefillAnalytics = {
   sourceDatabase: string;
   summary: {
     totalUsers: number;
+    authExportUsers: number;
+    authOnlyStations: number;
     stationsWithProfile: number;
     stationsWithActivity: number;
     onboardedStations: number;
@@ -371,18 +381,28 @@ async function buildAnalytics(): Promise<LegacySmartRefillAnalytics> {
         doc.ref.collection("deliveries").count().get(),
       ]);
       const flag = flagsMap.get(doc.id);
+      const firestoreEmail = String(user.email || "").trim();
+      const authUser = findLegacyAuthUser({
+        localId: doc.id,
+        email: firestoreEmail,
+      });
+      const email = firestoreEmail || authUser?.email || "";
+      const ownerName =
+        String(profile.ownerName || "").trim() ||
+        authUser?.displayName ||
+        String(user.displayName || "").trim() ||
+        "Owner";
+      const businessName =
+        String(profile.businessName || "").trim() ||
+        authUser?.displayName ||
+        String(user.displayName || "").trim() ||
+        "Unnamed station";
 
       return {
         id: doc.id,
-        businessName:
-          String(profile.businessName || "").trim() ||
-          String(user.displayName || "").trim() ||
-          "Unnamed station",
-        ownerName:
-          String(profile.ownerName || "").trim() ||
-          String(user.displayName || "").trim() ||
-          "Owner",
-        email: String(user.email || "").trim(),
+        businessName,
+        ownerName,
+        email,
         phone: String(profile.phone || "").trim() || null,
         address: String(profile.stationAddress || "").trim() || null,
         lat: typeof profile.latitude === "number" ? profile.latitude : null,
@@ -394,15 +414,56 @@ async function buildAnalytics(): Promise<LegacySmartRefillAnalytics> {
         bottlesTotal: 0,
         unpaidTotal: 0,
         lastDeliveryAt: null as string | null,
+        lastSignedInAt: authUser?.lastSignedInAt ?? null,
+        authOnly: false as boolean,
         triageStatus: flag?.triageStatus ?? "open",
         contactedAt: flag?.contactedAt ?? null,
         ignoredAt: flag?.ignoredAt ?? null,
       } satisfies LegacySmartRefillStation;
     },
   );
-  const stations = stationRows.filter(
+  const stations: LegacySmartRefillStation[] = stationRows.filter(
     (station): station is LegacySmartRefillStation => station != null,
   );
+
+  // Auth export users with no Firestore profile — still show in triage for outreach.
+  const knownIds = new Set(stations.map((station) => station.id));
+  const knownEmails = new Set(
+    stations
+      .map((station) => station.email.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  for (const authUser of getLegacyAuthUsers()) {
+    const emailKey = authUser.email.trim().toLowerCase();
+    if (knownIds.has(authUser.localId) || knownEmails.has(emailKey)) {
+      continue;
+    }
+    const flag = flagsMap.get(authUser.localId);
+    stations.push({
+      id: authUser.localId,
+      businessName: authUser.displayName || authUser.email || "Auth user",
+      ownerName: authUser.displayName || "Owner",
+      email: authUser.email,
+      phone: null,
+      address: null,
+      lat: null,
+      lng: null,
+      onboardingComplete: false,
+      customerCount: 0,
+      deliveryCount: 0,
+      revenueTotal: 0,
+      bottlesTotal: 0,
+      unpaidTotal: 0,
+      lastDeliveryAt: null,
+      lastSignedInAt: authUser.lastSignedInAt,
+      authOnly: true,
+      triageStatus: flag?.triageStatus ?? "open",
+      contactedAt: flag?.contactedAt ?? null,
+      ignoredAt: flag?.ignoredAt ?? null,
+    });
+    knownIds.add(authUser.localId);
+    knownEmails.add(emailKey);
+  }
 
   const activeStations = stations.filter((station) => station.deliveryCount > 0);
 
@@ -519,7 +580,9 @@ async function buildAnalytics(): Promise<LegacySmartRefillAnalytics> {
       process.env.SALES_PORTAL_LEGACY_FIRESTORE_DB || "prod-smartrefill",
     summary: {
       totalUsers: usersSnap.size,
-      stationsWithProfile: stations.length,
+      authExportUsers: getLegacyAuthUsers().length,
+      authOnlyStations: stations.filter((s) => s.authOnly).length,
+      stationsWithProfile: stations.filter((s) => !s.authOnly).length,
       stationsWithActivity: stations.filter(
         (station) => station.customerCount + station.deliveryCount > 0,
       ).length,
@@ -585,11 +648,92 @@ export async function fetchLegacySmartRefillStationDetail(input: {
 
   const userRef = prodSmartrefillDb.collection("users").doc(stationId);
   const userSnap = await userRef.get();
-  if (!userSnap.exists) return null;
+  const authUser = findLegacyAuthUser({ localId: stationId });
+
+  if (!userSnap.exists) {
+    if (!authUser) return null;
+    const flag = await getLegacyStationFlag(stationId);
+    return {
+      station: {
+        id: stationId,
+        businessName: authUser.displayName || authUser.email || "Auth user",
+        ownerName: authUser.displayName || "Owner",
+        email: authUser.email,
+        phone: null,
+        address: null,
+        lat: null,
+        lng: null,
+        onboardingComplete: false,
+        customerCount: 0,
+        deliveryCount: 0,
+        revenueTotal: 0,
+        bottlesTotal: 0,
+        unpaidTotal: 0,
+        lastDeliveryAt: null,
+        lastSignedInAt: authUser.lastSignedInAt,
+        authOnly: true,
+        triageStatus: flag?.triageStatus ?? "open",
+        contactedAt: flag?.contactedAt ?? null,
+        ignoredAt: flag?.ignoredAt ?? null,
+      },
+      customers: [],
+      transactions: [],
+      transactionPage: {
+        offset,
+        limit,
+        total: 0,
+        hasMore: false,
+      },
+    };
+  }
 
   const user = userSnap.data() || {};
   const profileSnap = await userRef.collection("profile").doc("main").get();
-  if (!profileSnap.exists) return null;
+  if (!profileSnap.exists) {
+    if (!authUser) return null;
+    const flag = await getLegacyStationFlag(stationId);
+    const email =
+      String(user.email || "").trim() || authUser.email;
+    return {
+      station: {
+        id: stationId,
+        businessName:
+          authUser.displayName ||
+          String(user.displayName || "").trim() ||
+          email ||
+          "Auth user",
+        ownerName:
+          authUser.displayName ||
+          String(user.displayName || "").trim() ||
+          "Owner",
+        email,
+        phone: null,
+        address: null,
+        lat: null,
+        lng: null,
+        onboardingComplete: false,
+        customerCount: 0,
+        deliveryCount: 0,
+        revenueTotal: 0,
+        bottlesTotal: 0,
+        unpaidTotal: 0,
+        lastDeliveryAt: null,
+        lastSignedInAt: authUser.lastSignedInAt,
+        authOnly: true,
+        triageStatus: flag?.triageStatus ?? "open",
+        contactedAt: flag?.contactedAt ?? null,
+        ignoredAt: flag?.ignoredAt ?? null,
+      },
+      customers: [],
+      transactions: [],
+      transactionPage: {
+        offset,
+        limit,
+        total: 0,
+        hasMore: false,
+      },
+    };
+  }
   const profile = profileSnap.data() || {};
 
   const [customersSnap, deliveriesSnap] = await Promise.all([
@@ -616,18 +760,27 @@ export async function fetchLegacySmartRefillStationDetail(input: {
 
   const page = transactions.slice(offset, offset + limit);
   const flag = await getLegacyStationFlag(stationId);
+  const linkedAuth =
+    authUser ||
+    findLegacyAuthUser({
+      localId: stationId,
+      email: String(user.email || "").trim(),
+    });
 
   const station: LegacySmartRefillStation = {
     id: stationId,
     businessName:
       String(profile.businessName || "").trim() ||
+      linkedAuth?.displayName ||
       String(user.displayName || "").trim() ||
       "Unnamed station",
     ownerName:
       String(profile.ownerName || "").trim() ||
+      linkedAuth?.displayName ||
       String(user.displayName || "").trim() ||
       "Owner",
-    email: String(user.email || "").trim(),
+    email:
+      String(user.email || "").trim() || linkedAuth?.email || "",
     phone: String(profile.phone || "").trim() || null,
     address: String(profile.stationAddress || "").trim() || null,
     lat: typeof profile.latitude === "number" ? profile.latitude : null,
@@ -639,6 +792,8 @@ export async function fetchLegacySmartRefillStationDetail(input: {
     bottlesTotal,
     unpaidTotal: Math.round(unpaidTotal * 100) / 100,
     lastDeliveryAt,
+    lastSignedInAt: linkedAuth?.lastSignedInAt ?? null,
+    authOnly: false,
     triageStatus: flag?.triageStatus ?? "open",
     contactedAt: flag?.contactedAt ?? null,
     ignoredAt: flag?.ignoredAt ?? null,

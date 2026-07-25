@@ -16,6 +16,8 @@ export type LegacySmartRefillStation = {
   bottlesTotal: number;
   unpaidTotal: number;
   lastDeliveryAt: string | null;
+  lastSignedInAt?: string | null;
+  authOnly?: boolean;
   triageStatus: LegacyStationTriageStatus;
   contactedAt: string | null;
   ignoredAt: string | null;
@@ -82,6 +84,8 @@ export type LegacySmartRefillAnalytics = {
   sourceDatabase: string;
   summary: {
     totalUsers: number;
+    authExportUsers?: number;
+    authOnlyStations?: number;
     stationsWithProfile: number;
     stationsWithActivity: number;
     onboardedStations: number;

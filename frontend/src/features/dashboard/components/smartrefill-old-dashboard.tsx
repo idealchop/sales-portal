@@ -353,6 +353,9 @@ function StationListRow({
                     Failed to contact
                   </Badge>
                 : null}
+                {station.authOnly ?
+                  <Badge className="bg-sky-100 text-sky-800">Auth only</Badge>
+                : null}
               </div>
               <p className="mt-1 text-sm text-[var(--muted-foreground)]">
                 {station.ownerName}
@@ -361,6 +364,11 @@ function StationListRow({
               {station.address ?
                 <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                   {station.address}
+                </p>
+              : null}
+              {station.lastSignedInAt ?
+                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                  Last sign-in {formatWhen(station.lastSignedInAt)}
                 </p>
               : null}
               {mode === "handled" ?
@@ -1267,7 +1275,11 @@ export function SmartRefillOldDashboard() {
             <SnapshotStat
               label="Businesses"
               value={String(data.summary.stationsWithProfile)}
-              hint={`${data.summary.stationsWithActivity} with customers/txs`}
+              hint={`${data.summary.stationsWithActivity} with customers/txs${
+                data.summary.authOnlyStations ?
+                  ` · ${data.summary.authOnlyStations} auth-only`
+                : ""
+              }`}
               icon={<Building2 className="h-4 w-4" />}
             />
             <SnapshotStat
