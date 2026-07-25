@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronDown, MapPin } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +31,7 @@ import {
 } from "@/features/dashboard/lib/inactive-owner-contact";
 import { recordInactiveOwnerContact } from "@/features/dashboard/lib/record-inactive-owner-contact";
 import { PaginatedList } from "@/components/paginated-list";
+import { useSalesProfile } from "@/hooks/use-sales-profile";
 import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
 import {
   WORKSPACE_HEALTH_BADGE_STYLES,
@@ -42,12 +45,15 @@ import {
   formatTrialDaysRemaining,
   isTrialBillingCycle,
 } from "@/lib/dashboard/subscription-labels";
+import { businessInfoPath } from "@/lib/admin/data-management-url-state";
 import { formatPhp } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DashboardAnalyticsRefresh } from "@/hooks/use-dashboard-analytics";
 import { ApiError } from "@/lib/api-client";
 
 const SUBSCRIPTION_PAGE_SIZE = 5;
+const INACTIVE_OWNERS_RETURN_TO =
+  "/dashboard/smartrefill#smartrefill-inactive";
 
 const TIMELINE_LABELS = {
   current: "Current",
@@ -227,6 +233,8 @@ function OwnerRow({
   expanded,
   onToggle,
   canApprove,
+  canOpenDataManagement,
+  onOpenDataManagement,
   onApprove,
   onViewReason,
   onViewDetail,
@@ -238,6 +246,8 @@ function OwnerRow({
   expanded: boolean;
   onToggle: () => void;
   canApprove: boolean;
+  canOpenDataManagement: boolean;
+  onOpenDataManagement: (owner: ActiveOwner) => void;
   onApprove: (businessId: string, subscriptionId: string) => void;
   onViewReason: (subscription: OwnerSubscription, businessName: string) => void;
   onViewDetail: (
@@ -269,49 +279,88 @@ function OwnerRow({
   }, [subscriptions]);
 
   const showContact = shouldShowInactiveOwnerContactButton(owner);
+  const dmHref = businessInfoPath(
+    owner.id,
+    INACTIVE_OWNERS_RETURN_TO,
+    owner.ownerId,
+  );
+
+  function handleRowActivate() {
+    if (canOpenDataManagement) {
+      onOpenDataManagement(owner);
+      return;
+    }
+    onToggle();
+  }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-white">
-      <div className="flex w-full items-start gap-2 px-4 py-3">
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-[var(--border)] bg-white transition",
+        "hover:border-teal-400 hover:bg-teal-50/30",
+      )}
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleRowActivate}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleRowActivate();
+          }
+        }}
+        className="flex w-full cursor-pointer items-start gap-2 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40"
+      >
         <button
           type="button"
-          onClick={onToggle}
-          className="flex min-w-0 flex-1 items-start gap-3 text-left transition hover:opacity-90"
+          aria-expanded={expanded}
+          aria-label={expanded ? "Collapse details" : "Expand details"}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggle();
+          }}
+          className="mt-0.5 shrink-0 rounded p-0.5 text-[var(--muted-foreground)] transition hover:bg-zinc-100 hover:text-foreground"
         >
           <ChevronDown
-            className={cn(
-              "mt-0.5 h-4 w-4 shrink-0 text-[var(--muted-foreground)] transition",
-              expanded && "rotate-180",
-            )}
+            className={cn("h-4 w-4 transition", expanded && "rotate-180")}
           />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-medium text-foreground">{owner.businessName}</p>
-              <Badge className={WORKSPACE_HEALTH_BADGE_STYLES[owner.healthTier]}>
-                {formatWorkspaceHealthTier(owner.healthTier)}
-              </Badge>
-              {(owner.pendingApprovals ?? 0) > 0 && (
-                <Badge className="bg-amber-100 text-amber-800">
-                  {owner.pendingApprovals} pending
-                </Badge>
-              )}
-            </div>
-            <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
-              {owner.planName || "—"} · {owner.customers} customers ·{" "}
-              {owner.transactionsLast30Days} tx/30d
-              {owner.monthlyRevenue > 0 ?
-                ` · ${formatPhp(owner.monthlyRevenue)}`
-              : ""}
-            </p>
-          </div>
         </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-medium text-foreground">{owner.businessName}</p>
+            <Badge className={WORKSPACE_HEALTH_BADGE_STYLES[owner.healthTier]}>
+              {formatWorkspaceHealthTier(owner.healthTier)}
+            </Badge>
+            {(owner.pendingApprovals ?? 0) > 0 && (
+              <Badge className="bg-amber-100 text-amber-800">
+                {owner.pendingApprovals} pending
+              </Badge>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
+            {owner.planName || "—"} · {owner.customers} customers ·{" "}
+            {owner.transactionsLast30Days} tx/30d
+            {owner.monthlyRevenue > 0 ?
+              ` · ${formatPhp(owner.monthlyRevenue)}`
+            : ""}
+          </p>
+          {canOpenDataManagement ?
+            <p className="mt-1 text-xs font-medium text-teal-700">
+              Open workspace →
+            </p>
+          : null}
+        </div>
         {showContact ?
           <Button
             type="button"
             size="sm"
             className="mt-0.5 shrink-0 bg-amber-600 text-white hover:bg-amber-700"
             disabled={contactingId === owner.id}
-            onClick={() => onContact(owner)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onContact(owner);
+            }}
           >
             {contactingId === owner.id ? "Sending…" : "Contact"}
           </Button>
@@ -320,6 +369,14 @@ function OwnerRow({
 
       {expanded && (
         <div className="space-y-4 border-t border-zinc-100 bg-zinc-50/60 px-4 py-3">
+          {canOpenDataManagement ?
+            <Link
+              href={dmHref}
+              className="inline-flex text-xs font-medium text-teal-700 hover:underline"
+            >
+              Open in Data management →
+            </Link>
+          : null}
           {owner.ownerEmail && (
             <p className="text-xs text-[var(--muted-foreground)]">{owner.ownerEmail}</p>
           )}
@@ -368,6 +425,8 @@ export function ActiveOwnersPanel({
   canApprove: boolean;
   onRefresh?: DashboardAnalyticsRefresh;
 }) {
+  const router = useRouter();
+  const { isAdmin } = useSalesProfile();
   const [localOwners, setLocalOwners] = useState(owners);
   const [ownersSource, setOwnersSource] = useState(owners);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -432,6 +491,12 @@ export function ActiveOwnersPanel({
     } finally {
       setApprovingId(null);
     }
+  }
+
+  function handleOpenDataManagement(owner: ActiveOwner) {
+    router.push(
+      businessInfoPath(owner.id, INACTIVE_OWNERS_RETURN_TO, owner.ownerId),
+    );
   }
 
   async function handleContact(owner: ActiveOwner) {
@@ -509,6 +574,8 @@ export function ActiveOwnersPanel({
                     )
                   }
                   canApprove={canApprove}
+                  canOpenDataManagement={isAdmin}
+                  onOpenDataManagement={handleOpenDataManagement}
                   onApprove={handleApprove}
                   onViewReason={(subscription, businessName) =>
                     setReasonTarget({ subscription, businessName })
