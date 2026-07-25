@@ -282,6 +282,7 @@ function StationListRow({
   selectable,
   canDelete,
   busyAction,
+  contactFailed,
   onToggleChecked,
   onSelect,
   onContact,
@@ -295,6 +296,7 @@ function StationListRow({
   selectable: boolean;
   canDelete: boolean;
   busyAction: "contact" | "ignore" | "restore" | "delete" | null;
+  contactFailed: boolean;
   onToggleChecked: () => void;
   onSelect: () => void;
   onContact: () => void;
@@ -344,6 +346,11 @@ function StationListRow({
                     }
                   >
                     {status === "ignored" ? "Ignored" : "Contacted"}
+                  </Badge>
+                : null}
+                {mode === "triage" && contactFailed ?
+                  <Badge className="bg-red-100 text-red-800">
+                    Failed to contact
                   </Badge>
                 : null}
               </div>
@@ -702,6 +709,22 @@ export function SmartRefillOldDashboard() {
     "contact" | "ignore" | "restore" | "delete" | null
   >(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [contactFailedIds, setContactFailedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  function markContactFailed(stationIds: string | string[], failed: boolean) {
+    const ids = Array.isArray(stationIds) ? stationIds : [stationIds];
+    if (ids.length === 0) return;
+    setContactFailedIds((current) => {
+      const next = new Set(current);
+      for (const id of ids) {
+        if (failed) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  }
   const [stationPendingDelete, setStationPendingDelete] =
     useState<LegacySmartRefillStation | null>(null);
   const [selectedStationIds, setSelectedStationIds] = useState<string[]>([]);
@@ -886,6 +909,7 @@ export function SmartRefillOldDashboard() {
     if (selectedStationId && ids.includes(selectedStationId)) {
       setSelectedStationId(null);
     }
+    markContactFailed(ids, false);
     setBusinessQueueTab("handled");
     setHandledStatusFilter("contacted");
     try {
@@ -894,6 +918,10 @@ export function SmartRefillOldDashboard() {
       if (result.failed.length > 0) {
         // Roll back failed rows so they stay in triage.
         const failedIds = new Set(result.failed.map((row) => row.stationId));
+        markContactFailed(
+          result.failed.map((row) => row.stationId),
+          true,
+        );
         setData((current) => {
           if (!current) return current;
           const priorById = new Map(previousStations.map((row) => [row.id, row]));
@@ -920,6 +948,7 @@ export function SmartRefillOldDashboard() {
         if (!current) return current;
         return { ...current, stations: previousStations };
       });
+      markContactFailed(ids, true);
       setBusinessQueueTab("triage");
       setActionError(
         err instanceof ApiError ?
@@ -1018,6 +1047,7 @@ export function SmartRefillOldDashboard() {
     }
     setBusyStationId(station.id);
     setBusyAction("contact");
+    markContactFailed(station.id, false);
     const contactedAt = new Date().toISOString();
     patchStationLocally(station.id, {
       triageStatus: "contacted",
@@ -1040,6 +1070,7 @@ export function SmartRefillOldDashboard() {
         contactedAt: station.contactedAt ?? null,
         ignoredAt: station.ignoredAt ?? null,
       });
+      markContactFailed(station.id, true);
       setBusinessQueueTab("triage");
       setActionError(
         err instanceof ApiError ?
@@ -1056,6 +1087,7 @@ export function SmartRefillOldDashboard() {
     setActionError(null);
     setBusyStationId(station.id);
     setBusyAction("ignore");
+    markContactFailed(station.id, false);
     const ignoredAt = new Date().toISOString();
     patchStationLocally(station.id, {
       triageStatus: "ignored",
@@ -1118,6 +1150,7 @@ export function SmartRefillOldDashboard() {
     setActionError(null);
     setBusyStationId(station.id);
     setBusyAction("delete");
+    markContactFailed(station.id, false);
     const previous = station;
     patchStationLocally(station.id, null);
     if (selectedStationId === station.id) setSelectedStationId(null);
@@ -1552,6 +1585,7 @@ export function SmartRefillOldDashboard() {
                     busyAction={
                       busyStationId === station.id ? busyAction : null
                     }
+                    contactFailed={contactFailedIds.has(station.id)}
                     onToggleChecked={() => toggleStationChecked(station.id)}
                     onSelect={() => setSelectedStationId(station.id)}
                     onContact={() => void handleContact(station)}
