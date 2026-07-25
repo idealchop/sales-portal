@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
 import type { DashboardAnalyticsRefresh } from "@/hooks/use-dashboard-analytics";
 import type { DashboardAnalytics } from "@/lib/dashboard/analytics";
@@ -13,6 +13,7 @@ type DashboardAnalyticsContextValue = {
   error: string | null;
   computedAt: string | null;
   refresh: DashboardAnalyticsRefresh;
+  setData: Dispatch<SetStateAction<DashboardAnalytics | null>>;
 };
 
 const DashboardAnalyticsContext =

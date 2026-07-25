@@ -5,6 +5,7 @@ import {
   setPlatformAlertContactStatus,
   type PlatformAlertContactStatus,
 } from "../services/platform-alert-contacts-service";
+import { removePlatformAlertFromDashboardSnapshot } from "../services/dashboard-analytics-snapshot";
 import { sendOutreachEmail } from "../services/outreach/send-outreach-email";
 import type { OutreachTemplateKind } from "../services/outreach/outreach-templates";
 
@@ -91,6 +92,9 @@ export async function patchPlatformAlertContactHandler(
       status,
       actorUid: uid,
     });
+    if (status === "contacted") {
+      await removePlatformAlertFromDashboardSnapshot(alertId);
+    }
     res.json({ data: { ...data, outreach } });
   } catch {
     res.status(500).json({ error: "Failed to update alert contact status." });

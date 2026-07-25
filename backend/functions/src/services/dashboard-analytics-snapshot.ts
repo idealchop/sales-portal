@@ -50,3 +50,41 @@ export async function writeDashboardAnalyticsSnapshot(
     logger.warn("Failed to persist dashboard analytics snapshot", { error });
   }
 }
+
+/** Remove a contacted alert from the cached snapshot so clients update immediately. */
+export async function removePlatformAlertFromDashboardSnapshot(
+  alertId: string,
+): Promise<void> {
+  try {
+    const current = await readDashboardAnalyticsSnapshot();
+    if (!current?.data?.platformAlerts?.items) return;
+
+    const items = current.data.platformAlerts.items.filter(
+      (item) => item.id !== alertId,
+    );
+    if (items.length === current.data.platformAlerts.items.length) return;
+
+    const counts = { ...current.data.platformAlerts.counts };
+    for (const key of Object.keys(counts) as Array<keyof typeof counts>) {
+      counts[key] = 0;
+    }
+    for (const item of items) {
+      counts[item.kind] = (counts[item.kind] ?? 0) + 1;
+    }
+
+    const computedAt = new Date().toISOString();
+    await snapshotRef().set({
+      data: {
+        ...current.data,
+        platformAlerts: { items, counts },
+      },
+      computedAt,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    logger.warn("Failed to patch dashboard analytics snapshot after alert contact", {
+      alertId,
+      error,
+    });
+  }
+}

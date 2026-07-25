@@ -15,11 +15,16 @@ import {
 import { ListPagination } from "@/components/list-pagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { useSalesProfile } from "@/hooks/use-sales-profile";
+import { useDashboardAnalyticsContext } from "@/features/dashboard/components/dashboard-analytics-context";
 import {
   contactPlatformAlert,
   markPlatformAlertDone,
 } from "@/features/dashboard/lib/platform-alert-contact";
 import { resolvePlatformAlertDataManagementPath } from "@/features/dashboard/lib/platform-alert-data-management";
+import {
+  buildPlatformAlertsSummary,
+  dismissPlatformAlertFromSummary,
+} from "@/features/dashboard/lib/platform-alert-list-state";
 import {
   businessInfoPath,
   dataManagementPath,
@@ -367,14 +372,22 @@ export function PlatformAlertsList({
 }) {
   const router = useRouter();
   const { profile } = useSalesProfile();
+  const { setData } = useDashboardAnalyticsContext();
   const isAdmin = profile?.role === "admin";
 
   const [kindFilter, setKindFilter] = useState<AlertKindFilter>("all");
   const [pageSize, setPageSize] = useState<AlertsPageSize>(
     DEFAULT_ALERTS_PAGE_SIZE,
   );
-  const [visibleItems, setVisibleItems] = useState(items);
-  const [visibleCounts, setVisibleCounts] = useState(counts);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [visibleItems, setVisibleItems] = useState(() =>
+    buildPlatformAlertsSummary(items).items,
+  );
+  const [visibleCounts, setVisibleCounts] = useState(() =>
+    buildPlatformAlertsSummary(items, new Set()).counts,
+  );
   const [itemsSource, setItemsSource] = useState(items);
   const [countsSource, setCountsSource] = useState(counts);
   const [savingAlertId, setSavingAlertId] = useState<string | null>(null);
@@ -383,10 +396,11 @@ export function PlatformAlertsList({
   const [selectedAlert, setSelectedAlert] = useState<PlatformAlert | null>(null);
 
   if (itemsSource !== items || countsSource !== counts) {
+    const summary = buildPlatformAlertsSummary(items, dismissedIds);
     setItemsSource(items);
     setCountsSource(counts);
-    setVisibleItems(items);
-    setVisibleCounts(counts);
+    setVisibleItems(summary.items);
+    setVisibleCounts(summary.counts);
   }
 
   const filteredItems = useMemo(() => {
@@ -402,14 +416,53 @@ export function PlatformAlertsList({
     kindFilter === "all" ? visibleItems.length : filteredItems.length;
 
   function dismissAlertOptimistically(item: PlatformAlert) {
+    setDismissedIds((current) => {
+      const next = new Set(current);
+      next.add(item.id);
+      return next;
+    });
     setVisibleItems((current) => current.filter((row) => row.id !== item.id));
     setVisibleCounts((current) => decrementKindCount(current, item.kind));
     setSelectedAlert((current) => (current?.id === item.id ? null : current));
+    setData((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        platformAlerts: dismissPlatformAlertFromSummary(
+          current.platformAlerts,
+          item.id,
+        ),
+      };
+    });
   }
 
-  function restoreAlerts() {
-    setVisibleItems(items);
-    setVisibleCounts(counts);
+  function restoreAlerts(item: PlatformAlert) {
+    setDismissedIds((current) => {
+      const next = new Set(current);
+      next.delete(item.id);
+      return next;
+    });
+    setVisibleItems((current) => {
+      if (current.some((row) => row.id === item.id)) return current;
+      return [item, ...current];
+    });
+    setVisibleCounts((current) => ({
+      ...current,
+      [item.kind]: (current[item.kind] ?? 0) + 1,
+    }));
+    setData((current) => {
+      if (!current) return current;
+      if (current.platformAlerts.items.some((row) => row.id === item.id)) {
+        return current;
+      }
+      return {
+        ...current,
+        platformAlerts: buildPlatformAlertsSummary([
+          item,
+          ...current.platformAlerts.items,
+        ]),
+      };
+    });
   }
 
   async function handleContact(item: PlatformAlert) {
@@ -423,7 +476,7 @@ export function PlatformAlertsList({
     try {
       await contactPlatformAlert(item);
     } catch {
-      restoreAlerts();
+      restoreAlerts(item);
       setContactError(
         "Could not send email via Brevo. Alert was kept in the list.",
       );
@@ -442,7 +495,7 @@ export function PlatformAlertsList({
     try {
       await markPlatformAlertDone(item);
     } catch {
-      restoreAlerts();
+      restoreAlerts(item);
       setContactError("Could not mark alert as done. Alert was kept in the list.");
     } finally {
       setSavingAlertId(null);

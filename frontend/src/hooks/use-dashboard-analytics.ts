@@ -104,6 +104,7 @@ export function useDashboardAnalytics() {
     error,
     computedAt,
     refresh,
+    setData,
   };
 }
 
