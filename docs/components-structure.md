@@ -37,7 +37,7 @@ frontend/src/
 | `components/smartrefill-old-dashboard.tsx` | Legacy SmartRefill ops from `prod-smartrefill`: triage / contacted-ignored queues (contact sends Brevo; contacted returns to triage after 15 days; ignored stays) |
 | `components/smartrefill-ops-health-strip.tsx` | Clickable support/maintenance snapshot tiles |
 | `components/smartrefill-maintenance-signals.tsx` | Workspace health + payment status bars |
-| `components/platform-alerts-list.tsx` | Alert queue; Contact sends Brevo outreach + dismisses |
+| `components/platform-alerts-list.tsx` | Alert queue; Contact (Brevo) + Mark done; row click opens Data management (admin) or detail dialog |
 | `components/active-owners-panel.tsx` | Inactive owners (7d+); Contact sends Brevo miss-you + 7d cooldown |
 | `components/sales-portal-dashboard.tsx` | Sales: market position, proactive outlook, scorecard, reports |
 | `components/sales-market-position-section.tsx` | Market position metrics + plan mix bars; proactive scoreboard |

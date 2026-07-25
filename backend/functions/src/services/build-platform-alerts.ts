@@ -19,6 +19,8 @@ export type PlatformAlert = {
   email?: string;
   businessId?: string;
   businessName?: string;
+  /** SmartRefill user id when alert is a new registration. */
+  userId?: string;
   contactStatus?: PlatformAlertContactStatus;
   /** True until a sales user acknowledges the alert (any contact action). */
   isNew?: boolean;
@@ -181,6 +183,7 @@ export function buildPlatformAlerts(input: {
       }`,
       occurredAt: user.joinedAt,
       email: user.email,
+      userId: user.id,
     });
   }
 

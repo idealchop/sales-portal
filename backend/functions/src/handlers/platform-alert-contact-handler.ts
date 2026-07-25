@@ -59,33 +59,30 @@ export async function patchPlatformAlertContactHandler(
 
     if (status === "contacted") {
       const toEmail = String(req.body?.toEmail || "").trim();
-      if (!toEmail) {
-        res.status(400).json({
-          error: "Recipient email is required to send outreach via Brevo.",
-        });
-        return;
-      }
-
-      try {
-        outreach = await sendOutreachEmail({
-          toEmail,
-          kind: resolveOutreachKind(req.body?.kind),
-          personalization: {
-            recipientName: req.body?.recipientName,
-            businessName: req.body?.businessName,
-            subtitle: req.body?.subtitle,
-          },
-          actorUid: uid,
-        });
-      } catch (error) {
-        logger.error("Failed to send platform alert outreach via Brevo", {
-          alertId,
-          error,
-        });
-        res.status(502).json({
-          error: "Failed to send outreach email via Brevo. Alert was not marked contacted.",
-        });
-        return;
+      // Outreach is optional — mark done without email when toEmail is omitted.
+      if (toEmail) {
+        try {
+          outreach = await sendOutreachEmail({
+            toEmail,
+            kind: resolveOutreachKind(req.body?.kind),
+            personalization: {
+              recipientName: req.body?.recipientName,
+              businessName: req.body?.businessName,
+              subtitle: req.body?.subtitle,
+            },
+            actorUid: uid,
+          });
+        } catch (error) {
+          logger.error("Failed to send platform alert outreach via Brevo", {
+            alertId,
+            error,
+          });
+          res.status(502).json({
+            error:
+              "Failed to send outreach email via Brevo. Alert was not marked contacted.",
+          });
+          return;
+        }
       }
     }
 

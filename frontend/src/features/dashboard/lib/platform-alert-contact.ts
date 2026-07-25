@@ -72,3 +72,10 @@ export async function contactPlatformAlert(
     subtitle: item.subtitle,
   });
 }
+
+/** Mark alert done/contacted without sending outreach email. */
+export async function markPlatformAlertDone(
+  item: PlatformAlert,
+): Promise<void> {
+  await updatePlatformAlertContactStatus(item.id, "contacted");
+}

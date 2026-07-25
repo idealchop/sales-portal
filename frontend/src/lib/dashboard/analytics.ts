@@ -435,6 +435,8 @@ export type PlatformAlert = {
   email?: string;
   businessId?: string;
   businessName?: string;
+  /** SmartRefill user id when alert is a new registration. */
+  userId?: string;
   contactStatus?: PlatformAlertContactStatus;
   isNew?: boolean;
 };

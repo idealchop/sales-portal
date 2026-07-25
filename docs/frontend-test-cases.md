@@ -50,6 +50,8 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-DASH-11 | any | Subscription list **Print OR** | Paid history row opens Official Receipt PDF / print dialog |
 | TC-DASH-12 | any | Subscription list **Print statement** | SOA PDF lists all paid periods for that business |
 | TC-DASH-13 | admin | Alert **Contact** (new user / demo) | Sends Brevo email (From support@ + BCC); alert leaves open queue |
+| TC-DASH-13b | any | Alert **Mark done** | Marks contacted without email; alert leaves open queue |
+| TC-DASH-13c | admin | Click alert row | Opens Data management business page (or search); non-admin sees detail dialog |
 | TC-DASH-14 | admin | Inactive owner **Contact** | Sends Brevo miss-you email + BCC; button hidden for 7 days |
 | TC-DASH-15 | admin | Tag owner as **Test account** in Permissions | After analytics refresh, owner’s stations/users absent from Platform/Sales KPIs, plan mix, and maps |
 | TC-DASH-16 | any | Open `/dashboard/smartrefill-old` | Triage / Contacted-Ignored; Contact sends Brevo; Ignore moves queue; bulk actions up to 50 |

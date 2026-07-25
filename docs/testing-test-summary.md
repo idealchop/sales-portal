@@ -80,6 +80,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/lib/email/new-user-welcome-template.test.ts` ✅ | New-user outreach template copy | TC-DASH-13 |
 | `unit/lib/email/demo-inquiry-template.test.ts` ✅ | Demo-inquiry outreach template copy | TC-DASH-13 |
 | `unit/lib/email/inactive-owner-template.test.ts` ✅ | Inactive-owner outreach template copy | TC-DASH-14 |
+| `unit/features/dashboard/platform-alert-data-management.test.ts` ✅ | Alert → Data management deep links | TC-DASH-13c |
 | `unit/lib/email/legacy-station-template.test.ts` ✅ | Legacy station contact template copy | TC-DASH-16 |
 | `unit/features/dashboard/build-subscription-approval-queue.test.ts` ✅ | Approval queue rows | TC-DASH-05, TC-DASH-09 |
 | `unit/lib/dashboard-analytics-normalize.test.ts` ✅ | `newJoiners`, `dashboardForecasts` defaults | TC-DASH-01 |

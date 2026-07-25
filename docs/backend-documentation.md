@@ -71,7 +71,7 @@ All routes are mounted at the function root (no `/api` prefix).
 | `POST` | `/dashboard/smartrefill-old/stations/bulk-ignore` | Portal | Bulk mark up to 50 legacy stations ignored |
 | `POST` | `/dashboard/smartrefill-old/stations/bulk-contact` | Portal | Bulk Brevo outreach + mark contacted (up to 50) |
 | `DELETE` | `/dashboard/smartrefill-old/stations/:stationId` | Manager/Admin | Permanently delete station + subcollections from `prod-smartrefill` |
-| `PATCH` | `/dashboard/platform-alerts/:alertId/contact` | Portal | Send alert outreach via Brevo (`support@riverph.com` + BCC), then mark contacted |
+| `PATCH` | `/dashboard/platform-alerts/:alertId/contact` | Portal | Mark alert contacted; optional Brevo outreach when `toEmail` is set (omit email to mark done only) |
 | `PATCH` | `/dashboard/inactive-owners/:businessId/contact` | Portal | Send inactive-owner outreach via Brevo, then record timestamp (7-day Contact cooldown) |
 | `POST` | `/dashboard/outreach/send` | Portal | Send Brevo outreach only (generic / named templates; no contact cooldown write) |
 | `POST` | `/dashboard/subscriptions/:businessId/:subscriptionId/approve` | Portal | Approve pending subscription |
