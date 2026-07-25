@@ -70,23 +70,53 @@ export async function sendOutreachEmail(
   sendSmtpEmail.textContent = template.text;
   sendSmtpEmail.tags = [template.brevoTag];
 
-  const response = await api.sendTransacEmail(sendSmtpEmail);
-  const messageId =
-    (response.body as { messageId?: string } | undefined)?.messageId;
+  try {
+    const response = await api.sendTransacEmail(sendSmtpEmail);
+    const messageId =
+      (response.body as { messageId?: string } | undefined)?.messageId;
 
-  logger.info("Brevo outreach email sent", {
-    toEmail,
-    kind: input.kind,
-    subject: template.subject,
-    messageId,
-    actorUid: input.actorUid,
-  });
+    logger.info("Brevo outreach email sent", {
+      toEmail,
+      kind: input.kind,
+      subject: template.subject,
+      messageId,
+      actorUid: input.actorUid,
+    });
 
-  return {
-    sent: true,
-    skipped: false,
-    messageId,
-    subject: template.subject,
-    brevoTag: template.brevoTag,
+    return {
+      sent: true,
+      skipped: false,
+      messageId,
+      subject: template.subject,
+      brevoTag: template.brevoTag,
+    };
+  } catch (error) {
+    const brevoMessage = extractBrevoErrorMessage(error);
+    logger.error("Brevo outreach email failed", {
+      toEmail,
+      kind: input.kind,
+      actorUid: input.actorUid,
+      error: brevoMessage,
+    });
+    throw new Error(brevoMessage);
+  }
+}
+
+function extractBrevoErrorMessage(error: unknown): string {
+  if (!error || typeof error !== "object") {
+    return "Failed to send outreach email via Brevo.";
+  }
+  const record = error as {
+    message?: string;
+    body?: { message?: string; code?: string };
+    response?: { body?: { message?: string; code?: string } };
   };
+  const body = record.body || record.response?.body;
+  const detail =
+    body?.message ||
+    (typeof record.message === "string" ? record.message : null);
+  if (detail?.trim()) {
+    return `Brevo: ${detail.trim()}`;
+  }
+  return "Failed to send outreach email via Brevo.";
 }

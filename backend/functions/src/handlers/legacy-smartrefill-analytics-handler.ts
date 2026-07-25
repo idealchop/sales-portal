@@ -336,10 +336,50 @@ export async function postLegacySmartRefillStationsBulkContactHandler(
     return;
   }
 
+  const rawContacts = Array.isArray(req.body?.contacts) ? req.body.contacts : [];
+  const contacts = rawContacts
+    .map((row: unknown) => {
+      if (!row || typeof row !== "object") return null;
+      const record = row as Record<string, unknown>;
+      const stationId = String(record.stationId || "").trim();
+      if (!stationId) return null;
+      return {
+        stationId,
+        toEmail:
+          record.toEmail == null ? null : String(record.toEmail).trim() || null,
+        recipientName:
+          record.recipientName == null ?
+            null
+          : String(record.recipientName).trim() || null,
+        businessName:
+          record.businessName == null ?
+            null
+          : String(record.businessName).trim() || null,
+      };
+    })
+    .filter(
+      (
+        row:
+          | {
+              stationId: string;
+              toEmail: string | null;
+              recipientName: string | null;
+              businessName: string | null;
+            }
+          | null,
+      ): row is {
+        stationId: string;
+        toEmail: string | null;
+        recipientName: string | null;
+        businessName: string | null;
+      } => row != null,
+    );
+
   try {
     const data = await bulkContactLegacySmartRefillStations({
       stationIds,
       actorUid: uid,
+      contacts,
     });
     clearLegacySmartRefillAnalyticsCache();
     res.json({ data });

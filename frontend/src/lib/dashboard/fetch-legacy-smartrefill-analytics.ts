@@ -138,6 +138,12 @@ export async function bulkIgnoreLegacySmartRefillStations(
 
 export async function bulkContactLegacySmartRefillStations(
   stationIds: string[],
+  contacts?: Array<{
+    stationId: string;
+    toEmail?: string | null;
+    recipientName?: string | null;
+    businessName?: string | null;
+  }>,
 ): Promise<{
   updatedIds: string[];
   failed: Array<{ stationId: string; error: string }>;
@@ -147,6 +153,9 @@ export async function bulkContactLegacySmartRefillStations(
       updatedIds: string[];
       failed: Array<{ stationId: string; error: string }>;
     };
-  }>("/dashboard/smartrefill-old/stations/bulk-contact", { stationIds });
+  }>("/dashboard/smartrefill-old/stations/bulk-contact", {
+    stationIds,
+    contacts,
+  });
   return json.data;
 }

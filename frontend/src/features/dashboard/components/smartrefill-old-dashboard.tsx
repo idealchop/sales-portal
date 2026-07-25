@@ -921,7 +921,16 @@ export function SmartRefillOldDashboard() {
     setBusinessQueueTab("handled");
     setHandledStatusFilter("contacted");
     try {
-      const result = await bulkContactLegacySmartRefillStations(ids);
+      const contacts = ids.map((id) => {
+        const station = previousStations.find((row) => row.id === id);
+        return {
+          stationId: id,
+          toEmail: station?.email ?? null,
+          recipientName: station?.ownerName ?? null,
+          businessName: station?.businessName ?? null,
+        };
+      });
+      const result = await bulkContactLegacySmartRefillStations(ids, contacts);
       const notes: string[] = [];
       if (result.failed.length > 0) {
         // Roll back failed rows so they stay in triage.
@@ -942,8 +951,14 @@ export function SmartRefillOldDashboard() {
             }),
           };
         });
+        const sampleErrors = result.failed
+          .slice(0, 3)
+          .map((row) => row.error)
+          .filter(Boolean);
         notes.push(
-          `Contacted ${result.updatedIds.length}. Failed: ${result.failed.length}.`,
+          `Contacted ${result.updatedIds.length}. Failed: ${result.failed.length}${
+            sampleErrors.length > 0 ? ` (${sampleErrors.join("; ")})` : ""
+          }.`,
         );
       }
       if (skipped > 0) {

@@ -1,8 +1,41 @@
 import { describe, expect, it } from "vitest";
 import {
   LEGACY_CONTACT_COOLDOWN_DAYS,
+  resolveLegacyContactFields,
   resolveLegacyStationTriageStatus,
 } from "../../../services/legacy-smartrefill-station-actions";
+
+describe("resolveLegacyContactFields", () => {
+  it("falls back to Auth export email when Firestore email is missing", () => {
+    expect(
+      resolveLegacyContactFields({
+        firestoreEmail: "",
+        firestoreOwnerName: "",
+        firestoreBusinessName: "Station",
+        firestoreDisplayName: "",
+        authEmail: "owner@example.com",
+        authDisplayName: "Owner From Auth",
+      }),
+    ).toEqual({
+      email: "owner@example.com",
+      ownerName: "Owner From Auth",
+      businessName: "Station",
+    });
+  });
+
+  it("prefers Firestore email over Auth export", () => {
+    expect(
+      resolveLegacyContactFields({
+        firestoreEmail: "firestore@example.com",
+        firestoreOwnerName: "Firestore Owner",
+        firestoreBusinessName: "Biz",
+        firestoreDisplayName: "Display",
+        authEmail: "auth@example.com",
+        authDisplayName: "Auth Owner",
+      }).email,
+    ).toBe("firestore@example.com");
+  });
+});
 
 describe("resolveLegacyStationTriageStatus", () => {
   const nowMs = Date.parse("2026-07-24T12:00:00.000Z");

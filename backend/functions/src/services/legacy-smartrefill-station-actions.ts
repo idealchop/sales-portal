@@ -4,6 +4,7 @@ import type {
 } from "firebase-admin/firestore";
 import { db, FieldValue, prodSmartrefillDb } from "../config/firebase-admin";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
+import { findLegacyAuthUser } from "./legacy-auth-users";
 import { sendOutreachEmail } from "./outreach/send-outreach-email";
 
 const FLAGS_COLLECTION = "legacy_smartrefill_station_flags";
@@ -292,19 +293,33 @@ export async function contactLegacySmartRefillStation(input: {
 export async function bulkContactLegacySmartRefillStations(input: {
   stationIds: string[];
   actorUid: string;
+  /** Optional per-station outreach fields (e.g. emails from Auth export / UI). */
+  contacts?: Array<{
+    stationId: string;
+    toEmail?: string | null;
+    recipientName?: string | null;
+    businessName?: string | null;
+  }>;
 }): Promise<{
   updatedIds: string[];
   failed: Array<{ stationId: string; error: string }>;
 }> {
   const uniqueIds = normalizeBulkStationIds(input.stationIds);
+  const contactById = new Map(
+    (input.contacts ?? []).map((row) => [row.stationId.trim(), row]),
+  );
   const updatedIds: string[] = [];
   const failed: Array<{ stationId: string; error: string }> = [];
 
   for (const stationId of uniqueIds) {
+    const contact = contactById.get(stationId);
     try {
       await contactLegacySmartRefillStation({
         stationId,
         actorUid: input.actorUid,
+        toEmail: contact?.toEmail,
+        recipientName: contact?.recipientName,
+        businessName: contact?.businessName,
       });
       updatedIds.push(stationId);
     } catch (error) {
@@ -318,7 +333,35 @@ export async function bulkContactLegacySmartRefillStations(input: {
   return { updatedIds, failed };
 }
 
-async function loadLegacyStationContactProfile(stationId: string): Promise<{
+/** Resolve contact fields from Firestore first, then Auth export fallback. */
+export function resolveLegacyContactFields(input: {
+  firestoreEmail?: string | null;
+  firestoreOwnerName?: string | null;
+  firestoreBusinessName?: string | null;
+  firestoreDisplayName?: string | null;
+  authEmail?: string | null;
+  authDisplayName?: string | null;
+}): {
+  email: string;
+  ownerName: string;
+  businessName: string;
+} {
+  const firestoreEmail = String(input.firestoreEmail || "").trim();
+  const authEmail = String(input.authEmail || "").trim();
+  const firestoreOwnerName = String(input.firestoreOwnerName || "").trim();
+  const firestoreBusinessName = String(input.firestoreBusinessName || "").trim();
+  const firestoreDisplayName = String(input.firestoreDisplayName || "").trim();
+  const authDisplayName = String(input.authDisplayName || "").trim();
+
+  return {
+    email: firestoreEmail || authEmail,
+    ownerName: firestoreOwnerName || authDisplayName || firestoreDisplayName,
+    businessName:
+      firestoreBusinessName || authDisplayName || firestoreDisplayName,
+  };
+}
+
+export async function loadLegacyStationContactProfile(stationId: string): Promise<{
   email: string;
   ownerName: string;
   businessName: string;
@@ -330,15 +373,20 @@ async function loadLegacyStationContactProfile(stationId: string): Promise<{
   ]);
   const user = userSnap.data() || {};
   const profile = profileSnap.data() || {};
-  return {
-    email: String(user.email || "").trim(),
-    ownerName:
-      String(profile.ownerName || "").trim() ||
-      String(user.displayName || "").trim(),
-    businessName:
-      String(profile.businessName || "").trim() ||
-      String(user.displayName || "").trim(),
-  };
+  const firestoreEmail = String(user.email || "").trim();
+  const authUser = findLegacyAuthUser({
+    localId: stationId,
+    email: firestoreEmail,
+  });
+
+  return resolveLegacyContactFields({
+    firestoreEmail,
+    firestoreOwnerName: String(profile.ownerName || "").trim(),
+    firestoreBusinessName: String(profile.businessName || "").trim(),
+    firestoreDisplayName: String(user.displayName || "").trim(),
+    authEmail: authUser?.email,
+    authDisplayName: authUser?.displayName,
+  });
 }
 
 /** Clears contacted/ignored so the station returns to Triage. */
