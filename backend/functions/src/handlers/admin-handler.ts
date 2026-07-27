@@ -11,6 +11,7 @@ import {
   type AdminAppAccessEntry,
 } from "../services/admin-user-service";
 import { listDataManagementOverview } from "../services/admin-data-management-service";
+import { cloneBusinessToDemoAccount } from "../services/clone-to-demo-service";
 import {
   deleteBusinessFirestoreDocument,
   deleteBusinessFirestoreTree,
@@ -57,6 +58,65 @@ export const getAdminDataManagement = async (
   } catch (error) {
     logger.error("Failed to load admin data management overview", { error });
     res.status(500).json({ error: "Failed to load data management." });
+  }
+};
+
+export const postAdminCloneToDemo = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const uid = req.user?.uid;
+  if (!uid) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const sourceBusinessId = String(req.body?.sourceBusinessId || "").trim();
+  if (!sourceBusinessId) {
+    res.status(400).json({ error: "sourceBusinessId is required." });
+    return;
+  }
+
+  try {
+    const data = await cloneBusinessToDemoAccount({
+      sourceBusinessId,
+      actorUid: uid,
+    });
+    res.json({ data });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "SOURCE_BUSINESS_ID_REQUIRED") {
+      res.status(400).json({ error: "sourceBusinessId is required." });
+      return;
+    }
+    if (message === "SOURCE_BUSINESS_NOT_FOUND") {
+      res.status(404).json({ error: "Source business was not found." });
+      return;
+    }
+    if (message === "SOURCE_OWNER_MISSING") {
+      res.status(400).json({
+        error: "Source business has no ownerId — cannot clone.",
+      });
+      return;
+    }
+    if (message === "SOURCE_OWNER_USER_NOT_FOUND") {
+      res.status(404).json({ error: "Source owner user profile was not found." });
+      return;
+    }
+    if (
+      message === "CANNOT_CLONE_DEMO_INTO_ITSELF" ||
+      message === "CANNOT_CLONE_DEMO_USER_SOURCE"
+    ) {
+      res.status(400).json({ error: "Cannot clone the demo account into itself." });
+      return;
+    }
+    logger.error("Failed to clone business to demo account", {
+      error,
+      sourceBusinessId,
+    });
+    res.status(500).json({
+      error: "Failed to clone account into demo@smartrefill.com.",
+    });
   }
 };
 

@@ -164,6 +164,7 @@ All admin routes require **Bearer token**, **sales-portal access**, and **`admin
 | `DELETE` | `/admin/users/:uid/firestore-profile` | Delete user profile docs |
 | `DELETE` | `/admin/users/:uid` | Delete user (Auth + Firestore) |
 | `GET` | `/admin/data-management` | Businesses index for data management |
+| `POST` | `/admin/data-management/clone-to-demo` | Clone owner workspace into `demo@smartrefill.com` (wipes previous demo clone only) |
 | `GET` | `/admin/catalog-collections/:collectionId` | List subscription catalog docs |
 | `PUT` | `/admin/catalog-collections/:collectionId/documents` | Create/update catalog document |
 | `DELETE` | `/admin/catalog-collections/:collectionId/documents` | Delete catalog document |

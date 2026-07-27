@@ -47,6 +47,7 @@ import { DataManagementNoBusinessDialog } from "@/features/admin/components/data
 import { DataManagementUserDocsDialog } from "@/features/admin/components/data-management-user-docs-dialog";
 import { DataManagementUserLogsDialog } from "@/features/admin/components/data-management-user-logs-dialog";
 import { DataManagementRemoveUserDialog } from "@/features/admin/components/data-management-remove-user-dialog";
+import { DataManagementCloneToDemoDialog } from "@/features/admin/components/data-management-clone-to-demo-dialog";
 import { CopyableUserId } from "@/features/admin/components/copyable-user-id";
 import { DataManagementUserAvatar } from "@/features/admin/components/data-management-user-avatar";
 import { FirestoreActionsMenu } from "@/features/admin/components/firestore-actions-menu";
@@ -96,6 +97,7 @@ function RoleLinkTable({
   onOpenProfile,
   onOpenLogs,
   onViewBusinessInfo,
+  onCloneToDemo,
   onRemoveUser,
 }: {
   rows: DataManagementLinkRow[];
@@ -103,6 +105,7 @@ function RoleLinkTable({
   onOpenProfile: (row: DataManagementLinkRow) => void;
   onOpenLogs: (row: DataManagementLinkRow) => void;
   onViewBusinessInfo: (row: DataManagementLinkRow) => void;
+  onCloneToDemo?: (row: DataManagementLinkRow) => void;
   onRemoveUser: (row: DataManagementLinkRow) => void;
 }) {
   const isStaffTab = tab === "staff";
@@ -248,6 +251,14 @@ function RoleLinkTable({
                     onViewBusinessInfo={
                       isStaffTab ? undefined : () => onViewBusinessInfo(row)
                     }
+                    onCloneToDemo={
+                      !isStaffTab &&
+                      row.businessId &&
+                      row.businessId !== "demo_smartrefill_clone" &&
+                      onCloneToDemo ?
+                        () => onCloneToDemo(row)
+                      : undefined
+                    }
                     onEdit={() => onOpenProfile(row)}
                     onRemove={() => onRemoveUser(row)}
                   />
@@ -284,6 +295,7 @@ function RoleLinkPanel({
     null,
   );
   const [removeRow, setRemoveRow] = useState<DataManagementLinkRow | null>(null);
+  const [cloneRow, setCloneRow] = useState<DataManagementLinkRow | null>(null);
 
   const filtered = useMemo(
     () =>
@@ -518,6 +530,7 @@ function RoleLinkPanel({
         onOpenProfile={setProfileRow}
         onOpenLogs={setLogsRow}
         onViewBusinessInfo={handleViewBusinessInfo}
+        onCloneToDemo={tabKey === "owners" ? setCloneRow : undefined}
         onRemoveUser={setRemoveRow}
       />
 
@@ -559,6 +572,14 @@ function RoleLinkPanel({
           }}
         />
       )}
+
+      {cloneRow && cloneRow.businessId ?
+        <DataManagementCloneToDemoDialog
+          row={cloneRow}
+          onClose={() => setCloneRow(null)}
+          onCloned={() => onUserCollectionChanged?.()}
+        />
+      : null}
 
       <ListPagination
         page={page}

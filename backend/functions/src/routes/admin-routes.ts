@@ -15,6 +15,7 @@ import {
   patchAdminCustomerBulkStatus,
   putAdminBusinessDocument,
   getAdminDataManagement,
+  postAdminCloneToDemo,
   getAdminUserDocuments,
   getAdminUsers,
   patchAdminUserAppAccess,
@@ -35,6 +36,7 @@ router.use(validateFirebaseIdToken, requireSalesPortalAccess, requireAdminRole);
 
 router.get("/users", getAdminUsers);
 router.get("/data-management", getAdminDataManagement);
+router.post("/data-management/clone-to-demo", postAdminCloneToDemo);
 router.get("/catalog-collections/:collectionId", getAdminCatalogCollection);
 router.put(
   "/catalog-collections/:collectionId/documents",

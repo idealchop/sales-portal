@@ -1,11 +1,11 @@
 "use client";
 
-import { Building2, Eye, MoreVertical, Pencil, ScrollText, Trash2 } from "lucide-react";
+import { Building2, Copy, Eye, MoreVertical, Pencil, ScrollText, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 
-const MENU_WIDTH = 176;
+const MENU_WIDTH = 196;
 const MENU_ITEM_HEIGHT = 36;
 const MENU_PADDING = 8;
 
@@ -18,6 +18,7 @@ export function FirestoreActionsMenu({
   onViewProfile,
   onLogs,
   onViewBusinessInfo,
+  onCloneToDemo,
   onEdit,
   onRemove,
   removeDisabled = false,
@@ -29,6 +30,7 @@ export function FirestoreActionsMenu({
   onViewProfile?: () => void;
   onLogs?: () => void;
   onViewBusinessInfo?: () => void;
+  onCloneToDemo?: () => void;
   onEdit: () => void;
   onRemove: () => void;
   removeDisabled?: boolean;
@@ -50,6 +52,7 @@ export function FirestoreActionsMenu({
     (onViewProfile ? 1 : 0) +
     (onLogs ? 1 : 0) +
     (onViewBusinessInfo ? 1 : 0) +
+    (onCloneToDemo ? 1 : 0) +
     2;
 
   const updateMenuPosition = useCallback(() => {
@@ -170,6 +173,19 @@ export function FirestoreActionsMenu({
             >
               <ScrollText className="h-3.5 w-3.5 text-zinc-500" />
               Logs
+            </button>
+          )}
+          {onCloneToDemo && (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-800 hover:bg-zinc-50"
+              onClick={() => {
+                setOpen(false);
+                onCloneToDemo();
+              }}
+            >
+              <Copy className="h-3.5 w-3.5 text-zinc-500" />
+              Clone to demo
             </button>
           )}
           <button

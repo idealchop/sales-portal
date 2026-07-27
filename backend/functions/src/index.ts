@@ -52,6 +52,8 @@ export const salesPortalApi = onRequest(
   {
     region: "asia-southeast1",
     cors: true,
+    timeoutSeconds: 540,
+    memory: "1GiB",
     secrets: [...SALES_PORTAL_FUNCTION_SECRETS],
   },
   api,
