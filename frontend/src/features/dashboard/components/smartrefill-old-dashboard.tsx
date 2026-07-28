@@ -353,9 +353,6 @@ function StationListRow({
                     Failed to contact
                   </Badge>
                 : null}
-                {station.authOnly ?
-                  <Badge className="bg-sky-100 text-sky-800">Auth only</Badge>
-                : null}
               </div>
               <p className="mt-1 text-sm text-[var(--muted-foreground)]">
                 {station.ownerName}
@@ -751,13 +748,15 @@ export function SmartRefillOldDashboard() {
   const triageCount = useMemo(
     () =>
       data?.stations.filter(
-        (station) => (station.triageStatus ?? "open") === "open",
+        (station) =>
+          !station.authOnly && (station.triageStatus ?? "open") === "open",
       ).length ?? 0,
     [data],
   );
   const handledCount = useMemo(
     () =>
       data?.stations.filter((station) => {
+        if (station.authOnly) return false;
         const status = station.triageStatus ?? "open";
         return status === "contacted" || status === "ignored";
       }).length ?? 0,
@@ -768,6 +767,7 @@ export function SmartRefillOldDashboard() {
     if (!data) return [];
     const q = businessQuery.trim().toLowerCase();
     const filtered = data.stations.filter((station) => {
+      if (station.authOnly) return false;
       const status = (station.triageStatus ?? "open") as LegacyStationTriageStatus;
       if (businessQueueTab === "triage") {
         if (status !== "open") return false;
@@ -1290,11 +1290,7 @@ export function SmartRefillOldDashboard() {
             <SnapshotStat
               label="Businesses"
               value={String(data.summary.stationsWithProfile)}
-              hint={`${data.summary.stationsWithActivity} with customers/txs${
-                data.summary.authOnlyStations ?
-                  ` · ${data.summary.authOnlyStations} auth-only`
-                : ""
-              }`}
+              hint={`${data.summary.stationsWithActivity} with customers/txs`}
               icon={<Building2 className="h-4 w-4" />}
             />
             <SnapshotStat

@@ -426,45 +426,6 @@ async function buildAnalytics(): Promise<LegacySmartRefillAnalytics> {
     (station): station is LegacySmartRefillStation => station != null,
   );
 
-  // Auth export users with no Firestore profile — still show in triage for outreach.
-  const knownIds = new Set(stations.map((station) => station.id));
-  const knownEmails = new Set(
-    stations
-      .map((station) => station.email.trim().toLowerCase())
-      .filter(Boolean),
-  );
-  for (const authUser of getLegacyAuthUsers()) {
-    const emailKey = authUser.email.trim().toLowerCase();
-    if (knownIds.has(authUser.localId) || knownEmails.has(emailKey)) {
-      continue;
-    }
-    const flag = flagsMap.get(authUser.localId);
-    stations.push({
-      id: authUser.localId,
-      businessName: authUser.displayName || authUser.email || "Auth user",
-      ownerName: authUser.displayName || "Owner",
-      email: authUser.email,
-      phone: null,
-      address: null,
-      lat: null,
-      lng: null,
-      onboardingComplete: false,
-      customerCount: 0,
-      deliveryCount: 0,
-      revenueTotal: 0,
-      bottlesTotal: 0,
-      unpaidTotal: 0,
-      lastDeliveryAt: null,
-      lastSignedInAt: authUser.lastSignedInAt,
-      authOnly: true,
-      triageStatus: flag?.triageStatus ?? "open",
-      contactedAt: flag?.contactedAt ?? null,
-      ignoredAt: flag?.ignoredAt ?? null,
-    });
-    knownIds.add(authUser.localId);
-    knownEmails.add(emailKey);
-  }
-
   const activeStations = stations.filter((station) => station.deliveryCount > 0);
 
   await mapWithConcurrency(
@@ -581,8 +542,8 @@ async function buildAnalytics(): Promise<LegacySmartRefillAnalytics> {
     summary: {
       totalUsers: usersSnap.size,
       authExportUsers: getLegacyAuthUsers().length,
-      authOnlyStations: stations.filter((s) => s.authOnly).length,
-      stationsWithProfile: stations.filter((s) => !s.authOnly).length,
+      authOnlyStations: 0,
+      stationsWithProfile: stations.length,
       stationsWithActivity: stations.filter(
         (station) => station.customerCount + station.deliveryCount > 0,
       ).length,
