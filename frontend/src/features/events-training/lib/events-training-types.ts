@@ -41,7 +41,7 @@ export type WebinarRecord = {
   status: WebinarStatus;
   /** Firestore `apps/{appId}` this webinar publishes for. */
   appId?: string;
-  /** Who may register: private (member tiers) or premium (paid unlock). */
+  /** Who may register: public (marketing guests + members), private (member tiers), or premium (paid unlock). */
   visibility: VideoVisibility;
   priceCents: number;
   currency: string;
@@ -51,6 +51,11 @@ export type WebinarRecord = {
   registrationCount: number;
   /** SmartRefill auto-accepts when true (no pending ops review). */
   autoAccept?: boolean;
+  /**
+   * Public events only: allow guest register on smartrefill.io.
+   * Missing → treated as enabled when visibility is public.
+   */
+  guestRegistrationEnabled?: boolean;
   joinLink: string | null;
   linkedVideoId: string | null;
   certificationEnabled: boolean;
@@ -283,12 +288,17 @@ export type ComposedWebinarScheduleMessage = {
 
 export type CertTargetType = "training_video" | "webinar_event";
 
+export type RegistrationKind = "member" | "guest";
+
 export type RegistrationRecord = {
   id: string;
   eventId: string;
+  /** Guest = marketing-site email registration; missing → member. */
+  kind?: RegistrationKind;
   userId: string;
   businessId: string;
   email: string;
+  displayName?: string | null;
   status: RegistrationStatus;
   emailReminderOptIn: boolean;
   joinLink: string | null;

@@ -34,6 +34,12 @@ export type WebinarRecord = {
   registrationCount: number;
   /** When true, SmartRefill registers members as accepted immediately. */
   autoAccept: boolean;
+  /**
+   * When visibility is public: allow non-member guest register on marketing
+   * `/resources/webinars`. Ignored (forced false) for premium/private.
+   * Missing on legacy docs → treated as true for public events.
+   */
+  guestRegistrationEnabled: boolean;
   joinLink: string | null;
   linkedVideoId: string | null;
   certificationEnabled: boolean;
@@ -42,6 +48,16 @@ export type WebinarRecord = {
   updatedAt: string | null;
   publishedAt: string | null;
 };
+
+/** Public events default guests on; non-public never allows guests. */
+export function resolveGuestRegistrationEnabled(
+  visibility: VideoVisibility,
+  value: unknown,
+): boolean {
+  if (visibility !== "public") return false;
+  if (typeof value === "boolean") return value;
+  return true;
+}
 
 function parseEnum<T extends string>(
   value: unknown,
@@ -180,6 +196,10 @@ function mapWebinar(id: string, data: Record<string, unknown>): WebinarRecord {
     capacity: data.capacity == null ? null : Number(data.capacity),
     registrationCount: Number(data.registrationCount) || 0,
     autoAccept: data.autoAccept === true,
+    guestRegistrationEnabled: resolveGuestRegistrationEnabled(
+      visibility,
+      data.guestRegistrationEnabled,
+    ),
     joinLink: typeof data.joinLink === "string" ? data.joinLink : null,
     linkedVideoId:
       typeof data.linkedVideoId === "string" ? data.linkedVideoId : null,
@@ -216,6 +236,7 @@ export type UpsertWebinarInput = {
   allowAllMembers?: boolean;
   capacity?: number | null;
   autoAccept?: boolean;
+  guestRegistrationEnabled?: boolean;
   joinLink?: string | null;
   linkedVideoId?: string | null;
   certificationEnabled?: boolean;
@@ -269,6 +290,10 @@ export async function createWebinar(
     capacity: input.capacity ?? null,
     registrationCount: 0,
     autoAccept: input.autoAccept === true,
+    guestRegistrationEnabled: resolveGuestRegistrationEnabled(
+      access.visibility,
+      input.guestRegistrationEnabled,
+    ),
     joinLink: input.joinLink?.trim() ?? null,
     linkedVideoId: input.linkedVideoId ?? null,
     certificationEnabled: input.certificationEnabled === true,
@@ -345,6 +370,17 @@ export async function updateWebinar(
       access.visibility === "premium" ?
         Math.round((access.priceCents / 100) * 100) / 100 :
         null;
+    patch.guestRegistrationEnabled = resolveGuestRegistrationEnabled(
+      access.visibility,
+      input.guestRegistrationEnabled !== undefined ?
+        input.guestRegistrationEnabled :
+        previous.guestRegistrationEnabled,
+    );
+  } else if (input.guestRegistrationEnabled !== undefined) {
+    patch.guestRegistrationEnabled = resolveGuestRegistrationEnabled(
+      previous.visibility,
+      input.guestRegistrationEnabled,
+    );
   }
 
   if (input.status !== undefined) {

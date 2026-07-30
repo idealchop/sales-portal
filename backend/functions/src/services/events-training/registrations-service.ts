@@ -7,12 +7,17 @@ import {
   webinarsCollection,
 } from "./events-training-db";
 
+export type RegistrationKind = "member" | "guest";
+
 export type RegistrationRecord = {
   id: string;
   eventId: string;
+  /** `guest` for marketing-site registrations; missing legacy docs → member. */
+  kind: RegistrationKind;
   userId: string;
   businessId: string;
   email: string;
+  displayName: string | null;
   status: RegistrationStatus;
   emailReminderOptIn: boolean;
   joinLink: string | null;
@@ -65,12 +70,18 @@ function mapRegistration(
     attendanceRaw === "attended" || attendanceRaw === "no_show" ?
       attendanceRaw :
       null;
+  const kind: RegistrationKind =
+    String(data.kind || "") === "guest" ? "guest" : "member";
+  const displayNameRaw =
+    typeof data.displayName === "string" ? data.displayName.trim() : "";
   return {
     id,
     eventId: String(data.eventId ?? ""),
+    kind,
     userId: String(data.userId ?? ""),
     businessId: String(data.businessId ?? ""),
     email: String(data.email ?? ""),
+    displayName: displayNameRaw || null,
     status: parseStatus(data.status),
     emailReminderOptIn: data.emailReminderOptIn !== false,
     joinLink: typeof data.joinLink === "string" ? data.joinLink : null,

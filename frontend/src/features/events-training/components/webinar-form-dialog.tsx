@@ -34,7 +34,7 @@ import {
   textareaClassName,
 } from "../lib/form-styles";
 
-type WebinarAudience = PrivateAudience | "premium";
+type WebinarAudience = PrivateAudience | "premium" | "public";
 
 const STATUS_OPTIONS: {
   value: WebinarStatus;
@@ -53,6 +53,11 @@ const AUDIENCE_OPTIONS: {
   label: string;
   hint: string;
 }[] = [
+  {
+    value: "public",
+    label: "Public",
+    hint: "Guests on smartrefill.io",
+  },
   {
     value: "all",
     label: "All members",
@@ -87,11 +92,12 @@ function emptyForm(): Partial<WebinarRecord> {
     timezone: "Asia/Manila",
     posterUrl: null,
     status: "draft",
-    visibility: "private",
+    visibility: "public",
     priceCents: 0,
     currency: "PHP",
     allowedPlanCodes: [],
-    allowAllMembers: true,
+    allowAllMembers: false,
+    guestRegistrationEnabled: true,
     capacity: null,
     autoAccept: false,
     joinLink: "",
@@ -102,6 +108,7 @@ function emptyForm(): Partial<WebinarRecord> {
 
 function resolveAudience(record: Partial<WebinarRecord>): WebinarAudience {
   if (record.visibility === "premium") return "premium";
+  if (record.visibility === "public") return "public";
   return inferPrivateAudience({
     allowAllMembers: record.allowAllMembers !== false,
     allowedPlanCodes: record.allowedPlanCodes ?? [],
@@ -113,14 +120,28 @@ function accessFromAudience(
   priceCents: number,
 ): Pick<
   WebinarRecord,
-  "visibility" | "priceCents" | "allowAllMembers" | "allowedPlanCodes"
+  | "visibility"
+  | "priceCents"
+  | "allowAllMembers"
+  | "allowedPlanCodes"
+  | "guestRegistrationEnabled"
 > {
+  if (audience === "public") {
+    return {
+      visibility: "public",
+      priceCents: 0,
+      allowAllMembers: false,
+      allowedPlanCodes: [],
+      guestRegistrationEnabled: true,
+    };
+  }
   if (audience === "premium") {
     return {
       visibility: "premium",
       priceCents,
       allowAllMembers: false,
       allowedPlanCodes: [],
+      guestRegistrationEnabled: false,
     };
   }
   const privateAccess = privateAudienceAccess(audience);
@@ -129,6 +150,7 @@ function accessFromAudience(
     priceCents: 0,
     allowAllMembers: privateAccess.allowAllMembers,
     allowedPlanCodes: privateAccess.allowedPlanCodes,
+    guestRegistrationEnabled: false,
   };
 }
 
@@ -174,7 +196,7 @@ export function WebinarFormDialog({
   const [tagDraft, setTagDraft] = useState("");
   const [capacityInput, setCapacityInput] = useState("");
   const [priceInput, setPriceInput] = useState("");
-  const [audience, setAudience] = useState<WebinarAudience>("all");
+  const [audience, setAudience] = useState<WebinarAudience>("public");
   const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -206,13 +228,15 @@ export function WebinarFormDialog({
         (initial.tags?.length ?? 0) > 0 ||
           initial.capacity != null ||
           initial.autoAccept === true ||
-          initial.certificationEnabled,
+          initial.certificationEnabled ||
+          (initial.visibility === "public" &&
+            initial.guestRegistrationEnabled === false),
       );
     } else {
       setForm(emptyForm());
       setTags([]);
       setCapacityInput("");
-      setAudience("all");
+      setAudience("public");
       setPriceInput("");
       setShowMore(false);
     }
@@ -224,10 +248,21 @@ export function WebinarFormDialog({
     setAudience(next);
     const priceCents =
       next === "premium" ? parsePricePesosToCents(priceInput) : 0;
-    setForm((prev) => ({
-      ...prev,
-      ...accessFromAudience(next, priceCents),
-    }));
+    setForm((prev) => {
+      const access = accessFromAudience(next, priceCents);
+      return {
+        ...prev,
+        ...access,
+        // Keep explicit guest opt-out when re-selecting Public.
+        guestRegistrationEnabled:
+          next === "public"
+            ? prev.visibility === "public" &&
+              prev.guestRegistrationEnabled === false
+              ? false
+              : true
+            : false,
+      };
+    });
     if (next !== "premium") setPriceInput("");
   }
 
@@ -311,6 +346,10 @@ export function WebinarFormDialog({
     const payload = {
       ...form,
       ...access,
+      guestRegistrationEnabled:
+        audience === "public"
+          ? form.guestRegistrationEnabled !== false
+          : false,
       tags,
       capacity,
       joinLink: (form.joinLink ?? "").trim() || null,
@@ -524,7 +563,7 @@ export function WebinarFormDialog({
                 Who can see and register for this live session.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {AUDIENCE_OPTIONS.map((option) => {
                 const active = audience === option.value;
                 return (
@@ -572,6 +611,7 @@ export function WebinarFormDialog({
                         priceCents: parsePricePesosToCents(e.target.value),
                         allowAllMembers: false,
                         allowedPlanCodes: [],
+                        guestRegistrationEnabled: false,
                       }));
                     }}
                   />
@@ -586,13 +626,40 @@ export function WebinarFormDialog({
               </div>
             ) : (
               <p className="rounded-xl border border-sky-100 bg-sky-50/70 px-3 py-2 text-xs text-sky-900">
-                {audience === "all"
-                  ? "Visible to all signed-in Smart Refill members (owners, admins, and riders)."
-                  : audience === "paid"
-                    ? "Visible to stations on Grow or Scale (paid) subscriptions."
-                    : "Visible only to stations on a Scale subscription."}
+                {audience === "public"
+                  ? "Listed on smartrefill.io /resources/webinars. Guests can register with email; signed-in members can still join from the hub."
+                  : audience === "all"
+                    ? "Visible to all signed-in Smart Refill members (owners, admins, and riders). Not open to marketing guests."
+                    : audience === "paid"
+                      ? "Visible to stations on Grow or Scale (paid) subscriptions."
+                      : "Visible only to stations on a Scale subscription."}
               </p>
             )}
+            {audience === "public" ? (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-teal-600 focus:ring-teal-500/30"
+                  checked={form.guestRegistrationEnabled !== false}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      guestRegistrationEnabled: e.target.checked,
+                    }))
+                  }
+                />
+                <span>
+                  <span className="block text-sm font-medium text-foreground">
+                    Allow guest registration
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    Non-members register with email on the marketing site and
+                    get a Brevo invite. Turn off to keep the event public to
+                    browse but member-only to register.
+                  </span>
+                </span>
+              </label>
+            ) : null}
           </section>
 
           <section className="space-y-3">
@@ -662,7 +729,8 @@ export function WebinarFormDialog({
                 />
               </div>
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Shared with accepted registrants after you publish.
+                Shared with accepted registrants (members and guests) after you
+                publish.
               </p>
             </div>
           </section>
@@ -671,9 +739,9 @@ export function WebinarFormDialog({
             <div>
               <h4 className="text-sm font-semibold text-foreground">Status</h4>
               <p className="text-xs text-muted-foreground">
-                Published webinars appear on{" "}
+                Published public webinars appear on{" "}
                 <code className="rounded bg-zinc-100 px-1">/resources/webinars</code>
-                .
+                . Member-only audiences list in the Smart Refill hub.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -796,7 +864,7 @@ export function WebinarFormDialog({
                       Auto-accept registrations
                     </span>
                     <span className="mt-0.5 block text-xs text-muted-foreground">
-                      Station owners skip the pending queue and get the join
+                      Guests and members skip the pending queue and get the join
                       link as soon as they register (still respects capacity).
                     </span>
                   </span>
@@ -818,8 +886,8 @@ export function WebinarFormDialog({
                       Offer certification
                     </span>
                     <span className="mt-0.5 block text-xs text-muted-foreground">
-                      Allows issuing certificates after the session for accepted
-                      attendees.
+                      Members can claim a certificate after attending. Guests
+                      must create a Smart Refill account (same email) first.
                     </span>
                   </span>
                 </label>

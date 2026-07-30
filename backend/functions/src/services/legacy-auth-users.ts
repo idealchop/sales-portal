@@ -57,20 +57,20 @@ function loadUsers(): LegacyAuthUser[] {
       emailVerified: Boolean(user.emailVerified),
       displayName:
         typeof user.displayName === "string" && user.displayName.trim() ?
-          user.displayName.trim()
-        : null,
+          user.displayName.trim() :
+          null,
       role:
         typeof user.role === "string" && user.role.trim() ?
-          user.role.trim()
-        : null,
+          user.role.trim() :
+          null,
       lastSignedInAt:
         typeof user.lastSignedInAt === "string" && user.lastSignedInAt.trim() ?
-          user.lastSignedInAt.trim()
-        : null,
+          user.lastSignedInAt.trim() :
+          null,
       createdAt:
         typeof user.createdAt === "string" && user.createdAt.trim() ?
-          user.createdAt.trim()
-        : null,
+          user.createdAt.trim() :
+          null,
     }))
     .filter((user) => user.localId && user.email);
 

@@ -349,12 +349,12 @@ export async function postLegacySmartRefillStationsBulkContactHandler(
           record.toEmail == null ? null : String(record.toEmail).trim() || null,
         recipientName:
           record.recipientName == null ?
-            null
-          : String(record.recipientName).trim() || null,
+            null :
+            String(record.recipientName).trim() || null,
         businessName:
           record.businessName == null ?
-            null
-          : String(record.businessName).trim() || null,
+            null :
+            String(record.businessName).trim() || null,
       };
     })
     .filter(

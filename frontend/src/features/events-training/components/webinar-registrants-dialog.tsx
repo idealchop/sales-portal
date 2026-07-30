@@ -117,6 +117,8 @@ export function WebinarRegistrantsDialog({
     accepted: items.filter((row) => row.status === "accepted").length,
     declined: items.filter((row) => row.status === "declined").length,
     attended: items.filter((row) => row.attendanceStatus === "attended").length,
+    guests: items.filter((row) => row.kind === "guest").length,
+    members: items.filter((row) => row.kind !== "guest").length,
   };
 
   return createPortal(
@@ -147,7 +149,7 @@ export function WebinarRegistrantsDialog({
             <p className="mt-1 text-xs text-muted-foreground">
               {loading
                 ? "Loading…"
-                : `${items.length} total · ${counts.accepted} accepted · ${counts.attended} attended · ${counts.pending} pending`}
+                : `${items.length} total · ${counts.guests} guest · ${counts.members} member · ${counts.accepted} accepted · ${counts.attended} attended · ${counts.pending} pending`}
             </p>
             {webinar.autoAccept ? (
               <p className="mt-1 text-xs font-medium text-teal-700">
@@ -188,7 +190,7 @@ export function WebinarRegistrantsDialog({
                 No registrations yet
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Names appear here when station owners sign up.
+                Names appear here when members or guests register.
               </p>
             </div>
           ) : null}
@@ -202,9 +204,13 @@ export function WebinarRegistrantsDialog({
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-foreground">
-                        {item.email || item.userId || "Unknown member"}
+                        {item.displayName ||
+                          item.email ||
+                          item.userId ||
+                          "Unknown registrant"}
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
+                        {item.displayName && item.email ? `${item.email} · ` : ""}
                         Signed up {formatWhen(item.createdAt)}
                         {item.attendanceStatus === "attended"
                           ? ` · Attended ${formatWhen(item.attendedAt)}`
@@ -214,6 +220,15 @@ export function WebinarRegistrantsDialog({
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
+                      {item.kind === "guest" ? (
+                        <Badge className="border-violet-200 bg-violet-50 text-violet-800">
+                          Guest
+                        </Badge>
+                      ) : (
+                        <Badge className="border-zinc-200 bg-zinc-100 text-zinc-700">
+                          Member
+                        </Badge>
+                      )}
                       <Badge className={cn("capitalize", statusClass(item.status))}>
                         {item.status}
                       </Badge>

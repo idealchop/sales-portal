@@ -45,7 +45,11 @@ function webinarVisibilityLabel(item: WebinarRecord): string {
       ? `Premium · ${formatPricePesos(item.priceCents)}`
       : "Premium";
   }
-  if (item.visibility === "public") return "Public";
+  if (item.visibility === "public") {
+    return item.guestRegistrationEnabled === false
+      ? "Public · members only"
+      : "Public · guests";
+  }
   return privateAudienceLabel(
     inferPrivateAudience({
       allowAllMembers: item.allowAllMembers,

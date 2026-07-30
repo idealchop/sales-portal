@@ -57,8 +57,8 @@ async function ensureDemoAuthUser(): Promise<{
   } catch (error) {
     const code =
       error && typeof error === "object" && "code" in error ?
-        String((error as { code?: string }).code)
-      : "";
+        String((error as { code?: string }).code) :
+        "";
     if (code !== "auth/user-not-found") throw error;
 
     const created = await auth.createUser({
@@ -238,8 +238,8 @@ export async function cloneBusinessToDemoAccount(input: {
     "Demo workspace";
 
   const appAccessRaw = Array.isArray(remappedUser.appAccess) ?
-      remappedUser.appAccess
-    : [];
+    remappedUser.appAccess :
+    [];
   const appAccess = appAccessRaw
     .filter((entry) => entry && typeof entry === "object")
     .map((entry) => {

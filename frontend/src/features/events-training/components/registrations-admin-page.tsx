@@ -126,6 +126,7 @@ export function RegistrationsAdminPage() {
         return (
           item.email.toLowerCase().includes(query) ||
           item.userId.toLowerCase().includes(query) ||
+          (item.displayName ?? "").toLowerCase().includes(query) ||
           (webinar?.name ?? "").toLowerCase().includes(query)
         );
       })
@@ -537,14 +538,22 @@ export function RegistrationsAdminPage() {
                             className="mt-1 size-4 shrink-0 rounded border-zinc-300 text-teal-600 focus:ring-teal-500/30"
                             checked={selected}
                             onChange={() => toggleSelected(item.id)}
-                            aria-label={`Select ${item.email || item.userId}`}
+                            aria-label={`Select ${item.displayName || item.email || item.userId}`}
                           />
                         ) : null}
                         <div className="min-w-0 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="truncate font-medium text-foreground">
-                              {item.email || item.userId}
+                              {item.displayName ||
+                                item.email ||
+                                item.userId ||
+                                "Unknown registrant"}
                             </p>
+                            {item.kind === "guest" ? (
+                              <Badge className="border-violet-200 bg-violet-50 text-violet-800">
+                                Guest
+                              </Badge>
+                            ) : null}
                             <Badge
                               className={cn(
                                 "capitalize",
@@ -561,6 +570,11 @@ export function RegistrationsAdminPage() {
                               {item.status}
                             </Badge>
                           </div>
+                          {item.displayName && item.email ? (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {item.email}
+                            </p>
+                          ) : null}
                           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-teal-800">
                             {webinar?.name ?? "Unknown webinar"}
                           </p>
@@ -675,7 +689,11 @@ export function RegistrationsAdminPage() {
       {deleteTarget ? (
         <ConfirmDeleteDialog
           title="Delete this registration?"
-          itemLabel={deleteTarget.email || deleteTarget.userId}
+          itemLabel={
+            deleteTarget.displayName ||
+            deleteTarget.email ||
+            deleteTarget.userId
+          }
           description="This permanently removes the sign-up record. Prefer Decline for pending requests if you only want to reject them."
           confirmLabel="Delete registration"
           onClose={() => setDeleteTarget(null)}
