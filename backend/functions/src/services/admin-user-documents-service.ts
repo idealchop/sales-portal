@@ -9,7 +9,31 @@ export type UserFirestoreDocumentRow = {
   data: Record<string, unknown>;
 };
 
-const MAX_DOCS_PER_SUBCOLLECTION = 100;
+/** Page size when listing an entire subcollection (no hard cap on total). */
+const SUBCOLLECTION_LIST_PAGE_SIZE = 500;
+
+async function listAllSubcollectionDocs(
+  subcollection: FirebaseFirestore.CollectionReference,
+): Promise<FirebaseFirestore.QueryDocumentSnapshot[]> {
+  const docs: FirebaseFirestore.QueryDocumentSnapshot[] = [];
+  let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+
+  for (;;) {
+    let query: FirebaseFirestore.Query = subcollection
+      .orderBy("__name__")
+      .limit(SUBCOLLECTION_LIST_PAGE_SIZE);
+    if (cursor) {
+      query = query.startAfter(cursor);
+    }
+    const snap = await query.get();
+    if (snap.empty) break;
+    docs.push(...snap.docs);
+    cursor = snap.docs[snap.docs.length - 1];
+    if (snap.size < SUBCOLLECTION_LIST_PAGE_SIZE) break;
+  }
+
+  return docs;
+}
 
 function serializeValue(value: unknown): unknown {
   if (value instanceof Timestamp) {
@@ -95,8 +119,8 @@ export async function listUserFirestoreDocuments(
 
   const subcollections = await userRef.listCollections();
   for (const subcollection of subcollections) {
-    const snap = await subcollection.limit(MAX_DOCS_PER_SUBCOLLECTION).get();
-    for (const doc of snap.docs) {
+    const docs = await listAllSubcollectionDocs(subcollection);
+    for (const doc of docs) {
       rows.push({
         path: doc.ref.path,
         collectionId: subcollection.id,
