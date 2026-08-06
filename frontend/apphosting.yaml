@@ -1,5 +1,7 @@
-# Firebase App Hosting — Sales Portal (Next.js)
+# Firebase App Hosting — Sales Portal (Next.js) — Prod defaults
+# Dev overrides: apphosting.dev.yaml (Environment name = `dev`) → riverdb-dev + salesPortalApiDev
 # See: https://firebase.google.com/docs/app-hosting/configure
+#      docs/environments.md
 
 kind: "AppStack"
 apiVersion: "v1"

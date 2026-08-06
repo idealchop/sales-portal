@@ -75,8 +75,8 @@ Frontend uses reCAPTCHA v3 + Firebase App Check (`NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 
 | Config | Domains |
 |--------|---------|
-| Firebase Auth → Authorized domains | `sales-river-tech.web.app`, `sales-river-tech.firebaseapp.com`, `sales-portal--aquaflow-management-suite.asia-southeast1.hosted.app` |
-| reCAPTCHA Enterprise key `sales-portal` (`6LcEChst…`) allowed domains | same three (+ `localhost`) |
+| Firebase Auth → Authorized domains | `sales-river-tech.web.app`, `sales-river-tech.firebaseapp.com`, `sales-portal--aquaflow-management-suite.asia-southeast1.hosted.app`, `dev-sales-portal--aquaflow-management-suite.asia-southeast1.hosted.app` |
+| reCAPTCHA Enterprise key `sales-portal` (`6LcEChst…`) allowed domains | same hosts (+ `localhost`) |
 
 If Auth logs `appCheck/recaptcha-error` or the browser reports a CORS failure on `/auth/status` from a new host, add that host to **both** lists above (CORS on the API already reflects any origin; the browser often mislabels Auth/App Check failures as CORS).
 

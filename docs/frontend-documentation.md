@@ -21,14 +21,14 @@ Copy from `.env.example` → `.env.local`:
 |----------|---------|
 | `NEXT_PUBLIC_DEV` | `true` for local API URLs |
 | `NEXT_PUBLIC_FIREBASE_*` | Firebase client config |
-| `NEXT_PUBLIC_FIRESTORE_DB` | `riverdb` |
+| `NEXT_PUBLIC_FIRESTORE_DB` | `riverdb` (local/Prod); hosted Dev uses `riverdb-dev` via `apphosting.dev.yaml` |
 | `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | App Check (reCAPTCHA v3) |
 | `NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN` | Local App Check debug token |
 | `NEXT_PUBLIC_SALES_PORTAL_API_URL_DEV` | Default `http://127.0.0.1:8071` |
 | `NEXT_PUBLIC_SMARTREFILL_API_URL_DEV` | SmartRefill emulator/prod URL |
 | `NEXT_PUBLIC_SMARTREFILL_APP_URL` | Smart Refill public origin for Resources share links (default `https://app.smartrefill.io`) |
 
-Production values are in **`frontend/apphosting.yaml`** (Firebase App Hosting).
+Production values are in **`frontend/apphosting.yaml`**. Hosted Dev overrides: **`frontend/apphosting.dev.yaml`** (Environment name `dev`) — see [environments.md](./environments.md).
 
 ## App Router structure
 

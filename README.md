@@ -2,6 +2,8 @@
 
 Monorepo with a **separate backend API** and **Next.js frontend**, integrated with the shared River platform (`aquaflow-management-suite` / `riverdb`). Sales Portal is an **internal multi-app sales hub**; SmartRefill is the first product app integrated.
 
+**Dev / Prod tiers:** hosted Dev uses Firestore **`riverdb-dev`** + API **`salesPortalApiDev`**; legacy SmartRefill ops still read **`prod-smartrefill`**. See [`docs/environments.md`](docs/environments.md).
+
 **Documentation index:** [`docs/README.md`](docs/README.md) · **Agent guide:** [`AGENTS.md`](AGENTS.md)
 
 ## Structure
@@ -88,8 +90,9 @@ Firebase App Hosting should build **only the Next.js app**, not the Cloud Functi
 | Setting | Value |
 |---------|--------|
 | **Root directory** | `frontend` (recommended) |
-| **Config file** | `frontend/apphosting.yaml` |
+| **Config file** | `frontend/apphosting.yaml` (Prod) · `frontend/apphosting.dev.yaml` (Environment = `dev`) |
 | **Node.js** | 22 (matches App Hosting buildpack) |
+| **Dev backend** | Create `dev-sales-portal` with Environment name `dev`, live branch `dev` — see [`docs/environments.md`](docs/environments.md) |
 
 If the backend is connected to the **repository root** (legacy), root `apphosting.yaml` runs `npm ci --prefix frontend` so deps install from `frontend/package-lock.json` (App Hosting does not resolve npm workspaces at the monorepo root).
 

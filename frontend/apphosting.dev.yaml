@@ -1,0 +1,39 @@
+# Firebase App Hosting — Dev overrides (Environment name: `dev`)
+# Merged over apphosting.yaml for backends tagged Environment = dev.
+# Prod backends (no env name / prod) keep apphosting.yaml unchanged.
+# See: https://firebase.google.com/docs/app-hosting/multiple-environments
+#
+# Primary Firestore: riverdb-dev
+# Legacy SmartRefill analytics (API): still prod-smartrefill via salesPortalApiDev
+# SmartRefill proxy: smartrefillV3ApiDev
+
+env:
+  - variable: NEXT_PUBLIC_FIRESTORE_DB
+    value: "riverdb-dev"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_DEV
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SALES_PORTAL_API_URL
+    value: "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/salesPortalApiDev"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SMARTREFILL_API_URL
+    value: "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/smartrefillV3ApiDev"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SMARTREFILL_APP_URL
+    value: "https://dev-smartrefill--aquaflow-management-suite.asia-southeast1.hosted.app"
+    availability:
+      - BUILD
+      - RUNTIME

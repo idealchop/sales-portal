@@ -25,14 +25,22 @@ Production URL:
 https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/salesPortalApi
 ```
 
+Dev URL (hosted Dev tier — `riverdb-dev`):
+
+```text
+https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/salesPortalApiDev
+```
+
+See [environments.md](./environments.md) for Dev / Prod tier setup.
+
 ## Environment
 
 | Variable | Source | Purpose |
 |----------|--------|---------|
 | `SALES_PORTAL_FIREBASE_PROJECT_ID` | `firebase.json` / `.env` | GCP project |
-| `SALES_PORTAL_FIRESTORE_DB` | `firebase.json` / `.env` | `riverdb` |
-| `SALES_PORTAL_LEGACY_FIRESTORE_DB` | `.env` (optional) | `prod-smartrefill` — SmartRefill (legacy) dashboard |
-| `SMARTREFILL_API_URL` | `firebase.json` / `.env` | Proxy target |
+| `SALES_PORTAL_FIRESTORE_DB` | `firebase.json` / `.env` | `riverdb` (Prod); hosted Dev forces `riverdb-dev` via `*Dev` function name |
+| `SALES_PORTAL_LEGACY_FIRESTORE_DB` | `.env` (optional) | `prod-smartrefill` — SmartRefill (legacy) dashboard (Dev + Prod) |
+| `SMARTREFILL_API_URL` | `firebase.json` / `.env` | Proxy target (Prod); hosted Dev forces `smartrefillV3ApiDev` |
 | `SALES_PORTAL_GEMINI_API_KEY` | Secret Manager (prod) / `.env` (local) | AI features |
 | `SMARTREFILL_BREVO_API_KEY` | Secret Manager (shared with SmartRefill) | Transactional outreach email (Contact / How are you?) |
 | `SALES_PORTAL_FIREBASE_CLIENT_EMAIL` | `.env` (local only) | Admin SDK |
@@ -211,12 +219,16 @@ backend/functions/src/
 
 ```bash
 cd backend
-./deploy.sh
+./deploy.sh                         # Prod — salesPortalApi → riverdb
+ENV=dev ./deploy.sh                 # Dev — salesPortalApiDev → riverdb-dev
+ENV=dev DEPLOY_DEV_JOBS=1 ./deploy.sh
 ```
 
 Pipeline: sync Firestore config → build → **unit + integration + BDD tests** → lint → secret check → deploy functions.
 
-Optional: `DEPLOY_FIRESTORE=1`, `DEPLOY_STORAGE_RULES=1`.
+Optional: `DEPLOY_FIRESTORE=1`, `DEPLOY_STORAGE_RULES=1` (Prod), `DEPLOY_DEV_JOBS=1` (Dev).
+
+Full tier matrix: [environments.md](./environments.md).
 
 ## Testing
 

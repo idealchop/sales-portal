@@ -1,0 +1,37 @@
+# Firebase App Hosting — Dev overrides (monorepo root fallback)
+# Used when the App Hosting backend builds from the repository root.
+# Preferred: set Root directory to `frontend` so frontend/apphosting.dev.yaml applies.
+#
+# Environment name: `dev` — merged over apphosting.yaml.
+# Primary Firestore: riverdb-dev · API: salesPortalApiDev · SmartRefill: smartrefillV3ApiDev
+
+env:
+  - variable: NEXT_PUBLIC_FIRESTORE_DB
+    value: "riverdb-dev"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_DEV
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SALES_PORTAL_API_URL
+    value: "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/salesPortalApiDev"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SMARTREFILL_API_URL
+    value: "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/smartrefillV3ApiDev"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SMARTREFILL_APP_URL
+    value: "https://dev-smartrefill--aquaflow-management-suite.asia-southeast1.hosted.app"
+    availability:
+      - BUILD
+      - RUNTIME

@@ -6,17 +6,18 @@ Firebase project wrapper for **`salesPortalApi`** (Cloud Functions) and Firestor
 
 ```text
 backend/
-├── firebase.json           # Functions + emulator + env vars
+├── firebase.json           # Prod functions + emulator + env vars (riverdb)
+├── firebase.dev.json       # Dev deploy config (riverdb-dev; no Prod env bleed)
 ├── firestore.rules         # Synced from smartrefill/frontend (canonical)
 ├── storage.rules           # Synced from smartrefill/frontend (canonical)
-├── deploy.sh               # Build, test, lint, deploy pipeline
+├── deploy.sh               # Build, test, lint, deploy pipeline (ENV=prod|dev)
 ├── secrets.env.example     # Secret Manager template
 ├── scripts/
 │   ├── set-secrets.sh
 │   ├── check-secrets.sh
 │   ├── sync-firestore-config.sh
 │   └── check-firestore-sync.sh
-└── functions/              # salesPortalApi source
+└── functions/              # salesPortalApi + salesPortalApiDev source
 ```
 
 ## Commands
@@ -32,11 +33,15 @@ npm run secrets:set
 npm run check:secrets
 
 # Deploy (from this directory)
-./deploy.sh
+./deploy.sh                 # Prod — salesPortalApi → riverdb
+ENV=dev ./deploy.sh         # Dev — salesPortalApiDev → riverdb-dev
+# Optional: ENV=dev DEPLOY_DEV_JOBS=1 ./deploy.sh
 
 # Local BDD (emulators + Playwright)
 npm run test:bdd:local
 ```
+
+Dev / Prod tiers: [docs/environments.md](../docs/environments.md).
 
 ## Local API
 

@@ -14,6 +14,7 @@ Product backlog: **[`docs/backlog-actionable.md`](docs/backlog-actionable.md)** 
 |-------|---------|
 | `sales-portal-feature-agent` | AB items on `feature/SP-{tier}`; one commit per AB |
 | `sales-portal-code-review-agent` | Review, quality gate, merge to `dev` |
+| `river-ai-usage-oversight` | AI/Gemini/Imagen cost & usage oversight vs SmartRefill (repo: `.agents/skills/river-ai-usage-oversight`) |
 
 **Base branch:** `dev` · **Feature branches:** `feature/SP-1` … `feature/SP-4`
 
@@ -32,7 +33,10 @@ Product backlog: **[`docs/backlog-actionable.md`](docs/backlog-actionable.md)** 
 |-------|------|
 | Firestore rules (canonical) | `smartrefill/frontend/firestore.rules` |
 | SmartRefill platform docs | `smartrefill/frontend/docs/README.md` |
-| Shared GCP project | `aquaflow-management-suite` / `riverdb` |
+| Shared GCP project | `aquaflow-management-suite` |
+| Primary Firestore | `riverdb` (Prod) · `riverdb-dev` (hosted Dev) |
+| Legacy SmartRefill Firestore | `prod-smartrefill` (Dev + Prod) |
+| Dev API | `salesPortalApiDev` — see `docs/environments.md` |
 
 ## Testing protocol
 
@@ -50,7 +54,8 @@ npm run test:all:local
 ## Deploy
 
 ```bash
-cd backend && ./deploy.sh
+cd backend && ./deploy.sh            # Prod
+cd backend && ENV=dev ./deploy.sh    # Dev (riverdb-dev)
 ```
 
 Requires `SALES_PORTAL_GEMINI_API_KEY` in Secret Manager — see root README.

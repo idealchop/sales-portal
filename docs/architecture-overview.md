@@ -63,7 +63,9 @@ flowchart LR
 
 The frontend does **not** use Firestore client SDK for analytics; it calls `GET /dashboard/analytics` (and legacy routes for SR Old).
 
-## Shared Firestore (`riverdb`)
+## Shared Firestore (`riverdb` / `riverdb-dev`)
+
+Prod App Hosting and `salesPortalApi` use **`riverdb`**. Hosted Dev (`salesPortalApiDev` / Environment `dev`) uses **`riverdb-dev`**. Legacy SmartRefill ops (`/dashboard/smartrefill-old/*`) always read **`prod-smartrefill`**. See [environments.md](./environments.md).
 
 Canonical rules and indexes live in **`smartrefill/frontend/firestore.rules`**. Sales Portal copies are synced via:
 

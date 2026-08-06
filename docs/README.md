@@ -9,6 +9,7 @@ Single source of truth for architecture, development, testing, and deployment.
 | Document | Purpose |
 |----------|---------|
 | [architecture-overview.md](./architecture-overview.md) | FE/BE split, SmartRefill integration, shared `riverdb` |
+| [environments.md](./environments.md) | **Dev / Prod tiers** — `riverdb-dev`, `prod-smartrefill` legacy, `salesPortalApiDev`, App Hosting `apphosting.dev.yaml` |
 | [auth-flow.md](./auth-flow.md) | Login, onboarding, `users.appAccess`, role gates |
 | [backend-documentation.md](./backend-documentation.md) | `salesPortalApi` routes, secrets, local server, deploy |
 | [frontend-documentation.md](./frontend-documentation.md) | Next.js App Router, features, env vars, App Hosting |
@@ -60,7 +61,8 @@ npm run test:all:local         # unit + BDD
 npm run quality-gate
 
 # Deploy API
-cd backend && ./deploy.sh
+cd backend && ./deploy.sh              # Prod (riverdb)
+cd backend && ENV=dev ./deploy.sh      # Dev (riverdb-dev + salesPortalApiDev)
 ```
 
 ## Related SmartRefill docs

@@ -1,14 +1,5 @@
 import { logger } from "firebase-functions";
-
-function resolveSmartrefillApiBaseUrl(): string {
-  if (process.env.SMARTREFILL_API_URL) {
-    return process.env.SMARTREFILL_API_URL.replace(/\/$/, "");
-  }
-  if (process.env.FUNCTIONS_EMULATOR) {
-    return "http://127.0.0.1:5001/aquaflow-management-suite/asia-southeast1/smartrefillV3Api";
-  }
-  return "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/smartrefillV3Api";
-}
+import { resolveSmartrefillApiBaseUrl } from "../config/dev-tier";
 
 export const SMARTREFILL_API_BASE_URL = resolveSmartrefillApiBaseUrl();
 

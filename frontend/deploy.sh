@@ -4,9 +4,13 @@
 # Does not commit, push, or deploy. Stops on the first failing step (set -e).
 #
 # After commit + push, deploy App Hosting + Hosting CDN:
+#   # Prod
 #   npx -y firebase-tools apphosting:rollouts:create sales-portal \
 #     --project aquaflow-management-suite --git-branch sales-portal --force
-#   npm run deploy:hosting   # from repo root
+#   # Dev (Environment name = dev → merges apphosting.dev.yaml / riverdb-dev)
+#   npx -y firebase-tools apphosting:rollouts:create dev-sales-portal \
+#     --project aquaflow-management-suite --git-branch dev --force
+#   npm run deploy:hosting   # from repo root (Prod CDN sales-river-tech)
 
 set -e
 
