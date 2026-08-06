@@ -76,10 +76,14 @@ npm run test:integration
 
 echo -e "${BLUE}🎭 Running BDD tests (Playwright + emulators)...${NC}"
 cd "${ROOT_DIR}"
-npx -y firebase-tools emulators:exec \
-  --project "${PROJECT_ID}" \
-  --only "functions,firestore,auth" \
-  "node seed-emulator.js && cd functions && npm run test:bdd"
+if [[ "${SKIP_BDD:-0}" == "1" ]]; then
+  echo -e "${YELLOW}   SKIP_BDD=1 — skipping Playwright BDD emulator gate.${NC}"
+else
+  npx -y firebase-tools emulators:exec \
+    --project "${PROJECT_ID}" \
+    --only "functions,firestore,auth" \
+    "node seed-emulator.js && cd functions && npm run test:bdd"
+fi
 
 cd "${FUNCTIONS_DIR}"
 
