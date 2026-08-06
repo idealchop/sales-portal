@@ -1,21 +1,38 @@
 /**
- * Gemini text models, newest → oldest.
- * The client tries each in order until one succeeds (404 / unavailable → next).
+ * Gemini text models — cheapest first, then quality upgrades.
+ * Primary: flash-lite. Keep gemini-3.5-flash as a late fallback only.
  */
 export const GEMINI_MODEL_CHAIN = [
-  "gemini-3.5-flash",
-  "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
   "gemini-2.0-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-3.5-flash",
   "gemini-1.5-flash",
 ] as const;
 
 export type GeminiModelId = (typeof GEMINI_MODEL_CHAIN)[number];
 
+let warnedSharedKeyFallback = false;
+
+/**
+ * Prefer Sales-dedicated keys so Monitoring can attribute spend.
+ * Order: Dev key → Sales prod key → shared GEMINI_API_KEY (legacy; avoid in prod).
+ */
 export function getGeminiApiKey(): string | undefined {
-  return (
-    process.env.SALES_PORTAL_GEMINI_API_KEY || process.env.GEMINI_API_KEY
-  );
+  const devKey = process.env.SALES_PORTAL_GEMINI_API_KEY_DEV?.trim();
+  if (devKey) return devKey;
+
+  const salesKey = process.env.SALES_PORTAL_GEMINI_API_KEY?.trim();
+  if (salesKey) return salesKey;
+
+  const shared = process.env.GEMINI_API_KEY?.trim();
+  if (shared && !warnedSharedKeyFallback) {
+    warnedSharedKeyFallback = true;
+    console.warn(
+      "Sales Portal Gemini is using shared GEMINI_API_KEY. Set SALES_PORTAL_GEMINI_API_KEY for attribution.",
+    );
+  }
+  return shared || undefined;
 }
 
 export function normalizeGeminiModelId(model: string): string {

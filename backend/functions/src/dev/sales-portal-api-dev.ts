@@ -1,5 +1,5 @@
 import { onRequest } from "firebase-functions/v2/https";
-import { SALES_PORTAL_FUNCTION_SECRETS } from "../config/function-secrets";
+import { SALES_PORTAL_DEV_FUNCTION_SECRETS } from "../config/function-secrets";
 import { api } from "../index-api";
 
 /**
@@ -14,7 +14,7 @@ export const salesPortalApiDev = onRequest(
     cors: true,
     timeoutSeconds: 540,
     memory: "1GiB",
-    secrets: [...SALES_PORTAL_FUNCTION_SECRETS],
+    secrets: [...SALES_PORTAL_DEV_FUNCTION_SECRETS],
   },
   api,
 );

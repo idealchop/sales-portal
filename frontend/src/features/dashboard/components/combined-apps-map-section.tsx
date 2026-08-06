@@ -13,7 +13,12 @@ const BusinessLocationsMap = dynamic(
     import("@/features/dashboard/components/business-locations-map").then(
       (mod) => mod.BusinessLocationsMap,
     ),
-  { loading: () => <div className="h-[420px] animate-pulse rounded-xl bg-zinc-200" /> },
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[420px] animate-pulse rounded-xl bg-zinc-200" />
+    ),
+  },
 );
 
 function withAppLabels(locations: BusinessMapLocation[]): BusinessMapLocation[] {

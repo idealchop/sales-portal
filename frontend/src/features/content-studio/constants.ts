@@ -33,9 +33,13 @@ export const CONTENT_STUDIO_BRAND_PRESETS = [
   },
 ] as const;
 
+export type ContentStudioMode = "both" | "caption" | "image";
+
 export type GeneratedSocialPost = {
   caption: string;
   imageUrl: string;
+  mode?: ContentStudioMode;
+  translatedScene?: boolean;
   prompt: string;
   timestamp: string;
 };

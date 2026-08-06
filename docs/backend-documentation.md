@@ -69,7 +69,7 @@ All routes are mounted at the function root (no `/api` prefix).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes `dashboardForecasts`, `personalSales`, `todaysWork`, `lastContactedAt` on owners). **Excludes** owners with `authAccountTag: "test"` from station/user/login/MRR KPIs |
+| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes rules-based `dashboardForecasts`, `personalSales`, `todaysWork`, `lastContactedAt` on owners). **No Gemini.** Excludes owners with `authAccountTag: "test"` from station/user/login/MRR KPIs |
 | `GET` | `/dashboard/smartrefill-old/analytics` | Portal | Legacy SmartRefill ops from `prod-smartrefill` (stations + charts) |
 | `GET` | `/dashboard/smartrefill-old/stations/:stationId` | Portal | Legacy station customers + paginated deliveries |
 | `POST` | `/dashboard/smartrefill-old/stations/:stationId/ignore` | Portal | Mark legacy station ignored (moves to Contacted / Ignored) |
@@ -90,7 +90,7 @@ All routes are mounted at the function root (no `/api` prefix).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/content-studio/generate` | Portal | AI social post + image generation |
+| `POST` | `/content-studio/generate` | Portal | On-demand AI social post. Body: `{ prompt, mode?: "both"\|"caption"\|"image" }`. Rate limit 10/15m. English prompts skip scene translate. |
 
 ### Onboarding (`/onboarding`)
 

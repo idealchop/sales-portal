@@ -45,10 +45,12 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    if (!loading && status) {
-      prefetchDashboardAnalytics();
-    }
-  }, [loading, status]);
+    if (loading || !status) return;
+    // SR-legacy uses its own analytics endpoint — skip platform prefetch so a
+    // cold platform compute does not contend with the legacy load.
+    if (pathname.startsWith("/dashboard/smartrefill-old")) return;
+    prefetchDashboardAnalytics();
+  }, [loading, status, pathname]);
 
   const role = (status?.role || profile?.role || null) as SalesPortalRole | null;
   const headerProfile = profile ?? (status ? profileFromAuthStatus(status) : null);

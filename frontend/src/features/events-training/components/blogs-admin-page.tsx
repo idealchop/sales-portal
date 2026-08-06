@@ -22,6 +22,7 @@ import {
 } from "../lib/private-audience";
 import { BlogFormDialog } from "./blog-form-dialog";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
+import { EventsTrainingPageHeader } from "./events-training-page-header";
 import { VideoStatusPicker } from "./video-status-picker";
 
 function visibilityLabel(item: WrsBlogRecord): string {
@@ -127,21 +128,16 @@ export function BlogsAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Articles</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            WRS Blog posts for{" "}
-            <code className="rounded bg-muted px-1 text-xs">
-              /resources/blogs
-            </code>
-            .
-          </p>
-        </div>
-        <Button type="button" className="rounded-full" onClick={openCreate}>
-          <Plus className="mr-1.5 h-4 w-4" /> Add article
-        </Button>
-      </div>
+      <EventsTrainingPageHeader
+        eyebrow="Create & manage"
+        title="Articles"
+        description="WRS Blog posts for /resources/blogs. Format with AI is optional and button-only."
+        actions={
+          <Button type="button" className="rounded-full" onClick={openCreate}>
+            <Plus className="mr-1.5 h-4 w-4" /> Add article
+          </Button>
+        }
+      />
 
       {error ? (
         <p className="rounded-2xl bg-red-50 px-3.5 py-2.5 text-sm text-red-700">

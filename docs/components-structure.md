@@ -39,7 +39,7 @@ frontend/src/
 | `components/smartrefill-maintenance-signals.tsx` | Workspace health + payment status bars |
 | `components/platform-alerts-list.tsx` | Alert queue; Contact (Brevo) + Mark done; row click opens Data management (admin) or detail dialog |
 | `components/active-owners-panel.tsx` | Inactive owners (7d+); Contact sends Brevo miss-you + 7d cooldown |
-| `components/sales-portal-dashboard.tsx` | Sales: market position, proactive outlook, scorecard, reports |
+| `components/sales-portal-dashboard.tsx` | Sales urgent-only: focus tiles + rules action queue + proposal stages |
 | `components/sales-market-position-section.tsx` | Market position metrics + plan mix bars; proactive scoreboard |
 | `lib/build-sales-market-report.ts` | Derives market share, expansion upside, projected wins from analytics (excludes `authAccountTag=test`) |
 | `lib/filter-chart-series.ts` | Date-range chart filters; drops test-tagged businesses |
@@ -47,9 +47,6 @@ frontend/src/
 | `components/sales-portal-shortcuts.tsx` | Quick links to proposals, commissions, materials, SmartRefill leads |
 | `components/hub-app-stats-section.tsx` | Alias → `PlatformAppsOverview` |
 | `components/sales-portal-actions-joiners-section.tsx` | Legacy Actions \| New joiners tabs (superseded by sales workspace sections) |
-| `components/dashboard-actions-forecast-section.tsx` | Hub Actions \| Forecast tabs |
-| `components/dashboard-insights-forecast-section.tsx` | App Insights \| Forecast tabs |
-| `components/dashboard-forecast-panel.tsx` | Paginated AI/rule-based forecasts |
 | `components/growth-charts-section.tsx` | Charts (Recharts), app-filtered |
 | `lib/app-chart-groups.ts` | Per-app chart kind lists (no overlap) |
 | `lib/sort-active-owners.ts` | Inactive owners (7d+ no login) sort + 10-row cap (expandable) |
@@ -62,8 +59,8 @@ Shared dashboard helpers under `src/lib/dashboard/`: `test-account-filters.ts`, 
 
 ### `features/content-studio/`
 
-- `components/content-studio-page.tsx` — generate social posts/images
-- `constants.ts` — tone/platform options
+- `components/content-studio-page.tsx` — on-demand generate (`both` / `caption` / `image`)
+- `constants.ts` — suggestions, brand presets, types
 
 ### `features/events-training/`
 

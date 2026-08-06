@@ -24,6 +24,7 @@ import { WebinarFormDialog } from "./webinar-form-dialog";
 import { WebinarRegistrantsDialog } from "./webinar-registrants-dialog";
 import { WebinarStatusPicker } from "./webinar-status-picker";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
+import { EventsTrainingPageHeader } from "./events-training-page-header";
 
 function formatSchedule(startsAt: string | null): string {
   if (!startsAt) return "No schedule";
@@ -152,23 +153,16 @@ export function WebinarsAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            Live webinars
-          </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Schedule sessions for{" "}
-            <code className="rounded bg-muted px-1 text-xs">
-              /resources/webinars
-            </code>
-            .
-          </p>
-        </div>
-        <Button type="button" className="rounded-full" onClick={openCreate}>
-          <Plus className="mr-1.5 h-4 w-4" /> Add webinar
-        </Button>
-      </div>
+      <EventsTrainingPageHeader
+        eyebrow="Create & manage"
+        title="Live webinars"
+        description="Schedule sessions for /resources/webinars and manage registrations from each card."
+        actions={
+          <Button type="button" className="rounded-full" onClick={openCreate}>
+            <Plus className="mr-1.5 h-4 w-4" /> Add webinar
+          </Button>
+        }
+      />
 
       {error ? (
         <p className="rounded-2xl bg-red-50 px-3.5 py-2.5 text-sm text-red-700">

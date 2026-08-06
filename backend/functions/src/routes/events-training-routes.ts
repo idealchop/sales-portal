@@ -1,4 +1,5 @@
 import express from "express";
+import { rateLimit } from "express-rate-limit";
 import {
   deleteBlogHandler,
   deleteScheduleHandler,
@@ -55,6 +56,16 @@ import { requireManagerOrAdminRole } from "../middleware/require-admin";
 
 const router = express.Router();
 
+/** On-demand blog HTML formatting (Gemini). Never auto-run from FE. */
+const formatBlogAiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: () => !!process.env.FUNCTIONS_EMULATOR,
+  message: "Too many AI format requests. Try again in a few minutes.",
+});
+
 /** Resources CMS + ops: blogs, videos, webinars, registrations, schedules, moderation, certs, analytics. */
 router.use(
   validateFirebaseIdToken,
@@ -85,7 +96,11 @@ router.delete(
 
 router.get("/blogs", getBlogsHandler);
 router.post("/blogs", postBlogHandler);
-router.post("/blogs/format-html", postFormatBlogBodyHandler);
+router.post(
+  "/blogs/format-html",
+  formatBlogAiLimiter,
+  postFormatBlogBodyHandler,
+);
 router.patch("/blogs/:blogId", patchBlogHandler);
 router.delete("/blogs/:blogId", deleteBlogHandler);
 router.get("/blogs/:blogId/comments", getBlogCommentsHandler);

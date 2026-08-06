@@ -3,6 +3,7 @@ import {
   getGeminiApiKey,
 } from "./gemini-config";
 import { parseGoogleApiErrorBody } from "./api-error";
+import { logAiUsage } from "./ai-usage-log";
 
 /** Imagen models, newest → oldest. */
 export const IMAGEN_MODEL_CHAIN = [
@@ -51,6 +52,14 @@ async function imagenPredict(
   if (!res.ok) {
     const detail = await res.text();
     const message = parseGoogleApiErrorBody(detail);
+    logAiUsage({
+      app: "sales-portal",
+      provider: "imagen",
+      operation: "predict",
+      model,
+      ok: false,
+      status: res.status,
+    });
     console.warn("imagenGenerate HTTP error", model, res.status, detail);
     if (res.status === 401) {
       throw new Error(`Image authentication failed: ${message}`);
@@ -75,6 +84,13 @@ async function imagenPredict(
     return null;
   }
 
+  logAiUsage({
+    app: "sales-portal",
+    provider: "imagen",
+    operation: "predict",
+    model,
+    ok: true,
+  });
   return toDataUri(prediction?.mimeType || "image/png", encoded);
 }
 
@@ -102,6 +118,14 @@ async function geminiImageGenerate(
   if (!res.ok) {
     const detail = await res.text();
     const message = parseGoogleApiErrorBody(detail);
+    logAiUsage({
+      app: "sales-portal",
+      provider: "gemini",
+      operation: "imageGenerate",
+      model,
+      ok: false,
+      status: res.status,
+    });
     console.warn("geminiImageGenerate HTTP error", model, res.status, detail);
     if (res.status === 401) {
       throw new Error(`Image authentication failed: ${message}`);
@@ -129,6 +153,13 @@ async function geminiImageGenerate(
     return null;
   }
 
+  logAiUsage({
+    app: "sales-portal",
+    provider: "gemini",
+    operation: "imageGenerate",
+    model,
+    ok: true,
+  });
   return toDataUri(inlineData.mimeType || "image/png", inlineData.data);
 }
 

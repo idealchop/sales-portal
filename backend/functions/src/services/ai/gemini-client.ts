@@ -3,12 +3,17 @@ import {
   resolveGeminiModelCandidates,
 } from "./gemini-config";
 import { parseGoogleApiErrorBody } from "./api-error";
+import {
+  extractGeminiUsageMetadata,
+  logAiUsage,
+} from "./ai-usage-log";
 
 type GeminiGenerateInput = {
   system: string;
   user: string;
   modelCandidates?: string[];
   generationConfig: Record<string, unknown>;
+  operation?: string;
 };
 
 function shouldTryNextGeminiModel(status: number): boolean {
@@ -29,6 +34,7 @@ async function geminiGenerateContent(
       resolveGeminiModelCandidates();
 
   let lastError = "Gemini request failed.";
+  const operation = input.operation || "generateContent";
 
   for (const model of candidates) {
     const url =
@@ -49,6 +55,14 @@ async function geminiGenerateContent(
       if (!res.ok) {
         const detail = await res.text();
         lastError = parseGoogleApiErrorBody(detail);
+        logAiUsage({
+          app: "sales-portal",
+          provider: "gemini",
+          operation,
+          model,
+          ok: false,
+          status: res.status,
+        });
         console.warn("geminiGenerateContent HTTP error", model, res.status, detail);
         if (res.status === 401) {
           return { text: null, error: `Gemini authentication failed: ${lastError}` };
@@ -61,9 +75,20 @@ async function geminiGenerateContent(
 
       const data = (await res.json()) as {
         candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        usageMetadata?: Record<string, unknown>;
       };
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
+      const usage = extractGeminiUsageMetadata(data);
       if (text) {
+        logAiUsage({
+          app: "sales-portal",
+          provider: "gemini",
+          operation,
+          model,
+          ok: true,
+          usage,
+          extra: model !== candidates[0] ? { fallbackFrom: candidates[0] } : undefined,
+        });
         if (model !== candidates[0]) {
           console.info("geminiGenerateContent using fallback model", {
             requested: candidates[0],
@@ -74,8 +99,25 @@ async function geminiGenerateContent(
       }
 
       lastError = "Gemini returned an empty response.";
+      logAiUsage({
+        app: "sales-portal",
+        provider: "gemini",
+        operation,
+        model,
+        ok: false,
+        usage,
+        extra: { reason: "empty_response" },
+      });
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
+      logAiUsage({
+        app: "sales-portal",
+        provider: "gemini",
+        operation,
+        model,
+        ok: false,
+        extra: { reason: "exception" },
+      });
       console.warn("geminiGenerateContent failed", model, error);
     }
   }
@@ -91,6 +133,8 @@ export async function geminiGenerateJson<T>(input: {
   modelCandidates?: string[];
   maxOutputTokens?: number;
   temperature?: number;
+  /** Structured ai_usage operation label (default generateJson). */
+  operation?: string;
 }): Promise<T> {
   const candidates =
     input.modelCandidates ??
@@ -100,6 +144,7 @@ export async function geminiGenerateJson<T>(input: {
     system: input.system,
     user: input.user,
     modelCandidates: candidates,
+    operation: input.operation || "generateJson",
     generationConfig: {
       temperature: input.temperature ?? 0.35,
       maxOutputTokens: input.maxOutputTokens ?? 2048,
@@ -127,6 +172,8 @@ export async function geminiGenerateText(input: {
   modelCandidates?: string[];
   maxOutputTokens?: number;
   temperature?: number;
+  /** Structured ai_usage operation label (default generateText). */
+  operation?: string;
 }): Promise<string> {
   const candidates =
     input.modelCandidates ??
@@ -136,6 +183,7 @@ export async function geminiGenerateText(input: {
     system: input.system,
     user: input.user,
     modelCandidates: candidates,
+    operation: input.operation || "generateText",
     generationConfig: {
       temperature: input.temperature ?? 0.7,
       maxOutputTokens: input.maxOutputTokens ?? 256,

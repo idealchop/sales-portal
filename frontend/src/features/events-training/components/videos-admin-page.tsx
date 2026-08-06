@@ -87,6 +87,7 @@ import { StoryFormDialog } from "./story-form-dialog";
 import { VideoDetailDialog } from "./video-detail-dialog";
 import { VideoStatusPicker } from "./video-status-picker";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
+import { EventsTrainingPageHeader } from "./events-training-page-header";
 
 type SourceMode = "url" | "embed";
 
@@ -780,19 +781,16 @@ export function VideosAdminPage({ lockedCategory }: VideosAdminPageProps = {}) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            {copy.title}
-          </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {copy.description}
-          </p>
-        </div>
-        <Button type="button" onClick={openCreate}>
-          <Plus className="mr-1.5 h-4 w-4" /> {copy.addLabel}
-        </Button>
-      </div>
+      <EventsTrainingPageHeader
+        eyebrow="Create & manage"
+        title={copy.title}
+        description={copy.description}
+        actions={
+          <Button type="button" onClick={openCreate}>
+            <Plus className="mr-1.5 h-4 w-4" /> {copy.addLabel}
+          </Button>
+        }
+      />
 
       {formOpen && !usesDedicatedForm
         ? createPortal(

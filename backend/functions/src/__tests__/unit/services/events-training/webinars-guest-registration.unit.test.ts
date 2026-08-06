@@ -11,8 +11,10 @@ describe("resolveGuestRegistrationEnabled", () => {
     expect(resolveGuestRegistrationEnabled("public", false)).toBe(false);
   });
 
-  it("forces false for private and premium", () => {
+  it("forces false for private; premium is opt-in only", () => {
     expect(resolveGuestRegistrationEnabled("private", true)).toBe(false);
-    expect(resolveGuestRegistrationEnabled("premium", true)).toBe(false);
+    expect(resolveGuestRegistrationEnabled("premium", undefined)).toBe(false);
+    expect(resolveGuestRegistrationEnabled("premium", false)).toBe(false);
+    expect(resolveGuestRegistrationEnabled("premium", true)).toBe(true);
   });
 });

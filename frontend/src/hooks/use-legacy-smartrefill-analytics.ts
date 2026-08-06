@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ApiError } from "@/lib/api-client";
 import { fetchLegacySmartRefillAnalytics } from "@/lib/dashboard/fetch-legacy-smartrefill-analytics";
 import type { LegacySmartRefillAnalytics } from "@/lib/dashboard/legacy-smartrefill-analytics";
 
@@ -24,9 +25,17 @@ export function useLegacySmartRefillAnalytics() {
       setComputedAt(result.computedAt);
       setError(null);
       hasDataRef.current = true;
-    } catch {
+    } catch (err) {
       if (!hasDataRef.current) {
-        setError("Unable to load SmartRefill (legacy) analytics.");
+        const detail =
+          err instanceof ApiError ?
+            err.message || `Request failed (${err.status})`
+          : null;
+        setError(
+          detail ?
+            `Unable to load SmartRefill (legacy) analytics. ${detail}`
+          : "Unable to load SmartRefill (legacy) analytics.",
+        );
         setData(null);
       }
     } finally {

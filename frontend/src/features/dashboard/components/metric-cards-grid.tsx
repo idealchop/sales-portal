@@ -3,11 +3,11 @@
 import { useState } from "react";
 import {
   Activity,
+  Briefcase,
   Building2,
   CreditCard,
   MonitorSmartphone,
   RefreshCw,
-  Sparkles,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -76,7 +76,7 @@ const VARIANT_STYLES: Record<
     ring: "hover:ring-orange-200",
   },
   pipeline: {
-    icon: Sparkles,
+    icon: Briefcase,
     accent: "text-indigo-700",
     chip: "bg-indigo-50 text-indigo-800",
     ring: "hover:ring-indigo-200",

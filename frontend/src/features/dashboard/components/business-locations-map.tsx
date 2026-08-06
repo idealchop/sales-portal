@@ -21,6 +21,7 @@ import {
   createMapMarkerIcon,
   filterLocationsByMapMarkerTiers,
   isOwnerInactive,
+  isValidMapCoordinate,
   MAP_MARKER_LEGEND,
   countLocationsByMapMarkerTier,
   resolveMapMarkerStyle,
@@ -30,6 +31,27 @@ import {
 import { ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import "leaflet/dist/leaflet.css";
+
+function InvalidateMapSize({ deps }: { deps: unknown }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const run = () => {
+      map.invalidateSize({ animate: false });
+    };
+    run();
+    const t1 = window.setTimeout(run, 80);
+    const t2 = window.setTimeout(run, 320);
+    window.addEventListener("resize", run);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.removeEventListener("resize", run);
+    };
+  }, [map, deps]);
+
+  return null;
+}
 
 function FitMapBounds({ locations }: { locations: BusinessMapLocation[] }) {
   const map = useMap();
@@ -265,13 +287,21 @@ export function BusinessLocationsMap({
     () => new Set(MAP_MARKER_LEGEND.map((entry) => entry.tier)),
   );
 
-  const tierCounts = useMemo(
-    () => countLocationsByMapMarkerTier(locations),
+  const plottableLocations = useMemo(
+    () =>
+      locations.filter((location) =>
+        isValidMapCoordinate(location.lat, location.lng),
+      ),
     [locations],
   );
+
+  const tierCounts = useMemo(
+    () => countLocationsByMapMarkerTier(plottableLocations),
+    [plottableLocations],
+  );
   const visibleLocations = useMemo(
-    () => filterLocationsByMapMarkerTiers(locations, visibleTiers),
-    [locations, visibleTiers],
+    () => filterLocationsByMapMarkerTiers(plottableLocations, visibleTiers),
+    [plottableLocations, visibleTiers],
   );
 
   const toggleLegendTier = useCallback((tier: MapMarkerTier) => {
@@ -298,7 +328,8 @@ export function BusinessLocationsMap({
       setIsFullscreen(document.fullscreenElement === shellRef.current);
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
@@ -319,7 +350,7 @@ export function BusinessLocationsMap({
       visibleLocations.find((location) => location.id === selected.id) ?? null
     : null;
 
-  if (locations.length === 0) {
+  if (plottableLocations.length === 0) {
     return (
       <div className="flex h-[min(68vh,560px)] min-h-[420px] items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-zinc-50 text-sm text-[var(--muted-foreground)]">
         No workspace locations with coordinates yet.
@@ -336,9 +367,14 @@ export function BusinessLocationsMap({
           visibleLocations.length,
       ]
     : [
-        locations.reduce((sum, item) => sum + item.lat, 0) / locations.length,
-        locations.reduce((sum, item) => sum + item.lng, 0) / locations.length,
+        plottableLocations.reduce((sum, item) => sum + item.lat, 0) /
+          plottableLocations.length,
+        plottableLocations.reduce((sum, item) => sum + item.lng, 0) /
+          plottableLocations.length,
       ];
+
+  const mapLayoutKey = isFullscreen ? "fs" : "win";
+  const mapSizeDeps = `${mapLayoutKey}:${plottableLocations.length}:${visibleLocations.length}`;
 
   return (
     <div
@@ -347,19 +383,21 @@ export function BusinessLocationsMap({
     >
       <div className="relative">
         <MapContainer
+          key={mapLayoutKey}
           center={
             visibleLocations.length === 1 ?
               [visibleLocations[0].lat, visibleLocations[0].lng]
             : center
           }
           zoom={visibleLocations.length === 1 ? 13 : 8}
-          className="h-[min(68vh,560px)] min-h-[420px] w-full"
+          className="h-[min(68vh,560px)] min-h-[420px] w-full bg-zinc-100"
           scrollWheelZoom
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <InvalidateMapSize deps={mapSizeDeps} />
           <FitMapBounds locations={visibleLocations} />
           <MapClickDismiss onDismiss={() => setSelected(null)} />
           {visibleLocations.map((location) => (

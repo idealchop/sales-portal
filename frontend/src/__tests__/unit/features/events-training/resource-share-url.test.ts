@@ -13,7 +13,7 @@ describe("resource-share-url", () => {
     );
   });
 
-  it("builds deep links for stories and webinar recordings", () => {
+  it("builds deep links for stories, webinar recordings, and tutorials", () => {
     expect(
       buildResourceVideoShareUrl({
         videoId: "story-1",
@@ -29,12 +29,20 @@ describe("resource-share-url", () => {
         origin: "https://app.smartrefill.io",
       }),
     ).toBe("https://app.smartrefill.io/resources/webinars?video=rec-9");
-  });
 
-  it("returns null for tutorials", () => {
     expect(
       buildResourceVideoShareUrl({
         videoId: "tut-1",
+        category: "tutorial",
+        origin: "https://app.smartrefill.io",
+      }),
+    ).toBe("https://app.smartrefill.io/resources/tutorials?video=tut-1");
+  });
+
+  it("returns null for missing video id", () => {
+    expect(
+      buildResourceVideoShareUrl({
+        videoId: "  ",
         category: "tutorial",
       }),
     ).toBeNull();

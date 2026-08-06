@@ -1,50 +1,126 @@
 "use client";
 
 import Link from "next/link";
-import { SalesMarketPositionSection } from "@/features/dashboard/components/sales-market-position-section";
-import { SalesProactiveScoreboard } from "@/features/dashboard/components/sales-market-position-section";
-import { PersonalSalesStrip } from "@/features/dashboard/components/personal-sales-strip";
-import { PipelineStageStrip } from "@/features/dashboard/components/pipeline-stage-strip";
+import {
+  AlertTriangle,
+  ArrowUpCircle,
+  Briefcase,
+  FileText,
+} from "lucide-react";
 import { SalesInsightsPanel } from "@/features/dashboard/components/sales-insights-panel";
-import { AppChartsGrid } from "@/features/dashboard/components/app-charts-grid";
+import { PipelineStageStrip } from "@/features/dashboard/components/pipeline-stage-strip";
 import { DashboardSection } from "@/features/dashboard/components/dashboard-section";
 import {
   DashboardAnalyticsShell,
-  useDashboardViewFilter,
+  type DashboardViewContext,
 } from "@/features/dashboard/components/dashboard-analytics-shell";
-import { buildSalesMarketReport } from "@/features/dashboard/lib/build-sales-market-report";
-import type { DashboardViewContext } from "@/features/dashboard/components/dashboard-analytics-shell";
+import { formatPhp } from "@/lib/format";
+
+function FocusTile({
+  label,
+  value,
+  hint,
+  icon,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon: React.ReactNode;
+  tone?: "default" | "warn";
+}) {
+  return (
+    <div
+      className={
+        tone === "warn" ?
+          "rounded-xl border border-amber-200 bg-amber-50/60 p-4"
+        : "rounded-xl border border-[var(--border)] bg-white p-4"
+      }
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
+            {label}
+          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+            {value}
+          </p>
+          {hint ?
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">{hint}</p>
+          : null}
+        </div>
+        <div
+          className={
+            tone === "warn" ?
+              "rounded-lg bg-white p-2 text-amber-700 shadow-sm"
+            : "rounded-lg bg-teal-50 p-2 text-teal-700"
+          }
+        >
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SalesPortalDashboardContent({ data }: DashboardViewContext) {
-  const { globalFilter, setGlobalFilter } = useDashboardViewFilter();
-  const report = buildSalesMarketReport(data, globalFilter);
+  const personal = data.personalSales;
+  const insights = data.salesInsights;
+  const highPriority = insights.salesActions.filter(
+    (action) => action.priority === "high",
+  ).length;
+  const needsAttention =
+    (personal?.draftsNeedingAction ?? 0) +
+    (personal?.sentAwaitingResponse ?? 0);
 
   return (
     <>
-      <DashboardSection
-        id="sales-market-position"
-        title="App market position"
-        description="Where Smart Refill stands in the installed base — share, health, traction, and growth. Each KPI shows trend vs the ideal for the selected date filter."
-        action={
-          <Link
-            href="/dashboard/smartrefill"
-            className="text-xs font-medium text-teal-700 hover:underline"
-          >
-            Open SmartRefill detail →
-          </Link>
-        }
-      >
-        <SalesMarketPositionSection
-          metrics={report.marketPosition}
-          planMix={report.planMix}
-          rangeLabel={report.rangeLabel}
+      <div className="space-y-1">
+        <h1 className="text-base font-semibold text-foreground">Sales · now</h1>
+        <p className="text-xs text-[var(--muted-foreground)]">
+          Who to contact and what is blocking deals. Rules-based — no Gemini on
+          this page.
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <FocusTile
+          label="Follow-ups"
+          value={insights.salesActions.length.toLocaleString()}
+          hint={
+            highPriority > 0 ?
+              `${highPriority} high priority`
+            : `${insights.atRiskWorkspaces} at-risk stations`
+          }
+          icon={<AlertTriangle className="h-4 w-4" />}
+          tone={highPriority > 0 || insights.salesActions.length > 0 ? "warn" : "default"}
         />
-      </DashboardSection>
+        <FocusTile
+          label="Open pipeline"
+          value={formatPhp(personal?.pipelineValue ?? data.proposalPipeline.pipelineValue)}
+          hint={`${personal?.totalProposals ?? data.proposalPipeline.totalProposals} proposals`}
+          icon={<Briefcase className="h-4 w-4" />}
+        />
+        <FocusTile
+          label="Needs attention"
+          value={needsAttention.toLocaleString()}
+          hint="Drafts + sent awaiting reply"
+          icon={<FileText className="h-4 w-4" />}
+          tone={needsAttention > 0 ? "warn" : "default"}
+        />
+        <FocusTile
+          label="Upsell ready"
+          value={insights.upgradeOpportunities.toLocaleString()}
+          hint={`${formatPhp(insights.estimatedMrr)} est. MRR`}
+          icon={<ArrowUpCircle className="h-4 w-4" />}
+        />
+      </div>
 
       <DashboardSection
-        id="sales-proactive"
-        title="Proactive sales outlook"
-        description="Forward-looking value: projected wins, expansion upside, and coverage — not just open tickets."
+        id="sales-do-next"
+        title="Do these next"
+        description="Priority account follow-ups for this period."
+        count={insights.salesActions.length}
         action={
           <div className="flex flex-wrap gap-3">
             <Link
@@ -62,44 +138,20 @@ function SalesPortalDashboardContent({ data }: DashboardViewContext) {
           </div>
         }
       >
-        <SalesProactiveScoreboard metrics={report.proactive} />
-      </DashboardSection>
-
-      <DashboardSection
-        id="sales-scorecard"
-        title="Sales scorecard"
-        description="Your pipeline stages and earnings — the numbers that feed weekly sales reports."
-      >
-        <div className="space-y-3">
-          <PersonalSalesStrip
-            personalSales={data.personalSales!}
-            analyticsScope={data.analyticsScope}
-          />
-          <PipelineStageStrip proposalPipeline={data.proposalPipeline} />
-        </div>
-      </DashboardSection>
-
-      <AppChartsGrid
-        appId="sales-portal"
-        title="Sales reports"
-        description="MRR by plan, plan mix, revenue trend, pipeline, and health — ready for status updates."
-        data={data}
-        globalFilter={globalFilter}
-        onGlobalFilterChange={setGlobalFilter}
-      />
-
-      <DashboardSection
-        id="sales-account-signals"
-        title="Account signals"
-        description="Optional detail when you need names behind the upgrade and health numbers."
-        count={data.salesInsights.salesActions.length}
-      >
         <SalesInsightsPanel
-          salesInsights={data.salesInsights}
+          salesInsights={insights}
           proposalPipeline={data.proposalPipeline}
           embedded
-          hideStatCards
+          actionsOnly
         />
+      </DashboardSection>
+
+      <DashboardSection
+        id="sales-pipeline-stages"
+        title="Proposal stages"
+        description="Where deals sit right now."
+      >
+        <PipelineStageStrip proposalPipeline={data.proposalPipeline} />
       </DashboardSection>
     </>
   );

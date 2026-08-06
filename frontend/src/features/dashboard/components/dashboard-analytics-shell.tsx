@@ -41,8 +41,15 @@ function DashboardAnalyticsShellContent({
   children: (ctx: DashboardViewContext) => ReactNode;
 }) {
   const { profile } = useSalesProfile();
-  const { data, isLoading, isRefreshing, isStale, error, computedAt, refresh } =
-    useDashboardAnalyticsContext();
+  const {
+    data,
+    isLoading,
+    isRefreshing,
+    isStale,
+    error,
+    computedAt,
+    refresh,
+  } = useDashboardAnalyticsContext();
 
   if (isLoading && !data) {
     return (

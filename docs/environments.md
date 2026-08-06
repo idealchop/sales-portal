@@ -42,6 +42,20 @@ ENV=dev DEPLOY_FIRESTORE=1 ./deploy.sh
 - Prod defaults: `frontend/apphosting.yaml` (do not change for Phase 1).
 - Dev overrides: `frontend/apphosting.dev.yaml` (merged when Environment name = `dev`).
 
+### Local development (= Dev)
+
+Keep local env files aligned with hosted Dev so you hit the same data and API tier:
+
+| Surface | Local setting |
+|--------|----------------|
+| Firestore | `riverdb-dev` (`NEXT_PUBLIC_FIRESTORE_DB` / `SALES_PORTAL_FIRESTORE_DB`) |
+| Sales API (local process) | `http://127.0.0.1:8071` via `NEXT_PUBLIC_SALES_PORTAL_API_URL_DEV` |
+| Sales / SmartRefill hosted fallbacks | `salesPortalApiDev` / `smartrefillV3ApiDev` |
+| Gemini (Sales BE) | `SALES_PORTAL_GEMINI_API_KEY_DEV` (dedicated “sales-portal” key) |
+| Legacy SmartRefill DB | `prod-smartrefill` (unchanged) |
+
+Copy from `.env.example` → `.env.local` / `backend/functions/.env`, then fill secrets. Restart Next and `serve:local` after changes.
+
 ### Pause Dev jobs without undeploying
 
 Set `SALES_PORTAL_DEV_JOBS_ENABLED=false` on the `*Dev` Cloud Run services. Handlers no-op until unset or set back to `true`. Dev tier is also inferred from function names ending in `Dev` (uses `riverdb-dev` + Dev SmartRefill API URL; legacy stays `prod-smartrefill`).

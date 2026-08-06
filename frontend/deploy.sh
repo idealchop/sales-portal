@@ -53,7 +53,8 @@ npm run lint -- --fix
 echo -e "${BLUE}🏗️  Building production bundle...${NC}"
 npm run build
 
-STAGED_DENY_PATTERN='(^|/)\.env(\.|$)|(^|/)node_modules/|(^|/)\.next/|(^|/)out/|(^|/)test-results/|(^|/)playwright-report/|(^|/)blob-report/|(^|/)coverage/|\.pem$|(^|/)credentials\.json|secret\.local|firebase-debug|(^|/)\.firebase/'
+# Allow `.env.example` — block real env files only.
+STAGED_DENY_PATTERN='(^|/)\.env$|(^|/)\.env\.(local|development|production|test|dev)(\.|$)|(^|/)node_modules/|(^|/)\.next/|(^|/)out/|(^|/)test-results/|(^|/)playwright-report/|(^|/)blob-report/|(^|/)coverage/|\.pem$|(^|/)credentials\.json|secret\.local|firebase-debug|(^|/)\.firebase/'
 
 verify_staged_paths() {
   local staged

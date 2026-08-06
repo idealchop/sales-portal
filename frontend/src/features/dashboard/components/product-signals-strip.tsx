@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  BarChart3,
   CheckCircle2,
   Layers,
-  Sparkles,
   UsersRound,
 } from "lucide-react";
 import type { DashboardAnalytics } from "@/lib/dashboard/analytics";
@@ -92,7 +92,7 @@ export function ProductSignalsStrip({ data }: { data: DashboardAnalytics }) {
             `${featureLabel(topFeature.feature)} · ${topFeature.completed}/${topFeature.total}`
           : "No adoption data"
         }
-        icon={<Sparkles className="h-3.5 w-3.5" />}
+        icon={<BarChart3 className="h-3.5 w-3.5" />}
       />
     </div>
   );

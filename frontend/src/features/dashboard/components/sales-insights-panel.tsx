@@ -82,16 +82,97 @@ export function SalesInsightsPanel({
   proposalPipeline,
   embedded = false,
   hideStatCards = false,
+  actionsOnly = false,
 }: {
   salesInsights: DashboardAnalytics["salesInsights"];
   proposalPipeline: DashboardAnalytics["proposalPipeline"];
   embedded?: boolean;
   hideStatCards?: boolean;
+  /** Action queue only — no health/MRR/payment/pipeline side panels. */
+  actionsOnly?: boolean;
 }) {
   const healthTotal = salesInsights.workspaceHealth.reduce(
     (sum, row) => sum + row.count,
     0,
   );
+
+  const actions = [...salesInsights.salesActions].sort((a, b) => {
+    const rank = { high: 0, medium: 1, low: 2 } as const;
+    return rank[a.priority] - rank[b.priority];
+  });
+
+  const queue = (
+    <Card className={actionsOnly ? undefined : "lg:col-span-2"}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold uppercase tracking-wide">
+          Action queue · {actions.length}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {actions.length === 0 ? (
+          <p className="py-8 text-center text-sm text-[var(--muted-foreground)]">
+            Nothing urgent — no follow-ups queued.
+          </p>
+        ) : (
+          <PaginatedList
+            items={actions}
+            pageSize={ACTION_PAGE_SIZE}
+            className="space-y-3"
+            renderItem={(action) => (
+              <div
+                key={action.id}
+                className="rounded-lg border border-[var(--border)] p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-foreground">
+                        {action.businessName}
+                      </p>
+                      <Badge className={PRIORITY_STYLES[action.priority]}>
+                        {action.priority}
+                      </Badge>
+                      <Badge>
+                        {ACTION_LABELS[action.actionType]}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-[var(--primary)]">
+                      {action.headline}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                      {action.detail}
+                    </p>
+                    {action.ownerEmail && (
+                      <BrevoOutreachButton
+                        toEmail={action.ownerEmail}
+                        businessName={action.businessName}
+                        subtitle={action.headline}
+                        label={`Email ${action.ownerEmail}`}
+                        className="mt-2"
+                      />
+                    )}
+                  </div>
+                  <div className="text-right text-xs text-[var(--muted-foreground)]">
+                    {action.planName && <p>{action.planName}</p>}
+                    {action.customers !== undefined && (
+                      <p>{action.customers} customers</p>
+                    )}
+                    {action.transactionsLast30Days !== undefined && (
+                      <p>{action.transactionsLast30Days} tx / 30d</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (actionsOnly) {
+    return <div className="space-y-4">{queue}</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -131,72 +212,7 @@ export function SalesInsightsPanel({
       : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide">
-              Action queue · {salesInsights.salesActions.length}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {salesInsights.salesActions.length === 0 ? (
-              <p className="py-8 text-center text-sm text-[var(--muted-foreground)]">
-                0 actions
-              </p>
-            ) : (
-              <PaginatedList
-                items={salesInsights.salesActions}
-                pageSize={ACTION_PAGE_SIZE}
-                className="space-y-3"
-                renderItem={(action) => (
-                  <div
-                    key={action.id}
-                    className="rounded-lg border border-[var(--border)] p-4"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium text-foreground">
-                            {action.businessName}
-                          </p>
-                          <Badge className={PRIORITY_STYLES[action.priority]}>
-                            {action.priority}
-                          </Badge>
-                          <Badge>
-                            {ACTION_LABELS[action.actionType]}
-                          </Badge>
-                        </div>
-                        <p className="mt-1 text-sm font-medium text-[var(--primary)]">
-                          {action.headline}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                          {action.detail}
-                        </p>
-                        {action.ownerEmail && (
-                          <BrevoOutreachButton
-                            toEmail={action.ownerEmail}
-                            businessName={action.businessName}
-                            subtitle={action.headline}
-                            label={`Email ${action.ownerEmail}`}
-                            className="mt-2"
-                          />
-                        )}
-                      </div>
-                      <div className="text-right text-xs text-[var(--muted-foreground)]">
-                        {action.planName && <p>{action.planName}</p>}
-                        {action.customers !== undefined && (
-                          <p>{action.customers} customers</p>
-                        )}
-                        {action.transactionsLast30Days !== undefined && (
-                          <p>{action.transactionsLast30Days} tx / 30d</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              />
-            )}
-          </CardContent>
-        </Card>
+        {queue}
 
         <div className="space-y-6">
           <Card>

@@ -1,4 +1,3 @@
-import { geminiGenerateJson } from "./ai/gemini-client";
 import type { WorkspaceBehaviorProfile } from "./compute-workspace-behavior";
 
 export type AiSalesAccountInsight = {
@@ -18,17 +17,6 @@ export type AiSalesInsightsResult = {
   behavioralReengagement: AiSalesAccountInsight[];
   priorityActions: AiSalesAccountInsight[];
   aiEnabled: boolean;
-};
-
-type AiResponse = {
-  revenueChurnRiskSummary?: string;
-  growthOpportunitySummary?: string;
-  behavioralReengagementSummary?: string;
-  priorityActionsSummary?: string;
-  revenueChurnRisk?: AiSalesAccountInsight[];
-  growthOpportunities?: AiSalesAccountInsight[];
-  behavioralReengagement?: AiSalesAccountInsight[];
-  priorityActions?: AiSalesAccountInsight[];
 };
 
 function buildFallbackInsights(
@@ -112,86 +100,8 @@ function buildFallbackInsights(
 export async function generateAiSalesInsights(
   profiles: WorkspaceBehaviorProfile[],
 ): Promise<AiSalesInsightsResult> {
-  const fallback = buildFallbackInsights(profiles);
-  if (profiles.length === 0) return fallback;
-
-  const compactPayload = profiles
-    .map((profile) => ({
-      businessName: profile.snapshot.name,
-      plan: profile.snapshot.planName,
-      customers: profile.snapshot.customers,
-      tx30d: profile.snapshot.transactionsLast30Days,
-      onboardingComplete: profile.snapshot.onboardingComplete,
-      gettingStartedSteps: profile.snapshot.gettingStartedCompleted,
-      paymentStatus: profile.snapshot.paymentStatus,
-      healthTier: profile.healthTier,
-      ownerInactive30d: profile.ownerInactive30d,
-      daysSinceOwnerLogin: profile.daysSinceOwnerLogin,
-      monthlyRevenue: profile.snapshot.price,
-      churnRiskScore: profile.churnRiskScore,
-      growthScore: profile.growthScore,
-      churnSignals: profile.churnSignals,
-      growthSignals: profile.growthSignals,
-    }))
-    .sort(
-      (a, b) =>
-        Math.max(b.churnRiskScore, b.growthScore) -
-        Math.max(a.churnRiskScore, a.growthScore),
-    )
-    .slice(0, 18);
-
-  const aiResult = await geminiGenerateJson<AiResponse>({
-    system: `SmartRefill sales analyst. JSON only.
-Keep copy short: summaries under 12 words, actions under 6 words, reasons under 8 words.
-Use numbers where possible.`,
-    user: JSON.stringify({
-      task: "Rank sales actions from workspace behavior",
-      workspaces: compactPayload,
-      outputSchema: {
-        revenueChurnRiskSummary: "short string with counts",
-        growthOpportunitySummary: "short string with counts",
-        behavioralReengagementSummary: "short string with counts",
-        priorityActionsSummary: "short string with action count",
-        revenueChurnRisk: [
-          {
-            businessName: "string",
-            recommendedAction: "string",
-            reason: "string",
-            priority: "high|medium|low",
-          },
-        ],
-        growthOpportunities: "same shape, max 5",
-        behavioralReengagement: "same shape, max 5",
-        priorityActions: "same shape, max 5",
-      },
-    }),
-    fallback: {},
-    maxOutputTokens: 2048,
-  });
-
-  if (!aiResult.priorityActions?.length && !aiResult.revenueChurnRisk?.length) {
-    return fallback;
-  }
-
-  return {
-    revenueChurnRiskSummary:
-      aiResult.revenueChurnRiskSummary || fallback.revenueChurnRiskSummary,
-    growthOpportunitySummary:
-      aiResult.growthOpportunitySummary || fallback.growthOpportunitySummary,
-    behavioralReengagementSummary:
-      aiResult.behavioralReengagementSummary ||
-      fallback.behavioralReengagementSummary,
-    priorityActionsSummary:
-      aiResult.priorityActionsSummary || fallback.priorityActionsSummary,
-    revenueChurnRisk: aiResult.revenueChurnRisk?.slice(0, 6) || fallback.revenueChurnRisk,
-    growthOpportunities:
-      aiResult.growthOpportunities?.slice(0, 6) || fallback.growthOpportunities,
-    behavioralReengagement:
-      aiResult.behavioralReengagement?.slice(0, 6) ||
-      fallback.behavioralReengagement,
-    priorityActions: aiResult.priorityActions?.slice(0, 6) || fallback.priorityActions,
-    aiEnabled: true,
-  };
+  // Rules-only — Gemini dashboard path removed. Keep aiEnabled false for clients.
+  return buildFallbackInsights(profiles);
 }
 
 function insightRows(

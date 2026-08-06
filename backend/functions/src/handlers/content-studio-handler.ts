@@ -1,10 +1,18 @@
 import { Response } from "express";
 import { AuthenticatedRequest } from "../middleware/auth-middleware";
-import { generateSocialPost } from "../services/content-studio/generate-social-post";
+import {
+  generateSocialPost,
+  type ContentStudioMode,
+} from "../services/content-studio/generate-social-post";
 import { formatErrorMessage } from "../services/ai/api-error";
 import { logger } from "firebase-functions";
 
 const CONTENT_STUDIO_ROLES = new Set(["sales", "manager", "admin"]);
+
+function parseMode(value: unknown): ContentStudioMode {
+  if (value === "caption" || value === "image" || value === "both") return value;
+  return "both";
+}
 
 export const postGenerateSocialPost = async (
   req: AuthenticatedRequest,
@@ -23,13 +31,19 @@ export const postGenerateSocialPost = async (
     return;
   }
 
+  const mode = parseMode(
+    req.body && typeof req.body === "object" ?
+      (req.body as { mode?: unknown }).mode
+    : undefined,
+  );
+
   try {
-    const data = await generateSocialPost({ prompt });
+    const data = await generateSocialPost({ prompt, mode });
     res.json({ data });
   } catch (error) {
     const message = formatErrorMessage(error);
     logger.error(
-      `Content Studio generation failed (uid=${req.user?.uid ?? "unknown"}): ${message}`,
+      `Content Studio generation failed (uid=${req.user?.uid ?? "unknown"} mode=${mode}): ${message}`,
     );
     res.status(500).json({ error: message });
   }

@@ -69,6 +69,15 @@ describe("generateAiSalesInsights fallback", () => {
     expect(rows.priorityActions[0].value).toMatch(/payment|Call/i);
   });
 
+  it("always returns rules-based insights (no Gemini)", async () => {
+    const { generateAiSalesInsights } = await import(
+      "../../../services/generate-ai-sales-insights"
+    );
+    const insights = await generateAiSalesInsights([profile()]);
+    expect(insights.aiEnabled).toBe(false);
+    expect(insights.priorityActions.length).toBeGreaterThan(0);
+  });
+
   it("returns empty-state rows when no accounts are flagged", () => {
     const rows = aiInsightsToBreakdownRows(
       buildFallbackInsights([

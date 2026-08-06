@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import {
+  createContext,
+  useContext,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
 import type { DashboardAnalyticsRefresh } from "@/hooks/use-dashboard-analytics";
 import type { DashboardAnalytics } from "@/lib/dashboard/analytics";

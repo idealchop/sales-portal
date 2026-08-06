@@ -98,6 +98,7 @@ function emptyForm(): Partial<WebinarRecord> {
     allowedPlanCodes: [],
     allowAllMembers: false,
     guestRegistrationEnabled: true,
+    registrationOpensAt: null,
     capacity: null,
     autoAccept: false,
     joinLink: "",
@@ -141,7 +142,7 @@ function accessFromAudience(
       priceCents,
       allowAllMembers: false,
       allowedPlanCodes: [],
-      guestRegistrationEnabled: false,
+      guestRegistrationEnabled: true,
     };
   }
   const privateAccess = privateAudienceAccess(audience);
@@ -229,8 +230,11 @@ export function WebinarFormDialog({
           initial.capacity != null ||
           initial.autoAccept === true ||
           initial.certificationEnabled ||
+          Boolean(initial.registrationOpensAt) ||
           (initial.visibility === "public" &&
-            initial.guestRegistrationEnabled === false),
+            initial.guestRegistrationEnabled === false) ||
+          (initial.visibility === "premium" &&
+            initial.guestRegistrationEnabled === true),
       );
     } else {
       setForm(emptyForm());
@@ -325,6 +329,15 @@ export function WebinarFormDialog({
       }
     }
 
+    if (form.registrationOpensAt && form.startsAt) {
+      const opens = new Date(form.registrationOpensAt).getTime();
+      const start = new Date(form.startsAt).getTime();
+      if (!Number.isNaN(opens) && !Number.isNaN(start) && opens > start) {
+        setError("Registration open time must be on or before the start time.");
+        return;
+      }
+    }
+
     const capacityTrimmed = capacityInput.trim();
     const capacity =
       capacityTrimmed === "" ? null : Number(capacityTrimmed);
@@ -347,7 +360,7 @@ export function WebinarFormDialog({
       ...form,
       ...access,
       guestRegistrationEnabled:
-        audience === "public"
+        audience === "public" || audience === "premium"
           ? form.guestRegistrationEnabled !== false
           : false,
       tags,
@@ -611,7 +624,7 @@ export function WebinarFormDialog({
                         priceCents: parsePricePesosToCents(e.target.value),
                         allowAllMembers: false,
                         allowedPlanCodes: [],
-                        guestRegistrationEnabled: false,
+                        guestRegistrationEnabled: true,
                       }));
                     }}
                   />
@@ -635,12 +648,16 @@ export function WebinarFormDialog({
                       : "Visible only to stations on a Scale subscription."}
               </p>
             )}
-            {audience === "public" ? (
+            {audience === "public" || audience === "premium" ? (
               <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-3">
                 <input
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-teal-600 focus:ring-teal-500/30"
-                  checked={form.guestRegistrationEnabled !== false}
+                  checked={
+                    audience === "premium"
+                      ? form.guestRegistrationEnabled === true
+                      : form.guestRegistrationEnabled !== false
+                  }
                   onChange={(e) =>
                     setForm((p) => ({
                       ...p,
@@ -650,12 +667,14 @@ export function WebinarFormDialog({
                 />
                 <span>
                   <span className="block text-sm font-medium text-foreground">
-                    Allow guest registration
+                    {audience === "premium"
+                      ? "Allow guest payment"
+                      : "Allow guest registration"}
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
-                    Non-members register with email on the marketing site and
-                    get a Brevo invite. Turn off to keep the event public to
-                    browse but member-only to register.
+                    {audience === "premium"
+                      ? "Non-members unlock with email + PayMongo on the marketing site (live, certificate, and replay)."
+                      : "Non-members register with email on the marketing site and get a Brevo invite. Turn off to keep the event public to browse but member-only to register."}
                   </span>
                 </span>
               </label>
@@ -706,6 +725,30 @@ export function WebinarFormDialog({
                   }
                 />
               </div>
+            </div>
+            <div>
+              <label
+                className={labelClassName}
+                htmlFor="webinar-registration-opens"
+              >
+                Registration opens at
+              </label>
+              <input
+                id="webinar-registration-opens"
+                className={inputClassName}
+                type="datetime-local"
+                value={formatDateTimeLocal(form.registrationOpensAt ?? null)}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    registrationOpensAt: parseDateTimeLocal(e.target.value),
+                  }))
+                }
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Leave empty to open registration as soon as you publish.
+                Station owners are notified when this time arrives.
+              </p>
             </div>
             {scheduleSummary ? (
               <p className="rounded-xl border border-teal-100 bg-teal-50/60 px-3 py-2 text-xs text-teal-900">

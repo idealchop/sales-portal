@@ -7,6 +7,7 @@ import {
   ChevronUp,
   Eye,
   ImagePlus,
+  Sparkles,
   Star,
   X,
 } from "lucide-react";
@@ -115,6 +116,9 @@ export function BlogFormDialog({
   const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formatting, setFormatting] = useState(false);
+  const [formatSource, setFormatSource] = useState<"ai" | "fallback" | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const editingId = initial?.id ?? null;
@@ -206,6 +210,7 @@ export function BlogFormDialog({
     }
     setTagDraft("");
     setError(null);
+    setFormatSource(null);
   }, [open, initial, apps, appsLoading]);
 
   useEffect(() => {
@@ -253,26 +258,37 @@ export function BlogFormDialog({
     }
   }
 
-  async function handleInsertTemplate() {
-    const current = (form.body ?? "").trim();
+  /** Local-only starter HTML — never calls Gemini. */
+  function handleInsertTemplate() {
     setError(null);
+    setFormatSource(null);
+    setForm((p) => ({
+      ...p,
+      body: resolveInsertTemplateBody((p.body ?? "").trim()),
+    }));
+  }
 
-    // Empty body → starter template (local).
+  /** On-demand Gemini HTML format — only when the user presses this button. */
+  async function handleFormatWithAi() {
+    const current = (form.body ?? "").trim();
     if (!current) {
-      setForm((p) => ({ ...p, body: resolveInsertTemplateBody("") }));
+      setError("Paste or write a draft first, then format with AI.");
       return;
     }
-
+    setError(null);
     setFormatting(true);
+    setFormatSource(null);
     try {
       const result = await formatWrsBlogBodyHtml({
         body: current,
         title: form.title ?? "",
       });
       setForm((p) => ({ ...p, body: result.html }));
+      setFormatSource(result.source);
     } catch {
-      // Offline / API not deployed yet — local HTML formatter.
+      // Offline / rate-limited — local HTML formatter (no Gemini).
       setForm((p) => ({ ...p, body: resolveInsertTemplateBody(current) }));
+      setFormatSource("fallback");
     } finally {
       setFormatting(false);
     }
@@ -486,9 +502,8 @@ export function BlogFormDialog({
                       Body
                     </h4>
                     <p className="text-xs text-muted-foreground">
-                      {(form.body ?? "").trim()
-                        ? "AI formats your current draft into clean HTML without changing the story."
-                        : "Insert a starter HTML outline, or paste plain text and format it."}
+                      Paste a draft, then press Format with AI only when you
+                      want Gemini. Saving never runs AI.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -498,13 +513,29 @@ export function BlogFormDialog({
                       variant="outline"
                       className="h-7 rounded-full px-2.5 text-xs"
                       disabled={submitting || formatting}
-                      onClick={() => void handleInsertTemplate()}
+                      onClick={handleInsertTemplate}
                     >
-                      {formatting
-                        ? "Formatting…"
-                        : (form.body ?? "").trim()
-                          ? "AI format as HTML"
-                          : "Insert template"}
+                      Insert template
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-7 rounded-full px-2.5 text-xs"
+                      disabled={
+                        submitting ||
+                        formatting ||
+                        !(form.body ?? "").trim()
+                      }
+                      onClick={() => void handleFormatWithAi()}
+                    >
+                      {formatting ? (
+                        "Formatting…"
+                      ) : (
+                        <>
+                          <Sparkles className="mr-1 h-3 w-3" />
+                          Format with AI
+                        </>
+                      )}
                     </Button>
                     <Badge
                       className={cn(
@@ -515,6 +546,16 @@ export function BlogFormDialog({
                     >
                       {bodyIsHtml ? "HTML detected" : "Plain text"}
                     </Badge>
+                    {formatSource === "ai" ? (
+                      <Badge className="bg-violet-50 text-violet-800">
+                        AI formatted
+                      </Badge>
+                    ) : null}
+                    {formatSource === "fallback" ? (
+                      <Badge className="bg-amber-50 text-amber-900">
+                        Local format
+                      </Badge>
+                    ) : null}
                   </div>
                 </div>
                 <textarea
@@ -523,11 +564,12 @@ export function BlogFormDialog({
                     textareaClassName,
                     "min-h-[22rem] font-mono text-[13px] leading-relaxed",
                   )}
-                  placeholder="Paste your story, then click AI format as HTML"
+                  placeholder="Paste your story, then click Format with AI when ready"
                   value={form.body ?? ""}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, body: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setFormatSource(null);
+                    setForm((p) => ({ ...p, body: e.target.value }));
+                  }}
                   spellCheck={false}
                   disabled={formatting}
                 />

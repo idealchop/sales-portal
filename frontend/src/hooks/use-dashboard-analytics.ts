@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
+import { usePathname } from "next/navigation";
 import { fetchDashboardAnalytics } from "@/lib/dashboard/fetch-dashboard-analytics";
 import {
   DASHBOARD_ANALYTICS_SNAPSHOT_PATH,
@@ -12,9 +13,15 @@ import { firestore } from "@/lib/firebase/firestore";
 
 const POLL_INTERVAL_MS = 30_000;
 
+function isLegacySmartRefillPath(pathname: string | null): boolean {
+  return !!pathname?.startsWith("/dashboard/smartrefill-old");
+}
+
 export function useDashboardAnalytics() {
+  const pathname = usePathname();
+  const skipPlatformAnalytics = isLegacySmartRefillPath(pathname);
   const [data, setData] = useState<DashboardAnalytics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!skipPlatformAnalytics);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isStale, setIsStale] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +56,11 @@ export function useDashboardAnalytics() {
   }, []);
 
   useEffect(() => {
+    if (skipPlatformAnalytics) {
+      setIsLoading(false);
+      return;
+    }
+
     const snapshotRef = doc(
       firestore,
       DASHBOARD_ANALYTICS_SNAPSHOT_PATH[0],
@@ -94,7 +106,7 @@ export function useDashboardAnalytics() {
       window.clearInterval(interval);
       window.removeEventListener("focus", onFocus);
     };
-  }, [refresh]);
+  }, [refresh, skipPlatformAnalytics]);
 
   return {
     data,

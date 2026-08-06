@@ -1,29 +1,16 @@
 "use client";
 
-import {
-  Children,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-  type ComponentType,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
-  BookOpen,
   Check,
   Clapperboard,
-  GraduationCap,
   Loader2,
   MessageSquareWarning,
-  PlayCircle,
-  Star,
   Users,
   X,
-  type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,35 +19,23 @@ import { useSalesProfile } from "@/hooks/use-sales-profile";
 import {
   acceptRegistration,
   declineRegistration,
-  fetchEventsTrainingAnalytics,
   fetchModerationInbox,
   fetchRegistrations,
-  fetchTrainingVideos,
   fetchWebinars,
-  fetchWrsBlogs,
   moderateBlogComment,
   moderateVideoComment,
   updateVideoQuestion,
 } from "../lib/events-training-api";
 import type {
-  EventsTrainingAnalyticsSummary,
   ModerationCommentItem,
   ModerationInbox,
   ModerationQuestionItem,
   RegistrationRecord,
-  TrainingVideoRecord,
   WebinarRecord,
-  WrsBlogRecord,
 } from "../lib/events-training-types";
-import {
-  pickFeaturedBlogs,
-  pickFeaturedStories,
-  pickOverviewWebinars,
-  pickRecentByCategory,
-  pickRecentStoriesAndBlogs,
-} from "../lib/overview-highlights";
-import { inputClassName, textareaClassName } from "../lib/form-styles";
-import { EventsTrainingAnalyticsPanel } from "./events-training-analytics-panel";
+import { pickOverviewWebinars } from "../lib/overview-highlights";
+import { textareaClassName } from "../lib/form-styles";
+import { EventsTrainingPageHeader } from "./events-training-page-header";
 
 const TODO_LIMIT = 6;
 
@@ -77,16 +52,61 @@ function formatWhen(iso: string | null): string {
   });
 }
 
+function FocusTile({
+  label,
+  value,
+  hint,
+  href,
+  tone = "default",
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  href: string;
+  tone?: "default" | "warn";
+  icon: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={
+        tone === "warn"
+          ? "rounded-xl border border-amber-200 bg-amber-50/60 p-4 transition hover:border-amber-300"
+          : "rounded-xl border border-zinc-200/80 bg-white p-4 transition hover:border-teal-200"
+      }
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+            {value}
+          </p>
+          {hint ? (
+            <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+          ) : null}
+        </div>
+        <div
+          className={
+            tone === "warn"
+              ? "rounded-lg bg-white p-2 text-amber-700 shadow-sm"
+              : "rounded-lg bg-teal-50 p-2 text-teal-700"
+          }
+        >
+          {icon}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export function OverviewAdminPage() {
   const router = useRouter();
   const { profile, loading: profileLoading } = useSalesProfile();
-  const [periodDays, setPeriodDays] = useState(30);
-  const [analytics, setAnalytics] =
-    useState<EventsTrainingAnalyticsSummary | null>(null);
   const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
   const [webinars, setWebinars] = useState<WebinarRecord[]>([]);
-  const [videos, setVideos] = useState<TrainingVideoRecord[]>([]);
-  const [blogs, setBlogs] = useState<WrsBlogRecord[]>([]);
   const [inbox, setInbox] = useState<ModerationInbox | null>(null);
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -100,52 +120,28 @@ export function OverviewAdminPage() {
   }, [webinars]);
 
   const liveWebinars = useMemo(
-    () => pickOverviewWebinars(webinars, 3),
+    () => pickOverviewWebinars(webinars, 4),
     [webinars],
-  );
-  const featuredStories = useMemo(
-    () => pickFeaturedStories(videos, 3),
-    [videos],
-  );
-  const featuredArticles = useMemo(() => pickFeaturedBlogs(blogs, 3), [blogs]);
-  const recentStoriesAndArticles = useMemo(
-    () => pickRecentStoriesAndBlogs(videos, blogs, 3),
-    [videos, blogs],
-  );
-  const recentTutorials = useMemo(
-    () => pickRecentByCategory(videos, "tutorial", 3),
-    [videos],
-  );
-  const recentRecordings = useMemo(
-    () => pickRecentByCategory(videos, "webinar", 3),
-    [videos],
   );
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [analyticsData, regs, events, moderation, allVideos, allBlogs] =
-        await Promise.all([
-          fetchEventsTrainingAnalytics(periodDays),
-          fetchRegistrations({ status: "pending" }),
-          fetchWebinars(),
-          fetchModerationInbox(),
-          fetchTrainingVideos(),
-          fetchWrsBlogs(),
-        ]);
-      setAnalytics(analyticsData);
+      const [regs, events, moderation] = await Promise.all([
+        fetchRegistrations({ status: "pending" }),
+        fetchWebinars(),
+        fetchModerationInbox(),
+      ]);
       setRegistrations(regs);
       setWebinars(events);
       setInbox(moderation);
-      setVideos(allVideos);
-      setBlogs(allBlogs);
     } catch {
       setError("Unable to load the overview.");
     } finally {
       setLoading(false);
     }
-  }, [periodDays]);
+  }, []);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -227,10 +223,7 @@ export function OverviewAdminPage() {
             ? {
                 ...row,
                 ...updated,
-                kind: "question" as const,
-                contentKind: "video" as const,
-                contentId: item.contentId,
-                contentTitle: item.contentTitle,
+                status: "answered" as const,
               }
             : row,
         );
@@ -291,29 +284,24 @@ export function OverviewAdminPage() {
   const openPending = pendingRegs.filter((row) => row.status === "pending");
   const visibleRegs = openPending.slice(0, TODO_LIMIT);
   const visibleModeration = moderationTodos.slice(0, TODO_LIMIT);
+  const waitingCount = openPending.length + moderationTodos.length;
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            Overview
-          </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Clear to-dos, then review performance.
-          </p>
-        </div>
-        <select
-          aria-label="Analytics period"
-          className={cn(inputClassName, "w-auto min-w-[9.5rem]")}
-          value={periodDays}
-          onChange={(e) => setPeriodDays(Number(e.target.value))}
-        >
-          <option value={7}>Last 7 days</option>
-          <option value={30}>Last 30 days</option>
-          <option value={90}>Last 90 days</option>
-        </select>
-      </div>
+      <EventsTrainingPageHeader
+        eyebrow="Ops · now"
+        title="Overview"
+        description="Clear sign-ups and moderation first. No Gemini on this page."
+        actions={
+          <Link
+            href="/events-training/analytics"
+            className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:underline"
+          >
+            Analytics
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        }
+      />
 
       {error ? (
         <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
@@ -321,13 +309,45 @@ export function OverviewAdminPage() {
         </p>
       ) : null}
 
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <FocusTile
+          label="Pending sign-ups"
+          value={loading ? "…" : String(openPending.length)}
+          hint={openPending.length > 0 ? "Needs accept / decline" : "Queue clear"}
+          href="/events-training/registrations"
+          icon={<Users className="h-4 w-4" />}
+          tone={openPending.length > 0 ? "warn" : "default"}
+        />
+        <FocusTile
+          label="Moderation"
+          value={loading ? "…" : String(moderationTodos.length)}
+          hint={
+            moderationTodos.length > 0
+              ? "Questions & flagged comments"
+              : "Inbox clear"
+          }
+          href="/events-training/moderation"
+          icon={<MessageSquareWarning className="h-4 w-4" />}
+          tone={moderationTodos.length > 0 ? "warn" : "default"}
+        />
+        <FocusTile
+          label="Live & upcoming"
+          value={loading ? "…" : String(liveWebinars.length)}
+          hint="Sessions on Resources"
+          href="/events-training/webinars"
+          icon={<Clapperboard className="h-4 w-4" />}
+        />
+      </div>
+
       <section className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">To do</h3>
           <p className="text-xs text-muted-foreground">
-            {openPending.length + moderationTodos.length === 0
-              ? "Queues are clear"
-              : `${openPending.length + moderationTodos.length} waiting`}
+            {loading
+              ? "Loading…"
+              : waitingCount === 0
+                ? "Queues are clear"
+                : `${waitingCount} waiting`}
           </p>
         </div>
 
@@ -370,11 +390,13 @@ export function OverviewAdminPage() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-foreground">
-                          {item.email || item.userId || "Unknown member"}
+                          {item.displayName || item.email || "Member"}
                         </p>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {webinar?.name || "Webinar"}
-                          {item.createdAt ? ` · ${formatWhen(item.createdAt)}` : ""}
+                          {webinar?.name ?? "Webinar"}
+                          {item.createdAt
+                            ? ` · ${formatWhen(item.createdAt)}`
+                            : ""}
                         </p>
                       </div>
                       <div className="flex shrink-0 gap-1.5">
@@ -454,9 +476,14 @@ export function OverviewAdminPage() {
                   const key = `${item.contentId}:${item.id}`;
                   const busy = busyId === item.id;
                   return (
-                    <div key={`q-${item.contentId}-${item.id}`} className="space-y-2 px-4 py-3">
+                    <div
+                      key={`q-${item.contentId}-${item.id}`}
+                      className="space-y-2 px-4 py-3"
+                    >
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <Badge className="bg-sky-50 text-sky-900">Question</Badge>
+                        <Badge className="bg-sky-50 text-sky-900">
+                          Question
+                        </Badge>
                         <span className="truncate text-xs text-muted-foreground">
                           {item.contentTitle}
                         </span>
@@ -498,35 +525,31 @@ export function OverviewAdminPage() {
                     key={`c-${item.contentId}-${item.id}`}
                     className="px-4 py-3"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <Badge className="bg-amber-50 text-amber-950">
-                            Flagged
-                          </Badge>
-                          <span className="truncate text-xs text-muted-foreground">
-                            {item.contentTitle}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-sm text-foreground">{item.text}</p>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-8 shrink-0 rounded-full"
-                        disabled={busy}
-                        onClick={() => void approveComment(item)}
-                      >
-                        {busy ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <>
-                            <Check className="mr-1 h-3.5 w-3.5" />
-                            Approve
-                          </>
-                        )}
-                      </Button>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge className="bg-rose-50 text-rose-900">
+                        Flagged
+                      </Badge>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {item.contentTitle}
+                      </span>
                     </div>
+                    <p className="mt-1.5 text-sm text-foreground">{item.text}</p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="mt-2 h-8 rounded-full"
+                      disabled={busy}
+                      onClick={() => void approveComment(item)}
+                    >
+                      {busy ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="mr-1 h-3.5 w-3.5" />
+                          Approve
+                        </>
+                      )}
+                    </Button>
                   </div>
                 );
               })}
@@ -541,281 +564,70 @@ export function OverviewAdminPage() {
       </section>
 
       <section className="space-y-3">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">Highlights</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Live webinars, featured content, and recently published training
-          </p>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          <HighlightCard
-            title="Live & upcoming webinars"
-            href="/events-training/webinars"
-            icon={Clapperboard}
-            loading={loading}
-            empty="No upcoming or ongoing webinars."
-          >
-            {liveWebinars.map(({ webinar, lane }) => (
-              <HighlightRow
-                key={webinar.id}
-                title={webinar.name}
-                meta={
-                  formatWhen(webinar.startsAt) ||
-                  (webinar.speaker ? webinar.speaker : "Scheduled")
-                }
-                badge={lane === "ongoing" ? "Ongoing" : "Upcoming"}
-                badgeClass={
-                  lane === "ongoing"
-                    ? "bg-emerald-50 text-emerald-800"
-                    : "bg-sky-50 text-sky-900"
-                }
-                imageUrl={webinar.posterUrl}
-              />
-            ))}
-          </HighlightCard>
-
-          <HighlightCard
-            title="Featured stories"
-            href="/events-training/videos"
-            icon={PlayCircle}
-            loading={loading}
-            empty="No featured stories yet."
-          >
-            {featuredStories.map((item) => (
-              <HighlightRow
-                key={item.id}
-                title={item.name}
-                meta={item.status}
-                badge="Featured"
-                badgeClass="bg-amber-50 text-amber-900"
-                imageUrl={item.thumbnailUrl}
-                starred
-              />
-            ))}
-          </HighlightCard>
-
-          <HighlightCard
-            title="Featured articles"
-            href="/events-training/blogs"
-            icon={BookOpen}
-            loading={loading}
-            empty="No featured articles yet."
-          >
-            {featuredArticles.map((item) => (
-              <HighlightRow
-                key={item.id}
-                title={item.title}
-                meta={
-                  item.authorName?.trim()
-                    ? `${item.authorName} · ${item.status}`
-                    : item.status
-                }
-                badge="Featured"
-                badgeClass="bg-amber-50 text-amber-900"
-                imageUrl={item.heroImageUrl}
-                starred
-              />
-            ))}
-          </HighlightCard>
-
-          <HighlightCard
-            title="Recent stories & articles"
-            href="/events-training/videos"
-            icon={BookOpen}
-            loading={loading}
-            empty="No stories or articles yet."
-          >
-            {recentStoriesAndArticles.map((row) =>
-              row.kind === "story" ? (
-                <HighlightRow
-                  key={`story-${row.item.id}`}
-                  title={row.item.name}
-                  meta={
-                    row.at
-                      ? formatWhen(row.at) || row.item.status
-                      : row.item.status
-                  }
-                  badge="Story"
-                  badgeClass="bg-violet-50 text-violet-900"
-                  imageUrl={row.item.thumbnailUrl}
-                />
-              ) : (
-                <HighlightRow
-                  key={`blog-${row.item.id}`}
-                  title={row.item.title}
-                  meta={
-                    row.at
-                      ? formatWhen(row.at) ||
-                        (row.item.authorName?.trim()
-                          ? `${row.item.authorName} · ${row.item.status}`
-                          : row.item.status)
-                      : row.item.authorName?.trim()
-                        ? `${row.item.authorName} · ${row.item.status}`
-                        : row.item.status
-                  }
-                  badge="Article"
-                  badgeClass="bg-sky-50 text-sky-900"
-                  imageUrl={row.item.heroImageUrl}
-                />
-              ),
-            )}
-          </HighlightCard>
-
-          <HighlightCard
-            title="Recent tutorials"
-            href="/events-training/tutorials"
-            icon={GraduationCap}
-            loading={loading}
-            empty="No tutorials yet."
-          >
-            {recentTutorials.map((item) => (
-              <HighlightRow
-                key={item.id}
-                title={item.name}
-                meta={
-                  item.recordedAt
-                    ? formatWhen(item.recordedAt) || item.status
-                    : item.status
-                }
-                badge={item.status}
-                badgeClass="bg-zinc-100 text-zinc-700"
-                imageUrl={item.thumbnailUrl}
-              />
-            ))}
-          </HighlightCard>
-
-          <HighlightCard
-            title="Recent webinar recordings"
-            href="/events-training/videos"
-            icon={Clapperboard}
-            loading={loading}
-            empty="No webinar recordings yet."
-          >
-            {recentRecordings.map((item) => (
-              <HighlightRow
-                key={item.id}
-                title={item.name}
-                meta={
-                  item.recordedAt
-                    ? formatWhen(item.recordedAt) || item.status
-                    : item.status
-                }
-                badge={item.status}
-                badgeClass="bg-zinc-100 text-zinc-700"
-                imageUrl={item.thumbnailUrl}
-              />
-            ))}
-          </HighlightCard>
-        </div>
-      </section>
-
-      <section id="analytics" className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">Analytics</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Trends and breakdowns for the selected period
-            </p>
-          </div>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-sm font-semibold text-foreground">
+            Live & upcoming webinars
+          </h3>
           <Link
-            href="/events-training/analytics"
+            href="/events-training/webinars"
             className="inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:underline"
           >
-            Open full analytics
+            Manage webinars
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
-        <EventsTrainingAnalyticsPanel data={analytics} loading={loading} />
+        <div className="rounded-2xl border border-zinc-200/80 bg-white divide-y divide-zinc-100">
+          {loading ? (
+            <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>
+          ) : null}
+          {!loading && liveWebinars.length === 0 ? (
+            <p className="px-4 py-8 text-sm text-muted-foreground">
+              No upcoming or ongoing webinars.
+            </p>
+          ) : null}
+          {liveWebinars.map(({ webinar, lane }) => (
+            <div
+              key={webinar.id}
+              className="flex items-start gap-3 px-4 py-3"
+            >
+              <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-zinc-100 ring-1 ring-zinc-200">
+                {webinar.posterUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={webinar.posterUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-zinc-400">
+                    <Clapperboard className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {webinar.name}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <Badge
+                    className={
+                      lane === "ongoing"
+                        ? "bg-emerald-50 text-emerald-800"
+                        : "bg-sky-50 text-sky-900"
+                    }
+                  >
+                    {lane === "ongoing" ? "Ongoing" : "Upcoming"}
+                  </Badge>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {formatWhen(webinar.startsAt) ||
+                      (webinar.speaker ? webinar.speaker : "Scheduled")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
-    </div>
-  );
-}
-
-function HighlightCard({
-  title,
-  href,
-  icon: Icon,
-  loading,
-  empty,
-  children,
-}: {
-  title: string;
-  href: string;
-  icon: LucideIcon | ComponentType<{ className?: string }>;
-  loading: boolean;
-  empty: string;
-  children: ReactNode;
-}) {
-  const hasItems = Children.count(children) > 0;
-
-  return (
-    <div className="rounded-2xl border border-zinc-200/80 bg-white">
-      <div className="flex items-center justify-between gap-2 border-b border-zinc-100 px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Icon className="h-4 w-4 shrink-0 text-teal-700" />
-          <h4 className="truncate text-sm font-semibold">{title}</h4>
-        </div>
-        <Link
-          href={href}
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-teal-700 hover:underline"
-        >
-          View all
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-      <div className="divide-y divide-zinc-100">
-        {loading ? (
-          <p className="px-4 py-8 text-sm text-muted-foreground">Loading…</p>
-        ) : null}
-        {!loading && !hasItems ? (
-          <p className="px-4 py-8 text-sm text-muted-foreground">{empty}</p>
-        ) : null}
-        {!loading ? children : null}
-      </div>
-    </div>
-  );
-}
-
-function HighlightRow({
-  title,
-  meta,
-  badge,
-  badgeClass,
-  imageUrl,
-  starred,
-}: {
-  title: string;
-  meta: string;
-  badge: string;
-  badgeClass: string;
-  imageUrl?: string | null;
-  starred?: boolean;
-}) {
-  return (
-    <div className="flex items-start gap-3 px-4 py-3">
-      <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-zinc-100 ring-1 ring-zinc-200">
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-zinc-400">
-            <PlayCircle className="h-4 w-4" />
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{title}</p>
-        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-          <Badge className={cn("capitalize", badgeClass)}>
-            {starred ? (
-              <Star className="mr-1 h-3 w-3 fill-amber-500 text-amber-500" />
-            ) : null}
-            {badge}
-          </Badge>
-          <span className="truncate text-xs text-muted-foreground">{meta}</span>
-        </div>
-      </div>
     </div>
   );
 }

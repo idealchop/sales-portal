@@ -1,4 +1,3 @@
-import { geminiGenerateJson } from "./ai/gemini-client";
 import type { ProposalPipeline, SalesInsights } from "./compute-sales-insights";
 import type { AiSalesInsightsResult } from "./generate-ai-sales-insights";
 
@@ -272,97 +271,11 @@ export function buildFallbackForecasts(input: ForecastInput): DashboardForecasts
   };
 }
 
-type AiForecastResponse = {
-  platform?: DashboardForecastItem[];
-  smartrefill?: DashboardForecastItem[];
-  salesPortal?: DashboardForecastItem[];
-};
-
-function normalizeItems(
-  items: DashboardForecastItem[] | undefined,
-  appId: DashboardForecastItem["appId"],
-  fallback: DashboardForecastItem[],
-): DashboardForecastItem[] {
-  if (!items?.length) return fallback;
-  return items.slice(0, 8).map((item, index) => ({
-    id: item.id || `${appId}-${index}`,
-    appId,
-    horizon: item.horizon || "30d",
-    metric: item.metric || "Metric",
-    current: item.current || "—",
-    projected: item.projected || "—",
-    delta: item.delta || "—",
-    roiImpact: item.roiImpact || "—",
-    action: item.action || "Review",
-    priority: item.priority || "medium",
-  }));
-}
-
 export async function generateDashboardForecasts(
   input: ForecastInput,
 ): Promise<DashboardForecasts> {
-  const fallback = buildFallbackForecasts(input);
-
-  const aiResult = await geminiGenerateJson<AiForecastResponse>({
-    system: `Sales Portal analyst. Proactive ROI forecasts for SmartRefill + Sales Portal.
-JSON only. Short strings: metric ≤3 words, action ≤5 words, delta with numbers.
-Each item needs horizon 30d|60d|90d, priority high|medium|low.`,
-    user: JSON.stringify({
-      task: "Forecast MRR, pipeline, retention, and cross-app ROI with proactive actions",
-      signals: {
-        mrr: input.salesInsights.estimatedMrr,
-        workspaces: input.summary.totalBusinesses,
-        transactions30d: input.summary.transactionsLast30Days,
-        upgradeOpportunities: input.salesInsights.upgradeOpportunities,
-        atRisk: input.salesInsights.atRiskWorkspaces,
-        pipelineValue: input.proposalPipeline.pipelineValue,
-        winRate: input.proposalPipeline.winRate,
-        proposals: input.proposalPipeline.totalProposals,
-        aiPriorityCount: input.aiSalesInsights.priorityActions.length,
-      },
-      outputSchema: {
-        platform: "max 6 items, appId platform",
-        smartrefill: "max 6 items, appId smartrefill",
-        salesPortal: "max 6 items, appId sales-portal",
-        itemShape: {
-          id: "string",
-          appId: "platform|smartrefill|sales-portal",
-          horizon: "30d|60d|90d",
-          metric: "string",
-          current: "string",
-          projected: "string",
-          delta: "string",
-          roiImpact: "string",
-          action: "string",
-          priority: "high|medium|low",
-        },
-      },
-    }),
-    fallback: {},
-    maxOutputTokens: 2048,
-  });
-
-  const hasAi =
-    Boolean(aiResult.platform?.length) ||
-    Boolean(aiResult.smartrefill?.length) ||
-    Boolean(aiResult.salesPortal?.length);
-
-  if (!hasAi) return fallback;
-
-  return {
-    platform: normalizeItems(aiResult.platform, "platform", fallback.platform),
-    smartrefill: normalizeItems(
-      aiResult.smartrefill,
-      "smartrefill",
-      fallback.smartrefill,
-    ),
-    salesPortal: normalizeItems(
-      aiResult.salesPortal,
-      "sales-portal",
-      fallback.salesPortal,
-    ),
-    aiEnabled: true,
-  };
+  // Rules-only — Gemini dashboard forecast path removed.
+  return buildFallbackForecasts(input);
 }
 
 export function reshapeForecastsForActor(

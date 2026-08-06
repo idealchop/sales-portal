@@ -51,6 +51,11 @@ export type TrainingVideoRecord = {
   allowedPlanCodes: string[];
   allowAllMembers: boolean;
   certificationEnabled: boolean;
+  /**
+   * Tutorials only: when true, list on marketing `/resources/tutorials`.
+   * Missing → false (in-app Tutorial panel only).
+   */
+  showOnResources: boolean;
   archivedAt: string | null;
   tags: string[];
   viewCount: number;
@@ -212,6 +217,8 @@ function mapVideo(id: string, data: Record<string, unknown>): TrainingVideoRecor
       [],
     allowAllMembers: resolveAllowAllMembers(data, visibility),
     certificationEnabled: data.certificationEnabled === true,
+    showOnResources:
+      category === VIDEO_CATEGORY_TUTORIAL && data.showOnResources === true,
     archivedAt: toIsoString(data.archivedAt),
     tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
     viewCount: Number(data.viewCount) || 0,
@@ -251,6 +258,8 @@ export type UpsertVideoInput = {
   allowedPlanCodes?: string[];
   allowAllMembers?: boolean;
   certificationEnabled?: boolean;
+  /** Tutorials: list on marketing `/resources/tutorials`. */
+  showOnResources?: boolean;
   tags?: string[];
 };
 
@@ -397,6 +406,7 @@ export async function createTrainingVideo(
     allowedPlanCodes: isTutorial ? [] : access.allowedPlanCodes,
     allowAllMembers: isTutorial ? false : access.allowAllMembers,
     certificationEnabled: isTutorial ? false : input.certificationEnabled === true,
+    showOnResources: isTutorial ? input.showOnResources === true : false,
     archivedAt: status === "archived" ? now : null,
     publishedAt: status === "published" ? now : null,
     tags: input.tags ?? [],
@@ -511,6 +521,11 @@ export async function updateTrainingVideo(
   if (input.currency !== undefined) patch.currency = input.currency.trim();
   if (!isTutorial && input.certificationEnabled !== undefined) {
     patch.certificationEnabled = input.certificationEnabled;
+  }
+  if (isTutorial && input.showOnResources !== undefined) {
+    patch.showOnResources = input.showOnResources === true;
+  } else if (!isTutorial && input.category !== undefined) {
+    patch.showOnResources = false;
   }
   if (input.tags !== undefined) patch.tags = input.tags;
 

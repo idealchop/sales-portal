@@ -61,6 +61,7 @@ import {
   updateWebinar,
 } from "../services/events-training/webinars-service";
 import { notifyWebinarPublishedViaSmartrefill } from "../services/notify-webinar-published";
+import { notifyRegistrationApprovedViaSmartrefill } from "../services/notify-webinar-registration-approved";
 import {
   getWebinarAutomationPlan,
   installWebinarPromotionAutomation,
@@ -195,6 +196,7 @@ function mapServiceError(res: Response, error: unknown) {
   case "NAME_REQUIRED":
   case "TITLE_REQUIRED":
   case "BODY_REQUIRED":
+  case "BODY_TOO_LONG":
   case "PLAYBACK_URL_REQUIRED":
   case "PREMIUM_PRICE_REQUIRED":
   case "PRIVATE_ACCESS_REQUIRED":
@@ -530,6 +532,15 @@ export async function postAcceptRegistrationHandler(
   }
   try {
     const data = await acceptRegistration(req.params.registrationId, actor.uid);
+    const idToken = bearerIdToken(req);
+    if (idToken) {
+      void notifyRegistrationApprovedViaSmartrefill(
+        idToken,
+        req.params.registrationId,
+      ).catch((error) => {
+        console.error("notifyRegistrationApprovedViaSmartrefill failed", error);
+      });
+    }
     res.json({ data });
   } catch (error) {
     mapServiceError(res, error);

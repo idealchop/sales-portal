@@ -21,17 +21,44 @@ const IMAGE_PROMPT_PREFIX =
   "Professional social media photo for Smart Refill, a Philippine water refill business. " +
   "People in a real workplace or home setting, productive and healthy. Not a product-only shot. Scene:";
 
+export type ContentStudioMode = "both" | "caption" | "image";
+
 export type GenerateSocialPostInput = {
   prompt: string;
+  mode?: ContentStudioMode;
 };
 
 export type GenerateSocialPostResult = {
   caption: string;
   imageUrl: string;
+  mode: ContentStudioMode;
+  /** True when a Gemini translate step ran before Imagen. */
+  translatedScene: boolean;
 };
+
+const PH_LANGUAGE_MARKERS =
+  /\b(ang|mga|sa|ng|na|po|opo|yung|para|hindi|ito|iyan|umiiinom|masaya|opisina|tubig|pamilya|familia|sabi|namin|ninyo|kayo|ako|siya|nila|natin|wala|meron|mayroon|kung|dahil|pero|at|o|ba|nga|lang|naman|dito|doon|iyan|yun|'tapos|kasi|talaga|salamat|maganda|malinis)\b/i;
+
+/**
+ * Skip Gemini scene translation when the prompt is already usable English.
+ * Heuristic only — false negatives still translate (safer for Imagen quality).
+ */
+export function promptNeedsSceneTranslation(prompt: string): boolean {
+  const text = prompt.trim();
+  if (!text) return false;
+  // Non-ASCII → likely Tagalog/dialect or accented copy; translate.
+  if (/[^\x00-\x7F]/.test(text)) return true;
+  if (PH_LANGUAGE_MARKERS.test(text)) return true;
+  return false;
+}
 
 function buildImagePrompt(sceneDescription: string): string {
   return `${IMAGE_PROMPT_PREFIX} ${sceneDescription.trim()}`;
+}
+
+function normalizeMode(mode: unknown): ContentStudioMode {
+  if (mode === "caption" || mode === "image" || mode === "both") return mode;
+  return "both";
 }
 
 async function translatePromptForImage(
@@ -45,6 +72,7 @@ async function translatePromptForImage(
     modelCandidates,
     maxOutputTokens: 320,
     temperature: 0.2,
+    operation: "contentStudio.translate",
   });
   return translated.trim() || prompt.trim();
 }
@@ -61,21 +89,30 @@ async function generateCaption(
     modelCandidates,
     maxOutputTokens: 120,
     temperature: 0.75,
+    operation: "contentStudio.caption",
   });
 }
 
 async function generateImageDataUri(
   prompt: string,
   geminiModelCandidates: string[],
-): Promise<string> {
-  const sceneDescription = await translatePromptForImage(prompt, geminiModelCandidates);
-  return imagenGenerateDataUri(buildImagePrompt(sceneDescription));
+): Promise<{ imageUrl: string; translatedScene: boolean }> {
+  let scene = prompt.trim();
+  let translatedScene = false;
+  if (promptNeedsSceneTranslation(scene)) {
+    scene = await translatePromptForImage(scene, geminiModelCandidates);
+    translatedScene = true;
+  }
+  const imageUrl = await imagenGenerateDataUri(buildImagePrompt(scene));
+  return { imageUrl, translatedScene };
 }
 
 export async function generateSocialPost(
   input: GenerateSocialPostInput,
 ): Promise<GenerateSocialPostResult> {
   const prompt = input.prompt.trim();
+  const mode = normalizeMode(input.mode);
+
   if (prompt.length < 10) {
     throw new Error("Prompt must be at least 10 characters.");
   }
@@ -84,11 +121,37 @@ export async function generateSocialPost(
   }
 
   const geminiModelCandidates = resolveGeminiModelCandidates();
+  const wantCaption = mode === "both" || mode === "caption";
+  const wantImage = mode === "both" || mode === "image";
 
-  const [caption, imageUrl] = await Promise.all([
-    generateCaption(prompt, geminiModelCandidates),
-    generateImageDataUri(prompt, geminiModelCandidates),
-  ]);
+  if (wantCaption && wantImage) {
+    const [caption, image] = await Promise.all([
+      generateCaption(prompt, geminiModelCandidates),
+      generateImageDataUri(prompt, geminiModelCandidates),
+    ]);
+    return {
+      caption,
+      imageUrl: image.imageUrl,
+      mode,
+      translatedScene: image.translatedScene,
+    };
+  }
 
-  return { caption, imageUrl };
+  if (wantCaption) {
+    const caption = await generateCaption(prompt, geminiModelCandidates);
+    return {
+      caption,
+      imageUrl: "",
+      mode,
+      translatedScene: false,
+    };
+  }
+
+  const image = await generateImageDataUri(prompt, geminiModelCandidates);
+  return {
+    caption: "",
+    imageUrl: image.imageUrl,
+    mode,
+    translatedScene: image.translatedScene,
+  };
 }

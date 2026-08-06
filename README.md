@@ -28,7 +28,7 @@ Cloud Functions API in `asia-southeast1`:
 | `GET /auth/status` | Validates Firebase Auth + `users.appAccess` (`sales-portal` + role) |
 | `GET /dashboard/analytics` | Platform analytics via Admin SDK |
 | `POST /dashboard/subscriptions/.../approve` | Subscription approval |
-| `POST /content-studio/generate` | AI social post generation |
+| `POST /content-studio/generate` | On-demand AI social post (`both` / `caption` / `image`) |
 | `GET/POST/PATCH/DELETE /events-training/*` | Events & Training CMS + ops (manager/admin) |
 | `GET/POST /onboarding/*` | Onboarding flows |
 | `GET/PUT/DELETE /admin/*` | Admin users, data management, catalog |

@@ -20,12 +20,13 @@ export function resourceCatalogPathForCategory(
 ): string | null {
   if (category === "wrs_stories") return VIDEO_CATEGORY_PATHS.wrs_stories;
   if (category === "webinar") return VIDEO_CATEGORY_PATHS.webinar;
+  if (category === "tutorial") return VIDEO_CATEGORY_PATHS.tutorial;
   return null;
 }
 
 /**
- * Absolute URL that opens a story / recording theater on public Resources.
- * Returns null for tutorials (dashboard-only) or missing ids.
+ * Absolute URL that opens a story / recording / tutorial theater on public Resources.
+ * Returns null for missing ids.
  */
 export function buildResourceVideoShareUrl(input: {
   videoId: string;

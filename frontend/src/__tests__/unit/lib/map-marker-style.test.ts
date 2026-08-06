@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { BusinessMapLocation } from "@/lib/dashboard/analytics";
 import {
   filterLocationsByMapMarkerTiers,
+  isValidMapCoordinate,
   resolveMapMarkerTier,
 } from "@/lib/dashboard/map-marker-style";
 
@@ -16,6 +17,15 @@ function location(
     ...overrides,
   };
 }
+
+describe("isValidMapCoordinate", () => {
+  it("rejects null island and out-of-range coords", () => {
+    expect(isValidMapCoordinate(0, 0)).toBe(false);
+    expect(isValidMapCoordinate(Number.NaN, 121)).toBe(false);
+    expect(isValidMapCoordinate(91, 121)).toBe(false);
+    expect(isValidMapCoordinate(14.5, 121)).toBe(true);
+  });
+});
 
 describe("filterLocationsByMapMarkerTiers", () => {
   it("returns only locations whose tier is visible", () => {
@@ -38,14 +48,15 @@ describe("filterLocationsByMapMarkerTiers", () => {
   });
 
   it("classifies billing trial as free trial even on scale plan", () => {
-    const row = location({
-      id: "trial-scale",
-      planCode: "scale",
-      planName: "Scale",
-      billingCycle: "trial",
-      lastActiveDay: "2099-01-01",
-    });
-
-    expect(resolveMapMarkerTier(row)).toBe("free-trial");
+    expect(
+      resolveMapMarkerTier(
+        location({
+          id: "trial",
+          planCode: "scale",
+          billingCycle: "trial",
+          lastActiveDay: "2099-01-01",
+        }),
+      ),
+    ).toBe("free-trial");
   });
 });

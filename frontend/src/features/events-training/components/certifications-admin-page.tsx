@@ -30,6 +30,7 @@ import {
   tutorialTargetAppLabel,
 } from "../lib/events-training-types";
 import { formatCertificateIssueDate } from "../lib/certificate-template";
+import { EventsTrainingPageHeader } from "./events-training-page-header";
 import {
   DEFAULT_WEBINAR_CERT_PAGE_SIZE,
   filterEnabledWebinarCertificates,
@@ -450,20 +451,18 @@ export function CertificationsAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Webinar certificates</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Configure the certificate template for a webinar. Members who attend
-            (or finish the linked recording) can claim it in the product app.
-          </p>
-        </div>
-        {!formOpen ? (
-          <Button type="button" onClick={() => setFormOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" /> Configure template
-          </Button>
-        ) : null}
-      </div>
+      <EventsTrainingPageHeader
+        eyebrow="Create & manage"
+        title="Webinar certificates"
+        description="Configure the certificate template for a webinar. Members who attend can claim it in the product app."
+        actions={
+          !formOpen ? (
+            <Button type="button" onClick={() => setFormOpen(true)}>
+              <Plus className="mr-1.5 h-4 w-4" /> Configure template
+            </Button>
+          ) : null
+        }
+      />
 
       {formOpen ? (
         <Card className="border-teal-200">

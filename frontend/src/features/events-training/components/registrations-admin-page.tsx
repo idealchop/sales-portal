@@ -30,6 +30,7 @@ import type {
   WebinarRecord,
 } from "../lib/events-training-types";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
+import { EventsTrainingPageHeader } from "./events-training-page-header";
 
 type View = "pending" | "accepted" | "declined" | "cancelled" | "all";
 
@@ -300,40 +301,33 @@ export function RegistrationsAdminPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">
-            Sign-up queue
-          </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-            Registrations
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Review pending webinar sign-ups across every session. Accept to
-            unlock the join link for the member.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {!loading && counts.pending > 0 ? (
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-950 ring-1 ring-amber-200/70">
-              {counts.pending} pending
-            </span>
-          ) : null}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-            disabled={loading || bulkBusy}
-            onClick={() => void load()}
-          >
-            <RefreshCw
-              className={cn("mr-1.5 h-3.5 w-3.5", loading && "animate-spin")}
-            />
-            Refresh
-          </Button>
-        </div>
-      </div>
+      <EventsTrainingPageHeader
+        eyebrow="Sign-up queue"
+        title="Registrations"
+        description="Review pending webinar sign-ups across every session. Accept to unlock the join link for the member."
+        actions={
+          <>
+            {!loading && counts.pending > 0 ? (
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-950 ring-1 ring-amber-200/70">
+                {counts.pending} pending
+              </span>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              disabled={loading || bulkBusy}
+              onClick={() => void load()}
+            >
+              <RefreshCw
+                className={cn("mr-1.5 h-3.5 w-3.5", loading && "animate-spin")}
+              />
+              Refresh
+            </Button>
+          </>
+        }
+      />
 
       <section className="overflow-hidden rounded-[1.75rem] border border-teal-900/5 bg-gradient-to-b from-white via-white to-teal-50/30 shadow-[0_18px_50px_-28px_rgba(15,118,110,0.35)]">
         <div className="border-b border-zinc-100 px-4 py-3 sm:px-5">

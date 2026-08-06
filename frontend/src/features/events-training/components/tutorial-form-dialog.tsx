@@ -66,6 +66,7 @@ function emptyForm(): Partial<TrainingVideoRecord> {
     currency: "PHP",
     allowedPlanCodes: [],
     allowAllMembers: false,
+    showOnResources: false,
     tags: [],
   };
 }
@@ -161,7 +162,9 @@ export function TutorialFormDialog({
       });
       setTags(initial.tags ?? []);
       setShowMore(
-        Boolean(initial.thumbnailUrl) || Boolean(initial.recordedAt),
+        Boolean(initial.thumbnailUrl) ||
+          Boolean(initial.recordedAt) ||
+          initial.showOnResources === true,
       );
     } else {
       const allowed = pagesForTutorialApp(nextDefault, nextApps);
@@ -270,6 +273,7 @@ export function TutorialFormDialog({
       playbackProvider,
       visibility: "public" as const,
       featured: false,
+      showOnResources: form.showOnResources === true,
       priceCents: 0,
       allowedPlanCodes: [],
       allowAllMembers: false,
@@ -624,6 +628,29 @@ export function TutorialFormDialog({
               })}
             </div>
           </section>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-3">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-teal-600 focus:ring-teal-500/30"
+              checked={form.showOnResources === true}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  showOnResources: e.target.checked,
+                }))
+              }
+            />
+            <span>
+              <span className="block text-sm font-medium text-foreground">
+                Show on Resources → Tutorials
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                List this video on smartrefill.io/resources/tutorials when
+                published. In-app Tutorial panel always shows published tutorials.
+              </span>
+            </span>
+          </label>
 
           <div>
             <button

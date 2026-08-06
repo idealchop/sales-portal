@@ -56,16 +56,27 @@ export function EventsTrainingShell({ children }: { children: React.ReactNode })
     return null;
   }
 
+  const waiting =
+    (attention?.pendingRegistrations ?? 0) + (attention?.moderationTodo ?? 0);
+
   return (
     <div className="space-y-6">
       <header className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Events & Training
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Resources content and webinar ops
-          </p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Events & Training
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Clear queues first, then publish Resources content. AI runs only
+              when you press Format with AI on articles.
+            </p>
+          </div>
+          {waiting > 0 ? (
+            <p className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-950 ring-1 ring-amber-200/70">
+              {waiting} need attention
+            </p>
+          ) : null}
         </div>
 
         <nav

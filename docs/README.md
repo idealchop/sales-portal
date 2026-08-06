@@ -10,13 +10,13 @@ Single source of truth for architecture, development, testing, and deployment.
 |----------|---------|
 | [architecture-overview.md](./architecture-overview.md) | FE/BE split, SmartRefill integration, shared `riverdb` |
 | [environments.md](./environments.md) | **Dev / Prod tiers** — `riverdb-dev`, `prod-smartrefill` legacy, `salesPortalApiDev`, App Hosting `apphosting.dev.yaml` |
+| [agent-workflow.md](./agent-workflow.md) | Feature + review agents; **release ship** via `river/.agents/skills/river-release-ship-agent/` (docs → tests → commit/push → Dev → Prod) |
 | [auth-flow.md](./auth-flow.md) | Login, onboarding, `users.appAccess`, role gates |
 | [backend-documentation.md](./backend-documentation.md) | `salesPortalApi` routes, secrets, local server, deploy |
 | [frontend-documentation.md](./frontend-documentation.md) | Next.js App Router, features, env vars, App Hosting |
 | [components-structure.md](./components-structure.md) | Feature folders, shared UI, navigation |
 | [testing-guide.md](./testing-guide.md) | **QA protocol** — unit, integration, BDD (FE + BE) |
 | [backlog-actionable.md](./backlog-actionable.md) | **AB-01…AB-58** — implementation-ready backlog |
-| [agent-workflow.md](./agent-workflow.md) | Feature + code review agents, `dev` branch model |
 | [events-training.md](./events-training.md) | Events & Training CMS + ops (registrations, schedules, moderation, certs, analytics) |
 
 ## QA & testing

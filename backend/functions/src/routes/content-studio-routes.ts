@@ -10,7 +10,7 @@ const router = express.Router();
 
 const generateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  limit: 10,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   skip: () => !!process.env.FUNCTIONS_EMULATOR,

@@ -15,6 +15,7 @@ Product backlog: **[`docs/backlog-actionable.md`](docs/backlog-actionable.md)** 
 | `sales-portal-feature-agent` | AB items on `feature/SP-{tier}`; one commit per AB |
 | `sales-portal-code-review-agent` | Review, quality gate, merge to `dev` |
 | `river-ai-usage-oversight` | AI/Gemini/Imagen cost & usage oversight vs SmartRefill (repo: `.agents/skills/river-ai-usage-oversight`) |
+| `river-ai-cost-reduction` | Cut external AI spend: on-demand only, local-first, flash-lite, quotas (repo: `.agents/skills/river-ai-cost-reduction`) |
 
 **Base branch:** `dev` · **Feature branches:** `feature/SP-1` … `feature/SP-4`
 

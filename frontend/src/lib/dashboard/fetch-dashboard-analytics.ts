@@ -8,12 +8,14 @@ type DashboardAnalyticsResponse = {
   data: DashboardAnalytics;
   meta?: {
     computedAt?: string;
+    aiEnabled?: boolean;
   };
 };
 
 export type DashboardAnalyticsFetchResult = {
   data: DashboardAnalytics;
   computedAt: string;
+  aiEnabled?: boolean;
 };
 
 let inFlight: Promise<DashboardAnalyticsFetchResult> | null = null;
@@ -24,7 +26,11 @@ async function requestDashboardAnalytics(): Promise<DashboardAnalyticsFetchResul
   );
   const data = normalizeDashboardAnalytics(response.data);
   const computedAt = response.meta?.computedAt ?? new Date().toISOString();
-  return { data, computedAt };
+  return {
+    data,
+    computedAt,
+    aiEnabled: response.meta?.aiEnabled === true,
+  };
 }
 
 export async function fetchDashboardAnalytics(): Promise<DashboardAnalyticsFetchResult> {

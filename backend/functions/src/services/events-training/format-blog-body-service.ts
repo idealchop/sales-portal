@@ -79,6 +79,9 @@ export async function formatBlogBodyWithAi(input: {
   if (!body) {
     throw new Error("BODY_REQUIRED");
   }
+  if (body.length > 40_000) {
+    throw new Error("BODY_TOO_LONG");
+  }
 
   const fallback = localFormatFallback(body);
   const user = [
@@ -89,12 +92,14 @@ export async function formatBlogBodyWithAi(input: {
     .filter(Boolean)
     .join("\n\n");
 
+  // Gemini only when callers hit POST /blogs/format-html (button-driven).
   const aiText = await geminiGenerateText({
     system: SYSTEM,
     user,
     fallback: "",
     temperature: 0.2,
     maxOutputTokens: 4096,
+    operation: "eventsTraining.formatBlogBody",
   });
 
   const cleaned = stripInlineCodeFences(aiText);

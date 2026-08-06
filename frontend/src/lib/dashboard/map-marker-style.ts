@@ -29,6 +29,15 @@ function dayKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+export function isValidMapCoordinate(lat: unknown, lng: unknown): boolean {
+  if (typeof lat !== "number" || typeof lng !== "number") return false;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return false;
+  // Null island / missing geocode placeholders
+  if (lat === 0 && lng === 0) return false;
+  return true;
+}
+
 export function isOwnerInactive(
   lastActiveDay: string | undefined,
   now = new Date(),

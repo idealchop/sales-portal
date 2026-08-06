@@ -1,5 +1,8 @@
 import express from "express";
-import { getDashboardAnalytics, getDashboardSalesHome } from "../handlers/dashboard-handler";
+import {
+  getDashboardAnalytics,
+  getDashboardSalesHome,
+} from "../handlers/dashboard-handler";
 import {
   getLegacySmartRefillAnalyticsHandler,
   getLegacySmartRefillStationDetailHandler,

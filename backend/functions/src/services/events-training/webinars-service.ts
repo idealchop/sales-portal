@@ -36,10 +36,15 @@ export type WebinarRecord = {
   autoAccept: boolean;
   /**
    * When visibility is public: allow non-member guest register on marketing
-   * `/resources/webinars`. Ignored (forced false) for premium/private.
-   * Missing on legacy docs → treated as true for public events.
+   * `/resources/webinars`. When premium: allow guest PayMongo checkout (email).
+   * Ignored (forced false) for private. Missing on legacy docs → treated as
+   * true for public events; false for premium unless explicitly enabled.
    */
   guestRegistrationEnabled: boolean;
+  /** When registration becomes available. Null = open as soon as published. */
+  registrationOpensAt: string | null;
+  /** Set when registration-open fan-out has run (SmartRefill job). */
+  registrationOpenNotifiedAt: string | null;
   joinLink: string | null;
   linkedVideoId: string | null;
   certificationEnabled: boolean;
@@ -49,12 +54,15 @@ export type WebinarRecord = {
   publishedAt: string | null;
 };
 
-/** Public events default guests on; non-public never allows guests. */
+/** Public defaults guests on; premium defaults off unless explicitly true; private never. */
 export function resolveGuestRegistrationEnabled(
   visibility: VideoVisibility,
   value: unknown,
 ): boolean {
-  if (visibility !== "public") return false;
+  if (visibility === "private") return false;
+  if (visibility === "premium") {
+    return value === true;
+  }
   if (typeof value === "boolean") return value;
   return true;
 }
@@ -200,6 +208,8 @@ function mapWebinar(id: string, data: Record<string, unknown>): WebinarRecord {
       visibility,
       data.guestRegistrationEnabled,
     ),
+    registrationOpensAt: toIsoString(data.registrationOpensAt),
+    registrationOpenNotifiedAt: toIsoString(data.registrationOpenNotifiedAt),
     joinLink: typeof data.joinLink === "string" ? data.joinLink : null,
     linkedVideoId:
       typeof data.linkedVideoId === "string" ? data.linkedVideoId : null,
@@ -237,6 +247,7 @@ export type UpsertWebinarInput = {
   capacity?: number | null;
   autoAccept?: boolean;
   guestRegistrationEnabled?: boolean;
+  registrationOpensAt?: string | null;
   joinLink?: string | null;
   linkedVideoId?: string | null;
   certificationEnabled?: boolean;
@@ -294,6 +305,8 @@ export async function createWebinar(
       access.visibility,
       input.guestRegistrationEnabled,
     ),
+    registrationOpensAt: parseTimestamp(input.registrationOpensAt ?? null),
+    registrationOpenNotifiedAt: null,
     joinLink: input.joinLink?.trim() ?? null,
     linkedVideoId: input.linkedVideoId ?? null,
     certificationEnabled: input.certificationEnabled === true,
@@ -352,6 +365,14 @@ export async function updateWebinar(
   if (input.posterUrl !== undefined) patch.posterUrl = input.posterUrl;
   if (input.capacity !== undefined) patch.capacity = input.capacity;
   if (input.autoAccept !== undefined) patch.autoAccept = input.autoAccept === true;
+  if (input.registrationOpensAt !== undefined) {
+    patch.registrationOpensAt = parseTimestamp(input.registrationOpensAt);
+    // Allow open-notify job to re-fire if ops reschedules the open time.
+    const nextOpen = parseTimestamp(input.registrationOpensAt);
+    if (nextOpen && nextOpen.toMillis() > Date.now()) {
+      patch.registrationOpenNotifiedAt = null;
+    }
+  }
   if (input.joinLink !== undefined) patch.joinLink = input.joinLink?.trim() ?? null;
   if (input.linkedVideoId !== undefined) patch.linkedVideoId = input.linkedVideoId;
   if (input.certificationEnabled !== undefined) {

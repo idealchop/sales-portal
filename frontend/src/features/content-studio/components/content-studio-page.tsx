@@ -29,6 +29,7 @@ import {
 import {
   CONTENT_STUDIO_BRAND_PRESETS,
   CONTENT_STUDIO_SUGGESTIONS,
+  type ContentStudioMode,
   type GeneratedSocialPost,
 } from "@/features/content-studio/constants";
 import { useContentStudioGenerate } from "@/hooks/use-content-studio-generate";
@@ -39,9 +40,20 @@ const formSchema = z.object({
     .string()
     .trim()
     .min(10, "Describe the image you want in at least 10 characters."),
+  mode: z.enum(["both", "caption", "image"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const MODE_OPTIONS: {
+  value: ContentStudioMode;
+  label: string;
+  hint: string;
+}[] = [
+  { value: "both", label: "Image + caption", hint: "Full post (uses more AI)" },
+  { value: "caption", label: "Caption only", hint: "1 Gemini call" },
+  { value: "image", label: "Image only", hint: "Imagen · skip caption" },
+];
 
 function HistoryPreviewDialog({
   item,
@@ -96,30 +108,40 @@ function HistoryPreviewDialog({
           <div>
             <p className="mb-2 text-sm font-semibold text-zinc-900">Visual</p>
             <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.imageUrl}
-                alt="Generated social media visual"
-                className="aspect-video w-full object-cover"
-              />
+              {item.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.imageUrl}
+                  alt="Generated social media visual"
+                  className="aspect-video w-full object-cover"
+                />
+              ) : (
+                <div className="flex aspect-video items-center justify-center px-4 text-center text-sm text-zinc-500">
+                  Caption-only run — no image generated
+                </div>
+              )}
             </div>
           </div>
           <div>
             <p className="mb-2 text-sm font-semibold text-zinc-900">Caption</p>
             <div className="min-h-[180px] rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm leading-relaxed text-zinc-800 whitespace-pre-wrap">
-              {item.caption}
+              {item.caption || "Image-only run — no caption generated"}
             </div>
           </div>
         </div>
         <div className="flex justify-end gap-2 border-t border-zinc-100 px-5 py-4">
-          <Button variant="outline" size="sm" onClick={() => onDownload(item.imageUrl)}>
-            <Download className="mr-2 h-4 w-4" />
-            Download image
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onCopy(item.caption)}>
-            <Copy className="mr-2 h-4 w-4" />
-            Copy caption
-          </Button>
+          {item.imageUrl ? (
+            <Button variant="outline" size="sm" onClick={() => onDownload(item.imageUrl)}>
+              <Download className="mr-2 h-4 w-4" />
+              Download image
+            </Button>
+          ) : null}
+          {item.caption ? (
+            <Button variant="outline" size="sm" onClick={() => onCopy(item.caption)}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy caption
+            </Button>
+          ) : null}
         </div>
       </div>
     </div>,
@@ -216,13 +238,14 @@ export function ContentStudioPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { prompt: "" },
+    defaultValues: { prompt: "", mode: "both" },
   });
+  const selectedMode = form.watch("mode");
 
   async function handleGenerate(values: FormValues) {
     clearError();
     setGeneratedContent(null);
-    const result = await generate(values.prompt);
+    const result = await generate(values.prompt, values.mode);
     if (!result) return;
     setGeneratedContent(result);
     setHistory((current) => [result, ...current]);
@@ -261,7 +284,8 @@ export function ContentStudioPage() {
                 Content Studio
               </h1>
               <p className="mt-1 text-[var(--muted-foreground)]">
-                Generate social visuals and captions for Smart Refill marketing.
+                On-demand AI only — pick caption, image, or both. English prompts
+                skip the translate step.
               </p>
             </div>
           </div>
@@ -276,8 +300,8 @@ export function ContentStudioPage() {
           <CardHeader>
             <CardTitle>Create visuals</CardTitle>
             <CardDescription>
-              Describe the scene in English, Tagalog, or any Filipino dialect. AI
-              generates a 16:9 image and a matching caption.
+              Runs only when you press Generate. Use caption-only or image-only
+              to spend less.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -286,11 +310,46 @@ export function ContentStudioPage() {
               className="space-y-5"
             >
               <div className="space-y-2">
+                <p className="text-sm font-medium text-zinc-700">Output</p>
+                <div className="grid gap-2">
+                  {MODE_OPTIONS.map((option) => {
+                    const active = selectedMode === option.value;
+                    return (
+                      <label
+                        key={option.value}
+                        className={cn(
+                          "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 text-sm transition",
+                          active
+                            ? "border-teal-500 bg-teal-50/60 ring-1 ring-teal-500/30"
+                            : "border-zinc-200 hover:border-zinc-300",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          value={option.value}
+                          className="mt-1"
+                          {...form.register("mode")}
+                        />
+                        <span>
+                          <span className="font-medium text-zinc-900">
+                            {option.label}
+                          </span>
+                          <span className="mt-0.5 block text-xs text-zinc-500">
+                            {option.hint}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <label
                   htmlFor="content-studio-prompt"
                   className="text-sm font-medium text-zinc-700"
                 >
-                  Image prompt
+                  Prompt
                 </label>
                 <textarea
                   id="content-studio-prompt"
@@ -329,7 +388,7 @@ export function ContentStudioPage() {
                   </>
                 : <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Generate content
+                    Generate {MODE_OPTIONS.find((m) => m.value === selectedMode)?.label.toLowerCase() ?? "content"}
                   </>
                 }
               </Button>
@@ -349,7 +408,7 @@ export function ContentStudioPage() {
               <div className="flex h-[420px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/70 text-center">
                 <Loader2 className="h-10 w-10 animate-spin text-[var(--primary)]" />
                 <p className="text-sm text-[var(--muted-foreground)]">
-                  Creating your image and caption. This may take a moment.
+                  Running AI for your selected output. This may take a moment.
                 </p>
               </div>
             )}
@@ -358,7 +417,7 @@ export function ContentStudioPage() {
               <div className="flex h-[420px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/70 text-center">
                 <Sparkles className="h-10 w-10 text-zinc-300" />
                 <p className="max-w-sm text-sm text-[var(--muted-foreground)]">
-                  Generated content will appear here once you submit a prompt.
+                  Generated content will appear here once you press Generate.
                 </p>
               </div>
             )}
@@ -366,38 +425,49 @@ export function ContentStudioPage() {
             {generatedContent && !isGenerating && (
               <div className="space-y-5">
                 <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={generatedContent.imageUrl}
-                    alt="Generated social media visual"
-                    className="aspect-video w-full object-cover"
-                  />
+                  {generatedContent.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={generatedContent.imageUrl}
+                      alt="Generated social media visual"
+                      className="aspect-video w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex aspect-video items-center justify-center px-4 text-center text-sm text-zinc-500">
+                      Caption-only — no image generated
+                    </div>
+                  )}
                 </div>
                 <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
                     Caption
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-800 whitespace-pre-wrap">
-                    {generatedContent.caption}
+                    {generatedContent.caption ||
+                      "Image-only — no caption generated"}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(generatedContent.imageUrl)}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download image
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopy(generatedContent.caption)}
-                  >
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy caption
-                  </Button>
+                  {generatedContent.imageUrl ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(generatedContent.imageUrl)}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download image
+                    </Button>
+                  ) : null}
+                  {generatedContent.caption ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopy(generatedContent.caption)}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy caption
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             )}
@@ -455,6 +525,7 @@ export function ContentStudioPage() {
                     size="sm"
                     className="h-8 w-8 p-0"
                     aria-label="Copy caption"
+                    disabled={!item.caption}
                     onClick={() => handleCopy(item.caption)}
                   >
                     <Copy className="h-4 w-4" />
@@ -464,6 +535,7 @@ export function ContentStudioPage() {
                     size="sm"
                     className="h-8 w-8 p-0"
                     aria-label="Download image"
+                    disabled={!item.imageUrl}
                     onClick={() => handleDownload(item.imageUrl)}
                   >
                     <Download className="h-4 w-4" />

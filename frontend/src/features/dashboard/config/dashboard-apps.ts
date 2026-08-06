@@ -80,7 +80,9 @@ export function getDashboardApp(id: DashboardAppId) {
   return DASHBOARD_APPS.find((app) => app.id === id);
 }
 
+/** Platform analytics snapshot routes (not SR-legacy — that uses its own API). */
 export function isDashboardAppPath(pathname: string): boolean {
+  if (pathname.startsWith("/dashboard/smartrefill-old")) return false;
   return (
     pathname === "/dashboard" ||
     pathname.startsWith("/dashboard/smartrefill") ||

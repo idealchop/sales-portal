@@ -35,6 +35,11 @@ REQUIRED_SECRETS=(
   "SMARTREFILL_BREVO_API_KEY"
 )
 
+# Dev gateway binds an extra dedicated Gemini key for Monitoring attribution.
+if [[ "${ENV:-}" == "dev" || "${CHECK_DEV_SECRETS:-0}" == "1" ]]; then
+  REQUIRED_SECRETS+=("SALES_PORTAL_GEMINI_API_KEY_DEV")
+fi
+
 GCLOUD=(gcloud --project="$PROJECT_ID")
 MISSING=()
 

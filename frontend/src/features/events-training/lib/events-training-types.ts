@@ -52,10 +52,14 @@ export type WebinarRecord = {
   /** SmartRefill auto-accepts when true (no pending ops review). */
   autoAccept?: boolean;
   /**
-   * Public events only: allow guest register on smartrefill.io.
+   * Public events: allow guest register on smartrefill.io.
+   * Premium events: allow guest PayMongo (email) checkout.
    * Missing → treated as enabled when visibility is public.
    */
   guestRegistrationEnabled?: boolean;
+  /** When registration becomes available. Null = open on publish. */
+  registrationOpensAt?: string | null;
+  registrationOpenNotifiedAt?: string | null;
   joinLink: string | null;
   linkedVideoId: string | null;
   certificationEnabled: boolean;
@@ -85,6 +89,11 @@ export type TrainingVideoRecord = {
   allowedPlanCodes: string[];
   allowAllMembers: boolean;
   certificationEnabled: boolean;
+  /**
+   * Tutorials only: list on marketing `/resources/tutorials`.
+   * Missing → treated as false.
+   */
+  showOnResources?: boolean;
   archivedAt: string | null;
   tags: string[];
 };

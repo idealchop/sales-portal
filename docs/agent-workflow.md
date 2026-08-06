@@ -1,11 +1,12 @@
 # Sales Portal — Agent workflow
 
-Two Cursor Agent Skills automate backlog delivery on a **`dev`** integration branch.
+Two Cursor Agent Skills automate backlog delivery on a **`dev`** integration branch. A third River-wide skill ships releases.
 
 | Agent skill | Path | Role |
 |-------------|------|------|
 | **Feature agent** | `.cursor/skills/sales-portal-feature-agent/` | Implement AB items on `feature/SP-{tier}`; one commit per AB |
 | **Code review agent** | `.cursor/skills/sales-portal-code-review-agent/` | Review, quality gate, merge to `dev` |
+| **Release & ship agent** | `river/.agents/skills/river-release-ship-agent/` | Docs + FE/BE tests + commit/push + **Dev then Prod** deploy (Sales Portal + SmartRefill) |
 
 Backlog source: [`backlog-actionable.md`](./backlog-actionable.md)
 

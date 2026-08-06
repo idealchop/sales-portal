@@ -32,9 +32,10 @@ import {
 } from "@/components/ui/card";
 import { PaginatedList } from "@/components/paginated-list";
 import { ListPagination } from "@/components/list-pagination";
-import { BusinessLocationsMap } from "@/features/dashboard/components/business-locations-map";
+import { BusinessLocationsMapLoader } from "@/features/dashboard/components/business-locations-map-loader";
 import { BrevoOutreachButton } from "@/features/dashboard/components/brevo-outreach-button";
 import { DashboardAppNav } from "@/features/dashboard/components/dashboard-app-nav";
+import { LegacySmartRefillLoading } from "@/features/dashboard/components/legacy-smartrefill-loading";
 import {
   DashboardSegmentTabs,
   type DashboardSegmentTab,
@@ -225,17 +226,30 @@ function toMapLocations(
   return stations
     .filter(
       (station) =>
-        typeof station.lat === "number" && typeof station.lng === "number",
+        typeof station.lat === "number" &&
+        typeof station.lng === "number" &&
+        Number.isFinite(station.lat) &&
+        Number.isFinite(station.lng) &&
+        !(station.lat === 0 && station.lng === 0) &&
+        station.lat >= -90 &&
+        station.lat <= 90 &&
+        station.lng >= -180 &&
+        station.lng <= 180,
     )
     .map((station) => ({
       id: station.id,
       name: station.businessName,
+      ownerEmail: station.email || undefined,
       lat: station.lat as number,
       lng: station.lng as number,
       address: station.address || undefined,
       onboardingComplete: station.onboardingComplete,
       customers: station.customerCount,
       transactionsLast30Days: station.deliveryCount,
+      lastActiveDay:
+        station.lastSignedInAt?.slice(0, 10) ||
+        station.lastDeliveryAt?.slice(0, 10) ||
+        undefined,
       appLabel: "Legacy",
     }));
 }
@@ -1215,17 +1229,17 @@ export function SmartRefillOldDashboard() {
       { id: "map", label: "Map", count: mapLocations.length },
       { id: "leads", label: "Leads", count: data.leads.length },
     ];
-  }, [data, mapLocations.length]);
+  }, [data, mapLocations.length, triageCount]);
+
+  const handleMapRefresh = useCallback(() => {
+    void refresh({ force: true });
+  }, [refresh]);
 
   if (isLoading && !data) {
     return (
       <div className="space-y-6">
         <DashboardAppNav />
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 animate-pulse rounded-xl bg-zinc-200" />
-          ))}
-        </div>
+        <LegacySmartRefillLoading />
       </div>
     );
   }
@@ -1235,8 +1249,23 @@ export function SmartRefillOldDashboard() {
       <div className="space-y-4">
         <DashboardAppNav />
         <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-8 text-center text-sm text-red-800">
-            {error || "Legacy analytics unavailable."}
+          <CardContent className="space-y-4 p-8 text-center text-sm text-red-800">
+            <p>{error || "Legacy analytics unavailable."}</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={isRefreshing}
+              onClick={() => void refresh({ force: true })}
+            >
+              <RefreshCw
+                className={cn(
+                  "mr-1.5 h-3.5 w-3.5",
+                  isRefreshing && "animate-spin",
+                )}
+              />
+              {isRefreshing ? "Retrying…" : "Retry"}
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -1668,9 +1697,9 @@ export function SmartRefillOldDashboard() {
             <p className="py-8 text-center text-sm text-[var(--muted-foreground)]">
               No mapped stations in prod-smartrefill.
             </p>
-          : <BusinessLocationsMap
+          : <BusinessLocationsMapLoader
               locations={mapLocations}
-              onRefresh={() => refresh({ force: true })}
+              onRefresh={handleMapRefresh}
               isRefreshing={isRefreshing}
             />
           }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Sparkles } from "lucide-react";
+import { CheckCircle2, ListTodo } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -20,7 +20,7 @@ const PRIORITY_STYLES = {
 
 const SOURCE_LABELS: Record<TodaysWorkItem["source"], string> = {
   sales_action: "Workspace",
-  ai_insight: "AI insight",
+  ai_insight: "Priority",
   approval: "Approval",
   proposal: "Proposal",
 };
@@ -74,7 +74,7 @@ export function TodaysWorkInbox({
               </div>
             </div>
             {item.source === "ai_insight" ?
-              <Sparkles className="h-4 w-4 shrink-0 text-teal-600" />
+              <ListTodo className="h-4 w-4 shrink-0 text-teal-600" />
             : null}
           </div>
         ))

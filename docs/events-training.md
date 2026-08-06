@@ -45,7 +45,7 @@ Member registration, PayMongo premium unlock, private quotas, Brevo email delive
 | `GET/POST/PATCH/DELETE` | `/blogs` | WRS blog CMS |
 | `POST` | `/upload` | Poster / thumbnail / blog-hero image upload |
 
-**CMS UX:** Capacity, **Auto-accept registrations**, join link, premium price (`unlockPrice` synced from price). Registrant dialog can mark **Attended** / **No-show**.
+**CMS UX:** Capacity, **Auto-accept registrations**, **Registration opens at** (`registrationOpensAt`; blank = open when published), join link, premium price (`unlockPrice` synced from price), **Allow guest registration / guest payment** (`guestRegistrationEnabled`). Registrant dialog can mark **Attended** / **No-show**.
 
 ### Registrations
 
@@ -53,7 +53,7 @@ Member registration, PayMongo premium unlock, private quotas, Brevo email delive
 |--------|------|---------|
 | `GET` | `/registrations?eventId&status` | List registrants |
 | `GET` | `/webinars/:webinarId/registrations` | Registrants for one event |
-| `POST` | `/registrations/:id/accept` | Accept (+ capacity check) |
+| `POST` | `/registrations/:id/accept` | Accept (+ capacity check); proxies SmartRefill **notify-approved** for guest/member confirmation email when applicable |
 | `POST` | `/registrations/:id/decline` | Decline |
 | `DELETE` | `/registrations/:id` | Permanently delete sign-up (adjusts `registrationCount` for pending/accepted) |
 | `POST` | `/registrations/:id/attendance` | Set `attended` \| `no_show` \| `cleared` |
@@ -145,6 +145,7 @@ Default origin is `https://app.smartrefill.io`. Guests can open **Public + publi
 | **`category`** | `wrs_stories` \| `webinar` \| **`tutorial`** | **Discriminator** — video tutorials always persist `category: "tutorial"` |
 | `appId` | e.g. `smartrefill` | Required for tutorials (target app from `apps` collection) |
 | `appPages` | string[] | Required for tutorials (pages within that app) |
+| `showOnResources` | boolean | Tutorials only — when **true**, published tutorial appears on marketing `/resources/tutorials` (`GET /public/resources/tutorials`). Default **false** (in-app Tutorial panel only). |
 | `status` | `draft` \| `published` \| `archived` | Tutorials list query: `category == tutorial` |
 
 Filter tutorials: `GET /events-training/videos?category=tutorial` or Firestore `where('category','==','tutorial')`.

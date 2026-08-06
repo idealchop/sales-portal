@@ -36,6 +36,7 @@ import type {
 } from "../lib/events-training-types";
 import { textareaClassName } from "../lib/form-styles";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
+import { EventsTrainingPageHeader } from "./events-training-page-header";
 
 type View = "todo" | "questions" | "comments";
 
@@ -583,33 +584,26 @@ export function ModerationAdminPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">
-            Action queue
-          </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-            Moderation
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Answer open questions and review flagged comments from every video
-            and blog in one place — no picking content first.
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="rounded-full"
-          disabled={loading}
-          onClick={() => void loadInbox()}
-        >
-          <RefreshCw
-            className={cn("mr-1.5 h-3.5 w-3.5", loading && "animate-spin")}
-          />
-          Refresh
-        </Button>
-      </div>
+      <EventsTrainingPageHeader
+        eyebrow="Action queue"
+        title="Moderation"
+        description="Answer open questions and review flagged comments from every video and blog in one place — no picking content first."
+        actions={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            disabled={loading}
+            onClick={() => void loadInbox()}
+          >
+            <RefreshCw
+              className={cn("mr-1.5 h-3.5 w-3.5", loading && "animate-spin")}
+            />
+            Refresh
+          </Button>
+        }
+      />
 
       <section className="overflow-hidden rounded-[1.75rem] border border-teal-900/5 bg-gradient-to-b from-white via-white to-teal-50/30 shadow-[0_18px_50px_-28px_rgba(15,118,110,0.35)]">
         <div className="border-b border-zinc-100 px-4 py-3 sm:px-5">

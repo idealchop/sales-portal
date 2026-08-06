@@ -9,7 +9,7 @@ import {
   Mail,
   Megaphone,
   RefreshCw,
-  Sparkles,
+  Send,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import type {
   ComposedWebinarScheduleMessage,
   WebinarRecord,
 } from "../lib/events-training-types";
+import { EventsTrainingPageHeader } from "./events-training-page-header";
 
 const CHANNEL_LABEL: Record<string, string> = {
   email: "Email",
@@ -221,14 +222,11 @@ export function SchedulesAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold">Automated promotions</h2>
-        <p className="mt-0.5 max-w-2xl text-sm text-muted-foreground">
-          When you publish a webinar, we automatically queue member emails, then
-          schedule weekly reminders and a countdown (7d · 3d · 1d · 1h ·
-          on-going). No manual scheduling.
-        </p>
-      </div>
+      <EventsTrainingPageHeader
+        eyebrow="Settings"
+        title="Automated promotions"
+        description="When you publish a webinar, we queue member emails and countdown reminders (7d · 3d · 1d · 1h). Template copy — no Gemini."
+      />
 
       {success ? (
         <div className="flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -297,7 +295,7 @@ export function SchedulesAdminPage() {
                   disabled={!webinarId || busy}
                   onClick={() => void handleInstall(true)}
                 >
-                  <Sparkles className="mr-1.5 h-4 w-4" />
+                  <Send className="mr-1.5 h-4 w-4" />
                   Queue publish now
                 </Button>
               ) : null}

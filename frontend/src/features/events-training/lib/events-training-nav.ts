@@ -36,13 +36,13 @@ export const EVENTS_TRAINING_NAV_GROUPS: EventsTrainingNavGroup[] = [
       {
         href: "/events-training",
         label: "Overview",
-        description: "Analytics and what needs attention",
+        description: "Queues and live webinars (no AI)",
         icon: LayoutDashboard,
       },
       {
         href: "/events-training/analytics",
         label: "Analytics",
-        description: "Registrations, views, and revenue",
+        description: "Registrations, views, and revenue (rules only)",
         icon: BarChart3,
       },
     ],
