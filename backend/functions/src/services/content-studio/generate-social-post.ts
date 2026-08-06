@@ -36,8 +36,17 @@ export type GenerateSocialPostResult = {
   translatedScene: boolean;
 };
 
-const PH_LANGUAGE_MARKERS =
-  /\b(ang|mga|sa|ng|na|po|opo|yung|para|hindi|ito|iyan|umiiinom|masaya|opisina|tubig|pamilya|familia|sabi|namin|ninyo|kayo|ako|siya|nila|natin|wala|meron|mayroon|kung|dahil|pero|at|o|ba|nga|lang|naman|dito|doon|iyan|yun|'tapos|kasi|talaga|salamat|maganda|malinis)\b/i;
+const PH_LANGUAGE_MARKERS = new RegExp(
+  [
+    "\\b(",
+    "ang|mga|sa|ng|na|po|opo|yung|para|hindi|ito|iyan|umiiinom|masaya|",
+    "opisina|tubig|pamilya|familia|sabi|namin|ninyo|kayo|ako|siya|nila|",
+    "natin|wala|meron|mayroon|kung|dahil|pero|at|o|ba|nga|lang|naman|",
+    "dito|doon|yun|tapos|kasi|talaga|salamat|maganda|malinis",
+    ")\\b",
+  ].join(""),
+  "i",
+);
 
 /**
  * Skip Gemini scene translation when the prompt is already usable English.
@@ -47,7 +56,8 @@ export function promptNeedsSceneTranslation(prompt: string): boolean {
   const text = prompt.trim();
   if (!text) return false;
   // Non-ASCII → likely Tagalog/dialect or accented copy; translate.
-  if (/[^\x00-\x7F]/.test(text)) return true;
+  // eslint-disable-next-line no-control-regex -- intentional ASCII-range check
+  if (/[^\u0000-\u007F]/.test(text)) return true;
   if (PH_LANGUAGE_MARKERS.test(text)) return true;
   return false;
 }
