@@ -32,10 +32,22 @@ describe("dev-tier", () => {
     expect(resolveSmartrefillApiBaseUrl()).toContain("smartrefillV3ApiDev");
   });
 
-  it("detects Dev tier from SALES_PORTAL_DEPLOY_TIER=dev", () => {
+  it("detects Dev tier from SALES_PORTAL_DEPLOY_TIER=dev when not hosted", () => {
     process.env.SALES_PORTAL_DEPLOY_TIER = "dev";
     expect(isSalesPortalDeployedDevTier()).toBe(true);
     expect(resolveFirestoreDatabaseId()).toBe("riverdb-dev");
+  });
+
+  it("ignores SALES_PORTAL_DEPLOY_TIER=dev on hosted Prod service name", () => {
+    process.env.K_SERVICE = "salesPortalApi";
+    process.env.SALES_PORTAL_DEPLOY_TIER = "dev";
+    process.env.SALES_PORTAL_FIRESTORE_DB = "riverdb-dev";
+    process.env.SMARTREFILL_API_URL =
+      "https://asia-southeast1-aquaflow-management-suite.cloudfunctions.net/smartrefillV3ApiDev";
+    expect(isSalesPortalDeployedDevTier()).toBe(false);
+    expect(resolveFirestoreDatabaseId()).toBe("riverdb");
+    expect(resolveSmartrefillApiBaseUrl()).toContain("smartrefillV3Api");
+    expect(resolveSmartrefillApiBaseUrl()).not.toContain("Dev");
   });
 
   it("uses riverdb for Prod and ignores Dev URLs", () => {

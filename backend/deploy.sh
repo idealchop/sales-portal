@@ -94,6 +94,24 @@ cd "${ROOT_DIR}"
 
 trap restore_dev_jobs_exports EXIT
 
+# Firebase CLI dotenv-deploys functions/.env into Cloud Run env. Local Dev
+# settings (DEPLOY_TIER=dev / riverdb-dev) must never ship with Prod.
+ENV_STASH=""
+stash_dotenv_for_prod() {
+  if [[ -f "${FUNCTIONS_DIR}/.env" ]]; then
+    ENV_STASH="${FUNCTIONS_DIR}/.env.deploy-stash-$$"
+    echo -e "${YELLOW}   Stashing functions/.env during Prod deploy (use .env.local for local Dev).${NC}"
+    mv "${FUNCTIONS_DIR}/.env" "${ENV_STASH}"
+  fi
+}
+restore_dotenv_stash() {
+  if [[ -n "${ENV_STASH}" && -f "${ENV_STASH}" ]]; then
+    mv "${ENV_STASH}" "${FUNCTIONS_DIR}/.env"
+    ENV_STASH=""
+  fi
+}
+trap 'restore_dev_jobs_exports; restore_dotenv_stash' EXIT
+
 echo -e "${BLUE}🔐 Checking required Cloud Functions secrets...${NC}"
 bash "${ROOT_DIR}/scripts/check-secrets.sh" --try-set
 
@@ -129,8 +147,10 @@ else
     echo -e "${BLUE}ℹ️  Skipping Firestore deploy (functions only).${NC}"
     echo -e "${BLUE}   Set DEPLOY_FIRESTORE=1 to deploy rules/indexes (same files as SmartRefill).${NC}"
   fi
+  stash_dotenv_for_prod
   echo -e "${BLUE}🔥 Deploying: ${DEPLOY_TARGETS}${NC}"
   npx -y firebase-tools deploy --project "${PROJECT_ID}" --only "${DEPLOY_TARGETS}"
+  restore_dotenv_stash
 fi
 
 if [[ "${DEPLOY_ENV}" == "prod" && "${DEPLOY_STORAGE_RULES:-0}" == "1" ]]; then

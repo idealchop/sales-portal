@@ -54,7 +54,7 @@ Keep local env files aligned with hosted Dev so you hit the same data and API ti
 | Gemini (Sales BE) | `SALES_PORTAL_GEMINI_API_KEY_DEV` (dedicated “sales-portal” key) |
 | Legacy SmartRefill DB | `prod-smartrefill` (unchanged) |
 
-Copy from `.env.example` → `.env.local` / `backend/functions/.env`, then fill secrets. Restart Next and `serve:local` after changes.
+Copy from `.env.example` → **`backend/functions/.env.local`** (preferred — Firebase never deploys `.env.local`), then fill secrets. Do **not** use a plain `functions/.env` for local Dev: Firebase dotenv-uploads `.env` on deploy and can flip Prod `salesPortalApi` onto `riverdb-dev`. Restart Next and `serve:local` after changes.
 
 ### Pause Dev jobs without undeploying
 

@@ -28,26 +28,37 @@ function cloudFunctionName(): string {
   );
 }
 
-/** True when this Cloud Run / Functions instance is a *Dev export. */
+/**
+ * True when this Cloud Run / Functions instance is a *Dev export.
+ *
+ * Hosted services: only the function name (`*Dev`) decides the tier so a
+ * leaked local `.env` (`SALES_PORTAL_DEPLOY_TIER=dev`) cannot flip Prod
+ * `salesPortalApi` onto `riverdb-dev`.
+ * Local / emulator: `SALES_PORTAL_DEPLOY_TIER=dev` is allowed.
+ */
 export function isSalesPortalDeployedDevTier(): boolean {
-  if (
+  const name = cloudFunctionName();
+  if (/Dev$/.test(name)) return true;
+  if (name) return false;
+  return (
     String(process.env.SALES_PORTAL_DEPLOY_TIER || "")
       .trim()
       .toLowerCase() === "dev"
-  ) {
-    return true;
-  }
-  return /Dev$/.test(cloudFunctionName());
+  );
 }
 
 /**
  * Primary Firestore database for this instance.
- * *Dev Cloud Functions always use riverdb-dev (ignore local .env riverdb bleed-through).
- * Otherwise SALES_PORTAL_FIRESTORE_DB wins, then riverdb.
+ * *Dev Cloud Functions always use riverdb-dev.
+ * Hosted Prod exports always use riverdb (ignore leaked dotenv riverdb-dev).
+ * Local: SALES_PORTAL_FIRESTORE_DB wins, then riverdb.
  */
 export function resolveFirestoreDatabaseId(): string {
   if (isSalesPortalDeployedDevTier()) {
     return "riverdb-dev";
+  }
+  if (cloudFunctionName()) {
+    return "riverdb";
   }
   const fromEnv = process.env.SALES_PORTAL_FIRESTORE_DB?.trim();
   if (fromEnv) return fromEnv;
@@ -72,11 +83,15 @@ export function resolvePublicApiBaseUrl(): string {
 
 /**
  * SmartRefill V3 proxy target.
- * Deployed Dev always uses smartrefillV3ApiDev (ignore Prod URL bleed-through).
+ * Deployed Dev always uses smartrefillV3ApiDev.
+ * Hosted Prod always uses smartrefillV3Api (ignore leaked *ApiDev dotenv).
  */
 export function resolveSmartrefillApiBaseUrl(): string {
   if (isSalesPortalDeployedDevTier()) {
     return DEV_SMARTREFILL_API_URL;
+  }
+  if (cloudFunctionName()) {
+    return PROD_SMARTREFILL_API_URL;
   }
   const fromEnv = process.env.SMARTREFILL_API_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
