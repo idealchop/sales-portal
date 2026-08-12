@@ -51,6 +51,11 @@ describe("mapOwnerSubscriptions", () => {
   });
 
   it("maps ISO string timestamps from newer subscription documents", () => {
+    const activatedAt = "2026-06-09T06:41:13.448Z";
+    const expiresAt = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
     const rows = mapOwnerSubscriptions([
       {
         id: "renewal-sub",
@@ -61,18 +66,18 @@ describe("mapOwnerSubscriptions", () => {
           paymentStatus: "approved",
           price: 1650,
           billingCycle: "monthly",
-          createdAt: "2026-06-09T06:41:13.448Z",
+          createdAt: activatedAt,
           dates: {
-            activatedAt: "2026-06-09T06:41:13.448Z",
-            expiresAt: "2026-08-09T06:41:13.426Z",
+            activatedAt,
+            expiresAt,
           },
         }),
       },
     ]);
 
-    expect(rows[0]?.createdAt).toBe("2026-06-09T06:41:13.448Z");
-    expect(rows[0]?.activatedAt).toBe("2026-06-09T06:41:13.448Z");
-    expect(rows[0]?.expiresAt).toBe("2026-08-09T06:41:13.426Z");
+    expect(rows[0]?.createdAt).toBe(activatedAt);
+    expect(rows[0]?.activatedAt).toBe(activatedAt);
+    expect(rows[0]?.expiresAt).toBe(expiresAt);
     expect(rows[0]?.timeline).toBe("current");
   });
 
