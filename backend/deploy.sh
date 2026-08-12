@@ -139,7 +139,9 @@ if [[ "${DEPLOY_ENV}" == "dev" ]]; then
     --config "${FIREBASE_CONFIG}" \
     --only "${DEPLOY_TARGETS}"
 else
-  DEPLOY_TARGETS="functions:sales-portal-api"
+  # Explicit function names so Prod deploy does not attempt to delete Dev-only
+  # jobs (e.g. eventsTrainingPromotionDeliveryDev) that live in the same codebase.
+  DEPLOY_TARGETS="functions:sales-portal-api:salesPortalApi,functions:sales-portal-api:eventsTrainingPromotionDelivery,functions:sales-portal-api:salesPortalApiDev"
   if [[ "${DEPLOY_FIRESTORE:-0}" == "1" ]]; then
     echo -e "${BLUE}🔥 Including Firestore rules/indexes (canonical: smartrefill/frontend).${NC}"
     DEPLOY_TARGETS="${DEPLOY_TARGETS},firestore:rules,firestore:indexes"
