@@ -129,16 +129,19 @@ function ConsumptionRow({
 
 export function BusinessInsightsSection({
   documents,
+  collectionCounts,
   transactions,
   transactionsLoading,
 }: {
   documents: BusinessFirestoreDocumentRow[];
+  collectionCounts?: Record<string, number>;
   transactions: UserFirestoreDocumentRow[];
   transactionsLoading?: boolean;
 }) {
   const insights = useMemo(
-    () => computeBusinessInsights({ documents, transactions }),
-    [documents, transactions],
+    () =>
+      computeBusinessInsights({ documents, transactions, collectionCounts }),
+    [collectionCounts, documents, transactions],
   );
 
   const hasConsumption = insights.consumption.length > 0;

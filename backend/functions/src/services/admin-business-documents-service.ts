@@ -12,6 +12,36 @@ export type BusinessFirestoreDocumentRow = {
 /** Page size when listing an entire subcollection (no hard cap on total). */
 const SUBCOLLECTION_LIST_PAGE_SIZE = 500;
 
+/**
+ * Large / dialog-only collections: overview returns counts only.
+ * Full docs load via listBusinessSubcollectionDocuments when opened.
+ * (Loading every subcollection body at once times out and surfaces as CORS.)
+ */
+export const LAZY_BUSINESS_SUBCOLLECTIONS = new Set([
+  "customers",
+  "transactions",
+  "audit_logs",
+  "notifications",
+  "ai_tool_runs",
+  "chat_sessions",
+  "raw_submissions",
+  "inventory_items",
+  "inventory_assignments",
+  "files",
+  "portal_order_ratings",
+  "proactive_schedule_week_snapshots",
+  "support_ai_knowledge",
+  "private",
+  "team_chats",
+  "orders",
+  "rider_cash_remittances",
+]);
+
+export type BusinessDocumentsListResult = {
+  documents: BusinessFirestoreDocumentRow[];
+  collectionCounts: Record<string, number>;
+};
+
 async function listAllSubcollectionDocs(
   subcollection: FirebaseFirestore.CollectionReference,
 ): Promise<FirebaseFirestore.QueryDocumentSnapshot[]> {
@@ -68,11 +98,26 @@ function serializeDocumentData(
   return serializeValue(data) as Record<string, unknown>;
 }
 
+function toDocumentRows(
+  collectionId: string,
+  docs: FirebaseFirestore.QueryDocumentSnapshot[],
+): BusinessFirestoreDocumentRow[] {
+  return docs.map((doc) => ({
+    path: doc.ref.path,
+    collectionId,
+    documentId: doc.id,
+    label: doc.id.toUpperCase(),
+    isRoot: false,
+    data: serializeDocumentData(doc.data()),
+  }));
+}
+
 export async function listBusinessFirestoreDocuments(
   businessId: string,
-): Promise<BusinessFirestoreDocumentRow[]> {
+): Promise<BusinessDocumentsListResult> {
   const businessRef = db.collection("businesses").doc(businessId);
   const rows: BusinessFirestoreDocumentRow[] = [];
+  const collectionCounts: Record<string, number> = {};
 
   const rootSnap = await businessRef.get();
   if (rootSnap.exists) {
@@ -88,17 +133,15 @@ export async function listBusinessFirestoreDocuments(
 
   const subcollections = await businessRef.listCollections();
   for (const subcollection of subcollections) {
+    const countSnap = await subcollection.count().get();
+    const count = countSnap.data().count;
+    collectionCounts[subcollection.id] = count;
+
+    if (count === 0) continue;
+    if (LAZY_BUSINESS_SUBCOLLECTIONS.has(subcollection.id)) continue;
+
     const docs = await listAllSubcollectionDocs(subcollection);
-    for (const doc of docs) {
-      rows.push({
-        path: doc.ref.path,
-        collectionId: subcollection.id,
-        documentId: doc.id,
-        label: doc.id.toUpperCase(),
-        isRoot: false,
-        data: serializeDocumentData(doc.data()),
-      });
-    }
+    rows.push(...toDocumentRows(subcollection.id, docs));
   }
 
   rows.sort((a, b) => {
@@ -108,7 +151,40 @@ export async function listBusinessFirestoreDocuments(
     return a.documentId.localeCompare(b.documentId);
   });
 
-  return rows;
+  return { documents: rows, collectionCounts };
+}
+
+export async function listBusinessSubcollectionDocuments(
+  businessId: string,
+  collectionId: string,
+): Promise<{
+  documents: BusinessFirestoreDocumentRow[];
+  totalCount: number;
+}> {
+  const normalized = collectionId.trim();
+  if (!normalized || normalized.includes("/") || normalized.includes("..")) {
+    throw new Error("INVALID_COLLECTION_ID");
+  }
+
+  const businessRef = db.collection("businesses").doc(businessId);
+  const businessSnap = await businessRef.get();
+  if (!businessSnap.exists) {
+    throw new Error("BUSINESS_NOT_FOUND");
+  }
+
+  const subcollection = businessRef.collection(normalized);
+  const [countSnap, docs] = await Promise.all([
+    subcollection.count().get(),
+    listAllSubcollectionDocs(subcollection),
+  ]);
+
+  const rows = toDocumentRows(normalized, docs);
+  rows.sort((a, b) => a.documentId.localeCompare(b.documentId));
+
+  return {
+    documents: rows,
+    totalCount: countSnap.data().count,
+  };
 }
 
 function timestampMs(value: unknown): number {

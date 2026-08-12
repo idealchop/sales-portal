@@ -16,6 +16,7 @@ import {
   deleteBusinessFirestoreDocument,
   deleteBusinessFirestoreTree,
   listBusinessFirestoreDocuments,
+  listBusinessSubcollectionDocuments,
   listBusinessTransactions,
   listCustomerTransactions,
   listCustomerInventoryAssignments,
@@ -340,14 +341,55 @@ export const getAdminBusinessDocuments = async (
   }
 
   try {
-    const documents = await listBusinessFirestoreDocuments(businessId);
-    res.json({ data: { documents } });
+    const { documents, collectionCounts } =
+      await listBusinessFirestoreDocuments(businessId);
+    res.json({ data: { documents, collectionCounts } });
   } catch (error) {
     logger.error("Failed to list business Firestore documents", {
       error,
       businessId,
     });
     res.status(500).json({ error: "Failed to load business documents." });
+  }
+};
+
+export const getAdminBusinessSubcollectionDocuments = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const businessId = String(req.params.businessId || "");
+  const collectionId = String(req.params.collectionId || "");
+  if (!businessId) {
+    res.status(400).json({ error: "Business id is required." });
+    return;
+  }
+  if (!collectionId) {
+    res.status(400).json({ error: "Collection id is required." });
+    return;
+  }
+
+  try {
+    const { documents, totalCount } = await listBusinessSubcollectionDocuments(
+      businessId,
+      collectionId,
+    );
+    res.json({ data: { documents, totalCount } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "INVALID_COLLECTION_ID") {
+      res.status(400).json({ error: "Invalid collection id." });
+      return;
+    }
+    if (message === "BUSINESS_NOT_FOUND") {
+      res.status(404).json({ error: "Business not found." });
+      return;
+    }
+    logger.error("Failed to list business subcollection documents", {
+      error,
+      businessId,
+      collectionId,
+    });
+    res.status(500).json({ error: "Failed to load subcollection documents." });
   }
 };
 

@@ -32,6 +32,7 @@ export function AdminDataManagementBusinessPage() {
   const { overview, isLoading: overviewLoading } = useAdminDataManagement();
   const {
     documents,
+    collectionCounts,
     isLoading,
     error,
     refresh,
@@ -117,6 +118,7 @@ export function AdminDataManagementBusinessPage() {
       <div className="rounded-2xl bg-[#fafafa] p-6 ring-1 ring-zinc-200/80">
         <BusinessProfileCollectionView
           documents={documents}
+          collectionCounts={collectionCounts}
           isLoading={isLoading}
           error={error}
           row={row}

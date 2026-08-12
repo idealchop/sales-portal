@@ -11,6 +11,9 @@ export function useAdminBusinessDocuments(
   const [documents, setDocuments] = useState<BusinessFirestoreDocumentRow[]>(
     [],
   );
+  const [collectionCounts, setCollectionCounts] = useState<
+    Record<string, number>
+  >({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,9 +24,13 @@ export function useAdminBusinessDocuments(
     setError(null);
     try {
       const response = await apiClient.get<{
-        data: { documents: BusinessFirestoreDocumentRow[] };
+        data: {
+          documents: BusinessFirestoreDocumentRow[];
+          collectionCounts?: Record<string, number>;
+        };
       }>(`/admin/businesses/${businessId}/documents`);
       setDocuments(response.data.documents);
+      setCollectionCounts(response.data.collectionCounts ?? {});
     } catch (err) {
       setError(
         err instanceof ApiError ?
@@ -66,6 +73,17 @@ export function useAdminBusinessDocuments(
         { path },
       );
       setDocuments((current) => current.filter((row) => row.path !== path));
+      const segments = path.split("/");
+      const collectionId =
+        segments.length >= 2 ? segments[segments.length - 2] : null;
+      if (collectionId) {
+        setCollectionCounts((current) => {
+          const next = { ...current };
+          const prev = next[collectionId] ?? 0;
+          next[collectionId] = Math.max(0, prev - 1);
+          return next;
+        });
+      }
     },
     [businessId],
   );
@@ -76,11 +94,13 @@ export function useAdminBusinessDocuments(
       data: { deletedPaths: string[] };
     }>(`/admin/businesses/${businessId}/firestore-tree`);
     setDocuments([]);
+    setCollectionCounts({});
     return response.data.deletedPaths;
   }, [businessId]);
 
   return {
     documents: enabled && businessId ? documents : [],
+    collectionCounts: enabled && businessId ? collectionCounts : {},
     isLoading: enabled && businessId ? isLoading : false,
     error: enabled && businessId ? error : null,
     refresh: load,

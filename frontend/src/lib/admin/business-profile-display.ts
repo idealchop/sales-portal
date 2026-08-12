@@ -282,10 +282,22 @@ type BusinessSubcollectionGroup = {
   collectionId: string;
   title: string;
   documents: BusinessFirestoreDocumentRow[];
+  /** Actual Firestore count (may exceed documents.length when lazy-loaded). */
+  totalCount: number;
 };
+
+function emptyGroup(collectionId: string, totalCount: number): BusinessSubcollectionGroup {
+  return {
+    collectionId,
+    title: businessSubcollectionTitle(collectionId),
+    documents: [],
+    totalCount,
+  };
+}
 
 export function splitBusinessDocuments(
   documents: BusinessFirestoreDocumentRow[],
+  collectionCounts: Record<string, number> = {},
 ): {
   root: BusinessFirestoreDocumentRow | null;
   subdocuments: BusinessFirestoreDocumentRow[];
@@ -316,6 +328,12 @@ export function splitBusinessDocuments(
     grouped.set(doc.collectionId, bucket);
   }
 
+  for (const [collectionId, count] of Object.entries(collectionCounts)) {
+    if (count > 0 && !grouped.has(collectionId)) {
+      grouped.set(collectionId, []);
+    }
+  }
+
   const allGroups = [...grouped.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([collectionId, docs]) => ({
@@ -324,66 +342,41 @@ export function splitBusinessDocuments(
       documents: [...docs].sort((a, b) =>
         a.documentId.localeCompare(b.documentId),
       ),
+      totalCount: collectionCounts[collectionId] ?? docs.length,
     }));
 
   const subcollectionGroups = allGroups.filter(
     (group) => !BUSINESS_DIALOG_ONLY_SUBCOLLECTIONS.has(group.collectionId),
   );
 
-  const membersGroup =
-    allGroups.find((group) => group.collectionId === "members") ?? null;
-  const subscriptionsGroup =
-    allGroups.find((group) => group.collectionId === "subscriptions") ?? null;
-  const customersGroup =
-    allGroups.find((group) => group.collectionId === "customers") ?? null;
-  const aiToolRunsGroup =
-    allGroups.find((group) => group.collectionId === "ai_tool_runs") ?? null;
-  const chatSessionsGroup =
-    allGroups.find((group) => group.collectionId === "chat_sessions") ?? null;
-  const supportAiKnowledgeGroup =
-    allGroups.find((group) => group.collectionId === "support_ai_knowledge") ??
-    null;
-  const privateGroup =
-    allGroups.find((group) => group.collectionId === "private") ?? null;
-  const inventoryItemsGroup =
-    allGroups.find((group) => group.collectionId === "inventory_items") ?? null;
-  const auditLogsGroup =
-    allGroups.find((group) => group.collectionId === "audit_logs") ?? null;
-  const notificationsGroup =
-    allGroups.find((group) => group.collectionId === "notifications") ?? null;
-  const paymentInfoGroup =
-    allGroups.find((group) => group.collectionId === "payment_info") ?? null;
-  const filesGroup =
-    allGroups.find((group) => group.collectionId === "files") ?? null;
-  const portalOrderRatingsGroup =
-    allGroups.find((group) => group.collectionId === "portal_order_ratings") ??
-    null;
-  const proactiveScheduleWeekSnapshotsGroup =
-    allGroups.find(
-      (group) => group.collectionId === "proactive_schedule_week_snapshots",
-    ) ?? null;
-  const rawSubmissionsGroup =
-    allGroups.find((group) => group.collectionId === "raw_submissions") ?? null;
+  const findGroup = (collectionId: string) => {
+    const found = allGroups.find((group) => group.collectionId === collectionId);
+    if (found) return found;
+    const count = collectionCounts[collectionId] ?? 0;
+    return count > 0 ? emptyGroup(collectionId, count) : null;
+  };
 
   return {
     root,
     subdocuments,
     subcollectionGroups,
-    membersGroup,
-    subscriptionsGroup,
-    customersGroup,
-    aiToolRunsGroup,
-    chatSessionsGroup,
-    supportAiKnowledgeGroup,
-    privateGroup,
-    inventoryItemsGroup,
-    auditLogsGroup,
-    notificationsGroup,
-    paymentInfoGroup,
-    filesGroup,
-    portalOrderRatingsGroup,
-    proactiveScheduleWeekSnapshotsGroup,
-    rawSubmissionsGroup,
+    membersGroup: findGroup("members"),
+    subscriptionsGroup: findGroup("subscriptions"),
+    customersGroup: findGroup("customers"),
+    aiToolRunsGroup: findGroup("ai_tool_runs"),
+    chatSessionsGroup: findGroup("chat_sessions"),
+    supportAiKnowledgeGroup: findGroup("support_ai_knowledge"),
+    privateGroup: findGroup("private"),
+    inventoryItemsGroup: findGroup("inventory_items"),
+    auditLogsGroup: findGroup("audit_logs"),
+    notificationsGroup: findGroup("notifications"),
+    paymentInfoGroup: findGroup("payment_info"),
+    filesGroup: findGroup("files"),
+    portalOrderRatingsGroup: findGroup("portal_order_ratings"),
+    proactiveScheduleWeekSnapshotsGroup: findGroup(
+      "proactive_schedule_week_snapshots",
+    ),
+    rawSubmissionsGroup: findGroup("raw_submissions"),
   };
 }
 

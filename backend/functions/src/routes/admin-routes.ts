@@ -8,6 +8,7 @@ import {
   deleteAdminUsersBulk,
   deleteAdminCatalogCollectionDocument,
   getAdminBusinessDocuments,
+  getAdminBusinessSubcollectionDocuments,
   getAdminBusinessTransactions,
   getAdminCustomerTransactions,
   getAdminCustomerInventoryAssignments,
@@ -47,6 +48,10 @@ router.delete(
   deleteAdminCatalogCollectionDocument,
 );
 router.get("/businesses/:businessId/documents", getAdminBusinessDocuments);
+router.get(
+  "/businesses/:businessId/collections/:collectionId",
+  getAdminBusinessSubcollectionDocuments,
+);
 router.get("/businesses/:businessId/transactions", getAdminBusinessTransactions);
 router.get(
   "/businesses/:businessId/customers/:customerId/transactions",

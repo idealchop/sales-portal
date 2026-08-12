@@ -264,8 +264,9 @@ function buildEngagementDailySeries(
 export function computeBusinessInsights(input: {
   documents: BusinessFirestoreDocumentRow[];
   transactions: UserFirestoreDocumentRow[];
+  collectionCounts?: Record<string, number>;
 }): BusinessInsightsSnapshot {
-  const { documents, transactions } = input;
+  const { documents, transactions, collectionCounts = {} } = input;
   const now = new Date();
   const todayStart = startOfLocalDay(now).getTime();
   const todayEnd = todayStart + 24 * 60 * 60 * 1000 - 1;
@@ -280,14 +281,30 @@ export function computeBusinessInsights(input: {
   );
 
   const activeCustomers = customers.filter((doc) => isActiveCustomer(doc.data));
+  const customerCount =
+    customers.length > 0 ?
+      activeCustomers.length
+    : (collectionCounts.customers ?? 0);
+  const memberCount =
+    members.length > 0 ? members.length : (collectionCounts.members ?? 0);
+  const aiRunCount =
+    aiRuns.length > 0 ? aiRuns.length : (collectionCounts.ai_tool_runs ?? 0);
+  const chatCount =
+    chatSessions.length > 0 ?
+      chatSessions.length
+    : (collectionCounts.chat_sessions ?? 0);
+
   const transactionsLast30Days = transactions.filter((doc) => {
     const ms = timestampMs(doc.data.createdAt);
     return ms >= thirtyDaysAgo;
   }).length;
-  const aiRunsLast30Days = aiRuns.filter((doc) => {
-    const ms = timestampMs(doc.data.createdAt);
-    return ms >= thirtyDaysAgo;
-  }).length;
+  const aiRunsLast30Days =
+    aiRuns.length > 0 ?
+      aiRuns.filter((doc) => {
+        const ms = timestampMs(doc.data.createdAt);
+        return ms >= thirtyDaysAgo;
+      }).length
+    : aiRunCount;
 
   const activeSubscription = resolveActiveSubscription(documents);
   const planCode = readString(activeSubscription?.data.planCode) || "starter";
@@ -296,20 +313,26 @@ export function computeBusinessInsights(input: {
     planCode.charAt(0).toUpperCase() + planCode.slice(1);
   const quotas = parsePlanQuotas(planCode);
 
-  const aiUsedThisMonth = countInWindow(
-    documents,
-    "ai_tool_runs",
-    "createdAt",
-    monthStart,
-    now.getTime(),
-  );
-  const chatUsedThisMonth = countInWindow(
-    documents,
-    "chat_sessions",
-    "createdAt",
-    monthStart,
-    now.getTime(),
-  );
+  const aiUsedThisMonth =
+    aiRuns.length > 0 ?
+      countInWindow(
+        documents,
+        "ai_tool_runs",
+        "createdAt",
+        monthStart,
+        now.getTime(),
+      )
+    : aiRunCount;
+  const chatUsedThisMonth =
+    chatSessions.length > 0 ?
+      countInWindow(
+        documents,
+        "chat_sessions",
+        "createdAt",
+        monthStart,
+        now.getTime(),
+      )
+    : chatCount;
   const transactionsToday = transactions.filter((doc) => {
     const ms = timestampMs(doc.data.createdAt);
     return ms >= todayStart && ms <= todayEnd;
@@ -318,13 +341,13 @@ export function computeBusinessInsights(input: {
   const stats: BusinessInsightStat[] = [
     {
       id: "customers",
-      label: "Active sukis",
-      value: String(activeCustomers.length),
+      label: customers.length > 0 ? "Active sukis" : "Customers",
+      value: String(customerCount),
     },
     {
       id: "team",
       label: "Team members",
-      value: String(members.length),
+      value: String(memberCount),
     },
     {
       id: "transactions",
@@ -333,13 +356,13 @@ export function computeBusinessInsights(input: {
     },
     {
       id: "ai-runs",
-      label: "AI runs (30d)",
+      label: aiRuns.length > 0 ? "AI runs (30d)" : "AI runs",
       value: String(aiRunsLast30Days),
     },
     {
       id: "chat",
       label: "Chat sessions",
-      value: String(chatSessions.length),
+      value: String(chatCount),
     },
     {
       id: "plan",
@@ -353,8 +376,8 @@ export function computeBusinessInsights(input: {
   if (quotas.customersMax !== null) {
     consumption.push({
       id: "customers",
-      label: "Active sukis",
-      used: activeCustomers.length,
+      label: customers.length > 0 ? "Active sukis" : "Customers",
+      used: customerCount,
       cap: quotas.customersMax,
       suffix: "on plan",
     });
@@ -394,7 +417,7 @@ export function computeBusinessInsights(input: {
     consumption.push({
       id: "team",
       label: "Team members",
-      used: members.length,
+      used: memberCount,
       cap: quotas.staffMax,
       suffix: "seats",
     });

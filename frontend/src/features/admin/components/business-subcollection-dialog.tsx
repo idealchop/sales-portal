@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { BusinessSubcollectionListSection } from "@/features/admin/components/business-subcollection-list-section";
+import { useAdminBusinessSubcollection } from "@/hooks/use-admin-business-subcollection";
+import type { BusinessFirestoreDocumentRow } from "@/lib/admin/business-profile-display";
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +14,8 @@ export function BusinessSubcollectionDialog({
   title,
   description,
   collectionId,
-  documents,
+  documents: initialDocuments,
+  totalCount: expectedTotalCount,
   businessId,
   maxWidthClass = "max-w-4xl",
   onClose,
@@ -23,6 +26,7 @@ export function BusinessSubcollectionDialog({
   description?: string;
   collectionId: string;
   documents: UserFirestoreDocumentRow[];
+  totalCount?: number;
   businessId?: string;
   maxWidthClass?: string;
   onClose: () => void;
@@ -32,6 +36,15 @@ export function BusinessSubcollectionDialog({
   ) => Promise<UserFirestoreDocumentRow>;
   onRemoveDocument: (path: string) => Promise<void>;
 }) {
+  const { documents, isLoading, error, setDocuments } =
+    useAdminBusinessSubcollection(
+      businessId,
+      collectionId,
+      Boolean(businessId),
+      initialDocuments as BusinessFirestoreDocumentRow[],
+      expectedTotalCount,
+    );
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -78,7 +91,15 @@ export function BusinessSubcollectionDialog({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-[#fafafa] px-5 py-5">
-          {documents.length === 0 ?
+          {isLoading ?
+            <div className="flex items-center justify-center py-16">
+              <div className="h-9 w-9 animate-spin rounded-full border-4 border-teal-200 border-t-teal-600" />
+            </div>
+          : error ?
+            <div className="rounded-xl border border-red-100 bg-red-50 px-6 py-8 text-center text-sm text-red-700">
+              {error}
+            </div>
+          : documents.length === 0 ?
             <div className="rounded-xl border border-dashed border-zinc-200 bg-white px-6 py-10 text-center">
               <p className="text-sm font-medium text-foreground">No records yet</p>
               <p className="mt-1 text-sm text-[var(--muted-foreground)]">
@@ -88,10 +109,25 @@ export function BusinessSubcollectionDialog({
           : <BusinessSubcollectionListSection
               collectionId={collectionId}
               title={title}
-              documents={documents}
+              documents={documents as UserFirestoreDocumentRow[]}
               businessId={businessId}
-              onSaveDocument={onSaveDocument}
-              onRemoveDocument={onRemoveDocument}
+              onSaveDocument={async (path, data) => {
+                const saved = await onSaveDocument(path, data);
+                setDocuments((current) =>
+                  current.map((row) =>
+                    row.path === path ?
+                      (saved as BusinessFirestoreDocumentRow)
+                    : row,
+                  ),
+                );
+                return saved;
+              }}
+              onRemoveDocument={async (path) => {
+                await onRemoveDocument(path);
+                setDocuments((current) =>
+                  current.filter((row) => row.path !== path),
+                );
+              }}
               hideHeader
             />
           }

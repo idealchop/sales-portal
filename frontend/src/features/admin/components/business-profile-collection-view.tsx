@@ -312,6 +312,7 @@ function SidebarCard({
 
 export function BusinessProfileCollectionView({
   documents,
+  collectionCounts = {},
   isLoading,
   error,
   row,
@@ -321,6 +322,7 @@ export function BusinessProfileCollectionView({
   onRemoveBusinessTree,
 }: {
   documents: BusinessFirestoreDocumentRow[];
+  collectionCounts?: Record<string, number>;
   isLoading: boolean;
   error: string | null;
   row: DataManagementLinkRow;
@@ -369,15 +371,18 @@ export function BusinessProfileCollectionView({
     portalOrderRatingsGroup,
     proactiveScheduleWeekSnapshotsGroup,
     rawSubmissionsGroup,
-  } = splitBusinessDocuments(documents);
+  } = splitBusinessDocuments(documents, collectionCounts);
   const { primaryFields, otherFields } =
     root ? splitBusinessRootFields(root.data) : { primaryFields: [], otherFields: [] };
   const displayName =
     row.businessName || businessNameFromData(root?.data) || businessId;
   const businessLogo = businessLogoFromData(root?.data);
-  const subcollectionCount = new Set(
-    documents.filter((doc) => !doc.isRoot).map((doc) => doc.collectionId),
-  ).size;
+  const subcollectionCount = Math.max(
+    new Set(
+      documents.filter((doc) => !doc.isRoot).map((doc) => doc.collectionId),
+    ).size,
+    Object.values(collectionCounts).filter((count) => count > 0).length,
+  );
 
   const { transactions, isLoading: transactionsLoading } =
     useAdminBusinessTransactions(
@@ -386,10 +391,17 @@ export function BusinessProfileCollectionView({
       Boolean(businessId),
     );
 
-  const supportAiKnowledgeCount = supportAiKnowledgeDialogCount(
-    (privateGroup?.documents ?? []) as UserFirestoreDocumentRow[],
-    (supportAiKnowledgeGroup?.documents ?? []) as UserFirestoreDocumentRow[],
-  );
+  const supportAiKnowledgeCount = (() => {
+    const fromDocs = supportAiKnowledgeDialogCount(
+      (privateGroup?.documents ?? []) as UserFirestoreDocumentRow[],
+      (supportAiKnowledgeGroup?.documents ?? []) as UserFirestoreDocumentRow[],
+    );
+    if (fromDocs > 0) return fromDocs;
+    return (
+      (supportAiKnowledgeGroup?.totalCount ?? 0) +
+      (privateGroup?.totalCount ?? 0)
+    );
+  })();
   const businessMapLocation =
     root ?
       buildBusinessMapLocation({
@@ -427,6 +439,7 @@ export function BusinessProfileCollectionView({
         <div className="space-y-10">
           <BusinessInsightsSection
             documents={documents}
+            collectionCounts={collectionCounts}
             transactions={transactions}
             transactionsLoading={transactionsLoading}
           />
@@ -465,16 +478,16 @@ export function BusinessProfileCollectionView({
                       size="sm"
                       className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
                       aria-label={
-                        auditLogsGroup && auditLogsGroup.documents.length > 0 ?
-                          `Audit logs (${auditLogsGroup.documents.length})`
+                        auditLogsGroup && auditLogsGroup.totalCount > 0 ?
+                          `Audit logs (${auditLogsGroup.totalCount})`
                         : "Audit logs"
                       }
                       onClick={() => setAuditLogsOpen(true)}
                     >
                       <ScrollText className="h-4 w-4" />
-                      {auditLogsGroup && auditLogsGroup.documents.length > 0 && (
+                      {auditLogsGroup && auditLogsGroup.totalCount > 0 && (
                         <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                          {auditLogsGroup.documents.length}
+                          {auditLogsGroup.totalCount}
                         </span>
                       )}
                     </Button>
@@ -485,17 +498,17 @@ export function BusinessProfileCollectionView({
                       className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
                       aria-label={
                         notificationsGroup &&
-                        notificationsGroup.documents.length > 0 ?
-                          `Notifications (${notificationsGroup.documents.length})`
+                        notificationsGroup.totalCount > 0 ?
+                          `Notifications (${notificationsGroup.totalCount})`
                         : "Notifications"
                       }
                       onClick={() => setNotificationsOpen(true)}
                     >
                       <Bell className="h-4 w-4" />
                       {notificationsGroup &&
-                        notificationsGroup.documents.length > 0 && (
+                        notificationsGroup.totalCount > 0 && (
                           <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                            {notificationsGroup.documents.length}
+                            {notificationsGroup.totalCount}
                           </span>
                         )}
                     </Button>
@@ -505,16 +518,16 @@ export function BusinessProfileCollectionView({
                       size="sm"
                       className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
                       aria-label={
-                        customersGroup && customersGroup.documents.length > 0 ?
-                          `Customers (${customersGroup.documents.length})`
+                        customersGroup && customersGroup.totalCount > 0 ?
+                          `Customers (${customersGroup.totalCount})`
                         : "Customers"
                       }
                       onClick={() => setCustomersOpen(true)}
                     >
                       <ContactRound className="h-4 w-4" />
-                      {customersGroup && customersGroup.documents.length > 0 && (
+                      {customersGroup && customersGroup.totalCount > 0 && (
                         <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                          {customersGroup.documents.length}
+                          {customersGroup.totalCount}
                         </span>
                       )}
                     </Button>
@@ -524,16 +537,16 @@ export function BusinessProfileCollectionView({
                       size="sm"
                       className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
                       aria-label={
-                        aiToolRunsGroup && aiToolRunsGroup.documents.length > 0 ?
-                          `AI run tools (${aiToolRunsGroup.documents.length})`
+                        aiToolRunsGroup && aiToolRunsGroup.totalCount > 0 ?
+                          `AI run tools (${aiToolRunsGroup.totalCount})`
                         : "AI run tools"
                       }
                       onClick={() => setAiToolRunsOpen(true)}
                     >
                       <Bot className="h-4 w-4" />
-                      {aiToolRunsGroup && aiToolRunsGroup.documents.length > 0 && (
+                      {aiToolRunsGroup && aiToolRunsGroup.totalCount > 0 && (
                         <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                          {aiToolRunsGroup.documents.length}
+                          {aiToolRunsGroup.totalCount}
                         </span>
                       )}
                     </Button>
@@ -544,17 +557,17 @@ export function BusinessProfileCollectionView({
                       className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
                       aria-label={
                         chatSessionsGroup &&
-                        chatSessionsGroup.documents.length > 0 ?
-                          `Chat (${chatSessionsGroup.documents.length})`
+                        chatSessionsGroup.totalCount > 0 ?
+                          `Chat (${chatSessionsGroup.totalCount})`
                         : "Chat"
                       }
                       onClick={() => setChatOpen(true)}
                     >
                       <MessageSquare className="h-4 w-4" />
                       {chatSessionsGroup &&
-                        chatSessionsGroup.documents.length > 0 && (
+                        chatSessionsGroup.totalCount > 0 && (
                           <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                            {chatSessionsGroup.documents.length}
+                            {chatSessionsGroup.totalCount}
                           </span>
                         )}
                     </Button>
@@ -584,17 +597,17 @@ export function BusinessProfileCollectionView({
                       className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
                       aria-label={
                         inventoryItemsGroup &&
-                        inventoryItemsGroup.documents.length > 0 ?
-                          `Inventory (${inventoryItemsGroup.documents.length})`
+                        inventoryItemsGroup.totalCount > 0 ?
+                          `Inventory (${inventoryItemsGroup.totalCount})`
                         : "Inventory"
                       }
                       onClick={() => setInventoryOpen(true)}
                     >
                       <Package className="h-4 w-4" />
                       {inventoryItemsGroup &&
-                        inventoryItemsGroup.documents.length > 0 && (
+                        inventoryItemsGroup.totalCount > 0 && (
                           <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                            {inventoryItemsGroup.documents.length}
+                            {inventoryItemsGroup.totalCount}
                           </span>
                         )}
                     </Button>
@@ -605,17 +618,17 @@ export function BusinessProfileCollectionView({
                       className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
                       aria-label={
                         rawSubmissionsGroup &&
-                        rawSubmissionsGroup.documents.length > 0 ?
-                          `Raw submissions (${rawSubmissionsGroup.documents.length})`
+                        rawSubmissionsGroup.totalCount > 0 ?
+                          `Raw submissions (${rawSubmissionsGroup.totalCount})`
                         : "Raw submissions"
                       }
                       onClick={() => setRawSubmissionsOpen(true)}
                     >
                       <QrCode className="h-4 w-4" />
                       {rawSubmissionsGroup &&
-                        rawSubmissionsGroup.documents.length > 0 && (
+                        rawSubmissionsGroup.totalCount > 0 && (
                           <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                            {rawSubmissionsGroup.documents.length}
+                            {rawSubmissionsGroup.totalCount}
                           </span>
                         )}
                     </Button>
@@ -910,8 +923,10 @@ export function BusinessProfileCollectionView({
           title="Audit logs"
           description="Activity recorded for this workspace"
           collectionId="audit_logs"
+          businessId={businessId}
           maxWidthClass="max-w-5xl"
           documents={(auditLogsGroup?.documents ?? []) as UserFirestoreDocumentRow[]}
+          totalCount={auditLogsGroup?.totalCount}
           onClose={() => setAuditLogsOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -923,10 +938,12 @@ export function BusinessProfileCollectionView({
           title="Notifications"
           description="Notification records for this workspace"
           collectionId="notifications"
+          businessId={businessId}
           maxWidthClass="max-w-6xl"
           documents={
             (notificationsGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
+          totalCount={notificationsGroup?.totalCount}
           onClose={() => setNotificationsOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -942,6 +959,7 @@ export function BusinessProfileCollectionView({
           documents={
             (customersGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
+          totalCount={customersGroup?.totalCount}
           onClose={() => setCustomersOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -953,10 +971,12 @@ export function BusinessProfileCollectionView({
           title="AI run tools"
           description="AI tool execution history for this workspace"
           collectionId="ai_tool_runs"
+          businessId={businessId}
           maxWidthClass="max-w-4xl"
           documents={
             (aiToolRunsGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
+          totalCount={aiToolRunsGroup?.totalCount}
           onClose={() => setAiToolRunsOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -968,10 +988,12 @@ export function BusinessProfileCollectionView({
           title="Chat"
           description="Chat sessions for this workspace"
           collectionId="chat_sessions"
+          businessId={businessId}
           maxWidthClass="max-w-4xl"
           documents={
             (chatSessionsGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
+          totalCount={chatSessionsGroup?.totalCount}
           onClose={() => setChatOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -997,9 +1019,11 @@ export function BusinessProfileCollectionView({
           title="Inventory"
           description="Inventory items for this workspace"
           collectionId="inventory_items"
+          businessId={businessId}
           documents={
             (inventoryItemsGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
+          totalCount={inventoryItemsGroup?.totalCount}
           onClose={() => setInventoryOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -1021,10 +1045,12 @@ export function BusinessProfileCollectionView({
           title="Subscriptions"
           description="Subscription records for this workspace"
           collectionId="subscriptions"
+          businessId={businessId}
           maxWidthClass="max-w-xl"
           documents={
             (subscriptionsGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
+          totalCount={subscriptionsGroup?.totalCount}
           onClose={() => setSubscriptionOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -1036,10 +1062,12 @@ export function BusinessProfileCollectionView({
           title="Payment info"
           description="Bank accounts and payment methods for this workspace"
           collectionId="payment_info"
+          businessId={businessId}
           maxWidthClass="max-w-xl"
           documents={
             (paymentInfoGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
+          totalCount={paymentInfoGroup?.totalCount}
           onClose={() => setPaymentInfoOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -1051,8 +1079,10 @@ export function BusinessProfileCollectionView({
           title="Files"
           description="Uploaded files and images for this workspace"
           collectionId="files"
+          businessId={businessId}
           maxWidthClass="max-w-xl"
           documents={(filesGroup?.documents ?? []) as UserFirestoreDocumentRow[]}
+          totalCount={filesGroup?.totalCount}
           onClose={() => setFilesOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -1064,10 +1094,12 @@ export function BusinessProfileCollectionView({
           title="Portal order ratings"
           description="Customer ratings for portal orders in this workspace"
           collectionId="portal_order_ratings"
+          businessId={businessId}
           maxWidthClass="max-w-xl"
           documents={
             (portalOrderRatingsGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
+          totalCount={portalOrderRatingsGroup?.totalCount}
           onClose={() => setPortalOrderRatingsOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
@@ -1091,10 +1123,12 @@ export function BusinessProfileCollectionView({
           title="Raw submissions"
           description="Portal QR orders and submissions awaiting or completed review"
           collectionId="raw_submissions"
+          businessId={businessId}
           maxWidthClass="max-w-5xl"
           documents={
             (rawSubmissionsGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
+          totalCount={rawSubmissionsGroup?.totalCount}
           onClose={() => setRawSubmissionsOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
