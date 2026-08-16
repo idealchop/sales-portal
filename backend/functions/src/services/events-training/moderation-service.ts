@@ -17,6 +17,9 @@ import {
   videoEngagementCollection,
   videoEngagementPostsCollection,
   videosCollection,
+  webinarEventEngagementCollection,
+  webinarEventEngagementPostsCollection,
+  webinarsCollection,
 } from "./events-training-db";
 
 export type CommentRecord = {
@@ -29,6 +32,9 @@ export type CommentRecord = {
   status: CommentStatus;
   createdAt: string | null;
   updatedAt: string | null;
+  answer: string | null;
+  answeredBy: string | null;
+  answeredAt: string | null;
 };
 
 export type QuestionRecord = {
@@ -94,6 +100,10 @@ function mapEngagementComment(
   data: Record<string, unknown>,
 ): CommentRecord {
   const anonymous = data.anonymous === true;
+  const answer =
+    typeof data.answer === "string" && data.answer.trim() ?
+      data.answer.trim() :
+      null;
   return {
     id,
     text: String(data.body ?? data.text ?? ""),
@@ -102,7 +112,10 @@ function mapEngagementComment(
       typeof data.displayName === "string" ?
         data.displayName :
         null,
-    parentId: null,
+    parentId:
+      typeof data.parentId === "string" && data.parentId.trim() ?
+        data.parentId.trim() :
+        null,
     authorType: anonymous ?
       "anonymous" :
       parseEnum(data.authorType, COMMENT_AUTHOR_TYPES, "member"),
@@ -110,6 +123,9 @@ function mapEngagementComment(
     status: parseEnum(data.status, COMMENT_STATUSES, "visible"),
     createdAt: toIsoString(data.createdAt),
     updatedAt: toIsoString(data.updatedAt),
+    answer,
+    answeredBy: typeof data.answeredBy === "string" ? data.answeredBy : null,
+    answeredAt: toIsoString(data.answeredAt),
   };
 }
 
@@ -159,6 +175,9 @@ function mapLegacyBlogComment(
     status: parseEnum(data.status, COMMENT_STATUSES, "visible"),
     createdAt: toIsoString(data.createdAt),
     updatedAt: toIsoString(data.updatedAt),
+    answer: null,
+    answeredBy: null,
+    answeredAt: null,
   };
 }
 
@@ -203,6 +222,22 @@ async function videoTitleMap(videoIds: string[]): Promise<Map<string, string>> {
   return titles;
 }
 
+async function webinarTitleMap(eventIds: string[]): Promise<Map<string, string>> {
+  const titles = new Map<string, string>();
+  await Promise.all(
+    [...new Set(eventIds)].map(async (id) => {
+      const snap = await webinarsCollection().doc(id).get();
+      if (!snap.exists) {
+        titles.set(id, "Untitled webinar");
+        return;
+      }
+      const name = String(snap.data()?.name ?? "").trim();
+      titles.set(id, name || "Untitled webinar");
+    }),
+  );
+  return titles;
+}
+
 /**
  * SmartRefill member engagement lives under
  * apps/smartrefill/training_video_engagement/{videoId}/posts.
@@ -217,6 +252,34 @@ export async function listVideoComments(
     .get()
     .catch(async () =>
       videoEngagementPostsCollection(videoId).limit(300).get(),
+    );
+
+  let items = snap.docs
+    .map((d) => {
+      const data = d.data() as Record<string, unknown>;
+      if (data.kind && data.kind !== "comment") return null;
+      return mapEngagementComment(d.id, data);
+    })
+    .filter((row): row is CommentRecord => Boolean(row));
+
+  if (!options?.includeHidden) {
+    items = items.filter((c) => c.status === "visible");
+  }
+  return items.sort((a, b) =>
+    (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
+  );
+}
+
+export async function listWebinarEventComments(
+  eventId: string,
+  options?: { includeHidden?: boolean },
+): Promise<CommentRecord[]> {
+  const snap = await webinarEventEngagementPostsCollection(eventId)
+    .where("kind", "==", "comment")
+    .limit(300)
+    .get()
+    .catch(async () =>
+      webinarEventEngagementPostsCollection(eventId).limit(300).get(),
     );
 
   let items = snap.docs
@@ -294,6 +357,22 @@ export async function moderateComment(
     return mapLegacyBlogComment(updated.id, updated.data() ?? {});
   }
 
+  if (kind === "webinar_event") {
+    const ref = webinarEventEngagementPostsCollection(parentId).doc(commentId);
+    const snap = await ref.get();
+    if (!snap.exists) throw new Error("COMMENT_NOT_FOUND");
+    const data = snap.data() ?? {};
+    if (data.kind && data.kind !== "comment") {
+      throw new Error("COMMENT_NOT_FOUND");
+    }
+    await ref.update({
+      status,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    const updated = await ref.get();
+    return mapEngagementComment(updated.id, updated.data() ?? {});
+  }
+
   const parentSnap = await videosCollection().doc(parentId).get();
   if (!parentSnap.exists) throw new Error("NOT_FOUND");
   const ref = videoEngagementPostsCollection(parentId).doc(commentId);
@@ -325,6 +404,18 @@ export async function deleteComment(
     return;
   }
 
+  if (kind === "webinar_event") {
+    const ref = webinarEventEngagementPostsCollection(parentId).doc(commentId);
+    const snap = await ref.get();
+    if (!snap.exists) return;
+    const data = snap.data() ?? {};
+    if (data.kind && data.kind !== "comment") {
+      throw new Error("COMMENT_NOT_FOUND");
+    }
+    await ref.delete();
+    return;
+  }
+
   // Engagement posts can outlive the training_videos parent doc — delete by
   // post id without requiring the video catalog row.
   const ref = videoEngagementPostsCollection(parentId).doc(commentId);
@@ -335,6 +426,34 @@ export async function deleteComment(
     throw new Error("COMMENT_NOT_FOUND");
   }
   await ref.delete();
+}
+
+/** Staff reply on a webinar-event guest comment (shown on marketing Resources). */
+export async function answerWebinarEventComment(
+  eventId: string,
+  commentId: string,
+  input: { answer: string; answeredBy: string },
+): Promise<CommentRecord> {
+  const trimmed = input.answer.trim();
+  if (!trimmed || trimmed.length > 5000) throw new Error("INVALID_ANSWER_TEXT");
+
+  const ref = webinarEventEngagementPostsCollection(eventId).doc(commentId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new Error("COMMENT_NOT_FOUND");
+  const data = snap.data() ?? {};
+  if (data.kind && data.kind !== "comment") {
+    throw new Error("COMMENT_NOT_FOUND");
+  }
+
+  await ref.update({
+    answer: trimmed,
+    answeredBy: input.answeredBy,
+    answeredAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+    status: data.status === "hidden" ? "visible" : data.status || "visible",
+  });
+  const updated = await ref.get();
+  return mapEngagementComment(updated.id, updated.data() ?? {});
 }
 
 export async function answerQuestion(
@@ -406,7 +525,7 @@ export async function deleteQuestion(
 }
 
 /**
- * Cross-video moderation inbox from SmartRefill training_video_engagement posts.
+ * Cross-content moderation inbox from SmartRefill engagement posts.
  * Also merges legacy blog comments when present.
  */
 export async function listModerationInbox(): Promise<ModerationInbox> {
@@ -439,13 +558,7 @@ export async function listModerationInbox(): Promise<ModerationInbox> {
       contentKind: "video" as const,
       contentId: row.videoId,
       contentTitle: titles.get(row.videoId) ?? "Untitled video",
-    }))
-    .sort((a, b) => {
-      const aFlag = a.status === "flagged" ? 0 : 1;
-      const bFlag = b.status === "flagged" ? 0 : 1;
-      if (aFlag !== bFlag) return aFlag - bFlag;
-      return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
-    });
+    }));
 
   const questions: ModerationQuestionItem[] = flat
     .filter((row) => row.data.kind === "question")
@@ -463,6 +576,35 @@ export async function listModerationInbox(): Promise<ModerationInbox> {
       if (byStatus !== 0) return byStatus;
       return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
     });
+
+  // Live webinar event guest comments.
+  const webinarEngagementSnap = await webinarEventEngagementCollection()
+    .limit(500)
+    .get();
+  const webinarIds = webinarEngagementSnap.docs.map((doc) => doc.id);
+  const webinarTitles = await webinarTitleMap(webinarIds);
+  const webinarPostRows = await mapPool(webinarIds, 8, async (eventId) => {
+    const snap = await webinarEventEngagementPostsCollection(eventId)
+      .limit(400)
+      .get();
+    return snap.docs.map((doc) => ({
+      eventId,
+      id: doc.id,
+      data: doc.data() as Record<string, unknown>,
+    }));
+  });
+  comments.push(
+    ...webinarPostRows
+      .flat()
+      .filter((row) => !row.data.kind || row.data.kind === "comment")
+      .map((row) => ({
+        ...mapEngagementComment(row.id, row.data),
+        kind: "comment" as const,
+        contentKind: "webinar_event" as const,
+        contentId: row.eventId,
+        contentTitle: webinarTitles.get(row.eventId) ?? "Untitled webinar",
+      })),
+  );
 
   // Legacy WRS blog comment subcollections (if any).
   const blogsSnap = await blogsCollection().limit(200).get();

@@ -351,6 +351,9 @@ export type CommentRecord = {
   status: CommentStatus;
   createdAt: string | null;
   updatedAt: string | null;
+  answer?: string | null;
+  answeredBy?: string | null;
+  answeredAt?: string | null;
 };
 
 export type QuestionRecord = {
@@ -368,7 +371,7 @@ export type QuestionRecord = {
 
 export type ModerationCommentItem = CommentRecord & {
   kind: "comment";
-  contentKind: "video" | "blog";
+  contentKind: "video" | "blog" | "webinar_event";
   contentId: string;
   contentTitle: string;
 };

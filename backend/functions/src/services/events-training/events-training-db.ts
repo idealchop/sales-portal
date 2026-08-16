@@ -70,3 +70,14 @@ export function videoEngagementCollection() {
 export function videoEngagementPostsCollection(videoId: string) {
   return videoEngagementCollection().doc(videoId).collection("posts");
 }
+
+/** SmartRefill webinar-event engagement root (`likes` / `posts`). */
+export function webinarEventEngagementCollection() {
+  return eventsTrainingRoot().collection(
+    EVENTS_TRAINING_COLLECTIONS.webinarEventEngagement,
+  );
+}
+
+export function webinarEventEngagementPostsCollection(eventId: string) {
+  return webinarEventEngagementCollection().doc(eventId).collection("posts");
+}

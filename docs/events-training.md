@@ -86,12 +86,13 @@ Jobs land in `events_training_email_queue`. Scheduler `eventsTrainingPromotionDe
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/moderation/inbox` | Cross-content queue: all video/blog comments + video Q&A (with parent titles) |
+| `GET` | `/moderation/inbox` | Cross-content queue: video/blog/webinar-event comments + video Q&A (with parent titles) |
 | `GET/PATCH/DELETE` | `/videos/:id/comments` · `/comments/:commentId` | List / set `visible` \| `hidden` \| `flagged` / permanently delete |
 | `GET/PATCH/DELETE` | `/blogs/:id/comments` · `/comments/:commentId` | Same for blogs |
+| `GET/PATCH/DELETE` | `/webinars/:id/comments` · `/comments/:commentId` | Live webinar event comments (`webinar_event_engagement`); PATCH with `answer` posts a staff reply (shown on marketing) |
 | `GET/PATCH/DELETE` | `/videos/:id/questions` · `/questions/:questionId` | List / answer / status / permanently delete |
 
-**CMS UX:** Default **To do** lists unanswered member questions + flagged comments from every video (SmartRefill `training_video_engagement/.../posts`). **All comments** / **All questions** browse the full queues — no per-video picker. Delete removes engagement posts (or blog comment docs) and uses the shared confirm dialog.
+**CMS UX:** Default **To do** lists unanswered member questions + flagged comments from videos and live webinars (SmartRefill `training_video_engagement` / `webinar_event_engagement` posts). **All comments** / **All questions** browse the full queues — no per-video picker. Webinar comments show a **Post reply** control (like Stories Q&A answers). Delete removes engagement posts (or blog comment docs) and uses the shared confirm dialog.
 
 ### Certifications & analytics
 
@@ -131,6 +132,7 @@ Default origin is `https://app.smartrefill.io`. Guests can open **Public + publi
 | Collection | Used by |
 |------------|---------|
 | `webinar_events` | Webinar CRUD |
+| `webinar_event_engagement` | Live webinar guest likes/comments (+ staff `answer`); Sales Portal moderation |
 | `training_videos` | Video CRUD (+ `comments` / `questions` subcollections) |
 | `wrs_blogs` | Blog CMS (+ `comments` subcollection) |
 | `webinar_registrations` | Registration ops |

@@ -11,6 +11,8 @@ export const EVENTS_TRAINING_COLLECTIONS = {
   trainingCertifications: "training_certifications",
   /** Member likes / comments / questions (SmartRefill). */
   trainingVideoEngagement: "training_video_engagement",
+  /** Guest + member likes / comments on live webinar events (SmartRefill). */
+  webinarEventEngagement: "webinar_event_engagement",
 } as const;
 
 export const VIDEO_VISIBILITY = [
@@ -138,4 +140,4 @@ export type ScheduleChannel = (typeof SCHEDULE_CHANNELS)[number];
 export type ScheduleTargetType = (typeof SCHEDULE_TARGET_TYPES)[number];
 export type ScheduleAudience = (typeof SCHEDULE_AUDIENCES)[number];
 export type CertTargetType = (typeof CERT_TARGET_TYPES)[number];
-export type ContentParentKind = "video" | "blog";
+export type ContentParentKind = "video" | "blog" | "webinar_event";

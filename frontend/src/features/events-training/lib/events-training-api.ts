@@ -354,6 +354,39 @@ export async function deleteBlogComment(blogId: string, commentId: string) {
   );
 }
 
+export async function moderateWebinarEventComment(
+  webinarId: string,
+  commentId: string,
+  status: CommentStatus,
+) {
+  const res = await apiClient.patch<{ data: CommentRecord }>(
+    `/events-training/webinars/${encodeURIComponent(webinarId)}/comments/${encodeURIComponent(commentId)}`,
+    { status },
+  );
+  return res.data;
+}
+
+export async function replyWebinarEventComment(
+  webinarId: string,
+  commentId: string,
+  answer: string,
+) {
+  const res = await apiClient.patch<{ data: CommentRecord }>(
+    `/events-training/webinars/${encodeURIComponent(webinarId)}/comments/${encodeURIComponent(commentId)}`,
+    { answer },
+  );
+  return res.data;
+}
+
+export async function deleteWebinarEventComment(
+  webinarId: string,
+  commentId: string,
+) {
+  await apiClient.delete(
+    `/events-training/webinars/${encodeURIComponent(webinarId)}/comments/${encodeURIComponent(commentId)}`,
+  );
+}
+
 export async function fetchVideoQuestions(videoId: string) {
   const res = await apiClient.get<{ data: QuestionRecord[] }>(
     `/events-training/videos/${videoId}/questions`,

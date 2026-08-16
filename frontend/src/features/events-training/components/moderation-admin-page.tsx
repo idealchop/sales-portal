@@ -22,9 +22,12 @@ import {
   deleteBlogComment,
   deleteVideoComment,
   deleteVideoQuestion,
+  deleteWebinarEventComment,
   fetchModerationInbox,
   moderateBlogComment,
   moderateVideoComment,
+  moderateWebinarEventComment,
+  replyWebinarEventComment,
   updateVideoQuestion,
 } from "../lib/events-training-api";
 import type {
@@ -79,8 +82,10 @@ function formatWhen(iso: string | null): string {
   });
 }
 
-function contentBadge(kind: "video" | "blog") {
-  return kind === "blog" ? "Blog" : "Video";
+function contentBadge(kind: "video" | "blog" | "webinar_event") {
+  if (kind === "blog") return "Blog";
+  if (kind === "webinar_event") return "Webinar";
+  return "Video";
 }
 
 export function ModerationAdminPage() {
@@ -198,6 +203,8 @@ export function ModerationAdminPage() {
     try {
       if (item.contentKind === "blog") {
         await moderateBlogComment(item.contentId, item.id, status);
+      } else if (item.contentKind === "webinar_event") {
+        await moderateWebinarEventComment(item.contentId, item.id, status);
       } else {
         await moderateVideoComment(item.contentId, item.id, status);
       }
@@ -319,6 +326,8 @@ export function ModerationAdminPage() {
       if (type === "comment") {
         if (item.contentKind === "blog") {
           await deleteBlogComment(item.contentId, item.id);
+        } else if (item.contentKind === "webinar_event") {
+          await deleteWebinarEventComment(item.contentId, item.id);
         } else {
           await deleteVideoComment(item.contentId, item.id);
         }
@@ -494,7 +503,48 @@ export function ModerationAdminPage() {
     );
   }
 
+  async function submitWebinarCommentReply(item: ModerationCommentItem) {
+    if (item.contentKind !== "webinar_event") return;
+    const key = `${item.contentId}:${item.id}`;
+    const answer = (answerDrafts[key] ?? "").trim();
+    if (!answer) {
+      setError("Reply text is required.");
+      return;
+    }
+    setBusyId(item.id);
+    setError(null);
+    try {
+      const updated = await replyWebinarEventComment(
+        item.contentId,
+        item.id,
+        answer,
+      );
+      setInbox((current) => {
+        if (!current) return current;
+        const comments = current.comments.map((row) =>
+          row.id === item.id && row.contentId === item.contentId
+            ? {
+                ...row,
+                ...updated,
+                kind: "comment" as const,
+                contentKind: "webinar_event" as const,
+                contentId: item.contentId,
+                contentTitle: item.contentTitle,
+              }
+            : row,
+        );
+        return { ...current, comments };
+      });
+      setAnswerDrafts((prev) => ({ ...prev, [key]: "" }));
+    } catch {
+      setError("Unable to reply to comment.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function renderCommentCard(item: ModerationCommentItem) {
+    const key = `${item.contentId}:${item.id}`;
     return (
       <li
         key={`${item.contentKind}:${item.contentId}:${item.id}`}
@@ -533,6 +583,44 @@ export function ModerationAdminPage() {
               {item.displayName || "Anonymous"} · {item.authorType}
               {item.createdAt ? ` · ${formatWhen(item.createdAt)}` : ""}
             </p>
+            {item.answer ? (
+              <div className="rounded-xl border border-teal-100 bg-teal-50/60 px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-teal-800">
+                  Smart Refill reply
+                </p>
+                <p className="mt-1.5 text-sm text-foreground">{item.answer}</p>
+              </div>
+            ) : null}
+            {item.contentKind === "webinar_event" ? (
+              <div className="space-y-2 pt-1">
+                <textarea
+                  className={textareaClassName}
+                  rows={3}
+                  placeholder="Type your reply here…"
+                  value={answerDrafts[key] ?? ""}
+                  onChange={(event) =>
+                    setAnswerDrafts((prev) => ({
+                      ...prev,
+                      [key]: event.target.value,
+                    }))
+                  }
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-full"
+                  disabled={busyId === item.id}
+                  onClick={() => void submitWebinarCommentReply(item)}
+                >
+                  {busyId === item.id ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <MessageSquareText className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Post reply
+                </Button>
+              </div>
+            ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap gap-1.5 lg:justify-end">
             {COMMENT_ACTIONS.map((action) => {

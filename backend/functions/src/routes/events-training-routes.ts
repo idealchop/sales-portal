@@ -16,6 +16,7 @@ import {
   getVideoCommentsHandler,
   getVideoQuestionsHandler,
   getVideosHandler,
+  getWebinarEventCommentsHandler,
   getWebinarRegistrationsHandler,
   getWebinarsHandler,
   patchBlogCommentHandler,
@@ -27,6 +28,8 @@ import {
   patchVideoHandler,
   patchVideoQuestionHandler,
   deleteVideoQuestionHandler,
+  patchWebinarEventCommentHandler,
+  deleteWebinarEventCommentHandler,
   patchWebinarHandler,
   postAcceptRegistrationHandler,
   postBlogHandler,
@@ -78,6 +81,15 @@ router.post("/webinars", postWebinarHandler);
 router.patch("/webinars/:webinarId", patchWebinarHandler);
 router.delete("/webinars/:webinarId", deleteWebinarHandler);
 router.get("/webinars/:webinarId/registrations", getWebinarRegistrationsHandler);
+router.get("/webinars/:webinarId/comments", getWebinarEventCommentsHandler);
+router.patch(
+  "/webinars/:webinarId/comments/:commentId",
+  patchWebinarEventCommentHandler,
+);
+router.delete(
+  "/webinars/:webinarId/comments/:commentId",
+  deleteWebinarEventCommentHandler,
+);
 
 router.get("/videos", getVideosHandler);
 router.get("/apps", getTutorialAppsHandler);

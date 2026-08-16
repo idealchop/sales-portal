@@ -21,12 +21,14 @@ import {
 import { uploadEventsTrainingImage } from "../services/events-training/events-training-upload-service";
 import {
   answerQuestion,
+  answerWebinarEventComment,
   deleteComment,
   deleteQuestion,
   listBlogComments,
   listModerationInbox,
   listQuestions,
   listVideoComments,
+  listWebinarEventComments,
   moderateComment,
   setQuestionStatus,
 } from "../services/events-training/moderation-service";
@@ -821,6 +823,67 @@ export async function deleteVideoCommentHandler(
 ) {
   try {
     await deleteComment("video", req.params.videoId, req.params.commentId);
+    res.status(204).send();
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
+export async function getWebinarEventCommentsHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    const data = await listWebinarEventComments(req.params.webinarId, {
+      includeHidden: true,
+    });
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
+export async function patchWebinarEventCommentHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    const status = String(req.body?.status || "") as CommentStatus;
+    const answer = typeof req.body?.answer === "string" ? req.body.answer : "";
+    if (answer.trim()) {
+      const data = await answerWebinarEventComment(
+        req.params.webinarId,
+        req.params.commentId,
+        {
+          answer,
+          answeredBy: req.user?.email || req.user?.uid || "sales-portal",
+        },
+      );
+      res.json({ data });
+      return;
+    }
+    const data = await moderateComment(
+      "webinar_event",
+      req.params.webinarId,
+      req.params.commentId,
+      status,
+    );
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
+export async function deleteWebinarEventCommentHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    await deleteComment(
+      "webinar_event",
+      req.params.webinarId,
+      req.params.commentId,
+    );
     res.status(204).send();
   } catch (error) {
     mapServiceError(res, error);
