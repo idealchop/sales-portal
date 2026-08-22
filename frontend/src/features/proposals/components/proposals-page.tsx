@@ -6,6 +6,7 @@ import {
   Clock,
   FileText,
   Link2,
+  Mail,
   PlusCircle,
   TrendingUp,
   Users,
@@ -22,8 +23,9 @@ import {
 import { useClients } from "@/hooks/use-clients";
 import { useProposals } from "@/hooks/use-proposals";
 import { shareProposal } from "@/lib/sales/api";
+import { ProposalOutreachComposeDialog } from "@/features/proposals/components/proposal-outreach-compose-dialog";
 import { formatPhp } from "@/lib/format";
-import type { Proposal } from "@/lib/definitions";
+import type { ClientAppAccess, Proposal } from "@/lib/definitions";
 
 const STATUS_STYLES: Record<string, string> = {
   accepted: "bg-emerald-50 text-emerald-700",
@@ -43,6 +45,28 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function AppBadges({ apps }: { apps?: ClientAppAccess[] }) {
+  if (!apps || apps.length === 0) {
+    return (
+      <span className="text-xs text-[var(--muted-foreground)]">No apps</span>
+    );
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {apps.map((app) => (
+        <Badge
+          key={app.appId}
+          className="bg-teal-50 text-teal-800 ring-1 ring-teal-100"
+        >
+          {app.label}
+          {app.role ? ` · ${app.role}` : ""}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
 function daysSince(value?: string): number | null {
   if (!value) return null;
   const created = new Date(value);
@@ -57,20 +81,53 @@ function formatAging(days: number | null): string {
   return `${days} days ago`;
 }
 
+function clientHasApp(
+  appIds: string[] | undefined,
+  appFilter: string,
+): boolean {
+  if (appFilter === "all") return true;
+  if (appFilter === "none") return !appIds || appIds.length === 0;
+  return Boolean(appIds?.includes(appFilter));
+}
+
 export function ProposalsPage() {
   const { proposals, isLoading: proposalsLoading, error: proposalsError } =
     useProposals();
-  const { clients, isLoading: clientsLoading, error: clientsError } =
-    useClients();
+  const {
+    clients,
+    directory,
+    isLoading: clientsLoading,
+    error: clientsError,
+  } = useClients();
   const [view, setView] = useState<"proposals" | "clients">("proposals");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [appFilter, setAppFilter] = useState<string>("all");
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sharingId, setSharingId] = useState<string | null>(null);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeRecipientId, setComposeRecipientId] = useState<string | undefined>();
 
   const clientById = useMemo(
     () => new Map(clients.map((client) => [client.id, client])),
     [clients],
   );
+
+  const appOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const entry of directory) {
+      for (const app of entry.apps) {
+        byId.set(app.appId, app.label);
+      }
+    }
+    for (const client of clients) {
+      for (const app of client.apps ?? []) {
+        byId.set(app.appId, app.label);
+      }
+    }
+    return [...byId.entries()]
+      .map(([appId, label]) => ({ appId, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [clients, directory]);
 
   const funnel = useMemo(() => {
     const byStatus = new Map<string, { count: number; value: number }>();
@@ -115,14 +172,19 @@ export function ProposalsPage() {
   }, [proposals]);
 
   const filteredProposals = useMemo(() => {
-    const base =
-      statusFilter === "all" ?
-        proposals
-      : proposals.filter((row) => row.status === statusFilter);
+    const base = proposals.filter((row) => {
+      if (statusFilter !== "all" && row.status !== statusFilter) return false;
+      const client = clientById.get(row.clientId);
+      return clientHasApp(client?.appIds, appFilter);
+    });
     return [...base].sort((a, b) =>
       String(b.createdAt).localeCompare(String(a.createdAt)),
     );
-  }, [proposals, statusFilter]);
+  }, [proposals, statusFilter, appFilter, clientById]);
+
+  const filteredDirectory = useMemo(() => {
+    return directory.filter((entry) => clientHasApp(entry.appIds, appFilter));
+  }, [directory, appFilter]);
 
   const staleSent = proposals.filter((row) => {
     if (row.status !== "sent") return false;
@@ -154,13 +216,20 @@ export function ProposalsPage() {
             Proposals & Clients
           </h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            Pipeline funnel, deal aging, and quick actions for your territory.
+            Pipeline funnel, deal aging, and clients linked to platform users by
+            app.
           </p>
         </div>
-        <Button href="/dashboard/proposals/new">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New proposal
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setComposeOpen(true)}>
+            <Mail className="mr-2 h-4 w-4" />
+            Compose email
+          </Button>
+          <Button href="/dashboard/proposals/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New proposal
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -236,7 +305,7 @@ export function ProposalsPage() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant={view === "proposals" ? "primary" : "outline"}
           size="sm"
@@ -251,8 +320,22 @@ export function ProposalsPage() {
           onClick={() => setView("clients")}
         >
           <Users className="mr-2 h-4 w-4" />
-          Clients ({clients.length})
+          Clients ({directory.length})
         </Button>
+        <select
+          className="h-9 rounded-lg border border-[var(--border)] bg-white px-3 text-sm"
+          value={appFilter}
+          onChange={(event) => setAppFilter(event.target.value)}
+          aria-label="Filter by app"
+        >
+          <option value="all">All apps</option>
+          {appOptions.map((app) => (
+            <option key={app.appId} value={app.appId}>
+              {app.label}
+            </option>
+          ))}
+          <option value="none">No app linked</option>
+        </select>
       </div>
 
       {shareMessage ?
@@ -282,7 +365,7 @@ export function ProposalsPage() {
             </select>
           </CardHeader>
           <CardContent className="space-y-3">
-            {proposalsLoading ?
+            {proposalsLoading || clientsLoading ?
               <p className="text-sm text-[var(--muted-foreground)]">Loading…</p>
             : proposalsError ?
               <p className="text-sm text-red-600">{proposalsError}</p>
@@ -319,6 +402,7 @@ export function ProposalsPage() {
                         Created {aging}
                         {isStale ? " · Follow up recommended" : ""}
                       </p>
+                      <AppBadges apps={client?.apps} />
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -342,7 +426,7 @@ export function ProposalsPage() {
           <CardHeader>
             <CardTitle>Clients</CardTitle>
             <CardDescription>
-              {clients.length} client{clients.length === 1 ? "" : "s"}
+              Platform users as clients · {filteredDirectory.length} in view
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -350,31 +434,71 @@ export function ProposalsPage() {
               <p className="text-sm text-[var(--muted-foreground)]">Loading…</p>
             : clientsError ?
               <p className="text-sm text-red-600">{clientsError}</p>
-            : clients.length === 0 ?
+            : filteredDirectory.length === 0 ?
               <p className="text-sm text-[var(--muted-foreground)]">
-                No clients yet — add clients when creating a proposal.
+                No platform users match this app filter.
               </p>
-            : clients.map((client) => (
+            : filteredDirectory.map((entry) => (
                 <div
-                  key={client.id}
+                  key={entry.linkedUserId}
                   className="rounded-lg border border-[var(--border)] p-4"
                 >
-                  <p className="font-medium text-foreground">
-                    {client.companyName}
-                  </p>
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    {client.contactName}
-                    {client.contactEmail ? ` · ${client.contactEmail}` : ""}
-                  </p>
-                  {client.status ?
-                    <Badge className="mt-2">{client.status}</Badge>
-                  : null}
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {entry.companyName || entry.displayName}
+                      </p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        {entry.displayName}
+                        {entry.email ? ` · ${entry.email}` : ""}
+                        {entry.phone ? ` · ${entry.phone}` : ""}
+                      </p>
+                      <AppBadges apps={entry.apps} />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {entry.clientId ?
+                        <Badge className="bg-emerald-50 text-emerald-700">
+                          {entry.clientStatus || "linked"}
+                        </Badge>
+                      : <Badge className="bg-zinc-100 text-zinc-600">
+                          Not in CRM yet
+                        </Badge>
+                      }
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setComposeRecipientId(`platform:${entry.linkedUserId}`);
+                          setComposeOpen(true);
+                        }}
+                      >
+                        <Mail className="mr-2 h-4 w-4" />
+                        Email
+                      </Button>
+                      <Button
+                        href={`/dashboard/proposals/new?user=${encodeURIComponent(entry.linkedUserId)}`}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Propose
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ))
             }
           </CardContent>
         </Card>
       }
+      {composeOpen ?
+        <ProposalOutreachComposeDialog
+          initialRecipientId={composeRecipientId}
+          onClose={() => {
+            setComposeOpen(false);
+            setComposeRecipientId(undefined);
+          }}
+        />
+      : null}
     </div>
   );
 }

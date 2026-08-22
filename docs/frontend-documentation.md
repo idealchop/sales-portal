@@ -88,7 +88,7 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | `/subscriptions/*` | admin | Live (catalog CRUD) |
 | `/admin/permissions` | admin | Live |
 | `/admin/data-management` | admin | Live |
-| `/dashboard/proposals` | sales+ | Live — proposals & clients list |
+| `/dashboard/proposals` | sales+ | Live — proposals & clients (users by app); **Compose email** opens multi-select outreach dialog (filter by source/app, Brevo bulk up to 50, mail client) |
 | `/dashboard/proposals/new` | sales+ | Live — create proposal wizard |
 | `/proposal/view/[linkId]` | — | Live — public shareable proposal |
 | `/dashboard/commissions` | sales+ | Live — commissions & monthly payouts |

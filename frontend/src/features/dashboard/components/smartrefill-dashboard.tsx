@@ -18,6 +18,7 @@ import {
 import { ProductSignalsStrip } from "@/features/dashboard/components/product-signals-strip";
 import { SmartRefillOpsHealthStrip } from "@/features/dashboard/components/smartrefill-ops-health-strip";
 import { SmartRefillMaintenanceSignals } from "@/features/dashboard/components/smartrefill-maintenance-signals";
+import { SmartRefillConfigPanel } from "@/features/dashboard/components/smartrefill-config-panel";
 import {
   DashboardAnalyticsShell,
   useDashboardViewFilter,
@@ -27,7 +28,7 @@ import { buildUserSubscriptionsList } from "@/features/dashboard/lib/build-user-
 import { filterInactiveOwners } from "@/features/dashboard/lib/sort-active-owners";
 import type { DashboardViewContext } from "@/features/dashboard/components/dashboard-analytics-shell";
 
-type SmartRefillTab = "attention" | "subscriptions" | "field" | "analytics";
+type SmartRefillTab = "attention" | "subscriptions" | "field" | "analytics" | "config";
 
 function SmartRefillDashboardContent({
   data,
@@ -36,6 +37,7 @@ function SmartRefillDashboardContent({
 }: DashboardViewContext) {
   const { globalFilter, setGlobalFilter } = useDashboardViewFilter();
   const canManageApprovals = role === "admin" || role === "manager";
+  const canManageConfig = role === "admin";
   const { growthSalesMetrics } = data;
   const app = getDashboardApp("smartrefill")!;
 
@@ -69,11 +71,15 @@ function SmartRefillDashboardContent({
         count: data.businessLocations.length,
       },
       { id: "analytics", label: "Analytics", count: 6 },
+      ...(canManageConfig ?
+        [{ id: "config", label: "Config" }]
+      : []),
     ],
     [
       attentionCount,
       subscriptionItems.length,
       data.businessLocations.length,
+      canManageConfig,
     ],
   );
 
@@ -254,6 +260,16 @@ function SmartRefillDashboardContent({
             onGlobalFilterChange={setGlobalFilter}
           />
         </div>
+      : null}
+
+      {tab === "config" && canManageConfig ?
+        <DashboardSection
+          id="smartrefill-config"
+          title="Configuration"
+          description="SmartRefill app settings for admins."
+        >
+          <SmartRefillConfigPanel />
+        </DashboardSection>
       : null}
     </>
   );

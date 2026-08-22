@@ -153,46 +153,66 @@ function InfoField({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function BusinessWorkspaceOnboardingFields({
+export function BusinessWorkspaceOnboardingProgress({
   data,
 }: {
   data: Record<string, unknown>;
 }) {
   const gettingStarted = parseGettingStartedProgress(data);
   const quickTour = parseQuickTourProgress(data);
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <ProgressChecklist
+        title="Getting started"
+        done={gettingStarted.done}
+        total={gettingStarted.total}
+        items={gettingStarted.items}
+      />
+      <ProgressChecklist
+        title="Quick tour"
+        done={quickTour.done}
+        total={quickTour.total}
+        items={quickTour.items}
+      />
+    </div>
+  );
+}
+
+export function BusinessWorkspaceUiConfig({
+  data,
+}: {
+  data: Record<string, unknown>;
+}) {
   const uiConfigRows = parseUiConfigRows(data);
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ProgressChecklist
-          title="Getting started"
-          done={gettingStarted.done}
-          total={gettingStarted.total}
-          items={gettingStarted.items}
-        />
-        <ProgressChecklist
-          title="Quick tour"
-          done={quickTour.done}
-          total={quickTour.total}
-          items={quickTour.items}
-        />
-      </div>
-
-      <div>
-        <div className="mb-3 flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-100/80 text-zinc-500">
-            <Settings2 className="h-3.5 w-3.5" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-zinc-900">UI config</p>
-            <p className="text-xs text-zinc-500">
-              Client-persisted workspace UI flags
-            </p>
-          </div>
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-100/80 text-zinc-500">
+          <Settings2 className="h-3.5 w-3.5" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-zinc-900">UI config</p>
+          <p className="text-xs text-zinc-500">
+            Client-persisted workspace UI flags
+          </p>
         </div>
-        <KeyValueGrid rows={uiConfigRows} />
       </div>
+      <KeyValueGrid rows={uiConfigRows} />
+    </div>
+  );
+}
+
+export function BusinessWorkspaceOnboardingFields({
+  data,
+}: {
+  data: Record<string, unknown>;
+}) {
+  return (
+    <div className="space-y-5">
+      <BusinessWorkspaceOnboardingProgress data={data} />
+      <BusinessWorkspaceUiConfig data={data} />
     </div>
   );
 }
@@ -206,18 +226,6 @@ export function BusinessUserFeedbackSection({
 
   return (
     <section>
-      <div className="mb-5 flex items-start gap-3">
-        <span className="mt-1.5 h-8 w-0.5 shrink-0 rounded-full bg-teal-500/70" />
-        <div>
-          <h4 className="text-[15px] font-semibold tracking-tight text-zinc-900">
-            User feedback
-          </h4>
-          <p className="mt-1 text-sm text-zinc-500">
-            Latest platform feedback snapshot for this workspace
-          </p>
-        </div>
-      </div>
-
       {feedback.hasFeedback ?
         <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
           <div className="flex items-start gap-3">
@@ -263,18 +271,6 @@ export function BusinessCatalogSection({
 
   return (
     <section>
-      <div className="mb-5 flex items-start gap-3">
-        <span className="mt-1.5 h-8 w-0.5 shrink-0 rounded-full bg-teal-500/70" />
-        <div>
-          <h4 className="text-[15px] font-semibold tracking-tight text-zinc-900">
-            Catalog
-          </h4>
-          <p className="mt-1 text-sm text-zinc-500">
-            Workspace lookup data configured during onboarding
-          </p>
-        </div>
-      </div>
-
       <div className="grid gap-4 lg:grid-cols-2">
         <CatalogGroup
           icon={Droplets}

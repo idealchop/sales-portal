@@ -112,8 +112,11 @@ Portal routes require **Bearer token**, **sales-portal access**, and role-scoped
 | `PATCH` | `/proposals/:proposalId` | Portal | Update proposal |
 | `POST` | `/proposals/:proposalId/share` | Portal | Create shareable link |
 | `GET` | `/clients` | Portal | List clients (role-scoped) |
-| `POST` | `/clients` | Portal | Create client |
+| `GET` | `/clients/directory` | Portal | Platform users as clients (with appAccess categories) |
+| `POST` | `/clients` | Portal | Create client (optional `linkedUserId`) |
 | `PATCH` | `/clients/:clientId` | Portal | Update client |
+| `GET` | `/outreach/recipients` | Portal | Aggregated outreach recipients (platform users, CRM, webinar guests/members, story/article engagement members) |
+| `POST` | `/outreach/send` | Portal | Send one Brevo outreach email per request (`personalized`, `demo_inquiry`, `new_user_registration`, `generic`); UI bulk send loops up to 50 recipients |
 | `GET` | `/commissions` | Portal | List commissions (role-scoped) |
 | `GET` | `/sales/team` | Portal | Manager team summary |
 | `GET` | `/sales-materials` | Portal | List sales materials |

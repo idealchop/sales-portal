@@ -33,7 +33,7 @@ frontend/src/
 | `components/dashboard-header.tsx` | Page title, refresh, user menu |
 | `components/platform-hub-dashboard.tsx` | All-apps hub: sales snapshot + simple per-app performance overview |
 | `components/platform-apps-overview.tsx` | App KPI cards with performance blurbs and deep links |
-| `components/smartrefill-dashboard.tsx` | SmartRefill ops dashboard (Attention / Subscriptions / Field / Analytics tabs) |
+| `components/smartrefill-dashboard.tsx` | SmartRefill ops dashboard (Attention / Subscriptions / Field / Analytics / Config tabs) |
 | `components/smartrefill-old-dashboard.tsx` | Legacy SmartRefill ops from `prod-smartrefill`: triage / contacted-ignored queues (contact sends Brevo; contacted returns to triage after 15 days; ignored stays) |
 | `components/smartrefill-ops-health-strip.tsx` | Clickable support/maintenance snapshot tiles |
 | `components/smartrefill-maintenance-signals.tsx` | Workspace health + payment status bars |
@@ -79,6 +79,19 @@ Manager/admin CMS + ops for Smart Refill Resources. Detail: [`events-training.md
 
 App routes: `app/events-training/page.tsx` (overview) + `{analytics,registrations,moderation,webinars,videos,blogs,tutorials,certifications,schedules}/page.tsx`.
 
+### `features/proposals/`
+
+Sales workflow: pipeline funnel, CRM clients linked to platform users by app, proposal wizard, public share links, and outreach email compose.
+
+| Path | Purpose |
+|------|---------|
+| `components/proposals-page.tsx` | Proposals & Clients hub — funnel KPIs, app filter, **Compose email**, per-client **Email** / **Propose** |
+| `components/proposal-wizard-page.tsx` | New proposal wizard (client picker from platform user directory) |
+| `components/proposal-outreach-compose-dialog.tsx` | Multi-select recipient picker + templates (personalized, demo, welcome, generic); Brevo bulk send or mail client |
+| `lib/proposal-outreach-compose-utils.ts` | Template preview + bulk send summary helpers (unit tested) |
+
+API: `GET /outreach/recipients`, `POST /outreach/send` (see [backend-documentation.md](./backend-documentation.md)).
+
 ### `features/admin/`
 
 Large admin surface for permissions and Firestore data management:
@@ -87,6 +100,7 @@ Large admin surface for permissions and Firestore data management:
 |----------------|---------|
 | `admin-permissions-page.tsx` | User access CRUD |
 | `admin-data-management-page.tsx` | Business/user document browser |
+| `admin-data-management-business-page.tsx` | Business overview — tabbed layout aligned with SmartRefill ops |
 | `admin-catalog-collection-page.tsx` | Subscription catalog tables |
 | `catalog-document-form-*` | Structured add/edit forms (not raw JSON) |
 | `plan-limitations-form-*` | Plan `limitations` editor |

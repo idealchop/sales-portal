@@ -14,6 +14,7 @@ import type {
   AddonFormValues,
   CatalogFormValues,
   PlanFormValues,
+  ProductIconFormValues,
   VoucherAffiliateFormValues,
 } from "@/lib/admin/catalog-document-forms";
 
@@ -441,6 +442,66 @@ function VoucherAffiliateFormFields({
   );
 }
 
+function ProductIconFormFields({
+  values,
+  onChange,
+  documentIdDisabled,
+}: {
+  values: ProductIconFormValues;
+  onChange: (patch: Partial<ProductIconFormValues>) => void;
+  documentIdDisabled?: boolean;
+}) {
+  return (
+    <>
+      <CatalogFormSection title="Basics">
+        <CatalogField label="Document ID" hint="Stable id used by SmartRefill, e.g. droplets">
+          <CatalogTextInput
+            value={values.documentId}
+            disabled={documentIdDisabled}
+            mono
+            onChange={(documentId) => onChange({ documentId })}
+          />
+        </CatalogField>
+        <CatalogField label="Name">
+          <CatalogTextInput
+            value={values.name}
+            onChange={(name) => onChange({ name })}
+            placeholder="Water"
+          />
+        </CatalogField>
+        <CatalogCheckbox
+          checked={values.active}
+          onChange={(active) => onChange({ active })}
+          label="Active (shown in the product picker)"
+        />
+      </CatalogFormSection>
+      <CatalogFormSection title="Artwork">
+        <CatalogField label="Image URL" hint="Optional public SVG or PNG URL">
+          <CatalogTextInput
+            value={values.imageUrl}
+            onChange={(imageUrl) => onChange({ imageUrl })}
+            placeholder="https://…"
+          />
+        </CatalogField>
+        <CatalogField label="Lucide icon" hint="Optional fallback, e.g. Droplets">
+          <CatalogTextInput
+            value={values.lucide}
+            onChange={(lucide) => onChange({ lucide })}
+            placeholder="Droplets"
+          />
+        </CatalogField>
+        <CatalogField label="Sort order" hint="Lower numbers appear first">
+          <CatalogNumberInput
+            value={values.sortOrder}
+            min={0}
+            onChange={(sortOrder) => onChange({ sortOrder })}
+          />
+        </CatalogField>
+      </CatalogFormSection>
+    </>
+  );
+}
+
 export function CatalogDocumentFormFields({
   form,
   onChange,
@@ -465,6 +526,18 @@ export function CatalogDocumentFormFields({
   if (form.collectionId === "subscription_addons") {
     return (
       <AddonFormFields
+        values={form.values}
+        documentIdDisabled={documentIdDisabled}
+        onChange={(patch) =>
+          onChange({ collectionId: form.collectionId, values: { ...form.values, ...patch } })
+        }
+      />
+    );
+  }
+
+  if (form.collectionId === "product_icons") {
+    return (
+      <ProductIconFormFields
         values={form.values}
         documentIdDisabled={documentIdDisabled}
         onChange={(patch) =>

@@ -8,6 +8,11 @@ describe("DASHBOARD_NAV role gates", () => {
 
     expect(subscriptions?.roles).toEqual(["admin"]);
     expect(admin?.roles).toEqual(["admin"]);
+    expect(admin?.children?.map((child) => child.href)).toEqual([
+      "/admin/permissions",
+      "/admin/data-management",
+      "/admin/clone-prod-to-dev",
+    ]);
   });
 
   it("shows Content Studio for sales, manager, and admin", () => {

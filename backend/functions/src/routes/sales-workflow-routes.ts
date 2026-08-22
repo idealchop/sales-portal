@@ -1,8 +1,10 @@
 import express from "express";
 import {
   deleteSalesMaterialHandler,
+  getClientDirectoryHandler,
   getClientsHandler,
   getCommissionsHandler,
+  getOutreachRecipientsHandler,
   getProposalHandler,
   getProposalsHandler,
   getPublicProposalHandler,
@@ -14,6 +16,7 @@ import {
   postClientHandler,
   postProposalHandler,
   postProposalShareHandler,
+  postSalesOutreachSendHandler,
   postSalesMaterialHandler,
 } from "../handlers/sales-workflow-handler";
 import {
@@ -34,6 +37,9 @@ router.patch("/proposals/:proposalId", patchProposalHandler);
 router.post("/proposals/:proposalId/share", postProposalShareHandler);
 
 router.get("/clients", getClientsHandler);
+router.get("/clients/directory", getClientDirectoryHandler);
+router.get("/outreach/recipients", getOutreachRecipientsHandler);
+router.post("/outreach/send", postSalesOutreachSendHandler);
 router.post("/clients", postClientHandler);
 router.patch("/clients/:clientId", patchClientHandler);
 

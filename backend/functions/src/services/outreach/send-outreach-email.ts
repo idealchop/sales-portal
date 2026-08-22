@@ -14,6 +14,8 @@ export type SendOutreachEmailInput = {
   toEmail: string;
   kind: OutreachTemplateKind;
   personalization?: OutreachPersonalization;
+  customSubject?: string;
+  customBodyText?: string;
   actorUid?: string;
 };
 
@@ -36,6 +38,10 @@ export async function sendOutreachEmail(
   const template = buildOutreachEmailByKind(
     input.kind,
     input.personalization ?? {},
+    {
+      subject: input.customSubject,
+      bodyText: input.customBodyText,
+    },
   );
   const api = getBrevoApi();
 

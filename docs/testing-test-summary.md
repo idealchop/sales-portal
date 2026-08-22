@@ -17,7 +17,9 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/auth-account-tag.test.ts` ✅ | `authAccountTag` read/collect; test-owner id set | TC-DASH-15 |
 | `unit/services/legacy-smartrefill-helpers.unit.test.ts` ✅ | Legacy station helpers / triage status | TC-DASH-16 |
 | `unit/services/legacy-station-triage.unit.test.ts` ✅ | Contacted 15-day cooldown vs ignored forever | TC-DASH-16 |
-| `unit/services/outreach-templates.unit.test.ts` ✅ | Brevo templates incl. `legacy_station` | TC-DASH-13, TC-DASH-16 |
+| `unit/services/outreach-templates.unit.test.ts` ✅ | Brevo templates incl. `legacy_station`, `personalized` | TC-DASH-13, TC-DASH-16, TC-PROP-03 |
+| `unit/services/outreach-recipients.unit.test.ts` ✅ | Recipient merge by email + app badges | TC-PROP-01 |
+| `unit/services/clients-directory.unit.test.ts` ✅ | Platform user directory + app categorization | TC-PROP-02 |
 | `unit/services/generate-ai-sales-insights.unit.test.ts` | AI insight payload shaping | TC-DASH-01 |
 | `unit/services/generate-dashboard-forecasts.unit.test.ts` ✅ | Fallback forecasts + actor reshape | TC-DASH-08 |
 | `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline mapping | TC-DASH-05, TC-DASH-09 |
@@ -82,6 +84,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/lib/email/inactive-owner-template.test.ts` ✅ | Inactive-owner outreach template copy | TC-DASH-14 |
 | `unit/features/dashboard/platform-alert-data-management.test.ts` ✅ | Alert → Data management deep links | TC-DASH-13c |
 | `unit/lib/email/legacy-station-template.test.ts` ✅ | Legacy station contact template copy | TC-DASH-16 |
+| `unit/features/proposals/proposal-outreach-compose.test.ts` ✅ | Outreach template preview + bulk send summary | TC-PROP-03, TC-PROP-04 |
 | `unit/features/dashboard/build-subscription-approval-queue.test.ts` ✅ | Approval queue rows | TC-DASH-05, TC-DASH-09 |
 | `unit/lib/dashboard-analytics-normalize.test.ts` ✅ | `newJoiners`, `dashboardForecasts` defaults | TC-DASH-01 |
 | `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |

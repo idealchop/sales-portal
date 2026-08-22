@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import type { Client } from "@/lib/definitions";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,14 +26,20 @@ const inputClassName =
 
 export function ProposalWizardPage() {
   const router = useRouter();
-  const { clients, refresh: refreshClients } = useClients();
+  const searchParams = useSearchParams();
+  const preselectedUserId = searchParams.get("user")?.trim() || "";
+  const { clients, directory, refresh: refreshClients } = useClients();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
 
-  const [clientMode, setClientMode] = useState<"existing" | "new">("existing");
+  const [clientMode, setClientMode] = useState<"user" | "existing" | "new">(
+    "user",
+  );
+  const [selectedLinkedUserId, setSelectedLinkedUserId] = useState("");
   const [selectedClientId, setSelectedClientId] = useState("");
+  const [appFilter, setAppFilter] = useState("all");
   const [companyName, setCompanyName] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -50,17 +57,63 @@ export function ProposalWizardPage() {
     [selectedPlanId],
   );
 
+  const appOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const entry of directory) {
+      for (const app of entry.apps) {
+        byId.set(app.appId, app.label);
+      }
+    }
+    return [...byId.entries()]
+      .map(([appId, label]) => ({ appId, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [directory]);
+
+  const filteredDirectory = useMemo(() => {
+    if (appFilter === "all") return directory;
+    return directory.filter((entry) => entry.appIds.includes(appFilter));
+  }, [directory, appFilter]);
+
   const pendingClients = useMemo(
     () => clients.filter((client) => client.status !== "active"),
     [clients],
   );
+
+  const selectedUser = useMemo(
+    () =>
+      directory.find((entry) => entry.linkedUserId === selectedLinkedUserId) ??
+      null,
+    [directory, selectedLinkedUserId],
+  );
+
+  useEffect(() => {
+    if (!preselectedUserId || directory.length === 0) return;
+    const match = directory.find(
+      (entry) => entry.linkedUserId === preselectedUserId,
+    );
+    if (!match) return;
+    setClientMode("user");
+    setSelectedLinkedUserId(match.linkedUserId);
+  }, [preselectedUserId, directory]);
 
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
     try {
       let clientId = selectedClientId;
-      if (clientMode === "new") {
+      if (clientMode === "user") {
+        if (!selectedLinkedUserId) {
+          setError("Select a platform user before continuing.");
+          return;
+        }
+        const created = await createClient({
+          linkedUserId: selectedLinkedUserId,
+          status: "pending",
+          clientType: selectedPlan.id as Client["clientType"],
+        });
+        clientId = created.id;
+        await refreshClients();
+      } else if (clientMode === "new") {
         const created = await createClient({
           companyName,
           contactName,
@@ -114,11 +167,19 @@ export function ProposalWizardPage() {
           <CardHeader>
             <CardTitle>Client</CardTitle>
             <CardDescription>
-              Choose an existing pending client or create a new one.
+              Link a platform user (categorized by app), reuse a CRM client, or
+              create a prospect.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={clientMode === "user" ? "primary" : "outline"}
+                size="sm"
+                onClick={() => setClientMode("user")}
+              >
+                Platform user
+              </Button>
               <Button
                 variant={clientMode === "existing" ? "primary" : "outline"}
                 size="sm"
@@ -131,11 +192,61 @@ export function ProposalWizardPage() {
                 size="sm"
                 onClick={() => setClientMode("new")}
               >
-                New client
+                New prospect
               </Button>
             </div>
 
-            {clientMode === "existing" ?
+            {clientMode === "user" ?
+              <div className="space-y-3">
+                <select
+                  className={inputClassName}
+                  value={appFilter}
+                  onChange={(event) => setAppFilter(event.target.value)}
+                >
+                  <option value="all">All apps</option>
+                  {appOptions.map((app) => (
+                    <option key={app.appId} value={app.appId}>
+                      {app.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className={inputClassName}
+                  value={selectedLinkedUserId}
+                  onChange={(event) => setSelectedLinkedUserId(event.target.value)}
+                >
+                  <option value="">Select user</option>
+                  {filteredDirectory.map((entry) => (
+                    <option key={entry.linkedUserId} value={entry.linkedUserId}>
+                      {entry.companyName || entry.displayName}
+                      {entry.email ? ` — ${entry.email}` : ""}
+                      {` (${entry.apps.map((app) => app.label).join(", ")})`}
+                    </option>
+                  ))}
+                </select>
+                {selectedUser ?
+                  <div className="rounded-lg border border-[var(--border)] bg-zinc-50 p-3 text-sm">
+                    <p className="font-medium text-foreground">
+                      {selectedUser.displayName}
+                    </p>
+                    <p className="text-[var(--muted-foreground)]">
+                      {selectedUser.email || "No email"}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {selectedUser.apps.map((app) => (
+                        <Badge
+                          key={app.appId}
+                          className="bg-teal-50 text-teal-800 ring-1 ring-teal-100"
+                        >
+                          {app.label}
+                          {app.role ? ` · ${app.role}` : ""}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                : null}
+              </div>
+            : clientMode === "existing" ?
               <select
                 className={inputClassName}
                 value={selectedClientId}
@@ -145,6 +256,9 @@ export function ProposalWizardPage() {
                 {pendingClients.map((client) => (
                   <option key={client.id} value={client.id}>
                     {client.companyName} — {client.contactName}
+                    {client.apps && client.apps.length > 0 ?
+                      ` (${client.apps.map((app) => app.label).join(", ")})`
+                    : ""}
                   </option>
                 ))}
               </select>
@@ -247,6 +361,14 @@ export function ProposalWizardPage() {
               <p className="text-[var(--muted-foreground)]">
                 {formatPhp(selectedPlan.amount)} estimated monthly value
               </p>
+              {selectedUser ?
+                <p className="mt-2 text-[var(--muted-foreground)]">
+                  Client user: {selectedUser.displayName}
+                  {selectedUser.apps.length > 0 ?
+                    ` · ${selectedUser.apps.map((app) => app.label).join(", ")}`
+                  : ""}
+                </p>
+              : null}
             </div>
             {error ?
               <p className="text-sm text-red-600">{error}</p>

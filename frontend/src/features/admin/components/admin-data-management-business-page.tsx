@@ -94,7 +94,8 @@ export function AdminDataManagementBusinessPage() {
               Business overview
             </h1>
             <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-              Firestore workspace record and subcollections for this business.
+              Workspace activity, subscriptions, catalog, and SmartRefill app
+              configuration — organized for admin work.
             </p>
           </div>
         </div>
@@ -115,22 +116,20 @@ export function AdminDataManagementBusinessPage() {
         </Button>
       </div>
 
-      <div className="rounded-2xl bg-[#fafafa] p-6 ring-1 ring-zinc-200/80">
-        <BusinessProfileCollectionView
-          documents={documents}
-          collectionCounts={collectionCounts}
-          isLoading={isLoading}
-          error={error}
-          row={row}
-          businessId={businessId}
-          onSaveDocument={saveDocument}
-          onRemoveDocument={removeDocument}
-          onRemoveBusinessTree={async () => {
-            await removeBusinessTree();
-            router.push(returnTo);
-          }}
-        />
-      </div>
+      <BusinessProfileCollectionView
+        documents={documents}
+        collectionCounts={collectionCounts}
+        isLoading={isLoading}
+        error={error}
+        row={row}
+        businessId={businessId}
+        onSaveDocument={saveDocument}
+        onRemoveDocument={removeDocument}
+        onRemoveBusinessTree={async () => {
+          await removeBusinessTree();
+          router.push(returnTo);
+        }}
+      />
     </div>
   );
 }

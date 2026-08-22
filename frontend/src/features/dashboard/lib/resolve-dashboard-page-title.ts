@@ -30,6 +30,7 @@ export function resolveDashboardPageTitle(pathname: string): string {
   if (pathname.startsWith("/subscriptions/vouchers-affiliates")) {
     return "Voucher & affiliates management";
   }
+  if (pathname.startsWith("/subscriptions/product-icons")) return "Product icons";
   if (pathname.startsWith("/subscriptions")) return "Subscriptions";
   if (pathname.startsWith("/content-studio")) return "Content Studio";
   if (pathname.startsWith("/events-training/webinars")) return "Webinars";

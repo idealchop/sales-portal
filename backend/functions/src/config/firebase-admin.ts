@@ -35,4 +35,5 @@ prodSmartrefillDb.settings({ ignoreUndefinedProperties: true });
 
 export const auth = admin.auth(app);
 export const storage = admin.storage(app);
+export { app };
 export { FieldValue, Timestamp } from "firebase-admin/firestore";

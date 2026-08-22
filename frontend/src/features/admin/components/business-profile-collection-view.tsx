@@ -1,38 +1,36 @@
 "use client";
 
 import {
-  Bell,
-  BookOpen,
-  Bot,
   Building2,
   Calendar,
   CheckCircle2,
   Clock,
-  ContactRound,
   CreditCard,
   Eye,
   FileStack,
   Fingerprint,
   Mail,
   MapPin,
-  MessageSquare,
-  Package,
-  Pencil,
   Phone,
-  QrCode,
-  ScrollText,
-  Sparkles,
   Star,
-  Trash2,
   UserRound,
   Users,
   Wallet,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DashboardSegmentTabs,
+  type DashboardSegmentTab,
+} from "@/features/dashboard/components/dashboard-segment-tabs";
+import {
+  BusinessProfileTabContent,
+  WorkspaceQuickActions,
+  type BusinessOverviewTab,
+} from "@/features/admin/components/business-profile-tab-content";
 import { BusinessSubcollectionDialog } from "@/features/admin/components/business-subcollection-dialog";
 import { DeleteBusinessFirestoreDialog } from "@/features/admin/components/delete-business-firestore-dialog";
 import { EditFirestoreDocDialog } from "@/features/admin/components/edit-firestore-doc-dialog";
@@ -44,16 +42,8 @@ import {
   type DataManagementLinkRow,
   type DataManagementLinkStatus,
 } from "@/lib/admin/data-management";
-import { BusinessInsightsSection } from "@/features/admin/components/business-insights-section";
 import { BusinessLocationMinimapLoader } from "@/features/admin/components/business-location-minimap-loader";
 import { BusinessSupportAiKnowledgeDialog } from "@/features/admin/components/business-support-ai-knowledge-dialog";
-import {
-  BusinessCatalogSection,
-  BusinessUserFeedbackSection,
-  BusinessWorkspaceOnboardingFields,
-} from "@/features/admin/components/business-workspace-config-sections";
-import { BusinessSubcollectionListSection } from "@/features/admin/components/business-subcollection-list-section";
-import { BusinessTransactionListSection } from "@/features/admin/components/business-transaction-list-section";
 import { TeamDetailDialog } from "@/features/admin/components/team-detail-dialog";
 import { ProactiveScheduleWeekSnapshotDialog } from "@/features/admin/components/proactive-schedule-week-snapshot-dialog";
 import {
@@ -76,6 +66,8 @@ import {
 import { formatSubscriptionPeriod } from "@/lib/dashboard/subscription-labels";
 import { useAdminBusinessTransactions } from "@/hooks/use-admin-business-transactions";
 import { ALL_BUSINESS_TRANSACTION_TYPES } from "@/lib/admin/business-insights-display";
+import { computeBusinessInsights } from "@/lib/admin/business-insights-display";
+import { parseCatalogSection } from "@/lib/admin/business-workspace-config-display";
 import { supportAiKnowledgeDialogCount } from "@/lib/admin/private-usage-list-display";
 import { buildBusinessMapLocation } from "@/lib/admin/business-location-display";
 import { cn } from "@/lib/utils";
@@ -229,37 +221,6 @@ function ProfileFieldContent({ field }: { field: ProfileField }) {
     : <span className="text-zinc-400">Not set</span>;
 }
 
-function SectionHeader({
-  title,
-  description,
-  actions,
-}: {
-  title: string;
-  description?: string;
-  actions?: ReactNode;
-}) {
-  return (
-    <div className="mb-5 flex items-start justify-between gap-4">
-      <div className="flex min-w-0 items-start gap-3">
-        <span className="mt-1.5 h-8 w-0.5 shrink-0 rounded-full bg-teal-500/70" />
-        <div>
-          <h4 className="text-[15px] font-semibold tracking-tight text-zinc-900">
-            {title}
-          </h4>
-          {description && (
-            <p className="mt-1 text-sm text-zinc-500">{description}</p>
-          )}
-        </div>
-      </div>
-      {actions && (
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-          {actions}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function SidebarViewButton({
   ariaLabel,
   onClick,
@@ -352,6 +313,7 @@ export function BusinessProfileCollectionView({
     useState(false);
   const [rawSubmissionsOpen, setRawSubmissionsOpen] = useState(false);
   const [logoEnlarged, setLogoEnlarged] = useState(false);
+  const [tab, setTab] = useState<BusinessOverviewTab>("insights");
 
   const {
     root,
@@ -412,12 +374,46 @@ export function BusinessProfileCollectionView({
       })
     : null;
 
+  const insightsSummary = useMemo(
+    () =>
+      computeBusinessInsights({
+        documents,
+        transactions,
+        collectionCounts,
+      }),
+    [collectionCounts, documents, transactions],
+  );
+
+  const catalogSummary = root ? parseCatalogSection(root.data) : null;
+  const catalogItemCount =
+    catalogSummary ?
+      catalogSummary.waterTypes.length +
+      catalogSummary.expenseCategories.length +
+      catalogSummary.inventoryCategories.length +
+      catalogSummary.usageGoals.length
+    : 0;
+
+  const overviewTabs: DashboardSegmentTab[] = useMemo(
+    () => [
+      { id: "insights", label: "Insights", count: insightsSummary.stats.length },
+      { id: "workspace", label: "Workspace" },
+      { id: "catalog", label: "Catalog", count: catalogItemCount },
+      {
+        id: "collections",
+        label: "Collections",
+        count: subcollectionGroups.length,
+      },
+      { id: "config", label: "Config" },
+    ],
+    [catalogItemCount, insightsSummary.stats.length, subcollectionGroups.length],
+  );
+
   if (isLoading && documents.length === 0) {
     return (
-      <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
-        <div className="space-y-4 rounded-2xl bg-zinc-50/50 p-6 ring-1 ring-zinc-200/60">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-14 animate-pulse rounded-lg bg-white" />
+            <div key={index} className="h-14 animate-pulse rounded-lg bg-zinc-100" />
           ))}
         </div>
         <div className="h-72 animate-pulse rounded-2xl bg-zinc-100" />
@@ -434,303 +430,63 @@ export function BusinessProfileCollectionView({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_280px] lg:items-start">
-      <div className="rounded-2xl bg-zinc-50/40 p-6 ring-1 ring-zinc-200/60">
-        <div className="space-y-10">
-          <BusinessInsightsSection
+    <div className="space-y-6">
+      <div className="sticky top-0 z-10 -mx-1 space-y-3 bg-[var(--background)]/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/80">
+        <DashboardSegmentTabs
+          tabs={overviewTabs}
+          activeId={tab}
+          onChange={(id) => setTab(id as BusinessOverviewTab)}
+        />
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+        <div className="min-w-0">
+          <BusinessProfileTabContent
+            tab={tab}
+            root={root ?? null}
+            businessId={businessId}
             documents={documents}
             collectionCounts={collectionCounts}
             transactions={transactions}
             transactionsLoading={transactionsLoading}
+            insightsStatCount={insightsSummary.stats.length}
+            catalogItemCount={catalogItemCount}
+            subcollectionGroups={subcollectionGroups}
+            primaryFields={primaryFields}
+            otherFields={otherFields}
+            ProfileFormField={ProfileFormField}
+            ProfileFieldContent={ProfileFieldContent}
+            fieldIcon={fieldIcon}
+            workspaceActions={
+              root ?
+                <WorkspaceQuickActions
+                  onEdit={() => setEditRootOpen(true)}
+                  onDelete={() => setDeleteTreeOpen(true)}
+                  onAuditLogs={() => setAuditLogsOpen(true)}
+                  auditLogsCount={auditLogsGroup?.totalCount ?? 0}
+                  onNotifications={() => setNotificationsOpen(true)}
+                  notificationsCount={notificationsGroup?.totalCount ?? 0}
+                  onCustomers={() => setCustomersOpen(true)}
+                  customersCount={customersGroup?.totalCount ?? 0}
+                  onAiToolRuns={() => setAiToolRunsOpen(true)}
+                  aiToolRunsCount={aiToolRunsGroup?.totalCount ?? 0}
+                  onChat={() => setChatOpen(true)}
+                  chatCount={chatSessionsGroup?.totalCount ?? 0}
+                  onSupportAiKnowledge={() => setSupportAiKnowledgeOpen(true)}
+                  supportAiKnowledgeCount={supportAiKnowledgeCount}
+                  onInventory={() => setInventoryOpen(true)}
+                  inventoryCount={inventoryItemsGroup?.totalCount ?? 0}
+                  onRawSubmissions={() => setRawSubmissionsOpen(true)}
+                  rawSubmissionsCount={rawSubmissionsGroup?.totalCount ?? 0}
+                />
+              : null
+            }
+            onSaveDocument={onSaveDocument}
+            onRemoveDocument={onRemoveDocument}
           />
-
-          {root && (
-            <section>
-              <SectionHeader
-                title="Workspace information"
-                description="Core fields stored on the business record"
-                actions={
-                  <>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
-                      aria-label="Edit workspace"
-                      disabled={!root}
-                      onClick={() => setEditRootOpen(true)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-9 w-9 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
-                      aria-label="Remove workspace"
-                      onClick={() => setDeleteTreeOpen(true)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
-                      aria-label={
-                        auditLogsGroup && auditLogsGroup.totalCount > 0 ?
-                          `Audit logs (${auditLogsGroup.totalCount})`
-                        : "Audit logs"
-                      }
-                      onClick={() => setAuditLogsOpen(true)}
-                    >
-                      <ScrollText className="h-4 w-4" />
-                      {auditLogsGroup && auditLogsGroup.totalCount > 0 && (
-                        <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                          {auditLogsGroup.totalCount}
-                        </span>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
-                      aria-label={
-                        notificationsGroup &&
-                        notificationsGroup.totalCount > 0 ?
-                          `Notifications (${notificationsGroup.totalCount})`
-                        : "Notifications"
-                      }
-                      onClick={() => setNotificationsOpen(true)}
-                    >
-                      <Bell className="h-4 w-4" />
-                      {notificationsGroup &&
-                        notificationsGroup.totalCount > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                            {notificationsGroup.totalCount}
-                          </span>
-                        )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
-                      aria-label={
-                        customersGroup && customersGroup.totalCount > 0 ?
-                          `Customers (${customersGroup.totalCount})`
-                        : "Customers"
-                      }
-                      onClick={() => setCustomersOpen(true)}
-                    >
-                      <ContactRound className="h-4 w-4" />
-                      {customersGroup && customersGroup.totalCount > 0 && (
-                        <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                          {customersGroup.totalCount}
-                        </span>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
-                      aria-label={
-                        aiToolRunsGroup && aiToolRunsGroup.totalCount > 0 ?
-                          `AI run tools (${aiToolRunsGroup.totalCount})`
-                        : "AI run tools"
-                      }
-                      onClick={() => setAiToolRunsOpen(true)}
-                    >
-                      <Bot className="h-4 w-4" />
-                      {aiToolRunsGroup && aiToolRunsGroup.totalCount > 0 && (
-                        <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                          {aiToolRunsGroup.totalCount}
-                        </span>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
-                      aria-label={
-                        chatSessionsGroup &&
-                        chatSessionsGroup.totalCount > 0 ?
-                          `Chat (${chatSessionsGroup.totalCount})`
-                        : "Chat"
-                      }
-                      onClick={() => setChatOpen(true)}
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      {chatSessionsGroup &&
-                        chatSessionsGroup.totalCount > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                            {chatSessionsGroup.totalCount}
-                          </span>
-                        )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
-                      aria-label={
-                        supportAiKnowledgeCount > 0 ?
-                          `Support AI knowledge (${supportAiKnowledgeCount})`
-                        : "Support AI knowledge"
-                      }
-                      onClick={() => setSupportAiKnowledgeOpen(true)}
-                    >
-                      <BookOpen className="h-4 w-4" />
-                      {supportAiKnowledgeCount > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                            {supportAiKnowledgeCount}
-                          </span>
-                        )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
-                      aria-label={
-                        inventoryItemsGroup &&
-                        inventoryItemsGroup.totalCount > 0 ?
-                          `Inventory (${inventoryItemsGroup.totalCount})`
-                        : "Inventory"
-                      }
-                      onClick={() => setInventoryOpen(true)}
-                    >
-                      <Package className="h-4 w-4" />
-                      {inventoryItemsGroup &&
-                        inventoryItemsGroup.totalCount > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                            {inventoryItemsGroup.totalCount}
-                          </span>
-                        )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="relative h-9 w-9 p-0 text-zinc-500 hover:text-zinc-800"
-                      aria-label={
-                        rawSubmissionsGroup &&
-                        rawSubmissionsGroup.totalCount > 0 ?
-                          `Raw submissions (${rawSubmissionsGroup.totalCount})`
-                        : "Raw submissions"
-                      }
-                      onClick={() => setRawSubmissionsOpen(true)}
-                    >
-                      <QrCode className="h-4 w-4" />
-                      {rawSubmissionsGroup &&
-                        rawSubmissionsGroup.totalCount > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
-                            {rawSubmissionsGroup.totalCount}
-                          </span>
-                        )}
-                    </Button>
-                  </>
-                }
-              />
-              {primaryFields.length > 0 && (
-                <div className="grid gap-5 sm:grid-cols-2">
-                  {primaryFields.map((field) => (
-                    <ProfileFormField
-                      key={field.key}
-                      label={field.label}
-                      icon={fieldIcon(field.key)}
-                      className={
-                        field.key === "address" || field.key === "email" ?
-                          "sm:col-span-2"
-                        : undefined
-                      }
-                    >
-                      <ProfileFieldContent field={field} />
-                    </ProfileFormField>
-                  ))}
-                </div>
-              )}
-
-              {otherFields.length > 0 && (
-                <div className={cn(primaryFields.length > 0 && "mt-8 border-t border-zinc-200/80 pt-8")}>
-                  <h5 className="mb-5 text-sm font-semibold tracking-tight text-zinc-800">
-                    Other info
-                  </h5>
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    {otherFields.map((field) => (
-                      <ProfileFormField
-                        key={field.key}
-                        label={field.label}
-                        icon={fieldIcon(field.key)}
-                        className={
-                          field.kind === "photo" || field.key === "email" ?
-                            "sm:col-span-2"
-                          : undefined
-                        }
-                      >
-                        <ProfileFieldContent field={field} />
-                      </ProfileFormField>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div
-                className={cn(
-                  (primaryFields.length > 0 || otherFields.length > 0) &&
-                    "mt-8 border-t border-zinc-200/80 pt-8",
-                )}
-              >
-                <h5 className="mb-5 text-sm font-semibold tracking-tight text-zinc-800">
-                  Onboarding & UI
-                </h5>
-                <BusinessWorkspaceOnboardingFields data={root.data} />
-              </div>
-
-              <BusinessTransactionListSection
-                businessId={businessId}
-                onSaveDocument={onSaveDocument}
-                onRemoveDocument={onRemoveDocument}
-              />
-            </section>
-          )}
-
-          {root && (
-            <>
-              <BusinessUserFeedbackSection data={root.data} />
-              <BusinessCatalogSection data={root.data} />
-            </>
-          )}
-
-          {subcollectionGroups.map((group) => (
-            <BusinessSubcollectionListSection
-              key={group.collectionId}
-              collectionId={group.collectionId}
-              title={group.title}
-              documents={group.documents as UserFirestoreDocumentRow[]}
-              onSaveDocument={onSaveDocument}
-              onRemoveDocument={onRemoveDocument}
-            />
-          ))}
-
-          {!root && subcollectionGroups.length === 0 && (
-            <div className="rounded-xl border border-dashed border-zinc-200 bg-white px-6 py-12 text-center">
-              <Sparkles className="mx-auto h-8 w-8 text-zinc-300" />
-              <p className="mt-3 text-sm font-medium text-zinc-800">
-                No workspace data yet
-              </p>
-              <p className="mt-1 text-sm text-zinc-500">
-                Firestore documents for this business will appear here.
-              </p>
-            </div>
-          )}
         </div>
-      </div>
 
-      <aside className="space-y-4 lg:sticky lg:top-0">
+      <aside className="space-y-4 lg:sticky lg:top-14">
         <div className="relative rounded-2xl bg-white ring-1 ring-zinc-200/70">
           <div className="relative h-20 overflow-hidden rounded-t-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-teal-800">
             <div className="absolute inset-x-0 top-0 h-20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_50%)]" />
@@ -896,6 +652,7 @@ export function BusinessProfileCollectionView({
           </p>
         </SidebarCard>
       </aside>
+      </div>
 
       {root && editRootOpen && (
         <EditFirestoreDocDialog

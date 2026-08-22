@@ -60,6 +60,23 @@ Copy from `.env.example` → **`backend/functions/.env.local`** (preferred — F
 
 Set `SALES_PORTAL_DEV_JOBS_ENABLED=false` on the `*Dev` Cloud Run services. Handlers no-op until unset or set back to `true`. Dev tier is also inferred from function names ending in `Dev` (uses `riverdb-dev` + Dev SmartRefill API URL; legacy stays `prod-smartrefill`).
 
+### Clone Prod → Dev (admin)
+
+Admins on **Prod** Sales Portal can open **Admin → Clone Prod → Dev** (`/admin/clone-prod-to-dev`) to:
+
+1. Export `riverdb` to GCS (`smartrefill-singapore/sales-portal/firestore-exports/…`)
+2. Delete the existing `riverdb-dev` database
+3. Recreate an empty `riverdb-dev` in the same region
+4. Import the export into `riverdb-dev`
+
+Firebase Auth is **not** touched (shared across tiers). After a successful clone, redeploy Dev rules/indexes if needed:
+
+```bash
+cd backend && ENV=dev DEPLOY_FIRESTORE=1 ./deploy.sh
+```
+
+The job is async; the page polls until export → delete → create → import finishes. Requires Prod `salesPortalApi` and IAM for Firestore Admin export/import/delete/create plus write access to the export bucket.
+
 ## Phase 2 (deferred) — Prod cutover
 
 Only after Dev works end-to-end:

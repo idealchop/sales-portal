@@ -92,6 +92,7 @@ export const DASHBOARD_NAV: NavItem[] = [
         label: "Voucher & affiliates management",
       },
       { href: "/subscriptions/plans", label: "Plan management" },
+      { href: "/subscriptions/product-icons", label: "Product icons" },
     ],
   },
   {
@@ -103,6 +104,7 @@ export const DASHBOARD_NAV: NavItem[] = [
     children: [
       { href: "/admin/permissions", label: "Permission" },
       { href: "/admin/data-management", label: "Data management" },
+      { href: "/admin/clone-prod-to-dev", label: "Clone Prod → Dev" },
     ],
   },
 ];

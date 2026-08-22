@@ -1,5 +1,11 @@
 export type WithId<T> = T & { id: string };
 
+export type ClientAppAccess = {
+  appId: string;
+  role?: string;
+  label: string;
+};
+
 export type Client = {
   id: string;
   userId: string;
@@ -10,6 +16,41 @@ export type Client = {
   address?: string;
   status?: string;
   clientType?: "household" | "sme" | "commercial" | "corporate" | "enterprise";
+  linkedUserId?: string;
+  appIds?: string[];
+  apps?: ClientAppAccess[];
+};
+
+export type ClientDirectoryEntry = {
+  linkedUserId: string;
+  displayName: string;
+  email?: string;
+  phone?: string;
+  companyName?: string;
+  apps: ClientAppAccess[];
+  appIds: string[];
+  clientId?: string;
+  clientStatus?: string;
+};
+
+export type OutreachRecipientSource =
+  | "platform_user"
+  | "crm_client"
+  | "webinar_guest"
+  | "webinar_member"
+  | "story_engagement"
+  | "article_engagement";
+
+export type OutreachRecipient = {
+  id: string;
+  email: string;
+  displayName: string;
+  companyName?: string;
+  source: OutreachRecipientSource;
+  sourceLabel: string;
+  appId?: string;
+  appLabel?: string;
+  apps?: ClientAppAccess[];
 };
 
 export type Proposal = {

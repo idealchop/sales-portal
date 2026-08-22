@@ -11,9 +11,12 @@ import {
 } from "../services/proposals-service";
 import {
   createClient,
+  listClientDirectory,
   listClients,
   updateClient,
 } from "../services/clients-service";
+import { listOutreachRecipients } from "../services/outreach-recipients-service";
+import { postOutreachSendHandler } from "./outreach-send-handler";
 import { listCommissions } from "../services/commissions-service";
 import { getManagerTeamSummary } from "../services/sales-team-service";
 import {
@@ -50,6 +53,9 @@ function mapServiceError(res: Response, error: unknown) {
     return;
   case "CLIENT_NOT_FOUND":
     res.status(404).json({ error: "Client not found." });
+    return;
+  case "LINKED_USER_NOT_FOUND":
+    res.status(404).json({ error: "Linked user not found." });
     return;
   default:
     res.status(500).json({ error: "Internal Server Error" });
@@ -180,6 +186,44 @@ export const getClientsHandler = async (
     mapServiceError(res, error);
   }
 };
+
+export const getClientDirectoryHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const data = await listClientDirectory(actor);
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const getOutreachRecipientsHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const data = await listOutreachRecipients(actor);
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const postSalesOutreachSendHandler = postOutreachSendHandler;
 
 export const postClientHandler = async (
   req: AuthenticatedRequest,

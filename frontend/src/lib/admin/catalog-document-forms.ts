@@ -60,13 +60,23 @@ export type VoucherAffiliateFormValues = {
   payoutCurrency: string;
 };
 
+export type ProductIconFormValues = {
+  documentId: string;
+  name: string;
+  imageUrl: string;
+  lucide: string;
+  sortOrder: string;
+  active: boolean;
+};
+
 export type CatalogFormValues =
   | { collectionId: "subscription_plans"; values: PlanFormValues }
   | { collectionId: "subscription_addons"; values: AddonFormValues }
   | {
       collectionId: "vouchers_affiliates";
       values: VoucherAffiliateFormValues;
-    };
+    }
+  | { collectionId: "product_icons"; values: ProductIconFormValues };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ?
@@ -178,6 +188,17 @@ function emptyVoucherAffiliateForm(): VoucherAffiliateFormValues {
   };
 }
 
+function emptyProductIconForm(): ProductIconFormValues {
+  return {
+    documentId: "",
+    name: "",
+    imageUrl: "",
+    lucide: "",
+    sortOrder: "10",
+    active: true,
+  };
+}
+
 export function emptyCatalogFormValues(
   collectionId: AdminCatalogCollectionId,
 ): CatalogFormValues {
@@ -186,6 +207,9 @@ export function emptyCatalogFormValues(
   }
   if (collectionId === "subscription_addons") {
     return { collectionId, values: emptyAddonForm() };
+  }
+  if (collectionId === "product_icons") {
+    return { collectionId, values: emptyProductIconForm() };
   }
   return { collectionId, values: emptyVoucherAffiliateForm() };
 }
@@ -239,6 +263,20 @@ export function catalogFormValuesFromDocument(
             String(data.maxUnitsPerBusiness)
           : "",
         trialEligible: metadata?.trialEligible === true,
+      },
+    };
+  }
+
+  if (collectionId === "product_icons") {
+    return {
+      collectionId,
+      values: {
+        documentId,
+        name: readString(data.name) || documentId,
+        imageUrl: readString(data.imageUrl),
+        lucide: readString(data.lucide),
+        sortOrder: data.sortOrder !== undefined ? String(data.sortOrder) : "10",
+        active: data.active !== false,
       },
     };
   }
@@ -382,6 +420,20 @@ function buildVoucherAffiliatePayload(
   };
 }
 
+function buildProductIconPayload(
+  values: ProductIconFormValues,
+  existing?: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    ...existing,
+    name: values.name.trim() || values.documentId.trim(),
+    imageUrl: values.imageUrl.trim() || undefined,
+    lucide: values.lucide.trim() || undefined,
+    sortOrder: readNumber(values.sortOrder) ?? 10,
+    active: values.active,
+  };
+}
+
 export function catalogDocumentPayloadFromForm(
   form: CatalogFormValues,
   existing?: Record<string, unknown>,
@@ -391,6 +443,9 @@ export function catalogDocumentPayloadFromForm(
   }
   if (form.collectionId === "subscription_addons") {
     return buildAddonPayload(form.values, existing);
+  }
+  if (form.collectionId === "product_icons") {
+    return buildProductIconPayload(form.values, existing);
   }
   return buildVoucherAffiliatePayload(form.values, existing);
 }
@@ -409,6 +464,16 @@ export function validateCatalogForm(form: CatalogFormValues): string | null {
     if (!documentId.trim()) return "Document id is required.";
     if (!code.trim()) return "Add-on code is required.";
     if (!name.trim()) return "Add-on name is required.";
+    return null;
+  }
+
+  if (form.collectionId === "product_icons") {
+    const { documentId, name, imageUrl, lucide } = form.values;
+    if (!documentId.trim()) return "Document id is required.";
+    if (!name.trim()) return "Icon name is required.";
+    if (!imageUrl.trim() && !lucide.trim()) {
+      return "Provide an image URL or a Lucide icon name.";
+    }
     return null;
   }
 

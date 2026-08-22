@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fetchClients } from "@/lib/sales/api";
-import type { Client } from "@/lib/definitions";
+import { fetchClientDirectory, fetchClients } from "@/lib/sales/api";
+import type { Client, ClientDirectoryEntry } from "@/lib/definitions";
 
 export function useClients() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [directory, setDirectory] = useState<ClientDirectoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,11 +14,16 @@ export function useClients() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchClients();
-      setClients(data);
+      const [clientData, directoryData] = await Promise.all([
+        fetchClients(),
+        fetchClientDirectory(),
+      ]);
+      setClients(clientData);
+      setDirectory(directoryData);
     } catch {
       setError("Unable to load clients.");
       setClients([]);
+      setDirectory([]);
     } finally {
       setIsLoading(false);
     }
@@ -26,10 +32,11 @@ export function useClients() {
   useEffect(() => {
     let cancelled = false;
 
-    void fetchClients()
-      .then((data) => {
+    void Promise.all([fetchClients(), fetchClientDirectory()])
+      .then(([clientData, directoryData]) => {
         if (cancelled) return;
-        setClients(data);
+        setClients(clientData);
+        setDirectory(directoryData);
         setError(null);
         setIsLoading(false);
       })
@@ -37,6 +44,7 @@ export function useClients() {
         if (cancelled) return;
         setError("Unable to load clients.");
         setClients([]);
+        setDirectory([]);
         setIsLoading(false);
       });
 
@@ -45,5 +53,5 @@ export function useClients() {
     };
   }, []);
 
-  return { clients, isLoading, error, refresh };
+  return { clients, directory, isLoading, error, refresh };
 }

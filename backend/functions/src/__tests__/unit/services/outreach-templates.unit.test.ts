@@ -56,6 +56,21 @@ describe("buildOutreachEmailByKind", () => {
     expect(email.html).toContain("subscription expiring soon");
     expect(email.brevoTag).toBe("sales_portal_alert_followup");
   });
+
+  it("builds personalized outreach from custom subject and body", () => {
+    const email = buildOutreachEmailByKind(
+      "personalized",
+      { recipientName: "Maria Santos" },
+      {
+        subject: "Quick follow-up",
+        bodyText: "Thanks for joining our webinar.\n\nLet us know if you have questions.",
+      },
+    );
+    expect(email.subject).toBe("Quick follow-up");
+    expect(email.text).toContain("Maria");
+    expect(email.text).toContain("Thanks for joining our webinar.");
+    expect(email.brevoTag).toBe("sales_portal_personalized");
+  });
 });
 
 describe("outreach constants", () => {

@@ -33,8 +33,8 @@ export const postGenerateSocialPost = async (
 
   const mode = parseMode(
     req.body && typeof req.body === "object" ?
-      (req.body as { mode?: unknown }).mode
-    : undefined,
+      (req.body as { mode?: unknown }).mode :
+      undefined,
   );
 
   try {

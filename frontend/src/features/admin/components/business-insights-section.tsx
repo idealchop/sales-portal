@@ -22,28 +22,6 @@ import type { BusinessFirestoreDocumentRow } from "@/lib/admin/business-profile-
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
 import { cn } from "@/lib/utils";
 
-function SectionHeader({
-  title,
-  description,
-}: {
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="mb-5 flex items-start gap-3">
-      <span className="mt-1.5 h-8 w-0.5 shrink-0 rounded-full bg-teal-500/70" />
-      <div>
-        <h4 className="text-[15px] font-semibold tracking-tight text-zinc-900">
-          {title}
-        </h4>
-        {description && (
-          <p className="mt-1 text-sm text-zinc-500">{description}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3.5 shadow-sm">
@@ -147,19 +125,14 @@ export function BusinessInsightsSection({
   const hasConsumption = insights.consumption.length > 0;
 
   return (
-    <section>
-      <SectionHeader
-        title="Insight section"
-        description="Workspace activity, trends, and subscription consumption"
-      />
-
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <section className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {insights.stats.map((stat) => (
           <StatCard key={stat.id} label={stat.label} value={stat.value} />
         ))}
       </div>
 
-      <div className="mb-6 grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard
           title="Transaction activity"
           description="Daily records over the last 14 days"

@@ -433,12 +433,57 @@ export type OutreachTemplateKind =
   | "demo_inquiry"
   | "inactive_owner"
   | "legacy_station"
-  | "generic";
+  | "generic"
+  | "personalized";
+
+export function buildPersonalizedOutreachEmail(input: {
+  subject: string;
+  bodyText: string;
+  recipientName?: string | null;
+}): OutreachEmailPayload {
+  const name = firstNameFromDisplay(input.recipientName);
+  const subject = input.subject.trim() || "Message from Smart Refill";
+  const bodyText = input.bodyText.trim() || "";
+  const greeting = greetingLine(name);
+  const paragraphs = bodyText
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+  if (paragraphs.length === 0 && bodyText) {
+    paragraphs.push(bodyText);
+  }
+
+  const text = [greeting, "", bodyText, "", "Warm regards,", "River Support Team", OUTREACH_SENDER.email]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    subject,
+    html: wrapHtml({
+      subject,
+      eyebrow: "Personal message",
+      greeting: escapeHtmlForEmail(greeting),
+      paragraphs: paragraphs.map((block) =>
+        escapeHtmlForEmail(block).replace(/\n/g, "<br />"),
+      ),
+    }),
+    text,
+    brevoTag: "sales_portal_personalized",
+  };
+}
 
 export function buildOutreachEmailByKind(
   kind: OutreachTemplateKind,
   input: OutreachPersonalization = {},
+  custom?: { subject?: string; bodyText?: string },
 ): OutreachEmailPayload {
+  if (kind === "personalized" && custom?.subject && custom?.bodyText) {
+    return buildPersonalizedOutreachEmail({
+      subject: custom.subject,
+      bodyText: custom.bodyText,
+      recipientName: input.recipientName,
+    });
+  }
   switch (kind) {
   case "new_user_registration":
     return buildNewUserOutreachEmail(input);

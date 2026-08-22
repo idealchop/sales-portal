@@ -11,7 +11,14 @@ import {
   type AdminAppAccessEntry,
 } from "../services/admin-user-service";
 import { listDataManagementOverview } from "../services/admin-data-management-service";
-import { cloneBusinessToDemoAccount } from "../services/clone-to-demo-service";
+import {
+  cloneBusinessToDemoAccount,
+} from "../services/clone-to-demo-service";
+import {
+  CLONE_PROD_TO_DEV_CONFIRM_PHRASE,
+  startCloneProdToDev,
+  tickCloneProdToDev,
+} from "../services/clone-prod-to-dev-service";
 import {
   deleteBusinessFirestoreDocument,
   deleteBusinessFirestoreTree,
@@ -118,6 +125,72 @@ export const postAdminCloneToDemo = async (
     res.status(500).json({
       error: "Failed to clone account into demo@smartrefill.com.",
     });
+  }
+};
+
+export const getAdminCloneProdToDev = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    // Advance long-running export/delete/create/import when the UI polls.
+    const data = await tickCloneProdToDev();
+    res.json({
+      data: {
+        job: data,
+        confirmPhrase: CLONE_PROD_TO_DEV_CONFIRM_PHRASE,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "MUST_RUN_ON_PROD_API") {
+      res.status(400).json({
+        error:
+          "Clone Prod → Dev must run against the Prod API (salesPortalApi / riverdb).",
+      });
+      return;
+    }
+    logger.error("Failed to load clone prod→dev status", { error });
+    res.status(500).json({ error: "Failed to load clone status." });
+  }
+};
+
+export const postAdminCloneProdToDev = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const uid = req.user?.uid;
+  if (!uid) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const confirm = String(req.body?.confirm || "");
+  try {
+    const data = await startCloneProdToDev({ actorUid: uid, confirm });
+    res.json({
+      data: {
+        job: data,
+        confirmPhrase: CLONE_PROD_TO_DEV_CONFIRM_PHRASE,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "CONFIRM_PHRASE_REQUIRED") {
+      res.status(400).json({
+        error: `Type ${CLONE_PROD_TO_DEV_CONFIRM_PHRASE} to confirm.`,
+      });
+      return;
+    }
+    if (message === "MUST_RUN_ON_PROD_API") {
+      res.status(400).json({
+        error:
+          "Clone Prod → Dev must run against the Prod API (salesPortalApi / riverdb).",
+      });
+      return;
+    }
+    logger.error("Failed to start clone prod→dev", { error });
+    res.status(500).json({ error: "Failed to start clone Prod → Dev." });
   }
 };
 

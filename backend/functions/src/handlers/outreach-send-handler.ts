@@ -9,6 +9,7 @@ const VALID_KINDS = new Set<OutreachTemplateKind>([
   "demo_inquiry",
   "inactive_owner",
   "generic",
+  "personalized",
 ]);
 
 function resolveOutreachKind(raw: unknown): OutreachTemplateKind {
@@ -36,15 +37,29 @@ export async function postOutreachSendHandler(
     return;
   }
 
+  const kind = resolveOutreachKind(req.body?.kind);
+  const customSubject =
+    typeof req.body?.subject === "string" ? req.body.subject.trim() : "";
+  const customBodyText =
+    typeof req.body?.bodyText === "string" ? req.body.bodyText.trim() : "";
+  if (kind === "personalized" && (!customSubject || !customBodyText)) {
+    res.status(400).json({
+      error: "Subject and body are required for personalized outreach.",
+    });
+    return;
+  }
+
   try {
     const outreach = await sendOutreachEmail({
       toEmail,
-      kind: resolveOutreachKind(req.body?.kind),
+      kind,
       personalization: {
         recipientName: req.body?.recipientName,
         businessName: req.body?.businessName,
         subtitle: req.body?.subtitle,
       },
+      customSubject: customSubject || undefined,
+      customBodyText: customBodyText || undefined,
       actorUid: uid,
     });
     res.json({ data: { outreach } });

@@ -119,9 +119,21 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 
 | ID | Role | Steps | Expected |
 |----|------|-------|----------|
-| TC-NAV-01 | sales | Click maintenance nav item (Proposals) | Maintenance page shown |
+| TC-NAV-01 | sales | Open `/dashboard/proposals` | Proposals & Clients page loads (not maintenance) |
 | TC-NAV-02 | admin | Subscriptions collapsible nav | Child routes reachable |
 | TC-NAV-03 | mobile | 320px viewport — sidebar | Usable on mobile width |
+
+## TC-PROP — Proposals & outreach
+
+| ID | Role | Steps | Expected |
+|----|------|-------|----------|
+| TC-PROP-01 | sales+ | Open **Compose email** on `/dashboard/proposals` | Recipient list loads (platform users, CRM, webinar guests/members, story/article engagement) |
+| TC-PROP-02 | sales+ | Filter recipients by app + source; search by email | List narrows; app badges visible on platform users |
+| TC-PROP-03 | sales+ | Select 2+ recipients, choose **Personalized**, send via Brevo | One email per recipient (up to 50); success summary |
+| TC-PROP-04 | sales+ | Select multiple, **Demo follow-up** template, send via Brevo | Each recipient gets personalized demo template (name/business) |
+| TC-PROP-05 | sales+ | Select multiple, **Open in mail client** with personalized body | Single draft with all addresses in To (shared message) |
+| TC-PROP-06 | sales+ | Client row **Email** button | Compose opens with that platform user pre-selected |
+| TC-PROP-07 | sales+ | **Propose** from client row | Wizard opens with user pre-filled |
 
 ---
 

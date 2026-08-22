@@ -1,6 +1,12 @@
 import { apiClient } from "@/lib/api-client";
 import { getSalesPortalApiUrl } from "@/lib/bff-url";
-import type { Client, Commission, Proposal } from "@/lib/definitions";
+import type {
+  Client,
+  ClientDirectoryEntry,
+  Commission,
+  OutreachRecipient,
+  Proposal,
+} from "@/lib/definitions";
 
 export type SalesMaterial = {
   id: string;
@@ -37,6 +43,49 @@ export async function fetchClients() {
   return res.data;
 }
 
+export async function fetchClientDirectory() {
+  const res = await apiClient.get<{ data: ClientDirectoryEntry[] }>(
+    "/clients/directory",
+  );
+  return res.data;
+}
+
+export async function fetchOutreachRecipients() {
+  const res = await apiClient.get<{ data: OutreachRecipient[] }>(
+    "/outreach/recipients",
+  );
+  return res.data;
+}
+
+export type OutreachSendKind =
+  | "new_user_registration"
+  | "demo_inquiry"
+  | "inactive_owner"
+  | "generic"
+  | "personalized";
+
+export async function sendSalesOutreachEmail(input: {
+  toEmail: string;
+  kind?: OutreachSendKind;
+  recipientName?: string;
+  businessName?: string;
+  subtitle?: string;
+  subject?: string;
+  bodyText?: string;
+}) {
+  const res = await apiClient.post<{
+    data: {
+      outreach: {
+        sent: boolean;
+        skipped: boolean;
+        messageId?: string;
+        subject: string;
+      };
+    };
+  }>("/outreach/send", input);
+  return res.data;
+}
+
 export async function fetchCommissions() {
   const res = await apiClient.get<{ data: Commission[] }>("/commissions");
   return res.data;
@@ -52,7 +101,9 @@ export async function fetchSalesMaterials() {
   return res.data;
 }
 
-export async function createClient(input: Partial<Client>) {
+export async function createClient(
+  input: Partial<Client> & { linkedUserId?: string; appIds?: string[] },
+) {
   const res = await apiClient.post<{ data: Client }>("/clients", input);
   return res.data;
 }

@@ -14,6 +14,11 @@ export const ADMIN_CATALOG_COLLECTIONS = {
     description: "Manage subscription plans, pricing tiers, and billing options.",
     route: "/subscriptions/plans",
   },
+  product_icons: {
+    title: "Product icons",
+    description: "Icons stations can assign to delivery products in SmartRefill.",
+    route: "/subscriptions/product-icons",
+  },
 } as const;
 
 export type AdminCatalogCollectionId = keyof typeof ADMIN_CATALOG_COLLECTIONS;
