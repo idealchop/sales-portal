@@ -41,9 +41,40 @@ const BUSINESS_PRIMARY_FIELD_KEYS = new Set([
 
 const BUSINESS_LOGO_FIELD_KEYS = ["logo", "logoURL", "photoURL"] as const;
 
-const BUSINESS_HIDDEN_ROOT_FIELD_KEYS = new Set<string>(
-  BUSINESS_LOGO_FIELD_KEYS,
-);
+/**
+ * Root fields that belong elsewhere (logo header, structured sections) or are
+ * internal SmartRefill job/idempotency state — not useful in Workspace → Other info.
+ */
+const BUSINESS_HIDDEN_ROOT_FIELD_KEYS = new Set<string>([
+  ...BUSINESS_LOGO_FIELD_KEYS,
+  // Legacy catalog / denormalized job flags
+  "containerOperatingMode",
+  "ownerMorningAlertsEnabled",
+  "workspaceOnboardedAt",
+  "analyticsDirtyAt",
+  "channelUsage",
+  // Nested map (when present) + dotted top-level writes from set(merge)
+  "customerEmailSentFlags",
+]);
+
+const BUSINESS_HIDDEN_ROOT_FIELD_PREFIXES = [
+  "customerEmailSentFlags.",
+] as const;
+
+/** Notification / email / push idempotency timestamps written by scheduled jobs. */
+const BUSINESS_IDEMPOTENCY_FIELD_PATTERN =
+  /(?:LastSent|LastAutoRun|EmailSentFlags|PushLast|DigestLast)/i;
+
+export function isBusinessOtherInfoNoiseField(key: string): boolean {
+  if (BUSINESS_HIDDEN_ROOT_FIELD_KEYS.has(key)) return true;
+  if (
+    BUSINESS_HIDDEN_ROOT_FIELD_PREFIXES.some((prefix) => key.startsWith(prefix))
+  ) {
+    return true;
+  }
+  if (BUSINESS_IDEMPOTENCY_FIELD_PATTERN.test(key)) return true;
+  return false;
+}
 
 export function businessLogoFromData(
   data: Record<string, unknown> | undefined,
@@ -64,6 +95,7 @@ const BUSINESS_SUBCOLLECTION_LABELS: Record<string, string> = {
   inventory: "Inventory",
   inventory_items: "Inventory",
   inventory_assignments: "Inventory assignments",
+  products: "Products",
   chat_sessions: "Chat",
   support_ai_knowledge: "Support AI knowledge",
   team_chats: "Team chat",
@@ -72,6 +104,7 @@ const BUSINESS_SUBCOLLECTION_LABELS: Record<string, string> = {
   ai_tool_runs: "AI run tools",
   audit_logs: "Audit logs",
   notifications: "Notifications",
+  alert_delivery_log: "Alert delivery log",
   payment_info: "Payment info",
   files: "Files",
   portal_order_ratings: "Portal order ratings",
@@ -97,6 +130,7 @@ export const BUSINESS_DIALOG_ONLY_SUBCOLLECTIONS = new Set([
   "team_chats",
   "inventory_items",
   "inventory_assignments",
+  "products",
   "audit_logs",
   "notifications",
   "payment_info",
@@ -249,7 +283,7 @@ function buildBusinessRootField(key: string, value: unknown): ProfileField {
 
   return {
     key,
-    label: humanizeFieldKey(key),
+    label: BUSINESS_OTHER_INFO_LABELS[key] ?? humanizeFieldKey(key),
     value,
     kind:
       isLogo ? "photo"
@@ -260,13 +294,143 @@ function buildBusinessRootField(key: string, value: unknown): ProfileField {
   };
 }
 
+const BUSINESS_OTHER_INFO_LABELS: Record<string, string> = {
+  onboardingComplete: "Onboarding complete",
+  createdAt: "Created",
+  updatedAt: "Updated",
+  banner: "Portal banner",
+  allowManualTransactionReference: "Allow manual transaction reference",
+  qrWalkInEnabled: "QR walk-in enabled",
+  customerImportAiFreeUsed: "Customer import AI free used",
+  containerDefaultPolicy: "Container default policy",
+  defaultContainerDepositAmount: "Default container deposit (₱)",
+  deliveryInventorySalesEnabled: "Delivery inventory sales enabled",
+  riderCommissionEnabled: "Rider commission enabled",
+  riderRateEnabled: "Rider rate enabled",
+  multiRiderAssignEnabled: "Multi-rider assign enabled",
+  multiRiderCommissionMode: "Multi-rider commission mode",
+};
+
+export type BusinessOtherInfoGroupId =
+  | "record"
+  | "portal"
+  | "containers"
+  | "riders"
+  | "more";
+
+export type BusinessOtherInfoGroup = {
+  id: BusinessOtherInfoGroupId;
+  title: string;
+  fields: ProfileField[];
+};
+
+const OTHER_INFO_GROUP_META: Array<{
+  id: BusinessOtherInfoGroupId;
+  title: string;
+  keys: readonly string[];
+}> = [
+  {
+    id: "record",
+    title: "Record",
+    keys: ["onboardingComplete", "createdAt", "updatedAt"],
+  },
+  {
+    id: "portal",
+    title: "Portal & ordering",
+    keys: [
+      "banner",
+      "allowManualTransactionReference",
+      "qrWalkInEnabled",
+      "customerImportAiFreeUsed",
+    ],
+  },
+  {
+    id: "containers",
+    title: "Containers & delivery",
+    keys: [
+      "containerDefaultPolicy",
+      "defaultContainerDepositAmount",
+      "deliveryInventorySalesEnabled",
+    ],
+  },
+  {
+    id: "riders",
+    title: "Riders",
+    keys: [
+      "riderCommissionEnabled",
+      "riderRateEnabled",
+      "multiRiderAssignEnabled",
+      "multiRiderCommissionMode",
+    ],
+  },
+];
+
+const OTHER_INFO_KEY_TO_GROUP = new Map<string, BusinessOtherInfoGroupId>();
+for (const group of OTHER_INFO_GROUP_META) {
+  for (const key of group.keys) {
+    OTHER_INFO_KEY_TO_GROUP.set(key, group.id);
+  }
+}
+
+function otherInfoGroupIdForKey(key: string): BusinessOtherInfoGroupId {
+  const mapped = OTHER_INFO_KEY_TO_GROUP.get(key);
+  if (mapped) return mapped;
+  if (/rider/i.test(key)) return "riders";
+  if (/container|deliveryInventory/i.test(key)) return "containers";
+  if (/^(banner|qr|portal|importAi)/i.test(key) || /WalkIn|ManualTransaction/i.test(key)) {
+    return "portal";
+  }
+  return "more";
+}
+
+export function groupBusinessOtherInfoFields(
+  fields: ProfileField[],
+): BusinessOtherInfoGroup[] {
+  const buckets = new Map<BusinessOtherInfoGroupId, ProfileField[]>();
+  for (const field of fields) {
+    const groupId = otherInfoGroupIdForKey(field.key);
+    const bucket = buckets.get(groupId) ?? [];
+    bucket.push(field);
+    buckets.set(groupId, bucket);
+  }
+
+  const ordered: BusinessOtherInfoGroup[] = [];
+  for (const meta of OTHER_INFO_GROUP_META) {
+    const groupFields = buckets.get(meta.id);
+    if (!groupFields || groupFields.length === 0) continue;
+    const keyOrder = new Map(meta.keys.map((key, index) => [key, index]));
+    ordered.push({
+      id: meta.id,
+      title: meta.title,
+      fields: [...groupFields].sort((a, b) => {
+        const ai = keyOrder.get(a.key) ?? Number.MAX_SAFE_INTEGER;
+        const bi = keyOrder.get(b.key) ?? Number.MAX_SAFE_INTEGER;
+        if (ai !== bi) return ai - bi;
+        return a.label.localeCompare(b.label);
+      }),
+    });
+  }
+
+  const more = buckets.get("more");
+  if (more && more.length > 0) {
+    ordered.push({
+      id: "more",
+      title: "More",
+      fields: [...more].sort((a, b) => a.label.localeCompare(b.label)),
+    });
+  }
+
+  return ordered;
+}
+
 export function splitBusinessRootFields(data: Record<string, unknown>): {
   primaryFields: ProfileField[];
   otherFields: ProfileField[];
+  otherInfoGroups: BusinessOtherInfoGroup[];
 } {
   const allFields = extractBusinessRootFields(data).filter(
     (field) =>
-      !BUSINESS_HIDDEN_ROOT_FIELD_KEYS.has(field.key) &&
+      !isBusinessOtherInfoNoiseField(field.key) &&
       !BUSINESS_STRUCTURED_ROOT_FIELD_KEYS.has(field.key),
   );
   const primaryFields = allFields.filter((field) =>
@@ -275,7 +439,11 @@ export function splitBusinessRootFields(data: Record<string, unknown>): {
   const otherFields = allFields.filter(
     (field) => !BUSINESS_PRIMARY_FIELD_KEYS.has(field.key),
   );
-  return { primaryFields, otherFields };
+  return {
+    primaryFields,
+    otherFields,
+    otherInfoGroups: groupBusinessOtherInfoFields(otherFields),
+  };
 }
 
 type BusinessSubcollectionGroup = {
@@ -310,6 +478,7 @@ export function splitBusinessDocuments(
   supportAiKnowledgeGroup: BusinessSubcollectionGroup | null;
   privateGroup: BusinessSubcollectionGroup | null;
   inventoryItemsGroup: BusinessSubcollectionGroup | null;
+  productsGroup: BusinessSubcollectionGroup | null;
   auditLogsGroup: BusinessSubcollectionGroup | null;
   notificationsGroup: BusinessSubcollectionGroup | null;
   paymentInfoGroup: BusinessSubcollectionGroup | null;
@@ -368,6 +537,7 @@ export function splitBusinessDocuments(
     supportAiKnowledgeGroup: findGroup("support_ai_knowledge"),
     privateGroup: findGroup("private"),
     inventoryItemsGroup: findGroup("inventory_items"),
+    productsGroup: findGroup("products"),
     auditLogsGroup: findGroup("audit_logs"),
     notificationsGroup: findGroup("notifications"),
     paymentInfoGroup: findGroup("payment_info"),

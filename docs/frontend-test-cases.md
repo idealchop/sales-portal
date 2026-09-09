@@ -109,7 +109,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 |----|------|-------|----------|
 | TC-ADM-01 | admin | `/admin/permissions` — grant access | User can log in |
 | TC-ADM-02 | admin | Revoke access | User blocked at login |
-| TC-ADM-03 | admin | `/admin/data-management` — browse business | Subcollections load |
+| TC-ADM-03 | admin | `/admin/data-management` — browse business | Subcollections load; Workspace **Other info** omits customer email-sent flags and job idempotency fields |
 | TC-ADM-04 | admin | Edit Firestore document | Save persists |
 | TC-ADM-05 | admin | Delete document | Confirm + remove |
 

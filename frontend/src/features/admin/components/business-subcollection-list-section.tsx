@@ -1,14 +1,15 @@
 "use client";
 
-import { FileJson, LayoutGrid, List, Loader2, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Loader2, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ListPagination } from "@/components/list-pagination";
 import { CustomerDetailDialog } from "@/features/admin/components/customer-detail-dialog";
 import { DeleteFirestoreDocDialog } from "@/features/admin/components/delete-firestore-doc-dialog";
 import { EditFirestoreDocDialog } from "@/features/admin/components/edit-firestore-doc-dialog";
-import { FirestoreActionsMenu } from "@/features/admin/components/firestore-actions-menu";
 import { FirestoreDocumentDetailDialog } from "@/features/admin/components/firestore-document-detail-dialog";
+import { BusinessGenericDocumentListTable } from "@/features/admin/components/business-generic-document-list-table";
+import { BusinessAlertDeliveryListTable } from "@/features/admin/components/business-alert-delivery-list-table";
 import { BusinessSupportAiKnowledgeListTable } from "@/features/admin/components/business-support-ai-knowledge-list-table";
 import { BusinessChatSessionListTable } from "@/features/admin/components/business-chat-session-list-table";
 import { BusinessAiToolRunListTable } from "@/features/admin/components/business-ai-tool-run-list-table";
@@ -20,15 +21,14 @@ import { BusinessPaymentInfoListRow } from "@/features/admin/components/business
 import { BusinessPortalOrderRatingListRow } from "@/features/admin/components/business-portal-order-rating-list-row";
 import { BusinessCustomerListRow } from "@/features/admin/components/business-customer-list-row";
 import { BusinessInventoryListTable } from "@/features/admin/components/business-inventory-list-table";
+import { BusinessProductListTable } from "@/features/admin/components/business-product-list-table";
 import { BusinessSubscriptionListRow } from "@/features/admin/components/business-subscription-list-row";
 import {
   DEFAULT_FIRESTORE_DOCUMENT_PAGE_SIZE,
   FIRESTORE_DOCUMENT_PAGE_SIZE_OPTIONS,
   firestoreDocumentSearchText,
-  firestoreDocumentSummary,
   matchesSubcollectionFilter,
   subcollectionFilterOptions,
-  type FirestoreDocumentDisplayMode,
   type FirestoreDocumentPageSize,
 } from "@/lib/admin/firestore-document-list";
 import {
@@ -75,11 +75,18 @@ import {
   sortInventoryDocuments,
 } from "@/lib/admin/inventory-list-display";
 import {
+  productSearchText,
+  sortProductDocuments,
+} from "@/lib/admin/product-list-display";
+import {
+  alertDeliverySearchText,
+  sortAlertDeliveryDocuments,
+} from "@/lib/admin/alert-delivery-list-display";
+import {
   sortSubscriptionDocuments,
   subscriptionLatestDocumentId,
 } from "@/lib/admin/subscription-list-display";
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
-import { userDocumentTitle } from "@/lib/admin/user-documents";
 import { cn } from "@/lib/utils";
 
 function SectionHeader({
@@ -128,11 +135,10 @@ export function BusinessSubcollectionListSection({
   const [documentsSource, setDocumentsSource] = useState(initialDocuments);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const [displayMode, setDisplayMode] =
-    useState<FirestoreDocumentDisplayMode>("cards");
   const isSubscriptionList = collectionId === "subscriptions";
   const isCustomerList = collectionId === "customers";
   const isInventoryList = collectionId === "inventory_items";
+  const isProductsList = collectionId === "products";
   const isPortalOrderRatingsList = collectionId === "portal_order_ratings";
   const isPaymentInfoList = collectionId === "payment_info";
   const isFilesList = collectionId === "files";
@@ -142,19 +148,7 @@ export function BusinessSubcollectionListSection({
   const isAiToolRunsList = collectionId === "ai_tool_runs";
   const isChatSessionsList = collectionId === "chat_sessions";
   const isSupportAiKnowledgeList = collectionId === "support_ai_knowledge";
-  const usesCustomListLayout =
-    isSubscriptionList ||
-    isCustomerList ||
-    isInventoryList ||
-    isPortalOrderRatingsList ||
-    isPaymentInfoList ||
-    isFilesList ||
-    isRawSubmissionsList ||
-    isAuditLogsList ||
-    isNotificationsList ||
-    isAiToolRunsList ||
-    isChatSessionsList ||
-    isSupportAiKnowledgeList;
+  const isAlertDeliveryList = collectionId === "alert_delivery_log";
   const [pageSize, setPageSize] = useState<FirestoreDocumentPageSize>(
     DEFAULT_FIRESTORE_DOCUMENT_PAGE_SIZE,
   );
@@ -174,6 +168,14 @@ export function BusinessSubcollectionListSection({
     setDocumentsSource(initialDocuments);
     setDocuments(initialDocuments);
   }
+
+  useEffect(() => {
+    setQuery("");
+    setFilter("all");
+    setPage(1);
+    setSelectedPaths(new Set());
+    setBulkError(null);
+  }, [collectionId]);
 
   const filterOptions = useMemo(
     () => subcollectionFilterOptions(collectionId),
@@ -204,15 +206,20 @@ export function BusinessSubcollectionListSection({
           chatSessionSearchText(doc).includes(q)
         : isSupportAiKnowledgeList ?
           supportAiKnowledgeSearchText(doc).includes(q)
+        : isProductsList ?
+          productSearchText(doc).includes(q)
+        : isAlertDeliveryList ?
+          alertDeliverySearchText(doc).includes(q)
         : firestoreDocumentSearchText(doc).includes(q));
       return matchesFilter && matchesQuery;
     });
-  }, [collectionId, documents, filter, isAiToolRunsList, isAuditLogsList, isChatSessionsList, isFilesList, isNotificationsList, isPaymentInfoList, isPortalOrderRatingsList, isRawSubmissionsList, isSupportAiKnowledgeList, query]);
+  }, [collectionId, documents, filter, isAiToolRunsList, isAlertDeliveryList, isAuditLogsList, isChatSessionsList, isFilesList, isNotificationsList, isPaymentInfoList, isPortalOrderRatingsList, isProductsList, isRawSubmissionsList, isSupportAiKnowledgeList, query]);
 
   const listedDocuments = useMemo(() => {
     if (isSubscriptionList) return sortSubscriptionDocuments(filtered);
     if (isCustomerList) return sortCustomerDocuments(filtered);
     if (isInventoryList) return sortInventoryDocuments(filtered);
+    if (isProductsList) return sortProductDocuments(filtered);
     if (isPortalOrderRatingsList) return sortPortalOrderRatingDocuments(filtered);
     if (isPaymentInfoList) return sortPaymentInfoDocuments(filtered);
     if (isFilesList) return sortFileDocuments(filtered);
@@ -222,15 +229,18 @@ export function BusinessSubcollectionListSection({
     if (isAiToolRunsList) return sortAiToolRunDocuments(filtered);
     if (isChatSessionsList) return sortChatSessionDocuments(filtered);
     if (isSupportAiKnowledgeList) return sortSupportAiKnowledgeDocuments(filtered);
+    if (isAlertDeliveryList) return sortAlertDeliveryDocuments(filtered);
     return filtered;
   }, [
     filtered,
     isAiToolRunsList,
+    isAlertDeliveryList,
     isAuditLogsList,
     isChatSessionsList,
     isCustomerList,
     isFilesList,
     isInventoryList,
+    isProductsList,
     isNotificationsList,
     isPaymentInfoList,
     isPortalOrderRatingsList,
@@ -407,42 +417,14 @@ export function BusinessSubcollectionListSection({
                   "Search subject, summary, status, user…"
                 : isSupportAiKnowledgeList ?
                   "Search question, answer, session, user…"
+                : isAlertDeliveryList ?
+                  "Search category, channel, status, audience…"
                 : "Search documents"
               }
               className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm"
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {!usesCustomListLayout && (
-              <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setDisplayMode("cards")}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition",
-                    displayMode === "cards" ?
-                      "bg-zinc-900 text-white"
-                    : "text-zinc-600 hover:bg-zinc-50",
-                  )}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                  Cards
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDisplayMode("rows")}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition",
-                    displayMode === "rows" ?
-                      "bg-zinc-900 text-white"
-                    : "text-zinc-600 hover:bg-zinc-50",
-                  )}
-                >
-                  <List className="h-4 w-4" />
-                  Rows
-                </button>
-              </div>
-            )}
             <label className="flex items-center gap-2 text-sm text-zinc-600">
               <span className="whitespace-nowrap font-medium">Per page</span>
               <select
@@ -549,6 +531,13 @@ export function BusinessSubcollectionListSection({
         </div>
       : isInventoryList ?
         <BusinessInventoryListTable
+          documents={paginatedItems}
+          onView={openView}
+          onEdit={openEdit}
+          onRemove={openRemove}
+        />
+      : isProductsList ?
+        <BusinessProductListTable
           documents={paginatedItems}
           onView={openView}
           onEdit={openEdit}
@@ -680,71 +669,19 @@ export function BusinessSubcollectionListSection({
           onEdit={openEdit}
           onRemove={openRemove}
         />
-      : displayMode === "cards" ?
-        <div className="grid gap-3 sm:grid-cols-2">
-          {paginatedItems.map((doc) => (
-            <div
-              key={doc.path}
-              className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:border-teal-200 hover:shadow-md"
-            >
-              <div className="flex items-start gap-2 border-b border-zinc-100 px-4 py-3">
-                <button
-                  type="button"
-                  onClick={() => openView(doc)}
-                  className="flex min-w-0 flex-1 items-start gap-3 text-left"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
-                    <FileJson className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">
-                      {userDocumentTitle(doc)}
-                    </p>
-                    <p className="mt-0.5 line-clamp-2 text-sm text-[var(--muted-foreground)]">
-                      {firestoreDocumentSummary(doc)}
-                    </p>
-                  </div>
-                </button>
-                <FirestoreActionsMenu
-                  onView={() => openView(doc)}
-                  onEdit={() => openEdit(doc)}
-                  onRemove={() => openRemove(doc)}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      : <div className="space-y-2">
-          {paginatedItems.map((doc) => (
-            <div
-              key={doc.path}
-              className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-white px-4 py-3 transition hover:border-teal-200 hover:bg-teal-50/20"
-            >
-              <button
-                type="button"
-                onClick={() => openView(doc)}
-                className="flex min-w-0 flex-1 items-center gap-3 text-left"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
-                  <FileJson className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-foreground">
-                    {userDocumentTitle(doc)}
-                  </p>
-                  <p className="mt-0.5 truncate text-sm text-[var(--muted-foreground)]">
-                    {firestoreDocumentSummary(doc)}
-                  </p>
-                </div>
-              </button>
-              <FirestoreActionsMenu
-                onView={() => openView(doc)}
-                onEdit={() => openEdit(doc)}
-                onRemove={() => openRemove(doc)}
-              />
-            </div>
-          ))}
-        </div>
+      : isAlertDeliveryList ?
+        <BusinessAlertDeliveryListTable
+          documents={paginatedItems}
+          onView={openView}
+          onEdit={openEdit}
+          onRemove={openRemove}
+        />
+      : <BusinessGenericDocumentListTable
+          documents={paginatedItems}
+          onView={openView}
+          onEdit={openEdit}
+          onRemove={openRemove}
+        />
       }
 
       {filtered.length > pageSize && (

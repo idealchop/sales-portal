@@ -11,6 +11,7 @@ import {
   Fingerprint,
   Mail,
   MapPin,
+  Package,
   Phone,
   Star,
   UserRound,
@@ -44,6 +45,7 @@ import {
 } from "@/lib/admin/data-management";
 import { BusinessLocationMinimapLoader } from "@/features/admin/components/business-location-minimap-loader";
 import { BusinessSupportAiKnowledgeDialog } from "@/features/admin/components/business-support-ai-knowledge-dialog";
+import { BusinessTransactionsDialog } from "@/features/admin/components/business-transactions-dialog";
 import { TeamDetailDialog } from "@/features/admin/components/team-detail-dialog";
 import { ProactiveScheduleWeekSnapshotDialog } from "@/features/admin/components/proactive-schedule-week-snapshot-dialog";
 import {
@@ -89,6 +91,16 @@ const FIELD_ICON_MAP: Record<string, LucideIcon> = {
   province: MapPin,
   onboardingComplete: CheckCircle2,
   allowManualTransactionReference: CheckCircle2,
+  qrWalkInEnabled: CheckCircle2,
+  customerImportAiFreeUsed: CheckCircle2,
+  deliveryInventorySalesEnabled: CheckCircle2,
+  riderCommissionEnabled: CheckCircle2,
+  riderRateEnabled: CheckCircle2,
+  multiRiderAssignEnabled: CheckCircle2,
+  multiRiderCommissionMode: Users,
+  containerDefaultPolicy: Package,
+  defaultContainerDepositAmount: Wallet,
+  banner: Building2,
   logo: Building2,
   logoURL: Building2,
   photoURL: Building2,
@@ -300,10 +312,12 @@ export function BusinessProfileCollectionView({
   const [auditLogsOpen, setAuditLogsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [customersOpen, setCustomersOpen] = useState(false);
+  const [transactionsOpen, setTransactionsOpen] = useState(false);
   const [aiToolRunsOpen, setAiToolRunsOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [supportAiKnowledgeOpen, setSupportAiKnowledgeOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [productsOpen, setProductsOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
   const [paymentInfoOpen, setPaymentInfoOpen] = useState(false);
@@ -326,6 +340,7 @@ export function BusinessProfileCollectionView({
     supportAiKnowledgeGroup,
     privateGroup,
     inventoryItemsGroup,
+    productsGroup,
     auditLogsGroup,
     notificationsGroup,
     paymentInfoGroup,
@@ -334,8 +349,10 @@ export function BusinessProfileCollectionView({
     proactiveScheduleWeekSnapshotsGroup,
     rawSubmissionsGroup,
   } = splitBusinessDocuments(documents, collectionCounts);
-  const { primaryFields, otherFields } =
-    root ? splitBusinessRootFields(root.data) : { primaryFields: [], otherFields: [] };
+  const { primaryFields, otherInfoGroups } =
+    root ?
+      splitBusinessRootFields(root.data)
+    : { primaryFields: [], otherInfoGroups: [] };
   const displayName =
     row.businessName || businessNameFromData(root?.data) || businessId;
   const businessLogo = businessLogoFromData(root?.data);
@@ -397,7 +414,6 @@ export function BusinessProfileCollectionView({
     () => [
       { id: "insights", label: "Insights", count: insightsSummary.stats.length },
       { id: "workspace", label: "Workspace" },
-      { id: "catalog", label: "Catalog", count: catalogItemCount },
       {
         id: "collections",
         label: "Collections",
@@ -405,7 +421,7 @@ export function BusinessProfileCollectionView({
       },
       { id: "config", label: "Config" },
     ],
-    [catalogItemCount, insightsSummary.stats.length, subcollectionGroups.length],
+    [insightsSummary.stats.length, subcollectionGroups.length],
   );
 
   if (isLoading && documents.length === 0) {
@@ -453,7 +469,7 @@ export function BusinessProfileCollectionView({
             catalogItemCount={catalogItemCount}
             subcollectionGroups={subcollectionGroups}
             primaryFields={primaryFields}
-            otherFields={otherFields}
+            otherInfoGroups={otherInfoGroups}
             ProfileFormField={ProfileFormField}
             ProfileFieldContent={ProfileFieldContent}
             fieldIcon={fieldIcon}
@@ -468,12 +484,16 @@ export function BusinessProfileCollectionView({
                   notificationsCount={notificationsGroup?.totalCount ?? 0}
                   onCustomers={() => setCustomersOpen(true)}
                   customersCount={customersGroup?.totalCount ?? 0}
+                  onTransactions={() => setTransactionsOpen(true)}
+                  transactionsCount={transactions.length}
                   onAiToolRuns={() => setAiToolRunsOpen(true)}
                   aiToolRunsCount={aiToolRunsGroup?.totalCount ?? 0}
                   onChat={() => setChatOpen(true)}
                   chatCount={chatSessionsGroup?.totalCount ?? 0}
                   onSupportAiKnowledge={() => setSupportAiKnowledgeOpen(true)}
                   supportAiKnowledgeCount={supportAiKnowledgeCount}
+                  onProducts={() => setProductsOpen(true)}
+                  productsCount={productsGroup?.totalCount ?? 0}
                   onInventory={() => setInventoryOpen(true)}
                   inventoryCount={inventoryItemsGroup?.totalCount ?? 0}
                   onRawSubmissions={() => setRawSubmissionsOpen(true)}
@@ -723,6 +743,15 @@ export function BusinessProfileCollectionView({
         />
       )}
 
+      {transactionsOpen && (
+        <BusinessTransactionsDialog
+          businessId={businessId}
+          onClose={() => setTransactionsOpen(false)}
+          onSaveDocument={onSaveDocument}
+          onRemoveDocument={onRemoveDocument}
+        />
+      )}
+
       {aiToolRunsOpen && (
         <BusinessSubcollectionDialog
           title="AI run tools"
@@ -766,6 +795,22 @@ export function BusinessProfileCollectionView({
             (supportAiKnowledgeGroup?.documents ?? []) as UserFirestoreDocumentRow[]
           }
           onClose={() => setSupportAiKnowledgeOpen(false)}
+          onSaveDocument={onSaveDocument}
+          onRemoveDocument={onRemoveDocument}
+        />
+      )}
+
+      {productsOpen && (
+        <BusinessSubcollectionDialog
+          title="Products"
+          description="Delivery catalog products for this workspace"
+          collectionId="products"
+          businessId={businessId}
+          documents={
+            (productsGroup?.documents ?? []) as UserFirestoreDocumentRow[]
+          }
+          totalCount={productsGroup?.totalCount}
+          onClose={() => setProductsOpen(false)}
           onSaveDocument={onSaveDocument}
           onRemoveDocument={onRemoveDocument}
         />

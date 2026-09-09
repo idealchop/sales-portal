@@ -9,22 +9,22 @@ import {
   Package,
   Pencil,
   QrCode,
+  Receipt,
   ScrollText,
+  ShoppingBag,
   Sparkles,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BusinessInsightsSection } from "@/features/admin/components/business-insights-section";
-import { BusinessSubcollectionListSection } from "@/features/admin/components/business-subcollection-list-section";
-import { BusinessTransactionListSection } from "@/features/admin/components/business-transaction-list-section";
+import { BusinessCollectionsPanel } from "@/features/admin/components/business-collections-panel";
+import { BusinessConfigPanel } from "@/features/admin/components/business-config-panel";
 import {
   BusinessCatalogSection,
   BusinessUserFeedbackSection,
   BusinessWorkspaceOnboardingProgress,
-  BusinessWorkspaceUiConfig,
 } from "@/features/admin/components/business-workspace-config-sections";
 import { DashboardSection } from "@/features/dashboard/components/dashboard-section";
-import { SmartRefillConfigPanel } from "@/features/dashboard/components/smartrefill-config-panel";
 import type { BusinessFirestoreDocumentRow } from "@/lib/admin/business-profile-display";
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
 import type { ProfileField } from "@/lib/admin/user-profile-display";
@@ -35,7 +35,6 @@ import type { ReactNode } from "react";
 export type BusinessOverviewTab =
   | "insights"
   | "workspace"
-  | "catalog"
   | "collections"
   | "config";
 
@@ -43,11 +42,16 @@ type SubcollectionGroup = {
   collectionId: string;
   title: string;
   documents: unknown[];
+  totalCount?: number;
 };
 
 type WorkspaceFieldProps = {
   primaryFields: ProfileField[];
-  otherFields: ProfileField[];
+  otherInfoGroups: Array<{
+    id: string;
+    title: string;
+    fields: ProfileField[];
+  }>;
   ProfileFormField: (props: {
     label: string;
     icon?: LucideIcon;
@@ -70,7 +74,7 @@ export function BusinessProfileTabContent({
   catalogItemCount,
   subcollectionGroups,
   primaryFields,
-  otherFields,
+  otherInfoGroups,
   ProfileFormField,
   ProfileFieldContent,
   fieldIcon,
@@ -86,10 +90,10 @@ export function BusinessProfileTabContent({
   transactions: UserFirestoreDocumentRow[];
   transactionsLoading?: boolean;
   insightsStatCount: number;
-  catalogItemCount: number;
+  catalogItemCount?: number;
   subcollectionGroups: SubcollectionGroup[];
   primaryFields: WorkspaceFieldProps["primaryFields"];
-  otherFields: WorkspaceFieldProps["otherFields"];
+  otherInfoGroups: WorkspaceFieldProps["otherInfoGroups"];
   ProfileFormField: WorkspaceFieldProps["ProfileFormField"];
   ProfileFieldContent: WorkspaceFieldProps["ProfileFieldContent"];
   fieldIcon: WorkspaceFieldProps["fieldIcon"];
@@ -146,7 +150,7 @@ export function BusinessProfileTabContent({
             </div>
           )}
 
-          {otherFields.length > 0 && (
+          {otherInfoGroups.length > 0 && (
             <div
               className={cn(
                 primaryFields.length > 0 && "mt-8 border-t border-zinc-200/80 pt-8",
@@ -155,20 +159,29 @@ export function BusinessProfileTabContent({
               <h5 className="mb-5 text-sm font-semibold tracking-tight text-zinc-800">
                 Other info
               </h5>
-              <div className="grid gap-5 sm:grid-cols-2">
-                {otherFields.map((field) => (
-                  <ProfileFormField
-                    key={field.key}
-                    label={field.label}
-                    icon={fieldIcon(field.key)}
-                    className={
-                      field.kind === "photo" || field.key === "email" ?
-                        "sm:col-span-2"
-                      : undefined
-                    }
-                  >
-                    <ProfileFieldContent field={field} />
-                  </ProfileFormField>
+              <div className="space-y-8">
+                {otherInfoGroups.map((group) => (
+                  <div key={group.id}>
+                    <h6 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                      {group.title}
+                    </h6>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      {group.fields.map((field) => (
+                        <ProfileFormField
+                          key={field.key}
+                          label={field.label}
+                          icon={fieldIcon(field.key)}
+                          className={
+                            field.kind === "photo" || field.key === "banner" ?
+                              "sm:col-span-2"
+                            : undefined
+                          }
+                        >
+                          <ProfileFieldContent field={field} />
+                        </ProfileFormField>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -183,24 +196,6 @@ export function BusinessProfileTabContent({
           <BusinessWorkspaceOnboardingProgress data={root.data} />
         </DashboardSection>
 
-        <DashboardSection
-          id="business-transactions"
-          title="Transactions"
-          description="Ledger records for this workspace"
-        >
-          <BusinessTransactionListSection
-            businessId={businessId}
-            onSaveDocument={onSaveDocument}
-            onRemoveDocument={onRemoveDocument}
-          />
-        </DashboardSection>
-      </div>
-    );
-  }
-
-  if (tab === "catalog" && root) {
-    return (
-      <div className="space-y-6">
         <DashboardSection
           id="business-feedback"
           title="User feedback"
@@ -222,58 +217,18 @@ export function BusinessProfileTabContent({
   }
 
   if (tab === "collections") {
-    if (subcollectionGroups.length === 0) {
-      return (
-        <div className="rounded-xl border border-dashed border-zinc-200 bg-white px-6 py-12 text-center">
-          <Sparkles className="mx-auto h-8 w-8 text-zinc-300" />
-          <p className="mt-3 text-sm font-medium text-zinc-800">
-            No subcollections yet
-          </p>
-          <p className="mt-1 text-sm text-zinc-500">
-            Firestore subcollections for this business will appear here.
-          </p>
-        </div>
-      );
-    }
-
     return (
-      <div className="space-y-6">
-        {subcollectionGroups.map((group) => (
-          <BusinessSubcollectionListSection
-            key={group.collectionId}
-            collectionId={group.collectionId}
-            title={group.title}
-            documents={group.documents as UserFirestoreDocumentRow[]}
-            onSaveDocument={onSaveDocument}
-            onRemoveDocument={onRemoveDocument}
-          />
-        ))}
-      </div>
+      <BusinessCollectionsPanel
+        groups={subcollectionGroups}
+        businessId={businessId}
+        onSaveDocument={onSaveDocument}
+        onRemoveDocument={onRemoveDocument}
+      />
     );
   }
 
   if (tab === "config") {
-    return (
-      <div className="space-y-6">
-        {root ?
-          <DashboardSection
-            id="business-ui-config"
-            title="Workspace UI config"
-            description="Client-persisted flags for this workspace"
-          >
-            <BusinessWorkspaceUiConfig data={root.data} />
-          </DashboardSection>
-        : null}
-
-        <DashboardSection
-          id="business-smartrefill-config"
-          title="SmartRefill app config"
-          description="Global product icons and subscription catalog settings"
-        >
-          <SmartRefillConfigPanel />
-        </DashboardSection>
-      </div>
-    );
+    return <BusinessConfigPanel rootData={root?.data ?? null} />;
   }
 
   if (!root) {
@@ -300,12 +255,16 @@ export function WorkspaceQuickActions({
   notificationsCount,
   onCustomers,
   customersCount,
+  onTransactions,
+  transactionsCount,
   onAiToolRuns,
   aiToolRunsCount,
   onChat,
   chatCount,
   onSupportAiKnowledge,
   supportAiKnowledgeCount,
+  onProducts,
+  productsCount,
   onInventory,
   inventoryCount,
   onRawSubmissions,
@@ -319,12 +278,16 @@ export function WorkspaceQuickActions({
   notificationsCount: number;
   onCustomers: () => void;
   customersCount: number;
+  onTransactions: () => void;
+  transactionsCount: number;
   onAiToolRuns: () => void;
   aiToolRunsCount: number;
   onChat: () => void;
   chatCount: number;
   onSupportAiKnowledge: () => void;
   supportAiKnowledgeCount: number;
+  onProducts: () => void;
+  productsCount: number;
   onInventory: () => void;
   inventoryCount: number;
   onRawSubmissions: () => void;
@@ -371,6 +334,12 @@ export function WorkspaceQuickActions({
         onClick={onCustomers}
       />
       <QuickActionIconButton
+        icon={Receipt}
+        label="Transactions"
+        count={transactionsCount}
+        onClick={onTransactions}
+      />
+      <QuickActionIconButton
         icon={Bot}
         label="AI run tools"
         count={aiToolRunsCount}
@@ -387,6 +356,12 @@ export function WorkspaceQuickActions({
         label="Support AI knowledge"
         count={supportAiKnowledgeCount}
         onClick={onSupportAiKnowledge}
+      />
+      <QuickActionIconButton
+        icon={ShoppingBag}
+        label="Products"
+        count={productsCount}
+        onClick={onProducts}
       />
       <QuickActionIconButton
         icon={Package}

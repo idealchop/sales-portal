@@ -7,7 +7,6 @@ import {
   Flag,
   Layers3,
   MessageSquareQuote,
-  Settings2,
   Sparkles,
   Wallet,
   type LucideIcon,
@@ -19,6 +18,7 @@ import {
   parseGettingStartedProgress,
   parseQuickTourProgress,
   parseUiConfigRows,
+  groupUiConfigRows,
   parseUserFeedback,
   type CatalogEntry,
   type ChecklistItem,
@@ -70,32 +70,6 @@ function ProgressChecklist({
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function KeyValueGrid({ rows }: { rows: { label: string; value: string }[] }) {
-  if (rows.length === 0) {
-    return (
-      <p className="rounded-xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-500">
-        No UI configuration saved yet.
-      </p>
-    );
-  }
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {rows.map((row) => (
-        <div
-          key={row.label}
-          className="rounded-lg bg-white px-3.5 py-2.5 ring-1 ring-zinc-200/70"
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-            {row.label}
-          </p>
-          <p className="mt-1 text-sm text-zinc-900">{row.value}</p>
-        </div>
-      ))}
     </div>
   );
 }
@@ -185,21 +159,44 @@ export function BusinessWorkspaceUiConfig({
   data: Record<string, unknown>;
 }) {
   const uiConfigRows = parseUiConfigRows(data);
+  const groups = groupUiConfigRows(uiConfigRows);
+
+  if (uiConfigRows.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-500">
+        No UI configuration saved yet.
+      </p>
+    );
+  }
 
   return (
-    <div>
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-100/80 text-zinc-500">
-          <Settings2 className="h-3.5 w-3.5" />
-        </span>
-        <div>
-          <p className="text-sm font-semibold text-zinc-900">UI config</p>
-          <p className="text-xs text-zinc-500">
-            Client-persisted workspace UI flags
-          </p>
+    <div className="space-y-5">
+      {groups.map((group) => (
+        <div key={group.id}>
+          <div className="mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              {group.label}
+            </p>
+            <p className="text-xs text-zinc-400">{group.description}</p>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+            {group.rows.map((row) => (
+              <div
+                key={row.key}
+                className="grid gap-1 border-b border-zinc-100 px-4 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] sm:items-center sm:gap-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-zinc-900">{row.label}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-zinc-400">
+                    {row.key}
+                  </p>
+                </div>
+                <p className="break-words text-sm text-zinc-700">{row.value}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-      <KeyValueGrid rows={uiConfigRows} />
+      ))}
     </div>
   );
 }

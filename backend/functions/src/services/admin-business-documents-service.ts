@@ -27,6 +27,7 @@ export const LAZY_BUSINESS_SUBCOLLECTIONS = new Set([
   "raw_submissions",
   "inventory_items",
   "inventory_assignments",
+  "products",
   "files",
   "portal_order_ratings",
   "proactive_schedule_week_snapshots",

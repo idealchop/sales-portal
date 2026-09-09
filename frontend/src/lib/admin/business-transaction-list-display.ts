@@ -1,9 +1,51 @@
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
 
-export const BUSINESS_SALE_TRANSACTION_TYPES = ["walkin", "direct_sale"] as const;
+export const BUSINESS_WALKIN_TRANSACTION_TYPES = ["walkin"] as const;
+export const BUSINESS_DELIVERY_COLLECTION_TRANSACTION_TYPES = [
+  "delivery",
+  "collection",
+] as const;
 export const BUSINESS_EXPENSE_TRANSACTION_TYPES = ["expense"] as const;
+export const BUSINESS_DIRECT_SALE_TRANSACTION_TYPES = ["direct_sale"] as const;
 
-export type BusinessTransactionTab = "sales" | "expense";
+/** @deprecated Prefer the four-tab helpers below. */
+export const BUSINESS_SALE_TRANSACTION_TYPES = [
+  "walkin",
+  "direct_sale",
+] as const;
+
+export type BusinessTransactionTab =
+  | "walkin"
+  | "delivery_collection"
+  | "expense"
+  | "direct_sale";
+
+export const BUSINESS_TRANSACTION_TABS: Array<{
+  id: BusinessTransactionTab;
+  label: string;
+  emptyHint: string;
+}> = [
+  {
+    id: "walkin",
+    label: "Walk-in",
+    emptyHint: "Walk-in sale records will appear here.",
+  },
+  {
+    id: "delivery_collection",
+    label: "Delivery & collection",
+    emptyHint: "Delivery and collection records will appear here.",
+  },
+  {
+    id: "expense",
+    label: "Expenses",
+    emptyHint: "Expense records will appear here.",
+  },
+  {
+    id: "direct_sale",
+    label: "Direct sale",
+    emptyHint: "Direct sale records will appear here.",
+  },
+];
 
 export type ParsedBusinessTransactionRow = {
   title: string;
@@ -151,7 +193,50 @@ export function parseBusinessTransactionRow(
 export function businessTransactionTypesForTab(
   tab: BusinessTransactionTab,
 ): string[] {
-  return tab === "expense" ?
-      [...BUSINESS_EXPENSE_TRANSACTION_TYPES]
-    : [...BUSINESS_SALE_TRANSACTION_TYPES];
+  switch (tab) {
+  case "walkin":
+    return [...BUSINESS_WALKIN_TRANSACTION_TYPES];
+  case "delivery_collection":
+    return [...BUSINESS_DELIVERY_COLLECTION_TRANSACTION_TYPES];
+  case "expense":
+    return [...BUSINESS_EXPENSE_TRANSACTION_TYPES];
+  case "direct_sale":
+    return [...BUSINESS_DIRECT_SALE_TRANSACTION_TYPES];
+  }
+}
+
+export function businessTransactionSearchText(
+  doc: UserFirestoreDocumentRow,
+): string {
+  const row = parseBusinessTransactionRow(doc);
+  const data = doc.data;
+  return [
+    row.title,
+    row.reference,
+    row.metaLabel,
+    row.itemSummary,
+    row.riderName,
+    row.deliveryStatusLabel,
+    row.paymentStatusLabel,
+    row.amountLabel,
+    readString(data.type),
+    readString(data.customerName),
+    readString(data.notes),
+    readString(data.category),
+    doc.documentId,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+export function filterBusinessTransactions(
+  documents: UserFirestoreDocumentRow[],
+  query: string,
+): UserFirestoreDocumentRow[] {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return documents;
+  return documents.filter((doc) =>
+    businessTransactionSearchText(doc).includes(normalized),
+  );
 }

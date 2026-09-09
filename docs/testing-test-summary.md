@@ -75,7 +75,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/features/dashboard/build-sales-market-report.test.ts` ✅ | Plan mix / ideals; excludes test stations | TC-DASH-07, TC-DASH-15 |
 | `unit/features/dashboard/resolve-platform-kpi-breakdowns.test.ts` ✅ | Tier derivation; skips test-tagged contexts | TC-DASH-15 |
 | `unit/features/dashboard/filter-chart-series.test.ts` ✅ | Range filters drop `authAccountTag=test` | TC-DASH-15 |
-| `unit/lib/enrich-map-locations.test.ts` ✅ | Map pins exclude test accounts | TC-DASH-04, TC-DASH-15 |
+| `unit/lib/business-profile-display.test.ts` ✅ | Workspace Other info hides email-sent / job idempotency noise | TC-ADM-03 |
 | `unit/features/dashboard/build-user-subscriptions-list.test.ts` ✅ | Subscription list excludes test owners | TC-DASH-15 |
 | `unit/features/dashboard/sort-active-owners.test.ts` ✅ | Inactive sort + list cap | TC-DASH-10 |
 | `unit/features/dashboard/inactive-owner-contact.test.ts` ✅ | 7-day Contact cooldown | TC-DASH-14 |

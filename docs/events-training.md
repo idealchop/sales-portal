@@ -32,6 +32,18 @@ Sales Portal CMS and ops for Smart Refill Resources content and webinar event ma
 
 Member registration, PayMongo premium unlock, private quotas, Brevo email delivery, notification job runners, and public Resources landings live in **SmartRefill** (not this repo).
 
+### Public crawlability (marketing)
+
+Published public records are meant to be discovered on **https://smartrefill.io**:
+
+| CMS | Public URL |
+|-----|------------|
+| Articles | `/resources/blogs/{slug}` |
+| Videos (`wrs_stories`) | `/resources/wrs-stories/{id}` |
+| Live webinars | `/resources/webinars/{eventId}` |
+
+Marketing `serve-static` regenerates **`/sitemap.xml`** and **`/llms-full.txt`** from the live public API (so new publishes appear without waiting for a full landing rebuild). Detail pages also use `__runtime` shells + SEO meta injection for crawlers.
+
 ---
 
 ## API (`/events-training`)

@@ -50,11 +50,89 @@ const UI_CONFIG_LABELS: Record<string, string> = {
   workspaceOnboardedAt: "Workspace onboarded at",
   gettingStartedGuideLastAutoShownDate: "Guide last auto-shown date",
   gettingStartedGuideAutoDismissed: "Guide auto-dismissed",
+  postOnboardingQuickActionsPending: "Quick actions pending",
+  postOnboardingQuickActionsDone: "Quick actions done",
+  whatsNewReadReleaseId: "What's new read release",
   dormantThresholdDays: "Dormant threshold (days)",
   dormantPushEnabled: "Dormant push enabled",
   dormantPushHour: "Dormant push hour",
   dormantEmailDigestEnabled: "Dormant email digest enabled",
   autoMorningBriefEnabled: "Auto morning brief enabled",
+  newOrderPushEnabled: "New order push enabled",
+  paymentReminderEnabled: "Payment reminder enabled",
+  paymentReminderPushEnabled: "Payment reminder push enabled",
+  paymentReminder30Enabled: "Payment reminder 30 days",
+  paymentReminder60Enabled: "Payment reminder 60 days",
+  paymentReminder90Enabled: "Payment reminder 90 days",
+  maintenancePushEnabled: "Maintenance push enabled",
+  productionVariancePushEnabled: "Production variance push enabled",
+  reorderPushEnabled: "Reorder push enabled",
+  reorderAlertDaysAhead: "Reorder alert days ahead",
+  dismissedDuplicateCustomerIds: "Dismissed duplicate customer IDs",
+  dismissedDuplicateGroupKeys: "Dismissed duplicate group keys",
+};
+
+export type UiConfigGroupId =
+  | "onboarding"
+  | "alerts"
+  | "hygiene"
+  | "other";
+
+export type UiConfigGroup = {
+  id: UiConfigGroupId;
+  label: string;
+  description: string;
+  rows: KeyValueRow[];
+};
+
+const UI_CONFIG_GROUP_META: Record<
+  UiConfigGroupId,
+  { label: string; description: string }
+> = {
+  onboarding: {
+    label: "Onboarding",
+    description: "Setup walkthrough and celebration flags",
+  },
+  alerts: {
+    label: "Alerts & notifications",
+    description: "Push, email, and reminder preferences",
+  },
+  hygiene: {
+    label: "Data hygiene",
+    description: "Duplicate dismissal and cleanup prefs",
+  },
+  other: {
+    label: "Other",
+    description: "Additional workspace UI flags",
+  },
+};
+
+const UI_CONFIG_KEY_GROUP: Record<string, UiConfigGroupId> = {
+  gettingStartedCelebrationShown: "onboarding",
+  gettingStartedReminderSnoozed: "onboarding",
+  workspaceOnboardedAt: "onboarding",
+  gettingStartedGuideLastAutoShownDate: "onboarding",
+  gettingStartedGuideAutoDismissed: "onboarding",
+  postOnboardingQuickActionsPending: "onboarding",
+  postOnboardingQuickActionsDone: "onboarding",
+  whatsNewReadReleaseId: "onboarding",
+  dormantThresholdDays: "alerts",
+  dormantPushEnabled: "alerts",
+  dormantPushHour: "alerts",
+  dormantEmailDigestEnabled: "alerts",
+  autoMorningBriefEnabled: "alerts",
+  newOrderPushEnabled: "alerts",
+  paymentReminderEnabled: "alerts",
+  paymentReminderPushEnabled: "alerts",
+  paymentReminder30Enabled: "alerts",
+  paymentReminder60Enabled: "alerts",
+  paymentReminder90Enabled: "alerts",
+  maintenancePushEnabled: "alerts",
+  productionVariancePushEnabled: "alerts",
+  reorderPushEnabled: "alerts",
+  reorderAlertDaysAhead: "alerts",
+  dismissedDuplicateCustomerIds: "hygiene",
+  dismissedDuplicateGroupKeys: "hygiene",
 };
 
 const USAGE_GOAL_LABELS: Record<string, string> = {
@@ -107,6 +185,10 @@ function formatScalar(value: unknown): string {
   if (value === null || value === undefined) return "—";
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "None";
+    return `${value.length} item${value.length === 1 ? "" : "s"}`;
+  }
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return "—";
@@ -117,6 +199,13 @@ function formatScalar(value: unknown): string {
       return formatProfileTimestamp(trimmed) ?? trimmed;
     }
     return trimmed;
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "—";
+    }
   }
   return String(value);
 }
@@ -223,6 +312,37 @@ export function parseUiConfigRows(data: Record<string, unknown>): KeyValueRow[] 
     label: UI_CONFIG_LABELS[key] ?? humanizeToken(key),
     value: formatScalar(uiConfig[key]),
   }));
+}
+
+export function groupUiConfigRows(rows: KeyValueRow[]): UiConfigGroup[] {
+  const buckets = new Map<UiConfigGroupId, KeyValueRow[]>();
+  for (const row of rows) {
+    const groupId = UI_CONFIG_KEY_GROUP[row.key] ?? "other";
+    const bucket = buckets.get(groupId) ?? [];
+    bucket.push(row);
+    buckets.set(groupId, bucket);
+  }
+
+  const order: UiConfigGroupId[] = [
+    "onboarding",
+    "alerts",
+    "hygiene",
+    "other",
+  ];
+
+  return order
+    .map((id) => {
+      const meta = UI_CONFIG_GROUP_META[id];
+      return {
+        id,
+        label: meta.label,
+        description: meta.description,
+        rows: (buckets.get(id) ?? []).sort((a, b) =>
+          a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
+        ),
+      };
+    })
+    .filter((group) => group.rows.length > 0);
 }
 
 export function parseUserFeedback(data: Record<string, unknown>): ParsedUserFeedback {
