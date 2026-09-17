@@ -32,6 +32,8 @@ Sales Portal CMS and ops for Smart Refill Resources content and webinar event ma
 
 Member registration, PayMongo premium unlock, private quotas, Brevo email delivery, notification job runners, and public Resources landings live in **SmartRefill** (not this repo).
 
+Lead pipeline **Content** tab (`/lead-pipeline`) imports those emails on **Gather new leads** (incremental) and on the midnight `leadPipelineGather` job (full). Sources: webinar registrations, training/story video engagement, and article comments/likes. Content-only guests stay off Warm; workspace owners keep their funnel queue and also appear on Content.
+
 ### Public crawlability (marketing)
 
 Published public records are meant to be discovered on **https://smartrefill.io**:
@@ -52,12 +54,14 @@ Marketing `serve-static` regenerates **`/sitemap.xml`** and **`/llms-full.txt`**
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET/POST/PATCH/DELETE` | `/webinars` | Live event CRUD |
+| `GET/POST/PATCH/DELETE` | `/webinars` | Live event CRUD. List includes `feedbackSummary` (average, count, recommend rate). |
+| `GET` | `/webinars/:webinarId/feedback` | Individual ratings, written feedback, recommendations, overall average, and `publicSummary` of approved ratings |
+| `PATCH/DELETE` | `/webinars/:webinarId/feedback/:feedbackId` | Approve (`visible`) / hide webinar ratings for the SmartRefill page, or delete |
 | `GET/POST/PATCH/DELETE` | `/videos` | Training video CRUD. Identity via `category`: `wrs_stories` \| `webinar` \| **`tutorial`**. List filter: `?category=tutorial`. First publish fans out SmartRefill owner activity feed + verified-email Brevo (tutorials and WRS Stories / webinar recordings). |
 | `GET/POST/PATCH/DELETE` | `/blogs` | WRS blog CMS |
 | `POST` | `/upload` | Poster / thumbnail / blog-hero image upload |
 
-**CMS UX:** Capacity, **Auto-accept registrations**, **Registration opens at** (`registrationOpensAt`; blank = open when published), join link, premium price (`unlockPrice` synced from price), **Allow guest registration / guest payment** (`guestRegistrationEnabled`). Registrant dialog can mark **Attended** / **No-show**.
+**CMS UX:** Capacity, **Auto-accept registrations**, **Registration opens at** (`registrationOpensAt`; blank = open when published), join link, premium price (`unlockPrice` synced from price), **Allow guest registration / guest payment** (`guestRegistrationEnabled`). Registrant dialog can mark **Attended** / **No-show**. Each webinar card shows overall ratings and **View feedback** (average, recommend rate, and individual comments from invite-email submissions).
 
 ### Registrations
 
@@ -71,6 +75,8 @@ Marketing `serve-static` regenerates **`/sitemap.xml`** and **`/llms-full.txt`**
 | `POST` | `/registrations/:id/attendance` | Set `attended` \| `no_show` \| `cleared` |
 
 **CMS UX:** **To do** lists pending sign-ups across webinars with search, per-row Accept/Decline/Delete, and bulk Accept/Decline selected. Accepted / declined / cancelled rows expose Delete. Destructive actions use an in-app confirm dialog (not `window.confirm`). Accepted rows expose join-link open/copy.
+
+Guest invite and reminder emails include **Join webinar** plus **Provide ratings and feedback**. The feedback button opens `{marketing}/resources/webinars/feedback` so attendees can rate the session (1–5), write feedback, and share a recommendation. Submissions land in `apps/smartrefill/webinar_event_feedback` as `pending`. Staff approve them in Moderation before they appear on the SmartRefill webinar page.
 
 ### Schedules (automated promotions)
 
@@ -98,13 +104,13 @@ Jobs land in `events_training_email_queue`. Scheduler `eventsTrainingPromotionDe
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/moderation/inbox` | Cross-content queue: video/blog/webinar-event comments + video Q&A (with parent titles) |
+| `GET` | `/moderation/inbox` | Cross-content queue: video/blog/webinar-event comments + video Q&A + pending webinar ratings |
 | `GET/PATCH/DELETE` | `/videos/:id/comments` · `/comments/:commentId` | List / set `visible` \| `hidden` \| `flagged` / permanently delete |
 | `GET/PATCH/DELETE` | `/blogs/:id/comments` · `/comments/:commentId` | Same for blogs |
 | `GET/PATCH/DELETE` | `/webinars/:id/comments` · `/comments/:commentId` | Live webinar event comments (`webinar_event_engagement`); PATCH with `answer` posts a staff reply (shown on marketing) |
 | `GET/PATCH/DELETE` | `/videos/:id/questions` · `/questions/:questionId` | List / answer / status / permanently delete |
 
-**CMS UX:** Default **To do** lists unanswered member questions + flagged comments from videos and live webinars (SmartRefill `training_video_engagement` / `webinar_event_engagement` posts). **All comments** / **All questions** browse the full queues — no per-video picker. Webinar comments show a **Post reply** control (like Stories Q&A answers). Delete removes engagement posts (or blog comment docs) and uses the shared confirm dialog.
+**CMS UX:** Default **To do** lists unanswered member questions, flagged comments, and **pending webinar ratings** (invite-email feedback waiting to go live). **All comments** / **All questions** browse those queues. **Webinar feedback** is only for what can appear on the SmartRefill webinar page: **Show on page** (`visible`) or **Hide**. Delete removes the rating. Webinar comments still have a **Post reply** control.
 
 ### Certifications & analytics
 

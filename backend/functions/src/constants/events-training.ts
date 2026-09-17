@@ -13,6 +13,8 @@ export const EVENTS_TRAINING_COLLECTIONS = {
   trainingVideoEngagement: "training_video_engagement",
   /** Guest + member likes / comments on live webinar events (SmartRefill). */
   webinarEventEngagement: "webinar_event_engagement",
+  /** Public webinar ratings / feedback / recommendations from invite emails. */
+  webinarEventFeedback: "webinar_event_feedback",
 } as const;
 
 export const VIDEO_VISIBILITY = [
@@ -83,6 +85,13 @@ export const REGISTRATION_STATUSES = [
 
 export const COMMENT_STATUSES = ["visible", "hidden", "flagged"] as const;
 
+/** Invite-email ratings: pending until staff approve them for the SmartRefill webinar page. */
+export const WEBINAR_FEEDBACK_STATUSES = [
+  "pending",
+  "visible",
+  "hidden",
+] as const;
+
 export const COMMENT_AUTHOR_TYPES = ["anonymous", "member", "staff"] as const;
 
 export const QUESTION_STATUSES = ["open", "answered", "closed"] as const;
@@ -131,6 +140,7 @@ export type VideoStatus = (typeof VIDEO_STATUSES)[number];
 export type BlogStatus = (typeof BLOG_STATUSES)[number];
 export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number];
 export type CommentStatus = (typeof COMMENT_STATUSES)[number];
+export type WebinarFeedbackStatus = (typeof WEBINAR_FEEDBACK_STATUSES)[number];
 export type CommentAuthorType = (typeof COMMENT_AUTHOR_TYPES)[number];
 export type QuestionStatus = (typeof QUESTION_STATUSES)[number];
 export type CertificationStatus = (typeof CERT_STATUSES)[number];

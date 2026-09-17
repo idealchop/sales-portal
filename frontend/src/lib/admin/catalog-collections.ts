@@ -16,7 +16,7 @@ export const ADMIN_CATALOG_COLLECTIONS = {
   },
   product_icons: {
     title: "Product icons",
-    description: "Icons stations can assign to delivery products in SmartRefill.",
+    description: "Icons stations can assign to delivery products in SmartRefill. Mark water-container artwork (gallons and bottles) so it can be distinguished from other icons.",
     route: "/subscriptions/product-icons",
   },
 } as const;
@@ -54,4 +54,8 @@ export function catalogDocumentActive(data: Record<string, unknown>): boolean | 
   if (typeof data.isActive === "boolean") return data.isActive;
   if (typeof data.enabled === "boolean") return data.enabled;
   return undefined;
+}
+
+export function catalogDocumentIsWaterContainer(data: Record<string, unknown>): boolean {
+  return data.waterContainer === true;
 }

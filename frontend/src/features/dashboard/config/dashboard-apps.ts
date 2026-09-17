@@ -1,4 +1,4 @@
-import { Archive, Briefcase, Droplets, LayoutGrid } from "lucide-react";
+import { Archive, Briefcase, Droplets } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type DashboardAppId =
@@ -22,16 +22,6 @@ export type DashboardAppDefinition = {
 
 export const DASHBOARD_APPS: DashboardAppDefinition[] = [
   {
-    id: "platform",
-    label: "All apps",
-    shortLabel: "All apps",
-    description: "KPIs and a simple performance overview across every product.",
-    href: "/dashboard",
-    icon: LayoutGrid,
-    status: "live",
-    accentClass: "bg-slate-100 text-slate-800",
-  },
-  {
     id: "smartrefill",
     label: "SmartRefill",
     shortLabel: "SmartRefill",
@@ -54,11 +44,11 @@ export const DASHBOARD_APPS: DashboardAppDefinition[] = [
   },
   {
     id: "sales-portal",
-    label: "Sales Portal",
+    label: "Dashboard",
     shortLabel: "Sales",
     description:
-      "Market position, proactive outlook, pipeline scorecard, and sales reports.",
-    href: "/dashboard/sales-portal",
+      "Action board for assigned leads, follow-ups, and personal sales performance.",
+    href: "/dashboard",
     icon: Briefcase,
     status: "live",
     accentClass: "bg-violet-50 text-violet-800",

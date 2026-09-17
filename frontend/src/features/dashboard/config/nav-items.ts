@@ -1,14 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  BookCopy,
-  CircleDollarSign,
+  AppWindow,
   CreditCard,
-  FileText,
   GraduationCap,
   LayoutDashboard,
-  Megaphone,
   ShieldCheck,
   Users,
+  Workflow,
 } from "lucide-react";
 import type { SalesPortalRole } from "@/lib/auth-status";
 import { EVENTS_TRAINING_SIDEBAR_CHILDREN } from "@/features/events-training/lib/events-training-nav";
@@ -29,11 +27,23 @@ export const DASHBOARD_NAV: NavItem[] = [
     icon: LayoutDashboard,
     roles: ["sales", "manager", "admin"],
     maintenance: false,
+  },
+  {
+    href: "/lead-pipeline",
+    label: "Lead pipeline",
+    icon: Workflow,
+    roles: ["sales", "manager", "admin"],
+    maintenance: false,
+  },
+  {
+    href: "/dashboard/smartrefill",
+    label: "Web apps",
+    icon: AppWindow,
+    roles: ["sales", "manager", "admin"],
+    maintenance: false,
     children: [
-      { href: "/dashboard", label: "All apps" },
       { href: "/dashboard/smartrefill", label: "SmartRefill" },
       { href: "/dashboard/smartrefill-old", label: "SmartRefill (legacy)" },
-      { href: "/dashboard/sales-portal", label: "Sales" },
     ],
   },
   {
@@ -41,34 +51,6 @@ export const DASHBOARD_NAV: NavItem[] = [
     label: "My Team",
     icon: Users,
     roles: ["manager"],
-    maintenance: false,
-  },
-  {
-    href: "/dashboard/proposals",
-    label: "Proposals & Clients",
-    icon: FileText,
-    roles: ["sales", "manager", "admin"],
-    maintenance: false,
-  },
-  {
-    href: "/dashboard/commissions",
-    label: "Commissions",
-    icon: CircleDollarSign,
-    roles: ["sales", "manager", "admin"],
-    maintenance: false,
-  },
-  {
-    href: "/dashboard/materials",
-    label: "Sales Materials",
-    icon: BookCopy,
-    roles: ["sales", "manager", "admin"],
-    maintenance: false,
-  },
-  {
-    href: "/content-studio",
-    label: "Content Studio",
-    icon: Megaphone,
-    roles: ["sales", "manager", "admin"],
     maintenance: false,
   },
   {

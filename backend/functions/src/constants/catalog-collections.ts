@@ -13,7 +13,7 @@ export const ADMIN_CATALOG_COLLECTIONS = {
   },
   product_icons: {
     title: "Product icons",
-    description: "Icons stations can assign to delivery products in SmartRefill.",
+    description: "Icons stations can assign to delivery products in SmartRefill. Mark water-container artwork (gallons and bottles) so it can be distinguished from other icons.",
   },
 } as const;
 

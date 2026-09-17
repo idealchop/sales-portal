@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { mapOwnerSubscriptions } from "../../../services/map-owner-subscriptions";
+import {
+  mapOwnerSubscriptions,
+  pickLatestCurrentPlanSubscription,
+  pickLatestLivePaidSubscription,
+} from "../../../services/map-owner-subscriptions";
 
 describe("mapOwnerSubscriptions", () => {
   it("classifies current, future, and past rows", () => {
@@ -139,5 +143,96 @@ describe("mapOwnerSubscriptions", () => {
     expect(rows[0]?.paymentReference).toBe("PAY-123");
     expect(rows[0]?.paymentMethod).toBe("gcash");
     expect(rows[0]?.receiptUrl).toBe("https://example.com/receipt.jpg");
+  });
+
+  it("picks the newest active paid plan over pending renewals", () => {
+    const now = Date.now();
+    const rows = mapOwnerSubscriptions([
+      {
+        id: "old-active-custom",
+        data: () => ({
+          planName: "Scale",
+          status: "active",
+          paymentStatus: "verified",
+          price: 1949,
+          billingCycle: "monthly",
+          createdAt: new Date(now - 90 * 86400000).toISOString(),
+          dates: {
+            activatedAt: new Date(now - 90 * 86400000).toISOString(),
+            expiresAt: new Date(now + 30 * 86400000).toISOString(),
+          },
+        }),
+      },
+      {
+        id: "latest-active-list",
+        data: () => ({
+          planName: "Scale",
+          status: "active",
+          paymentStatus: "verified",
+          price: 1650,
+          billingCycle: "monthly",
+          createdAt: new Date(now - 5 * 86400000).toISOString(),
+          dates: {
+            activatedAt: new Date(now - 5 * 86400000).toISOString(),
+            expiresAt: new Date(now + 25 * 86400000).toISOString(),
+          },
+        }),
+      },
+      {
+        id: "pending-renewal",
+        data: () => ({
+          planName: "Scale",
+          status: "pending",
+          paymentStatus: "pending_verification",
+          price: 1949,
+          billingCycle: "monthly",
+          createdAt: new Date(now).toISOString(),
+        }),
+      },
+    ]);
+
+    const latest = pickLatestLivePaidSubscription(rows);
+    expect(latest?.id).toBe("latest-active-list");
+    expect(latest?.price).toBe(1650);
+  });
+
+  it("picks newer Starter over older Scale still marked active", () => {
+    const now = Date.now();
+    const rows = mapOwnerSubscriptions([
+      {
+        id: "old-scale",
+        data: () => ({
+          planName: "Scale",
+          status: "active",
+          paymentStatus: "verified",
+          price: 1650,
+          billingCycle: "monthly",
+          createdAt: new Date(now - 120 * 86400000).toISOString(),
+          dates: {
+            activatedAt: new Date(now - 120 * 86400000).toISOString(),
+            expiresAt: new Date(now + 30 * 86400000).toISOString(),
+          },
+        }),
+      },
+      {
+        id: "new-starter",
+        data: () => ({
+          planName: "Starter",
+          planCode: "starter",
+          status: "active",
+          price: 0,
+          billingCycle: "monthly",
+          createdAt: new Date(now - 10 * 86400000).toISOString(),
+          dates: {
+            activatedAt: new Date(now - 10 * 86400000).toISOString(),
+          },
+        }),
+      },
+    ]);
+
+    const current = pickLatestCurrentPlanSubscription(rows);
+    expect(current?.id).toBe("new-starter");
+    expect(current?.planName).toBe("Starter");
+    expect(pickLatestLivePaidSubscription(rows)).toBeUndefined();
   });
 });

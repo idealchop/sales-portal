@@ -4,20 +4,16 @@ import type { DashboardAppId } from "@/features/dashboard/config/dashboard-apps"
 /** Product usage, growth, and in-app behavior — SmartRefill only. */
 const SMARTREFILL_CHART_KINDS: ChartInsightKind[] = [
   "customer-scale",
-  "transaction-volume",
+  "acquisition-growth",
   "login-activity",
+  "transaction-volume",
   "feature-adoption",
-  "usage-goals",
-  "device-mix",
-  "browser-mix",
-  "owner-growth",
-  "workspace-growth",
+  "mrr-by-plan",
 ];
 
 /** Revenue, pipeline, market mix, and sales reports — Sales Portal only. */
 const SALES_PORTAL_CHART_KINDS: ChartInsightKind[] = [
   "mrr-by-plan",
-  "plan-distribution",
   "revenue-trend",
   "proposal-pipeline",
   "workspace-health",

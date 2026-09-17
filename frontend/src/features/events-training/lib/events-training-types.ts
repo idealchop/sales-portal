@@ -27,6 +27,33 @@ export type TutorialAppOption = {
   logoUrl?: string | null;
 };
 
+export type WebinarFeedbackSummary = {
+  count: number;
+  averageRating: number | null;
+  recommendCount: number;
+  recommendRate: number | null;
+  ratingCounts: [number, number, number, number, number];
+};
+
+export type WebinarFeedbackStatus = "pending" | "visible" | "hidden";
+
+export type WebinarFeedbackRecord = {
+  id: string;
+  eventId: string;
+  eventName: string;
+  email: string;
+  displayName: string | null;
+  registrationId: string | null;
+  rating: number;
+  feedback: string | null;
+  recommend: boolean;
+  recommendation: string | null;
+  source: string | null;
+  status?: WebinarFeedbackStatus;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
 export type WebinarRecord = {
   id: string;
   name: string;
@@ -64,6 +91,8 @@ export type WebinarRecord = {
   linkedVideoId: string | null;
   certificationEnabled: boolean;
   archivedAt: string | null;
+  /** Overall ratings from invite-email feedback. */
+  feedbackSummary?: WebinarFeedbackSummary;
 };
 
 export type TrainingVideoRecord = {
@@ -383,14 +412,34 @@ export type ModerationQuestionItem = QuestionRecord & {
   contentTitle: string;
 };
 
+export type ModerationFeedbackItem = {
+  kind: "feedback";
+  id: string;
+  contentKind: "webinar_event";
+  contentId: string;
+  contentTitle: string;
+  email: string;
+  displayName: string | null;
+  rating: number;
+  feedback: string | null;
+  recommend: boolean;
+  recommendation: string | null;
+  status: WebinarFeedbackStatus;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
 export type ModerationInbox = {
   comments: ModerationCommentItem[];
   questions: ModerationQuestionItem[];
+  feedback: ModerationFeedbackItem[];
   counts: {
     openQuestions: number;
     flaggedComments: number;
+    pendingFeedback: number;
     comments: number;
     questions: number;
+    feedback: number;
   };
 };
 

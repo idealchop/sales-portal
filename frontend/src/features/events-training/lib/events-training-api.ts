@@ -14,6 +14,9 @@ import type {
   ScheduleRecord,
   TrainingVideoRecord,
   TutorialAppOption,
+  WebinarFeedbackRecord,
+  WebinarFeedbackStatus,
+  WebinarFeedbackSummary,
   WebinarRecord,
   WrsBlogRecord,
 } from "./events-training-types";
@@ -31,6 +34,38 @@ async function fileToBase64(file: File): Promise<string> {
 export async function fetchWebinars() {
   const res = await apiClient.get<{ data: WebinarRecord[] }>("/events-training/webinars");
   return res.data;
+}
+
+export async function fetchWebinarFeedback(webinarId: string) {
+  const res = await apiClient.get<{
+    data: {
+      summary: WebinarFeedbackSummary;
+      publicSummary?: WebinarFeedbackSummary;
+      items: WebinarFeedbackRecord[];
+    };
+  }>(`/events-training/webinars/${webinarId}/feedback`);
+  return res.data;
+}
+
+export async function moderateWebinarFeedback(
+  webinarId: string,
+  feedbackId: string,
+  status: WebinarFeedbackStatus,
+) {
+  const res = await apiClient.patch<{ data: WebinarFeedbackRecord }>(
+    `/events-training/webinars/${encodeURIComponent(webinarId)}/feedback/${encodeURIComponent(feedbackId)}`,
+    { status },
+  );
+  return res.data;
+}
+
+export async function deleteWebinarFeedback(
+  webinarId: string,
+  feedbackId: string,
+) {
+  await apiClient.delete(
+    `/events-training/webinars/${encodeURIComponent(webinarId)}/feedback/${encodeURIComponent(feedbackId)}`,
+  );
 }
 
 export async function createWebinar(input: Partial<WebinarRecord>) {

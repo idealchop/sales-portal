@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { DashboardAppNav } from "@/features/dashboard/components/dashboard-app-nav";
 import {
   DashboardDateFilterProvider,
   useDashboardDateFilter,
@@ -37,8 +36,10 @@ function MetricsSkeleton() {
 
 function DashboardAnalyticsShellContent({
   children,
+  showGlobalDateFilter = true,
 }: {
   children: (ctx: DashboardViewContext) => ReactNode;
+  showGlobalDateFilter?: boolean;
 }) {
   const { profile } = useSalesProfile();
   const {
@@ -71,8 +72,6 @@ function DashboardAnalyticsShellContent({
 
   return (
     <div className="flex flex-col gap-4">
-      <DashboardAppNav />
-
       {(isStale || isRefreshing) && (
         <p className="text-xs text-zinc-500">
           {isRefreshing ?
@@ -81,7 +80,7 @@ function DashboardAnalyticsShellContent({
         </p>
       )}
 
-      <DashboardGlobalDateFilter />
+      {showGlobalDateFilter ? <DashboardGlobalDateFilter /> : null}
 
       {children({
         data,
@@ -96,12 +95,18 @@ function DashboardAnalyticsShellContent({
 
 export function DashboardAnalyticsShell({
   children,
+  showGlobalDateFilter = true,
 }: {
   children: (ctx: DashboardViewContext) => ReactNode;
+  showGlobalDateFilter?: boolean;
 }) {
   return (
     <DashboardDateFilterProvider>
-      <DashboardAnalyticsShellContent>{children}</DashboardAnalyticsShellContent>
+      <DashboardAnalyticsShellContent
+        showGlobalDateFilter={showGlobalDateFilter}
+      >
+        {children}
+      </DashboardAnalyticsShellContent>
     </DashboardDateFilterProvider>
   );
 }

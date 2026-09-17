@@ -62,6 +62,14 @@ import {
   listWebinars,
   updateWebinar,
 } from "../services/events-training/webinars-service";
+import {
+  emptyWebinarFeedbackSummary,
+  listWebinarFeedback,
+  listWebinarFeedbackSummaries,
+  moderateWebinarFeedback,
+  deleteWebinarFeedback,
+  summarizeWebinarFeedback,
+} from "../services/events-training/webinar-feedback-service";
 import { notifyWebinarPublishedViaSmartrefill } from "../services/notify-webinar-published";
 import { notifyRegistrationApprovedViaSmartrefill } from "../services/notify-webinar-registration-approved";
 import {
@@ -231,7 +239,14 @@ export async function getWebinarsHandler(
   res: Response,
 ) {
   try {
-    const data = await listWebinars();
+    const [webinars, summaries] = await Promise.all([
+      listWebinars(),
+      listWebinarFeedbackSummaries(),
+    ]);
+    const data = webinars.map((webinar) => ({
+      ...webinar,
+      feedbackSummary: summaries[webinar.id] ?? emptyWebinarFeedbackSummary(),
+    }));
     res.json({ data });
   } catch (error) {
     mapServiceError(res, error);
@@ -518,6 +533,53 @@ export async function getWebinarRegistrationsHandler(
   try {
     const data = await listRegistrations({ eventId: req.params.webinarId });
     res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
+export async function getWebinarFeedbackHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    const items = await listWebinarFeedback(req.params.webinarId);
+    const visible = items.filter((item) => item.status === "visible");
+    res.json({
+      data: {
+        summary: summarizeWebinarFeedback(items),
+        publicSummary: summarizeWebinarFeedback(visible),
+        items,
+      },
+    });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
+export async function patchWebinarFeedbackHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    const data = await moderateWebinarFeedback(
+      req.params.webinarId,
+      req.params.feedbackId,
+      String(req.body?.status || ""),
+    );
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+}
+
+export async function deleteWebinarFeedbackHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  try {
+    await deleteWebinarFeedback(req.params.webinarId, req.params.feedbackId);
+    res.status(204).send();
   } catch (error) {
     mapServiceError(res, error);
   }

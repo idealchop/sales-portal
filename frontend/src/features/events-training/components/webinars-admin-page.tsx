@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { Calendar, Pencil, Plus, Star, Trash2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,9 @@ import {
   inferPrivateAudience,
   privateAudienceLabel,
 } from "../lib/private-audience";
+import { formatOverallRatingLabel } from "../lib/webinar-feedback-display";
 import { WebinarFormDialog } from "./webinar-form-dialog";
+import { WebinarFeedbackDialog } from "./webinar-feedback-dialog";
 import { WebinarRegistrantsDialog } from "./webinar-registrants-dialog";
 import { WebinarStatusPicker } from "./webinar-status-picker";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
@@ -69,6 +71,9 @@ export function WebinarsAdminPage() {
   const [editingItem, setEditingItem] = useState<WebinarRecord | null>(null);
   const [registrantsWebinar, setRegistrantsWebinar] =
     useState<WebinarRecord | null>(null);
+  const [feedbackWebinar, setFeedbackWebinar] = useState<WebinarRecord | null>(
+    null,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WebinarRecord | null>(null);
@@ -292,6 +297,26 @@ export function WebinarsAdminPage() {
                           >
                             View names
                           </Button>
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums",
+                              (item.feedbackSummary?.count ?? 0) > 0
+                                ? "bg-amber-50 text-amber-950 ring-1 ring-amber-100"
+                                : "bg-zinc-100 text-zinc-600",
+                            )}
+                          >
+                            <Star className="h-3.5 w-3.5" />
+                            {formatOverallRatingLabel(item.feedbackSummary)}
+                          </span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 rounded-full px-2.5 text-xs"
+                            onClick={() => setFeedbackWebinar(item)}
+                          >
+                            View feedback
+                          </Button>
                         </div>
                       </div>
                       <div className="flex shrink-0 gap-1">
@@ -334,6 +359,13 @@ export function WebinarsAdminPage() {
         <WebinarRegistrantsDialog
           webinar={registrantsWebinar}
           onClose={() => setRegistrantsWebinar(null)}
+        />
+      ) : null}
+
+      {feedbackWebinar ? (
+        <WebinarFeedbackDialog
+          webinar={feedbackWebinar}
+          onClose={() => setFeedbackWebinar(null)}
         />
       ) : null}
 

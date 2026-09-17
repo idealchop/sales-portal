@@ -15,12 +15,17 @@ describe("DASHBOARD_NAV role gates", () => {
     ]);
   });
 
-  it("shows Content Studio for sales, manager, and admin", () => {
-    const contentStudio = DASHBOARD_NAV.find(
-      (item) => item.href === "/content-studio",
-    );
+  it("hides deferred sales workflow routes from the sidebar", () => {
+    const hiddenHrefs = [
+      "/dashboard/proposals",
+      "/dashboard/commissions",
+      "/dashboard/materials",
+      "/content-studio",
+    ];
 
-    expect(contentStudio?.roles).toEqual(["sales", "manager", "admin"]);
+    for (const href of hiddenHrefs) {
+      expect(DASHBOARD_NAV.find((nav) => nav.href === href)).toBeUndefined();
+    }
   });
 
   it("restricts My Team to manager only", () => {
@@ -38,28 +43,19 @@ describe("DASHBOARD_NAV role gates", () => {
     }
   });
 
-  it("ships Tier 3 sales workflow routes without maintenance", () => {
-    const liveHrefs = [
-      "/dashboard/proposals",
-      "/dashboard/commissions",
-      "/dashboard/my-team",
-      "/dashboard/materials",
-    ];
+  it("exposes Sales Dashboard and top-level Lead pipeline", () => {
+    const dashboard = DASHBOARD_NAV.find((item) => item.label === "Dashboard");
+    const leadPipeline = DASHBOARD_NAV.find((item) => item.label === "Lead pipeline");
+    const webApps = DASHBOARD_NAV.find((item) => item.label === "Web apps");
 
-    for (const href of liveHrefs) {
-      const item = DASHBOARD_NAV.find((nav) => nav.href === href);
-      expect(item?.maintenance).toBe(false);
-    }
-  });
-
-  it("exposes multi-app dashboard children under Dashboard nav", () => {
-    const dashboard = DASHBOARD_NAV.find((item) => item.href === "/dashboard");
-
-    expect(dashboard?.children?.map((child) => child.href)).toEqual([
-      "/dashboard",
+    expect(dashboard?.href).toBe("/dashboard");
+    expect(dashboard?.children).toBeUndefined();
+    expect(leadPipeline?.href).toBe("/lead-pipeline");
+    expect(leadPipeline?.roles).toEqual(["sales", "manager", "admin"]);
+    expect(webApps?.href).toBe("/dashboard/smartrefill");
+    expect(webApps?.children?.map((child) => child.href)).toEqual([
       "/dashboard/smartrefill",
       "/dashboard/smartrefill-old",
-      "/dashboard/sales-portal",
     ]);
   });
 

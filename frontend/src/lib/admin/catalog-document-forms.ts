@@ -67,6 +67,8 @@ export type ProductIconFormValues = {
   lucide: string;
   sortOrder: string;
   active: boolean;
+  /** Gallon, bottle, or other refill container artwork (not a store accessory). */
+  waterContainer: boolean;
 };
 
 export type CatalogFormValues =
@@ -196,6 +198,7 @@ function emptyProductIconForm(): ProductIconFormValues {
     lucide: "",
     sortOrder: "10",
     active: true,
+    waterContainer: false,
   };
 }
 
@@ -277,6 +280,7 @@ export function catalogFormValuesFromDocument(
         lucide: readString(data.lucide),
         sortOrder: data.sortOrder !== undefined ? String(data.sortOrder) : "10",
         active: data.active !== false,
+        waterContainer: data.waterContainer === true,
       },
     };
   }
@@ -431,6 +435,7 @@ function buildProductIconPayload(
     lucide: values.lucide.trim() || undefined,
     sortOrder: readNumber(values.sortOrder) ?? 10,
     active: values.active,
+    waterContainer: values.waterContainer,
   };
 }
 

@@ -3,21 +3,22 @@ import { resolveDashboardPageTitle } from "@/features/dashboard/lib/resolve-dash
 
 describe("resolveDashboardPageTitle", () => {
   it("resolves dashboard app routes", () => {
-    expect(resolveDashboardPageTitle("/dashboard")).toBe("All apps");
     expect(resolveDashboardPageTitle("/dashboard/smartrefill")).toBe("SmartRefill");
     expect(resolveDashboardPageTitle("/dashboard/smartrefill-old")).toBe(
       "SmartRefill (legacy)",
     );
+    expect(resolveDashboardPageTitle("/dashboard")).toBe("Dashboard");
     expect(resolveDashboardPageTitle("/dashboard/sales-portal")).toBe(
       "Sales Portal",
     );
   });
 
   it("resolves other dashboard pages", () => {
-    expect(resolveDashboardPageTitle("/dashboard/proposals")).toBe(
-      "Proposals & Clients",
-    );
     expect(resolveDashboardPageTitle("/dashboard/settings")).toBe("Settings");
+    expect(resolveDashboardPageTitle("/dashboard/lead-pipeline")).toBe(
+      "Lead pipeline",
+    );
+    expect(resolveDashboardPageTitle("/lead-pipeline")).toBe("Lead pipeline");
   });
 
   it("resolves Events & Training routes", () => {

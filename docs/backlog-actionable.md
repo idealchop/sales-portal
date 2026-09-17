@@ -145,3 +145,4 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | 2026-06-17 | Tier 12 dashboard intelligence & UX polish (AB-51–AB-58) shipped on `feature/SP-11` |
 | 2026-07-24 | SmartRefill ops dashboard tabs; outreach Contact emails (alerts + inactive owners); inactive expand-all + 7d contact cooldown |
 | 2026-08-22 | Proposals & Clients outreach compose — multi-select recipients (platform/CRM/webinar/story/article), bulk Brevo send (50 cap), `/outreach/recipients` + `/outreach/send` |
+| 2026-09-15 | Lead pipeline (SC1–SC3 + SC5) — hybrid `leads` CRM, table/Insights dual-view, workspace link overlay |

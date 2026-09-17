@@ -43,6 +43,7 @@ See [environments.md](./environments.md) for Dev / Prod tier setup.
 | `SMARTREFILL_API_URL` | `firebase.json` / `.env` | Proxy target (Prod); hosted Dev forces `smartrefillV3ApiDev` |
 | `SALES_PORTAL_GEMINI_API_KEY` | Secret Manager (prod) / `.env` (local) | AI features |
 | `SMARTREFILL_BREVO_API_KEY` | Secret Manager (shared with SmartRefill) | Transactional outreach email (Contact / How are you?) |
+| `BREVO_WEBHOOK_TOKEN` | Optional env / Secret Manager | Shared token for Brevo open webhook (`?token=` or `x-brevo-token`) |
 | `SALES_PORTAL_FIREBASE_CLIENT_EMAIL` | `.env` (local only) | Admin SDK |
 | `SALES_PORTAL_FIREBASE_PRIVATE_KEY` | `.env` (local only) | Admin SDK |
 
@@ -57,6 +58,7 @@ All routes are mounted at the function root (no `/api` prefix).
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/health` | — | Service health |
+| `POST` | `/webhooks/brevo/transactional` | Optional token | Brevo open events → lead status **Email opened** |
 
 ### Auth (`/auth`)
 
@@ -117,6 +119,12 @@ Portal routes require **Bearer token**, **sales-portal access**, and role-scoped
 | `PATCH` | `/clients/:clientId` | Portal | Update client |
 | `GET` | `/outreach/recipients` | Portal | Aggregated outreach recipients (platform users, CRM, webinar guests/members, story/article engagement members) |
 | `POST` | `/outreach/send` | Portal | Send one Brevo outreach email per request (`personalized`, `demo_inquiry`, `new_user_registration`, `generic`); UI bulk send loops up to 50 recipients |
+| `GET` | `/leads` | Portal | List leads from riverdb `leads` (fast; `queue`=`all`\|`content`\|`warm`\|`cold`\|`onboarded`\|`archive`, `stage`, `assignee`, `q`). `content` is webinar/training/article/story emails. Does not rebuild SmartRefill/legacy live. |
+| `GET` | `/leads/analytics` | Portal | Lead funnel / source / assignee / trial-risk aggregates |
+| `POST` | `/leads/gather` | Portal | Pull SmartRefill + legacy + **content emails** into `leads`. Body `{ mode: "incremental" \| "full" }`. **Incremental** (UI **Gather new leads** button) inserts missing only. **Full** refreshes source fields and preserves CRM; also used by the midnight scheduler `leadPipelineGather`. Full promote `registered`→`onboarded` when SmartRefill `onboardingComplete` (never overwrites cold/archive). Refreshes onboarded journey snapshot. Content-only guests get `sourceKind: "content"` and `sr-content:{hash}` ids; existing workspace leads get `contentSources` overlay. Returns `{ scanned, inserted, updated, skipped }`. |
+| `POST` | `/leads` | Portal | Create lead |
+| `GET` | `/leads/:leadId` | Portal | Get lead |
+| `PATCH` | `/leads/:leadId` | Portal | Update lead (stage, attempts, link `linkedBusinessId`) |
 | `GET` | `/commissions` | Portal | List commissions (role-scoped) |
 | `GET` | `/sales/team` | Portal | Manager team summary |
 | `GET` | `/sales-materials` | Portal | List sales materials |
@@ -131,7 +139,9 @@ Manager/admin CMS + ops for Smart Refill Resources (shared `apps/smartrefill/*` 
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET/POST/PATCH/DELETE` | `/events-training/webinars` | Live webinar CRUD |
+| `GET/POST/PATCH/DELETE` | `/events-training/webinars` | Live webinar CRUD (list includes `feedbackSummary`) |
+| `GET` | `/events-training/webinars/:id/feedback` | Webinar ratings + overall average; `publicSummary` is approved-only |
+| `PATCH/DELETE` | `/events-training/webinars/:id/feedback/:feedbackId` | Show/hide or delete a webinar rating for the SmartRefill page |
 | `GET/POST/PATCH/DELETE` | `/events-training/videos` | Training videos (`category` identity: `wrs_stories` \| `webinar` \| `tutorial`; `?category=` filter) |
 | `GET` | `/events-training/apps` | List apps for tutorial targeting (`apps` collection) |
 | `GET/POST/PATCH/DELETE` | `/events-training/blogs` | WRS blog CMS |
@@ -149,7 +159,9 @@ Manager/admin CMS + ops for Smart Refill Resources (shared `apps/smartrefill/*` 
 | `POST` | `/events-training/certifications/:id/revoke` | Revoke certificate |
 | `GET` | `/events-training/analytics` | Ops analytics summary |
 
-**Scheduled job:** `eventsTrainingPromotionDelivery` (every 5 minutes) fires due automation schedules and enqueues email. See [`events-training.md`](./events-training.md).
+**Scheduled jobs:**
+- `eventsTrainingPromotionDelivery` (every 5 minutes) fires due automation schedules and enqueues email. See [`events-training.md`](./events-training.md).
+- `leadPipelineGather` (00:00 Asia/Manila) full-gathers SmartRefill, legacy, and content emails into `leads` (CRM fields preserved). UI **Gather new leads** stays incremental.
 
 ### SmartRefill proxy (`/smartrefill`)
 
@@ -209,9 +221,10 @@ See route files under `backend/functions/src/routes/`.
 
 ```text
 backend/functions/src/
-├── index.ts              # Express app + Cloud Function export
+├── index.ts              # HTTP API + scheduled job exports
 ├── local-server.ts       # ts-node-dev local server
 ├── config/               # Firebase admin, secrets list
+├── jobs/                 # Cloud Scheduler (lead gather, events-training)
 ├── middleware/
 ├── routes/
 ├── handlers/

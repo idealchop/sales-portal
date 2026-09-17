@@ -34,6 +34,11 @@ From repo root: `npm run test:unit:frontend` · `npm run test:bdd:local`
 | `unit/features/dashboard/build-subscription-approval-queue.test.ts` | Approval queue rows |
 | `unit/lib/dashboard-analytics-normalize.test.ts` | API payload defaults |
 | `unit/lib/subscription-attachments.test.ts` | Receipt/attachment helpers |
+| `unit/features/lead-pipeline/lead-pipeline-display.test.ts` | Attempt tracks + Content source labels |
+| `unit/features/lead-pipeline/lead-pipeline-insights.test.ts` | Insights queue mix |
+| `unit/features/lead-pipeline/lead-pipeline-list.test.ts` | Table filters + content sources |
+| `unit/lib/admin/catalog-document-forms.test.ts` | Product icon `waterContainer` persist |
+| `unit/features/events-training/webinar-feedback-display.test.ts` | Overall rating / recommend labels |
 
 ## BDD specs
 

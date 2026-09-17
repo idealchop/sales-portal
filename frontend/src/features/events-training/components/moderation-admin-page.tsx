@@ -10,6 +10,7 @@ import {
   MessageSquareText,
   RefreshCw,
   Search,
+  Star,
   Trash2,
   X,
 } from "lucide-react";
@@ -23,25 +24,30 @@ import {
   deleteVideoComment,
   deleteVideoQuestion,
   deleteWebinarEventComment,
+  deleteWebinarFeedback,
   fetchModerationInbox,
   moderateBlogComment,
   moderateVideoComment,
   moderateWebinarEventComment,
+  moderateWebinarFeedback,
   replyWebinarEventComment,
   updateVideoQuestion,
 } from "../lib/events-training-api";
 import type {
   CommentStatus,
   ModerationCommentItem,
+  ModerationFeedbackItem,
   ModerationInbox,
   ModerationQuestionItem,
   QuestionStatus,
+  WebinarFeedbackStatus,
 } from "../lib/events-training-types";
 import { textareaClassName } from "../lib/form-styles";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { EventsTrainingPageHeader } from "./events-training-page-header";
+import { formatFeedbackExposureLabel } from "../lib/webinar-feedback-display";
 
-type View = "todo" | "questions" | "comments";
+type View = "todo" | "questions" | "comments" | "feedback";
 
 const COMMENT_ACTIONS: {
   status: CommentStatus;
@@ -101,6 +107,7 @@ export function ModerationAdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<
     | { type: "comment"; item: ModerationCommentItem }
     | { type: "question"; item: ModerationQuestionItem }
+    | { type: "feedback"; item: ModerationFeedbackItem }
     | null
   >(null);
 
@@ -186,13 +193,49 @@ export function ModerationAdminPage() {
     );
   }, [inbox?.comments, query]);
 
-  const counts = inbox?.counts ?? {
+  const pendingFeedback = useMemo(() => {
+    const items = (inbox?.feedback ?? []).filter(
+      (item) => item.status === "pending",
+    );
+    if (!query) return items;
+    return items.filter(
+      (item) =>
+        item.contentTitle.toLowerCase().includes(query) ||
+        (item.feedback ?? "").toLowerCase().includes(query) ||
+        (item.displayName ?? "").toLowerCase().includes(query) ||
+        item.email.toLowerCase().includes(query),
+    );
+  }, [inbox?.feedback, query]);
+
+  const allFeedback = useMemo(() => {
+    const items = [...(inbox?.feedback ?? [])].sort((a, b) => {
+      const rank = (status: WebinarFeedbackStatus) =>
+        status === "pending" ? 0 : status === "visible" ? 1 : 2;
+      const byStatus = rank(a.status) - rank(b.status);
+      if (byStatus !== 0) return byStatus;
+      return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
+    });
+    if (!query) return items;
+    return items.filter(
+      (item) =>
+        item.contentTitle.toLowerCase().includes(query) ||
+        (item.feedback ?? "").toLowerCase().includes(query) ||
+        (item.displayName ?? "").toLowerCase().includes(query) ||
+        item.email.toLowerCase().includes(query),
+    );
+  }, [inbox?.feedback, query]);
+
+  const counts = {
     openQuestions: 0,
     flaggedComments: 0,
+    pendingFeedback: 0,
     comments: 0,
     questions: 0,
+    feedback: 0,
+    ...(inbox?.counts ?? {}),
   };
-  const todoCount = counts.openQuestions + counts.flaggedComments;
+  const todoCount =
+    counts.openQuestions + counts.flaggedComments + counts.pendingFeedback;
 
   async function setCommentStatus(
     item: ModerationCommentItem,
@@ -227,6 +270,39 @@ export function ModerationAdminPage() {
       });
     } catch {
       setError("Unable to update comment.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function setFeedbackStatus(
+    item: ModerationFeedbackItem,
+    status: WebinarFeedbackStatus,
+  ) {
+    setBusyId(item.id);
+    setError(null);
+    try {
+      await moderateWebinarFeedback(item.contentId, item.id, status);
+      setInbox((current) => {
+        if (!current) return current;
+        const feedback = current.feedback.map((row) =>
+          row.id === item.id && row.contentId === item.contentId
+            ? { ...row, status }
+            : row,
+        );
+        return {
+          ...current,
+          feedback,
+          counts: {
+            ...current.counts,
+            pendingFeedback: feedback.filter((row) => row.status === "pending")
+              .length,
+            feedback: feedback.length,
+          },
+        };
+      });
+    } catch {
+      setError("Unable to update webinar feedback.");
     } finally {
       setBusyId(null);
     }
@@ -344,6 +420,25 @@ export function ModerationAdminPage() {
               ...current.counts,
               comments: comments.length,
               flaggedComments: comments.filter((c) => c.status === "flagged")
+                .length,
+            },
+          };
+        });
+      } else if (type === "feedback") {
+        await deleteWebinarFeedback(item.contentId, item.id);
+        setInbox((current) => {
+          if (!current) return current;
+          const feedback = current.feedback.filter(
+            (row) =>
+              !(row.id === item.id && row.contentId === item.contentId),
+          );
+          return {
+            ...current,
+            feedback,
+            counts: {
+              ...current.counts,
+              feedback: feedback.length,
+              pendingFeedback: feedback.filter((row) => row.status === "pending")
                 .length,
             },
           };
@@ -658,6 +753,112 @@ export function ModerationAdminPage() {
     );
   }
 
+  function renderFeedbackCard(item: ModerationFeedbackItem) {
+    const name = item.displayName || item.email || "Attendee";
+    const busy = busyId === item.id;
+    return (
+      <li
+        key={`feedback:${item.contentId}:${item.id}`}
+        className={cn(
+          "rounded-2xl border bg-white px-4 py-4 shadow-sm",
+          item.status === "pending"
+            ? "border-amber-200 bg-amber-50/20"
+            : "border-zinc-200/80",
+        )}
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="bg-amber-50 text-amber-950">Webinar rating</Badge>
+              <Badge
+                className={cn(
+                  item.status === "visible" &&
+                    "border-emerald-200 bg-emerald-50 text-emerald-800",
+                  item.status === "hidden" && "bg-zinc-100 text-zinc-600",
+                  item.status === "pending" &&
+                    "border-amber-200 bg-amber-50 text-amber-950",
+                )}
+              >
+                {formatFeedbackExposureLabel(item.status)}
+              </Badge>
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-teal-800">
+              {item.contentTitle}
+            </p>
+            <p className="flex items-center gap-1 text-sm font-medium text-foreground">
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+              {item.rating} / 5
+              {item.recommend ? " · Recommends" : " · Does not recommend"}
+            </p>
+            {item.feedback ? (
+              <p className="text-sm leading-relaxed text-zinc-800">
+                {item.feedback}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">No written feedback</p>
+            )}
+            {item.recommendation ? (
+              <p className="text-xs leading-5 text-muted-foreground">
+                Internal recommendation: {item.recommendation}
+              </p>
+            ) : null}
+            <p className="text-xs text-muted-foreground">
+              {name}
+              {item.displayName && item.email ? ` · ${item.email}` : ""}
+              {item.createdAt ? ` · ${formatWhen(item.createdAt)}` : ""}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Approve to show this rating on the SmartRefill webinar page. Hide
+              to keep it off the public page.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={cn(
+                "rounded-full",
+                item.status === "visible" &&
+                  "border-emerald-500/80 bg-emerald-50 text-emerald-900",
+              )}
+              disabled={busy}
+              onClick={() => void setFeedbackStatus(item, "visible")}
+            >
+              <Check className="mr-1.5 h-3.5 w-3.5" />
+              Show on page
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={cn(
+                "rounded-full",
+                item.status === "hidden" && "border-zinc-400 bg-zinc-100 text-zinc-800",
+              )}
+              disabled={busy}
+              onClick={() => void setFeedbackStatus(item, "hidden")}
+            >
+              <EyeOff className="mr-1.5 h-3.5 w-3.5" />
+              Hide
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-destructive"
+              disabled={busy}
+              onClick={() => setDeleteTarget({ type: "feedback", item })}
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      </li>
+    );
+  }
+
   function renderEmpty(title: string, hint: string) {
     return (
       <div className="flex min-h-[16rem] flex-col items-center justify-center px-4 py-10 text-center">
@@ -675,7 +876,7 @@ export function ModerationAdminPage() {
       <EventsTrainingPageHeader
         eyebrow="Action queue"
         title="Moderation"
-        description="Answer open questions and review flagged comments from every video and blog in one place — no picking content first."
+        description="Review what can appear on SmartRefill webinar pages, answer video questions, and hide flagged comments — no picking content first."
         actions={
           <Button
             type="button"
@@ -702,6 +903,7 @@ export function ModerationAdminPage() {
                   ["todo", "To do", todoCount],
                   ["questions", "All questions", counts.questions],
                   ["comments", "All comments", counts.comments],
+                  ["feedback", "Webinar feedback", counts.feedback],
                 ] as const
               ).map(([id, label, count]) => {
                 const active = view === id;
@@ -739,7 +941,7 @@ export function ModerationAdminPage() {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <input
                 className="h-10 w-full rounded-full border border-zinc-200/90 bg-white pl-10 pr-9 text-sm outline-none transition placeholder:text-zinc-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
-                placeholder="Search across every video & blog…"
+                placeholder="Search videos, blogs, and webinar feedback…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label="Search moderation inbox"
@@ -768,15 +970,17 @@ export function ModerationAdminPage() {
           {loading ? (
             <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin text-teal-700" />
-              Loading questions and comments across all content…
+              Loading questions, comments, and webinar feedback…
             </div>
           ) : null}
 
           {!loading && view === "todo" ? (
-            openQuestions.length === 0 && flaggedComments.length === 0 ? (
+            openQuestions.length === 0 &&
+            flaggedComments.length === 0 &&
+            pendingFeedback.length === 0 ? (
               renderEmpty(
                 "Nothing needs attention",
-                "Open questions and flagged comments from every video and blog will appear here.",
+                "Open questions, flagged comments, and webinar ratings waiting to go live on SmartRefill will appear here.",
               )
             ) : (
               <div className="space-y-8">
@@ -829,6 +1033,34 @@ export function ModerationAdminPage() {
                     </ul>
                   )}
                 </section>
+
+                <section className="space-y-3">
+                  <div className="flex items-baseline justify-between gap-2 px-1">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      Webinar ratings to review
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {pendingFeedback.length} waiting to show on SmartRefill
+                    </p>
+                  </div>
+                  {pendingFeedback.length === 0 ? (
+                    <p className="rounded-2xl bg-zinc-50 px-4 py-6 text-center text-sm text-muted-foreground">
+                      No pending webinar ratings. Use{" "}
+                      <button
+                        type="button"
+                        className="font-medium text-teal-800 underline-offset-2 hover:underline"
+                        onClick={() => setView("feedback")}
+                      >
+                        Webinar feedback
+                      </button>{" "}
+                      to show or hide ratings on the public webinar page.
+                    </p>
+                  ) : (
+                    <ul className="space-y-2.5">
+                      {pendingFeedback.map((item) => renderFeedbackCard(item))}
+                    </ul>
+                  )}
+                </section>
               </div>
             )
           ) : null}
@@ -852,11 +1084,24 @@ export function ModerationAdminPage() {
             allComments.length === 0 ? (
               renderEmpty(
                 "No comments yet",
-                "Video and blog comments from Resources will show up here for Approve / Hide / Flag.",
+                "Video, blog, and webinar comments from Resources will show up here for Approve / Hide / Flag.",
               )
             ) : (
               <ul className="space-y-2.5">
                 {allComments.map((item) => renderCommentCard(item))}
+              </ul>
+            )
+          ) : null}
+
+          {!loading && view === "feedback" ? (
+            allFeedback.length === 0 ? (
+              renderEmpty(
+                "No webinar ratings yet",
+                "Ratings from webinar emails wait here until you approve them for the SmartRefill webinar page.",
+              )
+            ) : (
+              <ul className="space-y-2.5">
+                {allFeedback.map((item) => renderFeedbackCard(item))}
               </ul>
             )
           ) : null}
@@ -868,16 +1113,29 @@ export function ModerationAdminPage() {
           title={
             deleteTarget.type === "comment"
               ? "Delete this comment?"
-              : "Delete this question?"
+              : deleteTarget.type === "feedback"
+                ? "Delete this webinar rating?"
+                : "Delete this question?"
           }
-          itemLabel={deleteTarget.item.text}
+          itemLabel={
+            deleteTarget.type === "feedback"
+              ? deleteTarget.item.feedback ||
+                `${deleteTarget.item.rating}-star rating`
+              : deleteTarget.item.text
+          }
           description={
             deleteTarget.type === "comment"
               ? "This permanently removes the comment from Resources. This cannot be undone."
-              : "This permanently removes the question (and any answer) from Resources. This cannot be undone."
+              : deleteTarget.type === "feedback"
+                ? "This permanently removes the rating. It will no longer be available to show on the SmartRefill webinar page."
+                : "This permanently removes the question (and any answer) from Resources. This cannot be undone."
           }
           confirmLabel={
-            deleteTarget.type === "comment" ? "Delete comment" : "Delete question"
+            deleteTarget.type === "comment"
+              ? "Delete comment"
+              : deleteTarget.type === "feedback"
+                ? "Delete rating"
+                : "Delete question"
           }
           onClose={() => setDeleteTarget(null)}
           onConfirm={handleDeleteConfirm}

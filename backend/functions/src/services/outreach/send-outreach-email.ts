@@ -2,7 +2,7 @@ import { logger } from "firebase-functions";
 import { brevo, getBrevoApi } from "../../utils/brevo";
 import {
   OUTREACH_EMAIL_BCC,
-  OUTREACH_SENDER,
+  resolveOutreachSender,
 } from "./outreach-constants";
 import {
   buildOutreachEmailByKind,
@@ -17,6 +17,11 @@ export type SendOutreachEmailInput = {
   customSubject?: string;
   customBodyText?: string;
   actorUid?: string;
+  /** Optional lead id for Brevo open-tracking correlation. */
+  leadId?: string;
+  /** Optional verified sender override (must be in OUTREACH_SENDER_OPTIONS). */
+  senderEmail?: string;
+  senderName?: string;
 };
 
 export type SendOutreachEmailResult = {
@@ -60,21 +65,35 @@ export async function sendOutreachEmail(
     };
   }
 
+  const sender = resolveOutreachSender({
+    email: input.senderEmail,
+    name: input.senderName,
+  });
+
   const sendSmtpEmail = new brevo.SendSmtpEmail();
   sendSmtpEmail.sender = {
-    name: OUTREACH_SENDER.name,
-    email: OUTREACH_SENDER.email,
+    name: sender.name,
+    email: sender.email,
   };
   sendSmtpEmail.to = [{ email: toEmail }];
   sendSmtpEmail.bcc = OUTREACH_EMAIL_BCC.map((email) => ({ email }));
   sendSmtpEmail.replyTo = {
-    name: OUTREACH_SENDER.name,
-    email: OUTREACH_SENDER.email,
+    name: sender.name,
+    email: sender.email,
   };
   sendSmtpEmail.subject = template.subject;
   sendSmtpEmail.htmlContent = template.html;
   sendSmtpEmail.textContent = template.text;
   sendSmtpEmail.tags = [template.brevoTag];
+  if (input.leadId?.trim()) {
+    sendSmtpEmail.tags = [
+      ...(sendSmtpEmail.tags || []),
+      `lead:${input.leadId.trim()}`,
+    ];
+    sendSmtpEmail.headers = {
+      "X-Mailin-custom": `leadId=${input.leadId.trim()}`,
+    };
+  }
 
   try {
     const response = await api.sendTransacEmail(sendSmtpEmail);

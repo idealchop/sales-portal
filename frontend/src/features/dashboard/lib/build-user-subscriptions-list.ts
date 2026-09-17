@@ -200,7 +200,7 @@ export function pickLatestSubscription(
   if (subscriptions.length === 0) return undefined;
 
   return subscriptions.reduce((latest, subscription) =>
-    subscriptionCreatedMs(subscription) > subscriptionCreatedMs(latest) ?
+    subscriptionActivityMs(subscription) > subscriptionActivityMs(latest) ?
       subscription
     : latest,
   );
@@ -215,6 +215,65 @@ export function pickLatestActiveSubscription(
     isSubscriptionActive(subscription, now),
   );
   return pickLatestSubscription(active) ?? pickLatestSubscription(subscriptions);
+}
+
+/**
+ * Latest plan the workspace is on now — includes free Starter / trial.
+ * Prefer newest status=active (any price) so a downgrade to Starter wins over
+ * an older Scale that was never marked superseded.
+ */
+export function pickLatestCurrentPlanSubscription(
+  subscriptions: OwnerSubscription[],
+  now = Date.now(),
+): OwnerSubscription | undefined {
+  const activeNow = subscriptions.filter((subscription) => {
+    const status = subscription.status.toLowerCase();
+    if (status !== "active") return false;
+    if (INACTIVE_SUBSCRIPTION_STATUSES.has(status)) return false;
+    if (isSubscriptionExpiredByDate(subscription, now)) return false;
+    return true;
+  });
+  const fromActive = pickLatestSubscription(activeNow);
+  if (fromActive) return fromActive;
+
+  const current = subscriptions.find((sub) => sub.timeline === "current");
+  if (
+    current &&
+    !INACTIVE_SUBSCRIPTION_STATUSES.has(current.status.toLowerCase()) &&
+    !isSubscriptionExpiredByDate(current, now)
+  ) {
+    return current;
+  }
+
+  return pickLatestSubscription(
+    subscriptions.filter((subscription) => {
+      const status = subscription.status.toLowerCase();
+      if (INACTIVE_SUBSCRIPTION_STATUSES.has(status)) return false;
+      if (status === "scheduled") return false;
+      if (isSubscriptionExpiredByDate(subscription, now)) return false;
+      return true;
+    }),
+  );
+}
+
+/**
+ * Latest live paid plan only when the current plan itself is paid.
+ * Use {@link pickLatestCurrentPlanSubscription} to know plan tier first.
+ */
+export function pickLatestLivePaidSubscription(
+  subscriptions: OwnerSubscription[],
+  now = Date.now(),
+): OwnerSubscription | undefined {
+  const current = pickLatestCurrentPlanSubscription(subscriptions, now);
+  if (
+    current &&
+    current.status.toLowerCase() === "active" &&
+    Number(current.price) > 0 &&
+    !isTrialBillingCycle(current.billingCycle)
+  ) {
+    return current;
+  }
+  return undefined;
 }
 
 export function buildUserSubscriptionsList(

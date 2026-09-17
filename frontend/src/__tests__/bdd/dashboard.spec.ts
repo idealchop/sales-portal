@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const DASHBOARD_ROUTES = [
   "/dashboard",
   "/dashboard/smartrefill",
-  "/dashboard/sales-portal",
+  "/lead-pipeline",
 ];
 
 test.describe("Dashboard", () => {

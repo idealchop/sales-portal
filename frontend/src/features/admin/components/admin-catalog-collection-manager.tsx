@@ -13,6 +13,7 @@ import {
   ADMIN_CATALOG_COLLECTIONS,
   catalogDocumentActive,
   catalogDocumentDisplayName,
+  catalogDocumentIsWaterContainer,
   catalogDocumentSubtitle,
   type AdminCatalogCollectionId,
 } from "@/lib/admin/catalog-collections";
@@ -192,6 +193,9 @@ export function AdminCatalogCollectionManager({
                   : null}
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Document ID</th>
+                  {collectionId === "product_icons" ?
+                    <th className="px-4 py-3">Water container</th>
+                  : null}
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -200,6 +204,7 @@ export function AdminCatalogCollectionManager({
                 {filteredDocuments.map((doc) => {
                   const active = catalogDocumentActive(doc.data);
                   const subtitle = catalogDocumentSubtitle(doc.data);
+                  const waterContainer = catalogDocumentIsWaterContainer(doc.data);
                   return (
                     <tr
                       key={doc.path}
@@ -222,6 +227,20 @@ export function AdminCatalogCollectionManager({
                       <td className="px-4 py-3 font-mono text-xs text-zinc-600">
                         {doc.documentId}
                       </td>
+                      {collectionId === "product_icons" ?
+                        <td className="px-4 py-3">
+                          <span
+                            className={cn(
+                              "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
+                              waterContainer ?
+                                "bg-sky-50 text-sky-800"
+                              : "bg-zinc-100 text-zinc-600",
+                            )}
+                          >
+                            {waterContainer ? "Yes" : "No"}
+                          </span>
+                        </td>
+                      : null}
                       <td className="px-4 py-3">
                         {active === undefined ?
                           <span className="text-zinc-400">—</span>

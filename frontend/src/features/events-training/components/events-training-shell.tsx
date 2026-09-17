@@ -34,7 +34,8 @@ export function EventsTrainingShell({ children }: { children: React.ReactNode })
           pendingRegistrations: regs.length,
           moderationTodo:
             (inbox.counts.openQuestions ?? 0) +
-            (inbox.counts.flaggedComments ?? 0),
+            (inbox.counts.flaggedComments ?? 0) +
+            (inbox.counts.pendingFeedback ?? 0),
         });
       })
       .catch(() => {

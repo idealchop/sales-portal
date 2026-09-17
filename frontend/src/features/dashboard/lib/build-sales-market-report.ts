@@ -1,5 +1,7 @@
 import type { DashboardAnalytics } from "@/lib/dashboard/analytics";
 import { computeStarterPotentialLost } from "@/features/dashboard/lib/compute-starter-potential-lost";
+import { withWorkspaceNames } from "@/features/dashboard/lib/with-workspace-names";
+import { businessesForMrrInsights } from "@/features/dashboard/lib/with-latest-live-plans";
 import {
   dayKey,
   isDateInRange,
@@ -297,8 +299,14 @@ export function buildSalesMarketReport(
   const mrrIdeal = idealPayingStations * ideals.mrrPerPayingStation;
 
   const starterPotential = computeStarterPotentialLost(
-    (data.chartBusinessContext ?? []).filter(
-      (biz) => biz.authAccountTag !== "test",
+    businessesForMrrInsights(
+      data,
+      withWorkspaceNames(
+        (data.chartBusinessContext ?? []).filter(
+          (biz) => biz.authAccountTag !== "test",
+        ),
+        data,
+      ),
     ),
   );
   const pipelineValue = personal?.pipelineValue ?? pipeline.pipelineValue;

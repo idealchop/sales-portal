@@ -9,6 +9,11 @@ import { logger } from "firebase-functions";
 import { SALES_PORTAL_FUNCTION_SECRETS } from "../config/function-secrets";
 import { isDevJobsEnabled } from "../config/dev-tier";
 import { runEventsTrainingPromotionDelivery } from "../services/events-training/events-training-delivery-service";
+import {
+  runScheduledLeadGather,
+  SCHEDULED_LEAD_GATHER_CRON,
+  SCHEDULED_LEAD_GATHER_TIME_ZONE,
+} from "../services/gather-leads-service";
 
 async function runGated(name: string, fn: () => Promise<void>): Promise<void> {
   if (!isDevJobsEnabled()) {
@@ -33,5 +38,21 @@ export const eventsTrainingPromotionDeliveryDev = onSchedule(
       if (result.schedules.fired > 0 || result.schedules.errors > 0) {
         logger.info("eventsTrainingPromotionDeliveryDev complete", result);
       }
+    }),
+);
+
+export const leadPipelineGatherDev = onSchedule(
+  {
+    schedule: SCHEDULED_LEAD_GATHER_CRON,
+    timeZone: SCHEDULED_LEAD_GATHER_TIME_ZONE,
+    region: "asia-southeast1",
+    memory: "1GiB",
+    timeoutSeconds: 540,
+    secrets: [...SALES_PORTAL_FUNCTION_SECRETS],
+  },
+  () =>
+    runGated("leadPipelineGatherDev", async () => {
+      const result = await runScheduledLeadGather();
+      logger.info("leadPipelineGatherDev complete", result);
     }),
 );

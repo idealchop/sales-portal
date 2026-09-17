@@ -4,6 +4,11 @@ import {
   getClientDirectoryHandler,
   getClientsHandler,
   getCommissionsHandler,
+  getLeadAssigneesHandler,
+  getLeadHandler,
+  getLeadHistoryHandler,
+  getLeadsAnalyticsHandler,
+  getLeadsHandler,
   getOutreachRecipientsHandler,
   getProposalHandler,
   getProposalsHandler,
@@ -11,14 +16,18 @@ import {
   getSalesMaterialsHandler,
   getSalesTeamHandler,
   patchClientHandler,
+  patchLeadHandler,
   patchProposalHandler,
   patchSalesMaterialHandler,
   postClientHandler,
+  postLeadHandler,
+  postLeadsGatherHandler,
   postProposalHandler,
   postProposalShareHandler,
   postSalesOutreachSendHandler,
   postSalesMaterialHandler,
 } from "../handlers/sales-workflow-handler";
+import { postBrevoTransactionalWebhookHandler } from "../handlers/brevo-webhook-handler";
 import {
   requireSalesPortalAccess,
   validateFirebaseIdToken,
@@ -27,6 +36,10 @@ import {
 const router = express.Router();
 
 router.get("/public/proposals/:linkId", getPublicProposalHandler);
+router.post(
+  "/webhooks/brevo/transactional",
+  postBrevoTransactionalWebhookHandler,
+);
 
 router.use(validateFirebaseIdToken, requireSalesPortalAccess);
 
@@ -42,6 +55,15 @@ router.get("/outreach/recipients", getOutreachRecipientsHandler);
 router.post("/outreach/send", postSalesOutreachSendHandler);
 router.post("/clients", postClientHandler);
 router.patch("/clients/:clientId", patchClientHandler);
+
+router.get("/leads/analytics", getLeadsAnalyticsHandler);
+router.get("/leads/assignees", getLeadAssigneesHandler);
+router.post("/leads/gather", postLeadsGatherHandler);
+router.get("/leads", getLeadsHandler);
+router.post("/leads", postLeadHandler);
+router.get("/leads/:leadId/history", getLeadHistoryHandler);
+router.get("/leads/:leadId", getLeadHandler);
+router.patch("/leads/:leadId", patchLeadHandler);
 
 router.get("/commissions", getCommissionsHandler);
 router.get("/sales/team", getSalesTeamHandler);

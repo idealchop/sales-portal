@@ -81,3 +81,10 @@ export function webinarEventEngagementCollection() {
 export function webinarEventEngagementPostsCollection(eventId: string) {
   return webinarEventEngagementCollection().doc(eventId).collection("posts");
 }
+
+/** Public ratings submitted from webinar invite emails. */
+export function webinarEventFeedbackCollection() {
+  return eventsTrainingRoot().collection(
+    EVENTS_TRAINING_COLLECTIONS.webinarEventFeedback,
+  );
+}

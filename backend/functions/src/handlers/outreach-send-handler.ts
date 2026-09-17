@@ -61,6 +61,16 @@ export async function postOutreachSendHandler(
       customSubject: customSubject || undefined,
       customBodyText: customBodyText || undefined,
       actorUid: uid,
+      leadId:
+        typeof req.body?.leadId === "string" ? req.body.leadId.trim() : undefined,
+      senderEmail:
+        typeof req.body?.senderEmail === "string" ?
+          req.body.senderEmail.trim() :
+          undefined,
+      senderName:
+        typeof req.body?.senderName === "string" ?
+          req.body.senderName.trim() :
+          undefined,
     });
     res.json({ data: { outreach } });
   } catch (error) {

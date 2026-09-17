@@ -4,6 +4,11 @@ import type {
   Client,
   ClientDirectoryEntry,
   Commission,
+  Lead,
+  LeadAnalytics,
+  LeadHistoryEvent,
+  LeadQueue,
+  LeadStage,
   OutreachRecipient,
   Proposal,
 } from "@/lib/definitions";
@@ -72,6 +77,9 @@ export async function sendSalesOutreachEmail(input: {
   subtitle?: string;
   subject?: string;
   bodyText?: string;
+  leadId?: string;
+  senderEmail?: string;
+  senderName?: string;
 }) {
   const res = await apiClient.post<{
     data: {
@@ -93,6 +101,13 @@ export async function fetchCommissions() {
 
 export async function fetchSalesTeam() {
   const res = await apiClient.get<{ data: TeamMemberSummary[] }>("/sales/team");
+  return res.data;
+}
+
+export async function fetchLeadAssignees() {
+  const res = await apiClient.get<{ data: TeamMemberSummary[] }>(
+    "/leads/assignees",
+  );
   return res.data;
 }
 
@@ -165,6 +180,69 @@ export async function updateSalesMaterial(
 
 export async function deleteSalesMaterial(materialId: string) {
   await apiClient.delete(`/sales-materials/${materialId}`);
+}
+
+export type LeadListParams = {
+  queue?: LeadQueue;
+  stage?: LeadStage;
+  assignee?: string;
+  q?: string;
+};
+
+export async function fetchLeads(params: LeadListParams = {}) {
+  const search = new URLSearchParams();
+  if (params.queue && params.queue !== "all") search.set("queue", params.queue);
+  if (params.stage) search.set("stage", params.stage);
+  if (params.assignee) search.set("assignee", params.assignee);
+  if (params.q) search.set("q", params.q);
+  const query = search.toString();
+  const res = await apiClient.get<{ data: Lead[] }>(
+    `/leads${query ? `?${query}` : ""}`,
+  );
+  return res.data;
+}
+
+export async function fetchLeadsAnalytics() {
+  const res = await apiClient.get<{ data: LeadAnalytics }>("/leads/analytics");
+  return res.data;
+}
+
+export type GatherLeadsMode = "incremental" | "full";
+
+export type GatherLeadsSummary = {
+  mode: GatherLeadsMode;
+  scanned: number;
+  inserted: number;
+  updated: number;
+  skipped: number;
+};
+
+export async function gatherLeads(input: { mode: GatherLeadsMode }) {
+  const res = await apiClient.post<{ data: GatherLeadsSummary }>(
+    "/leads/gather",
+    input,
+  );
+  return res.data;
+}
+
+export async function createLead(input: Partial<Lead>) {
+  const res = await apiClient.post<{ data: Lead }>("/leads", input);
+  return res.data;
+}
+
+export async function updateLead(
+  leadId: string,
+  input: Partial<Lead> & { bumpAttempt?: boolean },
+) {
+  const res = await apiClient.patch<{ data: Lead }>(`/leads/${leadId}`, input);
+  return res.data;
+}
+
+export async function fetchLeadHistory(leadId: string) {
+  const res = await apiClient.get<{ data: LeadHistoryEvent[] }>(
+    `/leads/${leadId}/history`,
+  );
+  return res.data;
 }
 
 export const PROPOSAL_PLANS = [

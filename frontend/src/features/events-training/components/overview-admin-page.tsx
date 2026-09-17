@@ -24,10 +24,13 @@ import {
   fetchWebinars,
   moderateBlogComment,
   moderateVideoComment,
+  moderateWebinarEventComment,
+  moderateWebinarFeedback,
   updateVideoQuestion,
 } from "../lib/events-training-api";
 import type {
   ModerationCommentItem,
+  ModerationFeedbackItem,
   ModerationInbox,
   ModerationQuestionItem,
   RegistrationRecord,
@@ -167,7 +170,10 @@ export function OverviewAdminPage() {
     const comments = (inbox?.comments ?? [])
       .filter((item) => item.status === "flagged")
       .map((item) => ({ kind: "comment" as const, item }));
-    return [...questions, ...comments].sort((a, b) =>
+    const feedback = (inbox?.feedback ?? [])
+      .filter((item) => item.status === "pending")
+      .map((item) => ({ kind: "feedback" as const, item }));
+    return [...questions, ...comments, ...feedback].sort((a, b) =>
       (b.item.createdAt ?? "").localeCompare(a.item.createdAt ?? ""),
     );
   }, [inbox]);
@@ -254,6 +260,8 @@ export function OverviewAdminPage() {
     try {
       if (item.contentKind === "blog") {
         await moderateBlogComment(item.contentId, item.id, "visible");
+      } else if (item.contentKind === "webinar_event") {
+        await moderateWebinarEventComment(item.contentId, item.id, "visible");
       } else {
         await moderateVideoComment(item.contentId, item.id, "visible");
       }
@@ -276,6 +284,35 @@ export function OverviewAdminPage() {
       });
     } catch {
       setError("Unable to approve comment.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function approveFeedback(item: ModerationFeedbackItem) {
+    setBusyId(item.id);
+    setError(null);
+    try {
+      await moderateWebinarFeedback(item.contentId, item.id, "visible");
+      setInbox((current) => {
+        if (!current) return current;
+        const feedback = (current.feedback ?? []).map((row) =>
+          row.id === item.id && row.contentId === item.contentId
+            ? { ...row, status: "visible" as const }
+            : row,
+        );
+        return {
+          ...current,
+          feedback,
+          counts: {
+            ...current.counts,
+            pendingFeedback: feedback.filter((row) => row.status === "pending")
+              .length,
+          },
+        };
+      });
+    } catch {
+      setError("Unable to approve webinar feedback.");
     } finally {
       setBusyId(null);
     }
@@ -323,7 +360,7 @@ export function OverviewAdminPage() {
           value={loading ? "…" : String(moderationTodos.length)}
           hint={
             moderationTodos.length > 0
-              ? "Questions & flagged comments"
+              ? "Questions, flags, and webinar ratings"
               : "Inbox clear"
           }
           href="/events-training/moderation"
@@ -467,7 +504,7 @@ export function OverviewAdminPage() {
               ) : null}
               {!loading && visibleModeration.length === 0 ? (
                 <p className="px-4 py-8 text-sm text-muted-foreground">
-                  No open questions or flagged comments.
+                  No open questions, flagged comments, or webinar ratings to review.
                 </p>
               ) : null}
               {visibleModeration.map((entry) => {
@@ -512,6 +549,46 @@ export function OverviewAdminPage() {
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
                           "Post answer"
+                        )}
+                      </Button>
+                    </div>
+                  );
+                }
+
+                if (entry.kind === "feedback") {
+                  const item = entry.item;
+                  const busy = busyId === item.id;
+                  return (
+                    <div
+                      key={`f-${item.contentId}-${item.id}`}
+                      className="px-4 py-3"
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge className="bg-amber-50 text-amber-950">
+                          Webinar rating
+                        </Badge>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {item.contentTitle}
+                        </span>
+                      </div>
+                      <p className="mt-1.5 text-sm text-foreground">
+                        {item.rating}/5
+                        {item.feedback ? ` · ${item.feedback}` : ""}
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="mt-2 h-8 rounded-full"
+                        disabled={busy}
+                        onClick={() => void approveFeedback(item)}
+                      >
+                        {busy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <Check className="mr-1 h-3.5 w-3.5" />
+                            Show on SmartRefill
+                          </>
                         )}
                       </Button>
                     </div>

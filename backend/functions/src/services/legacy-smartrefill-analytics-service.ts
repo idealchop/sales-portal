@@ -275,6 +275,16 @@ function mapTransaction(
   };
 }
 
+/** Public loader for SmartRefill prod inquire/demo/business inquiry collections. */
+export async function fetchLegacySmartRefillLeads(): Promise<{
+  leads: LegacySmartRefillLead[];
+  openInquiries: number;
+  demoRequests: number;
+  businessInquiries: number;
+}> {
+  return loadLeads();
+}
+
 async function loadLeads(): Promise<{
   leads: LegacySmartRefillLead[];
   openInquiries: number;
@@ -594,6 +604,76 @@ export async function fetchLegacySmartRefillAnalytics(options?: {
     expiresAt: now + CACHE_TTL_MS,
   };
   return { data, computedAt };
+}
+
+/**
+ * Lightweight station list for lead pipeline — profile + customer count only.
+ * Skips the full delivery scan used by dashboard analytics.
+ */
+export async function fetchLegacyStationsForPipeline(): Promise<
+  LegacySmartRefillStation[]
+  > {
+  const [usersSnap, flagsMap] = await Promise.all([
+    prodSmartrefillDb.collection("users").get(),
+    getLegacyStationFlagsMap(),
+  ]);
+
+  const stationRows = await mapWithConcurrency(
+    usersSnap.docs,
+    PROFILE_CONCURRENCY,
+    async (doc) => {
+      const user = doc.data();
+      const profileSnap = await doc.ref.collection("profile").doc("main").get();
+      if (!profileSnap.exists) return null;
+
+      const profile = profileSnap.data() || {};
+      const customerCountSnap = await doc.ref.collection("customers").count().get();
+      const flag = flagsMap.get(doc.id);
+      const firestoreEmail = String(user.email || "").trim();
+      const authUser = findLegacyAuthUser({
+        localId: doc.id,
+        email: firestoreEmail,
+      });
+      const email = firestoreEmail || authUser?.email || "";
+      const ownerName =
+        String(profile.ownerName || "").trim() ||
+        authUser?.displayName ||
+        String(user.displayName || "").trim() ||
+        "Owner";
+      const businessName =
+        String(profile.businessName || "").trim() ||
+        authUser?.displayName ||
+        String(user.displayName || "").trim() ||
+        "Unnamed station";
+
+      return {
+        id: doc.id,
+        businessName,
+        ownerName,
+        email,
+        phone: String(profile.phone || "").trim() || null,
+        address: String(profile.stationAddress || "").trim() || null,
+        lat: typeof profile.latitude === "number" ? profile.latitude : null,
+        lng: typeof profile.longitude === "number" ? profile.longitude : null,
+        onboardingComplete: Boolean(profile.onboardingComplete),
+        customerCount: customerCountSnap.data().count,
+        deliveryCount: 0,
+        revenueTotal: 0,
+        bottlesTotal: 0,
+        unpaidTotal: 0,
+        lastDeliveryAt: null as string | null,
+        lastSignedInAt: authUser?.lastSignedInAt ?? null,
+        authOnly: false as boolean,
+        triageStatus: flag?.triageStatus ?? "open",
+        contactedAt: flag?.contactedAt ?? null,
+        ignoredAt: flag?.ignoredAt ?? null,
+      } satisfies LegacySmartRefillStation;
+    },
+  );
+
+  return stationRows.filter(
+    (station): station is LegacySmartRefillStation => station != null,
+  );
 }
 
 export async function fetchLegacySmartRefillStationDetail(input: {

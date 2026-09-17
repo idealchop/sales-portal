@@ -31,7 +31,7 @@ Prod App Hosting, Prod Functions, and `riverdb` stay as they are today. Do **not
 ```bash
 cd backend
 ENV=dev ./deploy.sh
-# Optional on-demand scheduler against riverdb-dev:
+# Optional schedulers against riverdb-dev (events-training + midnight lead gather):
 ENV=dev DEPLOY_DEV_JOBS=1 ./deploy.sh
 # Optional rules/indexes on riverdb-dev (usually deployed via SmartRefill):
 ENV=dev DEPLOY_FIRESTORE=1 ./deploy.sh

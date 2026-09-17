@@ -3,6 +3,36 @@ export const OUTREACH_SENDER = {
   email: "support@riverph.com",
 } as const;
 
+/** Verified Brevo senders that sales can choose from. */
+export const OUTREACH_SENDER_OPTIONS = [
+  { id: "support", name: "River Support", email: "support@riverph.com" },
+  { id: "justfer", name: "Justfer", email: "justfer@riverph.com" },
+  { id: "wina", name: "Wina", email: "wina@riverph.com" },
+  { id: "jimboy", name: "Jimboy", email: "jimboy@smartrefill.io" },
+] as const;
+
+export type OutreachSenderOption = (typeof OUTREACH_SENDER_OPTIONS)[number];
+
+export function resolveOutreachSender(input?: {
+  email?: string | null;
+  name?: string | null;
+}): { name: string; email: string } {
+  const email = input?.email?.trim().toLowerCase() || "";
+  const match = OUTREACH_SENDER_OPTIONS.find(
+    (option) => option.email.toLowerCase() === email,
+  );
+  if (match) {
+    return {
+      email: match.email,
+      name: input?.name?.trim() || match.name,
+    };
+  }
+  return {
+    email: OUTREACH_SENDER.email,
+    name: OUTREACH_SENDER.name,
+  };
+}
+
 export const OUTREACH_EMAIL_BCC = [
   "justfer@riverph.com",
   "wina@riverph.com",

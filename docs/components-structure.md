@@ -33,13 +33,13 @@ frontend/src/
 | `components/dashboard-header.tsx` | Page title, refresh, user menu |
 | `components/platform-hub-dashboard.tsx` | All-apps hub: sales snapshot + simple per-app performance overview |
 | `components/platform-apps-overview.tsx` | App KPI cards with performance blurbs and deep links |
-| `components/smartrefill-dashboard.tsx` | SmartRefill ops dashboard (Attention / Subscriptions / Field / Analytics / Config tabs) |
+| `components/smartrefill-dashboard.tsx` | SmartRefill ops dashboard (Subscriptions / Analytics / Config tabs) |
 | `components/smartrefill-old-dashboard.tsx` | Legacy SmartRefill ops from `prod-smartrefill`: triage / contacted-ignored queues (contact sends Brevo; contacted returns to triage after 15 days; ignored stays) |
 | `components/smartrefill-ops-health-strip.tsx` | Clickable support/maintenance snapshot tiles |
 | `components/smartrefill-maintenance-signals.tsx` | Workspace health + payment status bars |
 | `components/platform-alerts-list.tsx` | Alert queue; Contact (Brevo) + Mark done; row click opens Data management (admin) or detail dialog |
 | `components/active-owners-panel.tsx` | Inactive owners (7d+); Contact sends Brevo miss-you + 7d cooldown |
-| `components/sales-portal-dashboard.tsx` | Sales urgent-only: focus tiles + rules action queue + proposal stages |
+| `components/sales-portal-dashboard.tsx` | Action board at `/dashboard`: assigned-lead tasks + performance + proposal stages |
 | `components/sales-market-position-section.tsx` | Market position metrics + plan mix bars; proactive scoreboard |
 | `lib/build-sales-market-report.ts` | Derives market share, expansion upside, projected wins from analytics (excludes `authAccountTag=test`) |
 | `lib/filter-chart-series.ts` | Date-range chart filters; drops test-tagged businesses |
@@ -69,6 +69,7 @@ Manager/admin CMS + ops for Smart Refill Resources. Detail: [`events-training.md
 | Area | Purpose |
 |------|---------|
 | `components/*-admin-page.tsx` | Overview, analytics, registrations, moderation, webinars, videos, blogs, tutorials, certifications, schedules |
+| `components/webinar-feedback-dialog.tsx` | Per-webinar overall ratings + individual feedback from invite emails |
 | `components/confirm-delete-dialog.tsx` | Shared in-app destructive confirm (replaces `window.confirm`) |
 | `components/events-training-shell.tsx` | Compact grouped tab bar: Overview → Attention → Create → Schedules |
 | `lib/events-training-nav.ts` | Shared IA + sidebar children |
@@ -78,6 +79,29 @@ Manager/admin CMS + ops for Smart Refill Resources. Detail: [`events-training.md
 | `lib/form-styles.ts` | Shared form class names |
 
 App routes: `app/events-training/page.tsx` (overview) + `{analytics,registrations,moderation,webinars,videos,blogs,tutorials,certifications,schedules}/page.tsx`.
+
+### `features/lead-pipeline/`
+
+Hybrid lead CRM from **both** databases, labeled per row via `platformSource`:
+- `smartrefill` → `riverdb` businesses, Auth users not yet in SmartRefill, inquire/demo
+- `smartrefill_legacy` → `prod-smartrefill` stations
+
+Queues: **all / content / warm / cold / onboarded / archives** (table default All). **Content** = emails from webinars, training videos, articles, and stories (`sourceKind: "content"` guests plus overlay `contentSources` on existing workspace rows). **Onboarded** = SmartRefill (`riverdb`)
+workspaces with `onboardingComplete`; **Warm** = Auth sign-ups not in SmartRefill yet,
+inquire/demo, and registered-but-not-onboarded (content-only guests stay on Content, not Warm). Sales Portal accounts are excluded.
+Legacy stations never enter Onboarded. CRM `leads` overlays cold/archive follow-ups. Missed demo auto-moves to Cold; **Demo Scheduled** (or other Warm statuses) after a miss returns the lead to Warm and clears the missed flag so another demo can be booked.
+Uses a lightweight legacy station loader (no delivery scan).
+
+**Onboarded journey monitor (Day 1–15):** Active = getting-started ≥3 **and** distinct owner login days **>7** since `workspaceOnboardedAt` (fallback `registeredAt`). Day 8–14 inactive → flag `journey_inactive_day8`; Day 15+ inactive → flag `recommend_move_to_cold` (assignee confirms Cold via Update status — no auto stage write). Beyond journey (graduated or day 15+) also monitors subscription expiry ≤7d, grace period, renew, and plan change. Snapshot fields refresh on gather; `onboardedMonitor` is attached on list/get.
+
+| Path | Purpose |
+|------|---------|
+| `components/lead-pipeline-page.tsx` | Queue tabs, Table/Insights toggle, edit |
+| `components/lead-pipeline-table.tsx` | Spreadsheet-style list (default view) |
+| `components/lead-pipeline-insights.tsx` | Funnel, source, assignee, trial-risk charts |
+| `components/lead-form-dialog.tsx` | Create/update lead + link workspace |
+
+Route: `app/lead-pipeline/page.tsx`. API: `GET/POST/PATCH /leads`, `GET /leads/analytics`.
 
 ### `features/proposals/`
 
@@ -102,7 +126,7 @@ Large admin surface for permissions and Firestore data management:
 | `admin-data-management-page.tsx` | Business/user document browser |
 | `admin-data-management-business-page.tsx` | Business overview — tabbed layout aligned with SmartRefill ops |
 | `admin-catalog-collection-page.tsx` | Subscription catalog tables |
-| `catalog-document-form-*` | Structured add/edit forms (not raw JSON) |
+| `catalog-document-form-*` | Structured add/edit forms (not raw JSON); product icons include **Water container** |
 | `plan-limitations-form-*` | Plan `limitations` editor |
 | `firestore-document-detail-dialog.tsx` | Row click → read-only detail |
 

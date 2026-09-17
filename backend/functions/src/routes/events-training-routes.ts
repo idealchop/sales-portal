@@ -17,6 +17,9 @@ import {
   getVideoQuestionsHandler,
   getVideosHandler,
   getWebinarEventCommentsHandler,
+  getWebinarFeedbackHandler,
+  patchWebinarFeedbackHandler,
+  deleteWebinarFeedbackHandler,
   getWebinarRegistrationsHandler,
   getWebinarsHandler,
   patchBlogCommentHandler,
@@ -81,6 +84,15 @@ router.post("/webinars", postWebinarHandler);
 router.patch("/webinars/:webinarId", patchWebinarHandler);
 router.delete("/webinars/:webinarId", deleteWebinarHandler);
 router.get("/webinars/:webinarId/registrations", getWebinarRegistrationsHandler);
+router.get("/webinars/:webinarId/feedback", getWebinarFeedbackHandler);
+router.patch(
+  "/webinars/:webinarId/feedback/:feedbackId",
+  patchWebinarFeedbackHandler,
+);
+router.delete(
+  "/webinars/:webinarId/feedback/:feedbackId",
+  deleteWebinarFeedbackHandler,
+);
 router.get("/webinars/:webinarId/comments", getWebinarEventCommentsHandler);
 router.patch(
   "/webinars/:webinarId/comments/:commentId",

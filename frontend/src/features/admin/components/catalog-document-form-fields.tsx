@@ -474,6 +474,11 @@ function ProductIconFormFields({
           onChange={(active) => onChange({ active })}
           label="Active (shown in the product picker)"
         />
+        <CatalogCheckbox
+          checked={values.waterContainer}
+          onChange={(waterContainer) => onChange({ waterContainer })}
+          label="Water container (gallon, bottle, or other refill container)"
+        />
       </CatalogFormSection>
       <CatalogFormSection title="Artwork">
         <CatalogField label="Image URL" hint="Optional public SVG or PNG URL">

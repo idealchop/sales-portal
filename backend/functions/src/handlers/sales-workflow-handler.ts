@@ -18,7 +18,7 @@ import {
 import { listOutreachRecipients } from "../services/outreach-recipients-service";
 import { postOutreachSendHandler } from "./outreach-send-handler";
 import { listCommissions } from "../services/commissions-service";
-import { getManagerTeamSummary } from "../services/sales-team-service";
+import { getManagerTeamSummary, listLeadAssignees } from "../services/sales-team-service";
 import {
   assertAdmin,
   createSalesMaterial,
@@ -26,6 +26,20 @@ import {
   listSalesMaterials,
   updateSalesMaterial,
 } from "../services/sales-materials-service";
+import {
+  createLead,
+  getLead,
+  getLeadsAnalytics,
+  listLeadHistory,
+  listLeads,
+  updateLead,
+  type LeadQueue,
+  type LeadStage,
+} from "../services/leads-service";
+import {
+  gatherLeadsFromSources,
+  type GatherMode,
+} from "../services/gather-leads-service";
 
 function actorFromRequest(req: AuthenticatedRequest) {
   const uid = req.user?.uid;
@@ -46,9 +60,16 @@ function mapServiceError(res: Response, error: unknown) {
     return;
   case "CLIENT_ID_REQUIRED":
   case "CLIENT_FIELDS_REQUIRED":
+  case "LEAD_FIELDS_REQUIRED":
   case "MATERIAL_FIELDS_REQUIRED":
   case "INVALID_STATUS":
   case "INVALID_TYPE":
+  case "INVALID_STAGE":
+  case "INVALID_DEMO":
+  case "INVALID_SOURCE_KIND":
+  case "INVALID_DATA_IMPORTED":
+  case "INVALID_TRAINING_PHASE":
+  case "INVALID_DATE":
     res.status(400).json({ error: code });
     return;
   case "CLIENT_NOT_FOUND":
@@ -56,6 +77,9 @@ function mapServiceError(res: Response, error: unknown) {
     return;
   case "LINKED_USER_NOT_FOUND":
     res.status(404).json({ error: "Linked user not found." });
+    return;
+  case "LINKED_BUSINESS_NOT_FOUND":
+    res.status(404).json({ error: "Linked business not found." });
     return;
   default:
     res.status(500).json({ error: "Internal Server Error" });
@@ -279,6 +303,24 @@ export const getCommissionsHandler = async (
   }
 };
 
+export const getLeadAssigneesHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const data = await listLeadAssignees(actor);
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
 export const getSalesTeamHandler = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -367,6 +409,154 @@ export const deleteSalesMaterialHandler = async (
     assertAdmin(actor);
     await deleteSalesMaterial(req.params.materialId);
     res.json({ success: true });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const getLeadsHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const queue = typeof req.query.queue === "string" ?
+      (req.query.queue as LeadQueue) :
+      undefined;
+    const stage = typeof req.query.stage === "string" ?
+      (req.query.stage as LeadStage) :
+      undefined;
+    const assignee =
+      typeof req.query.assignee === "string" ? req.query.assignee : undefined;
+    const q = typeof req.query.q === "string" ? req.query.q : undefined;
+    const data = await listLeads(actor, { queue, stage, assignee, q });
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const getLeadsAnalyticsHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const data = await getLeadsAnalytics(actor);
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const getLeadHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const data = await getLead(actor, req.params.leadId);
+    if (!data) {
+      res.status(404).json({ error: "Lead not found." });
+      return;
+    }
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const postLeadsGatherHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const rawMode =
+      typeof req.body?.mode === "string" ? req.body.mode.trim() : "incremental";
+    if (rawMode !== "incremental" && rawMode !== "full") {
+      res.status(400).json({
+        error: "mode must be \"incremental\" or \"full\".",
+      });
+      return;
+    }
+    const mode = rawMode as GatherMode;
+    const data = await gatherLeadsFromSources(mode);
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const postLeadHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const data = await createLead(actor, req.body);
+    res.status(201).json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const patchLeadHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const data = await updateLead(actor, req.params.leadId, req.body);
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const getLeadHistoryHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const data = await listLeadHistory(actor, req.params.leadId);
+    res.json({ data });
   } catch (error) {
     mapServiceError(res, error);
   }

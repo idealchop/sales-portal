@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { chartKindsForApp } from "@/features/dashboard/lib/app-chart-groups";
 
 describe("chartKindsForApp", () => {
-  it("assigns non-overlapping chart kinds to SmartRefill and Sales Portal", () => {
+  it("keeps SmartRefill product charts distinct from Sales Portal pipeline charts", () => {
     const smartrefill = new Set(chartKindsForApp("smartrefill"));
     const salesPortal = new Set(chartKindsForApp("sales-portal"));
     const overlap = [...smartrefill].filter((kind) => salesPortal.has(kind));
 
-    expect(overlap).toEqual([]);
+    expect(overlap).toEqual(["mrr-by-plan"]);
     expect(smartrefill.size).toBeGreaterThan(0);
     expect(salesPortal.size).toBeGreaterThan(0);
   });
@@ -16,7 +16,7 @@ describe("chartKindsForApp", () => {
     const kinds = chartKindsForApp("smartrefill");
     expect(kinds).toContain("customer-scale");
     expect(kinds).toContain("feature-adoption");
-    expect(kinds).not.toContain("mrr-by-plan");
+    expect(kinds).toContain("mrr-by-plan");
     expect(kinds).not.toContain("proposal-pipeline");
   });
 

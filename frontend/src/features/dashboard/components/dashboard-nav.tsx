@@ -11,21 +11,25 @@ import type { SalesPortalRole } from "@/lib/auth-status";
 
 function isChildNavActive(pathname: string, childHref: string): boolean {
   // Index routes that are prefixes of sibling pages must match exactly.
-  if (childHref === "/dashboard" || childHref === "/events-training") {
+  if (
+    childHref === "/dashboard" ||
+    childHref === "/events-training" ||
+    childHref === "/dashboard/smartrefill"
+  ) {
     return pathname === childHref;
   }
   return pathname === childHref || pathname.startsWith(`${childHref}/`);
 }
 
 function isItemActive(pathname: string, item: NavItem): boolean {
-  if (item.href === "/dashboard") {
-    return (
-      pathname === "/dashboard" ||
-      pathname.startsWith("/dashboard/smartrefill") ||
-      pathname.startsWith("/dashboard/sales-portal")
-    );
+  if (item.children?.length) {
+    return item.children.some((child) => isChildNavActive(pathname, child.href));
   }
-  return pathname.startsWith(item.href);
+  // Dashboard home is exact — do not treat other /dashboard/* apps as active.
+  if (item.href === "/dashboard") {
+    return pathname === "/dashboard";
+  }
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
 export function DashboardNav({
@@ -44,10 +48,15 @@ export function DashboardNav({
     (item) => role && item.roles.includes(role),
   );
 
-  function toggleGroup(href: string) {
+  function toggleGroup(item: NavItem) {
+    const currentlyExpanded =
+      expandedGroups[item.href] ??
+      Boolean(
+        item.children?.some((child) => isChildNavActive(pathname, child.href)),
+      );
     setExpandedGroups((prev) => ({
       ...prev,
-      [href]: !(prev[href] ?? pathname.startsWith(href)),
+      [item.href]: !currentlyExpanded,
     }));
   }
 
@@ -56,7 +65,7 @@ export function DashboardNav({
     if (expandedGroups[item.href] !== undefined) {
       return expandedGroups[item.href];
     }
-    return pathname.startsWith(item.href);
+    return item.children.some((child) => isChildNavActive(pathname, child.href));
   }
 
   return (
@@ -76,7 +85,7 @@ export function DashboardNav({
             {hasChildren ?
               <button
                 type="button"
-                onClick={() => toggleGroup(item.href)}
+                onClick={() => toggleGroup(item)}
                 aria-expanded={groupExpanded}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition min-h-11",

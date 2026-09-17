@@ -3,6 +3,7 @@ import type { ChartBusinessContext } from "@/lib/dashboard/analytics";
 export type StarterPotentialLostRow = {
   id: string;
   label: string;
+  ownerEmail?: string;
   currentMrr: number;
   targetMrr: number;
   potentialLost: number;
@@ -22,6 +23,9 @@ export type StarterPotentialLostSummary = {
 
 const STARTER_POTENTIAL_COLOR = "#F59E0B";
 
+/** Official Scale monthly list price (PHP) — avoid averaging live invoices. */
+export const SCALE_LIST_PRICE_PHP = 1650;
+
 function planKey(biz: ChartBusinessContext): string {
   return `${biz.planCode || ""} ${biz.planName || ""}`.trim().toLowerCase();
 }
@@ -35,7 +39,7 @@ function isScalePlan(biz: ChartBusinessContext): boolean {
 }
 
 function isGrowthPlan(biz: ChartBusinessContext): boolean {
-  return planKey(biz).includes("growth");
+  return planKey(biz).includes("growth") || planKey(biz).includes("grow");
 }
 
 export function isStarterUpsellReady(biz: ChartBusinessContext): boolean {
@@ -43,37 +47,55 @@ export function isStarterUpsellReady(biz: ChartBusinessContext): boolean {
   return biz.customers >= 20 || biz.transactionsLast30Days >= 30;
 }
 
-function averagePositivePrices(prices: number[]): number {
-  const valid = prices.filter((price) => price > 0);
+/** Most common positive price; ties prefer the lower (list-like) amount. */
+export function mostCommonPositivePrice(prices: number[]): number {
+  const valid = prices
+    .filter((price) => Number.isFinite(price) && price > 0)
+    .map((price) => Math.round(price));
   if (valid.length === 0) return 0;
-  return Math.round(valid.reduce((sum, price) => sum + price, 0) / valid.length);
+
+  const counts = new Map<number, number>();
+  for (const price of valid) {
+    counts.set(price, (counts.get(price) || 0) + 1);
+  }
+
+  let bestPrice = valid[0];
+  let bestCount = 0;
+  for (const [price, count] of counts) {
+    if (
+      count > bestCount ||
+      (count === bestCount && price < bestPrice)
+    ) {
+      bestPrice = price;
+      bestCount = count;
+    }
+  }
+  return bestPrice;
 }
 
+/**
+ * Upsell target for Starter → Scale.
+ * Always use Scale list price (₱1,650). Averaging live Scale invoices produced
+ * confusing figures like ₱1,710 when seats had custom/prorated amounts.
+ */
 export function resolveStarterUpsellTarget(
   businesses: ChartBusinessContext[],
 ): { price: number; label: string } {
-  const scalePrices = businesses
-    .filter(isScalePlan)
-    .map((biz) => biz.price);
-  const scaleAvg = averagePositivePrices(scalePrices);
-  if (scaleAvg > 0) {
-    return { price: scaleAvg, label: "Scale avg" };
+  const hasScale = businesses.some(
+    (biz) => isScalePlan(biz) && biz.price > 0,
+  );
+  if (hasScale) {
+    return { price: SCALE_LIST_PRICE_PHP, label: "Scale" };
   }
 
-  const growthPrices = businesses
-    .filter(isGrowthPlan)
-    .map((biz) => biz.price);
-  const growthAvg = averagePositivePrices(growthPrices);
-  if (growthAvg > 0) {
-    return { price: growthAvg, label: "Growth avg" };
+  const growthMode = mostCommonPositivePrice(
+    businesses.filter(isGrowthPlan).map((biz) => biz.price),
+  );
+  if (growthMode > 0) {
+    return { price: growthMode, label: "Grow" };
   }
 
-  const paid = businesses.map((biz) => biz.price).filter((price) => price > 0);
-  if (paid.length > 0) {
-    return { price: Math.max(...paid), label: "Top plan" };
-  }
-
-  return { price: 0, label: "Scale avg" };
+  return { price: SCALE_LIST_PRICE_PHP, label: "Scale" };
 }
 
 export function computeStarterPotentialLost(
@@ -88,7 +110,12 @@ export function computeStarterPotentialLost(
       const potentialLost = Math.max(0, targetPrice - biz.price);
       return {
         id: biz.id,
-        label: biz.planName || "Starter",
+        label:
+          biz.name?.trim() ||
+          (biz.id ? `Workspace ${biz.id.slice(0, 8)}` : "") ||
+          biz.planName ||
+          "Starter workspace",
+        ownerEmail: biz.ownerEmail?.trim() || undefined,
         currentMrr: biz.price,
         targetMrr: targetPrice,
         potentialLost,
@@ -98,7 +125,10 @@ export function computeStarterPotentialLost(
       };
     })
     .filter((row) => row.potentialLost > 0)
-    .sort((a, b) => b.potentialLost - a.potentialLost);
+    .sort((a, b) => {
+      if (a.isUpsellReady !== b.isUpsellReady) return a.isUpsellReady ? -1 : 1;
+      return b.potentialLost - a.potentialLost;
+    });
 
   return {
     total: rows.reduce((sum, row) => sum + row.potentialLost, 0),

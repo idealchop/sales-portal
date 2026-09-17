@@ -32,11 +32,19 @@ export type ChartTimeSeries = {
 
 export type ChartBusinessContext = {
   id: string;
+  /** Display name for breakdown rows. */
+  name?: string;
+  /** Owner email when available (for identifying Starter upsell rows). */
+  ownerEmail?: string;
   createdAt: string | null;
   healthTier: "high" | "medium" | "low";
   planName?: string;
   planCode?: string;
   paymentStatus?: string;
+  /** Current subscription status (e.g. active, cancelled). */
+  subscriptionStatus?: string;
+  /** Subscription billing cycle (e.g. trial, monthly). */
+  billingCycle?: string;
   price: number;
   customers: number;
   transactionsLast30Days: number;
@@ -693,16 +701,27 @@ export function normalizeDashboardAnalytics(
     chartTimeSeries: raw.chartTimeSeries ?? EMPTY_CHART_TIME_SERIES,
     chartBusinessContext: (raw.chartBusinessContext ?? []).map((biz) => ({
       id: biz.id,
+      name: typeof biz.name === "string" ? biz.name : undefined,
+      ownerEmail:
+        typeof biz.ownerEmail === "string" ? biz.ownerEmail : undefined,
       createdAt: biz.createdAt ?? null,
       healthTier: biz.healthTier ?? "medium",
       planName: biz.planName,
       planCode: biz.planCode,
       paymentStatus: biz.paymentStatus,
+      subscriptionStatus:
+        typeof biz.subscriptionStatus === "string" ?
+          biz.subscriptionStatus
+        : undefined,
+      billingCycle:
+        typeof biz.billingCycle === "string" ? biz.billingCycle : undefined,
       price: biz.price ?? 0,
       customers: biz.customers ?? 0,
       transactionsLast30Days: biz.transactionsLast30Days ?? 0,
       usageGoals: biz.usageGoals ?? [],
       gettingStarted: biz.gettingStarted ?? {},
+      ownerId: typeof biz.ownerId === "string" ? biz.ownerId : undefined,
+      authAccountTag: biz.authAccountTag === "test" ? "test" : null,
     })),
     aiSalesInsights: raw.aiSalesInsights ?? EMPTY_AI_SALES_INSIGHTS,
     dashboardForecasts: raw.dashboardForecasts ?? EMPTY_DASHBOARD_FORECASTS,

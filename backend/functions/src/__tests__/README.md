@@ -55,6 +55,10 @@ BDD helpers: `bdd/bdd-api.ts` (`API_PATH`).
 | `unit/services/events-training-ops.unit.test.ts` | Registration + analytics helpers |
 | `unit/services/webinar-promotion-automation.unit.test.ts` | Auto promotion milestone channels |
 | `unit/services/schedule-message-composer.unit.test.ts` | Email caption composer |
+| `unit/services/leads-service.unit.test.ts` | Lead queue filters + analytics |
+| `unit/services/gather-leads-service.unit.test.ts` | Pipeline gather payloads + midnight full cron |
+| `unit/services/content-pipeline-leads.unit.test.ts` | Webinar/training/article/story pipeline emails |
+| `unit/services/events-training/webinar-feedback.unit.test.ts` | Webinar rating average + recommend rate |
 
 ## Integration tests
 

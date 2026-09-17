@@ -21,6 +21,7 @@ import {
   webinarEventEngagementPostsCollection,
   webinarsCollection,
 } from "./events-training-db";
+import { listAllWebinarFeedback } from "./webinar-feedback-service";
 
 export type CommentRecord = {
   id: string;
@@ -64,14 +65,34 @@ export type ModerationQuestionItem = QuestionRecord & {
   contentTitle: string;
 };
 
+export type ModerationFeedbackItem = {
+  kind: "feedback";
+  id: string;
+  contentKind: "webinar_event";
+  contentId: string;
+  contentTitle: string;
+  email: string;
+  displayName: string | null;
+  rating: number;
+  feedback: string | null;
+  recommend: boolean;
+  recommendation: string | null;
+  status: "pending" | "visible" | "hidden";
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
 export type ModerationInbox = {
   comments: ModerationCommentItem[];
   questions: ModerationQuestionItem[];
+  feedback: ModerationFeedbackItem[];
   counts: {
     openQuestions: number;
     flaggedComments: number;
+    pendingFeedback: number;
     comments: number;
     questions: number;
+    feedback: number;
   };
 };
 
@@ -630,14 +651,36 @@ export async function listModerationInbox(): Promise<ModerationInbox> {
     return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
   });
 
+  const feedback: ModerationFeedbackItem[] = (await listAllWebinarFeedback()).map(
+    (item) => ({
+      kind: "feedback" as const,
+      id: item.id,
+      contentKind: "webinar_event" as const,
+      contentId: item.eventId,
+      contentTitle: item.eventName || "Untitled webinar",
+      email: item.email,
+      displayName: item.displayName,
+      rating: item.rating,
+      feedback: item.feedback,
+      recommend: item.recommend,
+      recommendation: item.recommendation,
+      status: item.status,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    }),
+  );
+
   return {
     comments,
     questions,
+    feedback,
     counts: {
       openQuestions: questions.filter((q) => q.status === "open").length,
       flaggedComments: comments.filter((c) => c.status === "flagged").length,
+      pendingFeedback: feedback.filter((item) => item.status === "pending").length,
       comments: comments.length,
       questions: questions.length,
+      feedback: feedback.length,
     },
   };
 }

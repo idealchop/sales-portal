@@ -15,6 +15,7 @@ import { ChartBreakdownDialog } from "@/features/dashboard/components/chart-brea
 import { DateRangeFilter } from "@/features/dashboard/components/date-range-filter";
 import { AccessibleChartFrame } from "@/components/charts/chart-accessible-frame";
 import {
+  AcquisitionGrowthChart,
   BrowserMixChart,
   CustomerScaleChart,
   DeviceMixChart,
@@ -44,6 +45,7 @@ import type { DashboardAnalytics } from "@/lib/dashboard/analytics";
 const CHARTS_PAGE_SIZE = 6;
 
 const CHART_TYPE_LABELS: Record<ChartInsight["kind"], string> = {
+  "acquisition-growth": "Area + line",
   "owner-growth": "Area",
   "workspace-growth": "Line",
   "login-activity": "Area + line",
@@ -66,6 +68,19 @@ const CHART_TYPE_LABELS: Record<ChartInsight["kind"], string> = {
 
 function ChartRenderer({ insight }: { insight: ChartInsight }) {
   switch (insight.kind) {
+    case "acquisition-growth":
+      return (
+        <AcquisitionGrowthChart
+          data={
+            insight.chartData as {
+              month?: string;
+              date?: string;
+              owners: number;
+              workspaces: number;
+            }[]
+          }
+        />
+      );
     case "owner-growth":
       return (
         <OwnerSignupAreaChart
@@ -172,7 +187,13 @@ function ChartRenderer({ insight }: { insight: ChartInsight }) {
     case "plan-distribution":
       return (
         <HealthPieChart
-          data={insight.chartData as { name: string; count: number }[]}
+          data={
+            insight.chartData as {
+              name: string;
+              count: number;
+              color?: string;
+            }[]
+          }
         />
       );
     case "adoption-gaps":

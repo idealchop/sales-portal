@@ -79,13 +79,15 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | Path | Role | Status |
 |------|------|--------|
 | `/dashboard` | sales, manager, admin | Live — all-apps KPIs + performance overview (production accounts only) |
-| `/dashboard/smartrefill` | sales, manager, admin | Live — ops tabs: Attention (alerts + inactive owners), Subscriptions, Field ops (map/community), Analytics (KPIs, signals, charts) |
+| `/dashboard/smartrefill` | sales, manager, admin | Live — ops tabs: Subscriptions, Analytics (KPIs, signals, charts); Config (admin) |
 | `/dashboard/smartrefill-old` | sales, manager, admin | Live — legacy station triage / contact (Brevo) / ignore; bulk actions |
-| `/dashboard/sales-portal` | sales, manager, admin | Live — market position (+ plan mix), proactive outlook, scorecard, sales reports, account signals |
+| `/dashboard` | sales, manager, admin | Live — action board (assigned leads + performance), proposal stages |
+| `/dashboard/smartrefill` | sales, manager, admin | Live — SmartRefill platform analytics |
+| `/dashboard/sales-portal` | — | Redirects to `/dashboard` |
 | `/dashboard/settings` | sales, manager, admin | Live — read-only profile |
 | `/content-studio` | sales, manager, admin | Live |
 | `/events-training/*` | manager, admin | Live — overview, analytics, registrations, moderation, webinars, stories, articles, tutorials, certs, schedules |
-| `/subscriptions/*` | admin | Live (catalog CRUD) |
+| `/subscriptions/*` | admin | Live (catalog CRUD: plans, addons, vouchers, product icons) |
 | `/admin/permissions` | admin | Live |
 | `/admin/data-management` | admin | Live |
 | `/dashboard/proposals` | sales+ | Live — proposals & clients (users by app); **Compose email** opens multi-select outreach dialog (filter by source/app, Brevo bulk up to 50, mail client) |
@@ -94,6 +96,8 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | `/dashboard/commissions` | sales+ | Live — commissions & monthly payouts |
 | `/dashboard/materials` | sales+ | Live — materials library (admin CRUD) |
 | `/dashboard/my-team` | manager | Live — team performance summary |
+| `/dashboard/lead-pipeline` | sales+ | Redirects to `/lead-pipeline` |
+| `/lead-pipeline` | sales+ | Live — **all / content / warm / cold / onboarded / archives**. Content is webinar, training, article, and story emails. Midnight full gather (`leadPipelineGather`); **Gather new leads** is incremental |
 
 ## App Hosting deploy
 

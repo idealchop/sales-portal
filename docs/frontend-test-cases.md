@@ -42,8 +42,8 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-DASH-03 | any | Open metric breakdown dialog | Breakdown rows render |
 | TC-DASH-04 | any | Business locations map | Pins load for businesses with coords; no test-account pins |
 | TC-DASH-05 | admin | Approve pending subscription | Approval succeeds; UI refreshes |
-| TC-DASH-06 | any | Open `/dashboard/smartrefill` | Tabs: Attention, Subscriptions, Field ops, Analytics |
-| TC-DASH-07 | any | Open `/dashboard/sales-portal` | Market position + plan mix, proactive outlook, scorecard, reports |
+| TC-DASH-06 | any | Open `/dashboard/smartrefill` | Tabs: Subscriptions, Analytics; Config for admin |
+| TC-DASH-07 | any | Open `/dashboard` | Action board: assigned lead tasks + performance metrics |
 | TC-DASH-08 | any | Platform hub Actions \| Forecast tabs | Paginated forecast rows; actions inbox (if shown) |
 | TC-DASH-09 | admin | Subscription approval **View** | Detail dialog + receipt/attachment preview |
 | TC-DASH-10 | admin | Inactive owners list | Top 10 inactive (7d+); expand link shows remainder; Contact hides 7d |
@@ -80,8 +80,10 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-ET-04 | manager | Set visibility `private` + select plans / all members | Saves access rules |
 | TC-ET-05 | manager | `/events-training/registrations` accept pending | Status accepted; join link when available |
 | TC-ET-05b | manager | Delete a registration (confirm dialog) | Row removed; count adjusted for pending/accepted |
+| TC-ET-05c | manager | `/events-training/webinars` open **View feedback** | Overall average + recommend rate + individual ratings/comments |
 | TC-ET-06 | manager | `/events-training/schedules` open published webinar automation | Email timeline shown; Meta channels absent |
 | TC-ET-07 | manager | `/events-training/moderation` hide comment | Comment status `hidden` |
+| TC-ET-07c | manager | `/events-training/moderation` **Webinar feedback** Show on page | Rating status `visible`; appears on SmartRefill webinar page |
 | TC-ET-07b | manager | Delete comment / question (confirm dialog) | Item removed from inbox |
 | TC-ET-08 | manager | `/events-training/certifications` issue + revoke | Issued then revoked |
 | TC-ET-09 | manager | `/events-training/analytics` period 30 | Summary cards load |
@@ -100,6 +102,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-SUB-05 | admin | `/subscriptions/addons` CRUD | Addons list + forms work |
 | TC-SUB-06 | admin | `/subscriptions/vouchers-affiliates` | Vouchers/affiliates CRUD works |
 | TC-SUB-07 | sales | Navigate to `/subscriptions` | Blocked or nav hidden |
+| TC-SUB-08 | admin | Edit a product icon | **Water container** checkbox persists; list **Water container** column shows Yes or No |
 
 ---
 
@@ -122,6 +125,10 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-NAV-01 | sales | Open `/dashboard/proposals` | Proposals & Clients page loads (not maintenance) |
 | TC-NAV-02 | admin | Subscriptions collapsible nav | Child routes reachable |
 | TC-NAV-03 | mobile | 320px viewport — sidebar | Usable on mobile width |
+| TC-NAV-04 | sales | Open `/lead-pipeline` | Lead pipeline table loads; can switch to Insights |
+| TC-LEAD-01 | sales | Open table → tabs **All, Content, Warm, Cold, Onboarded, Archives** | Order matches; Content lists webinar / training / article / story emails after Gather; guests are not on Warm |
+| TC-LEAD-02 | sales | **Gather new leads**, then open Content | Incremental insert of missing emails; workspace owners who engaged stay on their funnel tab and also on Content |
+| TC-LEAD-04 | sales | Cold lead with Missed Demo → Update status **Demo Scheduled** | Moves to Warm; demo is no longer Missed so another demo can be booked |
 
 ## TC-PROP — Proposals & outreach
 

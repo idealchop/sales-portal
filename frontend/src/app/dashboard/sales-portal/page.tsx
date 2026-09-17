@@ -1,5 +1,6 @@
-import { SalesPortalDashboard } from "@/features/dashboard/components/sales-portal-dashboard";
+import { redirect } from "next/navigation";
 
-export default function SalesPortalDashboardPage() {
-  return <SalesPortalDashboard />;
+/** Legacy path — action board lives at `/dashboard`. */
+export default function SalesPortalDashboardRedirectPage() {
+  redirect("/dashboard");
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   Briefcase,
   CircleDollarSign,
@@ -48,21 +47,6 @@ export function PersonalSalesStrip({
 }) {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap justify-end gap-3">
-        <Link
-          href="/dashboard/proposals"
-          className="text-xs font-medium text-teal-700 hover:underline"
-        >
-          Open proposals →
-        </Link>
-        <Link
-          href="/dashboard/commissions"
-          className="text-xs font-medium text-teal-700 hover:underline"
-        >
-          Open commissions →
-        </Link>
-      </div>
-
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatTile
           label="Open pipeline"

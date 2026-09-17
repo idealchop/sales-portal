@@ -39,7 +39,7 @@ import {
   type SalesInsights,
 } from "./compute-sales-insights";
 import { classifyHealthForSnapshot } from "./compute-sales-insights-helpers";
-import { mapOwnerSubscriptions } from "./map-owner-subscriptions";
+import { mapOwnerSubscriptions, pickLatestCurrentPlanSubscription } from "./map-owner-subscriptions";
 import {
   buildDailyCountSeries,
   buildLoginDailySeries,
@@ -475,9 +475,9 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
         ),
       );
       const mappedSubscriptions = subscriptionsByBusiness.get(bizDoc.id) ?? [];
-      const currentSubscription = mappedSubscriptions.find(
-        (sub) => sub.timeline === "current",
-      );
+      const currentSubscription =
+        pickLatestCurrentPlanSubscription(mappedSubscriptions) ??
+        mappedSubscriptions.find((sub) => sub.timeline === "current");
 
       const customers = customersCountSnap.data().count;
       const deactivated = deactivatedCustomersSnap.data().count;
@@ -504,7 +504,17 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
       let paymentStatus: string | undefined;
       let billingCycle: string | undefined;
       let price = 0;
-      if (!subscriptionsSnap.empty) {
+      if (currentSubscription) {
+        planName =
+          currentSubscription.planName ||
+          currentSubscription.planCode ||
+          "Unknown";
+        planCode = currentSubscription.planCode;
+        subscriptionStatus = currentSubscription.status;
+        paymentStatus = currentSubscription.paymentStatus;
+        billingCycle = currentSubscription.billingCycle;
+        price = Number(currentSubscription.price || 0);
+      } else if (!subscriptionsSnap.empty) {
         const sub = subscriptionsSnap.docs[0].data();
         planName = String(sub.planName || sub.planCode || "Unknown");
         planCode =
@@ -516,9 +526,20 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
         billingCycle =
           typeof sub.billingCycle === "string" ? sub.billingCycle : undefined;
         price = Number(sub.price || 0);
-        if (sub.status === "active") {
-          planCounts.set(planName, (planCounts.get(planName) || 0) + 1);
-        }
+      }
+
+      if (subscriptionStatus === "active" && planName) {
+        const cycle = String(billingCycle || "").toLowerCase();
+        const isTrial =
+          cycle === "trial" || planName.toLowerCase().includes("trial");
+        const distributionLabel =
+          isTrial && !planName.toLowerCase().includes("trial") ?
+            `${planName} · Trial` :
+            planName;
+        planCounts.set(
+          distributionLabel,
+          (planCounts.get(distributionLabel) || 0) + 1,
+        );
       }
 
       const businessTier = classifyBusinessTier(
@@ -628,11 +649,15 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
 
       chartBusinessContext.push({
         id: bizDoc.id,
+        name: businessName,
+        ownerEmail,
         createdAt: toDate(data.createdAt)?.toISOString() ?? null,
         healthTier,
         planName,
         planCode,
         paymentStatus,
+        subscriptionStatus,
+        billingCycle,
         price,
         customers,
         transactionsLast30Days: businessTx30,

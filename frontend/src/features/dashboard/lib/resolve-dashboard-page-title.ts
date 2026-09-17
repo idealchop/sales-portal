@@ -47,6 +47,8 @@ export function resolveDashboardPageTitle(pathname: string): string {
   if (pathname === "/events-training") return "Overview";
   if (pathname.startsWith("/events-training")) return "Events & Training";
   if (pathname.startsWith("/dashboard/settings")) return "Settings";
+  if (pathname.startsWith("/lead-pipeline")) return "Lead pipeline";
+  if (pathname.startsWith("/dashboard/lead-pipeline")) return "Lead pipeline";
   if (pathname.startsWith("/dashboard/proposals/new")) return "Create proposal";
 
   return "Sales Portal";

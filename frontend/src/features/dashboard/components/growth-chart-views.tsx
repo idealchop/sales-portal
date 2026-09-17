@@ -43,6 +43,60 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
+/** Combined owner + workspace acquisition — area + line on one axis. */
+export function AcquisitionGrowthChart({
+  data,
+}: {
+  data: {
+    month?: string;
+    date?: string;
+    owners: number;
+    workspaces: number;
+  }[];
+}) {
+  if (data.length === 0) {
+    return <ChartEmpty message="No acquisition data in this period." />;
+  }
+
+  const xKey = data[0]?.month ? "month" : "date";
+
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id="acquisitionOwnersFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.4} />
+            <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.05} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" vertical={false} />
+        <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
+        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={32} />
+        <Tooltip contentStyle={tooltipStyle} />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Area
+          type="monotone"
+          dataKey="owners"
+          name="Owners"
+          stroke="#0284c7"
+          strokeWidth={2}
+          fill="url(#acquisitionOwnersFill)"
+          dot={{ r: 2, fill: "#0284c7" }}
+        />
+        <Line
+          type="monotone"
+          dataKey="workspaces"
+          name="Workspaces"
+          stroke="#14b8a6"
+          strokeWidth={2.5}
+          dot={{ r: 3, fill: "#14b8a6", strokeWidth: 2, stroke: "#fff" }}
+          activeDot={{ r: 5 }}
+        />
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
 /** Owner acquisition momentum — area shows volume building over time. */
 export function OwnerSignupAreaChart({
   data,
@@ -446,11 +500,11 @@ function ChartEmpty({ message }: { message: string }) {
   );
 }
 
-/** Workspace health distribution — pie chart by tier. */
+/** Workspace health / plan mix — pie chart by category. */
 export function HealthPieChart({
   data,
 }: {
-  data: { name: string; count: number }[];
+  data: { name: string; count: number; color?: string }[];
 }) {
   const filtered = data.filter((row) => row.count > 0);
   if (filtered.length === 0) {
@@ -469,8 +523,16 @@ export function HealthPieChart({
           outerRadius={82}
           paddingAngle={2}
         >
-          {filtered.map((_, index) => (
-            <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+          {filtered.map((entry, index) => (
+            <Cell
+              key={index}
+              fill={
+                entry.color ||
+                (/\btrial\b/i.test(entry.name) ?
+                  "#EA580C"
+                : PIE_COLORS[index % PIE_COLORS.length])
+              }
+            />
           ))}
         </Pie>
         <Tooltip contentStyle={tooltipStyle} />

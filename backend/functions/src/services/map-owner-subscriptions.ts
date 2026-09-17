@@ -88,6 +88,80 @@ function withoutSortFields(
   return copy;
 }
 
+function subscriptionActivityMs(sub: {
+  activatedAt?: string;
+  createdAt?: string;
+  activatesAt?: string;
+}): number {
+  for (const value of [sub.activatedAt, sub.createdAt, sub.activatesAt]) {
+    if (!value) continue;
+    const ms = new Date(value).getTime();
+    if (!Number.isNaN(ms)) return ms;
+  }
+  return 0;
+}
+
+/**
+ * Latest plan the workspace is actually on now — includes free Starter / trial.
+ * Prefer newest status=active (any price); do not keep an older paid Scale when
+ * a newer Starter is already active.
+ */
+export function pickLatestCurrentPlanSubscription(
+  subscriptions: OwnerSubscription[],
+  now = Date.now(),
+): OwnerSubscription | undefined {
+  const pickNewest = (rows: OwnerSubscription[]) => {
+    if (rows.length === 0) return undefined;
+    return rows.reduce((latest, sub) =>
+      subscriptionActivityMs(sub) > subscriptionActivityMs(latest) ? sub : latest,
+    );
+  };
+
+  const activeNow = subscriptions.filter((sub) => {
+    if (sub.status.toLowerCase() !== "active") return false;
+    if (isPastStatus(sub.status)) return false;
+    if (isExpiredByDate(sub, now)) return false;
+    return true;
+  });
+  const fromActive = pickNewest(activeNow);
+  if (fromActive) return fromActive;
+
+  const current = subscriptions.find((sub) => sub.timeline === "current");
+  if (current && !isExpiredByDate(current, now) && !isPastStatus(current.status)) {
+    return current;
+  }
+
+  return pickNewest(
+    subscriptions.filter(
+      (sub) =>
+        !isPastStatus(sub.status) &&
+        sub.status.toLowerCase() !== "scheduled" &&
+        !isExpiredByDate(sub, now),
+    ),
+  );
+}
+
+/**
+ * Latest live paid plan (status=active, paid, not expired).
+ * Prefer {@link pickLatestCurrentPlanSubscription} for “what plan are they on?” —
+ * this helper is only for paid-revenue math when the current plan is already known paid.
+ */
+export function pickLatestLivePaidSubscription(
+  subscriptions: OwnerSubscription[],
+  now = Date.now(),
+): OwnerSubscription | undefined {
+  const current = pickLatestCurrentPlanSubscription(subscriptions, now);
+  if (
+    current &&
+    current.status.toLowerCase() === "active" &&
+    Number(current.price) > 0 &&
+    String(current.billingCycle || "").toLowerCase() !== "trial"
+  ) {
+    return current;
+  }
+  return undefined;
+}
+
 export function mapOwnerSubscriptions(
   docs: Array<{ id: string; data: () => Record<string, unknown> }>,
 ): OwnerSubscription[] {

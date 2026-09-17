@@ -31,8 +31,12 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/services/events-training-playback.unit.test.ts` ✅ | YouTube / iframe playback normalize | Events & Training videos |
 | `unit/services/events-training-visibility.unit.test.ts` ✅ | Visibility enum (`public`/`premium`/`private`) | Events & Training videos |
 | `unit/services/events-training-ops.unit.test.ts` ✅ | Registration transitions, capacity, analytics period clamp | Registrations / analytics |
+| `unit/services/events-training/webinar-feedback.unit.test.ts` ✅ | Rating average + pending-until-approved status | TC-ET-05c, TC-ET-07c |
 | `unit/services/webinar-promotion-automation.unit.test.ts` ✅ | Email-only promotion milestones | Schedules / automation |
 | `unit/services/schedule-message-composer.unit.test.ts` ✅ | Email caption composer | Schedules preview |
+| `unit/services/leads-service.unit.test.ts` ✅ | Queue filters incl. Content leads | TC-LEAD-01 |
+| `unit/services/gather-leads-service.unit.test.ts` ✅ | Gather insert/refresh; midnight full cron | TC-LEAD-02, TC-LEAD-03 |
+| `unit/services/content-pipeline-leads.unit.test.ts` ✅ | Webinar/training/article/story merge + overlay | TC-LEAD-01, TC-LEAD-02 |
 
 ---
 
@@ -88,6 +92,11 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/features/dashboard/build-subscription-approval-queue.test.ts` ✅ | Approval queue rows | TC-DASH-05, TC-DASH-09 |
 | `unit/lib/dashboard-analytics-normalize.test.ts` ✅ | `newJoiners`, `dashboardForecasts` defaults | TC-DASH-01 |
 | `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |
+| `unit/features/lead-pipeline/lead-pipeline-display.test.ts` ✅ | Attempt tracks + content source labels | TC-LEAD-01 |
+| `unit/features/lead-pipeline/lead-pipeline-insights.test.ts` ✅ | Queue mix incl. Content slice | TC-NAV-04 |
+| `unit/features/lead-pipeline/lead-pipeline-list.test.ts` ✅ | Table filters; content source/search | TC-LEAD-01 |
+| `unit/features/events-training/webinar-feedback-display.test.ts` ✅ | Overall rating / recommend / public-exposure labels | TC-ET-05c, TC-ET-07c |
+| `unit/lib/admin/catalog-document-forms.test.ts` ✅ | Product icon `waterContainer` persist | TC-SUB-08 |
 | `unit/lib/auth-status.test.ts` 🔲 | Post-login path resolution | TC-AUTH-05, TC-AUTH-06 |
 | `unit/lib/bff-url.test.ts` 🔲 | Dev/prod API URL selection | — |
 

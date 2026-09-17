@@ -3,9 +3,10 @@
 # Sales Portal API — build, test (unit + integration + BDD), lint, deploy.
 # Deploys: sales-portal-api Cloud Functions (Express gateway on asia-southeast1).
 #
-# ENV=prod (default): salesPortalApi + eventsTrainingPromotionDelivery (+ optional Firestore).
-# ENV=dev: deploys only salesPortalApiDev (+ optional *Dev job) and optional riverdb-dev rules.
-#   DEPLOY_DEV_JOBS=1 — also deploy eventsTrainingPromotionDeliveryDev (gated by SALES_PORTAL_DEV_JOBS_ENABLED).
+# ENV=prod (default): salesPortalApi + eventsTrainingPromotionDelivery + leadPipelineGather (+ optional Firestore).
+# ENV=dev: deploys only salesPortalApiDev (+ optional *Dev jobs) and optional riverdb-dev rules.
+#   DEPLOY_DEV_JOBS=1 — also deploy eventsTrainingPromotionDeliveryDev + leadPipelineGatherDev
+#   (gated by SALES_PORTAL_DEV_JOBS_ENABLED).
 #
 # Default: functions only (shared riverdb with SmartRefill — rules deploy is opt-in).
 # Optional: DEPLOY_FIRESTORE=1 to include firestore:rules + firestore:indexes from this repo.
@@ -120,11 +121,11 @@ if [[ "${DEPLOY_ENV}" == "dev" ]]; then
   # Codebase-qualified filters (firebase-tools requires sales-portal-api:<name>)
   DEV_ONLY="functions:sales-portal-api:salesPortalApiDev"
   if [[ "${DEPLOY_DEV_JOBS:-0}" == "1" ]]; then
-    DEV_ONLY="${DEV_ONLY},functions:sales-portal-api:eventsTrainingPromotionDeliveryDev"
+    DEV_ONLY="${DEV_ONLY},functions:sales-portal-api:eventsTrainingPromotionDeliveryDev,functions:sales-portal-api:leadPipelineGatherDev"
     echo -e "${BLUE}🔥 Deploying Dev Cloud Functions (API + jobs) → riverdb-dev...${NC}"
   else
     echo -e "${BLUE}🔥 Deploying Dev Cloud Functions (API only) → riverdb-dev...${NC}"
-    echo -e "${YELLOW}   Tip: DEPLOY_DEV_JOBS=1 to also deploy eventsTrainingPromotionDeliveryDev.${NC}"
+    echo -e "${YELLOW}   Tip: DEPLOY_DEV_JOBS=1 to also deploy eventsTrainingPromotionDeliveryDev and leadPipelineGatherDev.${NC}"
   fi
   DEPLOY_TARGETS="${DEV_ONLY}"
   if [[ "${DEPLOY_FIRESTORE:-0}" == "1" ]]; then
@@ -141,7 +142,7 @@ if [[ "${DEPLOY_ENV}" == "dev" ]]; then
 else
   # Explicit function names so Prod deploy does not attempt to delete Dev-only
   # jobs (e.g. eventsTrainingPromotionDeliveryDev) that live in the same codebase.
-  DEPLOY_TARGETS="functions:sales-portal-api:salesPortalApi,functions:sales-portal-api:eventsTrainingPromotionDelivery,functions:sales-portal-api:salesPortalApiDev"
+  DEPLOY_TARGETS="functions:sales-portal-api:salesPortalApi,functions:sales-portal-api:eventsTrainingPromotionDelivery,functions:sales-portal-api:leadPipelineGather,functions:sales-portal-api:salesPortalApiDev"
   if [[ "${DEPLOY_FIRESTORE:-0}" == "1" ]]; then
     echo -e "${BLUE}🔥 Including Firestore rules/indexes (canonical: smartrefill/frontend).${NC}"
     DEPLOY_TARGETS="${DEPLOY_TARGETS},firestore:rules,firestore:indexes"
@@ -177,13 +178,13 @@ if [[ "${DEPLOY_ENV}" == "dev" ]]; then
   echo -e "${GREEN}   • salesPortalApiDev → riverdb-dev (legacy analytics → prod-smartrefill)${NC}"
   echo -e "${GREEN}   • SMARTREFILL_API_URL → smartrefillV3ApiDev${NC}"
   if [[ "${DEPLOY_DEV_JOBS:-0}" == "1" ]]; then
-    echo -e "${GREEN}   • eventsTrainingPromotionDeliveryDev (SALES_PORTAL_DEV_JOBS_ENABLED=true)${NC}"
+    echo -e "${GREEN}   • eventsTrainingPromotionDeliveryDev + leadPipelineGatherDev (SALES_PORTAL_DEV_JOBS_ENABLED=true)${NC}"
   fi
   if [[ "${DEPLOY_FIRESTORE:-0}" == "1" ]]; then
     echo -e "${GREEN}   • firestore:rules, firestore:indexes (riverdb-dev)${NC}"
   fi
 else
-  echo -e "${GREEN}   • functions:sales-portal-api (salesPortalApi + eventsTrainingPromotionDelivery, asia-southeast1)${NC}"
+  echo -e "${GREEN}   • functions:sales-portal-api (salesPortalApi + eventsTrainingPromotionDelivery + leadPipelineGather, asia-southeast1)${NC}"
   if [[ "${DEPLOY_FIRESTORE:-0}" == "1" ]]; then
     echo -e "${GREEN}   • firestore:rules, firestore:indexes, storage.rules (riverdb + smartrefill-singapore)${NC}"
   fi

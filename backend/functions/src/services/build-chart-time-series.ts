@@ -27,11 +27,19 @@ export type ChartTimeSeries = {
 
 export type ChartBusinessContext = {
   id: string;
+  /** Display name for breakdown rows. */
+  name?: string;
+  /** Owner email when available (for identifying Starter upsell rows). */
+  ownerEmail?: string;
   createdAt: string | null;
   healthTier: "high" | "medium" | "low";
   planName?: string;
   planCode?: string;
   paymentStatus?: string;
+  /** Current subscription status (e.g. active, cancelled). */
+  subscriptionStatus?: string;
+  /** Subscription billing cycle (e.g. trial, monthly). */
+  billingCycle?: string;
   price: number;
   customers: number;
   transactionsLast30Days: number;

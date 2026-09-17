@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { MetricHelpButton } from "@/features/dashboard/components/metric-help-button";
 import type { SalesInsights } from "@/lib/dashboard/analytics";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,20 @@ const HEALTH_STYLES: Record<"high" | "medium" | "low", string> = {
   high: "bg-emerald-500",
   medium: "bg-amber-400",
   low: "bg-red-500",
+};
+
+const WORKSPACE_HEALTH_HELP = {
+  title: "Workspace health",
+  summary:
+    "Product-usage health for each station so support can focus on low-health workspaces first.",
+  how: "Each workspace is scored from setup steps + recent activity: High = ≥5 setup steps and (≥10 transactions in 30 days or ≥50 customers). Low = <2 setup steps, or has customers but 0 transactions in 30 days. Medium = everything else. Counts and % are shares of all workspaces.",
+};
+
+const PAYMENT_STATUS_HELP = {
+  title: "Payment status",
+  summary:
+    "Billing status mix across workspaces — useful for spotting pending or missing payment verification.",
+  how: "Taken from each workspace’s current subscription paymentStatus (for example not set, verified, approved, pending). Count is how many workspaces have that status; % is that count ÷ all workspaces in the mix.",
 };
 
 function formatPaymentLabel(status: string): string {
@@ -38,10 +53,15 @@ export function SmartRefillMaintenanceSignals({
     <div className="grid gap-3 lg:grid-cols-2">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Workspace health</CardTitle>
-          <CardDescription>
-            Product health mix — prioritize low-health stations for support.
-          </CardDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <CardTitle className="text-sm font-semibold">Workspace health</CardTitle>
+              <CardDescription>
+                Product health mix — prioritize low-health stations for support.
+              </CardDescription>
+            </div>
+            <MetricHelpButton content={WORKSPACE_HEALTH_HELP} />
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {healthTotal === 0 ?
@@ -89,10 +109,15 @@ export function SmartRefillMaintenanceSignals({
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Payment status</CardTitle>
-          <CardDescription>
-            Billing health — catch pending or failed payments early.
-          </CardDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <CardTitle className="text-sm font-semibold">Payment status</CardTitle>
+              <CardDescription>
+                Billing health — catch pending or failed payments early.
+              </CardDescription>
+            </div>
+            <MetricHelpButton content={PAYMENT_STATUS_HELP} />
+          </div>
         </CardHeader>
         <CardContent>
           {paymentTotal === 0 ?

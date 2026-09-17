@@ -1,35 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import {
-  BookCopy,
-  CircleDollarSign,
-  Droplets,
-  FileText,
-  Users,
-} from "lucide-react";
+import { Droplets, Users } from "lucide-react";
 import { useSalesProfile } from "@/hooks/use-sales-profile";
 import { cn } from "@/lib/utils";
 
 const SHORTCUTS = [
-  {
-    href: "/dashboard/proposals",
-    label: "Proposals & clients",
-    hint: "Build and follow deals",
-    icon: FileText,
-  },
-  {
-    href: "/dashboard/commissions",
-    label: "Commissions",
-    hint: "Earnings & payouts",
-    icon: CircleDollarSign,
-  },
-  {
-    href: "/dashboard/materials",
-    label: "Sales materials",
-    hint: "Pitch decks & assets",
-    icon: BookCopy,
-  },
   {
     href: "/dashboard/smartrefill",
     label: "SmartRefill leads",

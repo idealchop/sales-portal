@@ -3,9 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Menu, RefreshCw, Settings } from "lucide-react";
+import { LogOut, Menu, Settings } from "lucide-react";
 import { signOut } from "firebase/auth";
-import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase/auth";
 import { apiClient } from "@/lib/api-client";
 import { roleLabel, type SalesPortalRole } from "@/lib/auth-status";
@@ -39,7 +38,7 @@ export function DashboardHeader({
   const pathname = usePathname();
   const analytics = useOptionalDashboardAnalyticsContext();
   const pageTitle = resolveDashboardPageTitle(pathname);
-  const showAnalyticsRefresh = isDashboardAppPath(pathname) && analytics;
+  const showAnalyticsStamp = isDashboardAppPath(pathname) && analytics;
   const asOf = formatComputedAt(analytics?.computedAt ?? null);
   const displayName = profile?.displayName || "User";
   const initials = displayName
@@ -65,7 +64,7 @@ export function DashboardHeader({
             <h1 className="truncate text-base font-semibold text-foreground sm:text-lg">
               {pageTitle}
             </h1>
-            {showAnalyticsRefresh && asOf ?
+            {showAnalyticsStamp && asOf ?
               <p className="truncate text-xs text-[var(--muted-foreground)]">
                 Data as of {asOf}
                 {analytics?.isRefreshing ? " · Refreshing…" : ""}
@@ -75,21 +74,6 @@ export function DashboardHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          {showAnalyticsRefresh ?
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={analytics?.isRefreshing}
-              onClick={() => void analytics?.refresh()}
-            >
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${analytics?.isRefreshing ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </Button>
-          : null}
-
           <Link
             href="/dashboard/settings"
             className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"

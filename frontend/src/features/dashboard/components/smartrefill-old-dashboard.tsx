@@ -34,7 +34,6 @@ import { PaginatedList } from "@/components/paginated-list";
 import { ListPagination } from "@/components/list-pagination";
 import { BusinessLocationsMapLoader } from "@/features/dashboard/components/business-locations-map-loader";
 import { BrevoOutreachButton } from "@/features/dashboard/components/brevo-outreach-button";
-import { DashboardAppNav } from "@/features/dashboard/components/dashboard-app-nav";
 import { LegacySmartRefillLoading } from "@/features/dashboard/components/legacy-smartrefill-loading";
 import {
   DashboardSegmentTabs,
@@ -1238,7 +1237,6 @@ export function SmartRefillOldDashboard() {
   if (isLoading && !data) {
     return (
       <div className="space-y-6">
-        <DashboardAppNav />
         <LegacySmartRefillLoading />
       </div>
     );
@@ -1247,7 +1245,6 @@ export function SmartRefillOldDashboard() {
   if (error || !data) {
     return (
       <div className="space-y-4">
-        <DashboardAppNav />
         <Card className="border-red-200 bg-red-50">
           <CardContent className="space-y-4 p-8 text-center text-sm text-red-800">
             <p>{error || "Legacy analytics unavailable."}</p>
@@ -1274,8 +1271,6 @@ export function SmartRefillOldDashboard() {
 
   return (
     <div className="flex flex-col gap-4">
-      <DashboardAppNav />
-
       <div className="sticky top-0 z-10 -mx-1 space-y-3 bg-[var(--background)]/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/80">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
