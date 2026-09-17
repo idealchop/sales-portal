@@ -207,9 +207,9 @@ export function LeadFollowUpComposeDialog({
   const { uid } = useAuthUid();
   const { members } = useLeadAssignees();
   const [templateId, setTemplateId] = useState<TemplateId>("lead_follow_up");
-  const [senderEmail, setSenderEmail] = useState(
-    OUTREACH_SENDER_OPTIONS[0].email,
-  );
+  const [senderEmail, setSenderEmail] = useState<
+    (typeof OUTREACH_SENDER_OPTIONS)[number]["email"]
+  >(OUTREACH_SENDER_OPTIONS[0].email);
   const [toEmail, setToEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -295,6 +295,7 @@ export function LeadFollowUpComposeDialog({
   }
 
   async function handleSendBrevo() {
+    if (!lead) return;
     const email = toEmail.trim();
     if (!email) {
       setError("Add a recipient email address.");
@@ -418,7 +419,9 @@ export function LeadFollowUpComposeDialog({
                 id="lead-follow-up-from"
                 className={inputClassName}
                 value={senderEmail}
-                onChange={(event) => setSenderEmail(event.target.value)}
+                onChange={(event) =>
+                  setSenderEmail(outreachSenderByEmail(event.target.value).email)
+                }
               >
                 {OUTREACH_SENDER_OPTIONS.map((option) => (
                   <option key={option.id} value={option.email}>

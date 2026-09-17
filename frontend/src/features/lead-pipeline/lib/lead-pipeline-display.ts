@@ -1,4 +1,4 @@
-import type { LeadStage } from "@/lib/definitions";
+import type { LeadQueue, LeadStage } from "@/lib/definitions";
 
 export const LEAD_STAGE_LABELS: Record<string, string> = {
   inquire: "Demo inquire",
@@ -238,7 +238,7 @@ function sortStatusOptionsByLabel(
 /** Group statuses by destination queue for select optgroups. */
 export function groupWarmStatusOptions(
   options: readonly WarmStatusOption[] = WARM_STATUS_OPTIONS,
-  _stayContext?: LeadStage | "all" | "warm" | "cold" | "onboarded" | "archive" | null,
+  _stayContext?: LeadStage | LeadQueue | null,
 ): WarmStatusGroup[] {
   void _stayContext;
   const groups: WarmStatusGroup[] = [
