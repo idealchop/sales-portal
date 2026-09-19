@@ -102,9 +102,9 @@ function subscriptionActivityMs(sub: {
 }
 
 /**
- * Latest plan the workspace is actually on now — includes free Starter / trial.
+ * Latest plan the workspace is actually on now — includes Free / trial.
  * Prefer newest status=active (any price); do not keep an older paid Scale when
- * a newer Starter is already active.
+ * a newer Free row is already active.
  */
 export function pickLatestCurrentPlanSubscription(
   subscriptions: OwnerSubscription[],

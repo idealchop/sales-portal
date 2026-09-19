@@ -4,18 +4,20 @@ import {
   OUTREACH_BRAND_COLOR,
   OUTREACH_EMAIL_BCC,
   OUTREACH_EMAIL_FROM,
+  OUTREACH_VISIBLE_CONTACT_EMAIL,
   SMART_REFILL_EMAIL_LOGO_SRC,
   buildOutreachMailto,
   escapeHtmlForEmail,
   firstNameFromDisplay,
 } from "@/lib/email/outreach-email-shared";
+import { buildSmartRefillEmailLegalFooterRowHtml } from "@/lib/email/smartrefill-email-legal-footer";
 
 /** @deprecated Prefer OUTREACH_EMAIL_FROM */
 export const NEW_USER_EMAIL_FROM = OUTREACH_EMAIL_FROM;
 /** @deprecated Prefer OUTREACH_EMAIL_BCC */
 export const NEW_USER_EMAIL_BCC = OUTREACH_EMAIL_BCC;
 
-const SUPPORT_EMAIL = "support@riverph.com";
+const SUPPORT_EMAIL = OUTREACH_VISIBLE_CONTACT_EMAIL;
 
 export type NewUserWelcomeInput = {
   /** Display name; falls back to a friendly greeting if empty. */
@@ -66,7 +68,6 @@ export function buildNewUserWelcomeText(input: NewUserWelcomeInput = {}): string
     "Warm regards,",
     "River Support Team",
     SUPPORT_EMAIL,
-    "https://riverph.com",
   );
 
   return lines.join("\n");
@@ -82,7 +83,6 @@ export function buildNewUserWelcomeHtml(input: NewUserWelcomeInput = {}): string
         <strong style="color:#0f172a;">${escapeHtmlForEmail(input.businessName.trim())}</strong>.
       </p>`
     : "";
-  const year = new Date().getFullYear();
   const subject = escapeHtmlForEmail(buildNewUserWelcomeSubject(input));
   const brand = OUTREACH_BRAND_COLOR;
 
@@ -156,16 +156,7 @@ export function buildNewUserWelcomeHtml(input: NewUserWelcomeInput = {}): string
               </p>
             </td>
           </tr>
-          <tr>
-            <td style="padding:20px 28px 28px;border-top:1px solid #e2e8f0;background-color:#f8fafc;">
-              <p style="margin:0;font-size:13px;font-weight:600;color:#0f172a;">River Support Team</p>
-              <p style="margin:4px 0 0;font-size:12px;color:#64748b;">
-                <a href="mailto:${SUPPORT_EMAIL}" style="color:${brand};text-decoration:none;">${SUPPORT_EMAIL}</a>
-                · <a href="https://riverph.com" style="color:${brand};text-decoration:none;">riverph.com</a>
-              </p>
-              <p style="margin:12px 0 0;font-size:11px;color:#94a3b8;">© ${year} River Tech Inc. · Smart Refill</p>
-            </td>
-          </tr>
+          ${buildSmartRefillEmailLegalFooterRowHtml()}
         </table>
       </td>
     </tr>

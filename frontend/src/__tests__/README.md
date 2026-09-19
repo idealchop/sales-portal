@@ -32,12 +32,16 @@ From repo root: `npm run test:unit:frontend` · `npm run test:bdd:local`
 | `unit/features/dashboard/build-hub-app-stats.test.ts` | Hub KPI grouping |
 | `unit/features/dashboard/sort-active-owners.test.ts` | Active owners sort + 5-row cap |
 | `unit/features/dashboard/build-subscription-approval-queue.test.ts` | Approval queue rows |
+| `unit/features/dashboard/build-user-subscriptions-list.test.ts` | Latest current plan; KPIs and groups (paying / voucher / trial / attention / ended); excludes test owners |
 | `unit/lib/dashboard-analytics-normalize.test.ts` | API payload defaults |
 | `unit/lib/subscription-attachments.test.ts` | Receipt/attachment helpers |
+| `unit/lib/dashboard/subscription-labels.test.ts` | Trial labels; unpaid Starter displays as Free |
 | `unit/features/lead-pipeline/lead-pipeline-display.test.ts` | Attempt tracks + Content source labels |
 | `unit/features/lead-pipeline/lead-pipeline-insights.test.ts` | Insights queue mix |
 | `unit/features/lead-pipeline/lead-pipeline-list.test.ts` | Table filters + content sources |
 | `unit/lib/admin/catalog-document-forms.test.ts` | Product icon `waterContainer` persist |
+| `unit/lib/admin/business-insights-display.test.ts` | Insights charts: tickets + gallons + other; order mix by channel |
+| `unit/lib/admin/sign-in-attendance-heatmap.test.ts` | Owner sign-in year heatmap from login_events |
 | `unit/features/events-training/webinar-feedback-display.test.ts` | Overall rating / recommend labels |
 
 ## BDD specs

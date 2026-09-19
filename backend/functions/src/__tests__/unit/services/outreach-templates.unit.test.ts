@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   OUTREACH_EMAIL_BCC,
   OUTREACH_SENDER,
+  OUTREACH_VISIBLE_CONTACT_EMAIL,
 } from "../../../services/outreach/outreach-constants";
 import { buildOutreachEmailByKind } from "../../../services/outreach/outreach-templates";
 
@@ -13,7 +14,10 @@ describe("buildOutreachEmailByKind", () => {
     });
     expect(email.subject).toContain("Juan");
     expect(email.html).toContain("Aqua Station");
-    expect(email.text).toContain(OUTREACH_SENDER.email);
+    expect(email.html).toContain("Privacy Policy");
+    expect(email.html).toContain("hello@smartrefill.io");
+    expect(email.html).not.toContain("riverph.com");
+    expect(email.text).toContain("hello@smartrefill.io");
     expect(email.brevoTag).toBe("sales_portal_new_user_welcome");
   });
 
@@ -44,7 +48,7 @@ describe("buildOutreachEmailByKind", () => {
     expect(email.html).toContain("chat support sa smartrefill.io");
     expect(email.text).toContain("mag-upgrade");
     expect(email.text).toContain(
-      `Para mag-schedule, reply sa email na ito, or email ${OUTREACH_SENDER.email}.`,
+      `Para mag-schedule, reply sa email na ito, or email ${OUTREACH_VISIBLE_CONTACT_EMAIL}.`,
     );
     expect(email.brevoTag).toBe("sales_portal_legacy_station");
   });

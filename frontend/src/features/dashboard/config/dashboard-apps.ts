@@ -26,7 +26,7 @@ export const DASHBOARD_APPS: DashboardAppDefinition[] = [
     label: "SmartRefill",
     shortLabel: "SmartRefill",
     description: "Owner workspaces, subscriptions, growth, and product health.",
-    href: "/dashboard/smartrefill",
+    href: "/webapp/smartrefill",
     icon: Droplets,
     status: "live",
     accentClass: "bg-teal-50 text-teal-800",

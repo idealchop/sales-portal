@@ -321,13 +321,19 @@ export function PlanLimitationsFormFields({
       <CatalogFormSection title="Core quotas">
         <MaxQuotaFields
           label="Customers"
-          hint="Active customer records the business can manage."
+          hint="Active sukis. Free is 100; Starter / Grow / Scale are unlimited."
           value={values.customers}
           onChange={(customers) => onChange({ ...values, customers })}
         />
         <FrequencyQuotaFields
+          label="Water containers / day"
+          hint="Walk-in and delivery qty on water-container products. Collections do not count. Scale is unlimited."
+          value={values.containers}
+          onChange={(containers) => onChange({ ...values, containers })}
+        />
+        <FrequencyQuotaFields
           label="Transactions"
-          hint="POS / refill transaction volume cap."
+          hint="Legacy daily record cap. Prefer water containers / day for new plans; keep in sync unless you have a reason not to."
           value={values.transactions}
           onChange={(transactions) => onChange({ ...values, transactions })}
         />
@@ -339,7 +345,7 @@ export function PlanLimitationsFormFields({
         />
         <FrequencyQuotaFields
           label="Online orders"
-          hint="Portal PLACE_ORDER and REQUEST_COLLECTION caps. Saved to online_orders and onlineOrders."
+          hint="QR / portal PLACE_ORDER and REQUEST_COLLECTION per day. Free is 0 (blocked). Starter 10, Grow 25, Scale unlimited."
           value={values.onlineOrders}
           onChange={(onlineOrders) => onChange({ ...values, onlineOrders })}
         />
@@ -497,8 +503,9 @@ export function PlanLimitationsFormFields({
 
       <CatalogFormSection title="Custom & future limitations">
         <p className="text-xs text-zinc-500">
-          Built-in keys: customers, transactions, aiTools, online_orders,
-          staff, support. Legacy keys (supportAi, supportAiTrial) appear here if
+          Built-in keys: customers, containers, transactions, aiTools,
+          online_orders, staff, support. Legacy keys (supportAi, supportAiTrial)
+          appear here if
           still on the document — remove them after migrating to support.*.
         </p>
         <CustomLimitationRows

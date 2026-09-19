@@ -100,6 +100,29 @@ function toDocumentRow(
   };
 }
 
+export function readCatalogDocumentRow(
+  collectionId: AdminCatalogCollectionId,
+  documentId: string,
+  data: FirebaseFirestore.DocumentData | undefined,
+): CatalogDocumentRow {
+  return toDocumentRow(collectionId, documentId, data);
+}
+
+export async function getCatalogCollectionDocument(
+  collectionId: string,
+  documentId: string,
+): Promise<CatalogDocumentRow> {
+  const safeCollectionId = assertCatalogCollectionId(collectionId);
+  const safeDocumentId = assertDocumentId(documentId);
+  const snap = await db.collection(safeCollectionId).doc(safeDocumentId).get();
+  if (!snap.exists) {
+    throw new Error("DOCUMENT_NOT_FOUND");
+  }
+  return toDocumentRow(safeCollectionId, safeDocumentId, snap.data());
+}
+
+export { assertCatalogCollectionId, assertDocumentId, deserializeValue };
+
 export async function listCatalogCollectionDocuments(
   collectionId: string,
 ): Promise<CatalogDocumentRow[]> {

@@ -17,11 +17,11 @@ describe("classifyBusinessTier", () => {
       classifyBusinessTier("Growth", "growth", "active", { price: 1499 }),
     ).toBe("grow");
     expect(
-      classifyBusinessTier("Starter", "starter", "active", { price: 499 }),
+      classifyBusinessTier("Starter", "starter", "active", { price: 399 }),
     ).toBe("starter");
   });
 
-  it("treats free trial, zero-price, and free starter as free — not Scale/Grow wins", () => {
+  it("treats trial, unpaid Starter, and Free as free — voucher Scale stays Scale", () => {
     expect(
       classifyBusinessTier("Scale", "scale", "active", {
         billingCycle: "trial",
@@ -30,11 +30,11 @@ describe("classifyBusinessTier", () => {
     ).toBe("free");
     expect(
       classifyBusinessTier("Scale Plan", "scale", "active", { price: 0 }),
-    ).toBe("free");
+    ).toBe("scale");
     expect(
       classifyBusinessTier("Starter", "starter", "active", { price: 0 }),
     ).toBe("free");
-    expect(classifyBusinessTier("Free tier", "free", "active", { price: 0 })).toBe(
+    expect(classifyBusinessTier("Free", "free", "active", { price: 0 })).toBe(
       "free",
     );
     expect(classifyBusinessTier(undefined, undefined, "cancelled")).toBe("free");

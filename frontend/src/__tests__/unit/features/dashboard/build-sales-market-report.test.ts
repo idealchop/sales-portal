@@ -177,7 +177,7 @@ describe("buildSalesMarketReport", () => {
 
     const report = buildSalesMarketReport(data, { preset: "this_month" });
     expect(report.planMix.find((row) => row.plan === "Scale")?.workspaces).toBe(
-      1,
+      2,
     );
   });
 });

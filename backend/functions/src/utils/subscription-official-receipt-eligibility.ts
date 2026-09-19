@@ -1,6 +1,6 @@
 /**
  * Whether a subscription may generate a paid Official Receipt PDF.
- * Excludes free trial, Starter (free tier), unpaid rows, and failed / pending payment.
+ * Excludes free trial, Free (₱0), unpaid rows, and failed / pending payment.
  */
 export function subscriptionRowEligibleForOfficialReceipt(
   sub: Record<string, unknown>,
@@ -9,7 +9,8 @@ export function subscriptionRowEligibleForOfficialReceipt(
   if (billingCycle === "trial") return false;
 
   const planCode = String(sub.planCode ?? "").toLowerCase();
-  if (planCode === "starter") return false;
+  const planName = String(sub.planName ?? "").toLowerCase();
+  if (planCode === "free" || planName === "free") return false;
 
   const priceRaw = sub.price;
   const price = typeof priceRaw === "number" ? priceRaw : Number(priceRaw);

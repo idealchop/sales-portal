@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const SHORTCUTS = [
   {
-    href: "/dashboard/smartrefill",
+    href: "/webapp/smartrefill",
     label: "SmartRefill leads",
     hint: "Owners, alerts, upsells",
     icon: Droplets,

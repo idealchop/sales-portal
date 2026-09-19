@@ -2,7 +2,7 @@ import type { OwnerSubscription } from "@/lib/dashboard/analytics";
 
 /**
  * True when sales portal may generate an Official Receipt PDF for this row
- * (paid period — not trial, Starter, or pending/failed payment).
+ * (paid period — not trial, Free, or pending/failed payment).
  */
 export function subscriptionEligibleForOfficialReceipt(
   subscription: Pick<
@@ -15,7 +15,7 @@ export function subscriptionEligibleForOfficialReceipt(
 
   const planCode = String(subscription.planCode ?? "").toLowerCase();
   const planName = String(subscription.planName ?? "").toLowerCase();
-  if (planCode === "starter" || planName === "starter") return false;
+  if (planCode === "free" || planName === "free") return false;
 
   const price = Number(subscription.price);
   if (!Number.isFinite(price) || price <= 0) return false;

@@ -7,7 +7,7 @@ import {
 } from "@/lib/email/legacy-station-template";
 import {
   OUTREACH_EMAIL_BCC,
-  OUTREACH_EMAIL_FROM,
+  OUTREACH_VISIBLE_CONTACT_EMAIL,
 } from "@/lib/email/outreach-email-shared";
 
 describe("legacy-station-template", () => {
@@ -26,10 +26,10 @@ describe("legacy-station-template", () => {
     expect(text).toContain("mag-upgrade");
     expect(text).toContain("chat support sa smartrefill.io");
     expect(text).toContain(
-      "Para mag-schedule, pwede po kayong mag-reply sa email na ito, or email kami sa support@riverph.com.",
+      "Para mag-schedule, pwede po kayong mag-reply sa email na ito, or email kami sa hello@smartrefill.io.",
     );
     expect(text).not.toContain("preferred date and time");
-    expect(text).toContain(OUTREACH_EMAIL_FROM);
+    expect(text).toContain(OUTREACH_VISIBLE_CONTACT_EMAIL);
   });
 
   it("falls back to business name in greeting when owner missing", () => {
@@ -56,7 +56,7 @@ describe("legacy-station-template", () => {
     });
     expect(href.startsWith("mailto:owner@example.com?")).toBe(true);
     const decoded = decodeURIComponent(href);
-    expect(decoded).toContain(OUTREACH_EMAIL_FROM);
+    expect(decoded).toContain(OUTREACH_VISIBLE_CONTACT_EMAIL);
     for (const address of OUTREACH_EMAIL_BCC) {
       expect(decoded).toContain(address);
     }

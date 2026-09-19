@@ -1,10 +1,14 @@
 import {
   OUTREACH_BRAND_COLOR,
-  OUTREACH_SENDER,
+  OUTREACH_VISIBLE_CONTACT_EMAIL,
   SMART_REFILL_EMAIL_LOGO_SRC,
   escapeHtmlForEmail,
   firstNameFromDisplay,
 } from "./outreach-constants";
+import {
+  buildSmartRefillEmailLegalFooterPlainText,
+  buildSmartRefillEmailLegalFooterRowHtml,
+} from "./smartrefill-email-legal-footer";
 
 export type OutreachEmailPayload = {
   subject: string;
@@ -27,9 +31,8 @@ function wrapHtml(input: {
   ctaLabel?: string;
   ctaMailtoSubject?: string;
 }): string {
-  const year = new Date().getFullYear();
   const brand = OUTREACH_BRAND_COLOR;
-  const support = OUTREACH_SENDER.email;
+  const support = OUTREACH_VISIBLE_CONTACT_EMAIL;
   const paragraphsHtml = input.paragraphs
     .map(
       (p) =>
@@ -85,16 +88,7 @@ function wrapHtml(input: {
               ${cta}
             </td>
           </tr>
-          <tr>
-            <td style="padding:20px 28px 28px;border-top:1px solid #e2e8f0;background-color:#f8fafc;">
-              <p style="margin:0;font-size:13px;font-weight:600;color:#0f172a;">River Support Team</p>
-              <p style="margin:4px 0 0;font-size:12px;color:#64748b;">
-                <a href="mailto:${support}" style="color:${brand};text-decoration:none;">${support}</a>
-                · <a href="https://riverph.com" style="color:${brand};text-decoration:none;">riverph.com</a>
-              </p>
-              <p style="margin:12px 0 0;font-size:11px;color:#94a3b8;">© ${year} River Tech Inc. · Smart Refill</p>
-            </td>
-          </tr>
+          ${buildSmartRefillEmailLegalFooterRowHtml()}
         </table>
       </td>
     </tr>
@@ -128,7 +122,7 @@ export function buildNewUserOutreachEmail(
     "Smooth ba ang experience ninyo? May questions or concerns ba kayo sa setup, transactions, customers, o sa ibang features? Feel free po to share — handa po kaming tumulong.",
     "Pwede niyo rin po kaming hingan ng help or mag-inquire anytime through the in-app chat support ng Smart Refill — nandiyan po ang team para tumulong.",
     "If ever gusto ninyo, libre po naming i-walkthrough ang Smart Refill through a short demo (around 15–20 minutes). Doon natin pag-uusapan ang features na most useful for your station, and we can answer your questions live.",
-    `Para mag-schedule, pwede po kayong mag-reply sa email na ito, or email kami sa ${OUTREACH_SENDER.email} with your preferred date and time.`,
+    `Para mag-schedule, pwede po kayong mag-reply sa email na ito, or email kami sa ${OUTREACH_VISIBLE_CONTACT_EMAIL} with your preferred date and time.`,
     "Maraming salamat po, and welcome to Smart Refill!",
   );
 
@@ -153,13 +147,13 @@ export function buildNewUserOutreachEmail(
     "",
     "If ever gusto ninyo, libre po naming i-walkthrough ang Smart Refill through a short demo (around 15–20 minutes).",
     "",
-    `Para mag-schedule, reply or email ${OUTREACH_SENDER.email}.`,
+    `Para mag-schedule, reply or email ${OUTREACH_VISIBLE_CONTACT_EMAIL}.`,
     "",
     "Maraming salamat po, and welcome to Smart Refill!",
     "",
     "Warm regards,",
     "River Support Team",
-    OUTREACH_SENDER.email,
+    OUTREACH_VISIBLE_CONTACT_EMAIL,
   );
 
   return {
@@ -197,7 +191,7 @@ export function buildDemoInquiryOutreachEmail(
   paragraphs.push(
     "Gusto po ba nating mag-schedule ng short demo (around 15–20 minutes)? Doon natin i-walkthrough ang Smart Refill, tingnan ang features na most useful for your station, and we can answer your questions live.",
     "Pwede niyo rin po kaming hingan ng help or mag-inquire anytime through the in-app chat support ng Smart Refill — nandiyan po ang team para tumulong.",
-    `Para mag-schedule, pwede po kayong mag-reply sa email na ito, or email kami sa ${OUTREACH_SENDER.email} with your preferred date and time.`,
+    `Para mag-schedule, pwede po kayong mag-reply sa email na ito, or email kami sa ${OUTREACH_VISIBLE_CONTACT_EMAIL} with your preferred date and time.`,
     "Maraming salamat po, and looking forward to chatting with you!",
   );
 
@@ -212,13 +206,13 @@ export function buildDemoInquiryOutreachEmail(
     "",
     "Pwede niyo rin po kaming hingan ng help through in-app chat support.",
     "",
-    `Para mag-schedule, reply or email ${OUTREACH_SENDER.email}.`,
+    `Para mag-schedule, reply or email ${OUTREACH_VISIBLE_CONTACT_EMAIL}.`,
     "",
     "Maraming salamat po!",
     "",
     "Warm regards,",
     "River Support Team",
-    OUTREACH_SENDER.email,
+    OUTREACH_VISIBLE_CONTACT_EMAIL,
   ]
     .filter(Boolean)
     .join("\n");
@@ -260,7 +254,7 @@ export function buildInactiveOwnerOutreachEmail(
   paragraphs.push(
     "We’d love to see you continue using Smart Refill. If ever may issue, problem, or something confusing sa app, don’t hesitate po to reach out — handa po kaming tumulong.",
     "Pwede niyo po kaming hingan ng help or mag-inquire anytime through the in-app chat support ng Smart Refill. Nandiyan po ang team para tumulong sa inyo.",
-    `Pwede rin po kayong mag-reply sa email na ito, or email kami sa ${OUTREACH_SENDER.email}.`,
+    `Pwede rin po kayong mag-reply sa email na ito, or email kami sa ${OUTREACH_VISIBLE_CONTACT_EMAIL}.`,
     "Maraming salamat po, and hoping to see you back soon!",
   );
 
@@ -277,13 +271,13 @@ export function buildInactiveOwnerOutreachEmail(
       "",
     "We’d love to see you continue using Smart Refill. If may issue, reach out via chat support.",
     "",
-    `Reply or email ${OUTREACH_SENDER.email}.`,
+    `Reply or email ${OUTREACH_VISIBLE_CONTACT_EMAIL}.`,
     "",
     "Maraming salamat po!",
     "",
     "Warm regards,",
     "River Support Team",
-    OUTREACH_SENDER.email,
+    OUTREACH_VISIBLE_CONTACT_EMAIL,
   ]
     .filter(Boolean)
     .join("\n");
@@ -330,7 +324,7 @@ export function buildGenericAlertOutreachEmail(
     "",
     "Warm regards,",
     "River Support Team",
-    OUTREACH_SENDER.email,
+    OUTREACH_VISIBLE_CONTACT_EMAIL,
   ].join("\n");
 
   return {
@@ -374,7 +368,7 @@ export function buildLegacyStationOutreachEmail(
     "May bagong version na po ang Smart Refill — mas madali ang customers, deliveries, at reports. Gusto naming i-check in kung interested kayo mag-upgrade or mag-continue with us.",
     "Libre po naming i-walkthrough ang updated Smart Refill through a short call (around 15–20 minutes). Doon natin tingnan ang setup ninyo and answer any questions live.",
     "Pwede niyo rin po kaming hingan ng help or mag-inquire anytime through the chat support sa smartrefill.io — nandiyan po ang team para tumulong.",
-    `Para mag-schedule, pwede po kayong mag-reply sa email na ito, or email kami sa ${OUTREACH_SENDER.email}.`,
+    `Para mag-schedule, pwede po kayong mag-reply sa email na ito, or email kami sa ${OUTREACH_VISIBLE_CONTACT_EMAIL}.`,
     "Maraming salamat po — looking forward to chatting with you!",
   );
 
@@ -404,13 +398,13 @@ export function buildLegacyStationOutreachEmail(
     "",
     "Pwede niyo rin po kaming hingan ng help or mag-inquire anytime through the chat support sa smartrefill.io.",
     "",
-    `Para mag-schedule, reply sa email na ito, or email ${OUTREACH_SENDER.email}.`,
+    `Para mag-schedule, reply sa email na ito, or email ${OUTREACH_VISIBLE_CONTACT_EMAIL}.`,
     "",
     "Maraming salamat po!",
     "",
     "Warm regards,",
     "River Support Team",
-    OUTREACH_SENDER.email,
+    OUTREACH_VISIBLE_CONTACT_EMAIL,
   );
 
   return {
@@ -453,7 +447,7 @@ export function buildPersonalizedOutreachEmail(input: {
     paragraphs.push(bodyText);
   }
 
-  const text = [greeting, "", bodyText, "", "Warm regards,", "River Support Team", OUTREACH_SENDER.email]
+  const text = [greeting, "", bodyText, "", "Warm regards,", "River Support Team", OUTREACH_VISIBLE_CONTACT_EMAIL]
     .filter(Boolean)
     .join("\n");
 
@@ -472,28 +466,35 @@ export function buildPersonalizedOutreachEmail(input: {
   };
 }
 
+function withLegalFooter(payload: OutreachEmailPayload): OutreachEmailPayload {
+  const text = payload.text.includes("Privacy Policy:") ?
+    payload.text :
+    `${payload.text}\n\n${buildSmartRefillEmailLegalFooterPlainText()}`;
+  return { ...payload, text };
+}
+
 export function buildOutreachEmailByKind(
   kind: OutreachTemplateKind,
   input: OutreachPersonalization = {},
   custom?: { subject?: string; bodyText?: string },
 ): OutreachEmailPayload {
   if (kind === "personalized" && custom?.subject && custom?.bodyText) {
-    return buildPersonalizedOutreachEmail({
+    return withLegalFooter(buildPersonalizedOutreachEmail({
       subject: custom.subject,
       bodyText: custom.bodyText,
       recipientName: input.recipientName,
-    });
+    }));
   }
   switch (kind) {
   case "new_user_registration":
-    return buildNewUserOutreachEmail(input);
+    return withLegalFooter(buildNewUserOutreachEmail(input));
   case "demo_inquiry":
-    return buildDemoInquiryOutreachEmail(input);
+    return withLegalFooter(buildDemoInquiryOutreachEmail(input));
   case "inactive_owner":
-    return buildInactiveOwnerOutreachEmail(input);
+    return withLegalFooter(buildInactiveOwnerOutreachEmail(input));
   case "legacy_station":
-    return buildLegacyStationOutreachEmail(input);
+    return withLegalFooter(buildLegacyStationOutreachEmail(input));
   default:
-    return buildGenericAlertOutreachEmail(input);
+    return withLegalFooter(buildGenericAlertOutreachEmail(input));
   }
 }

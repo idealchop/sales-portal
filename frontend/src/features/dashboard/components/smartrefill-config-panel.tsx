@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, ImageIcon, Layers, Package, Ticket } from "lucide-react";
+import { ArrowUpRight, ImageIcon, Layers, Package, Ticket, Timer } from "lucide-react";
 import { useState } from "react";
 import { AdminCatalogCollectionManager } from "@/features/admin/components/admin-catalog-collection-manager";
 import {
@@ -20,8 +20,14 @@ const MORE_SETTINGS = [
     icon: Layers,
   },
   {
+    href: "/subscriptions/trial",
+    label: "Free trial",
+    description: ADMIN_CATALOG_COLLECTIONS.subscription_trial_policy.description,
+    icon: Timer,
+  },
+  {
     href: "/subscriptions/addons",
-    label: "Addons management",
+    label: "Add-ons",
     description: ADMIN_CATALOG_COLLECTIONS.subscription_addons.description,
     icon: Package,
   },
@@ -46,8 +52,8 @@ export function SmartRefillConfigPanel() {
       <div>
         <h2 className="text-sm font-semibold text-foreground">App configuration</h2>
         <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-          Manage SmartRefill product settings. Icons here appear in the station
-          product picker when assigning delivery products.
+          Product icons live here in SmartRefill config. Subscription plans, the free trial,
+          add-ons, and vouchers are under Subscriptions.
         </p>
       </div>
 
@@ -95,8 +101,8 @@ export function SmartRefillConfigPanel() {
                 <ImageIcon className="h-4 w-4" />
               </div>
               <p className="text-xs text-[var(--muted-foreground)]">
-                Product icons are edited on this tab. Plans, add-ons, and vouchers
-                open in the Subscriptions section for full catalog editing.
+                Product icons stay on this tab. They are not part of subscriptions.
+                Plans, add-ons, and vouchers open in Subscriptions.
               </p>
             </div>
           </div>

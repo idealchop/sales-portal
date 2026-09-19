@@ -5,7 +5,7 @@ import {
   buildDemoInquirySubject,
   buildDemoInquiryText,
 } from "@/lib/email/demo-inquiry-template";
-import { OUTREACH_EMAIL_BCC, OUTREACH_EMAIL_FROM } from "@/lib/email/outreach-email-shared";
+import { OUTREACH_EMAIL_BCC, OUTREACH_VISIBLE_CONTACT_EMAIL } from "@/lib/email/outreach-email-shared";
 import { buildPlatformAlertOutreachMailto } from "@/lib/email/platform-alert-outreach";
 import type { PlatformAlert } from "@/lib/dashboard/analytics";
 
@@ -20,7 +20,7 @@ describe("demo-inquiry-template", () => {
     expect(text).toContain("Aqua Station");
     expect(text).toContain("demo inquiry");
     expect(text).toContain("chat support");
-    expect(text).toContain(OUTREACH_EMAIL_FROM);
+    expect(text).toContain(OUTREACH_VISIBLE_CONTACT_EMAIL);
   });
 
   it("builds html with demo CTA", () => {

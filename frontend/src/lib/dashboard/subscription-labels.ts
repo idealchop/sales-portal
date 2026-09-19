@@ -1,3 +1,11 @@
+import { formatPhp } from "@/lib/format";
+import {
+  isFreeForeverPlan,
+  isFreePlanCode,
+  isStarterPlanCode,
+  isTrialPlan,
+} from "@/lib/dashboard/subscription-plan-codes";
+
 const DOWNGRADE_REASONS: Record<string, string> = {
   too_expensive: "Plan cost is too high",
   not_using_features: "Not using premium features",
@@ -36,23 +44,44 @@ function formatPeriodDate(value?: string): string {
   });
 }
 
-function isStarterPlan(subscription: {
+function isIndefiniteFreePlan(subscription: {
   planCode?: string;
   planName: string;
   billingCycle?: string;
 }): boolean {
-  if (subscription.billingCycle === "trial") return false;
-  const code = (subscription.planCode || "").toLowerCase();
-  const name = subscription.planName.toLowerCase();
-  return code === "starter" || name === "starter";
+  if (isTrialPlan(subscription)) return false;
+  const cycle = String(subscription.billingCycle || "").toLowerCase();
+  if (cycle === "monthly" || cycle === "yearly") return false;
+  return (
+    isFreePlanCode(subscription.planCode, subscription.planName) ||
+    isStarterPlanCode(subscription.planCode, subscription.planName)
+  );
 }
 
 export function isTrialBillingCycle(billingCycle?: string): boolean {
   return billingCycle === "trial";
 }
 
-function isTrialPlan(subscription: { billingCycle?: string }): boolean {
-  return isTrialBillingCycle(subscription.billingCycle);
+/** Unpaid Starter is shown as Free so the list matches the live catalog. */
+export function displaySubscriptionPlanName(subscription: {
+  planCode?: string;
+  planName: string;
+  price?: number | null;
+  billingCycle?: string;
+}): string {
+  if (isFreeForeverPlan(subscription)) return "Free";
+  return subscription.planName;
+}
+
+export function formatSubscriptionListAmount(subscription: {
+  planCode?: string;
+  planName: string;
+  price: number;
+  billingCycle?: string;
+}): string {
+  if (isTrialBillingCycle(subscription.billingCycle)) return "Free Trial";
+  if (isFreeForeverPlan(subscription)) return "Free";
+  return formatPhp(Number(subscription.price) || 0);
 }
 
 export function formatBillingCycleLabel(billingCycle?: string): string | undefined {
@@ -102,7 +131,7 @@ export function formatSubscriptionPeriod(subscription: {
     subscription.createdAt;
   const startLabel = formatPeriodDate(start);
 
-  if (isStarterPlan(subscription)) {
+  if (isIndefiniteFreePlan(subscription)) {
     return `${startLabel} – indefinite`;
   }
 

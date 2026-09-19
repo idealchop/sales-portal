@@ -1,50 +1,11 @@
 import type { BusinessFirestoreDocumentRow } from "@/lib/admin/business-profile-display";
 import { sortSubscriptionDocuments } from "@/lib/admin/subscription-list-display";
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
+import { SUBSCRIPTION_PLAN_LIMITATION_PATCHES } from "@/lib/admin/subscription-plans-catalog";
 
 const INSIGHT_CHART_DAYS = 14;
 
-const PLAN_LIMITATION_PATCHES: Record<string, Record<string, unknown>> = {
-  starter: {
-    customers: { max: 20 },
-    transactions: { frequency: "daily", max: 20 },
-    aiTools: { max: 5, frequency: "monthly" },
-    online_orders: { frequency: "daily", max: 5 },
-    staff: { admin: 0, rider: 0 },
-    support: { chat: { max: 5, frequency: "monthly" } },
-  },
-  grow: {
-    customers: { max: 200 },
-    transactions: { frequency: "daily", max: 100 },
-    aiTools: { max: 20, frequency: "monthly" },
-    online_orders: { frequency: "daily", max: 25 },
-    staff: { admin: 0, rider: 1 },
-    support: { chat: { max: 10, frequency: "monthly" } },
-  },
-  pro: {
-    customers: { max: 200 },
-    transactions: { frequency: "daily", max: 100 },
-    aiTools: { max: 20, frequency: "monthly" },
-    online_orders: { frequency: "daily", max: 25 },
-    staff: { admin: 0, rider: 1 },
-    support: { chat: { max: 10, frequency: "monthly" } },
-  },
-  scale: {
-    customers: "full",
-    transactions: "full",
-    aiTools: "full",
-    online_orders: "full",
-    staff: { admin: 1, rider: 2 },
-    support: { chat: "full" },
-  },
-  enterprise: {
-    customers: "full",
-    transactions: "full",
-    aiTools: "full",
-    online_orders: "full",
-    support: { chat: "full" },
-  },
-};
+const PLAN_LIMITATION_PATCHES = SUBSCRIPTION_PLAN_LIMITATION_PATCHES;
 
 export type BusinessInsightStat = {
   id: string;
@@ -55,14 +16,19 @@ export type BusinessInsightStat = {
 export type BusinessInsightDailyRow = {
   date: string;
   label: string;
-  count: number;
+  transactions: number;
+  waterContainers: number;
+  other: number;
 };
 
-export type BusinessInsightEngagementRow = {
+export type BusinessInsightMixRow = {
   date: string;
   label: string;
-  aiRuns: number;
-  chatSessions: number;
+  deliveryManual: number;
+  deliveryQr: number;
+  walkin: number;
+  direct: number;
+  collection: number;
 };
 
 export type BusinessInsightConsumptionRow = {
@@ -76,7 +42,7 @@ export type BusinessInsightConsumptionRow = {
 export type BusinessInsightsSnapshot = {
   stats: BusinessInsightStat[];
   transactionDaily: BusinessInsightDailyRow[];
-  engagementDaily: BusinessInsightEngagementRow[];
+  mixDaily: BusinessInsightMixRow[];
   consumption: BusinessInsightConsumptionRow[];
   planLabel: string;
 };
@@ -117,7 +83,7 @@ function finiteCap(value: unknown): number | null {
 
 function parsePlanQuotas(planCode: string) {
   const code = planCode.toLowerCase() === "pro" ? "grow" : planCode.toLowerCase();
-  const patch = PLAN_LIMITATION_PATCHES[code] ?? PLAN_LIMITATION_PATCHES.starter;
+  const patch = PLAN_LIMITATION_PATCHES[code] ?? PLAN_LIMITATION_PATCHES.free;
   const staff =
     patch.staff && typeof patch.staff === "object" ?
       (patch.staff as { admin?: number; rider?: number })
@@ -127,7 +93,8 @@ function parsePlanQuotas(planCode: string) {
 
   return {
     customersMax: finiteCap(patch.customers),
-    transactionsDailyMax: finiteCap(patch.transactions),
+    transactionsDailyMax:
+      finiteCap(patch.containers) ?? finiteCap(patch.transactions),
     aiToolsMonthlyMax: finiteCap(patch.aiTools),
     onlineOrdersMax: finiteCap(patch.online_orders),
     supportChatMax: finiteCap(
@@ -206,57 +173,241 @@ function countInWindow(
   }).length;
 }
 
+const SALE_TRANSACTION_TYPES = new Set(["delivery", "walkin", "direct_sale"]);
+const SKIP_DELIVERY_STATUSES = new Set(["failed", "cancelled"]);
+const SKIP_REFILL_WATER_TYPE_IDS = new Set([
+  "adjustment",
+  "operating_expense",
+]);
+const DEFAULT_WATER_CONTAINER_ICON_IDS = ["round-gallon", "slim-gallon"];
+
+function compactIconKey(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function canonicalGallonIconId(iconId: string): string | undefined {
+  if (iconId === "round-gallon" || iconId === "slim-gallon") return iconId;
+  const compact = compactIconKey(iconId);
+  if (compact === "roundgallon" || compact === "roundicon") return "round-gallon";
+  if (compact === "slimgallon" || compact === "slimicon") return "slim-gallon";
+  return undefined;
+}
+
+export function buildWaterContainerIconIds(
+  productIcons: ReadonlyArray<{ documentId: string; data: Record<string, unknown> }>,
+): Set<string> {
+  const ids = new Set<string>();
+  for (const icon of productIcons) {
+    if (icon.data.waterContainer !== true) continue;
+    const id = String(icon.documentId || "").trim();
+    if (!id) continue;
+    ids.add(id);
+    const canonical = canonicalGallonIconId(id);
+    if (canonical) ids.add(canonical);
+  }
+  for (const id of DEFAULT_WATER_CONTAINER_ICON_IDS) {
+    ids.add(id);
+  }
+  return ids;
+}
+
+function productCatalogFromDocuments(
+  documents: BusinessFirestoreDocumentRow[],
+): Map<string, { itemOnly?: boolean; iconId?: string }> {
+  const productById = new Map<string, { itemOnly?: boolean; iconId?: string }>();
+  for (const doc of documents) {
+    if (doc.collectionId !== "products") continue;
+    productById.set(doc.documentId, {
+      itemOnly: doc.data.itemOnly === true,
+      iconId: readString(doc.data.iconId) || undefined,
+    });
+  }
+  return productById;
+}
+
+function refillLineQuantity(line: Record<string, unknown>): number {
+  const qty = Number(line.quantity ?? line.qty);
+  if (!Number.isFinite(qty) || qty <= 0) return 0;
+  return qty;
+}
+
+function iconCountsAsWaterContainer(
+  iconId: string,
+  waterContainerIconIds: Set<string>,
+): boolean {
+  if (waterContainerIconIds.has(iconId)) return true;
+  const canonical = canonicalGallonIconId(iconId);
+  return Boolean(canonical && waterContainerIconIds.has(canonical));
+}
+
+function refillLooksLikeNonWaterContainer(line: {
+  name?: string;
+  waterTypeId?: string;
+  productId?: string;
+}): boolean {
+  const text = [line.name, line.waterTypeId, line.productId]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (!text.trim()) return false;
+  if (/\bbottle\b/.test(text)) return true;
+  if (/\b\d+\s*ml\b/.test(text) || /\b\d+ml\b/.test(text)) return true;
+  if (/\b(350-ml|500-ml|1liter-bottle|1-liter|1l-bottle)\b/.test(text)) {
+    return true;
+  }
+  return false;
+}
+
+export function classifyTransactionRefillQuantities(
+  tx: Record<string, unknown>,
+  productById: Map<string, { itemOnly?: boolean; iconId?: string }>,
+  waterContainerIconIds: Set<string>,
+): { waterContainers: number; other: number } {
+  const type = readString(tx.type).toLowerCase();
+  const status = readString(tx.deliveryStatus).toLowerCase();
+  if (!SALE_TRANSACTION_TYPES.has(type) || SKIP_DELIVERY_STATUSES.has(status)) {
+    return { waterContainers: 0, other: 0 };
+  }
+
+  let waterContainers = 0;
+  let other = 0;
+  const refills = Array.isArray(tx.waterRefills) ? tx.waterRefills : [];
+  for (const entry of refills) {
+    if (!entry || typeof entry !== "object") continue;
+    const line = entry as Record<string, unknown>;
+    const waterTypeId = readString(line.waterTypeId).toLowerCase();
+    if (SKIP_REFILL_WATER_TYPE_IDS.has(waterTypeId)) continue;
+    const qty = refillLineQuantity(line);
+    if (qty <= 0) continue;
+    const productId = readString(line.productId);
+    const product = productId ? productById.get(productId) : undefined;
+    if (product?.itemOnly) continue;
+    const iconId = String(product?.iconId || line.iconId || "").trim();
+    const isWaterContainer =
+      iconId ?
+        iconCountsAsWaterContainer(iconId, waterContainerIconIds)
+      : !refillLooksLikeNonWaterContainer({
+          name: readString(line.name),
+          waterTypeId,
+          productId,
+        });
+    if (isWaterContainer) {
+      waterContainers += qty;
+    } else {
+      other += qty;
+    }
+  }
+  return { waterContainers, other };
+}
+
 function buildTransactionDailySeries(
   transactions: UserFirestoreDocumentRow[],
+  productById: Map<string, { itemOnly?: boolean; iconId?: string }>,
+  waterContainerIconIds: Set<string>,
 ): BusinessInsightDailyRow[] {
   const window = buildDailyWindow(INSIGHT_CHART_DAYS);
-  const counts = new Map(window.map((date) => [dayKey(date), 0]));
+  const byDay = new Map(
+    window.map((date) => [
+      dayKey(date),
+      { transactions: 0, waterContainers: 0, other: 0 },
+    ]),
+  );
 
   for (const tx of transactions) {
-    const ms = timestampMs(tx.data.createdAt ?? tx.data.updatedAt);
+    const ms = timestampMs(
+      tx.data.scheduledAt ?? tx.data.createdAt ?? tx.data.updatedAt,
+    );
     if (!ms) continue;
     const key = dayKey(new Date(ms));
-    if (counts.has(key)) {
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
+    const row = byDay.get(key);
+    if (!row) continue;
+    row.transactions += 1;
+    const qty = classifyTransactionRefillQuantities(
+      tx.data,
+      productById,
+      waterContainerIconIds,
+    );
+    row.waterContainers += qty.waterContainers;
+    row.other += qty.other;
   }
 
   return window.map((date) => {
     const key = dayKey(date);
+    const row = byDay.get(key) ?? {
+      transactions: 0,
+      waterContainers: 0,
+      other: 0,
+    };
     return {
       date: key,
       label: shortDayLabel(date),
-      count: counts.get(key) ?? 0,
+      transactions: row.transactions,
+      waterContainers: row.waterContainers,
+      other: row.other,
     };
   });
 }
 
-function buildEngagementDailySeries(
-  documents: BusinessFirestoreDocumentRow[],
-): BusinessInsightEngagementRow[] {
-  const window = buildDailyWindow(INSIGHT_CHART_DAYS);
-  const aiCounts = new Map(window.map((date) => [dayKey(date), 0]));
-  const chatCounts = new Map(window.map((date) => [dayKey(date), 0]));
+const EMPTY_MIX = {
+  deliveryManual: 0,
+  deliveryQr: 0,
+  walkin: 0,
+  direct: 0,
+  collection: 0,
+};
 
-  for (const doc of documents) {
-    const ms = timestampMs(doc.data.createdAt ?? doc.data.updatedAt);
+export function classifyInsightTransactionKind(
+  data: Record<string, unknown>,
+): keyof typeof EMPTY_MIX | null {
+  const type = readString(data.type).toLowerCase();
+  if (type === "walkin") return "walkin";
+  if (type === "direct_sale") return "direct";
+  if (type === "collection") return "collection";
+  if (type !== "delivery") return null;
+  return isQrDeliveryOrder(data) ? "deliveryQr" : "deliveryManual";
+}
+
+function isQrDeliveryOrder(data: Record<string, unknown>): boolean {
+  const notes = readString(data.notes).toLowerCase();
+  if (
+    notes.includes("portal order") ||
+    notes.includes("qr order") ||
+    notes.includes("customer portal")
+  ) {
+    return true;
+  }
+  const source = readString(
+    data.source ?? data.sourceChannel ?? data.origin ?? data.createdVia,
+  ).toLowerCase();
+  return source.includes("portal") || source.includes("qr");
+}
+
+function buildTransactionMixDailySeries(
+  transactions: UserFirestoreDocumentRow[],
+): BusinessInsightMixRow[] {
+  const window = buildDailyWindow(INSIGHT_CHART_DAYS);
+  const byDay = new Map(window.map((date) => [dayKey(date), { ...EMPTY_MIX }]));
+
+  for (const tx of transactions) {
+    const kind = classifyInsightTransactionKind(tx.data);
+    if (!kind) continue;
+    const ms = timestampMs(
+      tx.data.scheduledAt ?? tx.data.createdAt ?? tx.data.updatedAt,
+    );
     if (!ms) continue;
     const key = dayKey(new Date(ms));
-    if (doc.collectionId === "ai_tool_runs" && aiCounts.has(key)) {
-      aiCounts.set(key, (aiCounts.get(key) ?? 0) + 1);
-    }
-    if (doc.collectionId === "chat_sessions" && chatCounts.has(key)) {
-      chatCounts.set(key, (chatCounts.get(key) ?? 0) + 1);
-    }
+    const row = byDay.get(key);
+    if (!row) continue;
+    row[kind] += 1;
   }
 
   return window.map((date) => {
     const key = dayKey(date);
+    const row = byDay.get(key) ?? { ...EMPTY_MIX };
     return {
       date: key,
       label: shortDayLabel(date),
-      aiRuns: aiCounts.get(key) ?? 0,
-      chatSessions: chatCounts.get(key) ?? 0,
+      ...row,
     };
   });
 }
@@ -265,11 +416,14 @@ export function computeBusinessInsights(input: {
   documents: BusinessFirestoreDocumentRow[];
   transactions: UserFirestoreDocumentRow[];
   collectionCounts?: Record<string, number>;
+  productIcons?: ReadonlyArray<{ documentId: string; data: Record<string, unknown> }>;
 }): BusinessInsightsSnapshot {
-  const { documents, transactions, collectionCounts = {} } = input;
+  const { documents, transactions, collectionCounts = {}, productIcons = [] } =
+    input;
+  const productById = productCatalogFromDocuments(documents);
+  const waterContainerIconIds = buildWaterContainerIconIds(productIcons);
   const now = new Date();
   const todayStart = startOfLocalDay(now).getTime();
-  const todayEnd = todayStart + 24 * 60 * 60 * 1000 - 1;
   const monthStart = startOfLocalMonth(now).getTime();
   const thirtyDaysAgo = todayStart - 29 * 24 * 60 * 60 * 1000;
 
@@ -307,7 +461,7 @@ export function computeBusinessInsights(input: {
     : aiRunCount;
 
   const activeSubscription = resolveActiveSubscription(documents);
-  const planCode = readString(activeSubscription?.data.planCode) || "starter";
+  const planCode = readString(activeSubscription?.data.planCode) || "free";
   const planName =
     readString(activeSubscription?.data.planName) ||
     planCode.charAt(0).toUpperCase() + planCode.slice(1);
@@ -333,10 +487,14 @@ export function computeBusinessInsights(input: {
         now.getTime(),
       )
     : chatCount;
-  const transactionsToday = transactions.filter((doc) => {
-    const ms = timestampMs(doc.data.createdAt);
-    return ms >= todayStart && ms <= todayEnd;
-  }).length;
+  const transactionDaily = buildTransactionDailySeries(
+    transactions,
+    productById,
+    waterContainerIconIds,
+  );
+  const todayKey = dayKey(startOfLocalDay(now));
+  const waterContainersToday =
+    transactionDaily.find((row) => row.date === todayKey)?.waterContainers ?? 0;
 
   const stats: BusinessInsightStat[] = [
     {
@@ -396,8 +554,8 @@ export function computeBusinessInsights(input: {
   if (quotas.transactionsDailyMax !== null) {
     consumption.push({
       id: "transactions",
-      label: "Transaction records",
-      used: transactionsToday,
+      label: "Water containers",
+      used: waterContainersToday,
       cap: quotas.transactionsDailyMax,
       suffix: "today",
     });
@@ -425,8 +583,8 @@ export function computeBusinessInsights(input: {
 
   return {
     stats,
-    transactionDaily: buildTransactionDailySeries(transactions),
-    engagementDaily: buildEngagementDailySeries(documents),
+    transactionDaily,
+    mixDaily: buildTransactionMixDailySeries(transactions),
     consumption,
     planLabel: `${planName} (${planCode})`,
   };

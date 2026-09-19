@@ -39,9 +39,11 @@ frontend/src/app/
 ├── onboarding/
 ├── dashboard/                  # Multi-app analytics shell
 │   ├── page.tsx                # Platform hub (all-apps KPIs)
-│   ├── smartrefill/            # SmartRefill ops dashboard
+│   ├── smartrefill/            # Redirects to `/webapp/smartrefill`
 │   ├── smartrefill-old/        # Legacy SmartRefill (`prod-smartrefill`) triage
-│   └── sales-portal/           # Sales market position + scorecard
+│   └── sales-portal/           # Redirects to `/dashboard`
+├── webapp/
+│   └── smartrefill/            # SmartRefill ops dashboard
 ├── content-studio/
 ├── subscriptions/              # Admin catalog (plans, addons, vouchers)
 └── admin/                      # Permissions, data management
@@ -79,17 +81,17 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | Path | Role | Status |
 |------|------|--------|
 | `/dashboard` | sales, manager, admin | Live — all-apps KPIs + performance overview (production accounts only) |
-| `/dashboard/smartrefill` | sales, manager, admin | Live — ops tabs: Subscriptions, Analytics (KPIs, signals, charts); Config (admin) |
+| `/webapp/smartrefill` | sales, manager, admin | Live — ops tabs: Subscriptions (all production workspaces; KPIs + grouped billing list including ended plans), Analytics (KPIs, signals, charts); Config (admin) |
 | `/dashboard/smartrefill-old` | sales, manager, admin | Live — legacy station triage / contact (Brevo) / ignore; bulk actions |
 | `/dashboard` | sales, manager, admin | Live — action board (assigned leads + performance), proposal stages |
-| `/dashboard/smartrefill` | sales, manager, admin | Live — SmartRefill platform analytics |
+| `/dashboard/smartrefill` | sales, manager, admin | Redirects to `/webapp/smartrefill` |
 | `/dashboard/sales-portal` | — | Redirects to `/dashboard` |
 | `/dashboard/settings` | sales, manager, admin | Live — read-only profile |
 | `/content-studio` | sales, manager, admin | Live |
 | `/events-training/*` | manager, admin | Live — overview, analytics, registrations, moderation, webinars, stories, articles, tutorials, certs, schedules |
-| `/subscriptions/*` | admin | Live (catalog CRUD: plans, addons, vouchers, product icons) |
+| `/subscriptions/*` | admin | Live — catalog CRUD: **Free ₱0**, **Starter ₱399**, Grow ₱950, Scale ₱1,650, Enterprise (contact sales); addons, vouchers, product icons |
 | `/admin/permissions` | admin | Live |
-| `/admin/data-management` | admin | Live |
+| `/admin/data-management` | admin | Live — business Insights: owner **sign-in attendance** heatmap (login days this year), then tickets/gallons/other plus order mix (manual delivery, QR delivery, walk-in, direct, collection) |
 | `/dashboard/proposals` | sales+ | Live — proposals & clients (users by app); **Compose email** opens multi-select outreach dialog (filter by source/app, Brevo bulk up to 50, mail client) |
 | `/dashboard/proposals/new` | sales+ | Live — create proposal wizard |
 | `/proposal/view/[linkId]` | — | Live — public shareable proposal |

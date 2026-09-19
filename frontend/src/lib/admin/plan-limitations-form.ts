@@ -43,6 +43,7 @@ export type CustomLimitationEntry = {
 
 export type PlanLimitationsFormValues = {
   customers: MaxQuotaForm;
+  containers: FrequencyQuotaForm;
   transactions: FrequencyQuotaForm;
   aiTools: FrequencyQuotaForm;
   onlineOrders: FrequencyQuotaForm;
@@ -57,6 +58,7 @@ export type PlanLimitationsFormValues = {
 
 const KNOWN_LIMITATION_KEYS = new Set([
   "customers",
+  "containers",
   "transactions",
   "aiTools",
   "online_orders",
@@ -246,6 +248,7 @@ function customEntryId(key: string): string {
 export function emptyPlanLimitationsForm(): PlanLimitationsFormValues {
   return {
     customers: { mode: "capped", max: "" },
+    containers: { mode: "capped", max: "", frequency: "daily" },
     transactions: { mode: "capped", max: "", frequency: "daily" },
     aiTools: { mode: "capped", max: "", frequency: "monthly" },
     onlineOrders: { mode: "capped", max: "", frequency: "daily" },
@@ -296,6 +299,10 @@ export function planLimitationsFormFromFirestore(
 
   return {
     customers: parseMaxQuota(record.customers, "capped"),
+    containers: parseFrequencyQuota(
+      record.containers ?? record.transactions,
+      "daily",
+    ),
     transactions: parseFrequencyQuota(record.transactions, "daily"),
     aiTools: parseFrequencyQuota(record.aiTools, "monthly"),
     onlineOrders: parseFrequencyQuota(onlineOrdersSource, "daily"),
@@ -439,6 +446,7 @@ export function planLimitationsToFirestore(
 
   const limitations: Record<string, unknown> = {
     customers: buildMaxQuota(values.customers),
+    containers: buildFrequencyQuota(values.containers),
     transactions: buildFrequencyQuota(values.transactions),
     aiTools: buildFrequencyQuota(values.aiTools),
     online_orders: onlineOrdersValue,

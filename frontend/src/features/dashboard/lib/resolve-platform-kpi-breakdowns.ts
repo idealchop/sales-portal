@@ -3,6 +3,13 @@ import {
   type ChartBusinessContext,
   type DashboardAnalytics,
 } from "@/lib/dashboard/analytics";
+import {
+  isFreeForeverPlan,
+  isGrowPlanCode,
+  isPaidStarterPlan,
+  isScalePlanCode,
+  isTrialPlan,
+} from "@/lib/dashboard/subscription-plan-codes";
 
 type RoleCounts = DashboardAnalytics["summary"]["userRoleCounts"];
 type TierCounts = DashboardAnalytics["summary"]["businessTierCounts"];
@@ -54,13 +61,25 @@ export function classifyBusinessTier(
   planName?: string,
   planCode?: string,
   price = 0,
+  billingCycle?: string | null,
 ): keyof TierCounts {
-  const key = `${planCode || ""} ${planName || ""}`.trim().toLowerCase();
-  if (!key || key.includes("free") || price <= 0) return "free";
-  if (key.includes("scale")) return "scale";
-  if (key.includes("growth") || key.includes("grow")) return "grow";
-  if (key.includes("starter")) return "starter";
+  const input = { planName, planCode, price, billingCycle };
+  if (!planKey(planCode, planName) || isTrialPlan(input) || isFreeForeverPlan(input)) {
+    return "free";
+  }
+  if (isScalePlanCode(planCode, planName)) return "scale";
+  if (isGrowPlanCode(planCode, planName)) return "grow";
+  if (isPaidStarterPlan(input) || isStarterName(planCode, planName)) return "starter";
   return "free";
+}
+
+function planKey(planCode?: string, planName?: string): string {
+  return `${planCode || ""} ${planName || ""}`.trim().toLowerCase();
+}
+
+function isStarterName(planCode?: string, planName?: string): boolean {
+  const key = planKey(planCode, planName);
+  return key.includes("starter");
 }
 
 export function deriveBusinessTierCounts(
@@ -69,7 +88,7 @@ export function deriveBusinessTierCounts(
   const counts: TierCounts = { scale: 0, grow: 0, starter: 0, free: 0 };
   for (const business of businesses) {
     if (business.authAccountTag === "test") continue;
-    counts[classifyBusinessTier(business.planName, business.planCode, business.price)] += 1;
+    counts[classifyBusinessTier(business.planName, business.planCode, business.price, business.billingCycle)] += 1;
   }
   return counts;
 }

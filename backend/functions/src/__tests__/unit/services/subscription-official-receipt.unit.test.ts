@@ -15,7 +15,7 @@ describe("subscriptionRowEligibleForOfficialReceipt", () => {
     ).toBe(true);
   });
 
-  it("rejects trial, starter, and pending payment", () => {
+  it("rejects trial, Free, and pending payment", () => {
     expect(
       subscriptionRowEligibleForOfficialReceipt({
         planCode: "growth",
@@ -26,12 +26,20 @@ describe("subscriptionRowEligibleForOfficialReceipt", () => {
     ).toBe(false);
     expect(
       subscriptionRowEligibleForOfficialReceipt({
-        planCode: "starter",
+        planCode: "free",
         billingCycle: "monthly",
         price: 0,
         paymentStatus: "verified",
       }),
     ).toBe(false);
+    expect(
+      subscriptionRowEligibleForOfficialReceipt({
+        planCode: "starter",
+        billingCycle: "monthly",
+        price: 399,
+        paymentStatus: "verified",
+      }),
+    ).toBe(true);
     expect(
       subscriptionRowEligibleForOfficialReceipt({
         planCode: "growth",

@@ -21,6 +21,10 @@ import {
 } from "@/features/dashboard/lib/filter-chart-series";
 import { formatPhp } from "@/lib/format";
 import {
+  isFreeForeverPlan,
+  isTrialPlan,
+} from "@/lib/dashboard/subscription-plan-codes";
+import {
   computeStarterPotentialLost,
   STARTER_POTENTIAL_COLOR,
 } from "@/features/dashboard/lib/compute-starter-potential-lost";
@@ -164,9 +168,7 @@ function isPayingPlanForMrr(biz: ChartBusinessContext): boolean {
   if (String(biz.subscriptionStatus || "active").toLowerCase() !== "active") {
     return false;
   }
-  const key = `${biz.planCode || ""} ${biz.planName || ""}`.trim().toLowerCase();
-  if (key.includes("starter") || key.includes("trial")) return false;
-  if (String(biz.billingCycle || "").toLowerCase() === "trial") return false;
+  if (isTrialPlan(biz) || isFreeForeverPlan(biz)) return false;
   return true;
 }
 
@@ -306,7 +308,7 @@ function buildMrrChartPayload(businesses: ChartBusinessContext[]) {
 
   if (starterPotential.total > 0) {
     chartData.push({
-      name: `If Starters → ${starterPotential.targetPlanLabel}`,
+      name: `If Free → ${starterPotential.targetPlanLabel}`,
       mrr: starterPotential.total,
       count: starterPotential.workspaceCount,
       color: STARTER_POTENTIAL_COLOR,
@@ -317,7 +319,7 @@ function buildMrrChartPayload(businesses: ChartBusinessContext[]) {
   const subtitleParts = [
     `${formatPhp(actualMrr)} MRR`,
     starterPotential.total > 0 ?
-      `~${formatPhp(starterPotential.total)} if Starters upgrade`
+      `~${formatPhp(starterPotential.total)} if Free stations upgrade`
     : null,
     `${businesses.length} workspaces`,
   ].filter(Boolean);
@@ -376,17 +378,17 @@ function buildMrrBreakdown(
 
   if (starterPotential.total > 0) {
     groups.push({
-      title: `If Starters upgraded to ${targetLabel} (${targetPriceLabel}/mo)`,
+      title: `If Free stations upgraded to ${targetLabel} (${targetPriceLabel}/mo)`,
       rows: [
         {
-          label: "Extra MRR if all listed Starters upgraded",
+          label: "Extra MRR if all listed Free stations upgraded",
           value: `~${formatPhp(starterPotential.total)}/mo`,
-          detail: `${starterPotential.workspaceCount} Starter workspaces × ${targetLabel} list price ${targetPriceLabel}/mo`,
+          detail: `${starterPotential.workspaceCount} Free workspaces × ${targetLabel} list price ${targetPriceLabel}/mo`,
         },
         {
           label: "Ready to pitch now",
           value: `${starterPotential.upsellCount} of ${starterPotential.workspaceCount}`,
-          detail: "20+ customers or 30+ transactions in the last 30 days",
+          detail: "80+ customers or 40+ transactions in the last 30 days",
         },
         ...starterPotential.rows.slice(0, 10).map((row) => ({
           label: row.label,
@@ -413,9 +415,9 @@ function buildMrrBreakdown(
       })),
       ...(starterPotential.total > 0 ?
         [{
-          label: `If Starters → ${targetLabel}`,
+          label: `If Free → ${targetLabel}`,
           value: `~${formatPhp(starterPotential.total)}/mo`,
-          detail: `${starterPotential.workspaceCount} Starters vs ${targetLabel} ${targetPriceLabel}/mo`,
+          detail: `${starterPotential.workspaceCount} Free stations vs ${targetLabel} ${targetPriceLabel}/mo`,
         }]
       : []),
     ],

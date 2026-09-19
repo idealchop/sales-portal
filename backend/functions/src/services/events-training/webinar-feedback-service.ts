@@ -154,7 +154,7 @@ export async function listAllWebinarFeedback(): Promise<WebinarFeedbackRecord[]>
 
 export async function listWebinarFeedbackSummaries(): Promise<
   Record<string, WebinarFeedbackSummary>
-> {
+  > {
   try {
     const items = await listAllWebinarFeedback();
     const byEvent = new Map<string, FeedbackScore[]>();

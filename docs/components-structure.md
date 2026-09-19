@@ -33,7 +33,7 @@ frontend/src/
 | `components/dashboard-header.tsx` | Page title, refresh, user menu |
 | `components/platform-hub-dashboard.tsx` | All-apps hub: sales snapshot + simple per-app performance overview |
 | `components/platform-apps-overview.tsx` | App KPI cards with performance blurbs and deep links |
-| `components/smartrefill-dashboard.tsx` | SmartRefill ops dashboard (Subscriptions / Analytics / Config tabs) |
+| `components/smartrefill-dashboard.tsx` | SmartRefill ops dashboard (Subscriptions with billing KPIs/groups including ended plans, Analytics, Config) |
 | `components/smartrefill-old-dashboard.tsx` | Legacy SmartRefill ops from `prod-smartrefill`: triage / contacted-ignored queues (contact sends Brevo; contacted returns to triage after 15 days; ignored stays) |
 | `components/smartrefill-ops-health-strip.tsx` | Clickable support/maintenance snapshot tiles |
 | `components/smartrefill-maintenance-signals.tsx` | Workspace health + payment status bars |
@@ -124,10 +124,10 @@ Large admin surface for permissions and Firestore data management:
 |----------------|---------|
 | `admin-permissions-page.tsx` | User access CRUD |
 | `admin-data-management-page.tsx` | Business/user document browser |
-| `admin-data-management-business-page.tsx` | Business overview — tabbed layout aligned with SmartRefill ops |
+| `admin-data-management-business-page.tsx` | Business overview — tabbed layout aligned with SmartRefill ops. Insights **Sign-in attendance** is a year heatmap of owner `login_events` days; **Transaction activity** plots tickets vs gallons vs other units; **Order mix** stacks delivery (manual/QR), walk-in, direct, and collection |
 | `admin-catalog-collection-page.tsx` | Subscription catalog tables |
 | `catalog-document-form-*` | Structured add/edit forms (not raw JSON); product icons include **Water container** |
-| `plan-limitations-form-*` | Plan `limitations` editor |
+| `plan-limitations-form-*` | Plan `limitations` editor (customers, **water containers / day**, QR orders, staff, River AI) |
 | `firestore-document-detail-dialog.tsx` | Row click → read-only detail |
 
 ## Shared patterns

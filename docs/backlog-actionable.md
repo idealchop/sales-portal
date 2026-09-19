@@ -109,7 +109,7 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | AB-47 | Platform hub — 2 KPIs per app, cross-app map, 4 charts per app, ROI insights | ✅ Shipped |
 | AB-48 | SmartRefill app dashboard — stats, map/actions, charts, analysis sections | ✅ Shipped |
 | AB-49 | Sales Portal app dashboard — stats, actions, charts, analysis sections | ✅ Shipped |
-| AB-50 | Sidebar + route wiring for `/dashboard`, `/dashboard/smartrefill`, `/dashboard/sales-portal` | ✅ Shipped |
+| AB-50 | Sidebar + route wiring for `/dashboard`, `/webapp/smartrefill`, `/dashboard/sales-portal` | ✅ Shipped |
 
 ## Tier 12 — Dashboard intelligence & UX polish ✅ (feature/SP-11)
 

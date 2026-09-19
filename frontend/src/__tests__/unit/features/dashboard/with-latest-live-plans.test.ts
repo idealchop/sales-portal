@@ -87,9 +87,45 @@ describe("withLatestLivePlans", () => {
     expect(rows[0]).toMatchObject({
       id: "j2o",
       name: "J2O WRS",
-      planName: "Starter",
+      planName: "Free",
+      planCode: "free",
       price: 0,
       subscriptionStatus: "active",
+    });
+  });
+
+  it("keeps paid Starter as Starter", () => {
+    const owners: ActiveOwner[] = [
+      {
+        id: "paid",
+        businessName: "Paid Starter Co",
+        customers: 1,
+        transactionsLast30Days: 0,
+        healthTier: "medium",
+        onboardingComplete: true,
+        monthlyRevenue: 399,
+        subscriptions: [
+          sub({
+            id: "starter-paid",
+            planName: "Starter",
+            planCode: "starter",
+            price: 399,
+            createdAt: "2026-09-01T00:00:00.000Z",
+            activatedAt: "2026-09-01T00:00:00.000Z",
+          }),
+        ],
+      },
+    ];
+
+    const rows = withLatestLivePlans(
+      [biz({ id: "paid", planName: "Scale", price: 1650 })],
+      owners,
+    );
+
+    expect(rows[0]).toMatchObject({
+      planName: "Starter",
+      planCode: "starter",
+      price: 399,
     });
   });
 });

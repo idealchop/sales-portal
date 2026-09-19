@@ -1,27 +1,57 @@
 export const ADMIN_CATALOG_COLLECTIONS = {
   subscription_addons: {
-    title: "Addons management",
-    description: "Manage subscription add-ons available to Smart Refill businesses.",
+    title: "Add-ons",
+    description:
+      "Extras stations can buy on top of a plan — more riders, more River AI, or another station. Save when you are ready; SmartRefill updates right away.",
     route: "/subscriptions/addons",
+    howItWorks: [
+      "An add-on is not a plan. It is an extra a Grow or Scale station can purchase.",
+      "Pick Extra rider, AI boost, or Additional business to fill the usual price, then change anything you need.",
+      "Save makes it live in SmartRefill. No developer or IT step.",
+    ],
   },
   vouchers_affiliates: {
-    title: "Voucher & affiliates management",
-    description: "Manage vouchers, affiliate codes, and related promotions.",
+    title: "Vouchers & affiliates",
+    description:
+      "Vouchers are checkout codes (percent off, pesos off, or extra trial days). Affiliates are partner referral codes and their commission.",
     route: "/subscriptions/vouchers-affiliates",
+    howItWorks: [
+      "A voucher is what a station types at checkout. Use percent off, pesos off (including ₱0), or extra trial days.",
+      "An affiliate is a partner code. When a station signs up with it, the partner earns the commission you set.",
+      "Save makes the code live in SmartRefill. No developer or IT step.",
+    ],
   },
   subscription_plans: {
     title: "Plan management",
-    description: "Manage subscription plans, pricing tiers, and billing options.",
+    description:
+      "Set prices and limits stations see. Always keep Free (₱0) so the trial has somewhere to land. Publish when you are ready — no developer or IT step.",
     route: "/subscriptions/plans",
+  },
+  subscription_trial_policy: {
+    title: "Free trial",
+    description:
+      "This is not a pricing card. It is the trial new stations get at signup. When it ends without payment they move to Free.",
+    route: "/subscriptions/trial",
   },
   product_icons: {
     title: "Product icons",
-    description: "Icons stations can assign to delivery products in SmartRefill. Mark water-container artwork (gallons and bottles) so it can be distinguished from other icons.",
-    route: "/subscriptions/product-icons",
+    description: "Icons stations assign to delivery products. This belongs in SmartRefill config, not subscriptions.",
+    route: "/webapp/smartrefill",
   },
 } as const;
 
 export type AdminCatalogCollectionId = keyof typeof ADMIN_CATALOG_COLLECTIONS;
+
+export const VERSIONED_CATALOG_COLLECTIONS: AdminCatalogCollectionId[] = [
+  "subscription_plans",
+  "subscription_trial_policy",
+];
+
+export function isVersionedCatalogCollection(
+  collectionId: AdminCatalogCollectionId,
+): boolean {
+  return VERSIONED_CATALOG_COLLECTIONS.includes(collectionId);
+}
 
 export function isAdminCatalogCollectionId(
   value: string,

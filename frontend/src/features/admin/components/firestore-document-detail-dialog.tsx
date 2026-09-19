@@ -26,7 +26,7 @@ export function FirestoreDocumentDetailDialog({
   sectionTitle?: string;
   onClose: () => void;
   onEdit: () => void;
-  onRemove: () => void;
+  onRemove?: () => void;
   removeDisabled?: boolean;
   removeDisabledTitle?: string;
 }) {
@@ -106,6 +106,7 @@ export function FirestoreDocumentDetailDialog({
             <Pencil className="mr-1.5 h-4 w-4" />
             Edit
           </Button>
+          {onRemove ? (
           <Button
             type="button"
             className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
@@ -116,6 +117,7 @@ export function FirestoreDocumentDetailDialog({
             <Trash2 className="mr-1.5 h-4 w-4" />
             Remove
           </Button>
+          ) : null}
         </div>
       </div>
     </div>,

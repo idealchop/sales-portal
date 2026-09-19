@@ -1,11 +1,12 @@
 /** Subscription renewal / expiry reminder for onboarded Smart Refill owners. */
 
 import {
+  OUTREACH_VISIBLE_CONTACT_EMAIL,
   buildOutreachMailto,
   firstNameFromDisplay,
 } from "@/lib/email/outreach-email-shared";
 
-const SUPPORT_EMAIL = "support@riverph.com";
+const SUPPORT_EMAIL = OUTREACH_VISIBLE_CONTACT_EMAIL;
 
 export type SubscriptionReminderEmailInput = {
   ownerName?: string | null;

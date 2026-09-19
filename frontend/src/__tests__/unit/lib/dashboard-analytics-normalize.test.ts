@@ -125,4 +125,28 @@ describe("normalizeDashboardAnalytics", () => {
       aiEnabled: false,
     });
   });
+
+  it("copies activeOwners into subscriptionOwners when the new field is missing", () => {
+    const activeOwners = [
+      {
+        id: "b1",
+        businessName: "Station One",
+        customers: 1,
+        transactionsLast30Days: 0,
+        healthTier: "medium" as const,
+        onboardingComplete: true,
+        monthlyRevenue: 0,
+        subscriptions: [],
+      },
+    ];
+    const normalized = normalizeDashboardAnalytics({
+      growthSalesMetrics: {
+        growth: [],
+        sales: [],
+        activeOwners,
+      },
+    });
+
+    expect(normalized.growthSalesMetrics.subscriptionOwners).toEqual(activeOwners);
+  });
 });

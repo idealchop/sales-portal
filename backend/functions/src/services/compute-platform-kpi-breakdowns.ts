@@ -163,13 +163,12 @@ export function classifyBusinessTier(
     typeof priceRaw === "number" ? priceRaw : Number(priceRaw ?? NaN);
   const isTrial =
     billingCycle === "trial" ||
-    key.includes("trial") ||
-    key.includes("free");
-  // Starter is the free tier in SmartRefill catalog; unpaid/zero-price is not a win.
+    key.includes("trial");
   const isUnpaid = !Number.isFinite(price) || price <= 0;
-  const isFreeStarter = key.includes("starter") && isUnpaid;
+  const isFreePlan =
+    key.includes("free") || (key.includes("starter") && isUnpaid);
 
-  if (!hasActiveSub || !key || isTrial || isUnpaid || isFreeStarter) {
+  if (!hasActiveSub || !key || isTrial || isFreePlan) {
     return "free";
   }
   if (key.includes("scale")) return "scale";

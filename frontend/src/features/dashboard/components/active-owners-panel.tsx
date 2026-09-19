@@ -53,7 +53,7 @@ import { ApiError } from "@/lib/api-client";
 
 const SUBSCRIPTION_PAGE_SIZE = 5;
 const INACTIVE_OWNERS_RETURN_TO =
-  "/dashboard/smartrefill#smartrefill-inactive";
+  "/webapp/smartrefill#smartrefill-inactive";
 
 const TIMELINE_LABELS = {
   current: "Current",

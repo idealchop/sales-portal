@@ -3,14 +3,16 @@
 import {
   OUTREACH_BRAND_COLOR,
   OUTREACH_EMAIL_FROM,
+  OUTREACH_VISIBLE_CONTACT_EMAIL,
   SMART_REFILL_EMAIL_LOGO_SRC,
   buildOutreachMailto,
   escapeHtmlForEmail,
   firstNameFromDisplay,
   openOutreachMailto,
 } from "@/lib/email/outreach-email-shared";
+import { buildSmartRefillEmailLegalFooterRowHtml } from "@/lib/email/smartrefill-email-legal-footer";
 
-const SUPPORT_EMAIL = "support@riverph.com";
+const SUPPORT_EMAIL = OUTREACH_VISIBLE_CONTACT_EMAIL;
 
 export type LegacyStationEmailInput = {
   recipientName?: string | null;
@@ -74,7 +76,6 @@ export function buildLegacyStationText(
     "Warm regards,",
     "River Support Team",
     SUPPORT_EMAIL,
-    "https://riverph.com",
   );
 
   return lines.join("\n");
@@ -96,7 +97,6 @@ export function buildLegacyStationHtml(
     : `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">
         Nakita namin ang profile ninyo sa dating Smart Refill system.
       </p>`;
-  const year = new Date().getFullYear();
   const subject = escapeHtmlForEmail(buildLegacyStationSubject(input));
   const brand = OUTREACH_BRAND_COLOR;
 
@@ -169,16 +169,7 @@ export function buildLegacyStationHtml(
               </p>
             </td>
           </tr>
-          <tr>
-            <td style="padding:20px 28px 28px;border-top:1px solid #e2e8f0;background-color:#f8fafc;">
-              <p style="margin:0;font-size:13px;font-weight:600;color:#0f172a;">River Support Team</p>
-              <p style="margin:4px 0 0;font-size:12px;color:#64748b;">
-                <a href="mailto:${SUPPORT_EMAIL}" style="color:${brand};text-decoration:none;">${SUPPORT_EMAIL}</a>
-                · <a href="https://riverph.com" style="color:${brand};text-decoration:none;">riverph.com</a>
-              </p>
-              <p style="margin:12px 0 0;font-size:11px;color:#94a3b8;">© ${year} River Tech Inc. · Smart Refill</p>
-            </td>
-          </tr>
+          ${buildSmartRefillEmailLegalFooterRowHtml()}
         </table>
       </td>
     </tr>

@@ -71,7 +71,7 @@ All routes are mounted at the function root (no `/api` prefix).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes rules-based `dashboardForecasts`, `personalSales`, `todaysWork`, `lastContactedAt` on owners). **No Gemini.** Excludes owners with `authAccountTag: "test"` from station/user/login/MRR KPIs |
+| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes rules-based `dashboardForecasts`, `personalSales`, `todaysWork`, `lastContactedAt` on owners). **No Gemini.** Excludes owners with `authAccountTag: "test"` from station/user/login/MRR KPIs. `growthSalesMetrics.subscriptionOwners` is every production workspace for the Subscriptions tab; `activeOwners` stays the recently-active / live-plan subset |
 | `GET` | `/dashboard/smartrefill-old/analytics` | Portal | Legacy SmartRefill ops from `prod-smartrefill` (stations + charts) |
 | `GET` | `/dashboard/smartrefill-old/stations/:stationId` | Portal | Legacy station customers + paginated deliveries |
 | `POST` | `/dashboard/smartrefill-old/stations/:stationId/ignore` | Portal | Mark legacy station ignored (moves to Contacted / Ignored) |
@@ -188,9 +188,14 @@ All admin routes require **Bearer token**, **sales-portal access**, and **`admin
 | `DELETE` | `/admin/users/:uid` | Delete user (Auth + Firestore) |
 | `GET` | `/admin/data-management` | Businesses index for data management |
 | `POST` | `/admin/data-management/clone-to-demo` | Clone owner workspace into `demo@smartrefill.com` (wipes previous demo clone only) |
-| `GET` | `/admin/catalog-collections/:collectionId` | List subscription catalog docs |
-| `PUT` | `/admin/catalog-collections/:collectionId/documents` | Create/update catalog document |
-| `DELETE` | `/admin/catalog-collections/:collectionId/documents` | Delete catalog document |
+| `GET` | `/admin/catalog-collections/:collectionId` | List subscription catalog docs (admin) |
+| `PUT` | `/admin/catalog-collections/:collectionId/documents` | Save catalog document (admin; versioned collections save a **draft**) |
+| `DELETE` | `/admin/catalog-collections/:collectionId/documents` | Delete catalog document (blocked for versioned plan/trial docs) |
+| `GET` | `/dashboard/catalog-collections/:collectionId` | List catalog docs (all sales roles) |
+| `PUT` | `/dashboard/catalog-collections/:collectionId/documents` | Save draft (plans/trial) or direct upsert (addons/vouchers/icons) |
+| `POST` | `/dashboard/catalog-collections/:collectionId/documents/publish` | Publish draft; `effectiveAt` defaults to next Manila midnight |
+| `POST` | `/dashboard/catalog-collections/:collectionId/documents/deactivate` | Hide from new sales (`isActive: false`); never delete live plans |
+| `GET` | `/dashboard/catalog-collections/:collectionId/audit` | Who changed a catalog document |
 | `GET` | `/admin/businesses/:businessId/documents` | List business subcollection docs |
 | `GET` | `/admin/businesses/:businessId/transactions` | Business transactions |
 | `GET` | `/admin/businesses/:businessId/customers/:customerId/transactions` | Customer transactions |

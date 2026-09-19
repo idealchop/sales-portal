@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   NEW_USER_EMAIL_BCC,
-  NEW_USER_EMAIL_FROM,
   buildNewUserWelcomeHtml,
   buildNewUserWelcomeMailto,
   buildNewUserWelcomeSubject,
   buildNewUserWelcomeText,
 } from "@/lib/email/new-user-welcome-template";
-import { OUTREACH_EMAIL_BCC } from "@/lib/email/outreach-email-shared";
+import { OUTREACH_EMAIL_BCC, OUTREACH_VISIBLE_CONTACT_EMAIL } from "@/lib/email/outreach-email-shared";
 
 describe("new-user-welcome-template", () => {
   it("personalizes subject and body with first name", () => {
@@ -21,14 +20,14 @@ describe("new-user-welcome-template", () => {
     expect(text).toContain("mag-schedule");
     expect(text).toContain("regarding sa paggamit");
     expect(text).toContain("chat support");
-    expect(text).toContain(NEW_USER_EMAIL_FROM);
+    expect(text).toContain(OUTREACH_VISIBLE_CONTACT_EMAIL);
   });
 
   it("builds html with demo CTA and support sender", () => {
     const html = buildNewUserWelcomeHtml({ recipientName: "Juan" });
     expect(html).toContain("Hi Juan,");
     expect(html).toContain("Mag-schedule ng demo");
-    expect(html).toContain(NEW_USER_EMAIL_FROM);
+    expect(html).toContain(OUTREACH_VISIBLE_CONTACT_EMAIL);
     expect(html).toContain("River Support");
   });
 
@@ -39,7 +38,7 @@ describe("new-user-welcome-template", () => {
     expect(href.startsWith("mailto:user@example.com?")).toBe(true);
     expect(href).toContain("subject=");
     expect(href).toContain("body=");
-    expect(decodeURIComponent(href)).toContain(NEW_USER_EMAIL_FROM);
+    expect(decodeURIComponent(href)).toContain(OUTREACH_VISIBLE_CONTACT_EMAIL);
     for (const address of OUTREACH_EMAIL_BCC) {
       expect(decodeURIComponent(href)).toContain(address);
     }

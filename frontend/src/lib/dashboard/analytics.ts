@@ -281,6 +281,8 @@ export type GrowthSalesMetrics = {
   growth: DashboardMetric[];
   sales: DashboardMetric[];
   activeOwners: ActiveOwner[];
+  /** All production workspaces for billing ops. Falls back to activeOwners. */
+  subscriptionOwners?: ActiveOwner[];
 };
 
 export type AppFeedbackEntry = {
@@ -580,7 +582,28 @@ const EMPTY_GROWTH_SALES_METRICS: GrowthSalesMetrics = {
   growth: [],
   sales: [],
   activeOwners: [],
+  subscriptionOwners: [],
 };
+
+function normalizeGrowthSalesMetrics(
+  raw?: GrowthSalesMetrics | null,
+): GrowthSalesMetrics {
+  const metrics = raw ?? EMPTY_GROWTH_SALES_METRICS;
+  const activeOwners = metrics.activeOwners ?? [];
+  return {
+    ...metrics,
+    growth: metrics.growth ?? [],
+    sales: metrics.sales ?? [],
+    activeOwners,
+    subscriptionOwners: metrics.subscriptionOwners ?? activeOwners,
+  };
+}
+
+export function ownersForUserSubscriptions(
+  metrics: GrowthSalesMetrics,
+): ActiveOwner[] {
+  return metrics.subscriptionOwners ?? metrics.activeOwners;
+}
 
 const EMPTY_APP_FEEDBACK: AppFeedbackSummary = {
   totalCount: 0,
@@ -697,7 +720,7 @@ export function normalizeDashboardAnalytics(
     salesInsights: raw.salesInsights ?? EMPTY_SALES_INSIGHTS,
     proposalPipeline: raw.proposalPipeline ?? EMPTY_PROPOSAL_PIPELINE,
     appFeedback: raw.appFeedback ?? EMPTY_APP_FEEDBACK,
-    growthSalesMetrics: raw.growthSalesMetrics ?? EMPTY_GROWTH_SALES_METRICS,
+    growthSalesMetrics: normalizeGrowthSalesMetrics(raw.growthSalesMetrics),
     chartTimeSeries: raw.chartTimeSeries ?? EMPTY_CHART_TIME_SERIES,
     chartBusinessContext: (raw.chartBusinessContext ?? []).map((biz) => ({
       id: biz.id,

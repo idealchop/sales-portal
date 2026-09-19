@@ -1,5 +1,6 @@
-import { SmartRefillDashboard } from "@/features/dashboard/components/smartrefill-dashboard";
+import { redirect } from "next/navigation";
 
-export default function SmartRefillDashboardPage() {
-  return <SmartRefillDashboard />;
+/** Legacy path — SmartRefill ops lives at `/webapp/smartrefill`. */
+export default function SmartRefillDashboardRedirectPage() {
+  redirect("/webapp/smartrefill");
 }

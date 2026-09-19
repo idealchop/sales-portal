@@ -3,6 +3,7 @@ import {
   isPaymentPending,
   isUpgradeOpportunity,
 } from "./compute-sales-insights-helpers";
+import { isFreeForeverPlan } from "../utils/subscription-plan-codes";
 
 export type BusinessSnapshot = {
   id: string;
@@ -181,8 +182,12 @@ export function computeSalesInsights(input: {
         ownerEmail: snapshot.ownerEmail,
         actionType: "upgrade_opportunity",
         priority: "medium",
-        headline: "Upsell to Scale plan",
-        detail: `High usage on Starter (${snapshot.customers} customers, ${snapshot.transactionsLast30Days} tx/30d).`,
+        headline: isFreeForeverPlan(snapshot) ?
+          "Upsell from Free plan" :
+          "Upsell from Starter",
+        detail: isFreeForeverPlan(snapshot) ?
+          `High usage on Free (${snapshot.customers} customers, ${snapshot.transactionsLast30Days} tx/30d).` :
+          `High usage on Starter (${snapshot.customers} customers, ${snapshot.transactionsLast30Days} tx/30d).`,
         planName: snapshot.planName,
         customers: snapshot.customers,
         transactionsLast30Days: snapshot.transactionsLast30Days,

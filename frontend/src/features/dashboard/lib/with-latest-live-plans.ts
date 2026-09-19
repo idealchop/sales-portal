@@ -4,10 +4,11 @@ import type {
   DashboardAnalytics,
 } from "@/lib/dashboard/analytics";
 import { pickLatestCurrentPlanSubscription } from "@/features/dashboard/lib/build-user-subscriptions-list";
+import { isFreeForeverPlan } from "@/lib/dashboard/subscription-plan-codes";
 
 /**
  * Overlay each workspace with its latest current plan from activeOwners
- * (including free Starter — not the latest paid Scale left behind).
+ * (including Free — not the latest paid Scale left behind).
  */
 export function withLatestLivePlans(
   businesses: ChartBusinessContext[],
@@ -30,13 +31,14 @@ export function withLatestLivePlans(
       };
     }
 
+    const freeForever = isFreeForeverPlan(latest);
     return {
       ...biz,
       name: biz.name?.trim() || owner.businessName,
       ownerEmail: biz.ownerEmail?.trim() || owner.ownerEmail,
-      planName: latest.planName || biz.planName,
-      planCode: latest.planCode || biz.planCode,
-      price: Number(latest.price) || 0,
+      planName: freeForever ? "Free" : latest.planName || biz.planName,
+      planCode: freeForever ? "free" : latest.planCode || biz.planCode,
+      price: freeForever ? 0 : Number(latest.price) || 0,
       paymentStatus: latest.paymentStatus ?? biz.paymentStatus,
       billingCycle: latest.billingCycle ?? biz.billingCycle,
       subscriptionStatus: latest.status,

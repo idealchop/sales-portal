@@ -3,6 +3,9 @@ export const OUTREACH_SENDER = {
   email: "support@riverph.com",
 } as const;
 
+/** Visible reply-to in customer HTML/text. From address stays OUTREACH_SENDER. */
+export const OUTREACH_VISIBLE_CONTACT_EMAIL = "hello@smartrefill.io";
+
 /** Verified Brevo senders that sales can choose from. */
 export const OUTREACH_SENDER_OPTIONS = [
   { id: "support", name: "River Support", email: "support@riverph.com" },

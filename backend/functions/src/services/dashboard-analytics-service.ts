@@ -40,6 +40,7 @@ import {
 } from "./compute-sales-insights";
 import { classifyHealthForSnapshot } from "./compute-sales-insights-helpers";
 import { mapOwnerSubscriptions, pickLatestCurrentPlanSubscription } from "./map-owner-subscriptions";
+import { isFreeForeverPlan } from "../utils/subscription-plan-codes";
 import {
   buildDailyCountSeries,
   buildLoginDailySeries,
@@ -505,15 +506,22 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
       let billingCycle: string | undefined;
       let price = 0;
       if (currentSubscription) {
-        planName =
-          currentSubscription.planName ||
-          currentSubscription.planCode ||
-          "Unknown";
-        planCode = currentSubscription.planCode;
+        const freeForever = isFreeForeverPlan(currentSubscription);
+        if (freeForever) {
+          planName = "Free";
+          planCode = "free";
+          price = 0;
+        } else {
+          planName =
+            currentSubscription.planName ||
+            currentSubscription.planCode ||
+            "Unknown";
+          planCode = currentSubscription.planCode;
+          price = Number(currentSubscription.price || 0);
+        }
         subscriptionStatus = currentSubscription.status;
         paymentStatus = currentSubscription.paymentStatus;
         billingCycle = currentSubscription.billingCycle;
-        price = Number(currentSubscription.price || 0);
       } else if (!subscriptionsSnap.empty) {
         const sub = subscriptionsSnap.docs[0].data();
         planName = String(sub.planName || sub.planCode || "Unknown");
@@ -924,7 +932,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     createdAt: toDate(doc.data().createdAt),
   }));
 
-  const { growth, activeOwners } = computeGrowthSalesMetrics({
+  const { growth, activeOwners, subscriptionOwners } = computeGrowthSalesMetrics({
     businesses: businessSnapshots,
     ownerLastActive,
     testAccountOwnerIds,
@@ -979,6 +987,7 @@ export async function fetchDashboardAnalytics(): Promise<DashboardAnalytics> {
     growth,
     sales: behavioral.sales,
     activeOwners,
+    subscriptionOwners,
   };
 
   const chartTimeSeries: ChartTimeSeries = {

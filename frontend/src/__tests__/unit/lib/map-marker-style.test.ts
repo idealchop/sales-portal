@@ -47,7 +47,34 @@ describe("filterLocationsByMapMarkerTiers", () => {
     expect(resolveMapMarkerTier(rows[1])).toBe("inactive");
   });
 
-  it("classifies billing trial as free trial even on scale plan", () => {
+  it("classifies Grow, Free, Starter, and Scale trial", () => {
+    expect(
+      resolveMapMarkerTier(
+        location({
+          id: "grow-1",
+          planCode: "grow",
+          lastActiveDay: "2099-01-01",
+        }),
+      ),
+    ).toBe("growth");
+    expect(
+      resolveMapMarkerTier(
+        location({
+          id: "free-1",
+          planCode: "free",
+          lastActiveDay: "2099-01-01",
+        }),
+      ),
+    ).toBe("free");
+    expect(
+      resolveMapMarkerTier(
+        location({
+          id: "starter-1",
+          planCode: "starter",
+          lastActiveDay: "2099-01-01",
+        }),
+      ),
+    ).toBe("starter");
     expect(
       resolveMapMarkerTier(
         location({

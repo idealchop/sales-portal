@@ -35,7 +35,12 @@ describe("resolveStarterUpsellTarget", () => {
       biz({ id: "s1", planName: "Scale", price: 1999 }),
       biz({ id: "s2", planName: "Scale", price: 1710 }),
       biz({ id: "s3", planName: "Scale", price: 1650 }),
-      biz({ id: "st", planName: "Starter", price: 0 }),
+      biz({
+        id: "st",
+        planName: "Free",
+        planCode: "free",
+        price: 0,
+      }),
     ]);
 
     expect(target).toEqual({
@@ -53,16 +58,26 @@ describe("computeStarterPotentialLost", () => {
       biz({
         id: "a",
         name: "Aqua Station",
-        planName: "Starter",
+        planName: "Free",
+        planCode: "free",
         price: 0,
-        customers: 25,
+        customers: 100,
       }),
       biz({
         id: "b",
         name: "Blue Refill",
-        planName: "Starter",
+        planName: "Free",
+        planCode: "free",
         price: 0,
         customers: 2,
+      }),
+      biz({
+        id: "paid-starter",
+        name: "Paid Starter",
+        planName: "Starter",
+        planCode: "starter",
+        price: 399,
+        customers: 200,
       }),
     ]);
 
@@ -75,5 +90,6 @@ describe("computeStarterPotentialLost", () => {
       isUpsellReady: true,
     });
     expect(summary.rows[1].label).toBe("Blue Refill");
+    expect(summary.rows.some((row) => row.label === "Paid Starter")).toBe(false);
   });
 });

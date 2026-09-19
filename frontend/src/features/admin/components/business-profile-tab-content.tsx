@@ -113,6 +113,7 @@ export function BusinessProfileTabContent({
         count={insightsStatCount}
       >
         <BusinessInsightsSection
+          businessId={businessId}
           documents={documents}
           collectionCounts={collectionCounts}
           transactions={transactions}

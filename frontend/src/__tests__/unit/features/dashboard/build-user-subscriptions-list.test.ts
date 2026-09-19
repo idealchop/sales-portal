@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildUserSubscriptionKpis,
   buildUserSubscriptionsList,
   countActiveSubscriptions,
   countUserSubscriptionsByFilter,
   filterUserSubscriptionsList,
+  filterUserSubscriptionsOps,
   isPendingPaymentSubscription,
   isRecentlyPaidSubscription,
   pickLatestSubscription,
@@ -27,7 +29,7 @@ const owner = (
 });
 
 describe("buildUserSubscriptionsList", () => {
-  it("includes only the latest active subscription summary per business", () => {
+  it("includes the latest current plan, not a scheduled future change", () => {
     const items = buildUserSubscriptionsList([
       owner("b1", [
         {
@@ -70,14 +72,51 @@ describe("buildUserSubscriptionsList", () => {
     ]);
 
     expect(items).toHaveLength(1);
-    // Newest active (future scheduled counts as active) wins over older current.
-    expect(items[0]?.subscription.id).toBe("future");
+    expect(items[0]?.subscription.id).toBe("current");
     expect(items[0]?.activeSubscriptionCount).toBe(2);
     expect(items[0]?.history.map((sub) => sub.id)).toEqual([
       "future",
       "current",
       "past",
     ]);
+  });
+
+  it("uses a newer Free row over an older Scale still marked active", () => {
+    const items = buildUserSubscriptionsList([
+      owner("oceanus", [
+        {
+          id: "old-scale",
+          planName: "Scale",
+          planCode: "scale",
+          status: "active",
+          price: 0,
+          timeline: "current",
+          cancelAtPeriodEnd: false,
+          needsApproval: false,
+          isDowngrade: false,
+          isCancellation: false,
+          billingCycle: "monthly",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          activatedAt: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          id: "new-free",
+          planName: "Free",
+          planCode: "free",
+          status: "active",
+          price: 0,
+          timeline: "current",
+          cancelAtPeriodEnd: false,
+          needsApproval: false,
+          isDowngrade: false,
+          isCancellation: false,
+          createdAt: "2026-09-13T00:00:00.000Z",
+          activatedAt: "2026-09-13T00:00:00.000Z",
+        },
+      ]),
+    ]);
+
+    expect(items[0]?.subscription.id).toBe("new-free");
   });
 
   it("prefers a newer renewal over an expired current plan", () => {
@@ -400,9 +439,9 @@ describe("buildUserSubscriptionsList", () => {
         {
           id: "upgrade",
           planName: "Scale",
-          status: "pending",
+          status: "active",
           price: 999,
-          timeline: "future",
+          timeline: "current",
           cancelAtPeriodEnd: false,
           needsApproval: true,
           isDowngrade: false,
@@ -607,3 +646,157 @@ describe("buildUserSubscriptionsList", () => {
     expect(items.find((i) => i.businessId === "paid-biz")?.justPaid).toBe(true);
   });
 });
+
+describe("subscription ops KPIs, filters, and groupings", () => {
+  const now = new Date("2026-09-20T00:00:00.000Z").getTime();
+
+  it("groups voucher Scale, grace, trial, and paying Grow", () => {
+    const items = buildUserSubscriptionsList(
+      [
+        {
+          ...owner("oceanus", [
+            {
+              id: "scale-voucher",
+              planName: "Scale",
+              planCode: "scale",
+              status: "active",
+              price: 0,
+              timeline: "current",
+              cancelAtPeriodEnd: false,
+              needsApproval: false,
+              isDowngrade: false,
+              isCancellation: false,
+              billingCycle: "monthly",
+              paymentStatus: "verified",
+              createdAt: "2026-09-13T00:00:00.000Z",
+              expiresAt: "2026-10-13T00:00:00.000Z",
+            },
+          ]),
+          ownerEmail: "jayvee@riverph.com",
+        },
+        owner("danum", [
+          {
+            id: "scale-grace",
+            planName: "Scale",
+            planCode: "scale",
+            status: "grace_period",
+            price: 1650,
+            timeline: "current",
+            cancelAtPeriodEnd: false,
+            needsApproval: false,
+            isDowngrade: false,
+            isCancellation: false,
+            billingCycle: "monthly",
+            createdAt: "2026-08-13T00:00:00.000Z",
+            expiresAt: "2026-09-13T00:00:00.000Z",
+          },
+        ]),
+        owner("keith", [
+          {
+            id: "trial",
+            planName: "Scale",
+            planCode: "scale",
+            status: "active",
+            price: 0,
+            timeline: "current",
+            cancelAtPeriodEnd: false,
+            needsApproval: false,
+            isDowngrade: false,
+            isCancellation: false,
+            billingCycle: "trial",
+            createdAt: "2026-09-18T00:00:00.000Z",
+            expiresAt: "2026-10-03T00:00:00.000Z",
+          },
+        ]),
+        owner("hydro", [
+          {
+            id: "grow",
+            planName: "Grow",
+            planCode: "grow",
+            status: "active",
+            price: 950,
+            timeline: "current",
+            cancelAtPeriodEnd: false,
+            needsApproval: false,
+            isDowngrade: false,
+            isCancellation: false,
+            billingCycle: "monthly",
+            paymentStatus: "verified",
+            createdAt: "2026-08-31T00:00:00.000Z",
+            expiresAt: "2026-10-01T00:00:00.000Z",
+          },
+        ]),
+      ],
+      now,
+    );
+
+    expect(items.map((item) => [item.businessId, item.opsBucket])).toEqual([
+      ["danum", "attention"],
+      ["hydro", "paying"],
+      ["oceanus", "voucher"],
+      ["keith", "trial"],
+    ]);
+
+    const kpis = buildUserSubscriptionKpis(items);
+    expect(kpis).toMatchObject({
+      paying: 1,
+      voucher: 1,
+      trial: 1,
+      attention: 1,
+      monthlyBilled: 950,
+    });
+
+    expect(
+      filterUserSubscriptionsOps(items, { bucket: "voucher" }).map(
+        (item) => item.businessId,
+      ),
+    ).toEqual(["oceanus"]);
+    expect(
+      filterUserSubscriptionsOps(items, { plan: "grow" }).map(
+        (item) => item.businessId,
+      ),
+    ).toEqual(["hydro"]);
+    expect(
+      filterUserSubscriptionsOps(items, { search: "jayvee" }).map(
+        (item) => item.businessId,
+      ),
+    ).toEqual(["oceanus"]);
+  });
+
+  it("keeps expired and empty-history workspaces in the Ended group", () => {
+    const now = new Date("2026-09-20T00:00:00.000Z").getTime();
+    const items = buildUserSubscriptionsList(
+      [
+        owner("lapsed", [
+          {
+            id: "old-scale",
+            planName: "Scale",
+            planCode: "scale",
+            status: "active",
+            price: 1650,
+            timeline: "current",
+            cancelAtPeriodEnd: false,
+            needsApproval: false,
+            isDowngrade: false,
+            isCancellation: false,
+            billingCycle: "monthly",
+            createdAt: "2026-07-01T00:00:00.000Z",
+            expiresAt: "2026-08-01T00:00:00.000Z",
+          },
+        ]),
+        owner("never", []),
+      ],
+      now,
+    );
+
+    expect(items.map((item) => [item.businessId, item.opsBucket])).toEqual([
+      ["lapsed", "ended"],
+      ["never", "ended"],
+    ]);
+    expect(buildUserSubscriptionKpis(items).ended).toBe(2);
+    expect(items.find((item) => item.businessId === "lapsed")?.isExpired).toBe(
+      true,
+    );
+  });
+});
+

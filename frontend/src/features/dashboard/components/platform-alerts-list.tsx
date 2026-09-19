@@ -87,7 +87,7 @@ const ALERT_KIND_ORDER: PlatformAlertKind[] = [
 
 const ALERTS_PAGE_SIZE_OPTIONS = [5, 8, 10, 15, 20, 25] as const;
 const DEFAULT_ALERTS_PAGE_SIZE = 10;
-const ALERTS_RETURN_TO = "/dashboard/smartrefill#smartrefill-alerts";
+const ALERTS_RETURN_TO = "/webapp/smartrefill#smartrefill-alerts";
 
 type AlertKindFilter = PlatformAlertKind | "all";
 type AlertsPageSize = (typeof ALERTS_PAGE_SIZE_OPTIONS)[number];

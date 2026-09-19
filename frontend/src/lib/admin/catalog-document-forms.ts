@@ -6,15 +6,52 @@ import {
   validatePlanLimitationsForm,
   type PlanLimitationsFormValues,
 } from "@/lib/admin/plan-limitations-form";
+import { defaultPlanSortOrder } from "@/lib/admin/plan-catalog-display";
+import { ADDON_PRESETS } from "@/lib/admin/catalog-offer-display";
+import {
+  lookupSubscriptionPlanCatalogRow,
+  SUBSCRIPTION_PLAN_CATALOG_HINT,
+} from "@/lib/admin/subscription-plans-catalog";
+
+export type PlanCapabilitiesForm = {
+  map: "full" | "locate_only";
+  teamHub: boolean;
+  teamHubAdmins: boolean;
+  directoryStaff: boolean;
+  scalePlatform: boolean;
+  qrPortal: boolean;
+  riverAiBuddy: boolean;
+  selfServe: boolean;
+  showOnPricing: boolean;
+};
 
 export type PlanFormValues = {
   documentId: string;
   name: string;
   code: string;
+  description: string;
   monthlyPrice: string;
   yearlyPrice: string;
   isActive: boolean;
+  sortOrder: string;
+  effectiveAt: string;
+  capabilities: PlanCapabilitiesForm;
   limitations: PlanLimitationsFormValues;
+};
+
+export type TrialPolicyFormValues = {
+  documentId: string;
+  enabled: boolean;
+  durationDays: string;
+  basedOnPlanCode: string;
+  fallbackPlanCode: string;
+  teamChatPreviewDays: string;
+  pauseAllowed: boolean;
+  oneTrialPerBusiness: boolean;
+  isActive: boolean;
+  effectiveAt: string;
+  riverAiChatMax: string;
+  riverAiAttachmentsMax: string;
 };
 
 export type AddonFormValues = {
@@ -78,7 +115,8 @@ export type CatalogFormValues =
       collectionId: "vouchers_affiliates";
       values: VoucherAffiliateFormValues;
     }
-  | { collectionId: "product_icons"; values: ProductIconFormValues };
+  | { collectionId: "product_icons"; values: ProductIconFormValues }
+  | { collectionId: "subscription_trial_policy"; values: TrialPolicyFormValues };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ?
@@ -131,15 +169,50 @@ function fromDatetimeLocal(value: string): string | undefined {
   return date.toISOString();
 }
 
+function emptyCapabilities(): PlanCapabilitiesForm {
+  return {
+    map: "locate_only",
+    teamHub: false,
+    teamHubAdmins: false,
+    directoryStaff: false,
+    scalePlatform: false,
+    qrPortal: false,
+    riverAiBuddy: false,
+    selfServe: true,
+    showOnPricing: true,
+  };
+}
+
 function emptyPlanForm(): PlanFormValues {
   return {
     documentId: "",
     name: "",
     code: "",
+    description: "",
     monthlyPrice: "",
     yearlyPrice: "",
     isActive: true,
+    sortOrder: "100",
+    effectiveAt: "",
+    capabilities: emptyCapabilities(),
     limitations: emptyPlanLimitationsForm(),
+  };
+}
+
+function emptyTrialPolicyForm(): TrialPolicyFormValues {
+  return {
+    documentId: "current",
+    enabled: true,
+    durationDays: "15",
+    basedOnPlanCode: "scale",
+    fallbackPlanCode: "free",
+    teamChatPreviewDays: "3",
+    pauseAllowed: true,
+    oneTrialPerBusiness: true,
+    isActive: true,
+    effectiveAt: "",
+    riverAiChatMax: "5",
+    riverAiAttachmentsMax: "5",
   };
 }
 
@@ -214,7 +287,47 @@ export function emptyCatalogFormValues(
   if (collectionId === "product_icons") {
     return { collectionId, values: emptyProductIconForm() };
   }
+  if (collectionId === "subscription_trial_policy") {
+    return { collectionId, values: emptyTrialPolicyForm() };
+  }
   return { collectionId, values: emptyVoucherAffiliateForm() };
+}
+
+function capabilitiesFromData(data: Record<string, unknown>, code: string): PlanCapabilitiesForm {
+  const caps = asRecord(data.capabilities) || {};
+  const grow = code === "grow" || code === "pro";
+  const scale = code === "scale" || code === "enterprise";
+  return {
+    map:
+      caps.map === "full" || caps.map === "locate_only" ?
+        caps.map
+      : grow || scale ? "full"
+      : "locate_only",
+    teamHub: typeof caps.teamHub === "boolean" ? caps.teamHub : grow || scale,
+    teamHubAdmins:
+      typeof caps.teamHubAdmins === "boolean" ? caps.teamHubAdmins : scale,
+    directoryStaff:
+      typeof caps.directoryStaff === "boolean" ? caps.directoryStaff : scale,
+    scalePlatform:
+      typeof caps.scalePlatform === "boolean" ? caps.scalePlatform : scale,
+    qrPortal:
+      typeof caps.qrPortal === "boolean" ? caps.qrPortal : code !== "free",
+    riverAiBuddy:
+      typeof caps.riverAiBuddy === "boolean" ? caps.riverAiBuddy : scale,
+    selfServe:
+      typeof caps.selfServe === "boolean" ? caps.selfServe
+      : data.selfServe === false ? false
+      : code !== "enterprise",
+    showOnPricing:
+      typeof caps.showOnPricing === "boolean" ? caps.showOnPricing
+      : data.showOnPricing === false ? false
+      : code !== "enterprise",
+  };
+}
+
+function sourceDocumentData(data: Record<string, unknown>): Record<string, unknown> {
+  const draft = asRecord(data.draft);
+  return draft ? { ...data, ...draft } : data;
 }
 
 export function catalogFormValuesFromDocument(
@@ -222,20 +335,26 @@ export function catalogFormValuesFromDocument(
   documentId: string,
   data: Record<string, unknown>,
 ): CatalogFormValues {
+  const source = sourceDocumentData(data);
   if (collectionId === "subscription_plans") {
-    const pricing = asRecord(data.pricing);
+    const pricing = asRecord(source.pricing);
+    const code = readString(source.code);
 
     return {
       collectionId,
       values: {
         documentId,
-        name: readString(data.name),
-        code: readString(data.code),
+        name: readString(source.name),
+        code,
+        description: readString(source.description),
         monthlyPrice:
           pricing?.monthly !== undefined ? String(pricing.monthly) : "",
         yearlyPrice: pricing?.yearly !== undefined ? String(pricing.yearly) : "",
-        isActive: data.isActive !== false,
-        limitations: planLimitationsFormFromFirestore(data.limitations),
+        isActive: source.isActive !== false,
+        sortOrder: source.sortOrder !== undefined ? String(source.sortOrder) : "100",
+        effectiveAt: toDatetimeLocal(source.effectiveAt || data.effectiveAt),
+        capabilities: capabilitiesFromData(source, code),
+        limitations: planLimitationsFormFromFirestore(source.limitations),
       },
     };
   }
@@ -281,6 +400,37 @@ export function catalogFormValuesFromDocument(
         sortOrder: data.sortOrder !== undefined ? String(data.sortOrder) : "10",
         active: data.active !== false,
         waterContainer: data.waterContainer === true,
+      },
+    };
+  }
+
+  if (collectionId === "subscription_trial_policy") {
+    const overlay = asRecord(source.overlayLimitations);
+    const support = asRecord(overlay?.support);
+    const trial = asRecord(support?.trial);
+    const chat = asRecord(trial?.chat);
+    const attachments = asRecord(trial?.attachments);
+    return {
+      collectionId,
+      values: {
+        documentId,
+        enabled: source.enabled !== false,
+        durationDays:
+          source.durationDays !== undefined ? String(source.durationDays) : "15",
+        basedOnPlanCode: readString(source.basedOnPlanCode) || "scale",
+        fallbackPlanCode: readString(source.fallbackPlanCode) || "free",
+        teamChatPreviewDays:
+          source.teamChatPreviewDays !== undefined ?
+            String(source.teamChatPreviewDays)
+          : "3",
+        pauseAllowed: source.pauseAllowed !== false,
+        oneTrialPerBusiness: source.oneTrialPerBusiness !== false,
+        isActive: source.isActive !== false,
+        effectiveAt: toDatetimeLocal(source.effectiveAt || data.effectiveAt),
+        riverAiChatMax:
+          chat?.max !== undefined ? String(chat.max) : "5",
+        riverAiAttachmentsMax:
+          attachments?.max !== undefined ? String(attachments.max) : "5",
       },
     };
   }
@@ -332,12 +482,47 @@ function buildPlanPayload(
     ...existing,
     name: values.name.trim(),
     code: values.code.trim().toLowerCase(),
+    description: values.description.trim() || undefined,
     pricing: {
       monthly: readNumber(values.monthlyPrice) ?? 0,
       yearly: readNumber(values.yearlyPrice) ?? 0,
     },
     limitations: planLimitationsToFirestore(values.limitations),
     isActive: values.isActive,
+    sortOrder: readNumber(values.sortOrder) ?? 100,
+    selfServe: values.capabilities.selfServe,
+    showOnPricing: values.capabilities.showOnPricing,
+    capabilities: values.capabilities,
+    effectiveAt: fromDatetimeLocal(values.effectiveAt),
+  };
+}
+
+function buildTrialPolicyPayload(
+  values: TrialPolicyFormValues,
+  existing?: Record<string, unknown>,
+): Record<string, unknown> {
+  const chatMax = readNumber(values.riverAiChatMax) ?? 5;
+  const attachMax = readNumber(values.riverAiAttachmentsMax) ?? 5;
+  return {
+    ...existing,
+    enabled: values.enabled,
+    durationDays: readNumber(values.durationDays) ?? 15,
+    basedOnPlanCode: values.basedOnPlanCode.trim().toLowerCase() || "scale",
+    fallbackPlanCode: values.fallbackPlanCode.trim().toLowerCase() || "free",
+    teamChatPreviewDays: readNumber(values.teamChatPreviewDays) ?? 3,
+    pauseAllowed: values.pauseAllowed,
+    oneTrialPerBusiness: values.oneTrialPerBusiness,
+    isActive: values.isActive,
+    effectiveAt: fromDatetimeLocal(values.effectiveAt),
+    overlayLimitations: {
+      support: {
+        trial: {
+          chat: { max: chatMax, frequency: "daily" },
+          attachments: { enabled: true, max: attachMax, frequency: "daily" },
+          agentChat: true,
+        },
+      },
+    },
   };
 }
 
@@ -452,49 +637,134 @@ export function catalogDocumentPayloadFromForm(
   if (form.collectionId === "product_icons") {
     return buildProductIconPayload(form.values, existing);
   }
+  if (form.collectionId === "subscription_trial_policy") {
+    return buildTrialPolicyPayload(form.values, existing);
+  }
   return buildVoucherAffiliatePayload(form.values, existing);
+}
+
+function slugDocumentId(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
 export function validateCatalogForm(form: CatalogFormValues): string | null {
   if (form.collectionId === "subscription_plans") {
-    const { documentId, name, code, limitations } = form.values;
-    if (!documentId.trim()) return "Document id is required.";
+    const { name, code, limitations } = form.values;
     if (!name.trim()) return "Plan name is required.";
-    if (!code.trim()) return "Plan code is required.";
+    if (!code.trim()) return "Choose a plan type.";
+    if (!catalogFormDocumentId(form)) return "Plan name is required.";
     return validatePlanLimitationsForm(limitations);
   }
 
+  if (form.collectionId === "subscription_trial_policy") {
+    const { durationDays, basedOnPlanCode } = form.values;
+    if (!durationDays.trim()) return "How many days should the trial last?";
+    if (!basedOnPlanCode.trim()) return "Choose which plan the trial copies.";
+    return null;
+  }
+
   if (form.collectionId === "subscription_addons") {
-    const { documentId, code, name } = form.values;
-    if (!documentId.trim()) return "Document id is required.";
-    if (!code.trim()) return "Add-on code is required.";
+    const { code, name } = form.values;
     if (!name.trim()) return "Add-on name is required.";
+    if (!code.trim()) return "Give this add-on a short code, like EXT_RIDER.";
     return null;
   }
 
   if (form.collectionId === "product_icons") {
-    const { documentId, name, imageUrl, lucide } = form.values;
-    if (!documentId.trim()) return "Document id is required.";
+    const { name, imageUrl, lucide } = form.values;
     if (!name.trim()) return "Icon name is required.";
     if (!imageUrl.trim() && !lucide.trim()) {
-      return "Provide an image URL or a Lucide icon name.";
+      return "Add an image URL or a Lucide icon name so stations can see it.";
     }
     return null;
   }
 
-  const { documentId, code, name, kind } = form.values;
-  if (!documentId.trim()) return "Document id is required.";
-  if (!code.trim()) return "Code is required.";
+  const { code, name, kind } = form.values;
+  if (!code.trim()) return "What should people type at checkout?";
   if (!name.trim()) return "Name is required.";
   if (kind === "voucher" && !form.values.discountValue.trim()) {
-    return "Discount value is required for vouchers.";
+    return "How much is the discount?";
   }
   if (kind === "affiliate" && !form.values.commissionValue.trim()) {
-    return "Commission value is required for affiliates.";
+    return "How much does the partner earn?";
   }
   return null;
 }
 
 export function catalogFormDocumentId(form: CatalogFormValues): string {
-  return form.values.documentId.trim();
+  const existing = form.values.documentId.trim();
+  if (existing) return existing;
+  if (form.collectionId === "subscription_trial_policy") return "current";
+  if (form.collectionId === "subscription_plans") {
+    const code = slugDocumentId(form.values.code);
+    return code ? `plan_${code}` : "";
+  }
+  if (form.collectionId === "subscription_addons") {
+    const code = slugDocumentId(form.values.code);
+    return code ? `addon_${code}` : "";
+  }
+  if (form.collectionId === "vouchers_affiliates") {
+    const code = slugDocumentId(form.values.code);
+    if (!code) return "";
+    return form.values.kind === "affiliate" ? `affiliate_${code}` : `voucher_${code}`;
+  }
+  if (form.collectionId === "product_icons") {
+    return slugDocumentId(form.values.name || form.values.documentId);
+  }
+  return "";
 }
+
+export function applySubscriptionPlanCatalogDefaults(
+  values: PlanFormValues,
+): PlanFormValues | null {
+  const row = lookupSubscriptionPlanCatalogRow(values.code);
+  if (!row) return null;
+  return {
+    ...values,
+    documentId: values.documentId.trim() || `plan_${row.code}`,
+    name: row.name,
+    code: row.code,
+    monthlyPrice: String(row.pricing.monthly),
+    yearlyPrice: String(row.pricing.yearly),
+    sortOrder: defaultPlanSortOrder(row.code),
+    limitations: planLimitationsFormFromFirestore(row.limitations),
+    capabilities: capabilitiesFromData(row as unknown as Record<string, unknown>, row.code),
+  };
+}
+
+export function applyAddonPreset(values: AddonFormValues, code: string): AddonFormValues | null {
+  const preset = ADDON_PRESETS.find((row) => row.code === code);
+  if (!preset) return null;
+  return {
+    ...values,
+    documentId: values.documentId.trim() || `addon_${slugDocumentId(preset.code)}`,
+    code: preset.code,
+    name: preset.name,
+    description: preset.description,
+    price: preset.price,
+    unit: preset.unit,
+    billingModel: preset.billingModel,
+    billingInterval: preset.billingInterval,
+    featureKey: preset.featureKey,
+    extendsPlanLimitation: preset.extendsPlanLimitation,
+    applicablePlanCodes: preset.applicablePlanCodes,
+    maxUnitsPerBusiness: preset.maxUnitsPerBusiness,
+    trialEligible: preset.trialEligible,
+    sortOrder: preset.sortOrder,
+    isActive: true,
+    currency: "PHP",
+  };
+}
+
+export function filledPlanFormForCode(code: string): PlanFormValues | null {
+  return applySubscriptionPlanCatalogDefaults({
+    ...emptyPlanForm(),
+    code,
+  });
+}
+
+export { SUBSCRIPTION_PLAN_CATALOG_HINT };

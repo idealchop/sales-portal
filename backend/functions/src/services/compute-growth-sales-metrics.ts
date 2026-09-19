@@ -76,6 +76,8 @@ export type GrowthSalesMetrics = {
   growth: DashboardMetric[];
   sales: DashboardMetric[];
   activeOwners: ActiveOwner[];
+  /** All production workspaces (any billing history), for Subscriptions ops. */
+  subscriptionOwners: ActiveOwner[];
 };
 
 type UsageRow = { name: string; sessions: number; uniqueUsers: number };
@@ -117,7 +119,11 @@ export function computeGrowthSalesMetrics(input: {
   subscriptionsByBusiness: Map<string, OwnerSubscription[]>;
   virtualStaffCounts: { admins: number; riders: number };
   testAccountOwnerIds?: ReadonlySet<string>;
-}): { growth: DashboardMetric[]; activeOwners: ActiveOwner[] } {
+}): {
+  growth: DashboardMetric[];
+  activeOwners: ActiveOwner[];
+  subscriptionOwners: ActiveOwner[];
+} {
   const {
     businesses,
     ownerLastActive,
@@ -331,9 +337,45 @@ export function computeGrowthSalesMetrics(input: {
     },
   ];
 
-  const activeOwners: ActiveOwner[] = businesses
+  const toOwner = (b: BusinessSnapshot): ActiveOwner => {
+    const subscriptions = subscriptionsByBusiness.get(b.id) ?? [];
+    return {
+      id: b.id,
+      ownerId: b.ownerId,
+      businessName: b.name,
+      ownerEmail: b.ownerEmail,
+      planName: b.planName,
+      customers: b.customers,
+      transactionsLast30Days: b.transactionsLast30Days,
+      healthTier: healthTier(b),
+      paymentStatus: b.paymentStatus,
+      onboardingComplete: b.onboardingComplete,
+      address: b.address,
+      lastActiveDay: b.ownerId ? ownerLastActive.get(b.ownerId) : undefined,
+      monthlyRevenue: b.price,
+      subscriptions,
+      pendingApprovals: subscriptions.filter((sub) => sub.needsApproval).length,
+      authAccountTag:
+        b.ownerId && testAccountOwnerIds?.has(b.ownerId) ? "test" as const : null,
+    };
+  };
+
+  const sortOwners = (a: ActiveOwner, b: ActiveOwner) => {
+    const dayA = a.lastActiveDay || "";
+    const dayB = b.lastActiveDay || "";
+    if (dayA !== dayB) return dayB.localeCompare(dayA);
+    return b.transactionsLast30Days - a.transactionsLast30Days;
+  };
+
+  const productionBusinesses = businesses.filter((b) => {
+    if (b.ownerId && testAccountOwnerIds?.has(b.ownerId)) return false;
+    return true;
+  });
+
+  const subscriptionOwners = productionBusinesses.map(toOwner).sort(sortOwners);
+
+  const activeOwners = productionBusinesses
     .filter((b) => {
-      if (b.ownerId && testAccountOwnerIds?.has(b.ownerId)) return false;
       const lastActive = b.ownerId ?
         ownerLastActive.get(b.ownerId) :
         undefined;
@@ -343,34 +385,8 @@ export function computeGrowthSalesMetrics(input: {
       const activeSub = b.subscriptionStatus === "active";
       return recentlyActive || activeSub;
     })
-    .map((b) => {
-      const subscriptions = subscriptionsByBusiness.get(b.id) ?? [];
-      return {
-        id: b.id,
-        ownerId: b.ownerId,
-        businessName: b.name,
-        ownerEmail: b.ownerEmail,
-        planName: b.planName,
-        customers: b.customers,
-        transactionsLast30Days: b.transactionsLast30Days,
-        healthTier: healthTier(b),
-        paymentStatus: b.paymentStatus,
-        onboardingComplete: b.onboardingComplete,
-        address: b.address,
-        lastActiveDay: b.ownerId ? ownerLastActive.get(b.ownerId) : undefined,
-        monthlyRevenue: b.price,
-        subscriptions,
-        pendingApprovals: subscriptions.filter((sub) => sub.needsApproval).length,
-        authAccountTag:
-          b.ownerId && testAccountOwnerIds?.has(b.ownerId) ? "test" as const : null,
-      };
-    })
-    .sort((a, b) => {
-      const dayA = a.lastActiveDay || "";
-      const dayB = b.lastActiveDay || "";
-      if (dayA !== dayB) return dayB.localeCompare(dayA);
-      return b.transactionsLast30Days - a.transactionsLast30Days;
-    });
+    .map(toOwner)
+    .sort(sortOwners);
 
-  return { growth, activeOwners };
+  return { growth, activeOwners, subscriptionOwners };
 }

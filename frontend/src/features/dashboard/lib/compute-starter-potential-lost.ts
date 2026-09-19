@@ -1,4 +1,5 @@
 import type { ChartBusinessContext } from "@/lib/dashboard/analytics";
+import { isFreeForeverPlan } from "@/lib/dashboard/subscription-plan-codes";
 
 export type StarterPotentialLostRow = {
   id: string;
@@ -31,7 +32,7 @@ function planKey(biz: ChartBusinessContext): string {
 }
 
 export function isStarterPlan(biz: ChartBusinessContext): boolean {
-  return planKey(biz).includes("starter");
+  return isFreeForeverPlan(biz);
 }
 
 function isScalePlan(biz: ChartBusinessContext): boolean {
@@ -44,7 +45,7 @@ function isGrowthPlan(biz: ChartBusinessContext): boolean {
 
 export function isStarterUpsellReady(biz: ChartBusinessContext): boolean {
   if (!isStarterPlan(biz)) return false;
-  return biz.customers >= 20 || biz.transactionsLast30Days >= 30;
+  return biz.customers >= 80 || biz.transactionsLast30Days >= 40;
 }
 
 /** Most common positive price; ties prefer the lower (list-like) amount. */
@@ -114,7 +115,7 @@ export function computeStarterPotentialLost(
           biz.name?.trim() ||
           (biz.id ? `Workspace ${biz.id.slice(0, 8)}` : "") ||
           biz.planName ||
-          "Starter workspace",
+          "Free workspace",
         ownerEmail: biz.ownerEmail?.trim() || undefined,
         currentMrr: biz.price,
         targetMrr: targetPrice,

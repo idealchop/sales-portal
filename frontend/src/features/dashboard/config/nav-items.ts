@@ -36,13 +36,13 @@ export const DASHBOARD_NAV: NavItem[] = [
     maintenance: false,
   },
   {
-    href: "/dashboard/smartrefill",
+    href: "/webapp/smartrefill",
     label: "Web apps",
     icon: AppWindow,
     roles: ["sales", "manager", "admin"],
     maintenance: false,
     children: [
-      { href: "/dashboard/smartrefill", label: "SmartRefill" },
+      { href: "/webapp/smartrefill", label: "SmartRefill" },
       { href: "/dashboard/smartrefill-old", label: "SmartRefill (legacy)" },
     ],
   },
@@ -65,16 +65,13 @@ export const DASHBOARD_NAV: NavItem[] = [
     href: "/subscriptions",
     label: "Subscriptions",
     icon: CreditCard,
-    roles: ["admin"],
+    roles: ["sales", "manager", "admin"],
     maintenance: false,
     children: [
-      { href: "/subscriptions/addons", label: "Addons management" },
-      {
-        href: "/subscriptions/vouchers-affiliates",
-        label: "Voucher & affiliates management",
-      },
       { href: "/subscriptions/plans", label: "Plan management" },
-      { href: "/subscriptions/product-icons", label: "Product icons" },
+      { href: "/subscriptions/trial", label: "Free trial" },
+      { href: "/subscriptions/addons", label: "Add-ons" },
+      { href: "/subscriptions/vouchers-affiliates", label: "Vouchers & affiliates" },
     ],
   },
   {

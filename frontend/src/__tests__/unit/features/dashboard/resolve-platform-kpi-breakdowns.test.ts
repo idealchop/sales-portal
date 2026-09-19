@@ -120,6 +120,37 @@ describe("resolvePlatformKpiSummary", () => {
     ).toEqual({ scale: 1, grow: 0, starter: 1, free: 0 });
   });
 
+  it("counts Free ₱0 separately from paid Starter", () => {
+    expect(
+      deriveBusinessTierCounts([
+        {
+          id: "free",
+          createdAt: null,
+          healthTier: "low",
+          planName: "Free",
+          planCode: "free",
+          price: 0,
+          customers: 0,
+          transactionsLast30Days: 0,
+          usageGoals: [],
+          gettingStarted: {},
+        },
+        {
+          id: "starter",
+          createdAt: null,
+          healthTier: "medium",
+          planName: "Starter",
+          planCode: "starter",
+          price: 399,
+          customers: 10,
+          transactionsLast30Days: 5,
+          usageGoals: [],
+          gettingStarted: {},
+        },
+      ]),
+    ).toEqual({ scale: 0, grow: 0, starter: 1, free: 1 });
+  });
+
   it("skips authAccountTag=test businesses when deriving tiers", () => {
     expect(
       deriveBusinessTierCounts([

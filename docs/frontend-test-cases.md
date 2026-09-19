@@ -42,7 +42,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-DASH-03 | any | Open metric breakdown dialog | Breakdown rows render |
 | TC-DASH-04 | any | Business locations map | Pins load for businesses with coords; no test-account pins |
 | TC-DASH-05 | admin | Approve pending subscription | Approval succeeds; UI refreshes |
-| TC-DASH-06 | any | Open `/dashboard/smartrefill` | Tabs: Subscriptions, Analytics; Config for admin |
+| TC-DASH-06 | any | Open `/webapp/smartrefill` | Tabs: Subscriptions, Analytics; Config for admin. Subscriptions lists **all production workspaces** (not only live plans). KPIs: monthly billed, paying, trial, free, voucher, attention, ended. Group + plan + activity filters; grouped workspace cards |
 | TC-DASH-07 | any | Open `/dashboard` | Action board: assigned lead tasks + performance metrics |
 | TC-DASH-08 | any | Platform hub Actions \| Forecast tabs | Paginated forecast rows; actions inbox (if shown) |
 | TC-DASH-09 | admin | Subscription approval **View** | Detail dialog + receipt/attachment preview |
@@ -112,7 +112,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 |----|------|-------|----------|
 | TC-ADM-01 | admin | `/admin/permissions` — grant access | User can log in |
 | TC-ADM-02 | admin | Revoke access | User blocked at login |
-| TC-ADM-03 | admin | `/admin/data-management` — browse business | Subcollections load; Workspace **Other info** omits customer email-sent flags and job idempotency fields |
+| TC-ADM-03 | admin | `/admin/data-management` — browse business | Subcollections load; Workspace **Other info** omits customer email-sent flags and job idempotency fields; Insights **Sign-in attendance** shows a Jan–Dec heatmap of owner sign-in days (not only last sign-in); **Transaction activity** shows tickets, water-container qty, and other refill qty; **Order mix** shows manual delivery, QR delivery, walk-in, direct, and collection |
 | TC-ADM-04 | admin | Edit Firestore document | Save persists |
 | TC-ADM-05 | admin | Delete document | Confirm + remove |
 

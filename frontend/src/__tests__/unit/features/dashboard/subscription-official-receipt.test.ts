@@ -5,7 +5,7 @@ import {
 } from "@/features/dashboard/lib/subscription-official-receipt-eligibility";
 
 describe("subscriptionEligibleForOfficialReceipt", () => {
-  it("allows verified paid rows", () => {
+  it("allows verified paid Grow and Starter rows", () => {
     expect(
       subscriptionEligibleForOfficialReceipt({
         planName: "Growth",
@@ -16,14 +16,34 @@ describe("subscriptionEligibleForOfficialReceipt", () => {
         status: "approved",
       }),
     ).toBe(true);
+    expect(
+      subscriptionEligibleForOfficialReceipt({
+        planName: "Starter",
+        planCode: "starter",
+        billingCycle: "monthly",
+        price: 399,
+        paymentStatus: "verified",
+        status: "active",
+      }),
+    ).toBe(true);
   });
 
-  it("blocks trial and pending", () => {
+  it("blocks trial, Free, and pending", () => {
     expect(
       subscriptionEligibleForOfficialReceipt({
         planName: "Growth",
         billingCycle: "trial",
         price: 0,
+        status: "active",
+      }),
+    ).toBe(false);
+    expect(
+      subscriptionEligibleForOfficialReceipt({
+        planName: "Free",
+        planCode: "free",
+        billingCycle: "monthly",
+        price: 0,
+        paymentStatus: "verified",
         status: "active",
       }),
     ).toBe(false);

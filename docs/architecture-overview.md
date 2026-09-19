@@ -56,7 +56,7 @@ flowchart LR
 
 ## Hybrid read model
 
-- **Dashboard analytics** — aggregated in `salesPortalApi` via Firebase Admin SDK (users, businesses, login events, subscriptions). Owners with `authAccountTag: "test"` are omitted from production KPIs.
+- **Dashboard analytics** — aggregated in `salesPortalApi` via Firebase Admin SDK (users, businesses, login events, subscriptions). Owners with `authAccountTag: "test"` are omitted from production KPIs. `subscriptionOwners` is every production workspace for the Subscriptions tab; `activeOwners` is the recently-active / live-plan subset.
 - **Legacy SmartRefill ops** — separate Firestore DB `prod-smartrefill` via `/dashboard/smartrefill-old/*` (triage, Brevo contact, ignore/delete).
 - **Admin data management** — Admin SDK reads/writes on `riverdb` with server-side authorization.
 - **SmartRefill product data** — proxied through `ALL /smartrefill/*` with the caller’s Firebase ID token.

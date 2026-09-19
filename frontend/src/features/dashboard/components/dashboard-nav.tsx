@@ -14,7 +14,7 @@ function isChildNavActive(pathname: string, childHref: string): boolean {
   if (
     childHref === "/dashboard" ||
     childHref === "/events-training" ||
-    childHref === "/dashboard/smartrefill"
+    childHref === "/webapp/smartrefill"
   ) {
     return pathname === childHref;
   }

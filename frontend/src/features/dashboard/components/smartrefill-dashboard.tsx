@@ -18,6 +18,7 @@ import {
 } from "@/features/dashboard/components/dashboard-analytics-shell";
 import { DashboardGlobalDateFilter } from "@/features/dashboard/components/dashboard-global-date-filter";
 import { getDashboardApp } from "@/features/dashboard/config/dashboard-apps";
+import { ownersForUserSubscriptions } from "@/lib/dashboard/analytics";
 import { buildUserSubscriptionsList } from "@/features/dashboard/lib/build-user-subscriptions-list";
 import { chartKindsForApp } from "@/features/dashboard/lib/app-chart-groups";
 import type { DashboardViewContext } from "@/features/dashboard/components/dashboard-analytics-shell";
@@ -38,9 +39,8 @@ function SmartRefillDashboardContent({
 
   const [tab, setTab] = useState<SmartRefillTab>("analytics");
 
-  const subscriptionItems = buildUserSubscriptionsList(
-    growthSalesMetrics.activeOwners,
-  );
+  const subscriptionOwners = ownersForUserSubscriptions(growthSalesMetrics);
+  const subscriptionItems = buildUserSubscriptionsList(subscriptionOwners);
 
   const tabs: DashboardSegmentTab[] = useMemo(
     () => [
@@ -79,11 +79,11 @@ function SmartRefillDashboardContent({
         <DashboardSection
           id="smartrefill-subscriptions"
           title="User subscriptions"
-          description="Approve plans, print receipts, and review billing status."
+          description="Every production workspace, grouped by billing health. Ended plans stay in the list so the count matches stations."
           count={subscriptionItems.length}
         >
           <UserSubscriptionsList
-            owners={growthSalesMetrics.activeOwners}
+            owners={subscriptionOwners}
             canApprove={canManageApprovals}
             onRefresh={refresh}
           />

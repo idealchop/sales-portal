@@ -20,11 +20,11 @@ describe("resolvePlatformAlertDataManagementPath", () => {
         businessId: "biz-1",
         userId: "user-1",
       }),
-      "/dashboard/smartrefill",
+      "/webapp/smartrefill",
     );
 
     expect(href).toBe(
-      "/admin/data-management/business/biz-1?returnTo=%2Fdashboard%2Fsmartrefill&userId=user-1",
+      "/admin/data-management/business/biz-1?returnTo=%2Fwebapp%2Fsmartrefill&userId=user-1",
     );
   });
 
@@ -36,7 +36,7 @@ describe("resolvePlatformAlertDataManagementPath", () => {
         email: "owner@example.com",
         title: "Owner",
       }),
-      "/dashboard/smartrefill",
+      "/webapp/smartrefill",
     );
 
     expect(href).toContain("/admin/data-management?");

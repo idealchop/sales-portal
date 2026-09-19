@@ -1,11 +1,18 @@
 import L from "leaflet";
 import type { BusinessMapLocation } from "@/lib/dashboard/analytics";
+import {
+  isFreePlanCode,
+  isGrowPlanCode,
+  isScalePlanCode,
+  isStarterPlanCode,
+} from "@/lib/dashboard/subscription-plan-codes";
 import { isTrialBillingCycle } from "@/lib/dashboard/subscription-labels";
 
 export type MapMarkerTier =
   | "scale"
   | "growth"
   | "starter"
+  | "free"
   | "free-trial"
   | "inactive";
 
@@ -17,8 +24,9 @@ export type MapMarkerStyle = {
 
 export const MAP_MARKER_LEGEND: MapMarkerStyle[] = [
   { tier: "scale", color: "#6B7F5E", label: "Scale" },
-  { tier: "growth", color: "#059669", label: "Growth" },
+  { tier: "growth", color: "#059669", label: "Grow" },
   { tier: "starter", color: "#F59E0B", label: "Starter" },
+  { tier: "free", color: "#64748B", label: "Free" },
   { tier: "free-trial", color: "#EA580C", label: "Free Trial" },
   { tier: "inactive", color: "#9CA3AF", label: "Inactive 7d+" },
 ];
@@ -55,15 +63,12 @@ export function resolveMapMarkerTier(
 
   if (isTrialBillingCycle(location.billingCycle)) return "free-trial";
 
-  const plan = `${location.planCode || ""} ${location.planName || ""}`
-    .trim()
-    .toLowerCase();
+  if (isScalePlanCode(location.planCode, location.planName)) return "scale";
+  if (isGrowPlanCode(location.planCode, location.planName)) return "growth";
+  if (isStarterPlanCode(location.planCode, location.planName)) return "starter";
+  if (isFreePlanCode(location.planCode, location.planName)) return "free";
 
-  if (plan.includes("scale")) return "scale";
-  if (plan.includes("growth")) return "growth";
-  if (plan.includes("starter")) return "starter";
-
-  return "starter";
+  return "free";
 }
 
 export function resolveMapMarkerStyle(
@@ -71,7 +76,9 @@ export function resolveMapMarkerStyle(
 ): MapMarkerStyle {
   const tier = resolveMapMarkerTier(location);
   return (
-    MAP_MARKER_LEGEND.find((entry) => entry.tier === tier) ?? MAP_MARKER_LEGEND[2]
+    MAP_MARKER_LEGEND.find((entry) => entry.tier === tier) ??
+    MAP_MARKER_LEGEND.find((entry) => entry.tier === "free") ??
+    MAP_MARKER_LEGEND[0]
   );
 }
 

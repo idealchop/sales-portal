@@ -26,11 +26,11 @@ export function resolveDashboardPageTitle(pathname: string): string {
   if (pathname.startsWith("/admin/data-management")) return "Data management";
   if (pathname.startsWith("/admin")) return "Admin";
   if (pathname.startsWith("/subscriptions/plans")) return "Plan management";
-  if (pathname.startsWith("/subscriptions/addons")) return "Addons management";
+  if (pathname.startsWith("/subscriptions/trial")) return "Free trial";
+  if (pathname.startsWith("/subscriptions/addons")) return "Add-ons";
   if (pathname.startsWith("/subscriptions/vouchers-affiliates")) {
-    return "Voucher & affiliates management";
+    return "Vouchers & affiliates";
   }
-  if (pathname.startsWith("/subscriptions/product-icons")) return "Product icons";
   if (pathname.startsWith("/subscriptions")) return "Subscriptions";
   if (pathname.startsWith("/content-studio")) return "Content Studio";
   if (pathname.startsWith("/events-training/webinars")) return "Webinars";

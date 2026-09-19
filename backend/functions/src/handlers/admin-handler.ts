@@ -39,8 +39,9 @@ import {
 import {
   deleteCatalogCollectionDocument,
   listCatalogCollectionDocuments,
-  upsertCatalogCollectionDocument,
 } from "../services/admin-catalog-collection-service";
+import { saveCatalogDocument } from "../services/catalog-lifecycle-service";
+import { isVersionedCatalogCollection } from "../utils/catalog-publication";
 import { normalizeAuthAccountTagInput } from "../services/auth-account-tag";
 
 export const getAdminUsers = async (
@@ -878,11 +879,20 @@ export const putAdminCatalogCollectionDocument = async (
   }
 
   try {
-    const document = await upsertCatalogCollectionDocument(
+    if (!req.user?.uid) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const document = await saveCatalogDocument({
       collectionId,
-      body.documentId,
-      body.data,
-    );
+      documentId: body.documentId,
+      data: body.data,
+      actor: {
+        uid: req.user.uid,
+        email: req.user.email,
+        role: req.user.role,
+      },
+    });
     res.json({ data: { document } });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -916,6 +926,12 @@ export const deleteAdminCatalogCollectionDocument = async (
   }
 
   try {
+    if (isVersionedCatalogCollection(collectionId)) {
+      res.status(400).json({
+        error: "Deactivate this catalog item instead of deleting it.",
+      });
+      return;
+    }
     await deleteCatalogCollectionDocument(collectionId, body.documentId);
     res.json({
       data: {

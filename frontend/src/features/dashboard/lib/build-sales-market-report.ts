@@ -154,7 +154,7 @@ const PLAN_MIX_TIERS = [
   { key: "free", label: "Free / trial", tone: "risk" as const },
 ] as const;
 
-/** Paid wins only — free trial / ₱0 / starter free must not inflate Scale/Grow. */
+/** Plan mix by entitlements — trial and unpaid Starter/Free stay Free; voucher Scale stays Scale. */
 export function classifyPlanMixTier(input: {
   planName?: string | null;
   planCode?: string | null;
@@ -169,11 +169,11 @@ export function classifyPlanMixTier(input: {
     typeof input.price === "number" ? input.price : Number(input.price ?? NaN);
   const isTrial =
     billingCycle === "trial" ||
-    key.includes("trial") ||
-    key.includes("free");
-  const isUnpaid = !Number.isFinite(price) || price <= 0;
+    key.includes("trial");
+  const isUnpaidStarter =
+    key.includes("starter") && (!Number.isFinite(price) || price <= 0);
 
-  if (!key || isTrial || isUnpaid) return "free";
+  if (!key || isTrial || isUnpaidStarter || key.includes("free")) return "free";
   if (key.includes("scale")) return "scale";
   if (key.includes("growth") || key.includes("grow")) return "grow";
   if (key.includes("starter")) return "starter";
@@ -204,6 +204,7 @@ export function buildPlanMix(data: DashboardAnalytics): PlanMixRow[] {
         planName: biz.planName,
         planCode: biz.planCode,
         price: biz.price,
+        billingCycle: biz.billingCycle,
       });
       counts[tier] += 1;
       if (biz.price > 0) mrrByTier[tier] += biz.price;
@@ -421,7 +422,7 @@ export function buildSalesMarketReport(
       id: "expansion",
       label: "Expansion upside",
       value: formatPhp(starterPotential.total),
-      hint: `${starterPotential.upsellCount} upgrade-ready Starters → ${starterPotential.targetPlanLabel}`,
+        hint: `${starterPotential.upsellCount} upgrade-ready Free stations → ${starterPotential.targetPlanLabel}`,
       trend:
         starterPotential.upsellCount > 0 ? "up"
         : starterPotential.total > 0 ? "neutral"

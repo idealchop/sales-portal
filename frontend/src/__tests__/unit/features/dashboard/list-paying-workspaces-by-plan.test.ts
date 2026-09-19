@@ -18,7 +18,7 @@ function biz(
 }
 
 describe("listPayingWorkspacesByPlan", () => {
-  it("lists each paying Scale/Grow workspace by name", () => {
+  it("lists each paying Scale/Grow/Starter workspace by name", () => {
     const groups = listPayingWorkspacesByPlan([
       biz({
         id: "1",
@@ -40,10 +40,24 @@ describe("listPayingWorkspacesByPlan", () => {
         planName: "Grow",
         price: 950,
       }),
-      biz({ id: "4", name: "Free Starter", planName: "Starter", price: 0 }),
+      biz({
+        id: "5",
+        name: "Paid Starter",
+        planName: "Starter",
+        planCode: "starter",
+        price: 399,
+        subscriptionStatus: "active",
+      }),
+      biz({
+        id: "4",
+        name: "Free station",
+        planName: "Free",
+        planCode: "free",
+        price: 0,
+      }),
     ]);
 
-    expect(groups).toHaveLength(2);
+    expect(groups).toHaveLength(3);
     expect(groups[0]).toMatchObject({
       plan: "Scale",
       mrr: 3649,
@@ -59,5 +73,9 @@ describe("listPayingWorkspacesByPlan", () => {
         price: 950,
       }),
     ]);
+    expect(groups[2]).toMatchObject({
+      plan: "Starter",
+      mrr: 399,
+    });
   });
 });

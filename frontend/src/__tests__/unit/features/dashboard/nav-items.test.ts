@@ -2,11 +2,17 @@ import { describe, expect, it } from "vitest";
 import { DASHBOARD_NAV } from "@/features/dashboard/config/nav-items";
 
 describe("DASHBOARD_NAV role gates", () => {
-  it("shows Subscriptions and Admin only for admin", () => {
+  it("shows Subscriptions for all sales roles and Admin only for admin", () => {
     const subscriptions = DASHBOARD_NAV.find((item) => item.href === "/subscriptions");
     const admin = DASHBOARD_NAV.find((item) => item.href === "/admin");
 
-    expect(subscriptions?.roles).toEqual(["admin"]);
+    expect(subscriptions?.roles).toEqual(["sales", "manager", "admin"]);
+    expect(subscriptions?.children?.map((child) => child.href)).toEqual([
+      "/subscriptions/plans",
+      "/subscriptions/trial",
+      "/subscriptions/addons",
+      "/subscriptions/vouchers-affiliates",
+    ]);
     expect(admin?.roles).toEqual(["admin"]);
     expect(admin?.children?.map((child) => child.href)).toEqual([
       "/admin/permissions",
@@ -52,9 +58,9 @@ describe("DASHBOARD_NAV role gates", () => {
     expect(dashboard?.children).toBeUndefined();
     expect(leadPipeline?.href).toBe("/lead-pipeline");
     expect(leadPipeline?.roles).toEqual(["sales", "manager", "admin"]);
-    expect(webApps?.href).toBe("/dashboard/smartrefill");
+    expect(webApps?.href).toBe("/webapp/smartrefill");
     expect(webApps?.children?.map((child) => child.href)).toEqual([
-      "/dashboard/smartrefill",
+      "/webapp/smartrefill",
       "/dashboard/smartrefill-old",
     ]);
   });

@@ -1,4 +1,5 @@
 import type { BusinessSnapshot } from "./compute-sales-insights";
+import { isFreeForeverPlan, isPaidStarterPlan } from "../utils/subscription-plan-codes";
 
 export function isPaymentPending(paymentStatus?: string): boolean {
   if (!paymentStatus) return false;
@@ -29,9 +30,6 @@ export function classifyHealthForSnapshot(
 }
 
 export function isUpgradeOpportunity(snapshot: BusinessSnapshot): boolean {
-  const plan = (snapshot.planName || snapshot.planCode || "").toLowerCase();
-  if (!plan.includes("starter")) return false;
-  return (
-    snapshot.customers >= 20 || snapshot.transactionsLast30Days >= 30
-  );
+  if (!isFreeForeverPlan(snapshot) && !isPaidStarterPlan(snapshot)) return false;
+  return snapshot.customers >= 80 || snapshot.transactionsLast30Days >= 40;
 }

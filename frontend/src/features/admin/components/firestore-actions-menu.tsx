@@ -21,6 +21,9 @@ export function FirestoreActionsMenu({
   onCloneToDemo,
   onEdit,
   onRemove,
+  onPublish,
+  onDeactivate,
+  hideRemove = false,
   removeDisabled = false,
   removeDisabledTitle,
   align = "right",
@@ -32,7 +35,10 @@ export function FirestoreActionsMenu({
   onViewBusinessInfo?: () => void;
   onCloneToDemo?: () => void;
   onEdit: () => void;
-  onRemove: () => void;
+  onRemove?: () => void;
+  onPublish?: () => void;
+  onDeactivate?: () => void;
+  hideRemove?: boolean;
   removeDisabled?: boolean;
   removeDisabledTitle?: string;
   align?: "left" | "right";
@@ -53,7 +59,10 @@ export function FirestoreActionsMenu({
     (onLogs ? 1 : 0) +
     (onViewBusinessInfo ? 1 : 0) +
     (onCloneToDemo ? 1 : 0) +
-    2;
+    (onPublish ? 1 : 0) +
+    (onDeactivate ? 1 : 0) +
+    1 +
+    (hideRemove || !onRemove ? 0 : 1);
 
   const updateMenuPosition = useCallback(() => {
     const button = buttonRef.current;
@@ -199,20 +208,48 @@ export function FirestoreActionsMenu({
             <Pencil className="h-3.5 w-3.5 text-zinc-500" />
             Edit
           </button>
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={removeDisabled}
-            title={removeDisabled ? removeDisabledTitle : undefined}
-            onClick={() => {
-              if (removeDisabled) return;
-              setOpen(false);
-              onRemove();
-            }}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Remove
-          </button>
+          {onPublish && (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-800 hover:bg-zinc-50"
+              onClick={() => {
+                setOpen(false);
+                onPublish();
+              }}
+            >
+              <Copy className="h-3.5 w-3.5 text-zinc-500" />
+              Publish
+            </button>
+          )}
+          {onDeactivate && (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-amber-800 hover:bg-amber-50"
+              onClick={() => {
+                setOpen(false);
+                onDeactivate();
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Deactivate
+            </button>
+          )}
+          {!hideRemove && onRemove ?
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={removeDisabled}
+              title={removeDisabled ? removeDisabledTitle : undefined}
+              onClick={() => {
+                if (removeDisabled) return;
+                setOpen(false);
+                onRemove();
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Remove
+            </button>
+          : null}
         </div>,
         window.document.body,
       )

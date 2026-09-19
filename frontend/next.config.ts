@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
    * Stale HTML + new `/_next/static` hashes → ChunkLoadError 404s on login.
    * Hashed static assets remain immutable.
    */
+  async redirects() {
+    return [
+      {
+        source: "/dashboard/smartrefill",
+        destination: "/webapp/smartrefill",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

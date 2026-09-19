@@ -7,7 +7,7 @@ import {
 } from "@/lib/email/inactive-owner-template";
 import {
   OUTREACH_EMAIL_BCC,
-  OUTREACH_EMAIL_FROM,
+  OUTREACH_VISIBLE_CONTACT_EMAIL,
 } from "@/lib/email/outreach-email-shared";
 
 describe("inactive-owner-template", () => {
@@ -22,7 +22,7 @@ describe("inactive-owner-template", () => {
     expect(text).toContain("Aqua Clear Station");
     expect(text).toContain("chat support");
     expect(text).toContain("continue using Smart Refill");
-    expect(text).toContain(OUTREACH_EMAIL_FROM);
+    expect(text).toContain(OUTREACH_VISIBLE_CONTACT_EMAIL);
   });
 
   it("builds html with chat support CTA", () => {
@@ -38,7 +38,7 @@ describe("inactive-owner-template", () => {
     });
     expect(href.startsWith("mailto:owner@example.com?")).toBe(true);
     const decoded = decodeURIComponent(href);
-    expect(decoded).toContain(OUTREACH_EMAIL_FROM);
+    expect(decoded).toContain(OUTREACH_VISIBLE_CONTACT_EMAIL);
     for (const address of OUTREACH_EMAIL_BCC) {
       expect(decoded).toContain(address);
     }

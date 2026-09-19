@@ -1,5 +1,5 @@
-import { AdminCatalogCollectionPage } from "@/features/admin/components/admin-catalog-collection-page";
+import { redirect } from "next/navigation";
 
 export default function ProductIconsPage() {
-  return <AdminCatalogCollectionPage collectionId="product_icons" />;
+  redirect("/webapp/smartrefill");
 }

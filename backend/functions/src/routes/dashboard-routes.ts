@@ -33,6 +33,14 @@ import {
   requireSalesPortalAccess,
   validateFirebaseIdToken,
 } from "../middleware/auth-middleware";
+import {
+  deleteCatalogCollectionDocumentHandler,
+  getCatalogCollection,
+  getCatalogDocumentAudit,
+  postDeactivateCatalogDocument,
+  postPublishCatalogDocument,
+  putCatalogCollectionDocument,
+} from "../handlers/catalog-handler";
 
 const router = express.Router();
 
@@ -183,6 +191,43 @@ router.post(
   validateFirebaseIdToken,
   requireSalesPortalAccess,
   postAssignCommunityDispatchRequest,
+);
+
+router.get(
+  "/catalog-collections/:collectionId",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  getCatalogCollection,
+);
+router.put(
+  "/catalog-collections/:collectionId/documents",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  putCatalogCollectionDocument,
+);
+router.post(
+  "/catalog-collections/:collectionId/documents/publish",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  postPublishCatalogDocument,
+);
+router.post(
+  "/catalog-collections/:collectionId/documents/deactivate",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  postDeactivateCatalogDocument,
+);
+router.get(
+  "/catalog-collections/:collectionId/audit",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  getCatalogDocumentAudit,
+);
+router.delete(
+  "/catalog-collections/:collectionId/documents",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  deleteCatalogCollectionDocumentHandler,
 );
 
 export default router;

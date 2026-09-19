@@ -1,3 +1,4 @@
+import { isFreeForeverPlan } from "../utils/subscription-plan-codes";
 import type { BusinessSnapshot } from "./compute-sales-insights";
 import {
   classifyHealthForSnapshot,
@@ -79,7 +80,9 @@ export function buildWorkspaceBehaviorProfiles(input: {
 
     if (isUpgradeOpportunity(snapshot)) {
       growthScore += 35;
-      growthSignals.push("Starter upsell");
+      growthSignals.push(
+        isFreeForeverPlan(snapshot) ? "Free upsell" : "Starter upsell",
+      );
     }
 
     if (soloOwnerBusinessIds.has(snapshot.id) && snapshot.onboardingComplete) {
