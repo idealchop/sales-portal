@@ -9,6 +9,7 @@ import {
   warmStatusOptionByValue,
   type LeadQueueBucket,
 } from "@/features/lead-pipeline/lib/lead-pipeline-display";
+import { resolveAssigneeUids } from "@/features/lead-pipeline/lib/lead-assignees";
 
 export type NamedCount = { name: string; count: number };
 
@@ -292,15 +293,19 @@ export function buildLeadPipelineInsights(
     const stats = queueStats[queue];
     stats.total += 1;
 
-    const assigneeKey = lead.assignedToUid?.trim() || "";
-    if (!assigneeKey) unassigned += 1;
+    const assigneeKeys = resolveAssigneeUids(lead);
+    if (assigneeKeys.length === 0) unassigned += 1;
     else stats.assigned += 1;
 
-    const assigneeBucket = assigneeMap.get(assigneeKey || "unassigned") ?? {
-      count: 0,
-      overdueFollowUps: 0,
-    };
-    assigneeBucket.count += 1;
+    const mapKeys = assigneeKeys.length > 0 ? assigneeKeys : ["unassigned"];
+    for (const key of mapKeys) {
+      const assigneeBucket = assigneeMap.get(key) ?? {
+        count: 0,
+        overdueFollowUps: 0,
+      };
+      assigneeBucket.count += 1;
+      assigneeMap.set(key, assigneeBucket);
+    }
 
     if (lead.nextFollowUpAt) {
       stats.withFollowUp += 1;
@@ -308,7 +313,10 @@ export function buildLeadPipelineInsights(
       if (!Number.isNaN(followMs) && lead.stage !== "archive") {
         if (followMs < nowMs) {
           overdueFollowUps += 1;
-          assigneeBucket.overdueFollowUps += 1;
+          for (const key of mapKeys) {
+            const bucket = assigneeMap.get(key);
+            if (bucket) bucket.overdueFollowUps += 1;
+          }
           bump(followUpMap, "Overdue");
         } else if (followMs <= dueSoonMs) {
           dueSoon += 1;
@@ -322,7 +330,6 @@ export function buildLeadPipelineInsights(
     } else {
       bump(followUpMap, "No follow-up");
     }
-    assigneeMap.set(assigneeKey || "unassigned", assigneeBucket);
 
     if (!lead.lastContactAt && !lead.firstContactAt) {
       neverContacted += 1;

@@ -1,38 +1,46 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient, ApiError } from "@/lib/api-client";
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
 
 export function useAdminUserDocuments(uid: string | null, enabled: boolean) {
   const [documents, setDocuments] = useState<UserFirestoreDocumentRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { silent?: boolean }) => {
     if (!uid || !enabled) return;
-    await Promise.resolve();
-    setIsLoading(true);
+    const silent = options?.silent === true && hasLoadedRef.current;
+    if (!hasLoadedRef.current && !silent) setIsLoading(true);
+    else setIsFetching(true);
     setError(null);
     try {
       const response = await apiClient.get<{
         data: { documents: UserFirestoreDocumentRow[] };
       }>(`/admin/users/${uid}/documents`);
-      setDocuments(response.data.documents);
+      startTransition(() => {
+        setDocuments(response.data.documents);
+      });
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Unable to load user documents.",
       );
     } finally {
       setIsLoading(false);
+      setIsFetching(false);
     }
   }, [uid, enabled]);
 
   useEffect(() => {
-    if (!enabled || !uid) return;
-    void (async () => {
-      await load();
-    })();
+    if (!enabled || !uid) {
+      hasLoadedRef.current = false;
+      return;
+    }
+    void load();
   }, [enabled, uid, load]);
 
   const saveDocument = useCallback(
@@ -67,7 +75,8 @@ export function useAdminUserDocuments(uid: string | null, enabled: boolean) {
     documents: enabled && uid ? documents : [],
     isLoading: enabled && uid ? isLoading : false,
     error: enabled && uid ? error : null,
-    refresh: load,
+    refresh: () => load({ silent: true }),
+    isFetching,
     saveDocument,
     removeDocument,
   };

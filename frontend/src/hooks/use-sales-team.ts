@@ -1,48 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { fetchSalesTeam, type TeamMemberSummary } from "@/lib/sales/api";
+import { usePromiseResource } from "@/hooks/use-promise-resource";
+
+const EMPTY: TeamMemberSummary[] = [];
 
 export function useSalesTeam() {
-  const [members, setMembers] = useState<TeamMemberSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(() => fetchSalesTeam(), []);
 
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await fetchSalesTeam();
-      setMembers(data);
-    } catch {
-      setError("Unable to load team summary.");
-      setMembers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { data: members, isLoading, isFetching, error, refresh } =
+    usePromiseResource({
+      load,
+      initial: EMPTY,
+      errorMessage: "Unable to load team summary.",
+    });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void fetchSalesTeam()
-      .then((data) => {
-        if (cancelled) return;
-        setMembers(data);
-        setError(null);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setError("Unable to load team summary.");
-        setMembers([]);
-        setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { members, isLoading, error, refresh };
+  return { members, isLoading, isFetching, error, refresh };
 }

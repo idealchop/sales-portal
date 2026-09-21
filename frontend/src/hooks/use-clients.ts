@@ -1,57 +1,59 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { fetchClientDirectory, fetchClients } from "@/lib/sales/api";
+import { useCallback } from "react";
+import { createClient, fetchClientDirectory, fetchClients } from "@/lib/sales/api";
 import type { Client, ClientDirectoryEntry } from "@/lib/definitions";
+import { usePromiseResource } from "@/hooks/use-promise-resource";
+
+type ClientsState = {
+  clients: Client[];
+  directory: ClientDirectoryEntry[];
+};
+
+const EMPTY: ClientsState = { clients: [], directory: [] };
 
 export function useClients() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [directory, setDirectory] = useState<ClientDirectoryEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [clientData, directoryData] = await Promise.all([
-        fetchClients(),
-        fetchClientDirectory(),
-      ]);
-      setClients(clientData);
-      setDirectory(directoryData);
-    } catch {
-      setError("Unable to load clients.");
-      setClients([]);
-      setDirectory([]);
-    } finally {
-      setIsLoading(false);
-    }
+  const load = useCallback(async (): Promise<ClientsState> => {
+    const [clients, directory] = await Promise.all([
+      fetchClients(),
+      fetchClientDirectory(),
+    ]);
+    return { clients, directory };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
+  const { data, setData, isLoading, isFetching, error, refresh } =
+    usePromiseResource({
+      load,
+      initial: EMPTY,
+      errorMessage: "Unable to load clients.",
+    });
 
-    void Promise.all([fetchClients(), fetchClientDirectory()])
-      .then(([clientData, directoryData]) => {
-        if (cancelled) return;
-        setClients(clientData);
-        setDirectory(directoryData);
-        setError(null);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setError("Unable to load clients.");
-        setClients([]);
-        setDirectory([]);
-        setIsLoading(false);
-      });
+  const saveClient = useCallback(
+    async (
+      input: Partial<Client> & { linkedUserId?: string; appIds?: string[] },
+    ) => {
+      const created = await createClient(input);
+      setData((previous) => ({
+        ...previous,
+        clients: [
+          created,
+          ...previous.clients.filter((row) => row.id !== created.id),
+        ],
+      }));
+      // Directory may include new linked users — refresh quietly.
+      void refresh();
+      return created;
+    },
+    [refresh, setData],
+  );
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { clients, directory, isLoading, error, refresh };
+  return {
+    clients: data.clients,
+    directory: data.directory,
+    isLoading,
+    isFetching,
+    error,
+    refresh,
+    saveClient,
+  };
 }

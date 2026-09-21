@@ -186,6 +186,9 @@ export type Lead = {
   warmAttemptCount?: number;
   /** Contact attempts counted on the cold track (archive at 3). */
   coldAttemptCount?: number;
+  /** Canonical multi-assignee list. */
+  assignedToUids?: string[];
+  /** Legacy primary assignee — first of `assignedToUids`. */
   assignedToUid?: string;
   firstContactAt?: string | null;
   lastContactAt?: string | null;
@@ -294,4 +297,39 @@ export type LeadAnalytics = {
     daysLeftLte3: number;
   };
   stallReasons: Array<{ name: string; count: number }>;
+};
+
+export type LeadEmailTemplateVisibility = "personal" | "shared";
+
+export type LeadEmailTemplate = {
+  id: string;
+  title: string;
+  subject: string;
+  bodyText: string;
+  visibility: LeadEmailTemplateVisibility;
+  createdByUid: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+export type LeadEmailBlastQuota = {
+  dayKey: string;
+  limit: number;
+  used: number;
+  remaining: number;
+};
+
+export type LeadEmailBlastResult = {
+  quota: LeadEmailBlastQuota;
+  sent: number;
+  skipped: number;
+  failed: number;
+  attemptLogged: number;
+  results: Array<{
+    leadId: string;
+    email?: string;
+    status: "sent" | "skipped" | "failed";
+    reason?: string;
+    messageId?: string;
+  }>;
 };

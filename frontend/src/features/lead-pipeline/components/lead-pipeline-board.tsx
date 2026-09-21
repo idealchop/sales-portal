@@ -18,6 +18,7 @@ import {
   resolveLeadLastSignIn,
 } from "@/features/lead-pipeline/lib/lead-pipeline-display";
 import { compareOnboardedLeadsDefault } from "@/features/lead-pipeline/lib/lead-pipeline-list";
+import { formatAssigneeLabels } from "@/features/lead-pipeline/lib/lead-assignees";
 import { useLeadAssignees } from "@/hooks/use-lead-assignees";
 import type { Lead, LeadPlatformSource, LeadQueue } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
@@ -259,12 +260,10 @@ export function LeadPipelineBoard({
                   <BoardCard
                     key={lead.id}
                     lead={lead}
-                    assigneeName={
-                      lead.assignedToUid ?
-                        assigneeNameByUid.get(lead.assignedToUid) ||
-                        lead.assignedToUid.slice(0, 10)
-                      : "Unassigned"
-                    }
+                    assigneeName={formatAssigneeLabels(
+                      lead,
+                      assigneeNameByUid,
+                    )}
                     onViewDetails={onViewDetails}
                     onUpdateDetails={onUpdateDetails}
                     onUpdateStatus={onUpdateStatus}

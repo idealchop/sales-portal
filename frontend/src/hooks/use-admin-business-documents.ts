@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient, ApiError } from "@/lib/api-client";
 import type { BusinessFirestoreDocumentRow } from "@/lib/admin/business-profile-display";
 
@@ -15,12 +15,15 @@ export function useAdminBusinessDocuments(
     Record<string, number>
   >({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { silent?: boolean }) => {
     if (!businessId || !enabled) return;
-    await Promise.resolve();
-    setIsLoading(true);
+    const silent = options?.silent === true && hasLoadedRef.current;
+    if (!hasLoadedRef.current && !silent) setIsLoading(true);
+    else setIsFetching(true);
     setError(null);
     try {
       const response = await apiClient.get<{
@@ -29,8 +32,11 @@ export function useAdminBusinessDocuments(
           collectionCounts?: Record<string, number>;
         };
       }>(`/admin/businesses/${businessId}/documents`);
-      setDocuments(response.data.documents);
-      setCollectionCounts(response.data.collectionCounts ?? {});
+      startTransition(() => {
+        setDocuments(response.data.documents);
+        setCollectionCounts(response.data.collectionCounts ?? {});
+      });
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(
         err instanceof ApiError ?
@@ -39,14 +45,16 @@ export function useAdminBusinessDocuments(
       );
     } finally {
       setIsLoading(false);
+      setIsFetching(false);
     }
   }, [businessId, enabled]);
 
   useEffect(() => {
-    if (!enabled || !businessId) return;
-    void (async () => {
-      await load();
-    })();
+    if (!enabled || !businessId) {
+      hasLoadedRef.current = false;
+      return;
+    }
+    void load();
   }, [enabled, businessId, load]);
 
   const saveDocument = useCallback(
@@ -102,8 +110,9 @@ export function useAdminBusinessDocuments(
     documents: enabled && businessId ? documents : [],
     collectionCounts: enabled && businessId ? collectionCounts : {},
     isLoading: enabled && businessId ? isLoading : false,
+    isFetching: enabled && businessId ? isFetching : false,
     error: enabled && businessId ? error : null,
-    refresh: load,
+    refresh: () => load({ silent: true }),
     saveDocument,
     removeDocument,
     removeBusinessTree,

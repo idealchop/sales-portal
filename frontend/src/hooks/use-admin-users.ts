@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient, ApiError } from "@/lib/api-client";
 import type {
-  AdminAppAccessEntry,
   AdminUserPermissionsInput,
   AdminUserSummary,
 } from "@/lib/admin/users";
@@ -12,30 +11,35 @@ import { sortAdminUsers } from "@/features/admin/lib/user-display";
 export function useAdminUsers() {
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  const load = useCallback(async () => {
-    await Promise.resolve();
-    setIsLoading(true);
+  const load = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true && hasLoadedRef.current;
+    if (!hasLoadedRef.current && !silent) setIsLoading(true);
+    else setIsFetching(true);
     setError(null);
     try {
       const response = await apiClient.get<{ data: { users: AdminUserSummary[] } }>(
         "/admin/users",
       );
-      setUsers(response.data.users);
+      startTransition(() => {
+        setUsers(response.data.users);
+      });
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Unable to load users.",
       );
     } finally {
       setIsLoading(false);
+      setIsFetching(false);
     }
   }, []);
 
   useEffect(() => {
-    void (async () => {
-      await load();
-    })();
+    void load();
   }, [load]);
 
   const createUser = useCallback(
@@ -44,9 +48,11 @@ export function useAdminUsers() {
         "/admin/users",
         input,
       );
-      setUsers((current) =>
-        sortAdminUsers([...current, response.data.user], "name", "asc"),
-      );
+      startTransition(() => {
+        setUsers((current) =>
+          sortAdminUsers([...current, response.data.user], "name", "asc"),
+        );
+      });
       return response.data.user;
     },
     [],
@@ -58,11 +64,13 @@ export function useAdminUsers() {
         `/admin/users/${uid}/app-access`,
         input,
       );
-      setUsers((current) =>
-        current.map((user) =>
-          user.uid === uid ? response.data.user : user,
-        ),
-      );
+      startTransition(() => {
+        setUsers((current) =>
+          current.map((user) =>
+            user.uid === uid ? response.data.user : user,
+          ),
+        );
+      });
       return response.data.user;
     },
     [],
@@ -72,9 +80,11 @@ export function useAdminUsers() {
     const response = await apiClient.post<{ data: { user: AdminUserSummary } }>(
       `/admin/users/${uid}/revoke-access`,
     );
-    setUsers((current) =>
-      current.map((user) => (user.uid === uid ? response.data.user : user)),
-    );
+    startTransition(() => {
+      setUsers((current) =>
+        current.map((user) => (user.uid === uid ? response.data.user : user)),
+      );
+    });
     return response.data.user;
   }, []);
 
@@ -92,7 +102,9 @@ export function useAdminUsers() {
         const uid = unique[0];
         try {
           await apiClient.delete(`/admin/users/${uid}`);
-          setUsers((current) => current.filter((user) => user.uid !== uid));
+          startTransition(() => {
+            setUsers((current) => current.filter((user) => user.uid !== uid));
+          });
           onProgress?.(1, 1);
           return {
             deleted: [{ uid, deletedAuth: true, deletedProfile: true }],
@@ -125,7 +137,11 @@ export function useAdminUsers() {
 
         const { deleted, failed } = response.data;
         const deletedUids = new Set(deleted.map((row) => row.uid));
-        setUsers((current) => current.filter((user) => !deletedUids.has(user.uid)));
+        startTransition(() => {
+          setUsers((current) =>
+            current.filter((user) => !deletedUids.has(user.uid)),
+          );
+        });
         onProgress?.(unique.length, unique.length);
         return { deleted, failed };
       } catch (err) {
@@ -144,8 +160,9 @@ export function useAdminUsers() {
   return {
     users,
     isLoading,
+    isFetching,
     error,
-    refresh: load,
+    refresh: () => load({ silent: true }),
     createUser,
     saveAppAccess,
     revokeUserAccess,

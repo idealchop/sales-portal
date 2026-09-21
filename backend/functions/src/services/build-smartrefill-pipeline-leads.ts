@@ -712,6 +712,12 @@ export function mergeCrmOverlays(
         baseStage: lead.stage,
       }),
       attemptCount: overlay.attemptCount,
+      assignedToUids:
+        overlay.assignedToUids?.length ?
+          overlay.assignedToUids
+        : overlay.assignedToUid ?
+          [overlay.assignedToUid]
+        : lead.assignedToUids,
       assignedToUid: overlay.assignedToUid || lead.assignedToUid,
       notes: overlay.notes || lead.notes,
       stallReason: overlay.stallReason || lead.stallReason,

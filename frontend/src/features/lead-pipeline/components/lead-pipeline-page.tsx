@@ -49,10 +49,12 @@ export function LeadPipelinePage() {
     isLoading,
     error,
     saveLead,
+    bulkAssign,
     gather,
     isGathering,
     gatherError,
     gatherSummary,
+    refresh,
   } = useLeads({
     queue,
     assignee: boardOnly && uid ? uid : undefined,
@@ -72,8 +74,16 @@ export function LeadPipelinePage() {
     [analytics],
   );
 
-  async function handleAssign(lead: Lead, assignedToUid: string) {
-    await saveLead({ assignedToUid }, lead.id);
+  async function handleAssign(lead: Lead, assignedToUids: string[]) {
+    await saveLead({ assignedToUids }, lead.id);
+  }
+
+  async function handleBulkAssign(
+    leadIds: string[],
+    mode: 'set' | 'add' | 'remove' | 'clear',
+    assignedToUids?: string[],
+  ) {
+    await bulkAssign({ leadIds, mode, assignedToUids });
   }
 
   function switchView(next: ViewMode) {
@@ -307,6 +317,10 @@ export function LeadPipelinePage() {
           onViewHistory={setHistoryLead}
           onFollowUpEmail={setFollowUpLead}
           onAssign={handleAssign}
+          onBulkAssign={handleBulkAssign}
+          onLeadsChanged={() => {
+            void refresh();
+          }}
         />
       ) : (
         <LeadPipelineInsights

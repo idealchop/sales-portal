@@ -7,6 +7,8 @@ import {
   getLeadAssigneesHandler,
   getLeadHandler,
   getLeadHistoryHandler,
+  getLeadEmailBlastQuotaHandler,
+  getLeadEmailTemplatesHandler,
   getLeadsAnalyticsHandler,
   getLeadsHandler,
   getOutreachRecipientsHandler,
@@ -17,11 +19,16 @@ import {
   getSalesTeamHandler,
   patchClientHandler,
   patchLeadHandler,
+  patchLeadEmailTemplateHandler,
   patchProposalHandler,
   patchSalesMaterialHandler,
   postClientHandler,
   postLeadHandler,
+  postLeadEmailBlastHandler,
+  postLeadEmailTemplateHandler,
+  postLeadsBulkAssignHandler,
   postLeadsGatherHandler,
+  deleteLeadEmailTemplateHandler,
   postProposalHandler,
   postProposalShareHandler,
   postSalesOutreachSendHandler,
@@ -59,6 +66,16 @@ router.patch("/clients/:clientId", patchClientHandler);
 router.get("/leads/analytics", getLeadsAnalyticsHandler);
 router.get("/leads/assignees", getLeadAssigneesHandler);
 router.post("/leads/gather", postLeadsGatherHandler);
+router.post("/leads/bulk-assign", postLeadsBulkAssignHandler);
+router.get("/leads/email-templates", getLeadEmailTemplatesHandler);
+router.post("/leads/email-templates", postLeadEmailTemplateHandler);
+router.patch("/leads/email-templates/:templateId", patchLeadEmailTemplateHandler);
+router.delete(
+  "/leads/email-templates/:templateId",
+  deleteLeadEmailTemplateHandler,
+);
+router.get("/leads/email-blast/quota", getLeadEmailBlastQuotaHandler);
+router.post("/leads/email-blast", postLeadEmailBlastHandler);
 router.get("/leads", getLeadsHandler);
 router.post("/leads", postLeadHandler);
 router.get("/leads/:leadId/history", getLeadHistoryHandler);

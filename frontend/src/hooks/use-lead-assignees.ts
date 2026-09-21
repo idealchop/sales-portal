@@ -1,49 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { fetchLeadAssignees, type TeamMemberSummary } from "@/lib/sales/api";
+import { usePromiseResource } from "@/hooks/use-promise-resource";
+
+const EMPTY: TeamMemberSummary[] = [];
 
 /** Sales Portal accounts that can be assigned to a lead. */
 export function useLeadAssignees() {
-  const [members, setMembers] = useState<TeamMemberSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(() => fetchLeadAssignees(), []);
 
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await fetchLeadAssignees();
-      setMembers(data);
-    } catch {
-      setError("Unable to load sales accounts.");
-      setMembers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { data: members, isLoading, isFetching, error, refresh } =
+    usePromiseResource({
+      load,
+      initial: EMPTY,
+      errorMessage: "Unable to load sales accounts.",
+    });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void fetchLeadAssignees()
-      .then((data) => {
-        if (cancelled) return;
-        setMembers(data);
-        setError(null);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setError("Unable to load sales accounts.");
-        setMembers([]);
-        setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { members, isLoading, error, refresh };
+  return { members, isLoading, isFetching, error, refresh };
 }

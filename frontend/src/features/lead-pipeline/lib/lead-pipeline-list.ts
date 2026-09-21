@@ -1,8 +1,10 @@
-import type { Lead, LeadPlatformSource, LeadStage } from "@/lib/definitions";
+import type { Lead, LeadPlatformSource, LeadQueue, LeadStage } from "@/lib/definitions";
 import {
   DEMO_STATUS_OPTIONS,
   LEAD_ACQUISITION_SOURCES,
   displayAttemptCount,
+  isContentPipelineLead,
+  leadQueueBucket,
   normalizeDemoStatus,
   parseWarmStatus,
   resolveInquiredAt,
@@ -11,9 +13,65 @@ import {
   type DemoStatus,
   type WarmStatusValue,
 } from "@/features/lead-pipeline/lib/lead-pipeline-display";
+import {
+  leadHasAssignee,
+  leadIsUnassigned,
+  resolveAssigneeUids,
+} from "@/features/lead-pipeline/lib/lead-assignees";
 
 export const LEAD_PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 export type LeadPageSize = (typeof LEAD_PAGE_SIZE_OPTIONS)[number];
+
+/**
+ * Client-side mirror of backend `filterLeads` so queue / assignee tabs do not
+ * need a new API round-trip after the full list is cached.
+ */
+export function filterLeadsByPipelineParams(
+  leads: Lead[],
+  opts: {
+    queue?: LeadQueue;
+    assignee?: string;
+  } = {},
+): Lead[] {
+  const queue = opts.queue ?? "all";
+  const assignee = opts.assignee?.trim();
+
+  return leads.filter((lead) => {
+    if (queue === "content") {
+      if (!isContentPipelineLead(lead)) return false;
+    } else if (queue !== "all") {
+      if (leadQueueBucket(lead.stage) !== queue) return false;
+      // Content-only guests live on the Content tab, not Warm.
+      if (queue === "warm" && lead.sourceKind === "content") return false;
+    }
+    if (assignee && !leadHasAssignee(lead, assignee)) return false;
+    return true;
+  });
+}
+
+/** Recompute tab badge counts from a cached full lead list. */
+export function buildQueueCountsFromLeads(
+  leads: Lead[],
+): Record<LeadQueue, number> {
+  const counts: Record<LeadQueue, number> = {
+    all: leads.length,
+    content: 0,
+    warm: 0,
+    cold: 0,
+    onboarded: 0,
+    archive: 0,
+  };
+  for (const lead of leads) {
+    if (isContentPipelineLead(lead)) counts.content += 1;
+    const bucket = leadQueueBucket(lead.stage);
+    if (bucket === "warm" && lead.sourceKind === "content") {
+      // Content guests are not counted in Warm.
+      continue;
+    }
+    counts[bucket] += 1;
+  }
+  return counts;
+}
 
 export type LeadSortKey =
   | "businessName"
@@ -262,6 +320,7 @@ function haystack(lead: Lead): string {
     lead.stallReason,
     lead.warmStatus,
     lead.assignedToUid,
+    ...resolveAssigneeUids(lead),
     lead.linkedBusinessId,
     lead.platformSource,
     lead.contentSummary,
@@ -491,9 +550,9 @@ export function filterLeadsForList(
     if (filters.stage !== "all" && lead.stage !== filters.stage) return false;
 
     if (filters.assignedToUid === "unassigned") {
-      if (lead.assignedToUid) return false;
+      if (!leadIsUnassigned(lead)) return false;
     } else if (filters.assignedToUid !== "all") {
-      if (lead.assignedToUid !== filters.assignedToUid) return false;
+      if (!leadHasAssignee(lead, filters.assignedToUid)) return false;
     }
 
     if (filters.warmStatus !== "all") {
@@ -547,7 +606,7 @@ function sortValue(lead: Lead, key: LeadSortKey): string | number {
   case "attemptCount":
     return displayAttemptCount(lead).count;
   case "assignedToUid":
-    return (lead.assignedToUid || "").toLowerCase();
+    return resolveAssigneeUids(lead).join(",").toLowerCase();
   case "lastContactAt": {
     const ms = lead.lastContactAt ? Date.parse(lead.lastContactAt) : 0;
     return Number.isFinite(ms) ? ms : 0;

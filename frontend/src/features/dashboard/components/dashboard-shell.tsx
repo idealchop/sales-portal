@@ -7,6 +7,7 @@ import { Logo } from "@/components/logo";
 import { DashboardHeader } from "./dashboard-header";
 import { DashboardNav } from "./dashboard-nav";
 import { DashboardAnalyticsProvider } from "@/features/dashboard/components/dashboard-analytics-context";
+import { isDashboardAppPath } from "@/features/dashboard/config/dashboard-apps";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useSalesProfile } from "@/hooks/use-sales-profile";
 import { prefetchDashboardAnalytics } from "@/lib/dashboard/fetch-dashboard-analytics";
@@ -46,9 +47,9 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (loading || !status) return;
-    // SR-legacy uses its own analytics endpoint — skip platform prefetch so a
-    // cold platform compute does not contend with the legacy load.
-    if (pathname.startsWith("/dashboard/smartrefill-old")) return;
+    // Only prefetch platform analytics on dashboard app routes. Lead pipeline,
+    // admin, events, and subscriptions should not pay for a cold recompute.
+    if (!isDashboardAppPath(pathname)) return;
     prefetchDashboardAnalytics();
   }, [loading, status, pathname]);
 
@@ -96,7 +97,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <DashboardAnalyticsProvider>
+        <DashboardAnalyticsProvider enabled={isDashboardAppPath(pathname)}>
           <DashboardHeader
             profile={headerProfile}
             role={role}

@@ -3,6 +3,10 @@ import {
   leadQueueBucket,
   normalizeDemoStatus,
 } from "@/features/lead-pipeline/lib/lead-pipeline-display";
+import {
+  leadHasAssignee,
+  resolveAssigneeUids,
+} from "@/features/lead-pipeline/lib/lead-assignees";
 import { isStalledWarmDemoLead } from "@/features/lead-pipeline/lib/lead-referral-partners";
 import type { UserSubscriptionListItem } from "@/features/dashboard/lib/build-user-subscriptions-list";
 import {
@@ -300,7 +304,7 @@ function chanceFromLead(
   return estimateSalesHomeChance({
     intent,
     stage: lead.stage,
-    assigned: Boolean(lead.assignedToUid),
+    assigned: resolveAssigneeUids(lead).length > 0,
     hasEmail: Boolean(lead.email?.trim()),
     hasPhone: Boolean(lead.phone?.trim()),
     neverContacted: neverContacted(lead),
@@ -332,7 +336,7 @@ function toRow(
   uid: string | undefined,
   nowMs: number,
 ): SalesHomeStationRow {
-  const assignedToYou = Boolean(uid && lead.assignedToUid === uid);
+  const assignedToYou = Boolean(uid && leadHasAssignee(lead, uid));
   return {
     id: lead.id,
     leadId: lead.id,

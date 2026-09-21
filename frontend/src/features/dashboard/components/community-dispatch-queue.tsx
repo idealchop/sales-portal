@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Radio, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,7 @@ export function CommunityDispatchQueue({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [assignTarget, setAssignTarget] = useState<string | null>(null);
   const [selectedBusinessId, setSelectedBusinessId] = useState("");
+  const hasLoadedRef = useRef(false);
 
   const stationOptions = useMemo(
     () =>
@@ -80,12 +81,14 @@ export function CommunityDispatchQueue({
     [communityStations],
   );
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { silent?: boolean }) => {
     setError(null);
-    setLoading(true);
+    const silent = options?.silent === true && hasLoadedRef.current;
+    if (!silent) setLoading(true);
     try {
       const data = await fetchCommunityDispatchRequests({ limit: 50 });
       setRows(data);
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Could not load dispatch queue.",
@@ -114,7 +117,12 @@ export function CommunityDispatchQueue({
     setError(null);
     try {
       await cancelCommunityDispatchRequest(requestId);
-      await load();
+      setRows((current) =>
+        current.map((row) =>
+          row.id === requestId ? { ...row, status: "cancelled" } : row,
+        ),
+      );
+      void load({ silent: true });
       void onRefresh?.({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not cancel request.");
@@ -131,7 +139,12 @@ export function CommunityDispatchQueue({
       await assignCommunityDispatchRequest(requestId, selectedBusinessId);
       setAssignTarget(null);
       setSelectedBusinessId("");
-      await load();
+      setRows((current) =>
+        current.map((row) =>
+          row.id === requestId ? { ...row, status: "assigned" } : row,
+        ),
+      );
+      void load({ silent: true });
       void onRefresh?.({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not assign request.");

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Mail, Tag } from "lucide-react";
 import { ListPagination } from "@/components/list-pagination";
+import { Button } from "@/components/ui/button";
 import { usePagination } from "@/hooks/use-pagination";
 import type { Lead, LeadPlatformSource, LeadQueue } from "@/lib/definitions";
 import {
@@ -17,7 +18,6 @@ import {
   displayAttemptCount,
   attemptSeverity,
   attemptSeverityClassName,
-  inputClassName,
   leadContactStatus,
   leadLatestNote,
   leadQueueBucket,
@@ -38,7 +38,12 @@ import {
 } from "@/features/lead-pipeline/lib/lead-pipeline-list";
 import { useLeadAssignees } from "@/hooks/use-lead-assignees";
 import { LeadActionsMenu } from "@/features/lead-pipeline/components/lead-actions-menu";
+import { LeadAssigneeMultiSelect } from "@/features/lead-pipeline/components/lead-assignee-multi-select";
+import { LeadEmailBlastComposeDialog } from "@/features/lead-pipeline/components/lead-email-blast-compose-dialog";
+import { LeadPromoteOfferDialog } from "@/features/lead-pipeline/components/lead-promote-offer-dialog";
 import { LeadPipelineFilters } from "@/features/lead-pipeline/components/lead-pipeline-filters";
+import type { PromoteEmailDraft } from "@/features/lead-pipeline/lib/lead-promote-offer";
+import type { BulkAssignMode } from "@/lib/sales/api";
 import { cn } from "@/lib/utils";
 
 function LeadProfileCell({ lead }: { lead: Lead }) {
@@ -265,6 +270,8 @@ export function LeadPipelineTable({
   onViewHistory,
   onFollowUpEmail,
   onAssign,
+  onBulkAssign,
+  onLeadsChanged,
 }: {
   leads: Lead[];
   queue?: LeadQueue;
@@ -273,7 +280,14 @@ export function LeadPipelineTable({
   onUpdateStatus: (lead: Lead) => void;
   onViewHistory: (lead: Lead) => void;
   onFollowUpEmail: (lead: Lead) => void;
-  onAssign: (lead: Lead, assignedToUid: string) => Promise<void>;
+  onAssign: (lead: Lead, assignedToUids: string[]) => Promise<void>;
+  onBulkAssign: (
+    leadIds: string[],
+    mode: BulkAssignMode,
+    assignedToUids?: string[],
+  ) => Promise<void>;
+  /** Refresh list after blast when attempts were logged. */
+  onLeadsChanged?: () => void;
 }) {
   const { members } = useLeadAssignees();
   const [filters, setFilters] = useState<LeadListFilters>(
@@ -287,6 +301,13 @@ export function LeadPipelineTable({
   const [sortDir, setSortDir] = useState<LeadSortDir>("desc");
   const [pageSize, setPageSize] = useState<LeadPageSize>(25);
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [massAssigneeIds, setMassAssigneeIds] = useState<string[]>([]);
+  const [massBusy, setMassBusy] = useState(false);
+  const [massError, setMassError] = useState<string | null>(null);
+  const [blastOpen, setBlastOpen] = useState(false);
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [blastDraft, setBlastDraft] = useState<PromoteEmailDraft | null>(null);
 
   useEffect(() => {
     setSortKey(
@@ -296,6 +317,11 @@ export function LeadPipelineTable({
     );
     setSortDir("desc");
   }, [queue]);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setMassError(null);
+  }, [filters, queue]);
 
   const assigneeNameByUid = useMemo(() => {
     const map = new Map<string, string>();
@@ -320,6 +346,25 @@ export function LeadPipelineTable({
     hasPagination,
   } = usePagination(prepared, pageSize, resetKey);
 
+  const pageIds = useMemo(
+    () => paginatedItems.map((lead) => lead.id),
+    [paginatedItems],
+  );
+  const filteredIds = useMemo(
+    () => prepared.map((lead) => lead.id),
+    [prepared],
+  );
+  const selectedOnPage = pageIds.filter((id) => selectedIds.has(id));
+  const allPageSelected =
+    pageIds.length > 0 && selectedOnPage.length === pageIds.length;
+  const somePageSelected =
+    selectedOnPage.length > 0 && selectedOnPage.length < pageIds.length;
+
+  const selectedLeads = useMemo(
+    () => prepared.filter((lead) => selectedIds.has(lead.id)),
+    [prepared, selectedIds],
+  );
+
   function handleSort(key: LeadSortKey) {
     if (sortKey === key) {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -336,12 +381,69 @@ export function LeadPipelineTable({
     setFilters((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function handleAssign(lead: Lead, assignedToUid: string) {
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function togglePage() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        for (const id of pageIds) next.delete(id);
+      } else {
+        for (const id of pageIds) next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function selectAllFiltered() {
+    setSelectedIds(new Set(filteredIds));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setMassAssigneeIds([]);
+    setMassError(null);
+  }
+
+  async function handleAssign(lead: Lead, assignedToUids: string[]) {
     setAssigningId(lead.id);
     try {
-      await onAssign(lead, assignedToUid);
+      await onAssign(lead, assignedToUids);
     } finally {
       setAssigningId(null);
+    }
+  }
+
+  async function runMass(mode: BulkAssignMode) {
+    const leadIds = [...selectedIds];
+    if (leadIds.length === 0) return;
+    if (
+      (mode === "set" || mode === "add" || mode === "remove") &&
+      massAssigneeIds.length === 0
+    ) {
+      setMassError("Pick at least one assignee.");
+      return;
+    }
+    setMassBusy(true);
+    setMassError(null);
+    try {
+      await onBulkAssign(
+        leadIds,
+        mode,
+        mode === "clear" ? undefined : massAssigneeIds,
+      );
+      clearSelection();
+    } catch {
+      setMassError("Unable to update assignees.");
+    } finally {
+      setMassBusy(false);
     }
   }
 
@@ -357,12 +459,148 @@ export function LeadPipelineTable({
         queue={queue}
       />
 
-      <div className="flex items-center justify-between gap-2 text-xs text-zinc-500">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
         <p>
           Showing {paginatedItems.length} of {totalItems}
           {totalItems !== leads.length ? ` (filtered from ${leads.length})` : ""}
         </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedIds.size > 0 && selectedIds.size < filteredIds.length ?
+            <button
+              type="button"
+              className="font-medium text-teal-700 hover:underline"
+              onClick={selectAllFiltered}
+            >
+              Select all {filteredIds.length} filtered
+            </button>
+          : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            disabled={prepared.length === 0}
+            onClick={() => {
+              setBlastDraft(null);
+              setBlastOpen(true);
+            }}
+          >
+            <Mail className="h-3.5 w-3.5" />
+            Compose email
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => setPromoteOpen(true)}
+          >
+            <Tag className="h-3.5 w-3.5" />
+            Promote
+          </Button>
+        </div>
       </div>
+
+      {selectedIds.size > 0 ?
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-teal-200 bg-teal-50/60 px-3 py-2.5">
+          <p className="text-sm font-medium text-teal-900">
+            {selectedIds.size} selected
+          </p>
+          <div className="min-w-[180px] flex-1">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-teal-800/70">
+              Assignees
+            </p>
+            <div className="flex max-h-24 flex-wrap gap-x-3 gap-y-1 overflow-y-auto rounded-md border border-teal-200 bg-white px-2 py-1.5">
+              {members.map((member) => {
+                const checked = massAssigneeIds.includes(member.id);
+                return (
+                  <label
+                    key={member.id}
+                    className="flex items-center gap-1.5 text-xs text-zinc-700"
+                  >
+                    <input
+                      type="checkbox"
+                      className="rounded border-zinc-300"
+                      checked={checked}
+                      disabled={massBusy}
+                      onChange={() => {
+                        setMassAssigneeIds((prev) =>
+                          checked ?
+                            prev.filter((id) => id !== member.id)
+                          : [...prev, member.id],
+                        );
+                      }}
+                    />
+                    <span className="truncate">
+                      {member.displayName || member.email || member.id}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              disabled={massBusy}
+              onClick={() => void runMass("add")}
+            >
+              Add
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={massBusy}
+              onClick={() => void runMass("set")}
+            >
+              Replace
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={massBusy}
+              onClick={() => void runMass("remove")}
+            >
+              Remove
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={massBusy}
+              onClick={() => void runMass("clear")}
+            >
+              Unassign all
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={massBusy}
+              onClick={clearSelection}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={massBusy}
+              className="gap-1.5"
+              onClick={() => setBlastOpen(true)}
+            >
+              <Mail className="h-3.5 w-3.5" />
+              Email selected
+            </Button>
+          </div>
+          {massError ?
+            <p className="w-full text-xs text-red-600">{massError}</p>
+          : null}
+        </div>
+      : null}
 
       {prepared.length === 0 ?
         <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 px-4 py-16 text-center text-sm text-zinc-500">
@@ -373,9 +611,21 @@ export function LeadPipelineTable({
           : "No leads match the current filters."}
         </div>
       : <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
-          <table className="min-w-[820px] w-full border-collapse text-left text-sm">
+          <table className="min-w-[860px] w-full border-collapse text-left text-sm">
             <thead className="bg-zinc-50 text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
               <tr>
+                <th className="w-10 px-3 py-2.5">
+                  <input
+                    type="checkbox"
+                    className="rounded border-zinc-300"
+                    checked={allPageSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = somePageSelected;
+                    }}
+                    aria-label="Select page"
+                    onChange={togglePage}
+                  />
+                </th>
                 <SortHeader
                   label="Lead"
                   sortKey="businessName"
@@ -384,7 +634,7 @@ export function LeadPipelineTable({
                   onSort={handleSort}
                 />
                 <SortHeader
-                  label="Assigned"
+                  label="Assignees"
                   sortKey="assignedToUid"
                   activeKey={sortKey}
                   activeDir={sortDir}
@@ -407,12 +657,28 @@ export function LeadPipelineTable({
                     assigneeNameByUid.get(lead.lastContactedByUid) ||
                     lead.lastContactedByUid
                   : "—";
+                const checked = selectedIds.has(lead.id);
                 return (
                   <tr
                     key={lead.id}
-                    className="cursor-pointer border-t border-zinc-100 hover:bg-teal-50/30"
+                    className={cn(
+                      "cursor-pointer border-t border-zinc-100 hover:bg-teal-50/30",
+                      checked && "bg-teal-50/40",
+                    )}
                     onClick={() => onViewDetails(lead)}
                   >
+                    <td
+                      className="px-3 py-3 align-top"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        className="rounded border-zinc-300"
+                        checked={checked}
+                        aria-label={`Select ${lead.businessName}`}
+                        onChange={() => toggleOne(lead.id)}
+                      />
+                    </td>
                     <td className="px-3 py-3 align-top">
                       <LeadProfileCell lead={lead} />
                     </td>
@@ -420,22 +686,12 @@ export function LeadPipelineTable({
                       className="px-3 py-3 align-top"
                       onClick={(event) => event.stopPropagation()}
                     >
-                      <select
-                        className={cn(inputClassName, "min-w-[150px] py-1.5")}
-                        value={lead.assignedToUid || ""}
+                      <LeadAssigneeMultiSelect
+                        lead={lead}
+                        members={members}
                         disabled={assigningId === lead.id}
-                        onChange={(event) => {
-                          void handleAssign(lead, event.target.value);
-                        }}
-                        aria-label={`Assign ${lead.businessName}`}
-                      >
-                        <option value="">Unassigned</option>
-                        {members.map((member) => (
-                          <option key={member.id} value={member.id}>
-                            {member.displayName || member.email || member.id}
-                          </option>
-                        ))}
-                      </select>
+                        onSave={(uids) => handleAssign(lead, uids)}
+                      />
                     </td>
                     <td className="px-3 py-3 align-top">
                       <LeadContactCell
@@ -453,7 +709,8 @@ export function LeadPipelineTable({
                         onUpdateStatus={() => onUpdateStatus(lead)}
                         onViewHistory={() => onViewHistory(lead)}
                         onFollowUpEmail={() => onFollowUpEmail(lead)}
-                      />                    </td>
+                      />
+                    </td>
                   </tr>
                 );
               })}
@@ -471,6 +728,30 @@ export function LeadPipelineTable({
           onPageChange={setPage}
         />
       : null}
+
+      <LeadEmailBlastComposeDialog
+        open={blastOpen}
+        selectedLeads={selectedLeads}
+        filteredLeads={prepared}
+        initialScope={selectedLeads.length > 0 ? "selected" : "filtered"}
+        initialDraft={blastDraft}
+        onClose={() => {
+          setBlastOpen(false);
+          setBlastDraft(null);
+        }}
+        onSent={() => {
+          onLeadsChanged?.();
+        }}
+      />
+      <LeadPromoteOfferDialog
+        open={promoteOpen}
+        onClose={() => setPromoteOpen(false)}
+        onUseInEmail={(draft) => {
+          setBlastDraft(draft);
+          setPromoteOpen(false);
+          setBlastOpen(true);
+        }}
+      />
     </div>
   );
 }

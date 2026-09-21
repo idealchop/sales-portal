@@ -1068,7 +1068,7 @@ export const   LEAD_HISTORY_FIELD_LABELS: Record<string, string> = {
   address: "Address",
   stage: "Stage",
   attemptCount: "Attempts",
-  assignedToUid: "Assignee",
+  assignedToUid: "Assignees",
   lastContactAt: "Last contact",
   lastContactedByUid: "Contacted by",
   nextFollowUpAt: "Follow-up",

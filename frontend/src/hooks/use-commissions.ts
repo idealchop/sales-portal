@@ -1,49 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { fetchCommissions } from "@/lib/sales/api";
 import type { Commission } from "@/lib/definitions";
+import { usePromiseResource } from "@/hooks/use-promise-resource";
+
+const EMPTY: Commission[] = [];
 
 export function useCommissions() {
-  const [commissions, setCommissions] = useState<Commission[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(() => fetchCommissions(), []);
 
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await fetchCommissions();
-      setCommissions(data);
-    } catch {
-      setError("Unable to load commissions.");
-      setCommissions([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { data: commissions, isLoading, isFetching, error, refresh } =
+    usePromiseResource({
+      load,
+      initial: EMPTY,
+      errorMessage: "Unable to load commissions.",
+    });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void fetchCommissions()
-      .then((data) => {
-        if (cancelled) return;
-        setCommissions(data);
-        setError(null);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setError("Unable to load commissions.");
-        setCommissions([]);
-        setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { commissions, isLoading, error, refresh };
+  return { commissions, isLoading, isFetching, error, refresh };
 }

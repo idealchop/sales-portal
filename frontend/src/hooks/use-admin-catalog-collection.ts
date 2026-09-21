@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient, ApiError } from "@/lib/api-client";
 import type { AdminCatalogCollectionId } from "@/lib/admin/catalog-collections";
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
@@ -23,53 +23,66 @@ export function useAdminCatalogCollection(
 ) {
   const [documents, setDocuments] = useState<UserFirestoreDocumentRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  const load = useCallback(async () => {
-    if (!enabled) return;
-    await Promise.resolve();
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get<{
-        data: { documents: UserFirestoreDocumentRow[] };
-      }>(catalogPath(collectionId));
-      setDocuments(response.data.documents);
-    } catch (err) {
-      setError(
-        err instanceof ApiError ?
-          err.message
-        : "Unable to load catalog documents.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [collectionId, enabled]);
+  const load = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!enabled) return;
+      const silent = options?.silent === true && hasLoadedRef.current;
+      if (!hasLoadedRef.current && !silent) setIsLoading(true);
+      else setIsFetching(true);
+      setError(null);
+      try {
+        const response = await apiClient.get<{
+          data: { documents: UserFirestoreDocumentRow[] };
+        }>(catalogPath(collectionId));
+        startTransition(() => {
+          setDocuments(response.data.documents);
+        });
+        hasLoadedRef.current = true;
+      } catch (err) {
+        setError(
+          err instanceof ApiError ?
+            err.message
+          : "Unable to load catalog documents.",
+        );
+      } finally {
+        setIsLoading(false);
+        setIsFetching(false);
+      }
+    },
+    [collectionId, enabled],
+  );
 
   useEffect(() => {
-    if (!enabled) return;
-    void (async () => {
-      await load();
-    })();
+    if (!enabled) {
+      hasLoadedRef.current = false;
+      return;
+    }
+    void load();
   }, [enabled, load]);
 
   const upsertLocal = useCallback((saved: UserFirestoreDocumentRow) => {
-    setDocuments((current) => {
-      const index = current.findIndex(
-        (row) => row.documentId === saved.documentId,
-      );
-      if (index === -1) {
-        return [...current, saved].sort((a, b) =>
-          String(a.data.name || a.documentId).localeCompare(
-            String(b.data.name || b.documentId),
-            undefined,
-            { sensitivity: "base" },
-          ),
+    startTransition(() => {
+      setDocuments((current) => {
+        const index = current.findIndex(
+          (row) => row.documentId === saved.documentId,
         );
-      }
-      return current.map((row) =>
-        row.documentId === saved.documentId ? saved : row,
-      );
+        if (index === -1) {
+          return [...current, saved].sort((a, b) =>
+            String(a.data.name || a.documentId).localeCompare(
+              String(b.data.name || b.documentId),
+              undefined,
+              { sensitivity: "base" },
+            ),
+          );
+        }
+        return current.map((row) =>
+          row.documentId === saved.documentId ? saved : row,
+        );
+      });
     });
   }, []);
 
@@ -135,9 +148,11 @@ export function useAdminCatalogCollection(
         `${catalogPath(collectionId)}/documents`,
         { documentId },
       );
-      setDocuments((current) =>
-        current.filter((row) => row.documentId !== documentId),
-      );
+      startTransition(() => {
+        setDocuments((current) =>
+          current.filter((row) => row.documentId !== documentId),
+        );
+      });
     },
     [collectionId],
   );
@@ -145,8 +160,9 @@ export function useAdminCatalogCollection(
   return {
     documents: enabled ? documents : [],
     isLoading: enabled ? isLoading : false,
+    isFetching: enabled ? isFetching : false,
     error: enabled ? error : null,
-    refresh: load,
+    refresh: () => load({ silent: true }),
     saveDocument,
     publishDocument,
     deactivateDocument,

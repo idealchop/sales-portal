@@ -33,9 +33,20 @@ import {
   listLeadHistory,
   listLeads,
   updateLead,
+  bulkAssignLeads,
   type LeadQueue,
   type LeadStage,
 } from "../services/leads-service";
+import {
+  createLeadEmailTemplate,
+  deleteLeadEmailTemplate,
+  listLeadEmailTemplates,
+  updateLeadEmailTemplate,
+} from "../services/lead-email-templates-service";
+import {
+  getLeadEmailBlastQuota,
+  sendLeadEmailBlast,
+} from "../services/lead-email-blast-service";
 import {
   gatherLeadsFromSources,
   type GatherMode,
@@ -70,6 +81,15 @@ function mapServiceError(res: Response, error: unknown) {
   case "INVALID_DATA_IMPORTED":
   case "INVALID_TRAINING_PHASE":
   case "INVALID_DATE":
+  case "INVALID_BULK_ASSIGN_MODE":
+  case "LEAD_IDS_REQUIRED":
+  case "TOO_MANY_LEAD_IDS":
+  case "ASSIGNEES_REQUIRED":
+  case "TEMPLATE_FIELDS_REQUIRED":
+  case "BLAST_FIELDS_REQUIRED":
+  case "TOO_MANY_BLAST_RECIPIENTS":
+  case "DAILY_BLAST_LIMIT_REACHED":
+  case "DAILY_BLAST_LIMIT_EXCEEDED":
     res.status(400).json({ error: code });
     return;
   case "CLIENT_NOT_FOUND":
@@ -544,6 +564,28 @@ export const patchLeadHandler = async (
   }
 };
 
+export const postLeadsBulkAssignHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const data = await bulkAssignLeads(actor, {
+      leadIds: req.body?.leadIds,
+      mode: req.body?.mode,
+      assignedToUids: req.body?.assignedToUids,
+    });
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
 export const getLeadHistoryHandler = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -556,6 +598,120 @@ export const getLeadHistoryHandler = async (
 
   try {
     const data = await listLeadHistory(actor, req.params.leadId);
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const getLeadEmailTemplatesHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const data = await listLeadEmailTemplates(actor);
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const postLeadEmailTemplateHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const data = await createLeadEmailTemplate(actor, req.body);
+    res.status(201).json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const patchLeadEmailTemplateHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const data = await updateLeadEmailTemplate(
+      actor,
+      req.params.templateId,
+      req.body,
+    );
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const deleteLeadEmailTemplateHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    await deleteLeadEmailTemplate(actor, req.params.templateId);
+    res.status(204).send();
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const getLeadEmailBlastQuotaHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const data = await getLeadEmailBlastQuota(actor);
+    res.json({ data });
+  } catch (error) {
+    mapServiceError(res, error);
+  }
+};
+
+export const postLeadEmailBlastHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const actor = actorFromRequest(req);
+  if (!actor) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const data = await sendLeadEmailBlast(actor, {
+      leadIds: req.body?.leadIds,
+      subject: req.body?.subject,
+      bodyText: req.body?.bodyText,
+      countAsAttempt: Boolean(req.body?.countAsAttempt),
+      senderEmail: req.body?.senderEmail,
+      senderName: req.body?.senderName,
+      templateId: req.body?.templateId,
+    });
     res.json({ data });
   } catch (error) {
     mapServiceError(res, error);

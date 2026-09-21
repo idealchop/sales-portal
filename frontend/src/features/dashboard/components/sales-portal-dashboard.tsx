@@ -34,6 +34,7 @@ import { ownersForUserSubscriptions } from "@/lib/dashboard/analytics";
 import { useAuthUid } from "@/hooks/use-auth-uid";
 import { useLeads } from "@/hooks/use-leads";
 import { useSalesProfile } from "@/hooks/use-sales-profile";
+import { leadHasAssignee } from "@/features/lead-pipeline/lib/lead-assignees";
 import type { Lead } from "@/lib/definitions";
 
 function plusDaysAtNine(days: number): string {
@@ -63,7 +64,7 @@ export function SalesPortalDashboard() {
   });
 
   const assignedLeads = useMemo(
-    () => (uid ? leads.filter((lead) => lead.assignedToUid === uid) : []),
+    () => (uid ? leads.filter((lead) => leadHasAssignee(lead, uid)) : []),
     [leads, uid],
   );
   const assignedById = useMemo(

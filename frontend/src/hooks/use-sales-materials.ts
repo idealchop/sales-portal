@@ -1,48 +1,70 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { fetchSalesMaterials, type SalesMaterial } from "@/lib/sales/api";
+import { useCallback } from "react";
+import {
+  createSalesMaterial,
+  deleteSalesMaterial,
+  fetchSalesMaterials,
+  updateSalesMaterial,
+  type SalesMaterial,
+} from "@/lib/sales/api";
+import { usePromiseResource } from "@/hooks/use-promise-resource";
+
+const EMPTY: SalesMaterial[] = [];
 
 export function useSalesMaterials() {
-  const [materials, setMaterials] = useState<SalesMaterial[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(() => fetchSalesMaterials(), []);
 
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await fetchSalesMaterials();
-      setMaterials(data);
-    } catch {
-      setError("Unable to load sales materials.");
-      setMaterials([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { data: materials, setData, isLoading, isFetching, error, refresh } =
+    usePromiseResource({
+      load,
+      initial: EMPTY,
+      errorMessage: "Unable to load sales materials.",
+    });
 
-  useEffect(() => {
-    let cancelled = false;
+  const saveMaterial = useCallback(
+    async (
+      input: {
+        title: string;
+        description?: string;
+        type?: SalesMaterial["type"];
+        url: string;
+        imageId?: string;
+      },
+      materialId?: string,
+    ) => {
+      if (materialId) {
+        const updated = await updateSalesMaterial(materialId, input);
+        setData((previous) =>
+          previous.map((row) => (row.id === updated.id ? updated : row)),
+        );
+        return updated;
+      }
+      const created = await createSalesMaterial(input);
+      setData((previous) => [
+        created,
+        ...previous.filter((row) => row.id !== created.id),
+      ]);
+      return created;
+    },
+    [setData],
+  );
 
-    void fetchSalesMaterials()
-      .then((data) => {
-        if (cancelled) return;
-        setMaterials(data);
-        setError(null);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setError("Unable to load sales materials.");
-        setMaterials([]);
-        setIsLoading(false);
-      });
+  const removeMaterial = useCallback(
+    async (materialId: string) => {
+      await deleteSalesMaterial(materialId);
+      setData((previous) => previous.filter((row) => row.id !== materialId));
+    },
+    [setData],
+  );
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { materials, isLoading, error, refresh };
+  return {
+    materials,
+    isLoading,
+    isFetching,
+    error,
+    refresh,
+    saveMaterial,
+    removeMaterial,
+  };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient, ApiError } from "@/lib/api-client";
 import type { BusinessFirestoreDocumentRow } from "@/lib/admin/business-profile-display";
 
@@ -26,10 +26,12 @@ export function useAdminBusinessSubcollection(
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { silent?: boolean }) => {
     if (!businessId || !enabled) return;
-    setIsLoading(true);
+    const silent = options?.silent === true || hasLoadedRef.current;
+    if (!silent) setIsLoading(true);
     setError(null);
     try {
       const response = await apiClient.get<{
@@ -38,8 +40,11 @@ export function useAdminBusinessSubcollection(
           totalCount: number;
         };
       }>(`/admin/businesses/${businessId}/collections/${collectionId}`);
-      setDocuments(response.data.documents);
-      setTotalCount(response.data.totalCount);
+      startTransition(() => {
+        setDocuments(response.data.documents);
+        setTotalCount(response.data.totalCount);
+      });
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(
         err instanceof ApiError ?
@@ -61,6 +66,7 @@ export function useAdminBusinessSubcollection(
       setTotalCount(expected || seeded.length);
       setIsLoading(false);
       setError(null);
+      hasLoadedRef.current = true;
       return;
     }
 
@@ -72,7 +78,7 @@ export function useAdminBusinessSubcollection(
     totalCount,
     isLoading,
     error,
-    refresh: load,
+    refresh: () => load({ silent: true }),
     setDocuments,
   };
 }

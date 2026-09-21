@@ -6,6 +6,10 @@ import type {
   Commission,
   Lead,
   LeadAnalytics,
+  LeadEmailBlastQuota,
+  LeadEmailBlastResult,
+  LeadEmailTemplate,
+  LeadEmailTemplateVisibility,
   LeadHistoryEvent,
   LeadQueue,
   LeadStage,
@@ -235,6 +239,85 @@ export async function updateLead(
   input: Partial<Lead> & { bumpAttempt?: boolean },
 ) {
   const res = await apiClient.patch<{ data: Lead }>(`/leads/${leadId}`, input);
+  return res.data;
+}
+
+export type BulkAssignMode = "set" | "add" | "remove" | "clear";
+
+export async function bulkAssignLeads(input: {
+  leadIds: string[];
+  mode: BulkAssignMode;
+  assignedToUids?: string[];
+}) {
+  const res = await apiClient.post<{
+    data: {
+      updated: Lead[];
+      failed: Array<{ leadId: string; error: string }>;
+    };
+  }>("/leads/bulk-assign", input);
+  return res.data;
+}
+
+export async function fetchLeadEmailTemplates() {
+  const res = await apiClient.get<{ data: LeadEmailTemplate[] }>(
+    "/leads/email-templates",
+  );
+  return res.data;
+}
+
+export async function createLeadEmailTemplate(input: {
+  title: string;
+  subject: string;
+  bodyText: string;
+  visibility: LeadEmailTemplateVisibility;
+}) {
+  const res = await apiClient.post<{ data: LeadEmailTemplate }>(
+    "/leads/email-templates",
+    input,
+  );
+  return res.data;
+}
+
+export async function updateLeadEmailTemplate(
+  templateId: string,
+  input: {
+    title: string;
+    subject: string;
+    bodyText: string;
+    visibility: LeadEmailTemplateVisibility;
+  },
+) {
+  const res = await apiClient.patch<{ data: LeadEmailTemplate }>(
+    `/leads/email-templates/${templateId}`,
+    input,
+  );
+  return res.data;
+}
+
+export async function deleteLeadEmailTemplate(templateId: string) {
+  await apiClient.delete(`/leads/email-templates/${templateId}`);
+}
+
+export async function fetchLeadEmailBlastQuota() {
+  const res = await apiClient.get<{ data: LeadEmailBlastQuota }>(
+    "/leads/email-blast/quota",
+  );
+  return res.data;
+}
+
+export async function sendLeadEmailBlast(input: {
+  leadIds: string[];
+  subject: string;
+  bodyText: string;
+  countAsAttempt?: boolean;
+  senderEmail?: string;
+  senderName?: string;
+  templateId?: string;
+}) {
+  const res = await apiClient.post<{ data: LeadEmailBlastResult }>(
+    "/leads/email-blast",
+    input,
+  );
   return res.data;
 }
 

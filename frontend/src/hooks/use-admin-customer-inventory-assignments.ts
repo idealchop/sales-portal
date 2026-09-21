@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient, ApiError } from "@/lib/api-client";
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
 
@@ -13,45 +13,56 @@ export function useAdminCustomerInventoryAssignments(
     [],
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!businessId || !customerId || !enabled) return;
-    await Promise.resolve();
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get<{
-        data: { documents: UserFirestoreDocumentRow[] };
-      }>(
-        `/admin/businesses/${businessId}/customers/${customerId}/inventory-assignments`,
-      );
-      setAssignments(response.data.documents);
-    } catch (err) {
-      setError(
-        err instanceof ApiError ?
-          err.message
-        : "Unable to load inventory assignments.",
-      );
-      setAssignments([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [businessId, customerId, enabled]);
-
+  const hasLoadedRef = useRef(false);
   const isActive = enabled && Boolean(businessId) && Boolean(customerId);
 
+  const load = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!businessId || !customerId || !enabled) return;
+      const silent = options?.silent === true && hasLoadedRef.current;
+      if (!hasLoadedRef.current && !silent) setIsLoading(true);
+      else setIsFetching(true);
+      setError(null);
+      try {
+        const response = await apiClient.get<{
+          data: { documents: UserFirestoreDocumentRow[] };
+        }>(
+          `/admin/businesses/${businessId}/customers/${customerId}/inventory-assignments`,
+        );
+        startTransition(() => {
+          setAssignments(response.data.documents);
+        });
+        hasLoadedRef.current = true;
+      } catch (err) {
+        setError(
+          err instanceof ApiError ?
+            err.message
+          : "Unable to load inventory assignments.",
+        );
+        if (!hasLoadedRef.current) setAssignments([]);
+      } finally {
+        setIsLoading(false);
+        setIsFetching(false);
+      }
+    },
+    [businessId, customerId, enabled],
+  );
+
   useEffect(() => {
-    if (!isActive) return;
-    void (async () => {
-      await load();
-    })();
+    if (!isActive) {
+      hasLoadedRef.current = false;
+      return;
+    }
+    void load();
   }, [isActive, load]);
 
   return {
     assignments: isActive ? assignments : [],
     isLoading: isActive ? isLoading : false,
+    isFetching: isActive ? isFetching : false,
     error: isActive ? error : null,
-    refresh: load,
+    refresh: () => load({ silent: true }),
   };
 }

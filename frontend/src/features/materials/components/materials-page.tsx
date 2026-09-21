@@ -13,12 +13,7 @@ import {
 } from "@/components/ui/card";
 import { useSalesMaterials } from "@/hooks/use-sales-materials";
 import { useSalesProfile } from "@/hooks/use-sales-profile";
-import {
-  createSalesMaterial,
-  deleteSalesMaterial,
-  type SalesMaterial,
-  updateSalesMaterial,
-} from "@/lib/sales/api";
+import type { SalesMaterial } from "@/lib/sales/api";
 
 const inputClassName =
   "h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-foreground outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20";
@@ -30,7 +25,8 @@ function MaterialIcon({ type }: { type: SalesMaterial["type"] }) {
 
 export function MaterialsPage() {
   const { isAdmin } = useSalesProfile();
-  const { materials, isLoading, error, refresh } = useSalesMaterials();
+  const { materials, isLoading, error, saveMaterial, removeMaterial } =
+    useSalesMaterials();
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -84,14 +80,8 @@ export function MaterialsPage() {
         type,
       };
 
-      if (editingId) {
-        await updateSalesMaterial(editingId, payload);
-      } else {
-        await createSalesMaterial(payload);
-      }
-
+      await saveMaterial(payload, editingId || undefined);
       resetForm();
-      await refresh();
     } catch {
       setFormError("Unable to save material.");
     } finally {
@@ -102,9 +92,8 @@ export function MaterialsPage() {
   async function handleDelete(materialId: string) {
     setSubmitting(true);
     try {
-      await deleteSalesMaterial(materialId);
+      await removeMaterial(materialId);
       if (editingId === materialId) resetForm();
-      await refresh();
     } catch {
       setFormError("Unable to delete material.");
     } finally {

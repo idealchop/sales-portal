@@ -15,6 +15,14 @@ import { loadOnboardedBusinessSnapshot } from "./load-onboarded-snapshot";
 import { stampPipelineAffiliateOnPayingSubscription } from "./stamp-pipeline-affiliate";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
 import { buildSmartRefillPipelineLeads } from "./build-smartrefill-pipeline-leads";
+import {
+  assigneeWriteFields,
+  leadHasAssignee,
+  mergeAssigneeUids,
+  normalizeAssigneeUids,
+  removeAssigneeUids,
+  resolveAssigneeUids,
+} from "../lib/lead-assignees";
 
 export type LeadStage =
   | "inquire"
@@ -99,6 +107,9 @@ export type LeadRecord = {
   attemptCount: number;
   warmAttemptCount: number;
   coldAttemptCount: number;
+  /** Canonical multi-assignee list. */
+  assignedToUids?: string[];
+  /** Legacy primary assignee — first of `assignedToUids` (or undefined). */
   assignedToUid?: string;
   firstContactAt?: string | null;
   lastContactAt?: string | null;
@@ -178,6 +189,7 @@ export type CreateLeadInput = {
   stage?: LeadStage;
   attemptCount?: number;
   assignedToUid?: string;
+  assignedToUids?: string[];
   firstContactAt?: string | null;
   lastContactAt?: string | null;
   lastContactedByUid?: string;
@@ -523,10 +535,8 @@ export function normalizeLead(
     coldAttemptCount: Number.isFinite(Number(base.coldAttemptCount)) ?
       Math.max(0, Number(base.coldAttemptCount)) :
       0,
-    assignedToUid:
-      typeof base.assignedToUid === "string" && base.assignedToUid.trim() ?
-        base.assignedToUid.trim() :
-        undefined,
+    assignedToUids: resolveAssigneeUids(base),
+    assignedToUid: resolveAssigneeUids(base)[0],
     firstContactAt: optionalIso(base.firstContactAt),
     lastContactAt: optionalIso(base.lastContactAt),
     lastContactedByUid:
@@ -681,13 +691,27 @@ function workspaceFromPersistedLead(
       undefined;
   const accountReady =
     typeof nested.accountReady === "boolean" ? nested.accountReady : undefined;
+  const expiresAt =
+    typeof nested.trialDaysLeft === "number" ? null :
+      typeof base.subscriptionExpiresAt === "string" ? base.subscriptionExpiresAt :
+        typeof nested.expiresAt === "string" ? nested.expiresAt :
+          null;
+  const trialDaysLeft =
+    typeof nested.trialDaysLeft === "number" ? nested.trialDaysLeft :
+      daysLeftFromExpiresAt(expiresAt ?? undefined);
+  const billingCycleLower = (billingCycle || "").toLowerCase();
+  const isTrial =
+    billingCycleLower === "trial" ||
+    (planName || "").toLowerCase().includes("trial");
+
   if (
     !planName &&
     !planCode &&
     !billingCycle &&
     !Number.isFinite(price) &&
     onboardingComplete === undefined &&
-    accountReady === undefined
+    accountReady === undefined &&
+    trialDaysLeft === null
   ) {
     return undefined;
   }
@@ -696,6 +720,7 @@ function workspaceFromPersistedLead(
     planCode,
     billingCycle,
     price: Number.isFinite(price) ? price : undefined,
+    trialDaysLeft: isTrial || trialDaysLeft !== null ? trialDaysLeft : null,
     onboardingComplete,
     accountReady,
   };
@@ -726,7 +751,7 @@ export function filterLeads(
       // Content-only guests live on the Content tab, not Warm.
       if (opts.queue === "warm" && lead.sourceKind === "content") return false;
     }
-    if (assignee && lead.assignedToUid !== assignee) return false;
+    if (assignee && !leadHasAssignee(lead, assignee)) return false;
     if (!q) return true;
     const haystack = [
       lead.businessName,
@@ -779,19 +804,29 @@ export function buildLeadsAnalytics(
       stallMap.set(reason, (stallMap.get(reason) ?? 0) + 1);
     }
 
-    const assigneeKey = lead.assignedToUid?.trim() || "unassigned";
-    const bucket = assigneeMap.get(assigneeKey) ?? {
-      count: 0,
-      overdueFollowUps: 0,
-    };
-    bucket.count += 1;
-    if (lead.nextFollowUpAt) {
-      const followMs = new Date(lead.nextFollowUpAt).getTime();
-      if (!Number.isNaN(followMs) && followMs < nowMs && lead.stage !== "archive") {
-        bucket.overdueFollowUps += 1;
-      }
+    const assigneeKeysRaw = resolveAssigneeUids(lead);
+    const assigneeKeys =
+      assigneeKeysRaw.length > 0 ? assigneeKeysRaw : ["unassigned"];
+    const overdue =
+      lead.nextFollowUpAt ?
+        (() => {
+          const followMs = new Date(lead.nextFollowUpAt).getTime();
+          return (
+            !Number.isNaN(followMs) &&
+            followMs < nowMs &&
+            lead.stage !== "archive"
+          );
+        })()
+      : false;
+    for (const assigneeKey of assigneeKeys) {
+      const bucket = assigneeMap.get(assigneeKey) ?? {
+        count: 0,
+        overdueFollowUps: 0,
+      };
+      bucket.count += 1;
+      if (overdue) bucket.overdueFollowUps += 1;
+      assigneeMap.set(assigneeKey, bucket);
     }
-    assigneeMap.set(assigneeKey, bucket);
 
     const daysLeft = lead.workspace?.trialDaysLeft;
     if (
@@ -1002,9 +1037,10 @@ export async function listLeads(
     q?: string;
   } = {},
 ): Promise<LeadRecord[]> {
+  // Fast path: use denormalized workspace / monitor fields already on each lead
+  // (written by gather + PATCH). Live N× business enrichment belongs on getLead.
   const leads = await listAccessibleLeads(actor);
-  const enriched = await enrichLeadsWithWorkspace(leads);
-  return filterLeads(enriched, opts).sort((a, b) =>
+  return filterLeads(leads, opts).sort((a, b) =>
     String(b.updatedAt || b.createdAt || "").localeCompare(
       String(a.updatedAt || a.createdAt || ""),
     ),
@@ -1095,6 +1131,14 @@ export async function createLead(
     if (!businessSnap.exists) throw new Error("LINKED_BUSINESS_NOT_FOUND");
   }
 
+  const initialAssignees =
+    input.assignedToUids !== undefined ?
+      normalizeAssigneeUids(input.assignedToUids)
+    : input.assignedToUid?.trim() ?
+      [input.assignedToUid.trim()]
+    : [actor.uid];
+  const assigneeFields = assigneeWriteFields(initialAssignees);
+
   const ref = db.collection("leads").doc();
   const payload = {
     userId: actor.uid,
@@ -1108,7 +1152,7 @@ export async function createLead(
     attemptCount: Math.max(0, Number(input.attemptCount) || 0),
     warmAttemptCount: Math.max(0, Number(input.attemptCount) || 0),
     coldAttemptCount: 0,
-    assignedToUid: input.assignedToUid?.trim() || actor.uid,
+    ...assigneeFields,
     firstContactAt: parseOptionalDate(input.firstContactAt ?? null),
     lastContactAt: parseOptionalDate(input.lastContactAt ?? null),
     lastContactedByUid: input.lastContactedByUid?.trim() || null,
@@ -1264,8 +1308,15 @@ export async function updateLead(
     patch.coldAttemptCount = nextCold;
     patch.attemptCount = nextWarm + nextCold;
   }
-  if (input.assignedToUid !== undefined) {
-    patch.assignedToUid = input.assignedToUid.trim() || null;
+  if (input.assignedToUids !== undefined) {
+    Object.assign(patch, assigneeWriteFields(input.assignedToUids));
+  } else if (input.assignedToUid !== undefined) {
+    Object.assign(
+      patch,
+      assigneeWriteFields(
+        input.assignedToUid.trim() ? [input.assignedToUid.trim()] : [],
+      ),
+    );
   }
   if (input.firstContactAt !== undefined) {
     patch.firstContactAt = parseOptionalDate(input.firstContactAt);
@@ -1431,6 +1482,11 @@ export async function updateLead(
       attemptCount: existing.attemptCount,
       warmAttemptCount: existing.warmAttemptCount,
       coldAttemptCount: existing.coldAttemptCount,
+      assignedToUids: existing.assignedToUids?.length
+        ? existing.assignedToUids
+        : existing.assignedToUid
+          ? [existing.assignedToUid]
+          : [actor.uid],
       assignedToUid: existing.assignedToUid || actor.uid,
       channels: existing.channels,
       leadSource: existing.leadSource || "",
@@ -1478,6 +1534,90 @@ export async function updateLead(
     accountReady: updated.accountReady,
   });
   return updated;
+}
+
+export type BulkAssignMode = "set" | "add" | "remove" | "clear";
+
+export type BulkAssignLeadsInput = {
+  leadIds: string[];
+  mode: BulkAssignMode;
+  assignedToUids?: string[];
+};
+
+const BULK_ASSIGN_MAX = 200;
+
+export async function bulkAssignLeads(
+  actor: SalesActor,
+  input: BulkAssignLeadsInput,
+): Promise<{
+  updated: LeadRecord[];
+  failed: Array<{ leadId: string; error: string }>;
+}> {
+  const mode = input.mode;
+  if (!["set", "add", "remove", "clear"].includes(mode)) {
+    throw new Error("INVALID_BULK_ASSIGN_MODE");
+  }
+
+  const leadIds = [
+    ...new Set(
+      (Array.isArray(input.leadIds) ? input.leadIds : [])
+        .filter((id): id is string => typeof id === "string")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (leadIds.length === 0) throw new Error("LEAD_IDS_REQUIRED");
+  if (leadIds.length > BULK_ASSIGN_MAX) throw new Error("TOO_MANY_LEAD_IDS");
+
+  const targetUids = normalizeAssigneeUids(input.assignedToUids);
+  if ((mode === "set" || mode === "add" || mode === "remove") && targetUids.length === 0) {
+    throw new Error("ASSIGNEES_REQUIRED");
+  }
+
+  const updated: LeadRecord[] = [];
+  const failed: Array<{ leadId: string; error: string }> = [];
+
+  for (const leadId of leadIds) {
+    try {
+      const existing = await getLead(actor, leadId);
+      if (!existing && leadId.startsWith("sr-")) {
+        // Allow first overlay via updateLead path.
+      } else if (!existing) {
+        failed.push({ leadId, error: "NOT_FOUND" });
+        continue;
+      }
+
+      const current = existing ? resolveAssigneeUids(existing) : [];
+      let next: string[];
+      if (mode === "clear") {
+        next = [];
+      } else if (mode === "set") {
+        next = targetUids;
+      } else if (mode === "add") {
+        next = mergeAssigneeUids(current, targetUids);
+      } else {
+        next = removeAssigneeUids(current, targetUids);
+      }
+
+      const same =
+        next.length === current.length &&
+        next.every((uid, i) => uid === current[i]);
+      if (same && existing) {
+        updated.push(existing);
+        continue;
+      }
+
+      const row = await updateLead(actor, leadId, { assignedToUids: next });
+      updated.push(row);
+    } catch (error) {
+      failed.push({
+        leadId,
+        error: error instanceof Error ? error.message : "UPDATE_FAILED",
+      });
+    }
+  }
+
+  return { updated, failed };
 }
 
 export type LeadHistoryKind =
@@ -1539,6 +1679,7 @@ const STATUS_HISTORY_FIELDS = [
   "warmAttemptCount",
   "coldAttemptCount",
   "assignedToUid",
+  "assignedToUids",
   "lastOutreachMessageId",
   "lastOutreachOpenedAt",
 ] as const;
@@ -1684,6 +1825,7 @@ function filterChangesForKind(
       "stallReason",
       "channels",
       "assignedToUid",
+      "assignedToUids",
       "attemptCount",
       "warmAttemptCount",
       "coldAttemptCount",

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_DATE_FILTER,
   DEFAULT_LEAD_LIST_FILTERS,
+  buildQueueCountsFromLeads,
   clearedLeadListFilterValue,
   describeActiveLeadListFilters,
+  filterLeadsByPipelineParams,
   filterLeadsForList,
   prepareLeadListRows,
   resolveDateFilterRange,
@@ -47,6 +49,43 @@ function filters(overrides: Partial<LeadListFilters> = {}): LeadListFilters {
 }
 
 describe("lead-pipeline-list", () => {
+  it("filters queue and assignee without another API call", () => {
+    const rows = [
+      lead({ id: "1", stage: "warm", assignedToUid: "sales-1" }),
+      lead({ id: "2", stage: "cold", assignedToUid: "sales-2" }),
+      lead({
+        id: "3",
+        stage: "warm",
+        sourceKind: "content",
+        contentSources: ["webinar"],
+        assignedToUid: "sales-1",
+      }),
+      lead({ id: "4", stage: "onboarded", assignedToUid: "sales-1" }),
+    ];
+
+    expect(filterLeadsByPipelineParams(rows, { queue: "warm" }).map((r) => r.id)).toEqual([
+      "1",
+    ]);
+    expect(
+      filterLeadsByPipelineParams(rows, { queue: "content" }).map((r) => r.id),
+    ).toEqual(["3"]);
+    expect(
+      filterLeadsByPipelineParams(rows, {
+        queue: "all",
+        assignee: "sales-1",
+      }).map((r) => r.id),
+    ).toEqual(["1", "3", "4"]);
+
+    expect(buildQueueCountsFromLeads(rows)).toEqual({
+      all: 4,
+      content: 1,
+      warm: 1,
+      cold: 1,
+      onboarded: 1,
+      archive: 0,
+    });
+  });
+
   const rows = [
     lead({
       id: "1",
@@ -134,6 +173,21 @@ describe("lead-pipeline-list", () => {
         (row) => row.id,
       ),
     ).toEqual(["1"]);
+
+    expect(
+      filterLeadsForList(
+        [
+          ...rows,
+          lead({
+            id: "multi",
+            assignedToUids: ["alice", "bob"],
+            assignedToUid: "alice",
+          }),
+        ],
+        filters({ assignedToUid: "bob" }),
+        now,
+      ).map((row) => row.id),
+    ).toEqual(["2", "multi"]);
 
     expect(
       filterLeadsForList(rows, filters({ warmStatus: "awaiting_reply" }), now).map(

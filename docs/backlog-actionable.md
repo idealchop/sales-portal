@@ -146,3 +146,4 @@ Implementation-ready work ordered by ROI × ease. IDs: **AB-01** … **AB-24**.
 | 2026-07-24 | SmartRefill ops dashboard tabs; outreach Contact emails (alerts + inactive owners); inactive expand-all + 7d contact cooldown |
 | 2026-08-22 | Proposals & Clients outreach compose — multi-select recipients (platform/CRM/webinar/story/article), bulk Brevo send (50 cap), `/outreach/recipients` + `/outreach/send` |
 | 2026-09-15 | Lead pipeline (SC1–SC3 + SC5) — hybrid `leads` CRM, table/Insights dual-view, workspace link overlay |
+| 2026-09-22 | Lead multi-assign + mass assign; email blast templates (personal/shared) + 25/day soft cap; Promote vouchers/affiliates; silent Promise refresh across portal hooks |

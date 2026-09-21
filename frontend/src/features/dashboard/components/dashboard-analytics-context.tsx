@@ -27,10 +27,13 @@ const DashboardAnalyticsContext =
 
 export function DashboardAnalyticsProvider({
   children,
+  enabled = true,
 }: {
   children: ReactNode;
+  /** When false, skip Firestore listener + 30s poll (non-dashboard routes). */
+  enabled?: boolean;
 }) {
-  const value = useDashboardAnalytics();
+  const value = useDashboardAnalytics({ enabled });
   return (
     <DashboardAnalyticsContext.Provider value={value}>
       {children}
