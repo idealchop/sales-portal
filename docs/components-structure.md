@@ -39,7 +39,13 @@ frontend/src/
 | `components/smartrefill-maintenance-signals.tsx` | Workspace health + payment status bars |
 | `components/platform-alerts-list.tsx` | Alert queue; Contact (Brevo) + Mark done; row click opens Data management (admin) or detail dialog |
 | `components/active-owners-panel.tsx` | Inactive owners (7d+); Contact sends Brevo miss-you + 7d cooldown |
-| `components/sales-portal-dashboard.tsx` | Action board at `/dashboard`: assigned-lead tasks + performance + proposal stages |
+| `components/sales-portal-dashboard.tsx` | `/dashboard`: Jump lists, then Your work today, then Also watch (5 KPIs one row), then collapsible Win more / Keep them charts |
+| `components/sales-home-focus-panel.tsx` | Win more / Keep them: chart + chance mix; expand to station list |
+| `lib/build-sales-home-focus-chart.ts` | Intent bars and low/mid/high chance mix for win/keep |
+| `components/sales-home-route-shortcuts.tsx` | Jump cards with counts; **New in {app}** badges for SmartRefill / Sales Portal |
+| `components/sales-home-station-list.tsx` | Full-width win/keep rows: chance rail, Now / Should be panels, If nobody acts, Why this chance |
+| `lib/estimate-sales-home-chance.ts` | Heuristic onboard / return / continue percent (5% steps, no AI) |
+| `lib/build-sales-home-focus.ts` | Win/keep rows: now, should-be, what-if, gap levels; merges subscription roster |
 | `components/sales-market-position-section.tsx` | Market position metrics + plan mix bars; proactive scoreboard |
 | `lib/build-sales-market-report.ts` | Derives market share, expansion upside, projected wins from analytics (excludes `authAccountTag=test`) |
 | `lib/filter-chart-series.ts` | Date-range chart filters; drops test-tagged businesses |
@@ -98,9 +104,10 @@ Uses a lightweight legacy station loader (no delivery scan).
 |------|---------|
 | `components/lead-pipeline-page.tsx` | Queue tabs, Table/Insights toggle, edit |
 | `components/lead-pipeline-table.tsx` | Spreadsheet-style list (default view) |
-| `components/lead-pipeline-insights.tsx` | Funnel, source, assignee, trial-risk charts; **Who to reward** referral board |
-| `lib/lead-referral-partners.ts` | Groups Referrals by affiliate/CRM referrer; **success rate** = onboarded **and** paid Starter–Scale (Enterprise included). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed |
-| `components/lead-referrer-picker.tsx` | Referrer picker: catalog affiliates first, then CRM/directory |
+| `components/lead-pipeline-insights.tsx` | Funnel, source, assignee, trial-risk charts; **Who to reward** via `lead-referral-partners-panel.tsx` |
+| `components/lead-referral-partners-panel.tsx` | One-click **Create partner code** / **Create voucher** (prefilled name, email, `ownerUserId`); stalled-warm close-deal list |
+| `lib/lead-referral-partners.ts` | Groups Referrals + webinar/article `contentReferrer`. **Success rate** = onboarded **and** paid Starter–Scale (Enterprise included). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed. **Payout-eligible** = onboarded + account-ready or paid |
+| `components/lead-referrer-picker.tsx` | Referrer picker: catalog affiliates first, then CRM/directory (includes email) |
 | `components/lead-form-dialog.tsx` | Create/update lead + link workspace |
 
 Route: `app/lead-pipeline/page.tsx`. API: `GET/POST/PATCH /leads`, `GET /leads/analytics`.
@@ -128,7 +135,8 @@ Large admin surface for permissions and Firestore data management:
 | `admin-data-management-page.tsx` | Business/user document browser |
 | `admin-data-management-business-page.tsx` | Business overview — tabbed layout aligned with SmartRefill ops. Insights **Sign-in attendance** is a year heatmap of owner `login_events` days; **Transaction activity** plots tickets vs gallons vs other units; **Order mix** stacks delivery (manual/QR), walk-in, direct, and collection |
 | `admin-catalog-collection-page.tsx` | Subscription catalog tables |
-| `admin-catalog-collection-manager.tsx` | Catalog tables; plans/addons/vouchers show station roster; affiliates show pipeline **success rate** (paid Starter–Scale only) |
+| `admin-catalog-collection-manager.tsx` | Catalog tables; plans/addons/vouchers show station roster; affiliates show pipeline **success rate** + **payout** |
+| `voucher-affiliate-pipeline-panel.tsx` | Who deserves a partner code or checkout/close-deal voucher, with succession rate |
 | `plan-subscribers-dialog.tsx` | Paginated station roster (who, started, last active) |
 | `trial-stations-panel.tsx` | Free-trial roster with days remaining |
 | `catalog-document-form-*` | Structured add/edit forms (not raw JSON); product icons include **Water container** |

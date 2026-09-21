@@ -12,6 +12,7 @@ export type LeadReferrerSelection = {
   label: string;
   clientId?: string;
   userId?: string;
+  email?: string;
   affiliateId?: string;
   affiliateCode?: string;
 };
@@ -46,6 +47,7 @@ function buildOptions(
       affiliateId: affiliate.documentId,
       affiliateCode: affiliate.code || undefined,
       userId: affiliate.ownerUserId,
+      email: affiliate.contactEmail,
     });
   }
 
@@ -78,6 +80,7 @@ function buildOptions(
       userId: client.linkedUserId,
       affiliateId: matchedAffiliate?.documentId,
       affiliateCode: matchedAffiliate?.code,
+      email: client.contactEmail?.trim().toLowerCase(),
     });
   }
 
@@ -97,6 +100,7 @@ function buildOptions(
       subtitle: entry.email || entry.phone || "Platform account",
       clientId: entry.clientId,
       userId: entry.linkedUserId,
+      email: entry.email?.trim().toLowerCase(),
     });
   }
 

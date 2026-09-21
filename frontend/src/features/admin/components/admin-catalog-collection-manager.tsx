@@ -11,6 +11,11 @@ import { FirestoreActionsMenu } from "@/features/admin/components/firestore-acti
 import { FirestoreDocumentDetailDialog } from "@/features/admin/components/firestore-document-detail-dialog";
 import { PlanSubscribersDialog } from "@/features/admin/components/plan-subscribers-dialog";
 import {
+  VoucherAffiliatePipelinePanel,
+  voucherAffiliatePrefillFromPartner,
+  voucherAffiliatePrefillFromProspect,
+} from "@/features/admin/components/voucher-affiliate-pipeline-panel";
+import {
   buildUserSubscriptionsList,
   type UserSubscriptionListItem,
 } from "@/features/dashboard/lib/build-user-subscriptions-list";
@@ -56,6 +61,7 @@ import {
   formatVoucherOfferLine,
 } from "@/lib/admin/catalog-offer-display";
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
+import type { CatalogFormValues } from "@/lib/admin/catalog-document-forms";
 import { cn } from "@/lib/utils";
 
 function ProductIconPreview({ data }: { data: Record<string, unknown> }) {
@@ -110,6 +116,9 @@ export function AdminCatalogCollectionManager({
   const [deleteDoc, setDeleteDoc] = useState<UserFirestoreDocumentRow | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createPresetCode, setCreatePresetCode] = useState<string | undefined>(undefined);
+  const [createPrefill, setCreatePrefill] = useState<CatalogFormValues | undefined>(
+    undefined,
+  );
   const [subscribersDialog, setSubscribersDialog] = useState<{
     kind: "plan" | "addon" | "voucher" | "affiliate";
     name: string;
@@ -190,6 +199,7 @@ export function AdminCatalogCollectionManager({
 
   function openCreate(presetCode?: string) {
     setCreatePresetCode(presetCode);
+    setCreatePrefill(undefined);
     setCreateOpen(true);
   }
 
@@ -253,6 +263,24 @@ export function AdminCatalogCollectionManager({
             ))}
           </ol>
         </section>
+      : null}
+
+      {isVouchers && !compact ?
+        <VoucherAffiliatePipelinePanel
+          partners={referralBoard.partners}
+          prospectVouchers={referralBoard.prospectVouchers}
+          closeDealProspects={referralBoard.closeDealProspects}
+          onCreatePartner={(row) => {
+            setCreatePrefill(voucherAffiliatePrefillFromPartner(row));
+            setCreatePresetCode("affiliate");
+            setCreateOpen(true);
+          }}
+          onCreateVoucher={(row) => {
+            setCreatePrefill(voucherAffiliatePrefillFromProspect(row));
+            setCreatePresetCode("voucher");
+            setCreateOpen(true);
+          }}
+        />
       : null}
 
       <div className="flex flex-wrap items-center gap-3">
@@ -425,7 +453,12 @@ export function AdminCatalogCollectionManager({
                         code: String(doc.data.code || ""),
                         kind: offerKind,
                       })
-                    : { referred: 0, subscribed: 0, successRate: null };
+                    : {
+                        referred: 0,
+                        subscribed: 0,
+                        payoutEligible: 0,
+                        successRate: null,
+                      };
                   return (
                     <tr
                       key={doc.path}
@@ -577,6 +610,9 @@ export function AdminCatalogCollectionManager({
                                   <p className="text-[11px] text-zinc-500">
                                     {pipelineStats.subscribed} paid /{" "}
                                     {pipelineStats.referred} referred
+                                    {pipelineStats.payoutEligible > 0 ?
+                                      ` · ${pipelineStats.payoutEligible} payout`
+                                    : ""}
                                   </p>
                                 </div>
                             : "—"}
@@ -759,9 +795,11 @@ export function AdminCatalogCollectionManager({
           collectionId={collectionId}
           existingDocumentIds={documents.map((doc) => doc.documentId)}
           createPresetCode={createPresetCode}
+          createPrefill={createPrefill}
           onClose={() => {
             setCreateOpen(false);
             setCreatePresetCode(undefined);
+            setCreatePrefill(undefined);
           }}
           onSave={async (documentId, data) => {
             await saveDocument(documentId, data);

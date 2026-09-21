@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLeadActionBoard } from "@/features/dashboard/lib/build-lead-action-board";
+import { buildLeadActionBoard, leadActionMatchesDay } from "@/features/dashboard/lib/build-lead-action-board";
 import type { Lead } from "@/lib/definitions";
 
 function sampleLead(overrides: Partial<Lead> = {}): Lead {
@@ -131,5 +131,29 @@ describe("buildLeadActionBoard", () => {
     expect(board.items.map((item) => item.id)).toEqual(["cold-flag", "day8"]);
     expect(board.items[0]?.kind).toBe("recommend_move_to_cold");
     expect(board.items[1]?.kind).toBe("journey_inactive_day8");
+  });
+
+  it("puts undated and overdue tasks on today", () => {
+    expect(
+      leadActionMatchesDay(
+        { kind: "never_contacted", nextFollowUpAt: null },
+        "2026-09-21",
+        "2026-09-21",
+      ),
+    ).toBe(true);
+    expect(
+      leadActionMatchesDay(
+        { kind: "overdue_follow_up", nextFollowUpAt: "2026-09-10T12:00:00.000Z" },
+        "2026-09-21",
+        "2026-09-21",
+      ),
+    ).toBe(true);
+    expect(
+      leadActionMatchesDay(
+        { kind: "due_soon", nextFollowUpAt: "2026-09-22T12:00:00.000Z" },
+        "2026-09-21",
+        "2026-09-21",
+      ),
+    ).toBe(false);
   });
 });

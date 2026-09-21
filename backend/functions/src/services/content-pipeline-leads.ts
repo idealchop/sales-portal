@@ -31,6 +31,7 @@ export type ContentTouch = {
   sources: ContentSourceKind[];
   titles: string[];
   occurredAt: string | null;
+  referrerName?: string;
 };
 
 const EMPTY_CHANNELS: LeadChannels = {
@@ -147,6 +148,7 @@ export function mergeContentTouches(
       sources: unionSources(existing.sources, touch.sources),
       titles: unionTitles(existing.titles, touch.titles),
       occurredAt: laterIso(existing.occurredAt, touch.occurredAt),
+      referrerName: existing.referrerName || touch.referrerName,
     });
   }
   return [...byEmail.values()];
@@ -187,6 +189,7 @@ function toLeadFromContentTouch(touch: ContentTouch): LeadRecord {
     createdByUid: "smartrefill",
     contentSources: touch.sources,
     contentSummary: contentSummary(touch.titles),
+    contentReferrer: touch.referrerName?.trim() || undefined,
   };
 }
 
@@ -239,6 +242,10 @@ export function applyContentTouchesToPipeline(
       contentSources: sources,
       contentSummary: contentSummary(titles),
       inquiredAt: existing.inquiredAt || touch.occurredAt,
+      contentReferrer:
+        existing.referredBy?.trim() || existing.contentReferrer?.trim() ?
+          existing.contentReferrer :
+          touch.referrerName?.trim() || existing.contentReferrer,
     };
   }
 
@@ -261,6 +268,7 @@ type Accumulator = {
   source: ContentSourceKind;
   title: string;
   occurredAt: string | null;
+  referrerName?: string;
 };
 
 function pushTouch(bucket: Accumulator[], row: Accumulator) {
@@ -330,14 +338,18 @@ export async function loadContentPipelineTouches(
     root.collection("webinar_event_engagement").get(),
   ]);
 
-  const webinarTitle = new Map<string, string>();
+  const webinarMeta = new Map<string, { title: string; speaker?: string }>();
   for (const doc of webinarsSnap.docs) {
     const data = doc.data() ?? {};
     const title =
       (typeof data.name === "string" && data.name.trim()) ||
       (typeof data.title === "string" && data.title.trim()) ||
       "Webinar";
-    webinarTitle.set(doc.id, title);
+    const speaker =
+      typeof data.speaker === "string" && data.speaker.trim() ?
+        data.speaker.trim() :
+        undefined;
+    webinarMeta.set(doc.id, { title, speaker });
   }
 
   const videoMeta = new Map<
@@ -356,12 +368,19 @@ export async function loadContentPipelineTouches(
     });
   }
 
-  const blogTitle = new Map<string, string>();
+  const blogMeta = new Map<string, { title: string; author?: string }>();
   for (const doc of blogsSnap.docs) {
     const data = doc.data() ?? {};
     const title =
       (typeof data.title === "string" && data.title.trim()) || "Article";
-    blogTitle.set(doc.id, title);
+    const author =
+      (typeof data.authorName === "string" && data.authorName.trim()) ||
+      (data.author &&
+      typeof data.author === "object" &&
+      typeof (data.author as { name?: string }).name === "string" ?
+        (data.author as { name: string }).name.trim() :
+        "");
+    blogMeta.set(doc.id, { title, author: author || undefined });
   }
 
   const raw: Accumulator[] = [];
@@ -385,6 +404,7 @@ export async function loadContentPipelineTouches(
       profile.displayName ||
       email;
     const eventId = String(data.eventId || "");
+    const webinar = webinarMeta.get(eventId);
     raw.push({
       email,
       userId,
@@ -395,8 +415,9 @@ export async function loadContentPipelineTouches(
           data.businessId.trim() :
           undefined,
       source: "webinar",
-      title: webinarTitle.get(eventId) || "Webinar",
+      title: webinar?.title || "Webinar",
       occurredAt: toIso(data.createdAt) || toIso(data.updatedAt),
+      referrerName: webinar?.speaker,
     });
   }
 
@@ -404,6 +425,7 @@ export async function loadContentPipelineTouches(
     ref: FirebaseFirestore.DocumentReference;
     source: ContentSourceKind;
     title: string;
+    referrerName?: string;
     subcollections: string[];
   }> = [];
 
@@ -417,18 +439,22 @@ export async function loadContentPipelineTouches(
     });
   }
   for (const doc of blogEngagementSnap.docs) {
+    const blog = blogMeta.get(doc.id);
     engagementJobs.push({
       ref: doc.ref,
       source: "article",
-      title: blogTitle.get(doc.id) || "Article",
+      title: blog?.title || "Article",
+      referrerName: blog?.author,
       subcollections: ["likes", "posts"],
     });
   }
   for (const doc of webinarEngagementSnap.docs) {
+    const webinar = webinarMeta.get(doc.id);
     engagementJobs.push({
       ref: doc.ref,
       source: "webinar",
-      title: webinarTitle.get(doc.id) || "Webinar",
+      title: webinar?.title || "Webinar",
+      referrerName: webinar?.speaker,
       subcollections: ["likes", "posts"],
     });
   }
@@ -445,6 +471,7 @@ export async function loadContentPipelineTouches(
         ...person,
         source: job.source,
         title: job.title,
+        referrerName: job.referrerName,
       }));
     },
   );
@@ -463,6 +490,7 @@ export async function loadContentPipelineTouches(
         source: person.source,
         title: person.title,
         occurredAt: person.occurredAt,
+        referrerName: person.referrerName,
       });
     }
   }
@@ -499,7 +527,8 @@ export async function loadContentPipelineTouches(
 
   for (const doc of blogsSnap.docs) {
     const commentsSnap = await doc.ref.collection("comments").limit(80).get();
-    const title = blogTitle.get(doc.id) || "Article";
+    const title = blogMeta.get(doc.id)?.title || "Article";
+    const author = blogMeta.get(doc.id)?.author;
     for (const comment of commentsSnap.docs) {
       const data = (comment.data() ?? {}) as Record<string, unknown>;
       const userId =
@@ -521,6 +550,7 @@ export async function loadContentPipelineTouches(
         source: "article",
         title,
         occurredAt: toIso(data.createdAt),
+        referrerName: author,
       });
     }
   }
@@ -535,6 +565,7 @@ export async function loadContentPipelineTouches(
       sources: [row.source],
       titles: [row.title],
       occurredAt: row.occurredAt,
+      referrerName: row.referrerName,
     })),
   );
 }

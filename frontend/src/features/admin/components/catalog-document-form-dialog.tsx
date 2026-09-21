@@ -67,6 +67,7 @@ export function CatalogDocumentFormDialog({
   initialDocumentId,
   initialData,
   createPresetCode,
+  createPrefill,
   onClose,
   onSave,
   onPublish,
@@ -77,6 +78,7 @@ export function CatalogDocumentFormDialog({
   initialDocumentId?: string;
   initialData?: Record<string, unknown>;
   createPresetCode?: string;
+  createPrefill?: CatalogFormValues;
   onClose: () => void;
   onSave: (documentId: string, data: Record<string, unknown>) => Promise<void>;
   onPublish?: (documentId: string, data: Record<string, unknown>) => Promise<void>;
@@ -90,6 +92,7 @@ export function CatalogDocumentFormDialog({
         initialData ?? {},
       );
     }
+    if (createPrefill) return createPrefill;
     if (collectionId === "subscription_plans" && createPresetCode) {
       const filled = filledPlanFormForCode(createPresetCode);
       if (filled) return { collectionId, values: filled };

@@ -2,7 +2,6 @@ import type { Lead, OnboardedMonitorFlag } from "@/lib/definitions";
 import {
   LEAD_STAGE_LABELS,
   leadQueueBucket,
-  onboardedMonitorFlagLabel,
 } from "@/features/lead-pipeline/lib/lead-pipeline-display";
 
 export type LeadActionKind =
@@ -31,6 +30,12 @@ export type LeadActionItem = {
   nextFollowUpAt?: string | null;
   stageLabel: string;
   queueLabel: string;
+  email?: string;
+  phone?: string;
+  ownerName?: string;
+  linkedBusinessId?: string;
+  userId?: string;
+  suggestedAction: string;
 };
 
 export type LeadActionBoardSummary = {
@@ -157,28 +162,80 @@ function classifyLead(
 function kindLabel(kind: LeadActionKind): string {
   switch (kind) {
   case "overdue_follow_up":
-    return "Overdue follow-up";
+    return "Overdue check-in";
   case "due_soon":
-    return "Due within 7 days";
+    return "Check in this week";
   case "never_contacted":
-    return "Never contacted";
+    return "Say hello";
   case "no_follow_up":
-    return "No follow-up set";
+    return "Set a follow-up";
   case "journey_inactive_day8":
-    return onboardedMonitorFlagLabel("journey_inactive_day8");
+    return "New station went quiet";
   case "recommend_move_to_cold":
-    return onboardedMonitorFlagLabel("recommend_move_to_cold");
+    return "Went quiet";
   case "subscription_expiring_soon":
-    return onboardedMonitorFlagLabel("subscription_expiring_soon");
+    return "Plan ending soon";
   case "subscription_grace_period":
-    return onboardedMonitorFlagLabel("subscription_grace_period");
+    return "Plan lapsed — they can still come back";
   case "subscription_renew":
-    return onboardedMonitorFlagLabel("subscription_renew");
+    return "Came back";
   case "subscription_change":
-    return onboardedMonitorFlagLabel("subscription_change");
+    return "Plan changed";
   case "active":
     return "Assigned lead";
   }
+}
+
+function suggestedAction(kind: LeadActionKind): string {
+  switch (kind) {
+  case "never_contacted":
+    return "Send a hello, then set the next check-in so this does not get lost.";
+  case "overdue_follow_up":
+    return "Reach out today, then pick the next check-in date.";
+  case "due_soon":
+    return "Confirm the call or visit, then log that you checked in.";
+  case "no_follow_up":
+    return "Set a check-in date so this station stays on your week.";
+  case "journey_inactive_day8":
+    return "Ask if they got stuck during setup.";
+  case "recommend_move_to_cold":
+    return "Check if they still want SmartRefill. If not, move them to cold in the pipeline.";
+  case "subscription_expiring_soon":
+    return "Check in so they know how to stay on the plan.";
+  case "subscription_grace_period":
+    return "They can still come back — send a catch-up today.";
+  case "subscription_renew":
+    return "Say thanks and ask if they need help using the station.";
+  case "subscription_change":
+    return "Confirm the plan change and that they can still work as usual.";
+  case "active":
+    return "Open the pipeline if you need the full history.";
+  }
+}
+
+/** Local calendar day `YYYY-MM-DD`. */
+export function localDayKey(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Today’s work includes overdue and undated tasks (they have no calendar
+ * date, but they are still the job for this morning).
+ */
+export function leadActionMatchesDay(
+  item: Pick<LeadActionItem, "nextFollowUpAt" | "kind">,
+  selectedDay: string | null,
+  todayKey: string,
+): boolean {
+  if (!selectedDay) return true;
+  const key = item.nextFollowUpAt ? localDayKey(new Date(item.nextFollowUpAt)) : null;
+  if (key === selectedDay) return true;
+  if (selectedDay !== todayKey) return false;
+  if (!key) return true;
+  return key < todayKey;
 }
 
 function formatFollowUp(iso?: string | null): string | null {
@@ -250,6 +307,12 @@ export function buildLeadActionBoard(
       nextFollowUpAt: lead.nextFollowUpAt,
       stageLabel,
       queueLabel: qLabel,
+      email: lead.email?.trim() || undefined,
+      phone: lead.phone?.trim() || undefined,
+      ownerName: lead.ownerName,
+      linkedBusinessId: lead.linkedBusinessId,
+      userId: lead.userId,
+      suggestedAction: suggestedAction(kind),
       _rank: KIND_RANK[kind],
       _followMs: lead.nextFollowUpAt ?
         new Date(lead.nextFollowUpAt).getTime()

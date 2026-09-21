@@ -661,12 +661,22 @@ function VoucherAffiliateFormFields({
             label="First subscription only"
           />
         </CatalogFormSection>
-      : <CatalogFormSection title="Partner commission">
+      :           <CatalogFormSection title="Partner commission">
           <CatalogField label="Partner email">
             <CatalogTextInput
               value={values.contactEmail}
               onChange={(contactEmail) => onChange({ contactEmail })}
               placeholder="partner@example.com"
+            />
+          </CatalogField>
+          <CatalogField
+            label="Owner user id"
+            hint="SmartRefill owner uid, so Stations and Pipeline stay linked to this partner."
+          >
+            <CatalogTextInput
+              value={values.ownerUserId}
+              onChange={(ownerUserId) => onChange({ ownerUserId })}
+              placeholder="Firebase uid"
             />
           </CatalogField>
           <div className="grid gap-3 sm:grid-cols-2">

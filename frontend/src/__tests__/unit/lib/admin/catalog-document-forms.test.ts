@@ -5,6 +5,7 @@ import {
   catalogFormDocumentId,
   catalogFormValuesFromDocument,
   emptyCatalogFormValues,
+  prefilledVoucherAffiliateForm,
 } from "@/lib/admin/catalog-document-forms";
 
 describe("product icon catalog form", () => {
@@ -201,5 +202,33 @@ describe("trial policy catalog form", () => {
       teamChatPreviewDays: 5,
     });
     expect(typeof payload.effectiveAt).toBe("string");
+  });
+});
+
+describe("voucher affiliate catalog form", () => {
+  it("prefills a partner code with name, email, and ownerUserId", () => {
+    const form = prefilledVoucherAffiliateForm({
+      kind: "affiliate",
+      name: "Beta WRS",
+      code: "BETAWRS",
+      contactEmail: "beta@example.com",
+      ownerUserId: "owner-1",
+    });
+    expect(form.collectionId).toBe("vouchers_affiliates");
+    expect(form.values).toMatchObject({
+      kind: "affiliate",
+      name: "Beta WRS",
+      code: "BETAWRS",
+      contactEmail: "beta@example.com",
+      ownerUserId: "owner-1",
+      commissionValue: "10",
+    });
+    const payload = catalogDocumentPayloadFromForm(form);
+    expect(payload).toMatchObject({
+      kind: "affiliate",
+      contactEmail: "beta@example.com",
+      ownerUserId: "owner-1",
+      commissionValue: 10,
+    });
   });
 });

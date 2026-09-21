@@ -43,7 +43,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-DASH-04 | any | Business locations map | Pins load for businesses with coords; no test-account pins |
 | TC-DASH-05 | admin | Approve pending subscription | Approval succeeds; UI refreshes |
 | TC-DASH-06 | any | Open `/webapp/smartrefill` | Tabs: Subscriptions, Analytics; Config for admin. Subscriptions lists **all production workspaces** (not only live plans). KPIs: monthly billed, paying, trial, free, voucher, attention, ended. Group + plan + activity filters; grouped workspace cards |
-| TC-DASH-07 | any | Open `/dashboard` | Action board: assigned lead tasks + performance metrics |
+| TC-DASH-07 | any | Open `/dashboard` | Jump to a list first. **Your work today** next. **Also watch** is one row of 5 KPIs below that. **Win more / Keep them** last: chart visible, expand to see station list. New-user badges name the app. No ₱ |
 | TC-DASH-08 | any | Platform hub Actions \| Forecast tabs | Paginated forecast rows; actions inbox (if shown) |
 | TC-DASH-09 | admin | Subscription approval **View** | Detail dialog + receipt/attachment preview |
 | TC-DASH-10 | admin | Inactive owners list | Top 10 inactive (7d+); expand link shows remainder; Contact hides 7d |
@@ -101,7 +101,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-SUB-04 | admin | Click table row | Detail dialog opens |
 | TC-SUB-05 | admin | `/subscriptions/addons` CRUD | Addons list + forms work |
 | TC-SUB-06 | admin | `/subscriptions/vouchers-affiliates` | Vouchers/affiliates CRUD works |
-| TC-SUB-09 | admin | `/subscriptions/vouchers-affiliates` affiliate **Pipeline** column | Shows paid success rate (paid / referred). Free and trial referees do not count as subscribed |
+| TC-SUB-09 | admin | `/subscriptions/vouchers-affiliates` | **Pipeline: who deserves a code** lists partners (success + payout), checkout-voucher prospects, and stalled-warm close-deal prospects. Affiliate table **Pipeline** column shows paid / referred / payout. Free and trial referees do not count as subscribed |
 | TC-SUB-07 | sales | Navigate to `/subscriptions` | Blocked or nav hidden |
 | TC-SUB-08 | admin | Edit a product icon | **Water container** checkbox persists; list **Water container** column shows Yes or No |
 
@@ -130,7 +130,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-LEAD-01 | sales | Open table → tabs **All, Content, Warm, Cold, Onboarded, Archives** | Order matches; Content lists webinar / training / article / story emails after Gather; guests are not on Warm |
 | TC-LEAD-02 | sales | **Gather new leads**, then open Content | Incremental insert of missing emails; workspace owners who engaged stay on their funnel tab and also on Content |
 | TC-LEAD-04 | sales | Cold lead with Missed Demo → Update status **Demo Scheduled** | Moves to Warm; demo is no longer Missed so another demo can be booked |
-| TC-LEAD-05 | sales | Insights **Who to reward** | Referrer rows show Subscribed + Success. Success = onboarded **and** paying Starter–Scale (incl. Enterprise). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed. Make-affiliate needs 2+ paid referees |
+| TC-LEAD-05 | sales | Insights **Who to reward** | Referrer rows show Subscribed + Success + payout. Success = onboarded **and** paying Starter–Scale (incl. Enterprise). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed. Make-affiliate needs 2+ paid referees (or 2+ payout-eligible including 1 paid). **Create partner code** opens a prefilled affiliate form (name, email, ownerUserId). Checkout-voucher and stalled-warm demo lists have **Create voucher**. Webinar speaker / article author appears as a referrer when CRM `referredBy` is empty |
 
 ## TC-PROP — Proposals & outreach
 

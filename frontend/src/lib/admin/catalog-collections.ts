@@ -19,7 +19,8 @@ export const ADMIN_CATALOG_COLLECTIONS = {
     howItWorks: [
       "A voucher is what a station types at checkout. Use percent off, pesos off (including ₱0), or extra trial days.",
       "An affiliate is a partner code. When a station signs up with it, the partner earns the commission you set.",
-      "Lead pipeline Referrals now pick from these affiliates. Insights show who to make an affiliate vs who should get a checkout voucher.",
+      "Lead pipeline Referrals pick from these affiliates. Insights and this page show success rate plus who still needs a partner code or checkout voucher.",
+      "Onboarded/account-ready referrals count toward payout even if they did not type the code at checkout. Paying Starter–Scale stations get the affiliate stamped on their subscription.",
       "Each row shows how many live stations currently used that voucher or came through that partner. Open the count to see who, when they started, and last active.",
       "Save makes the code live in SmartRefill. No developer or IT step.",
     ],

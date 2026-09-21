@@ -8,6 +8,7 @@ import {
   loadOnboardedBusinessSnapshot,
   onboardedSnapshotLeadFields,
 } from "./load-onboarded-snapshot";
+import { stampPipelineAffiliateOnPayingSubscription } from "./stamp-pipeline-affiliate";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
 
 export type GatherMode = "incremental" | "full";
@@ -59,6 +60,7 @@ export const GATHER_SOURCE_FIELD_KEYS = [
   "subscriptionChangeType",
   "contentSources",
   "contentSummary",
+  "contentReferrer",
 ] as const;
 
 function omitUndefined<T extends Record<string, unknown>>(row: T): T {
@@ -105,6 +107,7 @@ export function buildGatherSourceUpdatePayload(
     subscriptionChangeType: lead.subscriptionChangeType ?? null,
     contentSources: lead.contentSources ?? [],
     contentSummary: lead.contentSummary || "",
+    contentReferrer: lead.contentReferrer || "",
     ...(opts?.promoteStageToOnboarded ? { stage: "onboarded" as LeadStage } : {}),
     ...(lead.notes?.trim() ? { sourceNotes: lead.notes.trim() } : {}),
     externalId: lead.id,
@@ -139,8 +142,24 @@ export function buildGatherInsertPayload(
 
 async function loadExistingLeadMeta(
   ids: string[],
-): Promise<Map<string, { stage: LeadStage }>> {
-  const existing = new Map<string, { stage: LeadStage }>();
+): Promise<
+  Map<
+    string,
+    {
+      stage: LeadStage;
+      referredByAffiliateId?: string;
+      referredByAffiliateCode?: string;
+    }
+  >
+> {
+  const existing = new Map<
+    string,
+    {
+      stage: LeadStage;
+      referredByAffiliateId?: string;
+      referredByAffiliateCode?: string;
+    }
+  >();
   const chunkSize = 100;
   for (let i = 0; i < ids.length; i += chunkSize) {
     const chunk = ids.slice(i, i + chunkSize);
@@ -149,9 +168,18 @@ async function loadExistingLeadMeta(
     const snaps = await db.getAll(...refs);
     for (const snap of snaps) {
       if (!snap.exists) continue;
-      const stageRaw = String(snap.data()?.stage || "inquire");
+      const data = snap.data() ?? {};
+      const stageRaw = String(data.stage || "inquire");
       existing.set(snap.id, {
         stage: stageRaw as LeadStage,
+        referredByAffiliateId:
+          typeof data.referredByAffiliateId === "string" ?
+            data.referredByAffiliateId.trim() :
+            undefined,
+        referredByAffiliateCode:
+          typeof data.referredByAffiliateCode === "string" ?
+            data.referredByAffiliateCode.trim() :
+            undefined,
       });
     }
   }
@@ -282,6 +310,24 @@ export async function gatherLeadsFromSources(
 
     await flush();
   }
+
+  await mapWithConcurrency(withSnapshots, 8, async (lead) => {
+    if (lead.stage !== "onboarded") return;
+    const existing = existingMeta.get(lead.id);
+    await stampPipelineAffiliateOnPayingSubscription({
+      linkedBusinessId: lead.linkedBusinessId,
+      stage: "onboarded",
+      referredByAffiliateId:
+        existing?.referredByAffiliateId || lead.referredByAffiliateId,
+      referredByAffiliateCode:
+        existing?.referredByAffiliateCode || lead.referredByAffiliateCode,
+      planCode: lead.planCode || undefined,
+      planName: lead.planName || undefined,
+      billingCycle: lead.billingCycle || undefined,
+      price: typeof lead.price === "number" ? lead.price : undefined,
+      accountReady: lead.accountReady,
+    });
+  });
 
   return {
     mode,

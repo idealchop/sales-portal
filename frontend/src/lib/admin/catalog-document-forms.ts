@@ -92,6 +92,7 @@ export type VoucherAffiliateFormValues = {
   stacksWithOtherPromos: boolean;
   firstTimeSubscriberOnly: boolean;
   contactEmail: string;
+  ownerUserId: string;
   commissionType: "percentage" | "fixed_per_conversion";
   commissionValue: string;
   payoutCurrency: string;
@@ -257,6 +258,7 @@ function emptyVoucherAffiliateForm(): VoucherAffiliateFormValues {
     stacksWithOtherPromos: false,
     firstTimeSubscriberOnly: false,
     contactEmail: "",
+    ownerUserId: "",
     commissionType: "percentage",
     commissionValue: "",
     payoutCurrency: "PHP",
@@ -291,6 +293,33 @@ export function emptyCatalogFormValues(
     return { collectionId, values: emptyTrialPolicyForm() };
   }
   return { collectionId, values: emptyVoucherAffiliateForm() };
+}
+
+export function prefilledVoucherAffiliateForm(input: {
+  kind: "voucher" | "affiliate";
+  name: string;
+  code?: string;
+  contactEmail?: string;
+  ownerUserId?: string;
+  notesInternal?: string;
+}): CatalogFormValues {
+  const empty = emptyVoucherAffiliateForm();
+  return {
+    collectionId: "vouchers_affiliates",
+    values: {
+      ...empty,
+      kind: input.kind,
+      name: input.name.trim(),
+      code: (input.code || "").trim().toUpperCase(),
+      contactEmail: input.contactEmail?.trim() || "",
+      ownerUserId: input.ownerUserId?.trim() || "",
+      notesInternal: input.notesInternal?.trim() || "",
+      commissionType: "percentage",
+      commissionValue: input.kind === "affiliate" ? "10" : "",
+      discountType: "percentage",
+      discountValue: input.kind === "voucher" ? "10" : "",
+    },
+  };
 }
 
 function capabilitiesFromData(data: Record<string, unknown>, code: string): PlanCapabilitiesForm {
@@ -463,6 +492,7 @@ export function catalogFormValuesFromDocument(
       stacksWithOtherPromos: data.stacksWithOtherPromos === true,
       firstTimeSubscriberOnly: data.firstTimeSubscriberOnly === true,
       contactEmail: readString(data.contactEmail),
+      ownerUserId: readString(data.ownerUserId),
       commissionType:
         readString(data.commissionType) === "fixed_per_conversion" ?
           "fixed_per_conversion"
@@ -601,6 +631,7 @@ function buildVoucherAffiliatePayload(
   return {
     ...base,
     contactEmail: values.contactEmail.trim() || undefined,
+    ownerUserId: values.ownerUserId.trim() || undefined,
     commissionType: values.commissionType,
     commissionValue: readNumber(values.commissionValue) ?? 0,
     conversionCount: readNumber(existing?.conversionCount) ?? 0,

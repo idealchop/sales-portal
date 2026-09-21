@@ -214,6 +214,10 @@ export type Lead = {
   referredByAffiliateId?: string;
   /** Catalog affiliate code when the referrer has a partner code. */
   referredByAffiliateCode?: string;
+  /** Email for the referrer (CRM / directory / affiliate), used to prefill partner codes. */
+  referredByEmail?: string;
+  /** Webinar speaker or article owner when a content lead later converts. */
+  contentReferrer?: string;
   notes?: string;
   linkedBusinessId?: string;
   sourceKind?: "inquiry" | "demo_request" | "business_inquiry" | "manual" | "content";

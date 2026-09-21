@@ -12,6 +12,7 @@ import {
   type OnboardedMonitor,
 } from "./onboarded-journey-monitor";
 import { loadOnboardedBusinessSnapshot } from "./load-onboarded-snapshot";
+import { stampPipelineAffiliateOnPayingSubscription } from "./stamp-pipeline-affiliate";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
 import { buildSmartRefillPipelineLeads } from "./build-smartrefill-pipeline-leads";
 
@@ -119,6 +120,8 @@ export type LeadRecord = {
   referredByUserId?: string;
   referredByAffiliateId?: string;
   referredByAffiliateCode?: string;
+  referredByEmail?: string;
+  contentReferrer?: string;
   notes?: string;
   linkedBusinessId?: string;
   sourceKind?: LeadSourceKind;
@@ -149,6 +152,10 @@ export type LeadRecord = {
   subscriptionStatus?: string | null;
   subscriptionExpiresAt?: string | null;
   subscriptionChangeType?: string | null;
+  planName?: string;
+  planCode?: string;
+  billingCycle?: string;
+  price?: number;
   createdAt?: string | null;
   updatedAt?: string | null;
   createdByUid?: string;
@@ -186,6 +193,8 @@ export type CreateLeadInput = {
   referredByUserId?: string;
   referredByAffiliateId?: string;
   referredByAffiliateCode?: string;
+  referredByEmail?: string;
+  contentReferrer?: string;
   notes?: string;
   linkedBusinessId?: string;
   sourceKind?: LeadSourceKind;
@@ -562,6 +571,14 @@ export function normalizeLead(
       base.referredByAffiliateCode.trim() ?
         base.referredByAffiliateCode.trim() :
         undefined,
+    referredByEmail:
+      typeof base.referredByEmail === "string" && base.referredByEmail.trim() ?
+        base.referredByEmail.trim().toLowerCase() :
+        undefined,
+    contentReferrer:
+      typeof base.contentReferrer === "string" && base.contentReferrer.trim() ?
+        base.contentReferrer.trim() :
+        undefined,
     notes: typeof base.notes === "string" ? base.notes : undefined,
     linkedBusinessId:
       typeof base.linkedBusinessId === "string" && base.linkedBusinessId.trim() ?
@@ -720,6 +737,8 @@ export function filterLeads(
       lead.sourceWebsite,
       lead.referredBy,
       lead.referredByAffiliateCode,
+      lead.referredByEmail,
+      lead.contentReferrer,
       lead.notes,
       lead.stallReason,
       lead.contentSummary,
@@ -1126,6 +1145,11 @@ export async function createLead(
       input.leadSource?.trim() === "Referrals" ?
         input.referredByAffiliateCode?.trim() || null :
         null,
+    referredByEmail:
+      input.leadSource?.trim() === "Referrals" ?
+        input.referredByEmail?.trim().toLowerCase() || null :
+        null,
+    contentReferrer: input.contentReferrer?.trim() || null,
     notes: input.notes?.trim() || "",
     linkedBusinessId: linkedBusinessId || null,
     sourceKind: input.sourceKind || "manual",
@@ -1283,6 +1307,7 @@ export async function updateLead(
       patch.referredByUserId = null;
       patch.referredByAffiliateId = null;
       patch.referredByAffiliateCode = null;
+      patch.referredByEmail = null;
     } else if (source === "Referrals") {
       patch.referredBy =
         input.referredBy !== undefined ?
@@ -1304,6 +1329,10 @@ export async function updateLead(
         input.referredByAffiliateCode !== undefined ?
           input.referredByAffiliateCode.trim() || null :
           existing.referredByAffiliateCode || null;
+      patch.referredByEmail =
+        input.referredByEmail !== undefined ?
+          input.referredByEmail.trim().toLowerCase() || null :
+          existing.referredByEmail || null;
       patch.sourceWebsite = "";
     } else {
       patch.sourceWebsite = "";
@@ -1312,6 +1341,7 @@ export async function updateLead(
       patch.referredByUserId = null;
       patch.referredByAffiliateId = null;
       patch.referredByAffiliateCode = null;
+      patch.referredByEmail = null;
     }
   } else {
     if (input.sourceWebsite !== undefined) {
@@ -1332,6 +1362,12 @@ export async function updateLead(
     if (input.referredByAffiliateCode !== undefined) {
       patch.referredByAffiliateCode =
         input.referredByAffiliateCode.trim() || null;
+    }
+    if (input.referredByEmail !== undefined) {
+      patch.referredByEmail = input.referredByEmail.trim().toLowerCase() || null;
+    }
+    if (input.contentReferrer !== undefined) {
+      patch.contentReferrer = input.contentReferrer.trim() || null;
     }
   }
   if (input.notes !== undefined) patch.notes = input.notes.trim();
@@ -1430,6 +1466,17 @@ export async function updateLead(
 
   const updated = await getLead(actor, leadId);
   if (!updated) throw new Error("NOT_FOUND");
+  await stampPipelineAffiliateOnPayingSubscription({
+    linkedBusinessId: updated.linkedBusinessId,
+    stage: updated.stage,
+    referredByAffiliateId: updated.referredByAffiliateId,
+    referredByAffiliateCode: updated.referredByAffiliateCode,
+    planCode: updated.workspace?.planCode || updated.planCode,
+    planName: updated.workspace?.planName || updated.planName,
+    billingCycle: updated.workspace?.billingCycle || updated.billingCycle,
+    price: updated.workspace?.price ?? updated.price,
+    accountReady: updated.accountReady,
+  });
   return updated;
 }
 
@@ -1470,6 +1517,8 @@ const DETAIL_HISTORY_FIELDS = [
   "referredByUserId",
   "referredByAffiliateId",
   "referredByAffiliateCode",
+  "referredByEmail",
+  "contentReferrer",
   "linkedBusinessId",
   "inquiredAt",
   "registeredAt",

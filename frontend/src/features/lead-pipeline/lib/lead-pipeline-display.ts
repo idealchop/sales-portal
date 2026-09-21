@@ -1083,6 +1083,8 @@ export const   LEAD_HISTORY_FIELD_LABELS: Record<string, string> = {
   referredByUserId: "Referrer account",
   referredByAffiliateId: "Affiliate",
   referredByAffiliateCode: "Affiliate code",
+  referredByEmail: "Referrer email",
+  contentReferrer: "Content referrer",
   accountReady: "Account ready",
   linkedBusinessId: "Business ID",
   channels: "Channels",

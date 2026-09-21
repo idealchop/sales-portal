@@ -30,6 +30,7 @@ type DetailsFormState = {
   referredByUserId: string;
   referredByAffiliateId: string;
   referredByAffiliateCode: string;
+  referredByEmail: string;
 };
 
 function fromLead(lead: Lead): DetailsFormState {
@@ -46,6 +47,7 @@ function fromLead(lead: Lead): DetailsFormState {
     referredByUserId: lead.referredByUserId || "",
     referredByAffiliateId: lead.referredByAffiliateId || "",
     referredByAffiliateCode: lead.referredByAffiliateCode || "",
+    referredByEmail: lead.referredByEmail || "",
   };
 }
 
@@ -129,6 +131,10 @@ export function LeadUpdateDetailsDialog({
             referredByAffiliateCode:
               form.leadSource === "Referrals" ?
                 form.referredByAffiliateCode.trim()
+              : "",
+            referredByEmail:
+              form.leadSource === "Referrals" ?
+                form.referredByEmail.trim()
               : "",
           }
         : {};
@@ -349,6 +355,7 @@ export function LeadUpdateDetailsDialog({
                     userId: form.referredByUserId || undefined,
                     affiliateId: form.referredByAffiliateId || undefined,
                     affiliateCode: form.referredByAffiliateCode || undefined,
+                    email: form.referredByEmail || undefined,
                   }}
                   onChange={(selection) =>
                     setForm((prev) =>
@@ -360,6 +367,7 @@ export function LeadUpdateDetailsDialog({
                           referredByUserId: selection.userId || "",
                           referredByAffiliateId: selection.affiliateId || "",
                           referredByAffiliateCode: selection.affiliateCode || "",
+                          referredByEmail: selection.email || "",
                         }
                       : prev,
                     )

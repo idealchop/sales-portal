@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
 import {
   Area,
   AreaChart,
@@ -25,13 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HorizontalBarChart } from "@/components/charts/distribution-chart";
 import { buildLeadPipelineInsights } from "@/features/lead-pipeline/lib/lead-pipeline-insights";
-import {
-  buildReferralPartnerBoard,
-  formatReferralSuccessRate,
-  type ReferralPartnerRecommendation,
-} from "@/features/lead-pipeline/lib/lead-referral-partners";
-import { useAdminCatalogCollection } from "@/hooks/use-admin-catalog-collection";
-import { catalogAffiliates } from "@/lib/admin/catalog-offer-options";
+import { LeadReferralPartnersPanel } from "@/features/lead-pipeline/components/lead-referral-partners-panel";
 import { useLeadAssignees } from "@/hooks/use-lead-assignees";
 import type { Lead, LeadAnalytics, LeadQueue } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
@@ -563,142 +556,6 @@ function PlatformSourceArea({
   );
 }
 
-function recommendationLabel(value: ReferralPartnerRecommendation): string {
-  switch (value) {
-  case "make_affiliate":
-    return "Make affiliate";
-  case "thank_you_voucher":
-    return "Thank-you voucher";
-  case "already_affiliate":
-    return "Already affiliate";
-  default:
-    return "Watch";
-  }
-}
-
-function recommendationClass(value: ReferralPartnerRecommendation): string {
-  switch (value) {
-  case "make_affiliate":
-    return "bg-emerald-50 text-emerald-800";
-  case "thank_you_voucher":
-    return "bg-sky-50 text-sky-800";
-  case "already_affiliate":
-    return "bg-teal-50 text-teal-800";
-  default:
-    return "bg-zinc-100 text-zinc-600";
-  }
-}
-
-function ReferralPartnersPanel({ leads }: { leads: Lead[] }) {
-  const { documents } = useAdminCatalogCollection("vouchers_affiliates", true);
-  const affiliates = useMemo(() => catalogAffiliates(documents), [documents]);
-  const board = useMemo(
-    () => buildReferralPartnerBoard(leads, affiliates),
-    [affiliates, leads],
-  );
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-base">Who to reward</CardTitle>
-            <p className="mt-1 text-xs text-zinc-500">
-              Affiliates are for the person who referred. Vouchers are for the
-              new station still deciding. Success rate only counts referees who
-              onboarded on a paid Starter–Scale plan — Free and trial do not
-              count as subscribed.
-            </p>
-          </div>
-          <Link
-            href="/subscriptions/vouchers-affiliates"
-            className="text-sm font-medium text-[var(--primary)] underline-offset-2 hover:underline"
-          >
-            Open vouchers & affiliates
-          </Link>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        {board.partners.length === 0 ?
-          <p className="text-sm text-zinc-500">
-            No referral leads yet. Set source to Referrals and pick who referred
-            — affiliates appear first in that list.
-          </p>
-        : <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                <tr>
-                  <th className="pb-2 pr-3">Referrer</th>
-                  <th className="pb-2 pr-3">Referred</th>
-                  <th className="pb-2 pr-3">Onboarded</th>
-                  <th className="pb-2 pr-3">Subscribed</th>
-                  <th className="pb-2 pr-3">Success</th>
-                  <th className="pb-2">Do this</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {board.partners.map((row) => (
-                  <tr key={row.key}>
-                    <td className="py-2 pr-3">
-                      <p className="font-medium text-zinc-900">{row.label}</p>
-                      {row.affiliateCode ?
-                        <p className="text-[11px] text-zinc-500">{row.affiliateCode}</p>
-                      : null}
-                    </td>
-                    <td className="py-2 pr-3 tabular-nums">{row.referred}</td>
-                    <td className="py-2 pr-3 tabular-nums">{row.onboarded}</td>
-                    <td className="py-2 pr-3 tabular-nums">{row.subscribed}</td>
-                    <td className="py-2 pr-3">
-                      <p className="font-medium tabular-nums text-zinc-900">
-                        {formatReferralSuccessRate(row.subscribed, row.referred)}
-                      </p>
-                      <p className="text-[11px] text-zinc-500">
-                        {row.subscribed} paid / {row.referred}
-                      </p>
-                    </td>
-                    <td className="py-2">
-                      <span
-                        className={cn(
-                          "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
-                          recommendationClass(row.recommendation),
-                        )}
-                      >
-                        {recommendationLabel(row.recommendation)}
-                      </span>
-                      <p className="mt-1 max-w-xs text-[11px] text-zinc-500">
-                        {row.reason}
-                      </p>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        }
-
-        {board.prospectVouchers.length > 0 ?
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Prospects who deserve a checkout voucher
-            </p>
-            <ul className="mt-2 divide-y divide-zinc-100 rounded-lg border border-zinc-100">
-              {board.prospectVouchers.slice(0, 8).map((row) => (
-                <li key={row.leadId} className="px-3 py-2">
-                  <p className="text-sm font-medium text-zinc-900">
-                    {row.businessName}
-                  </p>
-                  <p className="text-[11px] text-zinc-500">
-                    Referred by {row.referredBy} · {row.reason}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        : null}
-      </CardContent>
-    </Card>
-  );
-}
 
 export function LeadPipelineInsights({
   leads,
@@ -782,7 +639,7 @@ export function LeadPipelineInsights({
         />
       </div>
 
-      <ReferralPartnersPanel leads={leads} />
+      <LeadReferralPartnersPanel leads={leads} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="lg:col-span-2">

@@ -26,6 +26,7 @@ export type OnboardedBusinessSnapshot = {
   price?: number;
   currentSubscription: OnboardedMonitorSubscription | null;
   recentSubscriptionChanges: OnboardedMonitorSubscription[];
+  currentSubscriptionId?: string;
 };
 
 function toMonitorSub(row: OwnerSubscription): OnboardedMonitorSubscription {
@@ -155,6 +156,7 @@ export async function loadOnboardedBusinessSnapshot(
     price: current?.price,
     currentSubscription: current ? toMonitorSub(current) : null,
     recentSubscriptionChanges,
+    currentSubscriptionId: current?.id,
   };
 }
 

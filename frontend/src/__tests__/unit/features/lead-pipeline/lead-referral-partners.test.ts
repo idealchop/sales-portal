@@ -199,7 +199,49 @@ describe("buildReferralPartnerBoard", () => {
     ).toEqual({
       referred: 1,
       subscribed: 0,
+      payoutEligible: 0,
       successRate: 0,
     });
+  });
+
+  it("treats webinar speakers as referrers and lists stalled warm demos", () => {
+    const board = buildReferralPartnerBoard(
+      [
+        lead({
+          id: "content-convert",
+          leadSource: "Webinar",
+          contentReferrer: "Ana Speaker",
+          stage: "onboarded",
+          accountReady: true,
+          workspace: {
+            planName: "Grow",
+            planCode: "grow",
+            billingCycle: "monthly",
+            price: 950,
+          },
+        }),
+        lead({
+          id: "stalled",
+          leadSource: "Website",
+          stage: "warm",
+          attendedDemo: "attended",
+          stallReason: "Waiting on budget",
+          businessName: "Laguna Fill",
+        }),
+      ],
+      [],
+      Date.parse("2026-09-21T00:00:00.000Z"),
+    );
+
+    expect(board.partners[0]).toMatchObject({
+      label: "Ana Speaker",
+      subscribed: 1,
+      payoutEligible: 1,
+      contentAttributed: true,
+      recommendation: "thank_you_voucher",
+    });
+    expect(board.closeDealProspects.map((row) => row.businessName)).toEqual([
+      "Laguna Fill",
+    ]);
   });
 });

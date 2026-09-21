@@ -101,4 +101,18 @@ describe("content-pipeline-leads", () => {
     expect(guest.platformRole).toBe("Content");
     expect(isContentOnlyLead(guest)).toBe(true);
   });
+
+  it("stamps the webinar speaker as contentReferrer on convert-ready rows", () => {
+    const pipeline = applyContentTouchesToPipeline(
+      [lead({ referredBy: undefined })],
+      [
+        touch({
+          email: "jane@example.com",
+          userId: "owner-1",
+          referrerName: "Ana Speaker",
+        }),
+      ],
+    );
+    expect(pipeline[0].contentReferrer).toBe("Ana Speaker");
+  });
 });
