@@ -381,7 +381,9 @@ export function SalesPortalDashboard() {
         open={Boolean(followUpLead)}
         lead={followUpLead}
         onClose={() => setFollowUpLead(null)}
-        onSave={saveLead}
+        onSave={async (input, leadId) => {
+          await saveLead(input, leadId);
+        }}
       />
     </div>
   );

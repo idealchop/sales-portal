@@ -73,7 +73,7 @@ export function LeadEmailBlastComposeDialog({
   const [countAsAttempt, setCountAsAttempt] = useState(false);
   const [insertTarget, setInsertTarget] = useState<"subject" | "body">("body");
   const [tokensOpen, setTokensOpen] = useState(false);
-  const [senderEmail, setSenderEmail] = useState(
+  const [senderEmail, setSenderEmail] = useState<string>(
     OUTREACH_SENDER_OPTIONS[0]?.email || "",
   );
   const [remaining, setRemaining] = useState(LEAD_EMAIL_BLAST_DAILY_LIMIT);

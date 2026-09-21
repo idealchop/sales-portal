@@ -816,8 +816,8 @@ export function buildLeadsAnalytics(
             followMs < nowMs &&
             lead.stage !== "archive"
           );
-        })()
-      : false;
+        })() :
+        false;
     for (const assigneeKey of assigneeKeys) {
       const bucket = assigneeMap.get(assigneeKey) ?? {
         count: 0,
@@ -1133,10 +1133,10 @@ export async function createLead(
 
   const initialAssignees =
     input.assignedToUids !== undefined ?
-      normalizeAssigneeUids(input.assignedToUids)
-    : input.assignedToUid?.trim() ?
-      [input.assignedToUid.trim()]
-    : [actor.uid];
+      normalizeAssigneeUids(input.assignedToUids) :
+      input.assignedToUid?.trim() ?
+        [input.assignedToUid.trim()] :
+        [actor.uid];
   const assigneeFields = assigneeWriteFields(initialAssignees);
 
   const ref = db.collection("leads").doc();
@@ -1482,11 +1482,11 @@ export async function updateLead(
       attemptCount: existing.attemptCount,
       warmAttemptCount: existing.warmAttemptCount,
       coldAttemptCount: existing.coldAttemptCount,
-      assignedToUids: existing.assignedToUids?.length
-        ? existing.assignedToUids
-        : existing.assignedToUid
-          ? [existing.assignedToUid]
-          : [actor.uid],
+      assignedToUids: existing.assignedToUids?.length ?
+        existing.assignedToUids :
+        existing.assignedToUid ?
+          [existing.assignedToUid] :
+          [actor.uid],
       assignedToUid: existing.assignedToUid || actor.uid,
       channels: existing.channels,
       leadSource: existing.leadSource || "",

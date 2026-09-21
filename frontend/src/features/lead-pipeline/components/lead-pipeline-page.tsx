@@ -78,6 +78,13 @@ export function LeadPipelinePage() {
     await saveLead({ assignedToUids }, lead.id);
   }
 
+  async function saveLeadVoid(
+    input: Partial<Lead> & { bumpAttempt?: boolean },
+    leadId: string,
+  ) {
+    await saveLead(input, leadId);
+  }
+
   async function handleBulkAssign(
     leadIds: string[],
     mode: 'set' | 'add' | 'remove' | 'clear',
@@ -351,13 +358,13 @@ export function LeadPipelinePage() {
         open={Boolean(editingDetails)}
         lead={editingDetails}
         onClose={() => setEditingDetails(null)}
-        onSave={saveLead}
+        onSave={saveLeadVoid}
       />
       <LeadStatusDialog
         open={Boolean(updating)}
         lead={updating}
         onClose={() => setUpdating(null)}
-        onSave={saveLead}
+        onSave={saveLeadVoid}
       />
       <LeadHistoryDialog
         open={Boolean(historyLead)}
@@ -368,7 +375,7 @@ export function LeadPipelinePage() {
         open={Boolean(followUpLead)}
         lead={followUpLead}
         onClose={() => setFollowUpLead(null)}
-        onSave={saveLead}
+        onSave={saveLeadVoid}
       />
       {confirmFullRefresh ? (
         <ConfirmDeleteDialog
