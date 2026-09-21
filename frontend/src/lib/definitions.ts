@@ -134,7 +134,9 @@ export type LeadChannels = {
 
 export type LeadWorkspaceOverlay = {
   planName?: string;
+  planCode?: string;
   billingCycle?: string;
+  price?: number;
   trialDaysLeft?: number | null;
   onboardingComplete?: boolean;
   accountReady?: boolean;
@@ -208,6 +210,10 @@ export type Lead = {
   referredByClientId?: string;
   /** Platform user id when referral is linked to a directory account. */
   referredByUserId?: string;
+  /** Catalog affiliate document id when the referrer has a partner code. */
+  referredByAffiliateId?: string;
+  /** Catalog affiliate code when the referrer has a partner code. */
+  referredByAffiliateCode?: string;
   notes?: string;
   linkedBusinessId?: string;
   sourceKind?: "inquiry" | "demo_request" | "business_inquiry" | "manual" | "content";

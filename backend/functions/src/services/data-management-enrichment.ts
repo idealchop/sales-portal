@@ -1,10 +1,9 @@
 import { db } from "../config/firebase-admin";
 import {
-  normalizeSmartRefillStaffSubRole,
   resolveMemberStaffSubRole,
   type SmartRefillStaffSubRole,
 } from "../constants/smartrefill";
-import { mapOwnerSubscriptions } from "./map-owner-subscriptions";
+import { mapOwnerSubscriptions, extractAddonLineItems, type OwnerAddonLineItem } from "./map-owner-subscriptions";
 
 export type DataManagementMemberBreakdown = {
   admins: number;
@@ -28,25 +27,6 @@ type AddonCatalog = {
   byCode: Map<string, string>;
 };
 
-type AddonLineItem = {
-  addonId?: string;
-  code?: string;
-};
-
-function extractAddonLineItems(sub: Record<string, unknown>): AddonLineItem[] {
-  const top = sub.addonLineItems;
-  if (Array.isArray(top)) return top as AddonLineItem[];
-
-  const meta = sub.metadata;
-  const metaAddonItems =
-    meta && typeof meta === "object" ?
-      (meta as { addonLineItems?: unknown }).addonLineItems :
-      undefined;
-  if (Array.isArray(metaAddonItems)) return metaAddonItems as AddonLineItem[];
-
-  return [];
-}
-
 async function loadAddonCatalog(): Promise<AddonCatalog> {
   const snap = await db.collection("subscription_addons").get();
   const byId = new Map<string, string>();
@@ -65,7 +45,7 @@ async function loadAddonCatalog(): Promise<AddonCatalog> {
 }
 
 function resolveAddonNames(
-  lines: AddonLineItem[],
+  lines: OwnerAddonLineItem[],
   catalog: AddonCatalog,
 ): string[] {
   const names: string[] = [];

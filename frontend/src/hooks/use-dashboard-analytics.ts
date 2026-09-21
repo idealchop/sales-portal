@@ -17,9 +17,10 @@ function isLegacySmartRefillPath(pathname: string | null): boolean {
   return !!pathname?.startsWith("/dashboard/smartrefill-old");
 }
 
-export function useDashboardAnalytics() {
+export function useDashboardAnalytics(options?: { enabled?: boolean }) {
   const pathname = usePathname();
-  const skipPlatformAnalytics = isLegacySmartRefillPath(pathname);
+  const skipPlatformAnalytics =
+    options?.enabled === false || isLegacySmartRefillPath(pathname);
   const [data, setData] = useState<DashboardAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(!skipPlatformAnalytics);
   const [isRefreshing, setIsRefreshing] = useState(false);

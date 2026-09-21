@@ -101,6 +101,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-SUB-04 | admin | Click table row | Detail dialog opens |
 | TC-SUB-05 | admin | `/subscriptions/addons` CRUD | Addons list + forms work |
 | TC-SUB-06 | admin | `/subscriptions/vouchers-affiliates` | Vouchers/affiliates CRUD works |
+| TC-SUB-09 | admin | `/subscriptions/vouchers-affiliates` affiliate **Pipeline** column | Shows paid success rate (paid / referred). Free and trial referees do not count as subscribed |
 | TC-SUB-07 | sales | Navigate to `/subscriptions` | Blocked or nav hidden |
 | TC-SUB-08 | admin | Edit a product icon | **Water container** checkbox persists; list **Water container** column shows Yes or No |
 
@@ -129,6 +130,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-LEAD-01 | sales | Open table → tabs **All, Content, Warm, Cold, Onboarded, Archives** | Order matches; Content lists webinar / training / article / story emails after Gather; guests are not on Warm |
 | TC-LEAD-02 | sales | **Gather new leads**, then open Content | Incremental insert of missing emails; workspace owners who engaged stay on their funnel tab and also on Content |
 | TC-LEAD-04 | sales | Cold lead with Missed Demo → Update status **Demo Scheduled** | Moves to Warm; demo is no longer Missed so another demo can be booked |
+| TC-LEAD-05 | sales | Insights **Who to reward** | Referrer rows show Subscribed + Success. Success = onboarded **and** paying Starter–Scale (incl. Enterprise). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed. Make-affiliate needs 2+ paid referees |
 
 ## TC-PROP — Proposals & outreach
 

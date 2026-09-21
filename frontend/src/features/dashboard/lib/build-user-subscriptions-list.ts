@@ -67,6 +67,8 @@ export type UserSubscriptionListItem = {
   ownerEmail?: string;
   /** Latest active subscription when present; otherwise newest overall. */
   subscription: OwnerSubscription;
+  /** Calendar day of last owner login activity (`YYYY-MM-DD`) when known. */
+  lastActiveDay?: string;
   changeKind: SubscriptionChangeKind;
   activeSubscriptionCount: number;
   /** All subscriptions for this business, newest first. */
@@ -490,6 +492,7 @@ export function buildUserSubscriptionsList(
       businessId: owner.id,
       businessName: owner.businessName,
       ownerEmail: owner.ownerEmail,
+      lastActiveDay: owner.lastActiveDay,
       subscription,
       changeKind: resolveSubscriptionChangeKind(subscription),
       activeSubscriptionCount: countActiveSubscriptions(all, now),

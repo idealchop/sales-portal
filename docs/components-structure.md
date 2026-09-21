@@ -98,7 +98,9 @@ Uses a lightweight legacy station loader (no delivery scan).
 |------|---------|
 | `components/lead-pipeline-page.tsx` | Queue tabs, Table/Insights toggle, edit |
 | `components/lead-pipeline-table.tsx` | Spreadsheet-style list (default view) |
-| `components/lead-pipeline-insights.tsx` | Funnel, source, assignee, trial-risk charts |
+| `components/lead-pipeline-insights.tsx` | Funnel, source, assignee, trial-risk charts; **Who to reward** referral board |
+| `lib/lead-referral-partners.ts` | Groups Referrals by affiliate/CRM referrer; **success rate** = onboarded **and** paid Starter–Scale (Enterprise included). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed |
+| `components/lead-referrer-picker.tsx` | Referrer picker: catalog affiliates first, then CRM/directory |
 | `components/lead-form-dialog.tsx` | Create/update lead + link workspace |
 
 Route: `app/lead-pipeline/page.tsx`. API: `GET/POST/PATCH /leads`, `GET /leads/analytics`.
@@ -126,6 +128,9 @@ Large admin surface for permissions and Firestore data management:
 | `admin-data-management-page.tsx` | Business/user document browser |
 | `admin-data-management-business-page.tsx` | Business overview — tabbed layout aligned with SmartRefill ops. Insights **Sign-in attendance** is a year heatmap of owner `login_events` days; **Transaction activity** plots tickets vs gallons vs other units; **Order mix** stacks delivery (manual/QR), walk-in, direct, and collection |
 | `admin-catalog-collection-page.tsx` | Subscription catalog tables |
+| `admin-catalog-collection-manager.tsx` | Catalog tables; plans/addons/vouchers show station roster; affiliates show pipeline **success rate** (paid Starter–Scale only) |
+| `plan-subscribers-dialog.tsx` | Paginated station roster (who, started, last active) |
+| `trial-stations-panel.tsx` | Free-trial roster with days remaining |
 | `catalog-document-form-*` | Structured add/edit forms (not raw JSON); product icons include **Water container** |
 | `plan-limitations-form-*` | Plan `limitations` editor (customers, **water containers / day**, QR orders, staff, River AI) |
 | `firestore-document-detail-dialog.tsx` | Row click → read-only detail |

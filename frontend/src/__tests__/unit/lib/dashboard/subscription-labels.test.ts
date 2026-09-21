@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { isPaidSubscribedPlan } from "@/lib/dashboard/subscription-plan-codes";
 import {
   displaySubscriptionPlanName,
   formatBillingCycleLabel,
   formatSubscriptionListAmount,
   formatSubscriptionPeriod,
+  formatSubscriptionDate,
   formatTrialDaysRemaining,
+  trialDaysRemainingCount,
   isTrialBillingCycle,
 } from "@/lib/dashboard/subscription-labels";
 
@@ -41,6 +44,22 @@ describe("subscription-labels trial helpers", () => {
 
   it("returns null when expiry is missing", () => {
     expect(formatTrialDaysRemaining(undefined)).toBeNull();
+    expect(trialDaysRemainingCount(undefined)).toBeNull();
+  });
+
+  it("returns a numeric day count for sorting", () => {
+    expect(
+      trialDaysRemainingCount(
+        "2026-07-12T00:00:00.000Z",
+        new Date("2026-07-05T12:00:00"),
+      ),
+    ).toBe(7);
+  });
+
+  it("formats ISO timestamps and date-only last-active days", () => {
+    expect(formatSubscriptionDate("2026-09-01T00:00:00.000Z")).toMatch(/Sep/);
+    expect(formatSubscriptionDate("2026-09-21")).toMatch(/Sep 21/);
+    expect(formatSubscriptionDate(undefined)).toBe("—");
   });
 });
 
@@ -95,5 +114,61 @@ describe("formatSubscriptionPeriod", () => {
         billingCycle: "monthly",
       }),
     ).toMatch(/1,650/);
+  });
+});
+
+describe("isPaidSubscribedPlan", () => {
+  it("counts paid Starter–Scale only", () => {
+    expect(
+      isPaidSubscribedPlan({
+        planCode: "starter",
+        planName: "Starter",
+        price: 399,
+        billingCycle: "monthly",
+      }),
+    ).toBe(true);
+    expect(
+      isPaidSubscribedPlan({
+        planCode: "grow",
+        planName: "Grow",
+        price: 950,
+        billingCycle: "monthly",
+      }),
+    ).toBe(true);
+    expect(
+      isPaidSubscribedPlan({
+        planCode: "scale",
+        planName: "Scale",
+        price: 1650,
+        billingCycle: "monthly",
+      }),
+    ).toBe(true);
+  });
+
+  it("excludes Free, trial, and unpaid Starter", () => {
+    expect(
+      isPaidSubscribedPlan({
+        planCode: "free",
+        planName: "Free",
+        price: 0,
+        billingCycle: "monthly",
+      }),
+    ).toBe(false);
+    expect(
+      isPaidSubscribedPlan({
+        planCode: "starter",
+        planName: "Starter",
+        price: 0,
+        billingCycle: "monthly",
+      }),
+    ).toBe(false);
+    expect(
+      isPaidSubscribedPlan({
+        planCode: "scale",
+        planName: "Scale",
+        price: 0,
+        billingCycle: "trial",
+      }),
+    ).toBe(false);
   });
 });

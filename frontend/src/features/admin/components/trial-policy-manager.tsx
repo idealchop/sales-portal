@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CatalogDocumentFormFields } from "@/features/admin/components/catalog-document-form-fields";
+import { TrialStationsPanel } from "@/features/admin/components/trial-stations-panel";
+import { buildUserSubscriptionsList } from "@/features/dashboard/lib/build-user-subscriptions-list";
 import { useAdminCatalogCollection } from "@/hooks/use-admin-catalog-collection";
+import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
 import { ADMIN_CATALOG_COLLECTIONS } from "@/lib/admin/catalog-collections";
 import {
   catalogDocumentPayloadFromForm,
@@ -15,10 +18,12 @@ import {
   validateCatalogForm,
   type CatalogFormValues,
 } from "@/lib/admin/catalog-document-forms";
+import { currentTrialSubscribers } from "@/lib/admin/plan-subscriber-roster";
 import {
   missingRequiredPlanCodes,
   planPresetLabel,
 } from "@/lib/admin/plan-catalog-display";
+import { ownersForUserSubscriptions } from "@/lib/dashboard/analytics";
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ?
@@ -62,6 +67,18 @@ export function TrialPolicyManager({ enabled = true }: { enabled?: boolean }) {
     listAudit,
   } = useAdminCatalogCollection("subscription_trial_policy", enabled);
   const plans = useAdminCatalogCollection("subscription_plans", enabled);
+  const { data: analytics, isLoading: trialRosterLoading } = useDashboardAnalytics({
+    enabled,
+  });
+  const trialStations = useMemo(
+    () =>
+      currentTrialSubscribers(
+        buildUserSubscriptionsList(
+          analytics ? ownersForUserSubscriptions(analytics.growthSalesMetrics) : [],
+        ),
+      ),
+    [analytics],
+  );
 
   const currentDoc = documents.find((doc) => doc.documentId === "current") ?? documents[0];
   const summary = liveTrialSummary(currentDoc?.data);
@@ -245,6 +262,8 @@ export function TrialPolicyManager({ enabled = true }: { enabled?: boolean }) {
             />
           </dl>}
       </section>
+
+      <TrialStationsPanel stations={trialStations} isLoading={trialRosterLoading} />
 
       {(error || formError || notice) && (
         <div className="space-y-2">

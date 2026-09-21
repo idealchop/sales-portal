@@ -80,6 +80,12 @@ export type BusinessMapLocation = {
 
 export type OwnerSubscriptionTimeline = "past" | "current" | "future";
 
+export type OwnerAddonLineItem = {
+  addonId?: string;
+  code?: string;
+  quantity?: number;
+};
+
 export type OwnerSubscription = {
   id: string;
   planName: string;
@@ -105,6 +111,10 @@ export type OwnerSubscription = {
   needsApproval: boolean;
   isDowngrade: boolean;
   isCancellation: boolean;
+  addonLineItems?: OwnerAddonLineItem[];
+  voucherCode?: string;
+  affiliateCode?: string;
+  affiliateDocId?: string;
 };
 
 export type CommunityChannelUsageBilling = {

@@ -2,6 +2,12 @@ import type { Timestamp } from "firebase-admin/firestore";
 
 export type OwnerSubscriptionTimeline = "past" | "current" | "future";
 
+export type OwnerAddonLineItem = {
+  addonId?: string;
+  code?: string;
+  quantity?: number;
+};
+
 export type OwnerSubscription = {
   id: string;
   planName: string;
@@ -27,6 +33,10 @@ export type OwnerSubscription = {
   needsApproval: boolean;
   isDowngrade: boolean;
   isCancellation: boolean;
+  addonLineItems?: OwnerAddonLineItem[];
+  voucherCode?: string;
+  affiliateCode?: string;
+  affiliateDocId?: string;
 };
 
 function toIso(value: unknown): string | undefined {
@@ -72,6 +82,68 @@ function needsApprovalRow(data: Record<string, unknown>): boolean {
     paymentStatus === "pending" ||
     status === "pending"
   );
+}
+
+export function extractAddonLineItems(
+  sub: Record<string, unknown>,
+): OwnerAddonLineItem[] {
+  const top = sub.addonLineItems;
+  const meta = sub.metadata;
+  const nested =
+    meta && typeof meta === "object" ?
+      (meta as { addonLineItems?: unknown }).addonLineItems :
+      undefined;
+  const raw = Array.isArray(top) ? top : Array.isArray(nested) ? nested : [];
+
+  const lines: OwnerAddonLineItem[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const row = item as Record<string, unknown>;
+    const addonId =
+      typeof row.addonId === "string" && row.addonId.trim() ?
+        row.addonId.trim() :
+        undefined;
+    const code =
+      typeof row.code === "string" && row.code.trim() ?
+        row.code.trim() :
+        undefined;
+    if (!addonId && !code) continue;
+    const quantity = Number(row.quantity);
+    lines.push({
+      addonId,
+      code,
+      quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : undefined,
+    });
+  }
+  return lines;
+}
+
+function readTrimmedString(value: unknown): string | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  return value.trim();
+}
+
+export function extractOfferAttribution(sub: Record<string, unknown>): {
+  voucherCode?: string;
+  affiliateCode?: string;
+  affiliateDocId?: string;
+} {
+  const meta =
+    sub.metadata && typeof sub.metadata === "object" ?
+      (sub.metadata as Record<string, unknown>) :
+      {};
+  const voucherCode =
+    readTrimmedString(sub.voucherCode) || readTrimmedString(meta.voucherCode);
+  const affiliateCode =
+    readTrimmedString(sub.affiliateCode) || readTrimmedString(meta.affiliateCode);
+  const affiliateDocId =
+    readTrimmedString(sub.affiliateDocId) ||
+    readTrimmedString(meta.affiliateDocId);
+  return {
+    voucherCode,
+    affiliateCode,
+    affiliateDocId,
+  };
 }
 
 type SubscriptionSortRow = OwnerSubscription & {
@@ -180,6 +252,8 @@ export function mapOwnerSubscriptions(
     const activatesAt = toIso(dates.activatesAt);
     const activatesMs = activatesAt ? new Date(activatesAt).getTime() : 0;
     const cancelAtPeriodEnd = data.cancelAtPeriodEnd === true;
+    const addonLines = extractAddonLineItems(data);
+    const offer = extractOfferAttribution(data);
 
     return {
       id: doc.id,
@@ -222,6 +296,10 @@ export function mapOwnerSubscriptions(
       isDowngrade: metadata.changeType === "downgrade",
       isCancellation:
         cancelAtPeriodEnd || status === "cancelled" || status === "canceled",
+      addonLineItems: addonLines.length > 0 ? addonLines : undefined,
+      voucherCode: offer.voucherCode,
+      affiliateCode: offer.affiliateCode,
+      affiliateDocId: offer.affiliateDocId,
       _activatesMs: activatesMs,
       _createdMs: data.createdAt ? new Date(toIso(data.createdAt) || 0).getTime() : 0,
     };

@@ -58,3 +58,29 @@ export function isPaidStarterPlan(input: {
     typeof input.price === "number" ? input.price : Number(input.price ?? NaN);
   return Number.isFinite(price) && price > 0;
 }
+
+function payingPrice(price?: number | null): boolean {
+  const amount = typeof price === "number" ? price : Number(price ?? NaN);
+  return Number.isFinite(amount) && amount > 0;
+}
+
+function isGrowOrScalePlan(planCode?: string | null, planName?: string | null): boolean {
+  const code = normalizePlanCode(planCode);
+  const key = planKey(planCode, planName);
+  if (code === "grow" || code === "pro" || code === "growth") return true;
+  if (code === "scale" || code === "enterprise") return true;
+  return key.includes("grow") || key.includes("scale") || key.includes("enterprise");
+}
+
+/** Paying Starter–Scale. Free and trial never count as subscribed. */
+export function isPaidSubscribedPlan(input: {
+  planCode?: string | null;
+  planName?: string | null;
+  price?: number | null;
+  billingCycle?: string | null;
+}): boolean {
+  if (isTrialPlan(input) || isFreeForeverPlan(input)) return false;
+  if (!payingPrice(input.price)) return false;
+  if (isPaidStarterPlan(input)) return true;
+  return isGrowOrScalePlan(input.planCode, input.planName);
+}

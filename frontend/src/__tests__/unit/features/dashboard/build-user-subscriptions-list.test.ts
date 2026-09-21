@@ -73,6 +73,7 @@ describe("buildUserSubscriptionsList", () => {
 
     expect(items).toHaveLength(1);
     expect(items[0]?.subscription.id).toBe("current");
+    expect(items[0]?.lastActiveDay).toBeUndefined();
     expect(items[0]?.activeSubscriptionCount).toBe(2);
     expect(items[0]?.history.map((sub) => sub.id)).toEqual([
       "future",

@@ -38,6 +38,7 @@ function resolveEventKind(event: LeadHistoryEvent): LeadHistoryKind {
         "leadSource",
         "sourceWebsite",
         "referredBy",
+        "referredByAffiliateCode",
       ].includes(change.field),
     )
   ) {

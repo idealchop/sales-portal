@@ -35,13 +35,21 @@ export function formatPaymentStatus(status?: string): string {
   return status.replaceAll("_", " ");
 }
 
-function formatPeriodDate(value?: string): string {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-PH", {
+export function formatSubscriptionDate(value?: string | null): string {
+  if (!value?.trim()) return "—";
+  const raw = value.trim();
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T12:00:00.000Z` : raw;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-PH", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+}
+
+function formatPeriodDate(value?: string): string {
+  return formatSubscriptionDate(value);
 }
 
 function isIndefiniteFreePlan(subscription: {
@@ -98,17 +106,24 @@ function startOfLocalDay(value: Date): Date {
   return day;
 }
 
+export function trialDaysRemainingCount(
+  expiresAt?: string,
+  referenceDate: Date = new Date(),
+): number | null {
+  if (!expiresAt) return null;
+  const expires = new Date(expiresAt);
+  if (Number.isNaN(expires.getTime())) return null;
+  const expiresDay = startOfLocalDay(expires);
+  const today = startOfLocalDay(referenceDate);
+  return Math.round((expiresDay.getTime() - today.getTime()) / MS_PER_DAY);
+}
+
 export function formatTrialDaysRemaining(
   expiresAt?: string,
   referenceDate: Date = new Date(),
 ): string | null {
-  if (!expiresAt) return null;
-
-  const expiresDay = startOfLocalDay(new Date(expiresAt));
-  const today = startOfLocalDay(referenceDate);
-  const daysLeft = Math.round(
-    (expiresDay.getTime() - today.getTime()) / MS_PER_DAY,
-  );
+  const daysLeft = trialDaysRemainingCount(expiresAt, referenceDate);
+  if (daysLeft === null) return null;
 
   if (daysLeft < 0) return "Trial ended";
   if (daysLeft === 0) return "Last day of trial";

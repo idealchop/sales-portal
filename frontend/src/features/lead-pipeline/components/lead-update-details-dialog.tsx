@@ -28,6 +28,8 @@ type DetailsFormState = {
   referredBy: string;
   referredByClientId: string;
   referredByUserId: string;
+  referredByAffiliateId: string;
+  referredByAffiliateCode: string;
 };
 
 function fromLead(lead: Lead): DetailsFormState {
@@ -42,6 +44,8 @@ function fromLead(lead: Lead): DetailsFormState {
     referredBy: lead.referredBy || "",
     referredByClientId: lead.referredByClientId || "",
     referredByUserId: lead.referredByUserId || "",
+    referredByAffiliateId: lead.referredByAffiliateId || "",
+    referredByAffiliateCode: lead.referredByAffiliateCode || "",
   };
 }
 
@@ -117,6 +121,14 @@ export function LeadUpdateDetailsDialog({
             referredByUserId:
               form.leadSource === "Referrals" ?
                 form.referredByUserId.trim()
+              : "",
+            referredByAffiliateId:
+              form.leadSource === "Referrals" ?
+                form.referredByAffiliateId.trim()
+              : "",
+            referredByAffiliateCode:
+              form.leadSource === "Referrals" ?
+                form.referredByAffiliateCode.trim()
               : "",
           }
         : {};
@@ -286,6 +298,14 @@ export function LeadUpdateDetailsDialog({
                             event.target.value === "Referrals" ?
                               prev.referredByUserId
                             : "",
+                          referredByAffiliateId:
+                            event.target.value === "Referrals" ?
+                              prev.referredByAffiliateId
+                            : "",
+                          referredByAffiliateCode:
+                            event.target.value === "Referrals" ?
+                              prev.referredByAffiliateCode
+                            : "",
                         }
                       : prev,
                     )
@@ -327,6 +347,8 @@ export function LeadUpdateDetailsDialog({
                     label: form.referredBy,
                     clientId: form.referredByClientId || undefined,
                     userId: form.referredByUserId || undefined,
+                    affiliateId: form.referredByAffiliateId || undefined,
+                    affiliateCode: form.referredByAffiliateCode || undefined,
                   }}
                   onChange={(selection) =>
                     setForm((prev) =>
@@ -336,6 +358,8 @@ export function LeadUpdateDetailsDialog({
                           referredBy: selection.label,
                           referredByClientId: selection.clientId || "",
                           referredByUserId: selection.userId || "",
+                          referredByAffiliateId: selection.affiliateId || "",
+                          referredByAffiliateCode: selection.affiliateCode || "",
                         }
                       : prev,
                     )

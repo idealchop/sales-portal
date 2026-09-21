@@ -911,6 +911,7 @@ export function formatLeadSourceLine(lead: {
   leadSource?: string;
   sourceWebsite?: string;
   referredBy?: string;
+  referredByAffiliateCode?: string;
   contentSources?: Array<"webinar" | "training" | "article" | "story">;
 }): string {
   const source = lead.leadSource?.trim();
@@ -922,7 +923,11 @@ export function formatLeadSourceLine(lead: {
       base = site ? `Website · ${site}` : "Website";
     } else if (source === "Referrals") {
       const who = lead.referredBy?.trim();
-      base = who ? `Referrals · ${who}` : "Referrals";
+      const code = lead.referredByAffiliateCode?.trim();
+      if (who && code) base = `Referrals · ${who} · ${code}`;
+      else if (who) base = `Referrals · ${who}`;
+      else if (code) base = `Referrals · ${code}`;
+      else base = "Referrals";
     } else {
       base = source;
     }
@@ -1076,6 +1081,8 @@ export const   LEAD_HISTORY_FIELD_LABELS: Record<string, string> = {
   referredBy: "Referred by",
   referredByClientId: "Referrer client",
   referredByUserId: "Referrer account",
+  referredByAffiliateId: "Affiliate",
+  referredByAffiliateCode: "Affiliate code",
   accountReady: "Account ready",
   linkedBusinessId: "Business ID",
   channels: "Channels",

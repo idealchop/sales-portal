@@ -3,13 +3,19 @@
 import { Loader2, Plus, Search, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CatalogDocumentFormDialog } from "@/features/admin/components/catalog-document-form-dialog";
 import { DeleteFirestoreDocDialog } from "@/features/admin/components/delete-firestore-doc-dialog";
 import { FirestoreActionsMenu } from "@/features/admin/components/firestore-actions-menu";
 import { FirestoreDocumentDetailDialog } from "@/features/admin/components/firestore-document-detail-dialog";
+import { PlanSubscribersDialog } from "@/features/admin/components/plan-subscribers-dialog";
+import {
+  buildUserSubscriptionsList,
+  type UserSubscriptionListItem,
+} from "@/features/dashboard/lib/build-user-subscriptions-list";
 import { useAdminCatalogCollection } from "@/hooks/use-admin-catalog-collection";
+import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
 import {
   ADMIN_CATALOG_COLLECTIONS,
   catalogDocumentActive,
@@ -24,8 +30,26 @@ import {
   missingRequiredPlanCodes,
   planOnPricingPage,
   planPresetLabel,
+  catalogPlanCode,
   sortCatalogPlanDocuments,
 } from "@/lib/admin/plan-catalog-display";
+import {
+  groupCurrentSubscribersByAddonKey,
+  groupCurrentSubscribersByCatalogCode,
+  groupCurrentSubscribersByOfferKey,
+  subscribersForCatalogAddon,
+  subscribersForCatalogOffer,
+  subscribersForCatalogPlan,
+  catalogAddonMatchKeys,
+} from "@/lib/admin/plan-subscriber-roster";
+import {
+  buildReferralPartnerBoard,
+  formatReferralSuccessRate,
+  pipelineReferralStatsForOffer,
+} from "@/features/lead-pipeline/lib/lead-referral-partners";
+import { catalogAffiliates } from "@/lib/admin/catalog-offer-options";
+import { fetchLeads } from "@/lib/sales/api";
+import { ownersForUserSubscriptions } from "@/lib/dashboard/analytics";
 import {
   formatAddonPlansLine,
   formatAddonPriceLine,
@@ -86,11 +110,62 @@ export function AdminCatalogCollectionManager({
   const [deleteDoc, setDeleteDoc] = useState<UserFirestoreDocumentRow | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createPresetCode, setCreatePresetCode] = useState<string | undefined>(undefined);
+  const [subscribersDialog, setSubscribersDialog] = useState<{
+    kind: "plan" | "addon" | "voucher" | "affiliate";
+    name: string;
+    subscribers: UserSubscriptionListItem[];
+  } | null>(null);
   const isPlans = collectionId === "subscription_plans";
   const isAddons = collectionId === "subscription_addons";
   const isVouchers = collectionId === "vouchers_affiliates";
   const isIcons = collectionId === "product_icons";
   const howItWorks = "howItWorks" in meta ? meta.howItWorks : undefined;
+  const { data: analytics, isLoading: rosterLoading } = useDashboardAnalytics({
+    enabled: isPlans || isAddons || isVouchers,
+  });
+  const rosterItems = useMemo(() => {
+    if (!analytics || !(isPlans || isAddons || isVouchers)) return [];
+    return buildUserSubscriptionsList(
+      ownersForUserSubscriptions(analytics.growthSalesMetrics),
+    );
+  }, [analytics, isAddons, isPlans, isVouchers]);
+  const subscribersByPlan = useMemo(() => {
+    if (!isPlans) return new Map();
+    return groupCurrentSubscribersByCatalogCode(rosterItems);
+  }, [isPlans, rosterItems]);
+  const subscribersByAddon = useMemo(() => {
+    if (!isAddons) return new Map();
+    return groupCurrentSubscribersByAddonKey(rosterItems);
+  }, [isAddons, rosterItems]);
+  const subscribersByOffer = useMemo(() => {
+    if (!isVouchers) return new Map();
+    return groupCurrentSubscribersByOfferKey(rosterItems);
+  }, [isVouchers, rosterItems]);
+  const [pipelineLeads, setPipelineLeads] = useState<
+    Awaited<ReturnType<typeof fetchLeads>>
+  >([]);
+  useEffect(() => {
+    if (!isVouchers) {
+      setPipelineLeads([]);
+      return;
+    }
+    let cancelled = false;
+    void fetchLeads()
+      .then((rows) => {
+        if (!cancelled) setPipelineLeads(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setPipelineLeads([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isVouchers]);
+  const referralBoard = useMemo(
+    () =>
+      buildReferralPartnerBoard(pipelineLeads, catalogAffiliates(documents)),
+    [documents, pipelineLeads],
+  );
 
   const filteredDocuments = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -293,16 +368,20 @@ export function AdminCatalogCollectionManager({
                   {isPlans ?
                     <>
                       <th className="px-4 py-3">Price</th>
+                      <th className="px-4 py-3">Stations</th>
                       <th className="hidden px-4 py-3 md:table-cell">On pricing page</th>
                     </>
                   : isAddons ?
                     <>
                       <th className="px-4 py-3">Price</th>
+                      <th className="px-4 py-3">Stations</th>
                       <th className="hidden px-4 py-3 md:table-cell">Available on</th>
                     </>
                   : isVouchers ?
                     <>
                       <th className="px-4 py-3">Code</th>
+                      <th className="px-4 py-3">Stations</th>
+                      <th className="px-4 py-3">Pipeline</th>
                       <th className="hidden px-4 py-3 md:table-cell">Offer</th>
                     </>
                   : null}
@@ -315,6 +394,38 @@ export function AdminCatalogCollectionManager({
                 {filteredDocuments.map((doc) => {
                   const subtitle = catalogDocumentSubtitle(doc.data);
                   const waterContainer = catalogDocumentIsWaterContainer(doc.data);
+                  const planCode = isPlans ? catalogPlanCode(doc.data) : "";
+                  const planStations =
+                    isPlans ?
+                      subscribersForCatalogPlan(subscribersByPlan, planCode)
+                    : [];
+                  const addonStations =
+                    isAddons ?
+                      subscribersForCatalogAddon(
+                        subscribersByAddon,
+                        catalogAddonMatchKeys(doc.documentId, doc.data),
+                      )
+                    : [];
+                  const offerKind =
+                    String(doc.data.kind || "voucher") === "affiliate" ?
+                      "affiliate"
+                    : "voucher";
+                  const offerStations =
+                    isVouchers ?
+                      subscribersForCatalogOffer(
+                        subscribersByOffer,
+                        { documentId: doc.documentId, data: doc.data },
+                        documents,
+                      )
+                    : [];
+                  const pipelineStats =
+                    isVouchers && offerKind === "affiliate" ?
+                      pipelineReferralStatsForOffer(referralBoard.partners, {
+                        documentId: doc.documentId,
+                        code: String(doc.data.code || ""),
+                        kind: offerKind,
+                      })
+                    : { referred: 0, subscribed: 0, successRate: null };
                   return (
                     <tr
                       key={doc.path}
@@ -353,6 +464,30 @@ export function AdminCatalogCollectionManager({
                           <td className="px-4 py-3 text-zinc-700">
                             {formatPlanPriceLine(doc.data)}
                           </td>
+                          <td
+                            className="px-4 py-3"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="rounded-lg px-2 py-1 text-left text-sm font-medium text-[var(--primary)] underline-offset-2 hover:underline"
+                              onClick={() =>
+                                setSubscribersDialog({
+                                  kind: "plan",
+                                  name: catalogDocumentDisplayName(
+                                    doc.data,
+                                    doc.documentId,
+                                  ),
+                                  subscribers: planStations,
+                                })
+                              }
+                            >
+                              {rosterLoading && planStations.length === 0 ?
+                                "Loading…"
+                              : `${planStations.length} station${planStations.length === 1 ? "" : "s"}`
+                              }
+                            </button>
+                          </td>
                           <td className="hidden px-4 py-3 md:table-cell">
                             <span
                               className={cn(
@@ -371,6 +506,30 @@ export function AdminCatalogCollectionManager({
                           <td className="px-4 py-3 text-zinc-700">
                             {formatAddonPriceLine(doc.data)}
                           </td>
+                          <td
+                            className="px-4 py-3"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="rounded-lg px-2 py-1 text-left text-sm font-medium text-[var(--primary)] underline-offset-2 hover:underline"
+                              onClick={() =>
+                                setSubscribersDialog({
+                                  kind: "addon",
+                                  name: catalogDocumentDisplayName(
+                                    doc.data,
+                                    doc.documentId,
+                                  ),
+                                  subscribers: addonStations,
+                                })
+                              }
+                            >
+                              {rosterLoading && addonStations.length === 0 ?
+                                "Loading…"
+                              : `${addonStations.length} station${addonStations.length === 1 ? "" : "s"}`
+                              }
+                            </button>
+                          </td>
                           <td className="hidden px-4 py-3 md:table-cell text-zinc-600">
                             {formatAddonPlansLine(doc.data)}
                           </td>
@@ -379,6 +538,48 @@ export function AdminCatalogCollectionManager({
                         <>
                           <td className="px-4 py-3 font-medium text-zinc-700">
                             {String(doc.data.code || "—")}
+                          </td>
+                          <td
+                            className="px-4 py-3"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="rounded-lg px-2 py-1 text-left text-sm font-medium text-[var(--primary)] underline-offset-2 hover:underline"
+                              onClick={() =>
+                                setSubscribersDialog({
+                                  kind: offerKind,
+                                  name: catalogDocumentDisplayName(
+                                    doc.data,
+                                    doc.documentId,
+                                  ),
+                                  subscribers: offerStations,
+                                })
+                              }
+                            >
+                              {rosterLoading && offerStations.length === 0 ?
+                                "Loading…"
+                              : `${offerStations.length} station${offerStations.length === 1 ? "" : "s"}`
+                              }
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-zinc-700">
+                            {offerKind === "affiliate" ?
+                              pipelineStats.referred === 0 ?
+                                "—"
+                              : <div>
+                                  <p className="font-medium tabular-nums">
+                                    {formatReferralSuccessRate(
+                                      pipelineStats.subscribed,
+                                      pipelineStats.referred,
+                                    )}
+                                  </p>
+                                  <p className="text-[11px] text-zinc-500">
+                                    {pipelineStats.subscribed} paid /{" "}
+                                    {pipelineStats.referred} referred
+                                  </p>
+                                </div>
+                            : "—"}
                           </td>
                           <td className="hidden px-4 py-3 md:table-cell text-zinc-600">
                             {formatVoucherOfferLine(doc.data)}
@@ -488,6 +689,15 @@ export function AdminCatalogCollectionManager({
           </div>
         }
       </div>
+
+      {subscribersDialog && (
+        <PlanSubscribersDialog
+          kind={subscribersDialog.kind}
+          planName={subscribersDialog.name}
+          subscribers={subscribersDialog.subscribers}
+          onClose={() => setSubscribersDialog(null)}
+        />
+      )}
 
       {viewDoc && (
         <FirestoreDocumentDetailDialog

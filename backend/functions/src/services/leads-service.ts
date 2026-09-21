@@ -71,7 +71,9 @@ export type LeadChannels = {
 
 export type LeadWorkspaceOverlay = {
   planName?: string;
+  planCode?: string;
   billingCycle?: string;
+  price?: number;
   trialDaysLeft?: number | null;
   onboardingComplete?: boolean;
   accountReady?: boolean;
@@ -115,6 +117,8 @@ export type LeadRecord = {
   referredByClientId?: string;
   /** Platform user id when referral is linked to a directory account. */
   referredByUserId?: string;
+  referredByAffiliateId?: string;
+  referredByAffiliateCode?: string;
   notes?: string;
   linkedBusinessId?: string;
   sourceKind?: LeadSourceKind;
@@ -180,6 +184,8 @@ export type CreateLeadInput = {
   referredBy?: string;
   referredByClientId?: string;
   referredByUserId?: string;
+  referredByAffiliateId?: string;
+  referredByAffiliateCode?: string;
   notes?: string;
   linkedBusinessId?: string;
   sourceKind?: LeadSourceKind;
@@ -546,6 +552,16 @@ export function normalizeLead(
       base.referredByUserId.trim() ?
         base.referredByUserId.trim() :
         undefined,
+    referredByAffiliateId:
+      typeof base.referredByAffiliateId === "string" &&
+      base.referredByAffiliateId.trim() ?
+        base.referredByAffiliateId.trim() :
+        undefined,
+    referredByAffiliateCode:
+      typeof base.referredByAffiliateCode === "string" &&
+      base.referredByAffiliateCode.trim() ?
+        base.referredByAffiliateCode.trim() :
+        undefined,
     notes: typeof base.notes === "string" ? base.notes : undefined,
     linkedBusinessId:
       typeof base.linkedBusinessId === "string" && base.linkedBusinessId.trim() ?
@@ -617,6 +633,54 @@ export function normalizeLead(
       typeof base.contentSummary === "string" && base.contentSummary.trim() ?
         base.contentSummary.trim() :
         undefined,
+    workspace: workspaceFromPersistedLead(base),
+  };
+}
+
+function workspaceFromPersistedLead(
+  base: Record<string, unknown>,
+): LeadWorkspaceOverlay | undefined {
+  const nested =
+    base.workspace && typeof base.workspace === "object" && !Array.isArray(base.workspace) ?
+      (base.workspace as Record<string, unknown>) :
+      {};
+  const planName =
+    typeof nested.planName === "string" ? nested.planName :
+      typeof base.planName === "string" ? base.planName :
+        undefined;
+  const planCode =
+    typeof nested.planCode === "string" ? nested.planCode :
+      typeof base.planCode === "string" ? base.planCode :
+        undefined;
+  const billingCycle =
+    typeof nested.billingCycle === "string" ? nested.billingCycle :
+      typeof base.billingCycle === "string" ? base.billingCycle :
+        undefined;
+  const priceRaw = nested.price ?? base.price;
+  const price = Number(priceRaw);
+  const onboardingComplete =
+    typeof nested.onboardingComplete === "boolean" ?
+      nested.onboardingComplete :
+      undefined;
+  const accountReady =
+    typeof nested.accountReady === "boolean" ? nested.accountReady : undefined;
+  if (
+    !planName &&
+    !planCode &&
+    !billingCycle &&
+    !Number.isFinite(price) &&
+    onboardingComplete === undefined &&
+    accountReady === undefined
+  ) {
+    return undefined;
+  }
+  return {
+    planName,
+    planCode,
+    billingCycle,
+    price: Number.isFinite(price) ? price : undefined,
+    onboardingComplete,
+    accountReady,
   };
 }
 
@@ -655,6 +719,7 @@ export function filterLeads(
       lead.leadSource,
       lead.sourceWebsite,
       lead.referredBy,
+      lead.referredByAffiliateCode,
       lead.notes,
       lead.stallReason,
       lead.contentSummary,
@@ -766,7 +831,9 @@ async function loadWorkspaceOverlay(
 
   return {
     planName: snapshot.planName,
+    planCode: snapshot.planCode,
     billingCycle: snapshot.billingCycle,
+    price: snapshot.price,
     trialDaysLeft: isTrial || trialDaysLeft !== null ? trialDaysLeft : null,
     onboardingComplete: snapshot.onboardingComplete,
     accountReady: snapshot.onboardingComplete,
@@ -815,7 +882,9 @@ function attachOnboardedMonitorFromLive(
     onboardedMonitor,
     workspace: {
       planName: snapshot.planName,
+      planCode: snapshot.planCode,
       billingCycle: snapshot.billingCycle,
+      price: snapshot.price,
       trialDaysLeft: daysLeftFromExpiresAt(
         snapshot.subscriptionExpiresAt ?? undefined,
       ),
@@ -915,7 +984,8 @@ export async function listLeads(
   } = {},
 ): Promise<LeadRecord[]> {
   const leads = await listAccessibleLeads(actor);
-  return filterLeads(leads, opts).sort((a, b) =>
+  const enriched = await enrichLeadsWithWorkspace(leads);
+  return filterLeads(enriched, opts).sort((a, b) =>
     String(b.updatedAt || b.createdAt || "").localeCompare(
       String(a.updatedAt || a.createdAt || ""),
     ),
@@ -1047,6 +1117,14 @@ export async function createLead(
     referredByUserId:
       input.leadSource?.trim() === "Referrals" ?
         input.referredByUserId?.trim() || null :
+        null,
+    referredByAffiliateId:
+      input.leadSource?.trim() === "Referrals" ?
+        input.referredByAffiliateId?.trim() || null :
+        null,
+    referredByAffiliateCode:
+      input.leadSource?.trim() === "Referrals" ?
+        input.referredByAffiliateCode?.trim() || null :
         null,
     notes: input.notes?.trim() || "",
     linkedBusinessId: linkedBusinessId || null,
@@ -1203,6 +1281,8 @@ export async function updateLead(
       patch.referredBy = "";
       patch.referredByClientId = null;
       patch.referredByUserId = null;
+      patch.referredByAffiliateId = null;
+      patch.referredByAffiliateCode = null;
     } else if (source === "Referrals") {
       patch.referredBy =
         input.referredBy !== undefined ?
@@ -1216,12 +1296,22 @@ export async function updateLead(
         input.referredByUserId !== undefined ?
           input.referredByUserId.trim() || null :
           existing.referredByUserId || null;
+      patch.referredByAffiliateId =
+        input.referredByAffiliateId !== undefined ?
+          input.referredByAffiliateId.trim() || null :
+          existing.referredByAffiliateId || null;
+      patch.referredByAffiliateCode =
+        input.referredByAffiliateCode !== undefined ?
+          input.referredByAffiliateCode.trim() || null :
+          existing.referredByAffiliateCode || null;
       patch.sourceWebsite = "";
     } else {
       patch.sourceWebsite = "";
       patch.referredBy = "";
       patch.referredByClientId = null;
       patch.referredByUserId = null;
+      patch.referredByAffiliateId = null;
+      patch.referredByAffiliateCode = null;
     }
   } else {
     if (input.sourceWebsite !== undefined) {
@@ -1235,6 +1325,13 @@ export async function updateLead(
     }
     if (input.referredByUserId !== undefined) {
       patch.referredByUserId = input.referredByUserId.trim() || null;
+    }
+    if (input.referredByAffiliateId !== undefined) {
+      patch.referredByAffiliateId = input.referredByAffiliateId.trim() || null;
+    }
+    if (input.referredByAffiliateCode !== undefined) {
+      patch.referredByAffiliateCode =
+        input.referredByAffiliateCode.trim() || null;
     }
   }
   if (input.notes !== undefined) patch.notes = input.notes.trim();
@@ -1371,6 +1468,8 @@ const DETAIL_HISTORY_FIELDS = [
   "referredBy",
   "referredByClientId",
   "referredByUserId",
+  "referredByAffiliateId",
+  "referredByAffiliateCode",
   "linkedBusinessId",
   "inquiredAt",
   "registeredAt",

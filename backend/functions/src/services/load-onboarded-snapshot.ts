@@ -21,7 +21,9 @@ export type OnboardedBusinessSnapshot = {
   subscriptionExpiresAt: string | null;
   subscriptionChangeType: string | null;
   planName?: string;
+  planCode?: string;
   billingCycle?: string;
+  price?: number;
   currentSubscription: OnboardedMonitorSubscription | null;
   recentSubscriptionChanges: OnboardedMonitorSubscription[];
 };
@@ -148,7 +150,9 @@ export async function loadOnboardedBusinessSnapshot(
     subscriptionExpiresAt: current?.expiresAt ?? null,
     subscriptionChangeType: current?.changeType ?? null,
     planName: current?.planName,
+    planCode: current?.planCode,
     billingCycle: current?.billingCycle,
+    price: current?.price,
     currentSubscription: current ? toMonitorSub(current) : null,
     recentSubscriptionChanges,
   };
@@ -167,5 +171,9 @@ export function onboardedSnapshotLeadFields(
     subscriptionStatus: snapshot.subscriptionStatus,
     subscriptionExpiresAt: snapshot.subscriptionExpiresAt,
     subscriptionChangeType: snapshot.subscriptionChangeType,
+    planName: snapshot.planName ?? null,
+    planCode: snapshot.planCode ?? null,
+    billingCycle: snapshot.billingCycle ?? null,
+    price: snapshot.price ?? null,
   };
 }

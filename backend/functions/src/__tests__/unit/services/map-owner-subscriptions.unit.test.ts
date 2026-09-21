@@ -235,4 +235,89 @@ describe("mapOwnerSubscriptions", () => {
     expect(current?.planName).toBe("Starter");
     expect(pickLatestLivePaidSubscription(rows)).toBeUndefined();
   });
+
+  it("maps addon line items from the document or metadata", () => {
+    const now = Date.now();
+    const rows = mapOwnerSubscriptions([
+      {
+        id: "with-addons",
+        data: () => ({
+          planName: "Scale",
+          planCode: "scale",
+          status: "active",
+          paymentStatus: "verified",
+          price: 1650,
+          billingCycle: "monthly",
+          createdAt: new Date(now).toISOString(),
+          dates: {
+            expiresAt: new Date(now + 86400000).toISOString(),
+          },
+          addonLineItems: [
+            { addonId: "addon_ext_rider", quantity: 2 },
+            { code: "EXT_AI_BOOST" },
+            { quantity: 1 },
+          ],
+        }),
+      },
+      {
+        id: "metadata-addons",
+        data: () => ({
+          planName: "Grow",
+          planCode: "grow",
+          status: "superseded",
+          price: 950,
+          createdAt: new Date(now - 86400000).toISOString(),
+          metadata: {
+            addonLineItems: [{ addonId: "addon_ext_business", code: "EXT_BUSINESS" }],
+          },
+        }),
+      },
+    ]);
+
+    expect(rows.find((row) => row.id === "with-addons")?.addonLineItems).toEqual([
+      { addonId: "addon_ext_rider", quantity: 2 },
+      { code: "EXT_AI_BOOST" },
+    ]);
+    expect(rows.find((row) => row.id === "metadata-addons")?.addonLineItems).toEqual([
+      { addonId: "addon_ext_business", code: "EXT_BUSINESS" },
+    ]);
+  });
+
+  it("maps voucher and affiliate codes from the document or metadata", () => {
+    const now = Date.now();
+    const rows = mapOwnerSubscriptions([
+      {
+        id: "voucher-sub",
+        data: () => ({
+          planName: "Scale",
+          planCode: "scale",
+          status: "active",
+          price: 0,
+          billingCycle: "monthly",
+          createdAt: new Date(now).toISOString(),
+          voucherCode: "LAUNCH20",
+        }),
+      },
+      {
+        id: "affiliate-sub",
+        data: () => ({
+          planName: "Grow",
+          planCode: "grow",
+          status: "superseded",
+          price: 950,
+          createdAt: new Date(now - 86400000).toISOString(),
+          metadata: {
+            affiliateCode: "PARTNER10",
+            affiliateDocId: "affiliate_partner10",
+          },
+        }),
+      },
+    ]);
+
+    expect(rows.find((row) => row.id === "voucher-sub")?.voucherCode).toBe("LAUNCH20");
+    expect(rows.find((row) => row.id === "affiliate-sub")).toMatchObject({
+      affiliateCode: "PARTNER10",
+      affiliateDocId: "affiliate_partner10",
+    });
+  });
 });

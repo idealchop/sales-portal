@@ -2,12 +2,12 @@ export const ADMIN_CATALOG_COLLECTIONS = {
   subscription_addons: {
     title: "Add-ons",
     description:
-      "Extras stations can buy on top of a plan — more riders, more River AI, or another station. Save when you are ready; SmartRefill updates right away.",
+      "Extras stations can buy on top of a plan — more riders, more River AI, or another station. Each add-on shows how many live stations have it — open the count to see who.",
   },
   vouchers_affiliates: {
     title: "Vouchers & affiliates",
     description:
-      "Vouchers are checkout codes (percent off, pesos off, or extra trial days). Affiliates are partner referral codes and their commission.",
+      "Vouchers are checkout codes (percent off, pesos off, or extra trial days). Affiliates are partner referral codes and their commission. Each row shows how many live stations used that code — open the count to see who.",
   },
   subscription_plans: {
     title: "Plan management",

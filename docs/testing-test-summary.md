@@ -22,7 +22,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/services/clients-directory.unit.test.ts` ✅ | Platform user directory + app categorization | TC-PROP-02 |
 | `unit/services/generate-ai-sales-insights.unit.test.ts` | AI insight payload shaping | TC-DASH-01 |
 | `unit/services/generate-dashboard-forecasts.unit.test.ts` ✅ | Fallback forecasts + actor reshape | TC-DASH-08 |
-| `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline mapping | TC-DASH-05, TC-DASH-09 |
+| `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline mapping; addon line items + voucher/affiliate attribution | TC-DASH-05, TC-DASH-09, TC-SUB-05, TC-SUB-06 |
 | `unit/services/build-platform-alerts.unit.test.ts` ✅ | Demo / new-user / subscription alerts | TC-DASH-13 |
 | `unit/services/inactive-owner-contacts.unit.test.ts` ✅ | Attach `lastContactedAt` to owners | TC-DASH-14 |
 | `unit/services/build-todays-work-inbox.unit.test.ts` | Today’s work dedupe | TC-DASH-07 |
@@ -97,6 +97,9 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |
 | `unit/features/lead-pipeline/lead-pipeline-display.test.ts` ✅ | Attempt tracks + content source labels | TC-LEAD-01 |
 | `unit/features/lead-pipeline/lead-pipeline-insights.test.ts` ✅ | Queue mix incl. Content slice | TC-NAV-04 |
+| `unit/features/lead-pipeline/lead-referral-partners.test.ts` ✅ | Referral success rate: paid Starter–Scale only; Free/trial/unpaid Starter excluded | TC-LEAD-05, TC-SUB-09 |
+| `unit/lib/admin/plan-subscriber-roster.test.ts` ✅ | Plan / addon / voucher / affiliate station roster grouping | TC-SUB-01, TC-SUB-05, TC-SUB-06 |
+| `unit/lib/dashboard/subscription-labels.test.ts` ✅ | Trial labels; `isPaidSubscribedPlan` paid vs Free/trial | TC-LEAD-05 |
 | `unit/features/lead-pipeline/lead-pipeline-list.test.ts` ✅ | Table filters; content source/search | TC-LEAD-01 |
 | `unit/features/events-training/webinar-feedback-display.test.ts` ✅ | Overall rating / recommend / public-exposure labels | TC-ET-05c, TC-ET-07c |
 | `unit/lib/admin/catalog-document-forms.test.ts` ✅ | Product icon `waterContainer` persist | TC-SUB-08 |

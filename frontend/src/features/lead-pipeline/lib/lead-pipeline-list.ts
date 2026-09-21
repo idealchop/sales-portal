@@ -255,6 +255,7 @@ function haystack(lead: Lead): string {
     lead.leadSource,
     lead.sourceWebsite,
     lead.referredBy,
+    lead.referredByAffiliateCode,
     lead.notes,
     lead.stallReason,
     lead.warmStatus,
