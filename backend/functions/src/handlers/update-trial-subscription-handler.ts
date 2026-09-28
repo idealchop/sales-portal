@@ -23,6 +23,7 @@ export const patchTrialSubscription = async (
   const planCode = String(req.body?.planCode || "");
   const expiresAt = String(req.body?.expiresAt || "");
   const note = String(req.body?.note || "");
+  const paid = req.body?.paid === true;
   if (!businessId || !subscriptionId || !expiresAt) {
     res.status(400).json({ error: "Station, subscription, and end date are required." });
     return;
@@ -52,6 +53,7 @@ export const patchTrialSubscription = async (
       planCode,
       expiresAt,
       note,
+      paid,
       actorUid: req.user?.uid || "",
     });
     res.json(result);

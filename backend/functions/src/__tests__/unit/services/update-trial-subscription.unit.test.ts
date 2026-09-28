@@ -3,7 +3,6 @@ import {
   assertOverwriteNote,
   assertOverwritePlanCode,
   monthlyPriceFromPlan,
-  overwritePlanKind,
   parseTrialEnd,
   subscriptionOverwritePatch,
 } from "../../../services/update-trial-subscription";
@@ -37,6 +36,7 @@ describe("overwrite trial subscription", () => {
       planId: "scale-plan",
       planName: "Scale",
       listPrice: 1650,
+      paid: false,
       limitations: { customers: "full" },
       capabilities: { scalePlatform: true },
       expiresAt,
@@ -51,8 +51,7 @@ describe("overwrite trial subscription", () => {
     expect(patch.price).toBe(0);
     expect(patch["metadata.collectedAmount"]).toBe(0);
     expect(patch["metadata.listPrice"]).toBe(1650);
-    expect(patch["metadata.overridePlanKind"]).toBe("paid");
-    expect(overwritePlanKind("free", 0)).toBe("free");
+    expect(patch["metadata.overridePayment"]).toBe("granted");
     expect(patch.planCode).toBe("scale");
     expect(patch.paymentStatus).toBe("approved");
     expect(patch.paymentMethod).toBe("manual");
@@ -61,5 +60,23 @@ describe("overwrite trial subscription", () => {
     expect(patch["metadata.previousBillingCycle"]).toBe("trial");
     expect(patch["metadata.trialState"]).toBe("converted");
     expect(patch.planLimitationsSnapshot).toEqual({ customers: "full" });
+  });
+
+  it("records a paid overwrite at the catalog price", () => {
+    const patch = subscriptionOverwritePatch({
+      planCode: "scale",
+      planId: "scale-plan",
+      planName: "Scale",
+      listPrice: 1650,
+      paid: true,
+      limitations: {},
+      capabilities: {},
+      expiresAt: new Date("2026-10-20T15:59:59.999Z"),
+      note: "Customer paid for Scale.",
+      actorUid: "admin-1",
+    });
+    expect(patch.price).toBe(1650);
+    expect(patch["metadata.overridePayment"]).toBe("paid");
+    expect(patch["metadata.collectedAmount"]).toBe(1650);
   });
 });

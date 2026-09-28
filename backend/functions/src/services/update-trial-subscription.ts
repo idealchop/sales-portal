@@ -56,18 +56,20 @@ function asRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
-/** Paid catalog plan granted at ₱0, or the Free plan. Neither is collected revenue. */
-export function overwritePlanKind(planCode: string, listPrice: number): "paid" | "free" {
-  if (planCode === "free" || !(listPrice > 0)) return "free";
-  return "paid";
+export type OverridePayment = "paid" | "granted";
+
+export function overwriteCollectedAmount(paid: boolean, listPrice: number): number {
+  if (!paid) return 0;
+  return listPrice > 0 ? listPrice : 0;
 }
 
 export function subscriptionOverwritePatch(input: {
   planCode: string;
   planId: string;
   planName: string;
-  /** Catalog monthly price. Stored for reference only — collected amount is always 0. */
+  /** Catalog monthly price. Collected only when the overwrite is marked paid. */
   listPrice: number;
+  paid: boolean;
   limitations: unknown;
   capabilities: unknown;
   expiresAt: Date;
@@ -82,13 +84,15 @@ export function subscriptionOverwritePatch(input: {
   const now = input.now ?? new Date();
   const expiresAt = Timestamp.fromDate(input.expiresAt);
   const listPrice = input.planCode === "free" ? 0 : input.listPrice;
+  const paid = input.paid && listPrice > 0;
+  const collectedAmount = overwriteCollectedAmount(paid, listPrice);
   const patch: Record<string, unknown> = {
     "planId": input.planId,
     "planCode": input.planCode,
     "planName": input.planName,
     "status": "active",
     "billingCycle": "monthly",
-    "price": 0,
+    "price": collectedAmount,
     // Smart Refill only entitles a paid cycle when payment is verified or approved.
     // "manual" was stored before and the station stayed on the old trial.
     "paymentStatus": "approved",
@@ -100,9 +104,9 @@ export function subscriptionOverwritePatch(input: {
     "dates.renewalAt": expiresAt,
     "dates.gracePeriodExpiresAt": expiresAt,
     "metadata.changeType": "override",
-    "metadata.overridePlanKind": overwritePlanKind(input.planCode, listPrice),
+    "metadata.overridePayment": paid ? "paid" : "granted",
     "metadata.listPrice": listPrice,
-    "metadata.collectedAmount": 0,
+    "metadata.collectedAmount": collectedAmount,
     "metadata.overrideNote": input.note,
     "metadata.overrideBy": input.actorUid,
     "metadata.overrideAt": now.toISOString(),
@@ -143,6 +147,7 @@ export async function updateLiveTrialSubscription(input: {
   planCode: string;
   expiresAt: string;
   note: string;
+  paid: boolean;
   actorUid: string;
 }): Promise<{
   planCode: string;
@@ -150,7 +155,7 @@ export async function updateLiveTrialSubscription(input: {
   expiresAt: string;
   billingCycle: "monthly";
   price: number;
-  overridePlanKind: "paid" | "free";
+  overridePayment: OverridePayment;
 }> {
   const planCode = assertOverwritePlanCode(input.planCode);
   const note = assertOverwriteNote(input.note);
@@ -184,6 +189,7 @@ export async function updateLiveTrialSubscription(input: {
       planId: plan.id,
       planName,
       listPrice,
+      paid: input.paid,
       limitations: plan.data.limitations,
       capabilities: plan.data.capabilities,
       expiresAt,
@@ -196,6 +202,8 @@ export async function updateLiveTrialSubscription(input: {
     }),
   );
 
+  const overridePayment: OverridePayment =
+    input.paid && listPrice > 0 ? "paid" : "granted";
   await patchSubscriptionInDashboardSnapshot({
     businessId: input.businessId,
     subscriptionId: input.subscriptionId,
@@ -203,8 +211,9 @@ export async function updateLiveTrialSubscription(input: {
     planName,
     expiresAt: expiresAt.toISOString(),
     billingCycle: "monthly",
-    price: 0,
+    price: overwriteCollectedAmount(input.paid, listPrice),
     paymentStatus: "approved",
+    overridePayment,
   });
 
   return {
@@ -212,8 +221,8 @@ export async function updateLiveTrialSubscription(input: {
     planName,
     expiresAt: expiresAt.toISOString(),
     billingCycle: "monthly",
-    price: 0,
-    overridePlanKind: overwritePlanKind(planCode, listPrice),
+    price: overwriteCollectedAmount(input.paid, listPrice),
+    overridePayment,
   };
 }
 

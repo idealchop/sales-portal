@@ -28,22 +28,25 @@ export function isTrialablePlanCode(planCode: string): boolean {
   return TRIALABLE_PLAN_CODES.has(planCode.trim().toLowerCase());
 }
 
-function patchOwner(
-  owner: ActiveOwner,
-  edit: {
-    businessId: string;
-    subscriptionId: string;
-    planCode: string;
-    planName: string;
-    expiresAt: string;
-    billingCycle?: string;
-    price?: number;
-  },
-): ActiveOwner {
+export type TrialStationEdit = {
+  businessId: string;
+  subscriptionId: string;
+  planCode: string;
+  planName: string;
+  expiresAt: string;
+  billingCycle?: string;
+  price?: number;
+  overridePayment?: "paid" | "granted";
+};
+
+function patchOwner(owner: ActiveOwner, edit: TrialStationEdit): ActiveOwner {
   if (owner.id !== edit.businessId) return owner;
+  const granted = edit.overridePayment === "granted";
+  const price = granted ? 0 : edit.price ?? undefined;
   return {
     ...owner,
     planName: edit.planName,
+    ...(price !== undefined ? { monthlyRevenue: price } : {}),
     subscriptions: owner.subscriptions?.map((subscription) =>
       subscription.id === edit.subscriptionId ?
         {
@@ -52,7 +55,15 @@ function patchOwner(
           planName: edit.planName,
           expiresAt: edit.expiresAt,
           billingCycle: edit.billingCycle ?? "monthly",
-          price: edit.price ?? subscription.price,
+          ...(price !== undefined ? { price } : {}),
+          ...(edit.overridePayment ?
+            {
+              overridePayment: edit.overridePayment,
+              changeType: "override",
+              paymentStatus: "approved",
+              paymentMethod: "manual",
+            }
+          : {}),
         }
       : subscription,
     ),
@@ -61,15 +72,7 @@ function patchOwner(
 
 export function applyTrialStationEdit(
   analytics: DashboardAnalytics,
-  edit: {
-    businessId: string;
-    subscriptionId: string;
-    planCode: string;
-    planName: string;
-    expiresAt: string;
-    billingCycle?: string;
-    price?: number;
-  },
+  edit: TrialStationEdit,
 ): DashboardAnalytics {
   const metrics = analytics.growthSalesMetrics;
   return {

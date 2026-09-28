@@ -28,6 +28,8 @@ export type OwnerSubscription = {
   cancelledAt?: string;
   cancelAtPeriodEnd: boolean;
   changeType?: string;
+  /** Set when sales overwrote the plan: customer paid, or the plan was granted. */
+  overridePayment?: "paid" | "granted";
   downgradeReasonCode?: string;
   downgradeReasonDetail?: string;
   needsApproval: boolean;
@@ -284,6 +286,10 @@ export function mapOwnerSubscriptions(
       cancelAtPeriodEnd,
       changeType:
         typeof metadata.changeType === "string" ? metadata.changeType : undefined,
+      overridePayment:
+        metadata.overridePayment === "paid" || metadata.overridePayment === "granted" ?
+          metadata.overridePayment
+        : undefined,
       downgradeReasonCode:
         typeof metadata.downgradeReasonCode === "string" ?
           metadata.downgradeReasonCode :

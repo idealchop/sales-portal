@@ -7,6 +7,7 @@ export type DashboardSubscriptionEdit = {
   billingCycle?: string;
   price?: number;
   paymentStatus?: string;
+  overridePayment?: "paid" | "granted";
 };
 
 type JsonRecord = Record<string, unknown>;
@@ -24,6 +25,7 @@ function patchSubscription(
     ...(edit.billingCycle !== undefined ? { billingCycle: edit.billingCycle } : {}),
     ...(edit.price !== undefined ? { price: edit.price } : {}),
     ...(edit.paymentStatus !== undefined ? { paymentStatus: edit.paymentStatus } : {}),
+    ...(edit.overridePayment !== undefined ? { overridePayment: edit.overridePayment } : {}),
     ...(edit.billingCycle && edit.billingCycle !== "trial" ? { changeType: "override" } : {}),
   };
 }
@@ -33,10 +35,10 @@ function patchOwner(owner: JsonRecord, edit: DashboardSubscriptionEdit): JsonRec
   const subscriptions = Array.isArray(owner.subscriptions) ?
     owner.subscriptions.map((subscription) =>
       subscription && typeof subscription === "object" ?
-        patchSubscription(subscription as JsonRecord, edit)
-      : subscription,
-    )
-  : owner.subscriptions;
+        patchSubscription(subscription as JsonRecord, edit) :
+        subscription,
+    ) :
+    owner.subscriptions;
   return {
     ...owner,
     ...(edit.planName !== undefined ? { planName: edit.planName } : {}),
@@ -72,15 +74,15 @@ export function applySubscriptionEditToAnalytics<T>(
   const root = data as JsonRecord;
   const metrics =
     root.growthSalesMetrics && typeof root.growthSalesMetrics === "object" ?
-      (root.growthSalesMetrics as JsonRecord)
-    : null;
+      (root.growthSalesMetrics as JsonRecord) :
+      null;
   const locations = Array.isArray(root.businessLocations) ?
     root.businessLocations.map((location) =>
       location && typeof location === "object" ?
-        patchLocation(location as JsonRecord, edit)
-      : location,
-    )
-  : root.businessLocations;
+        patchLocation(location as JsonRecord, edit) :
+        location,
+    ) :
+    root.businessLocations;
 
   return {
     ...root,
@@ -90,7 +92,7 @@ export function applySubscriptionEditToAnalytics<T>(
         ...metrics,
         activeOwners: patchOwners(metrics.activeOwners, edit),
         subscriptionOwners: patchOwners(metrics.subscriptionOwners, edit),
-      }
-    : root.growthSalesMetrics,
+      } :
+      root.growthSalesMetrics,
   } as T;
 }

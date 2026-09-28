@@ -29,7 +29,12 @@ export function TrialStationEditDialog({
   saving: boolean;
   error: string | null;
   onClose: () => void;
-  onSave: (input: { planCode: string; expiresAt: string; note: string }) => void;
+  onSave: (input: {
+    planCode: string;
+    expiresAt: string;
+    note: string;
+    paid: boolean;
+  }) => void;
 }) {
   const currentCode = (station.subscription.planCode || "scale").toLowerCase();
   const [planCode, setPlanCode] = useState(
@@ -39,6 +44,7 @@ export function TrialStationEditDialog({
     manilaDateInputValue(station.subscription.expiresAt),
   );
   const [note, setNote] = useState("");
+  const [paid, setPaid] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,6 +71,7 @@ export function TrialStationEditDialog({
         planCode,
         expiresAt: trialEndsAtFromManilaDate(endDate),
         note: trimmedNote,
+        paid,
       });
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : "Enter a trial end date.");
@@ -146,6 +153,39 @@ export function TrialStationEditDialog({
             />
             <p className="text-xs text-zinc-500">They keep this plan through this day (Philippine time).</p>
           </label>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-foreground">Payment</legend>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="radio"
+                name="overwrite-payment"
+                className="mt-1"
+                checked={!paid}
+                onChange={() => setPaid(false)}
+              />
+              <span>
+                <span className="block font-medium text-foreground">Granted — not paid</span>
+                <span className="block text-xs text-zinc-500">
+                  Recorded at ₱0. This is not counted as income or a sale.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="radio"
+                name="overwrite-payment"
+                className="mt-1"
+                checked={paid}
+                onChange={() => setPaid(true)}
+              />
+              <span>
+                <span className="block font-medium text-foreground">Paid</span>
+                <span className="block text-xs text-zinc-500">
+                  Recorded at the plan’s monthly price.
+                </span>
+              </span>
+            </label>
+          </fieldset>
           <label className="block space-y-1.5">
             <span className="text-sm font-medium text-foreground">Why this changed</span>
             <textarea

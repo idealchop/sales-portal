@@ -106,6 +106,8 @@ export type OwnerSubscription = {
   cancelledAt?: string;
   cancelAtPeriodEnd: boolean;
   changeType?: string;
+  /** Sales overwrite: the customer paid, or the plan was granted at ₱0. */
+  overridePayment?: "paid" | "granted";
   downgradeReasonCode?: string;
   downgradeReasonDetail?: string;
   needsApproval: boolean;

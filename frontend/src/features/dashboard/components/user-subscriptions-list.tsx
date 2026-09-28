@@ -219,18 +219,27 @@ function statusBadges(item: UserSubscriptionListItem): Array<{
 }
 
 function AmountCell({ subscription }: { subscription: OwnerSubscription }) {
-  const overwritten = (subscription.changeType || "").toLowerCase() === "override";
-  return (
-    <>
-      <span className="block">{formatSubscriptionListAmount(subscription)}</span>
-      {overwritten ?
-        <span className="mt-0.5 block text-[11px] font-normal text-zinc-500">₱0 · not a sale</span>
-      : null}
-    </>
-  );
+  if (subscription.overridePayment === "granted") {
+    return (
+      <>
+        <span className="block">₱0</span>
+        <span className="mt-0.5 block text-[11px] font-normal text-zinc-500">Granted · not paid</span>
+      </>
+    );
+  }
+  if (subscription.overridePayment === "paid") {
+    return (
+      <>
+        <span className="block">{formatSubscriptionListAmount(subscription)}</span>
+        <span className="mt-0.5 block text-[11px] font-normal text-zinc-500">Paid</span>
+      </>
+    );
+  }
+  return <span className="block">{formatSubscriptionListAmount(subscription)}</span>;
 }
 
 function periodActivityLabel(subscription: OwnerSubscription): string {
+  if (subscription.overridePayment === "granted") return "Granted";
   if (isTrialBillingCycle(subscription.billingCycle)) return "Trial";
   const changeType = (subscription.changeType || "").toLowerCase();
   if (changeType === "upgrade") return "Upgrade";
@@ -599,6 +608,7 @@ export function UserSubscriptionsList({
     planCode: string;
     expiresAt: string;
     note: string;
+    paid: boolean;
   }) {
     if (!overwriteTarget) return;
     onLocalEdit?.();
@@ -611,6 +621,7 @@ export function UserSubscriptionsList({
         planCode: input.planCode,
         expiresAt: input.expiresAt,
         note: input.note,
+        paid: input.paid,
       });
       setLocalOwners((current) =>
         patchOwnerSubscription(current, overwriteTarget.item.businessId, overwriteTarget.subscription.id, {
@@ -622,6 +633,7 @@ export function UserSubscriptionsList({
           paymentStatus: "approved",
           paymentMethod: "manual",
           changeType: "override",
+          overridePayment: result.overridePayment,
         }),
       );
       setOverwriteTarget(null);

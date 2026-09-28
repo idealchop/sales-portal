@@ -57,6 +57,7 @@ export function TrialStationsPanel({
     expiresAt: string;
     billingCycle?: string;
     price?: number;
+    overridePayment?: "paid" | "granted";
   }) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -81,7 +82,12 @@ export function TrialStationsPanel({
   const { page, setPage, totalPages, paginatedItems, totalItems, pageSize } =
     usePagination(filtered, TRIAL_PAGE_SIZE, `${query}|${planFilter}|${urgencyFilter}|${sort}`);
 
-  async function handleSave(input: { planCode: string; expiresAt: string; note: string }) {
+  async function handleSave(input: {
+    planCode: string;
+    expiresAt: string;
+    note: string;
+    paid: boolean;
+  }) {
     if (!editing) return;
     setSaving(true);
     setSaveError(null);
@@ -92,6 +98,7 @@ export function TrialStationsPanel({
         planCode: input.planCode,
         expiresAt: input.expiresAt,
         note: input.note,
+        paid: input.paid,
       });
       onUpdated?.({
         businessId: editing.businessId,
@@ -101,6 +108,7 @@ export function TrialStationsPanel({
         expiresAt: result.expiresAt,
         billingCycle: result.billingCycle,
         price: result.price,
+        overridePayment: result.overridePayment,
       });
       setEditing(null);
     } catch (error) {

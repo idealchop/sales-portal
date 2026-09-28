@@ -6,12 +6,14 @@ export async function updateTrialStation(input: {
   planCode: string;
   expiresAt: string;
   note: string;
+  paid: boolean;
 }): Promise<{
   planCode: string;
   planName: string;
   expiresAt: string;
   billingCycle: string;
   price: number;
+  overridePayment: "paid" | "granted";
 }> {
   return apiClient.patch(
     `/dashboard/subscriptions/${input.businessId}/${input.subscriptionId}/trial`,
@@ -20,6 +22,7 @@ export async function updateTrialStation(input: {
       planCode: input.planCode,
       expiresAt: input.expiresAt,
       note: input.note,
+      paid: input.paid,
     },
   );
 }
