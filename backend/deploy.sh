@@ -3,7 +3,7 @@
 # Sales Portal API — build, test (unit + integration + BDD), lint, deploy.
 # Deploys: sales-portal-api Cloud Functions (Express gateway on asia-southeast1).
 #
-# ENV=prod (default): salesPortalApi + eventsTrainingPromotionDelivery + leadPipelineGather (+ optional Firestore).
+# ENV=prod (default): salesPortalApi + scheduled jobs + ops email triggers (+ optional Firestore).
 # ENV=dev: deploys only salesPortalApiDev (+ optional *Dev jobs) and optional riverdb-dev rules.
 #   DEPLOY_DEV_JOBS=1 — also deploy eventsTrainingPromotionDeliveryDev + leadPipelineGatherDev
 #   (gated by SALES_PORTAL_DEV_JOBS_ENABLED).
@@ -142,7 +142,7 @@ if [[ "${DEPLOY_ENV}" == "dev" ]]; then
 else
   # Explicit function names so Prod deploy does not attempt to delete Dev-only
   # jobs (e.g. eventsTrainingPromotionDeliveryDev) that live in the same codebase.
-  DEPLOY_TARGETS="functions:sales-portal-api:salesPortalApi,functions:sales-portal-api:eventsTrainingPromotionDelivery,functions:sales-portal-api:leadPipelineGather,functions:sales-portal-api:salesPortalApiDev"
+  DEPLOY_TARGETS="functions:sales-portal-api:salesPortalApi,functions:sales-portal-api:eventsTrainingPromotionDelivery,functions:sales-portal-api:leadPipelineGather,functions:sales-portal-api:opsNotifyNewUser,functions:sales-portal-api:opsNotifyOnboarding,functions:sales-portal-api:opsNotifySubscriptionReview,functions:sales-portal-api:salesPortalApiDev"
   if [[ "${DEPLOY_FIRESTORE:-0}" == "1" ]]; then
     echo -e "${BLUE}🔥 Including Firestore rules/indexes (canonical: smartrefill/frontend).${NC}"
     DEPLOY_TARGETS="${DEPLOY_TARGETS},firestore:rules,firestore:indexes"
@@ -184,7 +184,7 @@ if [[ "${DEPLOY_ENV}" == "dev" ]]; then
     echo -e "${GREEN}   • firestore:rules, firestore:indexes (riverdb-dev)${NC}"
   fi
 else
-  echo -e "${GREEN}   • functions:sales-portal-api (salesPortalApi + eventsTrainingPromotionDelivery + leadPipelineGather, asia-southeast1)${NC}"
+  echo -e "${GREEN}   • functions:sales-portal-api (salesPortalApi + jobs + ops email triggers, asia-southeast1)${NC}"
   if [[ "${DEPLOY_FIRESTORE:-0}" == "1" ]]; then
     echo -e "${GREEN}   • firestore:rules, firestore:indexes, storage.rules (riverdb + smartrefill-singapore)${NC}"
   fi
