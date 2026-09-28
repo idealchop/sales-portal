@@ -29,6 +29,28 @@ export function useDashboardAnalytics(options?: { enabled?: boolean }) {
   const [computedAt, setComputedAt] = useState<string | null>(null);
   const hasDataRef = useRef(false);
   const lastApiComputedAtRef = useRef<string | null>(null);
+  const appliedComputedAtRef = useRef<string | null>(null);
+  const ignoreThroughRef = useRef<string | null>(null);
+
+  const acceptServerAnalytics = useCallback(
+    (next: DashboardAnalytics, computedAt: string) => {
+      const floor = ignoreThroughRef.current;
+      if (floor && computedAt <= floor) return;
+      ignoreThroughRef.current = null;
+      appliedComputedAtRef.current = computedAt;
+      lastApiComputedAtRef.current = computedAt;
+      setData(next);
+      setComputedAt(computedAt);
+      setIsStale(false);
+      setError(null);
+      hasDataRef.current = true;
+    },
+    [],
+  );
+
+  const holdLocalEdits = useCallback(() => {
+    ignoreThroughRef.current = appliedComputedAtRef.current;
+  }, []);
 
   const refresh = useCallback(async (options?: { silent?: boolean }) => {
     if (!options?.silent) {
@@ -37,12 +59,7 @@ export function useDashboardAnalytics(options?: { enabled?: boolean }) {
 
     try {
       const result = await fetchDashboardAnalytics();
-      lastApiComputedAtRef.current = result.computedAt;
-      setData(result.data);
-      setComputedAt(result.computedAt);
-      setIsStale(false);
-      setError(null);
-      hasDataRef.current = true;
+      acceptServerAnalytics(result.data, result.computedAt);
     } catch {
       if (!options?.silent && !hasDataRef.current) {
         setError("Unable to load platform analytics.");
@@ -54,7 +71,7 @@ export function useDashboardAnalytics(options?: { enabled?: boolean }) {
         setIsRefreshing(false);
       }
     }
-  }, []);
+  }, [acceptServerAnalytics]);
 
   useEffect(() => {
     if (skipPlatformAnalytics) {
@@ -78,13 +95,12 @@ export function useDashboardAnalytics(options?: { enabled?: boolean }) {
 
         const apiAt = lastApiComputedAtRef.current;
         if (apiAt && parsed.computedAt <= apiAt) return;
+        const floor = ignoreThroughRef.current;
+        if (floor && parsed.computedAt <= floor) return;
 
-        setData(parsed.data);
-        setComputedAt(parsed.computedAt);
+        acceptServerAnalytics(parsed.data, parsed.computedAt);
         setIsLoading(false);
         setIsStale(!apiAt);
-        setError(null);
-        hasDataRef.current = true;
       },
       () => {
         // Permission or network errors fall back to the API refresh below.
@@ -107,7 +123,7 @@ export function useDashboardAnalytics(options?: { enabled?: boolean }) {
       window.clearInterval(interval);
       window.removeEventListener("focus", onFocus);
     };
-  }, [refresh, skipPlatformAnalytics]);
+  }, [acceptServerAnalytics, refresh, skipPlatformAnalytics]);
 
   return {
     data,
@@ -118,6 +134,7 @@ export function useDashboardAnalytics(options?: { enabled?: boolean }) {
     computedAt,
     refresh,
     setData,
+    holdLocalEdits,
   };
 }
 

@@ -48,6 +48,16 @@ describe("subscriptionRowEligibleForOfficialReceipt", () => {
         paymentStatus: "pending_verification",
       }),
     ).toBe(false);
+    expect(
+      subscriptionRowEligibleForOfficialReceipt({
+        planCode: "scale",
+        billingCycle: "monthly",
+        price: 1650,
+        paymentStatus: "approved",
+        paymentMethod: "manual",
+        metadata: { changeType: "override" },
+      }),
+    ).toBe(false);
   });
 });
 

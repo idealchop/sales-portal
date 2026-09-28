@@ -20,6 +20,7 @@ export type DashboardViewContext = {
   data: DashboardAnalytics;
   role: SalesPortalRole | undefined;
   refresh: DashboardAnalyticsRefresh;
+  holdLocalEdits: () => void;
   isRefreshing: boolean;
   computedAt: string | null;
 };
@@ -50,6 +51,7 @@ function DashboardAnalyticsShellContent({
     error,
     computedAt,
     refresh,
+    holdLocalEdits,
   } = useDashboardAnalyticsContext();
 
   if (isLoading && !data) {
@@ -86,6 +88,7 @@ function DashboardAnalyticsShellContent({
         data,
         role: profile?.role,
         refresh,
+        holdLocalEdits,
         isRefreshing,
         computedAt,
       })}

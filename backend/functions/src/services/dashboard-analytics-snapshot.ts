@@ -1,6 +1,10 @@
 import { db, FieldValue } from "../config/firebase-admin";
 import { logger } from "firebase-functions";
 import type { DashboardAnalytics } from "./dashboard-analytics-service";
+import {
+  applySubscriptionEditToAnalytics,
+  type DashboardSubscriptionEdit,
+} from "./patch-dashboard-subscription";
 
 export const DASHBOARD_ANALYTICS_SNAPSHOT_COLLECTION =
   "sales_portal_dashboard_analytics";
@@ -48,6 +52,31 @@ export async function writeDashboardAnalyticsSnapshot(
     });
   } catch (error) {
     logger.warn("Failed to persist dashboard analytics snapshot", { error });
+  }
+}
+
+/**
+ * Write one subscription change into the cached dashboard so lists update
+ * without waiting for the 30-minute full recompute.
+ */
+export async function patchSubscriptionInDashboardSnapshot(
+  edit: DashboardSubscriptionEdit,
+): Promise<void> {
+  try {
+    const current = await readDashboardAnalyticsSnapshot();
+    if (!current) return;
+    const computedAt = new Date().toISOString();
+    await snapshotRef().set({
+      data: applySubscriptionEditToAnalytics(current.data, edit),
+      computedAt,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    logger.warn("Failed to patch dashboard analytics snapshot after subscription edit", {
+      businessId: edit.businessId,
+      subscriptionId: edit.subscriptionId,
+      error,
+    });
   }
 }
 

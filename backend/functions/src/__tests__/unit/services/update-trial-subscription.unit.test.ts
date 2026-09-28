@@ -49,7 +49,8 @@ describe("overwrite trial subscription", () => {
     expect(patch.billingCycle).toBe("monthly");
     expect(patch.price).toBe(1650);
     expect(patch.planCode).toBe("scale");
-    expect(patch.paymentStatus).toBe("manual");
+    expect(patch.paymentStatus).toBe("approved");
+    expect(patch.paymentMethod).toBe("manual");
     expect(patch["metadata.overrideNote"]).toBe("Moved from free trial to Scale.");
     expect(patch["metadata.changeType"]).toBe("override");
     expect(patch["metadata.previousBillingCycle"]).toBe("trial");

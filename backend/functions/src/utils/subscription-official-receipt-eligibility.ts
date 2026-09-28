@@ -16,6 +16,15 @@ export function subscriptionRowEligibleForOfficialReceipt(
   const price = typeof priceRaw === "number" ? priceRaw : Number(priceRaw);
   if (!Number.isFinite(price) || price <= 0) return false;
 
+  const metadata =
+    sub.metadata && typeof sub.metadata === "object" ?
+      (sub.metadata as { changeType?: unknown }) :
+      undefined;
+  if (String(metadata?.changeType || "").toLowerCase() === "override") {
+    return false;
+  }
+  if (String(sub.paymentMethod || "").toLowerCase() === "manual") return false;
+
   const paymentStatus = String(sub.paymentStatus ?? "").toLowerCase();
   if (paymentStatus === "failed" || paymentStatus === "pending_verification") {
     return false;

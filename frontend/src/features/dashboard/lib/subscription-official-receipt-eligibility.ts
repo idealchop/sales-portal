@@ -7,9 +7,19 @@ import type { OwnerSubscription } from "@/lib/dashboard/analytics";
 export function subscriptionEligibleForOfficialReceipt(
   subscription: Pick<
     OwnerSubscription,
-    "billingCycle" | "planCode" | "planName" | "price" | "paymentStatus" | "status"
+    | "billingCycle"
+    | "planCode"
+    | "planName"
+    | "price"
+    | "paymentStatus"
+    | "paymentMethod"
+    | "status"
+    | "changeType"
   >,
 ): boolean {
+  if (String(subscription.changeType || "").toLowerCase() === "override") return false;
+  if (String(subscription.paymentMethod || "").toLowerCase() === "manual") return false;
+
   const billingCycle = String(subscription.billingCycle ?? "").toLowerCase();
   if (billingCycle === "trial") return false;
 

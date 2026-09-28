@@ -1,4 +1,5 @@
 import { db, FieldValue, Timestamp } from "../config/firebase-admin";
+import { patchSubscriptionInDashboardSnapshot } from "./dashboard-analytics-snapshot";
 import { isCatalogLiveForNewSales } from "../utils/catalog-publication";
 
 /** This roster is SmartRefill workspace trials in riverdb. */
@@ -31,8 +32,8 @@ export function assertOverwriteNote(note: string): string {
 export function monthlyPriceFromPlan(data: Record<string, unknown>): number {
   const pricing =
     data.pricing && typeof data.pricing === "object" && !Array.isArray(data.pricing) ?
-      (data.pricing as { monthly?: unknown })
-    : null;
+      (data.pricing as { monthly?: unknown }) :
+      null;
   const monthly = Number(pricing?.monthly);
   return Number.isFinite(monthly) && monthly > 0 ? monthly : 0;
 }
@@ -74,16 +75,19 @@ export function subscriptionOverwritePatch(input: {
   const now = input.now ?? new Date();
   const expiresAt = Timestamp.fromDate(input.expiresAt);
   const patch: Record<string, unknown> = {
-    planId: input.planId,
-    planCode: input.planCode,
-    planName: input.planName,
-    status: "active",
-    billingCycle: "monthly",
-    price: input.price,
-    paymentStatus: "manual",
-    planLimitationsSnapshot: asRecord(input.limitations),
-    catalogPublishedAt: input.catalogPublishedAt || now.toISOString(),
-    catalogEffectiveAt: input.catalogEffectiveAt || now.toISOString(),
+    "planId": input.planId,
+    "planCode": input.planCode,
+    "planName": input.planName,
+    "status": "active",
+    "billingCycle": "monthly",
+    "price": input.price,
+    // Smart Refill only entitles a paid cycle when payment is verified or approved.
+    // "manual" was stored before and the station stayed on the old trial.
+    "paymentStatus": "approved",
+    "paymentMethod": "manual",
+    "planLimitationsSnapshot": asRecord(input.limitations),
+    "catalogPublishedAt": input.catalogPublishedAt || now.toISOString(),
+    "catalogEffectiveAt": input.catalogEffectiveAt || now.toISOString(),
     "dates.expiresAt": expiresAt,
     "dates.renewalAt": expiresAt,
     "dates.gracePeriodExpiresAt": expiresAt,
@@ -94,7 +98,7 @@ export function subscriptionOverwritePatch(input: {
     "metadata.previousPlanCode": input.previousPlanCode || "",
     "metadata.previousBillingCycle": input.previousBillingCycle || "trial",
     "metadata.trialState": "converted",
-    updatedAt: FieldValue.serverTimestamp(),
+    "updatedAt": FieldValue.serverTimestamp(),
   };
   if (input.capabilities && typeof input.capabilities === "object") {
     patch.planCapabilitiesSnapshot = input.capabilities;
@@ -180,6 +184,17 @@ export async function updateLiveTrialSubscription(input: {
     }),
   );
 
+  await patchSubscriptionInDashboardSnapshot({
+    businessId: input.businessId,
+    subscriptionId: input.subscriptionId,
+    planCode,
+    planName,
+    expiresAt: expiresAt.toISOString(),
+    billingCycle: "monthly",
+    price,
+    paymentStatus: "approved",
+  });
+
   return {
     planCode,
     planName,
@@ -218,12 +233,17 @@ export async function extendLiveSubscription(input: {
     "dates.gracePeriodExpiresAt": expiresStamp,
     "metadata.extendedBy": input.actorUid,
     "metadata.extendedAt": new Date().toISOString(),
-    updatedAt: FieldValue.serverTimestamp(),
+    "updatedAt": FieldValue.serverTimestamp(),
   };
   if (String(current.billingCycle || "").toLowerCase() === "trial") {
     patch["metadata.trialBudgetExpiresAt"] = expiresAt.toISOString();
     patch["metadata.trialState"] = "running";
   }
   await ref.update(patch);
+  await patchSubscriptionInDashboardSnapshot({
+    businessId: input.businessId,
+    subscriptionId: input.subscriptionId,
+    expiresAt: expiresAt.toISOString(),
+  });
   return { expiresAt: expiresAt.toISOString() };
 }

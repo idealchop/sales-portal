@@ -20,6 +20,7 @@ type DashboardAnalyticsContextValue = {
   computedAt: string | null;
   refresh: DashboardAnalyticsRefresh;
   setData: Dispatch<SetStateAction<DashboardAnalytics | null>>;
+  holdLocalEdits: () => void;
 };
 
 const DashboardAnalyticsContext =

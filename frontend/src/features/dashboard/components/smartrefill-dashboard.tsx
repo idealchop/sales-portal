@@ -29,6 +29,7 @@ function SmartRefillDashboardContent({
   data,
   role,
   refresh,
+  holdLocalEdits,
 }: DashboardViewContext) {
   const { globalFilter, setGlobalFilter } = useDashboardViewFilter();
   const canManageApprovals = role === "admin" || role === "manager";
@@ -86,6 +87,7 @@ function SmartRefillDashboardContent({
             owners={subscriptionOwners}
             canApprove={canManageApprovals}
             onRefresh={refresh}
+            onLocalEdit={holdLocalEdits}
           />
         </DashboardSection>
       : null}

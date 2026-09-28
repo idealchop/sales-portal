@@ -77,6 +77,7 @@ export function TrialPolicyManager({ enabled = true }: { enabled?: boolean }) {
     data: analytics,
     isLoading: trialRosterLoading,
     setData: setAnalytics,
+    holdLocalEdits,
   } = useDashboardAnalytics({
     enabled,
   });
@@ -299,6 +300,7 @@ export function TrialPolicyManager({ enabled = true }: { enabled?: boolean }) {
         canEdit={canEditTrials}
         planOptions={trialPlanOptions}
         onUpdated={(edit) => {
+          holdLocalEdits();
           setAnalytics((current) =>
             current ? applyTrialStationEdit(current, edit) : current,
           );

@@ -439,10 +439,12 @@ export function UserSubscriptionsList({
   owners,
   canApprove,
   onRefresh,
+  onLocalEdit,
 }: {
   owners: ActiveOwner[];
   canApprove: boolean;
   onRefresh?: DashboardAnalyticsRefresh;
+  onLocalEdit?: () => void;
 }) {
   const [localOwners, setLocalOwners] = useState(owners);
   const [ownersSource, setOwnersSource] = useState(owners);
@@ -587,6 +589,7 @@ export function UserSubscriptionsList({
     note: string;
   }) {
     if (!overwriteTarget) return;
+    onLocalEdit?.();
     setEditSaving(true);
     setEditError(null);
     try {
@@ -604,6 +607,9 @@ export function UserSubscriptionsList({
           expiresAt: result.expiresAt,
           billingCycle: result.billingCycle,
           price: result.price,
+          paymentStatus: "approved",
+          paymentMethod: "manual",
+          changeType: "override",
         }),
       );
       setOverwriteTarget(null);
@@ -617,6 +623,7 @@ export function UserSubscriptionsList({
 
   async function handleExtend(expiresAt: string) {
     if (!extendTarget) return;
+    onLocalEdit?.();
     setEditSaving(true);
     setEditError(null);
     try {
