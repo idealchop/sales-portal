@@ -3,6 +3,7 @@ import {
   assertOverwriteNote,
   assertOverwritePlanCode,
   monthlyPriceFromPlan,
+  overwritePlanKind,
   parseTrialEnd,
   subscriptionOverwritePatch,
 } from "../../../services/update-trial-subscription";
@@ -35,7 +36,7 @@ describe("overwrite trial subscription", () => {
       planCode: "scale",
       planId: "scale-plan",
       planName: "Scale",
-      price: 1650,
+      listPrice: 1650,
       limitations: { customers: "full" },
       capabilities: { scalePlatform: true },
       expiresAt,
@@ -47,7 +48,11 @@ describe("overwrite trial subscription", () => {
     });
 
     expect(patch.billingCycle).toBe("monthly");
-    expect(patch.price).toBe(1650);
+    expect(patch.price).toBe(0);
+    expect(patch["metadata.collectedAmount"]).toBe(0);
+    expect(patch["metadata.listPrice"]).toBe(1650);
+    expect(patch["metadata.overridePlanKind"]).toBe("paid");
+    expect(overwritePlanKind("free", 0)).toBe("free");
     expect(patch.planCode).toBe("scale");
     expect(patch.paymentStatus).toBe("approved");
     expect(patch.paymentMethod).toBe("manual");

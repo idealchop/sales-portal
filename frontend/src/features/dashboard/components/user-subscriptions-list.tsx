@@ -218,6 +218,18 @@ function statusBadges(item: UserSubscriptionListItem): Array<{
   return badges;
 }
 
+function AmountCell({ subscription }: { subscription: OwnerSubscription }) {
+  const overwritten = (subscription.changeType || "").toLowerCase() === "override";
+  return (
+    <>
+      <span className="block">{formatSubscriptionListAmount(subscription)}</span>
+      {overwritten ?
+        <span className="mt-0.5 block text-[11px] font-normal text-zinc-500">₱0 · not a sale</span>
+      : null}
+    </>
+  );
+}
+
 function periodActivityLabel(subscription: OwnerSubscription): string {
   if (isTrialBillingCycle(subscription.billingCycle)) return "Trial";
   const changeType = (subscription.changeType || "").toLowerCase();
@@ -321,7 +333,7 @@ function SubscriptionTableRows({
           </div>
         </td>
         <td className="px-3 py-3 text-right font-medium text-foreground">
-          {formatSubscriptionListAmount(latest)}
+          <AmountCell subscription={latest} />
         </td>
         <td className="px-3 py-3 text-right">
           <Button size="sm" variant="outline" onClick={onToggle}>
@@ -371,7 +383,7 @@ function SubscriptionTableRows({
                 : null}
               </td>
               <td className="px-3 py-3 text-right align-top font-medium text-foreground">
-                {formatSubscriptionListAmount(subscription)}
+                <AmountCell subscription={subscription} />
               </td>
               <td className="px-3 py-3 text-right align-top">
                 {isLatest && isRealPeriod ?

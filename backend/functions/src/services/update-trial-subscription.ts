@@ -56,11 +56,18 @@ function asRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
+/** Paid catalog plan granted at ₱0, or the Free plan. Neither is collected revenue. */
+export function overwritePlanKind(planCode: string, listPrice: number): "paid" | "free" {
+  if (planCode === "free" || !(listPrice > 0)) return "free";
+  return "paid";
+}
+
 export function subscriptionOverwritePatch(input: {
   planCode: string;
   planId: string;
   planName: string;
-  price: number;
+  /** Catalog monthly price. Stored for reference only — collected amount is always 0. */
+  listPrice: number;
   limitations: unknown;
   capabilities: unknown;
   expiresAt: Date;
@@ -74,13 +81,14 @@ export function subscriptionOverwritePatch(input: {
 }): Record<string, unknown> {
   const now = input.now ?? new Date();
   const expiresAt = Timestamp.fromDate(input.expiresAt);
+  const listPrice = input.planCode === "free" ? 0 : input.listPrice;
   const patch: Record<string, unknown> = {
     "planId": input.planId,
     "planCode": input.planCode,
     "planName": input.planName,
     "status": "active",
     "billingCycle": "monthly",
-    "price": input.price,
+    "price": 0,
     // Smart Refill only entitles a paid cycle when payment is verified or approved.
     // "manual" was stored before and the station stayed on the old trial.
     "paymentStatus": "approved",
@@ -92,6 +100,9 @@ export function subscriptionOverwritePatch(input: {
     "dates.renewalAt": expiresAt,
     "dates.gracePeriodExpiresAt": expiresAt,
     "metadata.changeType": "override",
+    "metadata.overridePlanKind": overwritePlanKind(input.planCode, listPrice),
+    "metadata.listPrice": listPrice,
+    "metadata.collectedAmount": 0,
     "metadata.overrideNote": input.note,
     "metadata.overrideBy": input.actorUid,
     "metadata.overrideAt": now.toISOString(),
@@ -139,6 +150,7 @@ export async function updateLiveTrialSubscription(input: {
   expiresAt: string;
   billingCycle: "monthly";
   price: number;
+  overridePlanKind: "paid" | "free";
 }> {
   const planCode = assertOverwritePlanCode(input.planCode);
   const note = assertOverwriteNote(input.note);
@@ -160,7 +172,7 @@ export async function updateLiveTrialSubscription(input: {
 
   const plan = await loadTrialablePlan(planCode);
   const planName = String(plan.data.name || planCode);
-  const price = planCode === "free" ? 0 : monthlyPriceFromPlan(plan.data);
+  const listPrice = planCode === "free" ? 0 : monthlyPriceFromPlan(plan.data);
   const publishedAt =
     typeof plan.data.publishedAt === "string" ? plan.data.publishedAt : null;
   const effectiveAt =
@@ -171,7 +183,7 @@ export async function updateLiveTrialSubscription(input: {
       planCode,
       planId: plan.id,
       planName,
-      price,
+      listPrice,
       limitations: plan.data.limitations,
       capabilities: plan.data.capabilities,
       expiresAt,
@@ -191,7 +203,7 @@ export async function updateLiveTrialSubscription(input: {
     planName,
     expiresAt: expiresAt.toISOString(),
     billingCycle: "monthly",
-    price,
+    price: 0,
     paymentStatus: "approved",
   });
 
@@ -200,7 +212,8 @@ export async function updateLiveTrialSubscription(input: {
     planName,
     expiresAt: expiresAt.toISOString(),
     billingCycle: "monthly",
-    price,
+    price: 0,
+    overridePlanKind: overwritePlanKind(planCode, listPrice),
   };
 }
 
