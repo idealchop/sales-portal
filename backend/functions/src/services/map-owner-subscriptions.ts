@@ -236,6 +236,11 @@ export function pickLatestLivePaidSubscription(
   return undefined;
 }
 
+function readOverridePayment(value: unknown): "paid" | "granted" | undefined {
+  if (value === "paid" || value === "granted") return value;
+  return undefined;
+}
+
 export function mapOwnerSubscriptions(
   docs: Array<{ id: string; data: () => Record<string, unknown> }>,
 ): OwnerSubscription[] {
@@ -286,10 +291,7 @@ export function mapOwnerSubscriptions(
       cancelAtPeriodEnd,
       changeType:
         typeof metadata.changeType === "string" ? metadata.changeType : undefined,
-      overridePayment:
-        metadata.overridePayment === "paid" || metadata.overridePayment === "granted" ?
-          metadata.overridePayment
-        : undefined,
+      overridePayment: readOverridePayment(metadata.overridePayment),
       downgradeReasonCode:
         typeof metadata.downgradeReasonCode === "string" ?
           metadata.downgradeReasonCode :
