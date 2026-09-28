@@ -23,6 +23,7 @@ import {
   getSubscriptionStatement,
   postApproveSubscription,
 } from "../handlers/subscription-approval-handler";
+import { patchTrialSubscription } from "../handlers/update-trial-subscription-handler";
 import {
   getCommunityDispatchRequestById,
   getCommunityDispatchRequests,
@@ -149,6 +150,13 @@ router.post(
   validateFirebaseIdToken,
   requireSalesPortalAccess,
   postApproveSubscription,
+);
+
+router.patch(
+  "/subscriptions/:businessId/:subscriptionId/trial",
+  validateFirebaseIdToken,
+  requireSalesPortalAccess,
+  patchTrialSubscription,
 );
 
 router.get(

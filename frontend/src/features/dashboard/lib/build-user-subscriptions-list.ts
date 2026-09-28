@@ -99,15 +99,6 @@ export const SUBSCRIPTION_OPS_BUCKET_ORDER: SubscriptionOpsBucket[] = [
   "ended",
 ];
 
-const BUCKET_SORT: Record<SubscriptionOpsBucket, number> = {
-  attention: 0,
-  paying: 1,
-  voucher: 2,
-  trial: 3,
-  free: 4,
-  ended: 5,
-};
-
 const NO_PLAN_SUBSCRIPTION: OwnerSubscription = {
   id: "__none__",
   planName: "No plan",
@@ -298,6 +289,53 @@ export function subscriptionCreatedMs(
   if (!subscription.createdAt) return 0;
   const ms = new Date(subscription.createdAt).getTime();
   return Number.isNaN(ms) ? 0 : ms;
+}
+
+/** Trial, then renew/upgrade/downgrade, then other plans, then Free. */
+export type SubscriptionTableBand = "trial" | "change" | "other" | "free";
+
+const TABLE_BAND_ORDER: Record<SubscriptionTableBand, number> = {
+  trial: 0,
+  change: 1,
+  other: 2,
+  free: 3,
+};
+
+export function subscriptionTableBand(
+  item: Pick<UserSubscriptionListItem, "opsBucket" | "planTier" | "changeKind" | "subscription">,
+): SubscriptionTableBand {
+  if (
+    item.opsBucket === "trial" ||
+    isTrialBillingCycle(item.subscription.billingCycle) ||
+    isTrialPlan(item.subscription)
+  ) {
+    return "trial";
+  }
+  if (item.opsBucket === "free" || item.planTier === "free" || isFreeForeverPlan(item.subscription)) {
+    return "free";
+  }
+  if (
+    item.changeKind === "upgrade" ||
+    item.changeKind === "downgrade" ||
+    item.changeKind === "renewal"
+  ) {
+    return "change";
+  }
+  return "other";
+}
+
+export function compareUserSubscriptionsForTable(
+  a: UserSubscriptionListItem,
+  b: UserSubscriptionListItem,
+): number {
+  const bandA = subscriptionTableBand(a);
+  const bandB = subscriptionTableBand(b);
+  if (bandA !== bandB) return TABLE_BAND_ORDER[bandA] - TABLE_BAND_ORDER[bandB];
+  const aMs = subscriptionCreatedMs(a.subscription);
+  const bMs = subscriptionCreatedMs(b.subscription);
+  const byDate = bandA === "free" ? aMs - bMs : bMs - aMs;
+  if (byDate !== 0) return byDate;
+  return a.businessName.localeCompare(b.businessName, undefined, { sensitivity: "base" });
 }
 
 export function isSubscriptionExpiredByDate(
@@ -508,18 +546,7 @@ export function buildUserSubscriptionsList(
     });
   }
 
-  return items.sort((a, b) => {
-    if (BUCKET_SORT[a.opsBucket] !== BUCKET_SORT[b.opsBucket]) {
-      return BUCKET_SORT[a.opsBucket] - BUCKET_SORT[b.opsBucket];
-    }
-    if (a.planSortRank !== b.planSortRank) {
-      return a.planSortRank - b.planSortRank;
-    }
-    return (
-      subscriptionCreatedMs(b.subscription) -
-      subscriptionCreatedMs(a.subscription)
-    );
-  });
+  return items.sort(compareUserSubscriptionsForTable);
 }
 
 export function filterUserSubscriptionsList(

@@ -1,17 +1,11 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import {
-  AlertTriangle,
-  Archive,
   ChevronDown,
   CreditCard,
-  Gift,
   Printer,
   Search,
-  Sparkles,
-  Timer,
-  Wallet,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,8 +17,18 @@ import {
 } from "@/components/ui/card";
 import { ListPagination } from "@/components/list-pagination";
 import { SubscriptionUploadPreview } from "@/features/dashboard/components/subscription-upload-preview";
+import { TrialStationEditDialog } from "@/features/admin/components/trial-station-edit-dialog";
+import {
+  manilaDateInputValue,
+  trialEndsAtFromManilaDate,
+} from "@/features/admin/lib/trial-station-edit";
+import {
+  extendSubscription,
+  updateTrialStation,
+} from "@/features/admin/lib/update-trial-station";
+import { PLAN_PRESET_OPTIONS } from "@/lib/admin/plan-catalog-display";
+import { ApiError } from "@/lib/api-client";
 import { SubscriptionApprovalDetailDialog } from "@/features/dashboard/components/subscription-approval-detail-dialog";
-import { SubscriptionReasonDialog } from "@/features/dashboard/components/subscription-reason-dialog";
 import {
   applyApprovedSubscription,
   approveSubscription,
@@ -33,7 +37,6 @@ import {
   printSubscriptionOfficialReceipt,
   printSubscriptionStatement,
   subscriptionEligibleForOfficialReceipt,
-  subscriptionHistoryHasStatementPayments,
 } from "@/features/dashboard/lib/subscription-official-receipt";
 import {
   buildUserSubscriptionKpis,
@@ -52,14 +55,12 @@ import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
 import {
   displaySubscriptionPlanName,
   formatBillingCycleLabel,
-  formatPaymentStatus,
   formatSubscriptionListAmount,
   formatSubscriptionPeriod,
   formatSubscriptionStatus,
   formatTrialDaysRemaining,
   isTrialBillingCycle,
 } from "@/lib/dashboard/subscription-labels";
-import { formatPhp } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DashboardAnalyticsRefresh } from "@/hooks/use-dashboard-analytics";
 
@@ -100,15 +101,6 @@ const BUCKET_LABELS: Record<SubscriptionOpsBucket, string> = {
   trial: "Trial",
   free: "Free",
   ended: "Ended",
-};
-
-const BUCKET_HINTS: Record<SubscriptionOpsBucket, string> = {
-  attention: "Grace, expired current period, pending payment, expiring soon, or more than one live period",
-  paying: "Active paid plans billed monthly or yearly",
-  voucher: "Listed paid plan at ₱0 (voucher / comped)",
-  trial: "Scale or Grow free trial still running",
-  free: "Forever Free plan",
-  ended: "No live period — expired, cancelled, or never subscribed",
 };
 
 const PLAN_FILTERS: Array<{
@@ -162,67 +154,6 @@ function FilterChip({
           {count}
         </span>
       : null}
-    </button>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  hint,
-  icon,
-  active,
-  onClick,
-  tone = "default",
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  icon: ReactNode;
-  active?: boolean;
-  onClick?: () => void;
-  tone?: "default" | "alert";
-}) {
-  const className = cn(
-    "rounded-xl border p-4 text-left shadow-sm transition",
-    tone === "alert" ?
-      "border-amber-200 bg-amber-50/70"
-    : "border-zinc-200 bg-white",
-    onClick && "hover:border-teal-300 hover:shadow",
-    active && "ring-2 ring-teal-600",
-  );
-
-  const body = (
-    <>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-          {label}
-        </p>
-        <div
-          className={cn(
-            "rounded-lg p-2",
-            tone === "alert" ? "bg-amber-100 text-amber-800" : "bg-teal-50 text-teal-700",
-          )}
-        >
-          {icon}
-        </div>
-      </div>
-      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-zinc-900">
-        {value}
-      </p>
-      {hint ?
-        <p className="mt-1 text-xs text-zinc-500">{hint}</p>
-      : null}
-    </>
-  );
-
-  if (!onClick) {
-    return <div className={className}>{body}</div>;
-  }
-
-  return (
-    <button type="button" className={className} onClick={onClick} aria-pressed={active}>
-      {body}
     </button>
   );
 }
@@ -287,282 +218,222 @@ function statusBadges(item: UserSubscriptionListItem): Array<{
   return badges;
 }
 
-function HistoryRow({
-  subscription,
-  businessId,
-  canApprove,
-  approvingId,
-  printingId,
-  onApprove,
-  onPrintOr,
-  onReview,
-  onViewReason,
-}: {
-  subscription: OwnerSubscription;
-  businessId: string;
-  canApprove: boolean;
-  approvingId: string | null;
-  printingId: string | null;
-  onApprove: (businessId: string, subscriptionId: string) => void;
-  onPrintOr: (businessId: string, subscriptionId: string) => void;
-  onReview: (businessId: string, subscription: OwnerSubscription) => void;
-  onViewReason: (subscription: OwnerSubscription) => void;
-}) {
-  const changeKind = (() => {
-    const changeType = (subscription.changeType || "").toLowerCase();
-    if (changeType === "upgrade") return "upgrade" as const;
-    if (changeType === "downgrade" || subscription.isDowngrade) {
-      return "downgrade" as const;
-    }
-    if (changeType === "renew") return "renewal" as const;
-    return "other" as const;
-  })();
-  const isExpired = isSubscriptionExpiredByDate(subscription);
-  const isFreeTrial = isTrialBillingCycle(subscription.billingCycle);
-  const billingCycleLabel = formatBillingCycleLabel(subscription.billingCycle);
-  const trialDaysRemaining = isFreeTrial ?
-    formatTrialDaysRemaining(subscription.expiresAt)
-  : null;
-  const canPrintOr = subscriptionEligibleForOfficialReceipt(subscription);
-  const showReason = subscription.isDowngrade || subscription.isCancellation;
-
-  return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium text-foreground">
-              {displaySubscriptionPlanName(subscription)}
-            </p>
-            {changeKind !== "other" ?
-              <Badge className={CHANGE_KIND_STYLES[changeKind]}>
-                {CHANGE_KIND_LABELS[changeKind]}
-              </Badge>
-            : null}
-            {subscription.needsApproval ?
-              <Badge className="bg-amber-100 text-amber-800">Needs approval</Badge>
-            : null}
-            {isExpired ?
-              <Badge className="bg-red-100 text-red-800">Expired</Badge>
-            : <Badge className="border-zinc-200 bg-white font-normal text-zinc-600">
-                {subscription.timeline === "current" ?
-                  "Current period"
-                : subscription.timeline === "future" ?
-                  "Upcoming"
-                : "Past"}
-              </Badge>}
-            {isFreeTrial && trialDaysRemaining ?
-              <Badge className="bg-sky-50 font-normal text-sky-800">
-                {trialDaysRemaining}
-              </Badge>
-            : null}
-          </div>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            {billingCycleLabel ? `${billingCycleLabel} · ` : ""}
-            {formatSubscriptionStatus(subscription.status)}
-            {subscription.paymentStatus ?
-              ` · ${formatPaymentStatus(subscription.paymentStatus)}`
-            : ""}
-          </p>
-          <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-            {formatSubscriptionPeriod(subscription)}
-          </p>
-          <SubscriptionUploadPreview subscription={subscription} />
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <p className="text-sm font-medium text-foreground">
-            {formatSubscriptionListAmount(subscription)}
-          </p>
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onReview(businessId, subscription)}
-            >
-              Review
-            </Button>
-            {canPrintOr ?
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={printingId === subscription.id}
-                onClick={() => onPrintOr(businessId, subscription.id)}
-              >
-                {printingId === subscription.id ? "Preparing…" : "Print OR"}
-              </Button>
-            : null}
-            {showReason ?
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onViewReason(subscription)}
-              >
-                View reason
-              </Button>
-            : null}
-            {subscription.needsApproval && canApprove ?
-              <Button
-                size="sm"
-                disabled={approvingId === subscription.id}
-                onClick={() => onApprove(businessId, subscription.id)}
-              >
-                {approvingId === subscription.id ? "Approving…" : "Approve"}
-              </Button>
-            : null}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+function periodActivityLabel(subscription: OwnerSubscription): string {
+  if (isTrialBillingCycle(subscription.billingCycle)) return "Trial";
+  const changeType = (subscription.changeType || "").toLowerCase();
+  if (changeType === "upgrade") return "Upgrade";
+  if (changeType === "downgrade" || subscription.isDowngrade) return "Downgrade";
+  if (changeType === "renew") return "Renewal";
+  const name = (subscription.planName || subscription.planCode || "").toLowerCase();
+  if (name === "free" || subscription.planCode === "free") return "Free";
+  return "Plan";
 }
 
-function UserSubscriptionCard({
+const OVERWRITE_PLAN_OPTIONS = PLAN_PRESET_OPTIONS.filter(
+  (option) => option.code !== "enterprise",
+).map((option) => ({ code: option.code, label: option.label }));
+
+function SubscriptionTableRows({
   item,
   expanded,
-  canApprove,
+  canEdit,
   approvingId,
   printingId,
   onToggle,
-  onApprove,
-  onPrintOr,
+  onPrintSubscription,
   onPrintStatement,
   onReview,
-  onViewReason,
+  onOverwrite,
+  onExtend,
 }: {
   item: UserSubscriptionListItem;
   expanded: boolean;
-  canApprove: boolean;
+  canEdit: boolean;
   approvingId: string | null;
   printingId: string | null;
   onToggle: () => void;
-  onApprove: (businessId: string, subscriptionId: string) => void;
-  onPrintOr: (businessId: string, subscriptionId: string) => void;
+  onPrintSubscription: (businessId: string, subscription: OwnerSubscription) => void;
   onPrintStatement: (businessId: string) => void;
   onReview: (businessId: string, subscription: OwnerSubscription) => void;
-  onViewReason: (
-    item: UserSubscriptionListItem,
-    subscription: OwnerSubscription,
-  ) => void;
+  onOverwrite: (item: UserSubscriptionListItem, subscription: OwnerSubscription) => void;
+  onExtend: (item: UserSubscriptionListItem, subscription: OwnerSubscription) => void;
 }) {
-  const { subscription, businessName, ownerEmail } = item;
-  const isFreeTrial = isTrialBillingCycle(subscription.billingCycle);
-  const billingCycleLabel = formatBillingCycleLabel(subscription.billingCycle);
-  const trialDaysRemaining = isFreeTrial ?
-    formatTrialDaysRemaining(subscription.expiresAt)
-  : null;
-  const canPrintStatement = subscriptionHistoryHasStatementPayments(
-    item.history,
-  );
+  const periods =
+    item.history.length > 0 ? item.history : [item.subscription];
+  const latest = periods[0];
   const statementBusy = printingId === `statement:${item.businessId}`;
-  const badges = statusBadges(item);
+  const latestTrial = isTrialBillingCycle(latest.billingCycle);
+  const latestCycle = formatBillingCycleLabel(latest.billingCycle);
+  const latestDays = latestTrial ? formatTrialDaysRemaining(latest.expiresAt) : null;
+  const periodLabel = `${periods.length} period${periods.length === 1 ? "" : "s"}`;
 
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-xl border bg-white",
-        item.opsBucket === "attention" ?
-          "border-amber-300 ring-1 ring-amber-100"
-        : item.justPaid ?
-          "border-emerald-300 ring-1 ring-emerald-100"
-        : "border-[var(--border)]",
-      )}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3 p-4">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="min-w-0 flex-1 text-left"
-          aria-expanded={expanded}
-        >
-          <div className="flex flex-wrap items-center gap-2">
+    <>
+      <tr className={item.opsBucket === "attention" ? "bg-amber-50/40" : undefined}>
+        <td className="px-3 py-3">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={expanded}
+            className="flex items-start gap-2 text-left"
+          >
             <ChevronDown
               className={cn(
-                "h-4 w-4 shrink-0 text-zinc-500 transition",
+                "mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition",
                 expanded ? "rotate-0" : "-rotate-90",
               )}
               aria-hidden
             />
-            <p className="font-medium text-foreground">{businessName}</p>
-            <Badge className="border-zinc-200 bg-white font-medium text-zinc-800">
-              {displaySubscriptionPlanName(subscription)}
-            </Badge>
-            {badges.map((badge) => (
+            <span>
+              <span className="block font-medium text-foreground">{item.businessName}</span>
+              {item.ownerEmail ?
+                <span className="mt-0.5 block text-xs text-[var(--primary)]">{item.ownerEmail}</span>
+              : null}
+              <span className="mt-1 block text-[11px] uppercase tracking-wide text-zinc-400">
+                {expanded ? "Hide history" : periodLabel}
+              </span>
+            </span>
+          </button>
+        </td>
+        <td className="px-3 py-3">
+          <p className="font-medium text-foreground">{displaySubscriptionPlanName(latest)}</p>
+          <p className="mt-0.5 text-xs text-zinc-500">{formatSubscriptionPeriod(latest)}</p>
+        </td>
+        <td className="px-3 py-3 whitespace-nowrap text-zinc-700">
+          {periodActivityLabel(latest)}
+        </td>
+        <td className="px-3 py-3">
+          <p className="text-zinc-700">
+            {latestCycle ? `${latestCycle} · ` : ""}
+            {formatSubscriptionStatus(
+              isSubscriptionExpiredByDate(latest) ? "expired" : latest.status,
+            )}
+          </p>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {statusBadges(item).map((badge) => (
               <Badge key={badge.label} className={badge.className}>
                 {badge.label}
               </Badge>
             ))}
-            {isFreeTrial && trialDaysRemaining ?
-              <Badge className="bg-sky-50 font-normal text-sky-800">
-                {trialDaysRemaining}
-              </Badge>
+            {latestTrial && latestDays ?
+              <Badge className="bg-sky-50 font-normal text-sky-800">{latestDays}</Badge>
             : null}
           </div>
-          <p className="mt-1 pl-6 text-sm text-[var(--muted-foreground)]">
-            {item.opsBucket === "ended" && item.history.length === 0 ?
-              "No subscription on file"
-            : `${billingCycleLabel ?? "No billing cycle"} · ${formatSubscriptionStatus(
-                item.isExpired ? "expired" : subscription.status,
-              )}${
-                subscription.paymentStatus ?
-                  ` · ${formatPaymentStatus(subscription.paymentStatus)}`
-                : ""
-              }`}
-          </p>
-          <p className="mt-1 pl-6 text-xs text-[var(--muted-foreground)]">
-            {formatSubscriptionPeriod(subscription)}
-            {ownerEmail ? ` · ${ownerEmail}` : ""}
-            {` · ${item.history.length} period${item.history.length === 1 ? "" : "s"}`}
-          </p>
-        </button>
-
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <p className="text-sm font-medium text-foreground">
-            {item.history.length === 0 && item.opsBucket === "ended" ?
-              "—"
-            : formatSubscriptionListAmount(subscription)}
-          </p>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!canPrintStatement || statementBusy}
-            onClick={() => onPrintStatement(item.businessId)}
-            className="gap-1.5"
-          >
-            <Printer className="h-3.5 w-3.5" aria-hidden />
-            {statementBusy ? "Preparing…" : "Print statement"}
+        </td>
+        <td className="px-3 py-3 text-right font-medium text-foreground">
+          {formatSubscriptionListAmount(latest)}
+        </td>
+        <td className="px-3 py-3 text-right">
+          <Button size="sm" variant="outline" onClick={onToggle}>
+            {expanded ? "Hide" : "History"}
           </Button>
-        </div>
-      </div>
-
+        </td>
+      </tr>
       {expanded ?
-        <div className="space-y-3 border-t border-zinc-100 bg-zinc-50/70 px-4 py-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Billing history
-            </p>
-            <p className="text-xs text-zinc-500">Latest first</p>
-          </div>
-          <div className="space-y-2">
-            {item.history.map((sub) => (
-              <HistoryRow
-                key={sub.id}
-                subscription={sub}
-                businessId={item.businessId}
-                canApprove={canApprove}
-                approvingId={approvingId}
-                printingId={printingId}
-                onApprove={onApprove}
-                onPrintOr={onPrintOr}
-                onReview={onReview}
-                onViewReason={(historySub) => onViewReason(item, historySub)}
-              />
-            ))}
-          </div>
-        </div>
+        periods.map((subscription, index) => {
+          const isLatest = index === 0;
+          const isFreeTrial = isTrialBillingCycle(subscription.billingCycle);
+          const billingCycleLabel = formatBillingCycleLabel(subscription.billingCycle);
+          const trialDaysRemaining = isFreeTrial ?
+            formatTrialDaysRemaining(subscription.expiresAt)
+          : null;
+          const expired = isSubscriptionExpiredByDate(subscription);
+          const printBusy = printingId === subscription.id;
+          const isRealPeriod = subscription.id !== "__none__";
+          return (
+            <tr key={subscription.id} className="bg-zinc-50/70">
+              <td className="px-3 py-3 pl-10 align-top">
+                <p className="text-[11px] uppercase tracking-wide text-zinc-400">
+                  {isLatest ? "Latest" : "Earlier"}
+                </p>
+              </td>
+              <td className="px-3 py-3 align-top">
+                <p className="font-medium text-foreground">
+                  {displaySubscriptionPlanName(subscription)}
+                </p>
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  {formatSubscriptionPeriod(subscription)}
+                </p>
+                <SubscriptionUploadPreview subscription={subscription} />
+              </td>
+              <td className="px-3 py-3 align-top whitespace-nowrap text-zinc-700">
+                {periodActivityLabel(subscription)}
+              </td>
+              <td className="px-3 py-3 align-top">
+                <p className="text-zinc-700">
+                  {billingCycleLabel ? `${billingCycleLabel} · ` : ""}
+                  {formatSubscriptionStatus(expired ? "expired" : subscription.status)}
+                </p>
+                {isFreeTrial && trialDaysRemaining ?
+                  <Badge className="mt-1 bg-sky-50 font-normal text-sky-800">
+                    {trialDaysRemaining}
+                  </Badge>
+                : null}
+              </td>
+              <td className="px-3 py-3 text-right align-top font-medium text-foreground">
+                {formatSubscriptionListAmount(subscription)}
+              </td>
+              <td className="px-3 py-3 text-right align-top">
+                {isLatest && isRealPeriod ?
+                  <div className="flex flex-wrap justify-end gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={approvingId === subscription.id}
+                      onClick={() => onReview(item.businessId, subscription)}
+                    >
+                      Review
+                    </Button>
+                    {canEdit ?
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onOverwrite(item, subscription)}
+                        >
+                          Overwrite
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onExtend(item, subscription)}
+                        >
+                          Update
+                        </Button>
+                      </>
+                    : null}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={printBusy}
+                      onClick={() => onPrintSubscription(item.businessId, subscription)}
+                      className="gap-1.5"
+                    >
+                      <Printer className="h-3.5 w-3.5" aria-hidden />
+                      {printBusy ? "Preparing…" : "Print subscription"}
+                    </Button>
+                  </div>
+                : isRealPeriod ?
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={statementBusy}
+                    onClick={() => onPrintStatement(item.businessId)}
+                    className="gap-1.5"
+                  >
+                    <Printer className="h-3.5 w-3.5" aria-hidden />
+                    {statementBusy ? "Preparing…" : "Print statement"}
+                  </Button>
+                : <span className="text-xs text-zinc-400">—</span>}
+              </td>
+            </tr>
+          );
+        })
       : null}
-    </div>
+    </>
   );
 }
+
 
 export function UserSubscriptionsList({
   owners,
@@ -586,16 +457,22 @@ export function UserSubscriptionsList({
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [printingId, setPrintingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reasonTarget, setReasonTarget] = useState<{
-    businessName: string;
-    subscription: OwnerSubscription;
-  } | null>(null);
   const [detailTarget, setDetailTarget] = useState<{
     businessId: string;
     businessName: string;
     ownerEmail?: string;
     subscription: OwnerSubscription;
   } | null>(null);
+  const [overwriteTarget, setOverwriteTarget] = useState<{
+    item: UserSubscriptionListItem;
+    subscription: OwnerSubscription;
+  } | null>(null);
+  const [extendTarget, setExtendTarget] = useState<{
+    item: UserSubscriptionListItem;
+    subscription: OwnerSubscription;
+  } | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   if (ownersSource !== owners) {
     setOwnersSource(owners);
@@ -625,22 +502,6 @@ export function UserSubscriptionsList({
   const resetKey = `${search}:${bucket}:${plan}:${activity}:${pageSize}`;
   const { paginatedItems, page, setPage, totalPages, totalItems } =
     usePagination(filteredItems, pageSize, resetKey);
-
-  const groupedPage = useMemo(() => {
-    const groups: Array<{
-      bucket: SubscriptionOpsBucket;
-      items: UserSubscriptionListItem[];
-    }> = [];
-    for (const item of paginatedItems) {
-      const current = groups[groups.length - 1];
-      if (current && current.bucket === item.opsBucket) {
-        current.items.push(item);
-      } else {
-        groups.push({ bucket: item.opsBucket, items: [item] });
-      }
-    }
-    return groups;
-  }, [paginatedItems]);
 
   const planCounts = useMemo(() => {
     const counts: Record<string, number> = { all: allItems.length };
@@ -709,6 +570,75 @@ export function UserSubscriptionsList({
     });
   }
 
+  async function handlePrintSubscription(
+    businessId: string,
+    subscription: OwnerSubscription,
+  ) {
+    if (subscriptionEligibleForOfficialReceipt(subscription)) {
+      await handlePrintOr(businessId, subscription.id);
+      return;
+    }
+    await handlePrintStatement(businessId);
+  }
+
+  async function handleOverwrite(input: {
+    planCode: string;
+    expiresAt: string;
+    note: string;
+  }) {
+    if (!overwriteTarget) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const result = await updateTrialStation({
+        businessId: overwriteTarget.item.businessId,
+        subscriptionId: overwriteTarget.subscription.id,
+        planCode: input.planCode,
+        expiresAt: input.expiresAt,
+        note: input.note,
+      });
+      setLocalOwners((current) =>
+        patchOwnerSubscription(current, overwriteTarget.item.businessId, overwriteTarget.subscription.id, {
+          planCode: result.planCode,
+          planName: result.planName,
+          expiresAt: result.expiresAt,
+          billingCycle: result.billingCycle,
+          price: result.price,
+        }),
+      );
+      setOverwriteTarget(null);
+      void onRefresh?.({ silent: true });
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : "Could not overwrite this subscription.");
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  async function handleExtend(expiresAt: string) {
+    if (!extendTarget) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const result = await extendSubscription({
+        businessId: extendTarget.item.businessId,
+        subscriptionId: extendTarget.subscription.id,
+        expiresAt,
+      });
+      setLocalOwners((current) =>
+        patchOwnerSubscription(current, extendTarget.item.businessId, extendTarget.subscription.id, {
+          expiresAt: result.expiresAt,
+        }),
+      );
+      setExtendTarget(null);
+      void onRefresh?.({ silent: true });
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : "Could not update this subscription.");
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
   function toggleBucket(next: SubscriptionOpsBucket) {
     setBucket((current) => (current === next ? "all" : next));
   }
@@ -733,68 +663,6 @@ export function UserSubscriptionsList({
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        <KpiCard
-          label="Monthly billed"
-          value={formatPhp(kpis.monthlyBilled)}
-          hint={`${kpis.paying} paying workspace${kpis.paying === 1 ? "" : "s"}`}
-          icon={<Wallet className="h-4 w-4" />}
-        />
-        <KpiCard
-          label="Paying"
-          value={String(kpis.paying)}
-          hint={`${kpis.scale} Scale · ${kpis.grow} Grow · ${kpis.starter} Starter`}
-          icon={<CreditCard className="h-4 w-4" />}
-          active={bucket === "paying"}
-          onClick={() => toggleBucket("paying")}
-        />
-        <KpiCard
-          label="Trials"
-          value={String(kpis.trial)}
-          hint="Active free trials"
-          icon={<Timer className="h-4 w-4" />}
-          active={bucket === "trial"}
-          onClick={() => toggleBucket("trial")}
-        />
-        <KpiCard
-          label="Free"
-          value={String(kpis.free)}
-          hint="Forever Free plan"
-          icon={<Sparkles className="h-4 w-4" />}
-          active={bucket === "free"}
-          onClick={() => toggleBucket("free")}
-        />
-        <KpiCard
-          label="Voucher"
-          value={String(kpis.voucher)}
-          hint="Paid plan listed at ₱0"
-          icon={<Gift className="h-4 w-4" />}
-          active={bucket === "voucher"}
-          onClick={() => toggleBucket("voucher")}
-        />
-        <KpiCard
-          label="Needs attention"
-          value={String(kpis.attention)}
-          hint={
-            kpis.pending > 0 ?
-              `${kpis.pending} pending approval`
-            : "Grace, expired current period, or overlapping"
-          }
-          icon={<AlertTriangle className="h-4 w-4" />}
-          active={bucket === "attention"}
-          onClick={() => toggleBucket("attention")}
-          tone="alert"
-        />
-        <KpiCard
-          label="Ended"
-          value={String(kpis.ended)}
-          hint="Expired, cancelled, or no plan"
-          icon={<Archive className="h-4 w-4" />}
-          active={bucket === "ended"}
-          onClick={() => toggleBucket("ended")}
-        />
-      </div>
-
       <Card>
         <CardHeader className="space-y-3 pb-2">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -919,56 +787,57 @@ export function UserSubscriptionsList({
           : <>
               <p className="mb-3 text-xs text-[var(--muted-foreground)]">
                 Showing {paginatedItems.length} of {filteredItems.length} workspace
-                {filteredItems.length === 1 ? "" : "s"}
-                {bucket !== "all" ? ` in ${BUCKET_LABELS[bucket].toLowerCase()}` : ""}
+                {filteredItems.length === 1 ? "" : "s"}. Open a station to see its
+                subscription history, newest first.
               </p>
-              <div className="space-y-6">
-                {groupedPage.map((group) => (
-                  <div key={group.bucket} className="space-y-2">
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-800">
-                        {BUCKET_LABELS[group.bucket]} · {group.items.length}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {BUCKET_HINTS[group.bucket]}
-                      </p>
-                    </div>
-                    <div className="space-y-3">
-                      {group.items.map((item) => (
-                        <UserSubscriptionCard
-                          key={item.businessId}
-                          item={item}
-                          expanded={expandedIds.has(item.businessId)}
-                          canApprove={canApprove}
-                          approvingId={approvingId}
-                          printingId={printingId}
-                          onToggle={() => toggleExpanded(item.businessId)}
-                          onApprove={handleApprove}
-                          onPrintOr={(businessId, subscriptionId) => {
-                            void handlePrintOr(businessId, subscriptionId);
-                          }}
-                          onPrintStatement={(businessId) => {
-                            void handlePrintStatement(businessId);
-                          }}
-                          onReview={(businessId, subscription) =>
-                            setDetailTarget({
-                              businessId,
-                              businessName: item.businessName,
-                              ownerEmail: item.ownerEmail,
-                              subscription,
-                            })
-                          }
-                          onViewReason={(listItem, subscription) =>
-                            setReasonTarget({
-                              businessName: listItem.businessName,
-                              subscription,
-                            })
-                          }
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="border-b border-zinc-100 bg-zinc-50/90 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    <tr>
+                      <th className="px-3 py-3">Station</th>
+                      <th className="px-3 py-3">Plan</th>
+                      <th className="px-3 py-3">Activity</th>
+                      <th className="px-3 py-3">Status</th>
+                      <th className="px-3 py-3 text-right">Amount</th>
+                      <th className="px-3 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {paginatedItems.map((item) => (
+                      <SubscriptionTableRows
+                        key={item.businessId}
+                        item={item}
+                        expanded={expandedIds.has(item.businessId)}
+                        canEdit={canApprove}
+                        onToggle={() => toggleExpanded(item.businessId)}
+                        approvingId={approvingId}
+                        printingId={printingId}
+                        onPrintSubscription={(businessId, subscription) => {
+                          void handlePrintSubscription(businessId, subscription);
+                        }}
+                        onPrintStatement={(businessId) => {
+                          void handlePrintStatement(businessId);
+                        }}
+                        onReview={(businessId, subscription) =>
+                          setDetailTarget({
+                            businessId,
+                            businessName: item.businessName,
+                            ownerEmail: item.ownerEmail,
+                            subscription,
+                          })
+                        }
+                        onOverwrite={(listItem, subscription) => {
+                          setEditError(null);
+                          setOverwriteTarget({ item: listItem, subscription });
+                        }}
+                        onExtend={(listItem, subscription) => {
+                          setEditError(null);
+                          setExtendTarget({ item: listItem, subscription });
+                        }}
+                      />
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <ListPagination
                 page={page}
@@ -1000,17 +869,130 @@ export function UserSubscriptionsList({
         />
       : null}
 
-      {reasonTarget ?
-        <SubscriptionReasonDialog
-          subscription={reasonTarget.subscription}
-          businessName={reasonTarget.businessName}
-          onClose={() => setReasonTarget(null)}
+      {overwriteTarget ?
+        <TrialStationEditDialog
+          station={{
+            ...overwriteTarget.item,
+            subscription: overwriteTarget.subscription,
+          }}
+          planOptions={OVERWRITE_PLAN_OPTIONS}
+          saving={editSaving}
+          error={editError}
+          onClose={() => {
+            if (!editSaving) setOverwriteTarget(null);
+          }}
+          onSave={(input) => void handleOverwrite(input)}
         />
       : null}
+
+      {extendTarget ?
+        <ExtendSubscriptionDialog
+          subscription={extendTarget.subscription}
+          stationName={extendTarget.item.businessName}
+          saving={editSaving}
+          error={editError}
+          onClose={() => {
+            if (!editSaving) setExtendTarget(null);
+          }}
+          onSave={(expiresAt) => void handleExtend(expiresAt)}
+        />
+      : null}
+
     </>
   );
 }
 
 function itemBusinessStatementId(businessId: string): string {
   return `statement:${businessId}`;
+}
+
+function patchOwnerSubscription(
+  owners: ActiveOwner[],
+  businessId: string,
+  subscriptionId: string,
+  patch: Partial<OwnerSubscription>,
+): ActiveOwner[] {
+  return owners.map((owner) => {
+    if (owner.id !== businessId) return owner;
+    return {
+      ...owner,
+      planName: patch.planName || owner.planName,
+      subscriptions: owner.subscriptions?.map((subscription) =>
+        subscription.id === subscriptionId ? { ...subscription, ...patch } : subscription,
+      ),
+    };
+  });
+}
+
+function ExtendSubscriptionDialog({
+  subscription,
+  stationName,
+  saving,
+  error,
+  onClose,
+  onSave,
+}: {
+  subscription: OwnerSubscription;
+  stationName: string;
+  saving: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSave: (expiresAt: string) => void;
+}) {
+  const [endDate, setEndDate] = useState(manilaDateInputValue(subscription.expiresAt));
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+      <button
+        type="button"
+        aria-label="Close"
+        className="absolute inset-0 bg-black/45"
+        onClick={() => {
+          if (!saving) onClose();
+        }}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-[var(--border)] bg-white p-5 shadow-xl"
+      >
+        <h2 className="text-base font-semibold text-foreground">Update subscription</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          Extend {stationName}&apos;s {displaySubscriptionPlanName(subscription)} access. The plan
+          stays the same.
+        </p>
+        <label className="mt-4 block space-y-1.5">
+          <span className="text-sm font-medium text-foreground">Access until</span>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
+            className="h-10 w-full rounded-lg border border-[var(--border)] bg-white px-3 text-sm"
+          />
+        </label>
+        {localError || error ?
+          <p className="mt-3 text-sm text-red-700">{localError || error}</p>
+        : null}
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button
+            disabled={saving}
+            onClick={() => {
+              try {
+                setLocalError(null);
+                onSave(trialEndsAtFromManilaDate(endDate));
+              } catch (err) {
+                setLocalError(err instanceof Error ? err.message : "Enter an end date.");
+              }
+            }}
+          >
+            {saving ? "Saving…" : "Update"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }

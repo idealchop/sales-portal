@@ -79,7 +79,7 @@ function SmartRefillDashboardContent({
         <DashboardSection
           id="smartrefill-subscriptions"
           title="User subscriptions"
-          description="Every production workspace, grouped by billing health. Ended plans stay in the list so the count matches stations."
+          description="Trials first, then renewals, upgrades, and downgrades. Free plans are last, oldest first."
           count={subscriptionItems.length}
         >
           <UserSubscriptionsList

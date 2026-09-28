@@ -169,6 +169,7 @@ Manager/admin CMS + ops for Smart Refill Resources (shared `apps/smartrefill/*` 
 **Scheduled jobs:**
 - `eventsTrainingPromotionDelivery` (every 5 minutes) fires due automation schedules and enqueues email. See [`events-training.md`](./events-training.md).
 - `leadPipelineGather` (00:00 Asia/Manila) full-gathers SmartRefill, legacy, and content emails into `leads` (CRM fields preserved). UI **Gather new leads** stays incremental.
+- `opsNotifyNewUser`, `opsNotifyOnboarding`, and `opsNotifySubscriptionReview` (Firestore on `riverdb`) email `support@riverph.com` when a Smart Refill account is created, a station finishes onboarding, or a subscription enters payment review. CC: `jimboy@smartrefill.io`, `wina@riverph.com`, `abantekeithh@gmail.com` (Keith Abante).
 
 ### SmartRefill proxy (`/smartrefill`)
 

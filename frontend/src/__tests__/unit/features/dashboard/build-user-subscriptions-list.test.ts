@@ -259,7 +259,7 @@ describe("buildUserSubscriptionsList", () => {
     ).toBe(1);
   });
 
-  it("sorts businesses by latest active plan tier Scale → Grow → Scale trial", () => {
+  it("lists trials first, then plan changes, with Free oldest last", () => {
     const items = buildUserSubscriptionsList([
       owner("trial", [
         {
@@ -311,9 +311,9 @@ describe("buildUserSubscriptionsList", () => {
     ]);
 
     expect(items.map((item) => item.businessId)).toEqual([
-      "scale",
-      "grow",
       "trial",
+      "grow",
+      "scale",
     ]);
   });
 
@@ -732,10 +732,10 @@ describe("subscription ops KPIs, filters, and groupings", () => {
     );
 
     expect(items.map((item) => [item.businessId, item.opsBucket])).toEqual([
-      ["danum", "attention"],
-      ["hydro", "paying"],
-      ["oceanus", "voucher"],
       ["keith", "trial"],
+      ["oceanus", "voucher"],
+      ["hydro", "paying"],
+      ["danum", "attention"],
     ]);
 
     const kpis = buildUserSubscriptionKpis(items);

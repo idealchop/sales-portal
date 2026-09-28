@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { CatalogDocumentFormFields } from "@/features/admin/components/catalog-document-form-fields";
 import { TrialStationsPanel } from "@/features/admin/components/trial-stations-panel";
 import { buildUserSubscriptionsList } from "@/features/dashboard/lib/build-user-subscriptions-list";
+import { applyTrialStationEdit } from "@/features/admin/lib/trial-station-edit";
 import { useAdminCatalogCollection } from "@/hooks/use-admin-catalog-collection";
 import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
+import { useSalesProfile } from "@/hooks/use-sales-profile";
 import { ADMIN_CATALOG_COLLECTIONS } from "@/lib/admin/catalog-collections";
 import {
   catalogDocumentPayloadFromForm,
@@ -20,8 +22,10 @@ import {
 } from "@/lib/admin/catalog-document-forms";
 import { currentTrialSubscribers } from "@/lib/admin/plan-subscriber-roster";
 import {
+  catalogPlanCode,
   missingRequiredPlanCodes,
   planPresetLabel,
+  PLAN_PRESET_OPTIONS,
 } from "@/lib/admin/plan-catalog-display";
 import { ownersForUserSubscriptions } from "@/lib/dashboard/analytics";
 
@@ -67,7 +71,13 @@ export function TrialPolicyManager({ enabled = true }: { enabled?: boolean }) {
     listAudit,
   } = useAdminCatalogCollection("subscription_trial_policy", enabled);
   const plans = useAdminCatalogCollection("subscription_plans", enabled);
-  const { data: analytics, isLoading: trialRosterLoading } = useDashboardAnalytics({
+  const { profile } = useSalesProfile();
+  const canEditTrials = profile?.role === "admin" || profile?.role === "manager";
+  const {
+    data: analytics,
+    isLoading: trialRosterLoading,
+    setData: setAnalytics,
+  } = useDashboardAnalytics({
     enabled,
   });
   const trialStations = useMemo(
@@ -107,6 +117,26 @@ export function TrialPolicyManager({ enabled = true }: { enabled?: boolean }) {
       : emptyCatalogFormValues("subscription_trial_policy"),
     );
   }
+
+  const trialPlanOptions = useMemo(() => {
+    const fromCatalog = plans.documents
+      .map((doc) => {
+        const code = catalogPlanCode(doc.data);
+        if (!code || code === "pro") return null;
+        const name = String(doc.data.name || planPresetLabel(code));
+        return { code, label: name };
+      })
+      .filter((option): option is { code: string; label: string } => Boolean(option));
+    const unique = new Map<string, { code: string; label: string }>();
+    for (const option of fromCatalog) {
+      if (!unique.has(option.code)) unique.set(option.code, option);
+    }
+    if (unique.size > 0) return [...unique.values()];
+    return PLAN_PRESET_OPTIONS.filter((option) => option.code !== "enterprise").map((option) => ({
+      code: option.code,
+      label: option.label,
+    }));
+  }, [plans.documents]);
 
   const basedOnLabel = useMemo(
     () => planPresetLabel(summary.basedOnPlanCode),
@@ -201,8 +231,8 @@ export function TrialPolicyManager({ enabled = true }: { enabled?: boolean }) {
             .
           </li>
           <li>
-            Publish changes new signups only. Stations already on trial keep the trial they started
-            with.
+            Publish changes new signups. Managers can overwrite one station’s current trial with
+            another plan from the table, and must leave a note explaining why.
           </li>
         </ol>
       </section>
@@ -263,7 +293,17 @@ export function TrialPolicyManager({ enabled = true }: { enabled?: boolean }) {
           </dl>}
       </section>
 
-      <TrialStationsPanel stations={trialStations} isLoading={trialRosterLoading} />
+      <TrialStationsPanel
+        stations={trialStations}
+        isLoading={trialRosterLoading}
+        canEdit={canEditTrials}
+        planOptions={trialPlanOptions}
+        onUpdated={(edit) => {
+          setAnalytics((current) =>
+            current ? applyTrialStationEdit(current, edit) : current,
+          );
+        }}
+      />
 
       {(error || formError || notice) && (
         <div className="space-y-2">

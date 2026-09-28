@@ -76,6 +76,8 @@ export function isDashboardAppPath(pathname: string): boolean {
   return (
     pathname === "/dashboard" ||
     pathname.startsWith("/dashboard/smartrefill") ||
-    pathname.startsWith("/dashboard/sales-portal")
+    pathname.startsWith("/dashboard/sales-portal") ||
+    pathname === "/webapp/smartrefill" ||
+    pathname.startsWith("/webapp/smartrefill/")
   );
 }
