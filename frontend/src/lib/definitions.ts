@@ -236,6 +236,10 @@ export type Lead = {
   registeredAt?: string | null;
   /** Total customers on the account when known. */
   customerCount?: number;
+  /** Current subscription plan when the list stamps it. */
+  planName?: string;
+  planCode?: string;
+  billingCycle?: string;
   /** Latest Brevo transactional message id from follow-up email. */
   lastOutreachMessageId?: string;
   /** When Brevo reported the follow-up email was opened. */

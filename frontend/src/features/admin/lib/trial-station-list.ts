@@ -1,6 +1,24 @@
 import type { UserSubscriptionListItem } from "@/features/dashboard/lib/build-user-subscriptions-list";
+import { businessInfoPath } from "@/lib/admin/data-management-url-state";
 import { trialStartedAt } from "@/lib/admin/plan-subscriber-roster";
 import { trialDaysRemainingCount } from "@/lib/dashboard/subscription-labels";
+
+const TRIAL_STATIONS_RETURN = "/subscriptions/trial";
+
+/** Data management page for a station on the free-trial roster. */
+export function trialStationDataManagementPath(row: {
+  businessId?: string | null;
+  ownerUserId?: string | null;
+}): string | null {
+  const businessId = row.businessId?.trim();
+  if (!businessId) return null;
+  const userId = row.ownerUserId?.trim();
+  return businessInfoPath(
+    businessId,
+    TRIAL_STATIONS_RETURN,
+    userId && userId !== "smartrefill" ? userId : undefined,
+  );
+}
 
 export type TrialUrgencyFilter = "all" | "ending" | "later";
 

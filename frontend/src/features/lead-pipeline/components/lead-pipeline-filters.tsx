@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,9 @@ import {
   isAdvancedLeadListFilterActive,
   isLeadListFilterActive,
   LEAD_PAGE_SIZE_OPTIONS,
+  LEAD_PLAN_FILTER_NONE,
   LEAD_SOURCE_FILTER_OPTIONS,
+  onboardedPlanFilterOptions,
   type DateFilterPreset,
   type DateFilterState,
   type LeadAttemptsFilter,
@@ -27,7 +29,7 @@ import {
   type LeadSortDir,
   type LeadSortKey,
 } from "@/features/lead-pipeline/lib/lead-pipeline-list";
-import type { LeadQueue } from "@/lib/definitions";
+import type { Lead, LeadQueue } from "@/lib/definitions";
 import type { TeamMemberSummary } from "@/lib/sales/api";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +114,7 @@ export function LeadPipelineFilters({
   sortKey = "onboardedDefault",
   sortDir = "desc",
   onSort,
+  leads = [],
 }: {
   filters: LeadListFilters;
   onChange: <K extends keyof LeadListFilters>(
@@ -126,6 +129,7 @@ export function LeadPipelineFilters({
   sortKey?: LeadSortKey;
   sortDir?: LeadSortDir;
   onSort?: (key: LeadSortKey, dir: LeadSortDir) => void;
+  leads?: Lead[];
 }) {
   const advancedActive = isAdvancedLeadListFilterActive(filters);
   const [advancedOpen, setAdvancedOpen] = useState(advancedActive);
@@ -140,6 +144,22 @@ export function LeadPipelineFilters({
     ]),
   );
   const chips = describeActiveLeadListFilters(filters, { assigneeNameByUid });
+  const planOptions = useMemo(() => {
+    const options = onboardedPlanFilterOptions(leads);
+    if (
+      filters.plan === "all" ||
+      options.some((option) => option.value === filters.plan)
+    ) {
+      return options;
+    }
+    return [
+      ...options,
+      {
+        value: filters.plan,
+        label: filters.plan === LEAD_PLAN_FILTER_NONE ? "No plan" : filters.plan,
+      },
+    ];
+  }, [filters.plan, leads]);
 
   function clearChip(key: LeadListFilterChipKey) {
     onChange(key, clearedLeadListFilterValue(key));
@@ -231,6 +251,22 @@ export function LeadPipelineFilters({
                   <option value="all">All roles</option>
                   <option value="owner">Owner</option>
                   <option value="staff">Staff</option>
+                </select>
+              </label>
+              <label className="min-w-[160px] flex-1 sm:max-w-[200px]">
+                <FilterLabel>Subscription</FilterLabel>
+                <select
+                  className={inputClassName}
+                  aria-label="Filter by subscription plan"
+                  value={filters.plan}
+                  onChange={(event) => onChange("plan", event.target.value)}
+                >
+                  <option value="all">All subscriptions</option>
+                  {planOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="min-w-[180px] flex-1 sm:max-w-[240px]">

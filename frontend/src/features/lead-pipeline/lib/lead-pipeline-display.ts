@@ -1,5 +1,6 @@
 import type { LeadQueue, LeadStage } from "@/lib/definitions";
 import { businessInfoPath } from "@/lib/admin/data-management-url-state";
+import { isTrialBillingCycle } from "@/lib/dashboard/subscription-labels";
 
 /** Data management account for a lead's Smart Refill business, when one is linked. */
 export function leadBusinessDataManagementPath(lead: {
@@ -992,6 +993,29 @@ export function formatAccountReadyLine(lead: {
   if (!ready) return "No";
   const plan = lead.workspace?.planName?.trim();
   return plan || "Yes";
+}
+
+/** Subscription plan the onboarded user is on. A trial is named apart from the paid plan. */
+export function formatOnboardedPlanLabel(lead: {
+  planName?: string | null;
+  planCode?: string | null;
+  billingCycle?: string | null;
+  workspace?: {
+    planName?: string | null;
+    planCode?: string | null;
+    billingCycle?: string | null;
+  } | null;
+}): string | null {
+  const name =
+    lead.workspace?.planName?.trim() ||
+    lead.planName?.trim() ||
+    lead.workspace?.planCode?.trim() ||
+    lead.planCode?.trim();
+  if (!name) return null;
+  const cycle = lead.workspace?.billingCycle || lead.billingCycle;
+  const trial = isTrialBillingCycle(cycle ?? undefined) || /\btrial\b/i.test(name);
+  if (!trial || /\btrial\b/i.test(name)) return name;
+  return `${name} · Trial`;
 }
 
 export function onboardedMonitorFlagLabel(

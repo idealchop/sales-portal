@@ -42,7 +42,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-DASH-03 | any | Open metric breakdown dialog | Breakdown rows render |
 | TC-DASH-04 | any | Business locations map | Pins load for businesses with coords; no test-account pins |
 | TC-DASH-05 | admin | Approve pending subscription | Approval succeeds; UI refreshes |
-| TC-DASH-06 | any | Open `/webapp/smartrefill` | Tabs: Subscriptions, Analytics; Config for admin. Subscriptions lists **all production workspaces** (not only live plans). KPIs: monthly billed, paying, trial, free, voucher, attention, ended. Group + plan + activity filters; grouped workspace cards |
+| TC-DASH-06 | any | Open `/webapp/smartrefill` | Tabs: Subscriptions, Analytics; Config for admin. Subscriptions lists **all production workspaces** (not only live plans). KPIs: monthly billed, paying, trial, free, voucher, attention, ended. Group + plan + activity filters. Sort: priority (trials first), station, plan, ends soonest/latest, amount, activity, status — also by clicking those column headers. Admin station name opens `/admin/data-management/business/{id}` |
 | TC-DASH-07 | any | Open `/dashboard` | Jump to a list first. **Your work today** next. **Also watch** is one row of 5 KPIs below that. **Win more / Keep them** last: chart visible, expand to see station list. New-user badges name the app. No ₱ |
 | TC-DASH-08 | any | Platform hub Actions \| Forecast tabs | Paginated forecast rows; actions inbox (if shown) |
 | TC-DASH-09 | admin | Subscription approval **View** | Detail dialog + receipt/attachment preview |
@@ -132,7 +132,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-LEAD-02 | sales | **Gather new leads**, then open Content | Incremental insert of missing emails; workspace owners who engaged stay on their funnel tab and also on Content |
 | TC-LEAD-04 | sales | Cold lead with Missed Demo → Update status **Demo Scheduled** | Moves to Warm; demo is no longer Missed so another demo can be booked |
 | TC-LEAD-05 | sales | Insights **Who to reward** | Referrer rows show Subscribed + Success + payout. Success = onboarded **and** paying Starter–Scale (incl. Enterprise). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed. Make-affiliate needs 2+ paid referees (or 2+ payout-eligible including 1 paid). **Create partner code** opens a prefilled affiliate form (name, email, ownerUserId). Checkout-voucher and stalled-warm demo lists have **Create voucher**. Webinar speaker / article author appears as a referrer when CRM `referredBy` is empty |
-| TC-LEAD-06 | sales | Onboarded tab | Each Smart Refill row shows **Owner** or **Staff** and the station customer total. Staff of the same station are extra rows sharing that count. Role filter All / Owner / Staff. Sort: customers highest or lowest, role Owner first or Staff first. Station name opens `/admin/data-management/business/{id}` (admin). Person name still opens the lead |
+| TC-LEAD-06 | sales | Onboarded tab | Each Smart Refill row shows **Owner** or **Staff**, the plan (**Scale** or **Scale · Trial**), and the station customer total. Staff of the same station are extra rows sharing that count. Filters: Role All / Owner / Staff, and Subscription (the plan the station is subscribed to, trials separate). Sort: customers highest or lowest, role Owner first or Staff first. Station name opens `/admin/data-management/business/{id}` (admin). Person name still opens the lead. Lead details also show the plan |
 
 ## TC-PROP — Proposals & outreach
 

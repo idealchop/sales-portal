@@ -45,7 +45,17 @@ describe("applyOnboardedSmartRefillRoster", () => {
   it("stamps customer totals and adds a staff row for the same station", () => {
     const rows = applyOnboardedSmartRefillRoster(
       [station()],
-      [{ businessId: "b1", ownerId: "owner-1", customerCount: 42 }],
+      [{
+        businessId: "b1",
+        ownerId: "owner-1",
+        customerCount: 42,
+        subscription: {
+          planName: "Scale",
+          planCode: "scale",
+          billingCycle: "trial",
+          price: 0,
+        },
+      }],
       [
         { businessId: "b1", userId: "owner-1", role: "owner", name: "Jayvee" },
         {
@@ -63,6 +73,9 @@ describe("applyOnboardedSmartRefillRoster", () => {
       id: "sr-business:b1",
       platformRole: "Owner",
       customerCount: 42,
+      planName: "Scale",
+      billingCycle: "trial",
+      workspace: { planName: "Scale", billingCycle: "trial" },
     });
     expect(rows[1]).toMatchObject({
       id: "sr-staff:b1:staff-1",
@@ -74,6 +87,7 @@ describe("applyOnboardedSmartRefillRoster", () => {
       platformSource: "smartrefill",
       customerCount: 42,
       stage: "onboarded",
+      workspace: { planName: "Scale", billingCycle: "trial" },
     });
   });
 

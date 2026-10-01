@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, Search } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { SMARTREFILL_TRIAL_APP_LABEL } from "@/features/admin/lib/trial-station-
 import {
   filterAndSortTrialStations,
   trialPlanFilterOptions,
+  trialStationDataManagementPath,
   TRIAL_STATION_SORT_OPTIONS,
   type TrialStationSort,
   type TrialUrgencyFilter,
@@ -29,6 +31,20 @@ import {
 import { cn } from "@/lib/utils";
 
 const TRIAL_PAGE_SIZE = 10;
+
+function StationNameLink({ row }: { row: UserSubscriptionListItem }) {
+  const label = row.businessName || row.businessId;
+  const href = trialStationDataManagementPath(row);
+  if (!href) return <p className="font-medium text-foreground">{label}</p>;
+  return (
+    <Link
+      href={href}
+      className="font-medium text-teal-800 underline-offset-2 hover:underline"
+    >
+      {label}
+    </Link>
+  );
+}
 
 function daysTone(label: string | null): "ok" | "soon" | "muted" {
   if (!label) return "muted";
@@ -208,9 +224,7 @@ export function TrialStationsPanel({
                 <li key={row.businessId} className="px-5 py-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground">
-                        {row.businessName || row.businessId}
-                      </p>
+                      <StationNameLink row={row} />
                       {row.ownerEmail ?
                         <a
                           href={`mailto:${row.ownerEmail}`}
@@ -275,9 +289,7 @@ export function TrialStationsPanel({
                   return (
                     <tr key={row.businessId}>
                       <td className="px-5 py-3">
-                        <p className="font-medium text-foreground">
-                          {row.businessName || row.businessId}
-                        </p>
+                        <StationNameLink row={row} />
                         {row.ownerEmail ?
                           <a
                             href={`mailto:${row.ownerEmail}`}

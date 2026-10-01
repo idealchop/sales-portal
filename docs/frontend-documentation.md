@@ -81,7 +81,7 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | Path | Role | Status |
 |------|------|--------|
 | `/dashboard` | sales, manager, admin | Live — Jump to a list first. Then **Your work today**. Then **Also watch** (5 KPIs, one row). Last: **Win more / Keep them** charts; expand to see station lists. New-user badges name the app. No ₱. |
-| `/webapp/smartrefill` | sales, manager, admin | Live — ops tabs: Subscriptions (all production workspaces; KPIs + grouped billing list including ended plans), Analytics (KPIs, signals, charts); Config (admin) |
+| `/webapp/smartrefill` | sales, manager, admin | Live — ops tabs: Subscriptions (all production workspaces; KPIs + grouped billing list including ended plans; sort by priority, station, plan, end date, amount, activity, or status; admin station name opens Data management), Analytics (KPIs, signals, charts); Config (admin) |
 | `/dashboard/smartrefill-old` | sales, manager, admin | Live — legacy station triage / contact (Brevo) / ignore; bulk actions |
 | `/dashboard/smartrefill` | sales, manager, admin | Redirects to `/webapp/smartrefill` |
 | `/dashboard/sales-portal` | — | Redirects to `/dashboard` |
@@ -98,7 +98,7 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | `/dashboard/materials` | sales+ | Live — materials library (admin CRUD) |
 | `/dashboard/my-team` | manager | Live — team performance summary |
 | `/dashboard/lead-pipeline` | sales+ | Redirects to `/lead-pipeline` |
-| `/lead-pipeline` | sales+ | Live — **all / content / warm / cold / onboarded / archives**. Content is webinar, training, article, and story emails. **Onboarded** (Smart Refill only) shows Owner vs Staff and the station customer total, with role filter and customer/role sort. A station name with `linkedBusinessId` opens that business in Data management. Midnight full gather (`leadPipelineGather`); **Gather new leads** is incremental. Insights **Who to reward** scores referral partners by paid Starter–Scale success rate (Free/trial do not count as subscribed); one-click create partner/voucher; webinar speaker / article author counts as referrer when CRM referrer is empty |
+| `/lead-pipeline` | sales+ | Live — **all / content / warm / cold / onboarded / archives**. Content is webinar, training, article, and story emails. **Onboarded** (Smart Refill only) shows Owner vs Staff, the plan (a trial is labeled apart from the paid plan), and the station customer total, with role and plan filters and customer/role sort. A station name with `linkedBusinessId` opens that business in Data management. Midnight full gather (`leadPipelineGather`); **Gather new leads** is incremental. Insights **Who to reward** scores referral partners by paid Starter–Scale success rate (Free/trial do not count as subscribed); one-click create partner/voucher; webinar speaker / article author counts as referrer when CRM referrer is empty |
 
 ## App Hosting deploy
 

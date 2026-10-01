@@ -98,7 +98,7 @@ inquire/demo, and registered-but-not-onboarded (content-only guests stay on Cont
 Legacy stations never enter Onboarded. CRM `leads` overlays cold/archive follow-ups. Missed demo auto-moves to Cold; **Demo Scheduled** (or other Warm statuses) after a miss returns the lead to Warm and clears the missed flag so another demo can be booked.
 Uses a lightweight legacy station loader (no delivery scan).
 
-**Onboarded roster (Smart Refill only):** Each onboarded station shows **Owner** or **Staff** and the station’s customer total (`businesses/{id}/customers` count, shared by every person on that station). Staff seats (`admin` / `rider` / `staff` on `businesses/{id}/members`, inactive skipped) are extra rows with id `sr-staff:{businessId}:{userId}`. The owner row stays **Owner**. The list attaches this live, before Gather. Gather persists the same roster. Onboarded filters: Role **All / Owner / Staff**. Sort: Attention first (default), customers highest or lowest, role Owner first or Staff first. Switching queues clears the role filter. A missing customer count sorts last in both directions.
+**Onboarded roster (Smart Refill only):** Each onboarded station shows **Owner** or **Staff**, the subscription the station is on (`Scale` or `Scale · Trial`, loaded live from the current subscription), and the station’s customer total (`businesses/{id}/customers` count, shared by every person on that station). Staff seats (`admin` / `rider` / `staff` on `businesses/{id}/members`, inactive skipped) are extra rows with id `sr-staff:{businessId}:{userId}`. The owner row stays **Owner**. The list attaches this live, before Gather. Gather persists the same roster. Onboarded filters: Role **All / Owner / Staff**, and **Subscription** (the plan the station is subscribed to; a trial is separate from the paid plan). Sort: Attention first (default), customers highest or lowest, role Owner first or Staff first. Switching queues clears the role and plan filters. A missing customer count sorts last in both directions.
 
 **Station name → Data management:** When `linkedBusinessId` is set, the business name on the table, board, and lead details links to `/admin/data-management/business/{id}?returnTo=/lead-pipeline` (plus `userId` when it is a real owner). The person name still opens the lead. The business page stays admin-only.
 
@@ -145,7 +145,7 @@ Large admin surface for permissions and Firestore data management:
 | `admin-catalog-collection-manager.tsx` | Catalog tables; plans/addons/vouchers show station roster; affiliates show pipeline **success rate** + **payout** |
 | `voucher-affiliate-pipeline-panel.tsx` | Who deserves a partner code or checkout/close-deal voucher, with succession rate |
 | `plan-subscribers-dialog.tsx` | Paginated station roster (who, started, last active) |
-| `trial-stations-panel.tsx` | Free-trial roster with days remaining |
+| `trial-stations-panel.tsx` | Free-trial roster with days remaining. Station name opens that business in Data management |
 | `catalog-document-form-*` | Structured add/edit forms (not raw JSON); product icons include **Water container** |
 | `plan-limitations-form-*` | Plan `limitations` editor (customers, **water containers / day**, QR orders, staff, River AI) |
 | `firestore-document-detail-dialog.tsx` | Row click → read-only detail |

@@ -1,6 +1,10 @@
 import { db } from "../config/firebase-admin";
 import { normalizeSmartRefillRole } from "../constants/smartrefill";
-import type { LeadRecord } from "./leads-service";
+import type { LeadRecord, LeadWorkspaceOverlay } from "./leads-service";
+import {
+  mapOwnerSubscriptions,
+  pickLatestCurrentPlanSubscription,
+} from "./map-owner-subscriptions";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
 
 export type OnboardedRosterMember = {
@@ -12,10 +16,19 @@ export type OnboardedRosterMember = {
   phone?: string;
 };
 
+export type OnboardedRosterSubscription = {
+  planName?: string;
+  planCode?: string;
+  billingCycle?: string;
+  price?: number;
+};
+
 export type OnboardedRosterBusiness = {
   businessId: string;
   ownerId?: string;
   customerCount: number;
+  /** Current subscription the station is on. */
+  subscription?: OnboardedRosterSubscription;
 };
 
 const EMPTY_CHANNELS = {
@@ -52,6 +65,40 @@ function personKey(businessId: string, userId: string): string {
   return `${businessId}:${userId}`;
 }
 
+function subscriptionOverlay(
+  business: OnboardedRosterBusiness | undefined,
+): LeadWorkspaceOverlay | undefined {
+  const subscription = business?.subscription;
+  const planName = subscription?.planName?.trim();
+  const planCode = subscription?.planCode?.trim();
+  if (!planName && !planCode) return undefined;
+  return {
+    planName: planName || undefined,
+    planCode: planCode || undefined,
+    billingCycle: subscription?.billingCycle,
+    price: subscription?.price,
+  };
+}
+
+function withSubscriptionPlan(
+  lead: LeadRecord,
+  business: OnboardedRosterBusiness | undefined,
+): LeadRecord {
+  const overlay = subscriptionOverlay(business);
+  if (!overlay) return lead;
+  return {
+    ...lead,
+    planName: overlay.planName,
+    planCode: overlay.planCode,
+    billingCycle: overlay.billingCycle,
+    price: overlay.price,
+    workspace: {
+      ...lead.workspace,
+      ...overlay,
+    },
+  };
+}
+
 function isOnboardedSmartRefill(lead: LeadRecord): boolean {
   return (
     lead.stage === "onboarded" &&
@@ -85,15 +132,19 @@ export function applyOnboardedSmartRefillRoster(
     if (lead.userId && lead.userId !== "smartrefill") {
       covered.add(personKey(businessId, lead.userId));
     }
+    const next = withSubscriptionPlan(
+      {
+        ...lead,
+        ...(business ? { customerCount: business.customerCount } : {}),
+        platformRole: isStaff ? "Staff" : "Owner",
+        platformSource: "smartrefill" as const,
+      },
+      business,
+    );
     if (!isStaff && !stationByBusiness.has(businessId)) {
-      stationByBusiness.set(businessId, lead);
+      stationByBusiness.set(businessId, next);
     }
-    return {
-      ...lead,
-      ...(business ? { customerCount: business.customerCount } : {}),
-      platformRole: isStaff ? "Staff" : "Owner",
-      platformSource: "smartrefill" as const,
-    };
+    return next;
   });
 
   const staffRows: LeadRecord[] = [];
@@ -142,11 +193,20 @@ async function loadBusinessRoster(
   members: OnboardedRosterMember[];
 }> {
   const ref = db.collection("businesses").doc(businessId);
-  const [countSnap, membersSnap, businessSnap] = await Promise.all([
+  const [countSnap, membersSnap, businessSnap, subsSnap] = await Promise.all([
     ref.collection("customers").count().get(),
     ref.collection("members").get(),
     ref.get(),
+    ref.collection("subscriptions").get(),
   ]);
+  const currentPlan = pickLatestCurrentPlanSubscription(
+    mapOwnerSubscriptions(
+      subsSnap.docs.map((doc) => ({
+        id: doc.id,
+        data: () => (doc.data() ?? {}) as Record<string, unknown>,
+      })),
+    ),
+  );
   const data = (businessSnap.data() ?? {}) as Record<string, unknown>;
   const ownerId =
     typeof data.ownerId === "string" && data.ownerId.trim() ?
@@ -179,6 +239,14 @@ async function loadBusinessRoster(
       businessId,
       ownerId,
       customerCount: countSnap.data().count,
+      subscription: currentPlan ?
+        {
+          planName: currentPlan.planName,
+          planCode: currentPlan.planCode,
+          billingCycle: currentPlan.billingCycle,
+          price: currentPlan.price,
+        } :
+        undefined,
     },
     members,
   };

@@ -1,6 +1,10 @@
 import type { ActiveOwner, OwnerSubscription } from "@/lib/dashboard/analytics";
+import { businessInfoPath } from "@/lib/admin/data-management-url-state";
 import { isTestAccountOwner } from "@/lib/dashboard/test-account-filters";
-import { isTrialBillingCycle } from "@/lib/dashboard/subscription-labels";
+import {
+  formatSubscriptionStatus,
+  isTrialBillingCycle,
+} from "@/lib/dashboard/subscription-labels";
 import {
   isFreeForeverPlan,
   isGrowPlanCode,
@@ -64,6 +68,7 @@ export type UserSubscriptionKpis = {
 export type UserSubscriptionListItem = {
   businessId: string;
   businessName: string;
+  ownerUserId?: string;
   ownerEmail?: string;
   /** Latest active subscription when present; otherwise newest overall. */
   subscription: OwnerSubscription;
@@ -338,6 +343,122 @@ export function compareUserSubscriptionsForTable(
   return a.businessName.localeCompare(b.businessName, undefined, { sensitivity: "base" });
 }
 
+export type SubscriptionTableSortKey =
+  | "priority"
+  | "station"
+  | "plan"
+  | "ends"
+  | "amount"
+  | "activity"
+  | "status";
+
+export type SubscriptionTableSortDir = "asc" | "desc";
+
+export const SUBSCRIPTIONS_DATA_MANAGEMENT_RETURN = "/webapp/smartrefill";
+
+/** Admin data-management page for a workspace on the subscriptions table. */
+export function subscriptionBusinessDataManagementPath(item: {
+  businessId?: string | null;
+  ownerUserId?: string | null;
+}): string | null {
+  const businessId = item.businessId?.trim();
+  if (!businessId) return null;
+  const userId = item.ownerUserId?.trim();
+  return businessInfoPath(
+    businessId,
+    SUBSCRIPTIONS_DATA_MANAGEMENT_RETURN,
+    userId && userId !== "smartrefill" ? userId : undefined,
+  );
+}
+
+export function subscriptionActivityLabel(subscription: OwnerSubscription): string {
+  if (subscription.overridePayment === "granted") return "Granted";
+  if (isTrialBillingCycle(subscription.billingCycle)) return "Trial";
+  const changeType = (subscription.changeType || "").toLowerCase();
+  if (changeType === "upgrade") return "Upgrade";
+  if (changeType === "downgrade" || subscription.isDowngrade) return "Downgrade";
+  if (changeType === "renew") return "Renewal";
+  const name = (subscription.planName || subscription.planCode || "").toLowerCase();
+  if (name === "free" || subscription.planCode === "free") return "Free";
+  return "Plan";
+}
+
+function subscriptionEndsMs(item: UserSubscriptionListItem): number | null {
+  const raw = item.subscription.expiresAt;
+  if (!raw) return null;
+  const ms = new Date(raw).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
+
+function subscriptionAmountSortValue(item: UserSubscriptionListItem): number {
+  const subscription = item.subscription;
+  if (subscription.overridePayment === "granted") return 0;
+  if (isTrialBillingCycle(subscription.billingCycle)) return 0;
+  return Number(subscription.price) || 0;
+}
+
+function compareMissingLast(
+  left: number | null,
+  right: number | null,
+  dir: SubscriptionTableSortDir,
+): number {
+  if (left === null && right === null) return 0;
+  if (left === null) return 1;
+  if (right === null) return -1;
+  return dir === "asc" ? left - right : right - left;
+}
+
+function compareSubscriptionSortKey(
+  a: UserSubscriptionListItem,
+  b: UserSubscriptionListItem,
+  key: Exclude<SubscriptionTableSortKey, "priority">,
+  dir: SubscriptionTableSortDir,
+): number {
+  switch (key) {
+    case "station":
+      return a.businessName.localeCompare(b.businessName, undefined, {
+        sensitivity: "base",
+      }) * (dir === "asc" ? 1 : -1);
+    case "plan":
+      return (a.planSortRank - b.planSortRank) * (dir === "asc" ? 1 : -1);
+    case "ends":
+      return compareMissingLast(subscriptionEndsMs(a), subscriptionEndsMs(b), dir);
+    case "amount":
+      return (subscriptionAmountSortValue(a) - subscriptionAmountSortValue(b)) *
+        (dir === "asc" ? 1 : -1);
+    case "activity":
+      return subscriptionActivityLabel(a.subscription).localeCompare(
+        subscriptionActivityLabel(b.subscription),
+        undefined,
+        { sensitivity: "base" },
+      ) * (dir === "asc" ? 1 : -1);
+    case "status":
+      return formatSubscriptionStatus(a.subscription.status).localeCompare(
+        formatSubscriptionStatus(b.subscription.status),
+        undefined,
+        { sensitivity: "base" },
+      ) * (dir === "asc" ? 1 : -1);
+    default:
+      return 0;
+  }
+}
+
+/** Priority keeps trials first. Other keys sort the visible table; missing end dates stay last. */
+export function sortUserSubscriptionsForTable(
+  items: UserSubscriptionListItem[],
+  key: SubscriptionTableSortKey = "priority",
+  dir: SubscriptionTableSortDir = "asc",
+): UserSubscriptionListItem[] {
+  if (key === "priority") return [...items].sort(compareUserSubscriptionsForTable);
+  return [...items].sort((a, b) => {
+    const compared = compareSubscriptionSortKey(a, b, key, dir);
+    if (compared !== 0) return compared;
+    return a.businessName.localeCompare(b.businessName, undefined, {
+      sensitivity: "base",
+    });
+  });
+}
+
 export function isSubscriptionExpiredByDate(
   subscription: OwnerSubscription,
   now = Date.now(),
@@ -529,6 +650,7 @@ export function buildUserSubscriptionsList(
     > = {
       businessId: owner.id,
       businessName: owner.businessName,
+      ownerUserId: owner.ownerId,
       ownerEmail: owner.ownerEmail,
       lastActiveDay: owner.lastActiveDay,
       subscription,

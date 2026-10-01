@@ -11,6 +11,7 @@ import {
   formatLeadDate,
   formatCustomerCount,
   formatOnboardedJourneyChip,
+  formatOnboardedPlanLabel,
   leadBusinessDataManagementPath,
   platformMembershipLabel,
   leadContactStatus,
@@ -83,6 +84,7 @@ function BoardCard({
     new Date(lead.nextFollowUpAt).getTime() < Date.now() &&
     leadQueueBucket(lead.stage) !== "archive";
   const isOnboarded = leadQueueBucket(lead.stage) === "onboarded";
+  const planLabel = isOnboarded ? formatOnboardedPlanLabel(lead) : null;
   const membership = platformMembershipLabel(lead.platformRole);
   const customers = formatCustomerCount(lead.customerCount);
   const journeyChip = formatOnboardedJourneyChip(lead.onboardedMonitor);
@@ -152,6 +154,18 @@ function BoardCard({
             )}
           >
             {membership}
+          </Badge>
+        : null}
+        {planLabel ?
+          <Badge
+            className={cn(
+              "text-[10px] font-semibold",
+              planLabel.includes("Trial") ?
+                "bg-sky-50 text-sky-800"
+              : "bg-zinc-100 text-zinc-800",
+            )}
+          >
+            {planLabel}
           </Badge>
         : null}
         {isOnboarded && customers ?

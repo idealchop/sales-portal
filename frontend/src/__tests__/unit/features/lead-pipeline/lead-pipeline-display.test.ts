@@ -7,6 +7,7 @@ import {
   formatLeadSourceLine,
   groupWarmStatusOptions,
   isContentPipelineLead,
+  formatOnboardedPlanLabel,
   leadBusinessDataManagementPath,
   LEAD_QUEUE_TABS,
   parseWarmStatus,
@@ -237,6 +238,22 @@ describe("lead attempt tracks", () => {
       }),
     ).toBe(true);
     expect(isContentPipelineLead({ sourceKind: "existing" })).toBe(false);
+  });
+});
+
+describe("onboarded plan label", () => {
+  it("names a trial apart from the paid plan", () => {
+    expect(
+      formatOnboardedPlanLabel({
+        workspace: { planName: "Scale", billingCycle: "trial" },
+      }),
+    ).toBe("Scale · Trial");
+    expect(
+      formatOnboardedPlanLabel({
+        workspace: { planName: "Scale", billingCycle: "monthly" },
+      }),
+    ).toBe("Scale");
+    expect(formatOnboardedPlanLabel({ workspace: {} })).toBeNull();
   });
 });
 

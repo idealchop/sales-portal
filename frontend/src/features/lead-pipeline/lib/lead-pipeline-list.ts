@@ -6,6 +6,7 @@ import {
   isContentPipelineLead,
   leadQueueBucket,
   normalizeDemoStatus,
+  formatOnboardedPlanLabel,
   parseWarmStatus,
   resolveInquiredAt,
   resolveRegisteredAt,
@@ -141,6 +142,9 @@ export type LeadAttemptsFilter =
 
 export type LeadUserRoleFilter = "all" | "owner" | "staff";
 
+/** Sentinel for onboarded rows that have no plan name. */
+export const LEAD_PLAN_FILTER_NONE = "__none__";
+
 export type LeadListFilters = {
   search: string;
   platformSource: "all" | LeadPlatformSource;
@@ -157,6 +161,8 @@ export type LeadListFilters = {
   stage: "all" | LeadStage;
   /** Smart Refill onboarded person: owner of the station, or staff. */
   userRole: LeadUserRoleFilter;
+  /** Onboarded plan label, or `__none__` for a station with no plan. */
+  plan: "all" | string;
 };
 
 export const DEFAULT_LEAD_LIST_FILTERS: LeadListFilters = {
@@ -174,6 +180,7 @@ export const DEFAULT_LEAD_LIST_FILTERS: LeadListFilters = {
   attempts: "all",
   stage: "all",
   userRole: "all",
+  plan: "all",
 };
 
 export const LEAD_SOURCE_FILTER_OPTIONS = [
@@ -375,7 +382,8 @@ export function isLeadListFilterActive(filters: LeadListFilters): boolean {
     filters.accountReady !== "all" ||
     filters.attempts !== "all" ||
     filters.stage !== "all" ||
-    filters.userRole !== "all"
+    filters.userRole !== "all" ||
+    filters.plan !== "all"
   );
 }
 
@@ -408,7 +416,8 @@ export type LeadListFilterChipKey =
   | "accountReady"
   | "attempts"
   | "stage"
-  | "userRole";
+  | "userRole"
+  | "plan";
 
 export type LeadListFilterChip = {
   key: LeadListFilterChipKey;
@@ -519,6 +528,16 @@ export function describeActiveLeadListFilters(
     });
   }
 
+  if (filters.plan !== "all") {
+    chips.push({
+      key: "plan",
+      label:
+        filters.plan === LEAD_PLAN_FILTER_NONE ?
+          "Subscription: No plan"
+        : `Subscription: ${filters.plan}`,
+    });
+  }
+
   const inquire = dateFilterChipLabel("Date inquire", filters.inquiredAt);
   if (inquire) chips.push({ key: "inquiredAt", label: inquire });
 
@@ -568,6 +587,10 @@ export function filterLeadsForList(
     if (filters.stage !== "all" && lead.stage !== filters.stage) return false;
 
     if (filters.userRole !== "all" && leadUserRole(lead) !== filters.userRole) {
+      return false;
+    }
+
+    if (filters.plan !== "all" && onboardedPlanFilterValue(lead) !== filters.plan) {
       return false;
     }
 
@@ -654,6 +677,27 @@ function sortValue(lead: Lead, key: LeadSortKey): string | number {
   default:
     return "";
   }
+}
+
+export function onboardedPlanFilterValue(lead: Lead): string {
+  return formatOnboardedPlanLabel(lead) ?? LEAD_PLAN_FILTER_NONE;
+}
+
+export function onboardedPlanFilterOptions(
+  leads: Lead[],
+): Array<{ value: string; label: string }> {
+  const values = new Set<string>();
+  for (const lead of leads) values.add(onboardedPlanFilterValue(lead));
+  return [...values]
+    .map((value) => ({
+      value,
+      label: value === LEAD_PLAN_FILTER_NONE ? "No plan" : value,
+    }))
+    .sort((a, b) => {
+      if (a.value === LEAD_PLAN_FILTER_NONE) return 1;
+      if (b.value === LEAD_PLAN_FILTER_NONE) return -1;
+      return a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
+    });
 }
 
 function leadUserRole(lead: Lead): LeadUserRoleFilter | "other" {

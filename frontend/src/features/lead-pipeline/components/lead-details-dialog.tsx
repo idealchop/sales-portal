@@ -13,6 +13,7 @@ import type {
 } from "@/lib/definitions";
 import {
   formatCustomerCount,
+  formatOnboardedPlanLabel,
   formatLeadChannels,
   formatLeadDate,
   formatLeadMilestoneDate,
@@ -270,6 +271,7 @@ export function LeadDetailsDialog({
   const lastContactLabel = formatLeadDate(lead.lastContactAt);
   const platformLabel = platformSourceLabel(lead.platformSource);
   const isOnboarded = leadQueueBucket(lead.stage) === "onboarded";
+  const planLabel = isOnboarded ? formatOnboardedPlanLabel(lead) : null;
   const lastSignInLabel = isOnboarded
     ? resolveLeadLastSignIn(lead)
     : null;
@@ -382,6 +384,12 @@ export function LeadDetailsDialog({
               <>
                 <div className="hidden h-10 w-px bg-zinc-200 sm:mx-4 sm:block" />
                 <Milestone label="Last sign-in">{lastSignInLabel}</Milestone>
+              </>
+            : null}
+            {planLabel ?
+              <>
+                <div className="hidden h-10 w-px bg-zinc-200 sm:mx-4 sm:block" />
+                <Milestone label="Plan">{planLabel}</Milestone>
               </>
             : null}
           </div>

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { filterAndSortTrialStations } from "@/features/admin/lib/trial-station-list";
+import {
+  filterAndSortTrialStations,
+  trialStationDataManagementPath,
+} from "@/features/admin/lib/trial-station-list";
 import type { UserSubscriptionListItem } from "@/features/dashboard/lib/build-user-subscriptions-list";
 
 const now = new Date("2026-09-29T04:00:00.000Z");
@@ -90,6 +93,18 @@ describe("filterAndSortTrialStations", () => {
     expect(
       filterAndSortTrialStations(stations, { query: "demo@", now }).map((item) => item.businessId),
     ).toEqual(["b"]);
+  });
+
+  it("links a trial station to its data management business page", () => {
+    expect(
+      trialStationDataManagementPath({
+        businessId: "biz-1",
+        ownerUserId: "owner-1",
+      }),
+    ).toBe(
+      "/admin/data-management/business/biz-1?returnTo=%2Fsubscriptions%2Ftrial&userId=owner-1",
+    );
+    expect(trialStationDataManagementPath({ businessId: "  " })).toBeNull();
   });
 
   it("sorts stations alphabetically", () => {

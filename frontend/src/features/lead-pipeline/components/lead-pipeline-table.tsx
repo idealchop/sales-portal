@@ -14,6 +14,7 @@ import {
   formatLeadDate,
   formatLeadSourceLine,
   formatOnboardedJourneyChip,
+  formatOnboardedPlanLabel,
   leadBusinessDataManagementPath,
   demoStatusLabel,
   demoStatusToneClass,
@@ -62,6 +63,7 @@ function LeadProfileCell({ lead }: { lead: Lead }) {
   const journeyChip = formatOnboardedJourneyChip(lead.onboardedMonitor);
   const monitorFlags = lead.onboardedMonitor?.flags ?? [];
   const isOnboarded = leadQueueBucket(lead.stage) === "onboarded";
+  const planLabel = isOnboarded ? formatOnboardedPlanLabel(lead) : null;
   const lastSignIn = isOnboarded ? resolveLeadLastSignIn(lead) : null;
   const stationHref = leadBusinessDataManagementPath(lead);
 
@@ -110,6 +112,18 @@ function LeadProfileCell({ lead }: { lead: Lead }) {
             )}
           >
             {membership}
+          </span>
+        : null}
+        {planLabel ?
+          <span
+            className={cn(
+              "rounded px-1.5 py-0.5 font-semibold",
+              planLabel.includes("Trial") ?
+                "bg-sky-50 text-sky-800"
+              : "bg-zinc-100 text-zinc-800",
+            )}
+          >
+            {planLabel}
           </span>
         : null}
         {customers ?
@@ -341,7 +355,11 @@ export function LeadPipelineTable({
     );
     setSortDir("desc");
     setFilters((prev) =>
-      prev.userRole === "all" ? prev : { ...prev, userRole: "all" },
+      prev.userRole === "all" && prev.plan === "all" ? prev : {
+        ...prev,
+        userRole: "all",
+        plan: "all",
+      },
     );
   }, [queue]);
 
@@ -494,6 +512,7 @@ export function LeadPipelineTable({
           setSortKey(key);
           setSortDir(dir);
         }}
+        leads={leads}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">

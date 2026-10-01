@@ -11,6 +11,8 @@ import {
   pickLatestSubscription,
   resolvePaymentIndicators,
   resolveSubscriptionChangeKind,
+  sortUserSubscriptionsForTable,
+  subscriptionBusinessDataManagementPath,
 } from "@/features/dashboard/lib/build-user-subscriptions-list";
 import type { ActiveOwner } from "@/lib/dashboard/analytics";
 
@@ -797,6 +799,64 @@ describe("subscription ops KPIs, filters, and groupings", () => {
     expect(buildUserSubscriptionKpis(items).ended).toBe(2);
     expect(items.find((item) => item.businessId === "lapsed")?.isExpired).toBe(
       true,
+    );
+  });
+});
+
+describe("subscription table sort and data-management link", () => {
+  const sub = (
+    id: string,
+    extra: Partial<NonNullable<ActiveOwner["subscriptions"]>[number]> = {},
+  ): NonNullable<ActiveOwner["subscriptions"]>[number] => ({
+    id,
+    planName: "Scale",
+    status: "active",
+    price: 1650,
+    timeline: "current",
+    cancelAtPeriodEnd: false,
+    needsApproval: false,
+    isDowngrade: false,
+    isCancellation: false,
+    billingCycle: "monthly",
+    createdAt: "2026-09-01T00:00:00.000Z",
+    ...extra,
+  });
+
+  it("sorts stations, end dates, and amounts, and keeps a missing end date last", () => {
+    const items = buildUserSubscriptionsList([
+      {
+        ...owner("zeta", [sub("z", { price: 100, expiresAt: "2026-12-01T00:00:00.000Z" })]),
+        businessName: "Zeta Water",
+        ownerId: "user-z",
+      },
+      {
+        ...owner("alpha", [
+          sub("a", {
+            price: 0,
+            billingCycle: "trial",
+            expiresAt: "2026-10-10T00:00:00.000Z",
+          }),
+        ]),
+        businessName: "Alpha Station",
+        ownerId: "user-a",
+      },
+      {
+        ...owner("mid", [sub("m", { price: 950, planName: "Grow", planCode: "grow" })]),
+        businessName: "Mid Grow",
+        ownerId: "user-m",
+      },
+    ]);
+
+    expect(sortUserSubscriptionsForTable(items, "station", "asc").map((item) => item.businessId))
+      .toEqual(["alpha", "mid", "zeta"]);
+    expect(sortUserSubscriptionsForTable(items, "station", "desc").map((item) => item.businessId))
+      .toEqual(["zeta", "mid", "alpha"]);
+    expect(sortUserSubscriptionsForTable(items, "ends", "asc").map((item) => item.businessId))
+      .toEqual(["alpha", "zeta", "mid"]);
+    expect(sortUserSubscriptionsForTable(items, "amount", "desc").map((item) => item.businessId))
+      .toEqual(["mid", "zeta", "alpha"]);
+    expect(subscriptionBusinessDataManagementPath(items.find((item) => item.businessId === "zeta")!)).toBe(
+      "/admin/data-management/business/zeta?returnTo=%2Fwebapp%2Fsmartrefill&userId=user-z",
     );
   });
 });

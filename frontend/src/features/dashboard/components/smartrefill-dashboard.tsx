@@ -86,6 +86,7 @@ function SmartRefillDashboardContent({
           <UserSubscriptionsList
             owners={subscriptionOwners}
             canApprove={canManageApprovals}
+            canOpenDataManagement={role === "admin"}
             onRefresh={refresh}
             onLocalEdit={holdLocalEdits}
           />

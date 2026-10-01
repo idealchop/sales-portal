@@ -514,6 +514,38 @@ describe("lead-pipeline-list", () => {
     ).toEqual(["Staff", "Owner", "Owner"]);
   });
 
+  it("filters onboarded stations by plan and keeps a trial distinct", () => {
+    const rows = [
+      lead({
+        id: "scale-trial",
+        stage: "onboarded",
+        workspace: { planName: "Scale", billingCycle: "trial" },
+      }),
+      lead({
+        id: "scale-paid",
+        stage: "onboarded",
+        workspace: { planName: "Scale", billingCycle: "monthly" },
+      }),
+      lead({
+        id: "free",
+        stage: "onboarded",
+        workspace: { planName: "Free", billingCycle: "monthly" },
+      }),
+    ];
+
+    expect(
+      filterLeadsForList(rows, filters({ plan: "Scale · Trial" })).map((row) => row.id),
+    ).toEqual(["scale-trial"]);
+    expect(
+      filterLeadsForList(rows, filters({ plan: "Scale" })).map((row) => row.id),
+    ).toEqual(["scale-paid"]);
+    expect(
+      describeActiveLeadListFilters(filters({ plan: "Scale · Trial" })).map(
+        (chip) => chip.label,
+      ),
+    ).toEqual(["Subscription: Scale · Trial"]);
+  });
+
   it("describes active filters as clearable chips", () => {
     const chips = describeActiveLeadListFilters(
       filters({

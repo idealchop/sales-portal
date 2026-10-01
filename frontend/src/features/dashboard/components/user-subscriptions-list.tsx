@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   ChevronDown,
   CreditCard,
@@ -44,10 +45,15 @@ import {
   countUserSubscriptionsByFilter,
   filterUserSubscriptionsOps,
   isSubscriptionExpiredByDate,
+  sortUserSubscriptionsForTable,
+  subscriptionActivityLabel,
+  subscriptionBusinessDataManagementPath,
   type SubscriptionChangeKind,
   type SubscriptionListFilterKind,
   type SubscriptionOpsBucket,
   type SubscriptionOpsQuery,
+  type SubscriptionTableSortDir,
+  type SubscriptionTableSortKey,
   type UserSubscriptionListItem,
 } from "@/features/dashboard/lib/build-user-subscriptions-list";
 import { usePagination } from "@/hooks/use-pagination";
@@ -239,15 +245,72 @@ function AmountCell({ subscription }: { subscription: OwnerSubscription }) {
 }
 
 function periodActivityLabel(subscription: OwnerSubscription): string {
-  if (subscription.overridePayment === "granted") return "Granted";
-  if (isTrialBillingCycle(subscription.billingCycle)) return "Trial";
-  const changeType = (subscription.changeType || "").toLowerCase();
-  if (changeType === "upgrade") return "Upgrade";
-  if (changeType === "downgrade" || subscription.isDowngrade) return "Downgrade";
-  if (changeType === "renew") return "Renewal";
-  const name = (subscription.planName || subscription.planCode || "").toLowerCase();
-  if (name === "free" || subscription.planCode === "free") return "Free";
-  return "Plan";
+  return subscriptionActivityLabel(subscription);
+}
+
+const SUBSCRIPTION_SORT_OPTIONS: Array<{
+  value: string;
+  label: string;
+  key: SubscriptionTableSortKey;
+  dir: SubscriptionTableSortDir;
+}> = [
+  { value: "priority", label: "Priority (trials first)", key: "priority", dir: "asc" },
+  { value: "station:asc", label: "Station A–Z", key: "station", dir: "asc" },
+  { value: "station:desc", label: "Station Z–A", key: "station", dir: "desc" },
+  { value: "plan:asc", label: "Plan", key: "plan", dir: "asc" },
+  { value: "plan:desc", label: "Plan, reverse", key: "plan", dir: "desc" },
+  { value: "ends:asc", label: "Ends soonest", key: "ends", dir: "asc" },
+  { value: "ends:desc", label: "Ends latest", key: "ends", dir: "desc" },
+  { value: "amount:desc", label: "Amount highest", key: "amount", dir: "desc" },
+  { value: "amount:asc", label: "Amount lowest", key: "amount", dir: "asc" },
+  { value: "activity:asc", label: "Activity A–Z", key: "activity", dir: "asc" },
+  { value: "activity:desc", label: "Activity Z–A", key: "activity", dir: "desc" },
+  { value: "status:asc", label: "Status A–Z", key: "status", dir: "asc" },
+  { value: "status:desc", label: "Status Z–A", key: "status", dir: "desc" },
+];
+
+function subscriptionSortValue(
+  key: SubscriptionTableSortKey,
+  dir: SubscriptionTableSortDir,
+): string {
+  if (key === "priority") return "priority";
+  return `${key}:${dir}`;
+}
+
+function SortableHeader({
+  label,
+  column,
+  activeKey,
+  dir,
+  align = "left",
+  onSort,
+}: {
+  label: string;
+  column: Exclude<SubscriptionTableSortKey, "priority">;
+  activeKey: SubscriptionTableSortKey;
+  dir: SubscriptionTableSortDir;
+  align?: "left" | "right";
+  onSort: (column: Exclude<SubscriptionTableSortKey, "priority">) => void;
+}) {
+  const active = activeKey === column;
+  return (
+    <th
+      className={cn("px-3 py-3", align === "right" && "text-right")}
+      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={cn(
+          "inline-flex items-center gap-1 uppercase tracking-wide hover:text-foreground",
+          align === "right" && "ml-auto",
+        )}
+      >
+        {label}
+        {active ? <span aria-hidden>{dir === "asc" ? "↑" : "↓"}</span> : null}
+      </button>
+    </th>
+  );
 }
 
 const OVERWRITE_PLAN_OPTIONS = PLAN_PRESET_OPTIONS.filter(
@@ -266,12 +329,14 @@ function SubscriptionTableRows({
   onReview,
   onOverwrite,
   onExtend,
+  stationHref,
 }: {
   item: UserSubscriptionListItem;
   expanded: boolean;
   canEdit: boolean;
   approvingId: string | null;
   printingId: string | null;
+  stationHref: string | null;
   onToggle: () => void;
   onPrintSubscription: (businessId: string, subscription: OwnerSubscription) => void;
   onPrintStatement: (businessId: string) => void;
@@ -292,29 +357,43 @@ function SubscriptionTableRows({
     <>
       <tr className={item.opsBucket === "attention" ? "bg-amber-50/40" : undefined}>
         <td className="px-3 py-3">
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={expanded}
-            className="flex items-start gap-2 text-left"
-          >
-            <ChevronDown
-              className={cn(
-                "mt-0.5 h-4 w-4 shrink-0 text-zinc-500 transition",
-                expanded ? "rotate-0" : "-rotate-90",
-              )}
-              aria-hidden
-            />
+          <div className="flex items-start gap-2 text-left">
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-expanded={expanded}
+              aria-label={expanded ? "Hide history" : "Show history"}
+              className="mt-0.5 shrink-0 rounded p-0.5 text-zinc-500 hover:text-foreground"
+            >
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition",
+                  expanded ? "rotate-0" : "-rotate-90",
+                )}
+                aria-hidden
+              />
+            </button>
             <span>
-              <span className="block font-medium text-foreground">{item.businessName}</span>
+              {stationHref ?
+                <Link
+                  href={stationHref}
+                  className="block font-medium text-teal-800 underline-offset-2 hover:underline"
+                >
+                  {item.businessName}
+                </Link>
+              : <span className="block font-medium text-foreground">{item.businessName}</span>}
               {item.ownerEmail ?
                 <span className="mt-0.5 block text-xs text-[var(--primary)]">{item.ownerEmail}</span>
               : null}
-              <span className="mt-1 block text-[11px] uppercase tracking-wide text-zinc-400">
+              <button
+                type="button"
+                onClick={onToggle}
+                className="mt-1 block text-[11px] uppercase tracking-wide text-zinc-400 hover:text-foreground"
+              >
                 {expanded ? "Hide history" : periodLabel}
-              </span>
+              </button>
             </span>
-          </button>
+          </div>
         </td>
         <td className="px-3 py-3">
           <p className="font-medium text-foreground">{displaySubscriptionPlanName(latest)}</p>
@@ -459,11 +538,14 @@ function SubscriptionTableRows({
 export function UserSubscriptionsList({
   owners,
   canApprove,
+  canOpenDataManagement = false,
   onRefresh,
   onLocalEdit,
 }: {
   owners: ActiveOwner[];
   canApprove: boolean;
+  /** Admins can open the station in Data management. */
+  canOpenDataManagement?: boolean;
   onRefresh?: DashboardAnalyticsRefresh;
   onLocalEdit?: () => void;
 }) {
@@ -473,6 +555,8 @@ export function UserSubscriptionsList({
   const [bucket, setBucket] = useState<"all" | SubscriptionOpsBucket>("all");
   const [plan, setPlan] = useState<SubscriptionOpsQuery["plan"]>("all");
   const [activity, setActivity] = useState<SubscriptionListFilterKind>("all");
+  const [sortKey, setSortKey] = useState<SubscriptionTableSortKey>("priority");
+  const [sortDir, setSortDir] = useState<SubscriptionTableSortDir>("asc");
   const [pageSize, setPageSize] = useState<SubscriptionsPageSize>(
     DEFAULT_SUBSCRIPTIONS_PAGE_SIZE,
   );
@@ -513,16 +597,20 @@ export function UserSubscriptionsList({
   );
   const filteredItems = useMemo(
     () =>
-      filterUserSubscriptionsOps(allItems, {
-        search,
-        bucket,
-        plan,
-        activity,
-      }),
-    [activity, allItems, bucket, plan, search],
+      sortUserSubscriptionsForTable(
+        filterUserSubscriptionsOps(allItems, {
+          search,
+          bucket,
+          plan,
+          activity,
+        }),
+        sortKey,
+        sortDir,
+      ),
+    [activity, allItems, bucket, plan, search, sortDir, sortKey],
   );
 
-  const resetKey = `${search}:${bucket}:${plan}:${activity}:${pageSize}`;
+  const resetKey = `${search}:${bucket}:${plan}:${activity}:${pageSize}:${sortKey}:${sortDir}`;
   const { paginatedItems, page, setPage, totalPages, totalItems } =
     usePagination(filteredItems, pageSize, resetKey);
 
@@ -674,6 +762,20 @@ export function UserSubscriptionsList({
     setBucket((current) => (current === next ? "all" : next));
   }
 
+  function applySort(nextKey: SubscriptionTableSortKey, nextDir: SubscriptionTableSortDir) {
+    setSortKey(nextKey);
+    setSortDir(nextDir);
+  }
+
+  function handleColumnSort(column: Exclude<SubscriptionTableSortKey, "priority">) {
+    const defaultDir: SubscriptionTableSortDir = column === "amount" ? "desc" : "asc";
+    if (sortKey !== column) {
+      applySort(column, defaultDir);
+      return;
+    }
+    applySort(column, sortDir === "asc" ? "desc" : "asc");
+  }
+
   if (allItems.length === 0) {
     return (
       <Card>
@@ -711,6 +813,27 @@ export function UserSubscriptionsList({
                   aria-label="Search station or email"
                   className="h-9 w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 text-sm"
                 />
+              </label>
+              <label className="flex shrink-0 items-center gap-2 text-sm text-zinc-600">
+                <span className="whitespace-nowrap font-medium">Sort</span>
+                <select
+                  value={subscriptionSortValue(sortKey, sortDir)}
+                  aria-label="Sort subscriptions"
+                  onChange={(event) => {
+                    const next = SUBSCRIPTION_SORT_OPTIONS.find(
+                      (option) => option.value === event.target.value,
+                    );
+                    if (!next) return;
+                    applySort(next.key, next.dir);
+                  }}
+                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm"
+                >
+                  {SUBSCRIPTION_SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="flex shrink-0 items-center gap-2 text-sm text-zinc-600">
                 <span className="whitespace-nowrap font-medium">Rows</span>
@@ -825,11 +948,42 @@ export function UserSubscriptionsList({
                 <table className="min-w-full text-sm">
                   <thead className="border-b border-zinc-100 bg-zinc-50/90 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
                     <tr>
-                      <th className="px-3 py-3">Station</th>
-                      <th className="px-3 py-3">Plan</th>
-                      <th className="px-3 py-3">Activity</th>
-                      <th className="px-3 py-3">Status</th>
-                      <th className="px-3 py-3 text-right">Amount</th>
+                      <SortableHeader
+                        label="Station"
+                        column="station"
+                        activeKey={sortKey}
+                        dir={sortDir}
+                        onSort={handleColumnSort}
+                      />
+                      <SortableHeader
+                        label="Plan"
+                        column="plan"
+                        activeKey={sortKey}
+                        dir={sortDir}
+                        onSort={handleColumnSort}
+                      />
+                      <SortableHeader
+                        label="Activity"
+                        column="activity"
+                        activeKey={sortKey}
+                        dir={sortDir}
+                        onSort={handleColumnSort}
+                      />
+                      <SortableHeader
+                        label="Status"
+                        column="status"
+                        activeKey={sortKey}
+                        dir={sortDir}
+                        onSort={handleColumnSort}
+                      />
+                      <SortableHeader
+                        label="Amount"
+                        column="amount"
+                        activeKey={sortKey}
+                        dir={sortDir}
+                        align="right"
+                        onSort={handleColumnSort}
+                      />
                       <th className="px-3 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -840,6 +994,11 @@ export function UserSubscriptionsList({
                         item={item}
                         expanded={expandedIds.has(item.businessId)}
                         canEdit={canApprove}
+                        stationHref={
+                          canOpenDataManagement ?
+                            subscriptionBusinessDataManagementPath(item)
+                          : null
+                        }
                         onToggle={() => toggleExpanded(item.businessId)}
                         approvingId={approvingId}
                         printingId={printingId}
