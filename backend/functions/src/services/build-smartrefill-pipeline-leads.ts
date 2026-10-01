@@ -23,6 +23,7 @@ import type {
   LeadStage,
   LeadSourceKind,
 } from "./leads-service";
+import { attachOnboardedSmartRefillRoster } from "./onboarded-user-roster";
 
 const EMPTY_CHANNELS: LeadChannels = {
   viber: false,
@@ -626,7 +627,9 @@ export async function buildSmartRefillPipelineBundle(): Promise<PipelineBundle> 
     if (email) sales.emails.add(email);
   }
 
-  const businesses = loadRiverdbBusinessLeadsFromSnap(businessesSnap, usersByUid);
+  const businesses = await attachOnboardedSmartRefillRoster(
+    loadRiverdbBusinessLeadsFromSnap(businessesSnap, usersByUid),
+  );
 
   const fromInquire = legacyInquires.leads.map(toLeadFromLegacy);
   const fromStations = legacyStations.map(toLeadFromLegacyStation);

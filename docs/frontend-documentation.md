@@ -90,7 +90,7 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | `/events-training/*` | manager, admin | Live — overview, analytics, registrations, moderation, webinars, stories, articles, tutorials, certs, schedules |
 | `/subscriptions/*` | admin | Live — catalog CRUD: **Free ₱0**, **Starter ₱399**, Grow ₱950, Scale ₱1,650, Enterprise (contact sales); addons, vouchers/affiliates (pipeline lists partners + checkout/close-deal prospects; affiliate **Pipeline** = paid success rate + payout-eligible count), product icons |
 | `/admin/permissions` | admin | Live |
-| `/admin/data-management` | admin | Live — business Insights: owner **sign-in attendance** heatmap (login days this year), then tickets/gallons/other plus order mix (manual delivery, QR delivery, walk-in, direct, collection) |
+| `/admin/data-management` | admin | Live — owners **Subscription** labels trials (`Scale` + **Trial** badge, dates, days left) and can filter **Trial** or a specific plan trial such as **Scale · Trial**. Business Insights: owner **sign-in attendance** heatmap (login days this year), then tickets/gallons/other plus order mix (manual delivery, QR delivery, walk-in, direct, collection) |
 | `/dashboard/proposals` | sales+ | Live — proposals & clients (users by app); **Compose email** opens multi-select outreach dialog (filter by source/app, Brevo bulk up to 50, mail client) |
 | `/dashboard/proposals/new` | sales+ | Live — create proposal wizard |
 | `/proposal/view/[linkId]` | — | Live — public shareable proposal |
@@ -98,7 +98,7 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 | `/dashboard/materials` | sales+ | Live — materials library (admin CRUD) |
 | `/dashboard/my-team` | manager | Live — team performance summary |
 | `/dashboard/lead-pipeline` | sales+ | Redirects to `/lead-pipeline` |
-| `/lead-pipeline` | sales+ | Live — **all / content / warm / cold / onboarded / archives**. Content is webinar, training, article, and story emails. Midnight full gather (`leadPipelineGather`); **Gather new leads** is incremental. Insights **Who to reward** scores referral partners by paid Starter–Scale success rate (Free/trial do not count as subscribed); one-click create partner/voucher; webinar speaker / article author counts as referrer when CRM referrer is empty |
+| `/lead-pipeline` | sales+ | Live — **all / content / warm / cold / onboarded / archives**. Content is webinar, training, article, and story emails. **Onboarded** (Smart Refill only) shows Owner vs Staff and the station customer total, with role filter and customer/role sort. A station name with `linkedBusinessId` opens that business in Data management. Midnight full gather (`leadPipelineGather`); **Gather new leads** is incremental. Insights **Who to reward** scores referral partners by paid Starter–Scale success rate (Free/trial do not count as subscribed); one-click create partner/voucher; webinar speaker / article author counts as referrer when CRM referrer is empty |
 
 ## App Hosting deploy
 

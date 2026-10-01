@@ -14,6 +14,7 @@ import {
 import { loadOnboardedBusinessSnapshot } from "./load-onboarded-snapshot";
 import { stampPipelineAffiliateOnPayingSubscription } from "./stamp-pipeline-affiliate";
 import { mapWithConcurrency } from "../utils/map-with-concurrency";
+import { attachOnboardedSmartRefillRoster } from "./onboarded-user-roster";
 import { buildSmartRefillPipelineLeads } from "./build-smartrefill-pipeline-leads";
 import {
   assigneeWriteFields,
@@ -1023,9 +1024,10 @@ async function enrichOnboardedMonitorsLive(
  */
 async function listAccessibleLeads(_actor: SalesActor): Promise<LeadRecord[]> {
   const snap = await db.collection("leads").get();
-  return snap.docs
+  const leads = snap.docs
     .map((doc) => normalizeLead(doc.id, doc.data() ?? {}))
     .map(attachOnboardedMonitorFromSnapshot);
+  return attachOnboardedSmartRefillRoster(leads);
 }
 
 export async function listLeads(

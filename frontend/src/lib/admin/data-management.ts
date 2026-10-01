@@ -1,3 +1,9 @@
+import {
+  formatSubscriptionPeriod,
+  formatTrialDaysRemaining,
+  isTrialBillingCycle,
+} from "@/lib/dashboard/subscription-labels";
+
 export type DataManagementLinkStatus = "linked" | "no_business" | "no_user";
 
 export type DataManagementStaffRole = "admin" | "rider";
@@ -78,12 +84,37 @@ export function formatMemberBreakdown(
   return `${adminLabel} · ${riderLabel}`;
 }
 
-export function formatActiveSubscriptionTitle(
+export function isDataManagementTrial(
+  subscription?: DataManagementActiveSubscription,
+): boolean {
+  return isTrialBillingCycle(subscription?.billingCycle);
+}
+
+export function formatActiveSubscriptionPlan(
   subscription?: DataManagementActiveSubscription,
 ): string {
   if (!subscription) return "—";
   if (subscription.addonNames.length === 0) return subscription.planName;
   return [subscription.planName, ...subscription.addonNames].join(" · ");
+}
+
+export function formatActiveSubscriptionTitle(
+  subscription?: DataManagementActiveSubscription,
+): string {
+  const plan = formatActiveSubscriptionPlan(subscription);
+  if (plan === "—") return plan;
+  if (isDataManagementTrial(subscription)) return `${plan} · Trial`;
+  return plan;
+}
+
+/** Date range, plus days left when the current plan is a trial. */
+export function formatActiveSubscriptionPeriodLine(
+  subscription: DataManagementActiveSubscription,
+): string {
+  const period = formatSubscriptionPeriod(subscription);
+  if (!isDataManagementTrial(subscription)) return period;
+  const daysLeft = formatTrialDaysRemaining(subscription.expiresAt);
+  return daysLeft ? `${period} · ${daysLeft}` : period;
 }
 
 export type DataManagementSortBy =
@@ -119,6 +150,7 @@ export type DataManagementSubscriptionFilter = string;
 
 export const DATA_MANAGEMENT_SUBSCRIPTION_FILTER_ALL = "all";
 export const DATA_MANAGEMENT_SUBSCRIPTION_FILTER_NONE = "no_subscription";
+export const DATA_MANAGEMENT_SUBSCRIPTION_FILTER_TRIAL = "trial";
 
 export const DATA_MANAGEMENT_PAGE_SIZE_OPTIONS = [5, 8, 10, 15, 20, 25] as const;
 export const DEFAULT_DATA_MANAGEMENT_PAGE_SIZE = 10;
@@ -176,6 +208,13 @@ export function buildSubscriptionFilterOptions(
     { value: DATA_MANAGEMENT_SUBSCRIPTION_FILTER_ALL, label: "All subscriptions" },
   ];
 
+  if (rows.some((row) => isDataManagementTrial(row.activeSubscription))) {
+    options.push({
+      value: DATA_MANAGEMENT_SUBSCRIPTION_FILTER_TRIAL,
+      label: "Trial",
+    });
+  }
+
   for (const title of [...titles].sort((a, b) =>
     a.localeCompare(b, undefined, { sensitivity: "base" }),
   )) {
@@ -201,6 +240,9 @@ function matchesSubscriptionFilter(
   }
   if (subscriptionFilter === DATA_MANAGEMENT_SUBSCRIPTION_FILTER_NONE) {
     return !row.activeSubscription;
+  }
+  if (subscriptionFilter === DATA_MANAGEMENT_SUBSCRIPTION_FILTER_TRIAL) {
+    return isDataManagementTrial(row.activeSubscription);
   }
   return subscriptionDisplayTitle(row) === subscriptionFilter;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ArrowDown, ArrowUp, ArrowUpDown, Mail, Tag } from "lucide-react";
 import { ListPagination } from "@/components/list-pagination";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
   formatLeadDate,
   formatLeadSourceLine,
   formatOnboardedJourneyChip,
+  leadBusinessDataManagementPath,
   demoStatusLabel,
   demoStatusToneClass,
   displayAttemptCount,
@@ -61,12 +63,22 @@ function LeadProfileCell({ lead }: { lead: Lead }) {
   const monitorFlags = lead.onboardedMonitor?.flags ?? [];
   const isOnboarded = leadQueueBucket(lead.stage) === "onboarded";
   const lastSignIn = isOnboarded ? resolveLeadLastSignIn(lead) : null;
+  const stationHref = leadBusinessDataManagementPath(lead);
 
   return (
     <div className="min-w-[280px] max-w-[420px]">
-      <div className="font-semibold tracking-tight text-zinc-900">
-        {lead.businessName}
-      </div>
+      {stationHref ?
+        <Link
+          href={stationHref}
+          className="font-semibold tracking-tight text-teal-800 underline-offset-2 hover:underline"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {lead.businessName}
+        </Link>
+      : <div className="font-semibold tracking-tight text-zinc-900">
+          {lead.businessName}
+        </div>
+      }
       <div className="mt-0.5 text-sm text-zinc-700">
         {lead.ownerName || "—"}
       </div>
@@ -85,7 +97,19 @@ function LeadProfileCell({ lead }: { lead: Lead }) {
             )}
           >
             {platformLine}
-            {membership ? ` · ${membership}` : ""}
+            {!isOnboarded && membership ? ` · ${membership}` : ""}
+          </span>
+        : null}
+        {isOnboarded && membership ?
+          <span
+            className={cn(
+              "rounded px-1.5 py-0.5 font-semibold",
+              membership === "Staff" ?
+                "bg-violet-50 text-violet-800"
+              : "bg-teal-50 text-teal-800",
+            )}
+          >
+            {membership}
           </span>
         : null}
         {customers ?
@@ -316,6 +340,9 @@ export function LeadPipelineTable({
       : "createdAt",
     );
     setSortDir("desc");
+    setFilters((prev) =>
+      prev.userRole === "all" ? prev : { ...prev, userRole: "all" },
+    );
   }, [queue]);
 
   useEffect(() => {
@@ -371,7 +398,11 @@ export function LeadPipelineTable({
       return;
     }
     setSortKey(key);
-    setSortDir(key === "businessName" || key === "ownerName" ? "asc" : "desc");
+    setSortDir(
+      key === "businessName" || key === "ownerName" || key === "userRole" ?
+        "asc"
+      : "desc",
+    );
   }
 
   function updateFilter<K extends keyof LeadListFilters>(
@@ -457,6 +488,12 @@ export function LeadPipelineTable({
         onPageSizeChange={setPageSize}
         members={members}
         queue={queue}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onSort={(key, dir) => {
+          setSortKey(key);
+          setSortDir(dir);
+        }}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">

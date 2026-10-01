@@ -7,6 +7,7 @@ import {
   formatLeadSourceLine,
   groupWarmStatusOptions,
   isContentPipelineLead,
+  leadBusinessDataManagementPath,
   LEAD_QUEUE_TABS,
   parseWarmStatus,
   previewAttemptCounts,
@@ -236,5 +237,21 @@ describe("lead attempt tracks", () => {
       }),
     ).toBe(true);
     expect(isContentPipelineLead({ sourceKind: "existing" })).toBe(false);
+  });
+});
+
+describe("lead business data management link", () => {
+  it("points a linked station at its data management account", () => {
+    expect(
+      leadBusinessDataManagementPath({
+        linkedBusinessId: "biz-1",
+        userId: "owner-1",
+      }),
+    ).toBe(
+      "/admin/data-management/business/biz-1?returnTo=%2Flead-pipeline&userId=owner-1",
+    );
+    expect(
+      leadBusinessDataManagementPath({ linkedBusinessId: "  " }),
+    ).toBeNull();
   });
 });

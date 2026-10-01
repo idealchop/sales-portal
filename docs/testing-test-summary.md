@@ -35,6 +35,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/services/webinar-promotion-automation.unit.test.ts` ✅ | Email-only promotion milestones | Schedules / automation |
 | `unit/services/schedule-message-composer.unit.test.ts` ✅ | Email caption composer | Schedules preview |
 | `unit/services/leads-service.unit.test.ts` ✅ | Queue filters incl. Content leads | TC-LEAD-01 |
+| `unit/services/onboarded-user-roster.unit.test.ts` ✅ | Onboarded Smart Refill customer count, Owner vs Staff rows, no duplicate staff | TC-LEAD-06 |
 | `unit/services/gather-leads-service.unit.test.ts` ✅ | Gather insert/refresh; midnight full cron | TC-LEAD-02, TC-LEAD-03 |
 | `unit/services/content-pipeline-leads.unit.test.ts` ✅ | Webinar/training/article/story merge + overlay; speaker as `contentReferrer` | TC-LEAD-01, TC-LEAD-02, TC-LEAD-05 |
 | `unit/services/stamp-pipeline-affiliate.unit.test.ts` ✅ | Paying-station affiliate stamp + pipeline commission bump | TC-LEAD-05, TC-SUB-09 |
@@ -98,12 +99,13 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |
 | `unit/features/dashboard/build-sales-home-focus.test.ts` ✅ | Win/keep lists; no money fields | TC-DASH-07 |
 | `unit/features/dashboard/build-sales-home-highlights.test.ts` ✅ | Subscriptions / SmartRefill / Admin watch counts; no money | TC-DASH-07 |
-| `unit/features/lead-pipeline/lead-pipeline-display.test.ts` ✅ | Attempt tracks + content source labels | TC-LEAD-01 |
+| `unit/features/lead-pipeline/lead-pipeline-display.test.ts` ✅ | Attempt tracks + content source labels; station name → data-management path | TC-LEAD-01, TC-LEAD-06 |
 | `unit/features/lead-pipeline/lead-pipeline-insights.test.ts` ✅ | Queue mix incl. Content slice | TC-NAV-04 |
 | `unit/features/lead-pipeline/lead-referral-partners.test.ts` ✅ | Referral success rate: paid Starter–Scale only; Free/trial/unpaid Starter excluded; content referrer; stalled-warm close-deal | TC-LEAD-05, TC-SUB-09 |
 | `unit/lib/admin/plan-subscriber-roster.test.ts` ✅ | Plan / addon / voucher / affiliate station roster grouping | TC-SUB-01, TC-SUB-05, TC-SUB-06 |
 | `unit/lib/dashboard/subscription-labels.test.ts` ✅ | Trial labels; `isPaidSubscribedPlan` paid vs Free/trial | TC-LEAD-05 |
-| `unit/features/lead-pipeline/lead-pipeline-list.test.ts` ✅ | Table filters; content source/search | TC-LEAD-01 |
+| `unit/features/lead-pipeline/lead-pipeline-list.test.ts` ✅ | Table filters; content source/search; onboarded role filter and customer sort | TC-LEAD-01, TC-LEAD-06 |
+| `unit/lib/data-management-sort.test.ts` ✅ | Trial plan title, Trial badge filter, paid plan stays unlabeled | TC-ADM-06 |
 | `unit/features/events-training/webinar-feedback-display.test.ts` ✅ | Overall rating / recommend / public-exposure labels | TC-ET-05c, TC-ET-07c |
 | `unit/lib/admin/catalog-document-forms.test.ts` ✅ | Product icon `waterContainer` persist; partner-code prefill (`ownerUserId`) | TC-SUB-08, TC-LEAD-05 |
 | `unit/lib/auth-status.test.ts` 🔲 | Post-login path resolution | TC-AUTH-05, TC-AUTH-06 |

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { LeadActionsMenu } from "@/features/lead-pipeline/components/lead-actions-menu";
 import {
@@ -8,7 +9,10 @@ import {
   attemptSeverityClassName,
   displayAttemptCount,
   formatLeadDate,
+  formatCustomerCount,
   formatOnboardedJourneyChip,
+  leadBusinessDataManagementPath,
+  platformMembershipLabel,
   leadContactStatus,
   leadQueueBucket,
   onboardedMonitorFlagLabel,
@@ -79,25 +83,40 @@ function BoardCard({
     new Date(lead.nextFollowUpAt).getTime() < Date.now() &&
     leadQueueBucket(lead.stage) !== "archive";
   const isOnboarded = leadQueueBucket(lead.stage) === "onboarded";
+  const membership = platformMembershipLabel(lead.platformRole);
+  const customers = formatCustomerCount(lead.customerCount);
   const journeyChip = formatOnboardedJourneyChip(lead.onboardedMonitor);
   const monitorFlags = lead.onboardedMonitor?.flags ?? [];
   const lastSignIn = isOnboarded ? resolveLeadLastSignIn(lead) : null;
+  const stationHref = leadBusinessDataManagementPath(lead);
 
   return (
     <article className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm">
       <div className="flex items-start justify-between gap-2">
-        <button
-          type="button"
-          className="min-w-0 flex-1 text-left"
-          onClick={() => onViewDetails(lead)}
-        >
-          <p className="truncate font-semibold text-zinc-900">
-            {lead.businessName || "Untitled"}
-          </p>
-          <p className="mt-0.5 truncate text-sm text-zinc-600">
+        <div className="min-w-0 flex-1 text-left">
+          {stationHref ?
+            <Link
+              href={stationHref}
+              className="block truncate font-semibold text-teal-800 underline-offset-2 hover:underline"
+            >
+              {lead.businessName || "Untitled"}
+            </Link>
+          : <button
+              type="button"
+              className="block max-w-full truncate text-left font-semibold text-zinc-900"
+              onClick={() => onViewDetails(lead)}
+            >
+              {lead.businessName || "Untitled"}
+            </button>
+          }
+          <button
+            type="button"
+            className="mt-0.5 block max-w-full truncate text-left text-sm text-zinc-600"
+            onClick={() => onViewDetails(lead)}
+          >
             {lead.ownerName || "—"}
-          </p>
-        </button>
+          </button>
+        </div>
         <LeadActionsMenu
           onViewDetails={() => onViewDetails(lead)}
           onUpdateDetails={() => onUpdateDetails(lead)}
@@ -122,6 +141,23 @@ function BoardCard({
           >
             {platformLine}
           </span>
+        : null}
+        {isOnboarded && membership ?
+          <Badge
+            className={cn(
+              "text-[10px] font-semibold",
+              membership === "Staff" ?
+                "bg-violet-50 text-violet-800"
+              : "bg-teal-50 text-teal-800",
+            )}
+          >
+            {membership}
+          </Badge>
+        : null}
+        {isOnboarded && customers ?
+          <Badge className="bg-teal-50 text-[10px] font-medium text-teal-900">
+            {customers}
+          </Badge>
         : null}
         {journeyChip ?
           <Badge className="max-w-full truncate bg-emerald-50 text-[10px] font-medium text-emerald-900">

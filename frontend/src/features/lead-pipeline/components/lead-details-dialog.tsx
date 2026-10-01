@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
   formatLeadMilestoneDate,
   formatLeadSourceLine,
   LEAD_STAGE_LABELS,
+  leadBusinessDataManagementPath,
   leadQueueBucket,
   platformMembershipLabel,
   platformSourceLabel,
@@ -278,6 +280,9 @@ export function LeadDetailsDialog({
     lead.businessName?.trim() ||
     lead.ownerName?.trim() ||
     "Lead details";
+  const stationHref = lead.businessName?.trim() ?
+    leadBusinessDataManagementPath(lead)
+  : null;
 
   return createPortal(
     <div
@@ -312,7 +317,14 @@ export function LeadDetailsDialog({
                 id="lead-details-title"
                 className="mt-2 text-xl font-semibold tracking-tight text-zinc-900"
               >
-                {title}
+                {stationHref ?
+                  <Link
+                    href={stationHref}
+                    className="text-teal-800 underline-offset-2 hover:underline"
+                  >
+                    {title}
+                  </Link>
+                : title}
               </h2>
 
               <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-zinc-500">

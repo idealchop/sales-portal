@@ -24,8 +24,10 @@ import {
   dataManagementStaffRoleLabel,
   dataManagementUserLabel,
   filterDataManagementRows,
-  formatActiveSubscriptionTitle,
+  formatActiveSubscriptionPeriodLine,
+  formatActiveSubscriptionPlan,
   formatMemberBreakdown,
+  isDataManagementTrial,
   sortDataManagementRows,
   type DataManagementLinkRow,
   type DataManagementLinkStatus,
@@ -41,7 +43,6 @@ import {
   parseDataManagementSearchParams,
   type DataManagementUrlState,
 } from "@/lib/admin/data-management-url-state";
-import { formatSubscriptionPeriod } from "@/lib/dashboard/subscription-labels";
 import { cn } from "@/lib/utils";
 import { DataManagementNoBusinessDialog } from "@/features/admin/components/data-management-no-business-dialog";
 import { DataManagementUserDocsDialog } from "@/features/admin/components/data-management-user-docs-dialog";
@@ -231,10 +232,15 @@ function RoleLinkTable({
                   {row.activeSubscription ?
                     <div className="space-y-0.5">
                       <p className="font-medium text-foreground">
-                        {formatActiveSubscriptionTitle(row.activeSubscription)}
+                        {formatActiveSubscriptionPlan(row.activeSubscription)}
+                        {isDataManagementTrial(row.activeSubscription) ?
+                          <Badge className="ml-1.5 bg-sky-50 font-normal text-sky-800">
+                            Trial
+                          </Badge>
+                        : null}
                       </p>
                       <p className="text-xs text-[var(--muted-foreground)]">
-                        {formatSubscriptionPeriod(row.activeSubscription)}
+                        {formatActiveSubscriptionPeriodLine(row.activeSubscription)}
                       </p>
                     </div>
                   : <span className="text-zinc-400">—</span>}

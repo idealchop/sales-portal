@@ -24,10 +24,22 @@ import {
   type LeadListFilterChipKey,
   type LeadListFilters,
   type LeadPageSize,
+  type LeadSortDir,
+  type LeadSortKey,
 } from "@/features/lead-pipeline/lib/lead-pipeline-list";
 import type { LeadQueue } from "@/lib/definitions";
 import type { TeamMemberSummary } from "@/lib/sales/api";
 import { cn } from "@/lib/utils";
+
+function onboardedSortValue(sortKey: LeadSortKey, sortDir: LeadSortDir): string {
+  if (sortKey === "customerCount") {
+    return sortDir === "asc" ? "customers-asc" : "customers-desc";
+  }
+  if (sortKey === "userRole") {
+    return sortDir === "desc" ? "role-staff" : "role-owner";
+  }
+  return "default";
+}
 
 function FilterLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -97,6 +109,9 @@ export function LeadPipelineFilters({
   onPageSizeChange,
   members,
   queue = "warm",
+  sortKey = "onboardedDefault",
+  sortDir = "desc",
+  onSort,
 }: {
   filters: LeadListFilters;
   onChange: <K extends keyof LeadListFilters>(
@@ -108,6 +123,9 @@ export function LeadPipelineFilters({
   onPageSizeChange: (size: LeadPageSize) => void;
   members: TeamMemberSummary[];
   queue?: LeadQueue;
+  sortKey?: LeadSortKey;
+  sortDir?: LeadSortDir;
+  onSort?: (key: LeadSortKey, dir: LeadSortDir) => void;
 }) {
   const advancedActive = isAdvancedLeadListFilterActive(filters);
   const [advancedOpen, setAdvancedOpen] = useState(advancedActive);
@@ -194,6 +212,51 @@ export function LeadPipelineFilters({
             ))}
             </select>
           </label>
+
+          {queue === "onboarded" ?
+            <>
+              <label className="min-w-[140px] flex-1 sm:max-w-[160px]">
+                <FilterLabel>Role</FilterLabel>
+                <select
+                  className={inputClassName}
+                  aria-label="Filter by user role"
+                  value={filters.userRole}
+                  onChange={(event) =>
+                    onChange(
+                      "userRole",
+                      event.target.value as LeadListFilters["userRole"],
+                    )
+                  }
+                >
+                  <option value="all">All roles</option>
+                  <option value="owner">Owner</option>
+                  <option value="staff">Staff</option>
+                </select>
+              </label>
+              <label className="min-w-[180px] flex-1 sm:max-w-[240px]">
+                <FilterLabel>Sort</FilterLabel>
+                <select
+                  className={inputClassName}
+                  aria-label="Sort onboarded users"
+                  value={onboardedSortValue(sortKey, sortDir)}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    if (next === "customers-asc") onSort?.("customerCount", "asc");
+                    else if (next === "customers-desc") onSort?.("customerCount", "desc");
+                    else if (next === "role-staff") onSort?.("userRole", "desc");
+                    else if (next === "role-owner") onSort?.("userRole", "asc");
+                    else onSort?.("onboardedDefault", "desc");
+                  }}
+                >
+                  <option value="default">Attention first</option>
+                  <option value="customers-desc">Customers: highest first</option>
+                  <option value="customers-asc">Customers: lowest first</option>
+                  <option value="role-owner">Role: Owner first</option>
+                  <option value="role-staff">Role: Staff first</option>
+                </select>
+              </label>
+            </>
+          : null}
 
           <label className="min-w-[140px] flex-1 sm:max-w-[180px]">
             <FilterLabel>Platform</FilterLabel>

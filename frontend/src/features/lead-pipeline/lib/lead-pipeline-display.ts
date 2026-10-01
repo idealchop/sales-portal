@@ -1,4 +1,20 @@
 import type { LeadQueue, LeadStage } from "@/lib/definitions";
+import { businessInfoPath } from "@/lib/admin/data-management-url-state";
+
+/** Data management account for a lead's Smart Refill business, when one is linked. */
+export function leadBusinessDataManagementPath(lead: {
+  linkedBusinessId?: string | null;
+  userId?: string | null;
+}): string | null {
+  const businessId = lead.linkedBusinessId?.trim();
+  if (!businessId) return null;
+  const userId = lead.userId?.trim();
+  return businessInfoPath(
+    businessId,
+    "/lead-pipeline",
+    userId && userId !== "smartrefill" ? userId : undefined,
+  );
+}
 
 export const LEAD_STAGE_LABELS: Record<string, string> = {
   inquire: "Demo inquire",

@@ -22,7 +22,9 @@ import { CopyableUserId } from "@/features/admin/components/copyable-user-id";
 import {
   dataManagementStaffRoleLabel,
   dataManagementStatusLabel,
-  formatActiveSubscriptionTitle,
+  formatActiveSubscriptionPeriodLine,
+  formatActiveSubscriptionPlan,
+  isDataManagementTrial,
   formatMemberBreakdown,
   type DataManagementLinkRow,
   type DataManagementLinkStatus,
@@ -39,7 +41,6 @@ import {
   type ProfileField,
 } from "@/lib/admin/user-profile-display";
 import type { UserFirestoreDocumentRow } from "@/lib/admin/user-documents";
-import { formatSubscriptionPeriod } from "@/lib/dashboard/subscription-labels";
 import { cn } from "@/lib/utils";
 
 type RoleTab = "owners" | "staff";
@@ -468,10 +469,11 @@ export function UserProfileCollectionView({
             {row.activeSubscription ?
               <div className="space-y-1">
                 <p className="font-medium leading-snug text-zinc-900">
-                  {formatActiveSubscriptionTitle(row.activeSubscription)}
+                  {formatActiveSubscriptionPlan(row.activeSubscription)}
+                  {isDataManagementTrial(row.activeSubscription) ? " · Trial" : ""}
                 </p>
                 <p className="text-sm text-zinc-500">
-                  {formatSubscriptionPeriod(row.activeSubscription)}
+                  {formatActiveSubscriptionPeriodLine(row.activeSubscription)}
                 </p>
               </div>
             : <p className="text-sm text-zinc-500">No active plan</p>}

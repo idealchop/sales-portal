@@ -87,7 +87,11 @@ export type LeadSortKey =
   /** Warm queue default: inquire/registered, follow-up override, legacy customer count. */
   | "warmDefault"
   /** Onboarded queue default: attention flags first (grace, cold recommend, etc.). */
-  | "onboardedDefault";
+  | "onboardedDefault"
+  /** Onboarded: station customer total. */
+  | "customerCount"
+  /** Onboarded: Owner before Staff, or the reverse. */
+  | "userRole";
 
 export type LeadSortDir = "asc" | "desc";
 
@@ -135,6 +139,8 @@ export type LeadAttemptsFilter =
   | "3"
   | "4plus";
 
+export type LeadUserRoleFilter = "all" | "owner" | "staff";
+
 export type LeadListFilters = {
   search: string;
   platformSource: "all" | LeadPlatformSource;
@@ -149,6 +155,8 @@ export type LeadListFilters = {
   accountReady: "all" | "yes" | "no";
   attempts: LeadAttemptsFilter;
   stage: "all" | LeadStage;
+  /** Smart Refill onboarded person: owner of the station, or staff. */
+  userRole: LeadUserRoleFilter;
 };
 
 export const DEFAULT_LEAD_LIST_FILTERS: LeadListFilters = {
@@ -165,6 +173,7 @@ export const DEFAULT_LEAD_LIST_FILTERS: LeadListFilters = {
   accountReady: "all",
   attempts: "all",
   stage: "all",
+  userRole: "all",
 };
 
 export const LEAD_SOURCE_FILTER_OPTIONS = [
@@ -365,7 +374,8 @@ export function isLeadListFilterActive(filters: LeadListFilters): boolean {
     filters.demo !== "all" ||
     filters.accountReady !== "all" ||
     filters.attempts !== "all" ||
-    filters.stage !== "all"
+    filters.stage !== "all" ||
+    filters.userRole !== "all"
   );
 }
 
@@ -397,7 +407,8 @@ export type LeadListFilterChipKey =
   | "demo"
   | "accountReady"
   | "attempts"
-  | "stage";
+  | "stage"
+  | "userRole";
 
 export type LeadListFilterChip = {
   key: LeadListFilterChipKey;
@@ -501,6 +512,13 @@ export function describeActiveLeadListFilters(
     chips.push({ key: "stage", label: `Stage: ${filters.stage}` });
   }
 
+  if (filters.userRole !== "all") {
+    chips.push({
+      key: "userRole",
+      label: filters.userRole === "owner" ? "Role: Owner" : "Role: Staff",
+    });
+  }
+
   const inquire = dateFilterChipLabel("Date inquire", filters.inquiredAt);
   if (inquire) chips.push({ key: "inquiredAt", label: inquire });
 
@@ -548,6 +566,10 @@ export function filterLeadsForList(
       if (lead.platformSource !== filters.platformSource) return false;
     }
     if (filters.stage !== "all" && lead.stage !== filters.stage) return false;
+
+    if (filters.userRole !== "all" && leadUserRole(lead) !== filters.userRole) {
+      return false;
+    }
 
     if (filters.assignedToUid === "unassigned") {
       if (!leadIsUnassigned(lead)) return false;
@@ -625,9 +647,32 @@ function sortValue(lead: Lead, key: LeadSortKey): string | number {
     return warmLeadPriorityMs(lead);
   case "onboardedDefault":
     return onboardedAttentionRank(lead);
+  case "customerCount":
+    return customerCountSortValue(lead);
+  case "userRole":
+    return userRoleSortRank(lead);
   default:
     return "";
   }
+}
+
+function leadUserRole(lead: Lead): LeadUserRoleFilter | "other" {
+  const role = (lead.platformRole || "").trim().toLowerCase();
+  if (role === "owner") return "owner";
+  if (role === "staff") return "staff";
+  return "other";
+}
+
+function userRoleSortRank(lead: Lead): number {
+  const role = leadUserRole(lead);
+  if (role === "owner") return 0;
+  if (role === "staff") return 1;
+  return 2;
+}
+
+function customerCountSortValue(lead: Lead): number {
+  const count = Number(lead.customerCount);
+  return Number.isFinite(count) && count >= 0 ? Math.floor(count) : -1;
 }
 
 function parseLeadDateMs(iso: string | null | undefined): number | null {
@@ -739,6 +784,16 @@ export function sortLeadsForList(
     const sorted = [...leads].sort(compareOnboardedLeadsDefault);
     // Default "desc" keeps attention-first order; asc reverses for toggle.
     return sortDir === "asc" ? sorted.reverse() : sorted;
+  }
+  if (sortKey === "customerCount") {
+    return [...leads].sort((a, b) => {
+      const left = customerCountSortValue(a);
+      const right = customerCountSortValue(b);
+      const missingA = left < 0;
+      const missingB = right < 0;
+      if (missingA !== missingB) return missingA ? 1 : -1;
+      return sortDir === "asc" ? left - right : right - left;
+    });
   }
 
   const dir = sortDir === "asc" ? 1 : -1;

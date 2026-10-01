@@ -98,6 +98,10 @@ inquire/demo, and registered-but-not-onboarded (content-only guests stay on Cont
 Legacy stations never enter Onboarded. CRM `leads` overlays cold/archive follow-ups. Missed demo auto-moves to Cold; **Demo Scheduled** (or other Warm statuses) after a miss returns the lead to Warm and clears the missed flag so another demo can be booked.
 Uses a lightweight legacy station loader (no delivery scan).
 
+**Onboarded roster (Smart Refill only):** Each onboarded station shows **Owner** or **Staff** and the station’s customer total (`businesses/{id}/customers` count, shared by every person on that station). Staff seats (`admin` / `rider` / `staff` on `businesses/{id}/members`, inactive skipped) are extra rows with id `sr-staff:{businessId}:{userId}`. The owner row stays **Owner**. The list attaches this live, before Gather. Gather persists the same roster. Onboarded filters: Role **All / Owner / Staff**. Sort: Attention first (default), customers highest or lowest, role Owner first or Staff first. Switching queues clears the role filter. A missing customer count sorts last in both directions.
+
+**Station name → Data management:** When `linkedBusinessId` is set, the business name on the table, board, and lead details links to `/admin/data-management/business/{id}?returnTo=/lead-pipeline` (plus `userId` when it is a real owner). The person name still opens the lead. The business page stays admin-only.
+
 **Onboarded journey monitor (Day 1–15):** Active = getting-started ≥3 **and** distinct owner login days **>7** since `workspaceOnboardedAt` (fallback `registeredAt`). Day 8–14 inactive → flag `journey_inactive_day8`; Day 15+ inactive → flag `recommend_move_to_cold` (assignee confirms Cold via Update status — no auto stage write). Beyond journey (graduated or day 15+) also monitors subscription expiry ≤7d, grace period, renew, and plan change. Snapshot fields refresh on gather; `onboardedMonitor` is attached on list/get.
 
 | Path | Purpose |
@@ -135,7 +139,7 @@ Large admin surface for permissions and Firestore data management:
 | Component area | Purpose |
 |----------------|---------|
 | `admin-permissions-page.tsx` | User access CRUD |
-| `admin-data-management-page.tsx` | Business/user document browser |
+| `admin-data-management-page.tsx` | Business/user document browser. Owners **Subscription** shows the plan name, a **Trial** badge when `billingCycle` is `trial`, the period, and days left. Filter **Trial** matches any trial; a plan trial (for example **Scale · Trial**) is separate from the paid plan |
 | `admin-data-management-business-page.tsx` | Business overview — tabbed layout aligned with SmartRefill ops. Insights **Sign-in attendance** is a year heatmap of owner `login_events` days; **Transaction activity** plots tickets vs gallons vs other units; **Order mix** stacks delivery (manual/QR), walk-in, direct, and collection |
 | `admin-catalog-collection-page.tsx` | Subscription catalog tables |
 | `admin-catalog-collection-manager.tsx` | Catalog tables; plans/addons/vouchers show station roster; affiliates show pipeline **success rate** + **payout** |

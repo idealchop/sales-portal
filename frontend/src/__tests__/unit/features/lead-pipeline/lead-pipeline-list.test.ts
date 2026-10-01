@@ -472,6 +472,48 @@ describe("lead-pipeline-list", () => {
     ).toEqual(["grace", "cold", "expiring", "day8", "healthy"]);
   });
 
+  it("filters onboarded users by role and sorts customers both ways", () => {
+    const rows = [
+      lead({
+        id: "owner-high",
+        stage: "onboarded",
+        platformRole: "Owner",
+        customerCount: 40,
+      }),
+      lead({
+        id: "staff-mid",
+        stage: "onboarded",
+        platformRole: "Staff",
+        customerCount: 12,
+      }),
+      lead({
+        id: "owner-low",
+        stage: "onboarded",
+        platformRole: "Owner",
+        customerCount: 2,
+      }),
+    ];
+
+    expect(
+      filterLeadsForList(rows, filters({ userRole: "staff" })).map((row) => row.id),
+    ).toEqual(["staff-mid"]);
+    expect(
+      filterLeadsForList(rows, filters({ userRole: "owner" })).map((row) => row.id),
+    ).toEqual(["owner-high", "owner-low"]);
+    expect(
+      sortLeadsForList(rows, "customerCount", "desc").map((row) => row.id),
+    ).toEqual(["owner-high", "staff-mid", "owner-low"]);
+    expect(
+      sortLeadsForList(rows, "customerCount", "asc").map((row) => row.id),
+    ).toEqual(["owner-low", "staff-mid", "owner-high"]);
+    expect(
+      sortLeadsForList(rows, "userRole", "asc").map((row) => row.platformRole),
+    ).toEqual(["Owner", "Owner", "Staff"]);
+    expect(
+      sortLeadsForList(rows, "userRole", "desc").map((row) => row.platformRole),
+    ).toEqual(["Staff", "Owner", "Owner"]);
+  });
+
   it("describes active filters as clearable chips", () => {
     const chips = describeActiveLeadListFilters(
       filters({

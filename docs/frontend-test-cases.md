@@ -114,6 +114,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-ADM-01 | admin | `/admin/permissions` — grant access | User can log in |
 | TC-ADM-02 | admin | Revoke access | User blocked at login |
 | TC-ADM-03 | admin | `/admin/data-management` — browse business | Subcollections load; Workspace **Other info** omits customer email-sent flags and job idempotency fields; Insights **Sign-in attendance** shows a Jan–Dec heatmap of owner sign-in days (not only last sign-in); **Transaction activity** shows tickets, water-container qty, and other refill qty; **Order mix** shows manual delivery, QR delivery, walk-in, direct, and collection |
+| TC-ADM-06 | admin | `/admin/data-management` owners — Subscription column | A trial row shows the plan name, a **Trial** badge, the date range, and days left. A paid plan of the same name has no badge. Subscription filter **Trial** lists every trial; **Scale · Trial** is separate from **Scale** |
 | TC-ADM-04 | admin | Edit Firestore document | Save persists |
 | TC-ADM-05 | admin | Delete document | Confirm + remove |
 
@@ -131,6 +132,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-LEAD-02 | sales | **Gather new leads**, then open Content | Incremental insert of missing emails; workspace owners who engaged stay on their funnel tab and also on Content |
 | TC-LEAD-04 | sales | Cold lead with Missed Demo → Update status **Demo Scheduled** | Moves to Warm; demo is no longer Missed so another demo can be booked |
 | TC-LEAD-05 | sales | Insights **Who to reward** | Referrer rows show Subscribed + Success + payout. Success = onboarded **and** paying Starter–Scale (incl. Enterprise). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed. Make-affiliate needs 2+ paid referees (or 2+ payout-eligible including 1 paid). **Create partner code** opens a prefilled affiliate form (name, email, ownerUserId). Checkout-voucher and stalled-warm demo lists have **Create voucher**. Webinar speaker / article author appears as a referrer when CRM `referredBy` is empty |
+| TC-LEAD-06 | sales | Onboarded tab | Each Smart Refill row shows **Owner** or **Staff** and the station customer total. Staff of the same station are extra rows sharing that count. Role filter All / Owner / Staff. Sort: customers highest or lowest, role Owner first or Staff first. Station name opens `/admin/data-management/business/{id}` (admin). Person name still opens the lead |
 
 ## TC-PROP — Proposals & outreach
 
