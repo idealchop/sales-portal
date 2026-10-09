@@ -129,7 +129,7 @@ Portal routes require **Bearer token**, **sales-portal access**, and role-scoped
 | `DELETE` | `/leads/email-templates/:templateId` | Portal | Delete template |
 | `GET` | `/leads/email-blast/quota` | Portal | Daily blast quota (soft/hard cap 25 sent/user/UTC day) |
 | `POST` | `/leads/email-blast` | Portal | Blast personalized emails via Brevo. Body `{ leadIds, subject, bodyText, countAsAttempt?, senderEmail? }`. Tokens `{{firstName}}` etc. Optional attempt bump. |
-| `POST` | `/leads` | Portal | Create lead |
+| `POST` | `/leads` | Portal | Create a manual lead. Requires `businessName` and `ownerName`. Defaults to stage `inquire` (Warm), `sourceKind: "manual"`, and assignee = the caller |
 | `GET` | `/leads/:leadId` | Portal | Get lead |
 | `PATCH` | `/leads/:leadId` | Portal | Update lead (stage, attempts, link `linkedBusinessId`, referral `referredBy` / `referredByAffiliateId` / `referredByAffiliateCode` / `referredByEmail`). Side effect: if the lead is onboarded on a paying Starter–Scale plan with an affiliate, stamps `affiliateCode` onto the current subscription when empty. GET never mutates. |
 | `GET` | `/commissions` | Portal | List commissions (role-scoped) |

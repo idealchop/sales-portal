@@ -1,4 +1,4 @@
-import type { LeadQueue, LeadStage } from "@/lib/definitions";
+import type { Lead, LeadQueue, LeadStage } from "@/lib/definitions";
 import { businessInfoPath } from "@/lib/admin/data-management-url-state";
 import { isTrialBillingCycle } from "@/lib/dashboard/subscription-labels";
 
@@ -865,6 +865,86 @@ export function isAcquisitionSource(
   value?: string | null,
 ): value is LeadAcquisitionSource {
   return LEAD_ACQUISITION_SOURCES.includes(value as LeadAcquisitionSource);
+}
+
+export type ManualLeadForm = {
+  businessName: string;
+  ownerName: string;
+  email: string;
+  phone: string;
+  address: string;
+  notes: string;
+  leadSource: "" | LeadAcquisitionSource;
+  sourceWebsite: string;
+  referredBy: string;
+  referredByClientId: string;
+  referredByUserId: string;
+  referredByAffiliateId: string;
+  referredByAffiliateCode: string;
+  referredByEmail: string;
+};
+
+export const EMPTY_MANUAL_LEAD_FORM: ManualLeadForm = {
+  businessName: "",
+  ownerName: "",
+  email: "",
+  phone: "",
+  address: "",
+  notes: "",
+  leadSource: "",
+  sourceWebsite: "",
+  referredBy: "",
+  referredByClientId: "",
+  referredByUserId: "",
+  referredByAffiliateId: "",
+  referredByAffiliateCode: "",
+  referredByEmail: "",
+};
+
+/** Payload for POST /leads. Lands on Warm as a manual inquire. */
+export function buildManualLeadInput(
+  form: ManualLeadForm,
+  inquiredAt = new Date().toISOString(),
+): Partial<Lead> {
+  const source =
+    form.leadSource ?
+      {
+        leadSource: form.leadSource,
+        sourceWebsite:
+          form.leadSource === "Website" ? form.sourceWebsite.trim() : "",
+        referredBy:
+          form.leadSource === "Referrals" ? form.referredBy.trim() : "",
+        referredByClientId:
+          form.leadSource === "Referrals" ?
+            form.referredByClientId.trim()
+          : "",
+        referredByUserId:
+          form.leadSource === "Referrals" ? form.referredByUserId.trim() : "",
+        referredByAffiliateId:
+          form.leadSource === "Referrals" ?
+            form.referredByAffiliateId.trim()
+          : "",
+        referredByAffiliateCode:
+          form.leadSource === "Referrals" ?
+            form.referredByAffiliateCode.trim()
+          : "",
+        referredByEmail:
+          form.leadSource === "Referrals" ? form.referredByEmail.trim() : "",
+      }
+    : {};
+
+  return {
+    businessName: form.businessName.trim(),
+    ownerName: form.ownerName.trim(),
+    email: form.email.trim(),
+    phone: form.phone.trim(),
+    address: form.address.trim(),
+    notes: form.notes.trim(),
+    stage: "inquire",
+    sourceKind: "manual",
+    inquiredAt,
+    ...source,
+  };
 }
 
 export function demoStatusLabel(value?: string | null): string {

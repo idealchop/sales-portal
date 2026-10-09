@@ -32,9 +32,7 @@ export async function generateSubscriptionOfficialReceipt(input: {
   const biz = (businessSnap.data() ?? {}) as Record<string, unknown>;
   const sub = (subSnap.data() ?? {}) as Record<string, unknown>;
 
-  if (!subscriptionRowEligibleForOfficialReceipt(sub)) {
-    throw new Error("SUBSCRIPTION_NOT_ELIGIBLE_FOR_OR");
-  }
+  const officialReceipt = subscriptionRowEligibleForOfficialReceipt(sub);
 
   const ownerId = String(biz.ownerId || "");
   let ownerDisplayName = "";
@@ -77,6 +75,12 @@ export async function generateSubscriptionOfficialReceipt(input: {
     renewalDate: formatSubscriptionReceiptDate(
       dates.renewalAt ?? sub.renewalAt,
     ),
+    documentHeading: officialReceipt ?
+      "Official Receipt — Subscription"
+    : "Subscription details",
+    watermarkCaption: officialReceipt ?
+      "Official subscription receipt"
+    : "Subscription details",
   });
 
   return {

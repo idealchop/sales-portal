@@ -37,7 +37,6 @@ import {
 import {
   printSubscriptionOfficialReceipt,
   printSubscriptionStatement,
-  subscriptionEligibleForOfficialReceipt,
 } from "@/features/dashboard/lib/subscription-official-receipt";
 import {
   buildUserSubscriptionKpis,
@@ -351,7 +350,6 @@ function SubscriptionTableRows({
   const latestTrial = isTrialBillingCycle(latest.billingCycle);
   const latestCycle = formatBillingCycleLabel(latest.billingCycle);
   const latestDays = latestTrial ? formatTrialDaysRemaining(latest.expiresAt) : null;
-  const periodLabel = `${periods.length} period${periods.length === 1 ? "" : "s"}`;
 
   return (
     <>
@@ -390,7 +388,7 @@ function SubscriptionTableRows({
                 onClick={onToggle}
                 className="mt-1 block text-[11px] uppercase tracking-wide text-zinc-400 hover:text-foreground"
               >
-                {expanded ? "Hide history" : periodLabel}
+                {expanded ? "Hide history" : "Print subscriptions"}
               </button>
             </span>
           </div>
@@ -425,12 +423,27 @@ function SubscriptionTableRows({
         </td>
         <td className="px-3 py-3 text-right">
           <Button size="sm" variant="outline" onClick={onToggle}>
-            {expanded ? "Hide" : "History"}
+            {expanded ? "Hide" : "Print subscriptions"}
           </Button>
         </td>
       </tr>
       {expanded ?
-        periods.map((subscription, index) => {
+        <>
+        <tr className="bg-zinc-50/70">
+          <td colSpan={6} className="px-3 py-2 text-right">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={statementBusy || latest.id === "__none__"}
+              onClick={() => onPrintStatement(item.businessId)}
+              className="gap-1.5"
+            >
+              <Printer className="h-3.5 w-3.5" aria-hidden />
+              {statementBusy ? "Preparing…" : "Print statement"}
+            </Button>
+          </td>
+        </tr>
+        {periods.map((subscription, index) => {
           const isLatest = index === 0;
           const isFreeTrial = isTrialBillingCycle(subscription.billingCycle);
           const billingCycleLabel = formatBillingCycleLabel(subscription.billingCycle);
@@ -474,17 +487,19 @@ function SubscriptionTableRows({
                 <AmountCell subscription={subscription} />
               </td>
               <td className="px-3 py-3 text-right align-top">
-                {isLatest && isRealPeriod ?
+                {isRealPeriod ?
                   <div className="flex flex-wrap justify-end gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={approvingId === subscription.id}
-                      onClick={() => onReview(item.businessId, subscription)}
-                    >
-                      Review
-                    </Button>
-                    {canEdit ?
+                    {isLatest ?
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={approvingId === subscription.id}
+                        onClick={() => onReview(item.businessId, subscription)}
+                      >
+                        Review
+                      </Button>
+                    : null}
+                    {isLatest && canEdit ?
                       <>
                         <Button
                           size="sm"
@@ -513,22 +528,12 @@ function SubscriptionTableRows({
                       {printBusy ? "Preparing…" : "Print subscription"}
                     </Button>
                   </div>
-                : isRealPeriod ?
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={statementBusy}
-                    onClick={() => onPrintStatement(item.businessId)}
-                    className="gap-1.5"
-                  >
-                    <Printer className="h-3.5 w-3.5" aria-hidden />
-                    {statementBusy ? "Preparing…" : "Print statement"}
-                  </Button>
                 : <span className="text-xs text-zinc-400">—</span>}
               </td>
             </tr>
           );
-        })
+        })}
+        </>
       : null}
     </>
   );
@@ -640,16 +645,19 @@ export function UserSubscriptionsList({
     }
   }
 
-  async function handlePrintOr(businessId: string, subscriptionId: string) {
+  async function handlePrintSubscription(
+    businessId: string,
+    subscription: OwnerSubscription,
+  ) {
     setError(null);
-    setPrintingId(subscriptionId);
+    setPrintingId(subscription.id);
     try {
-      await printSubscriptionOfficialReceipt(businessId, subscriptionId);
+      await printSubscriptionOfficialReceipt(businessId, subscription.id);
     } catch (err) {
       setError(
         err instanceof Error ?
           err.message
-        : "Could not print Official Receipt.",
+        : "Could not print this subscription.",
       );
     } finally {
       setPrintingId(null);
@@ -679,17 +687,6 @@ export function UserSubscriptionsList({
       else next.add(businessId);
       return next;
     });
-  }
-
-  async function handlePrintSubscription(
-    businessId: string,
-    subscription: OwnerSubscription,
-  ) {
-    if (subscriptionEligibleForOfficialReceipt(subscription)) {
-      await handlePrintOr(businessId, subscription.id);
-      return;
-    }
-    await handlePrintStatement(businessId);
   }
 
   async function handleOverwrite(input: {
@@ -941,8 +938,8 @@ export function UserSubscriptionsList({
           : <>
               <p className="mb-3 text-xs text-[var(--muted-foreground)]">
                 Showing {paginatedItems.length} of {filteredItems.length} workspace
-                {filteredItems.length === 1 ? "" : "s"}. Open a station to see its
-                subscription history, newest first.
+                {filteredItems.length === 1 ? "" : "s"}. Open Print subscriptions
+                to see the history. Print statement covers every period.
               </p>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">

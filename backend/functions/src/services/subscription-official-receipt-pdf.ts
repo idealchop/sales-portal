@@ -19,6 +19,9 @@ export type SubscriptionOfficialReceiptPdfInput = {
   periodStart: string;
   periodEnd: string;
   renewalDate: string;
+  /** Paid periods use the official receipt heading. Other periods print subscription details. */
+  documentHeading?: string;
+  watermarkCaption?: string;
 };
 
 function formatLocationLikeValue(v: unknown, depth = 0): string {
@@ -95,7 +98,10 @@ export function formatBusinessAddressForPdf(
   return c || "";
 }
 
-function drawReceiptWatermark(doc: InstanceType<typeof PDFDocument>): void {
+function drawReceiptWatermark(
+  doc: InstanceType<typeof PDFDocument>,
+  caption = "Official subscription receipt",
+): void {
   const w = doc.page.width;
   const h = doc.page.height;
   doc.save();
@@ -108,7 +114,7 @@ function drawReceiptWatermark(doc: InstanceType<typeof PDFDocument>): void {
   doc.font("Helvetica").fontSize(13);
   doc.opacity(0.045);
   doc.fillColor("#0f766e");
-  doc.text("Official subscription receipt", -220, 28, {
+  doc.text(caption, -220, 28, {
     width: 440,
     align: "center",
   });
@@ -137,11 +143,14 @@ export function buildSubscriptionOfficialReceiptPdf(
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
+      const heading = input.documentHeading || "Official Receipt — Subscription";
       const doc = new PDFDocument({
         size: "A4",
         margin: 48,
         info: {
-          Title: "Smart Refill Official Receipt",
+          Title: heading.startsWith("Official") ?
+            "Smart Refill Official Receipt"
+          : "Smart Refill Subscription",
           Author: "Smart Refill Sales Portal",
         },
       });
@@ -152,7 +161,7 @@ export function buildSubscriptionOfficialReceiptPdf(
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
-      drawReceiptWatermark(doc);
+      drawReceiptWatermark(doc, input.watermarkCaption);
 
       const margin =
         typeof doc.page.margins?.left === "number" ? doc.page.margins.left : 48;
@@ -205,7 +214,7 @@ export function buildSubscriptionOfficialReceiptPdf(
         .fillColor("#374151")
         .fontSize(11)
         .font("Helvetica")
-        .text("Official Receipt — Subscription", margin, doc.y, {
+        .text(heading, margin, doc.y, {
           width: contentWidth,
         });
       doc.moveDown(0.45);

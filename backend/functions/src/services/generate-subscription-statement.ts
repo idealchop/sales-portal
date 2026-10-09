@@ -23,17 +23,10 @@ function subscriptionCreatedMs(data: Record<string, unknown>): number {
   return 0;
 }
 
-/** Include paid / payment periods (exclude free trial & zero-price free tiers). */
+/** Every stored subscription period belongs on the statement, including Free and trial. */
 export function subscriptionRowForStatement(
-  sub: Record<string, unknown>,
+  _sub: Record<string, unknown>,
 ): boolean {
-  const billingCycle = String(sub.billingCycle ?? "").toLowerCase();
-  if (billingCycle === "trial") return false;
-
-  const priceRaw = sub.price;
-  const price = typeof priceRaw === "number" ? priceRaw : Number(priceRaw);
-  if (!Number.isFinite(price) || price <= 0) return false;
-
   return true;
 }
 

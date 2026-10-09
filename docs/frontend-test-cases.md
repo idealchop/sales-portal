@@ -47,8 +47,8 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-DASH-08 | any | Platform hub Actions \| Forecast tabs | Paginated forecast rows; actions inbox (if shown) |
 | TC-DASH-09 | admin | Subscription approval **View** | Detail dialog + receipt/attachment preview |
 | TC-DASH-10 | admin | Inactive owners list | Top 10 inactive (7d+); expand link shows remainder; Contact hides 7d |
-| TC-DASH-11 | any | Subscription list **Print OR** | Paid history row opens Official Receipt PDF / print dialog |
-| TC-DASH-12 | any | Subscription list **Print statement** | SOA PDF lists all paid periods for that business |
+| TC-DASH-11 | any | Subscription list history **Print subscription** | That period opens a PDF of its subscription details. A paid period is the Official Receipt |
+| TC-DASH-12 | any | Subscription list **Print subscriptions**, then **Print statement** | One statement button prints every period in that station’s history, including Free and trial |
 | TC-DASH-13 | admin | Alert **Contact** (new user / demo) | Sends Brevo email (From support@ + BCC); alert leaves open queue |
 | TC-DASH-13b | any | Alert **Mark done** | Marks contacted without email; alert leaves open queue |
 | TC-DASH-13c | admin | Click alert row | Opens Data management business page (or search); non-admin sees detail dialog |
@@ -133,6 +133,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-LEAD-04 | sales | Cold lead with Missed Demo → Update status **Demo Scheduled** | Moves to Warm; demo is no longer Missed so another demo can be booked |
 | TC-LEAD-05 | sales | Insights **Who to reward** | Referrer rows show Subscribed + Success + payout. Success = onboarded **and** paying Starter–Scale (incl. Enterprise). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed. Make-affiliate needs 2+ paid referees (or 2+ payout-eligible including 1 paid). **Create partner code** opens a prefilled affiliate form (name, email, ownerUserId). Checkout-voucher and stalled-warm demo lists have **Create voucher**. Webinar speaker / article author appears as a referrer when CRM `referredBy` is empty |
 | TC-LEAD-06 | sales | Onboarded tab | Each Smart Refill row shows **Owner** or **Staff**, the plan (**Scale** or **Scale · Trial**), and the station customer total. Staff of the same station are extra rows sharing that count. Filters: Role All / Owner / Staff, and Subscription (the plan the station is subscribed to, trials separate). Sort: customers highest or lowest, role Owner first or Staff first. Station name opens `/admin/data-management/business/{id}` (admin). Person name still opens the lead. Lead details also show the plan |
+| TC-LEAD-07 | sales | **Add lead** with business and owner | New row on Warm (and All), assigned to you. Source and notes save. Business and owner are required |
 
 ## TC-PROP — Proposals & outreach
 

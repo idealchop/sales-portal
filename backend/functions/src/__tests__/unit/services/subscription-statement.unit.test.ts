@@ -3,7 +3,7 @@ import { subscriptionRowForStatement } from "../../../services/generate-subscrip
 import { buildSubscriptionStatementPdf } from "../../../services/subscription-statement-of-account-pdf";
 
 describe("subscriptionRowForStatement", () => {
-  it("includes paid periods and excludes free trial", () => {
+  it("includes every period, including free and trial", () => {
     expect(
       subscriptionRowForStatement({
         billingCycle: "monthly",
@@ -17,14 +17,14 @@ describe("subscriptionRowForStatement", () => {
         price: 0,
         paymentStatus: "verified",
       }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       subscriptionRowForStatement({
         billingCycle: "monthly",
         price: 0,
-        planCode: "starter",
+        planCode: "free",
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 

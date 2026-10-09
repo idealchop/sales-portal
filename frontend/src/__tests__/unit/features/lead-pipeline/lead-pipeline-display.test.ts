@@ -7,6 +7,7 @@ import {
   formatLeadSourceLine,
   groupWarmStatusOptions,
   isContentPipelineLead,
+  buildManualLeadInput,
   formatOnboardedPlanLabel,
   leadBusinessDataManagementPath,
   LEAD_QUEUE_TABS,
@@ -270,5 +271,41 @@ describe("lead business data management link", () => {
     expect(
       leadBusinessDataManagementPath({ linkedBusinessId: "  " }),
     ).toBeNull();
+  });
+});
+
+describe("manual lead", () => {
+  it("starts a Warm inquire assigned through the create payload", () => {
+    expect(
+      buildManualLeadInput(
+        {
+          businessName: "  Danum  ",
+          ownerName: " Jubem ",
+          email: "jubem@example.com",
+          phone: "0917",
+          address: "Davao",
+          notes: "Walk-in",
+          leadSource: "Website",
+          sourceWebsite: " smartrefill.app ",
+          referredBy: "ignored",
+          referredByClientId: "c1",
+          referredByUserId: "u1",
+          referredByAffiliateId: "a1",
+          referredByAffiliateCode: "CODE",
+          referredByEmail: "ref@example.com",
+        },
+        "2026-10-09T00:00:00.000Z",
+      ),
+    ).toMatchObject({
+      businessName: "Danum",
+      ownerName: "Jubem",
+      notes: "Walk-in",
+      stage: "inquire",
+      sourceKind: "manual",
+      leadSource: "Website",
+      sourceWebsite: "smartrefill.app",
+      referredBy: "",
+      inquiredAt: "2026-10-09T00:00:00.000Z",
+    });
   });
 });

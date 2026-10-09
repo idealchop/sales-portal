@@ -6,10 +6,12 @@ import {
   ChevronDown,
   Columns3,
   Download,
+  Plus,
   Table2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { LeadAddDialog } from '@/features/lead-pipeline/components/lead-add-dialog';
 import { LeadDetailsDialog } from '@/features/lead-pipeline/components/lead-details-dialog';
 import { LeadFollowUpComposeDialog } from '@/features/lead-pipeline/components/lead-follow-up-compose-dialog';
 import { LeadHistoryDialog } from '@/features/lead-pipeline/components/lead-history-dialog';
@@ -38,6 +40,7 @@ export function LeadPipelinePage() {
   const [updating, setUpdating] = useState<Lead | null>(null);
   const [historyLead, setHistoryLead] = useState<Lead | null>(null);
   const [followUpLead, setFollowUpLead] = useState<Lead | null>(null);
+  const [addingLead, setAddingLead] = useState(false);
   const [gatherMenuOpen, setGatherMenuOpen] = useState(false);
   const [confirmFullRefresh, setConfirmFullRefresh] = useState(false);
 
@@ -73,6 +76,13 @@ export function LeadPipelinePage() {
       },
     [analytics],
   );
+
+  async function handleCreateLead(input: Partial<Lead>) {
+    await saveLead(input);
+    if (view === 'table' && queue !== 'all' && queue !== 'warm') {
+      selectQueue('warm');
+    }
+  }
 
   async function handleAssign(lead: Lead, assignedToUids: string[]) {
     await saveLead({ assignedToUids }, lead.id);
@@ -126,6 +136,16 @@ export function LeadPipelinePage() {
           </p>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
+          <Button
+            type='button'
+            size='sm'
+            variant='outline'
+            onClick={() => setAddingLead(true)}
+            className='gap-1.5'
+          >
+            <Plus className='h-3.5 w-3.5' />
+            Add lead
+          </Button>
           <div className='relative inline-flex'>
             <Button
               type='button'
@@ -337,6 +357,11 @@ export function LeadPipelinePage() {
         />
       )}
 
+      <LeadAddDialog
+        open={addingLead}
+        onClose={() => setAddingLead(false)}
+        onCreate={handleCreateLead}
+      />
       <LeadDetailsDialog
         open={Boolean(viewing)}
         lead={viewing}

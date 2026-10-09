@@ -106,7 +106,7 @@ Uses a lightweight legacy station loader (no delivery scan).
 
 | Path | Purpose |
 |------|---------|
-| `components/lead-pipeline-page.tsx` | Queue tabs, Table/Board/Insights, edit |
+| `components/lead-pipeline-page.tsx` | Queue tabs, Table/Board/Insights, **Add lead**, edit |
 | `components/lead-pipeline-table.tsx` | Spreadsheet list — multi-select, mass assign, Compose email, Promote |
 | `components/lead-assignee-multi-select.tsx` | Per-lead multi-assignee picker |
 | `components/lead-email-blast-compose-dialog.tsx` | Saved templates + blast (25/day), optional attempt |
@@ -115,7 +115,7 @@ Uses a lightweight legacy station loader (no delivery scan).
 | `components/lead-referral-partners-panel.tsx` | One-click **Create partner code** / **Create voucher** (prefilled name, email, `ownerUserId`); stalled-warm close-deal list |
 | `lib/lead-referral-partners.ts` | Groups Referrals + webinar/article `contentReferrer`. **Success rate** = onboarded **and** paid Starter–Scale (Enterprise included). Free, trial, unpaid Starter, and ₱0 voucher/comped plans are not subscribed. **Payout-eligible** = onboarded + account-ready or paid |
 | `components/lead-referrer-picker.tsx` | Referrer picker: catalog affiliates first, then CRM/directory (includes email) |
-| `components/lead-form-dialog.tsx` | Create/update lead + link workspace |
+| `components/lead-add-dialog.tsx` | Manual **Add lead** — business, owner, contact, notes, source. Starts as Warm inquire, assigned to the creator |
 
 Route: `app/lead-pipeline/page.tsx`. API: `GET/POST/PATCH /leads`, `POST /leads/bulk-assign`, `GET/POST/PATCH/DELETE /leads/email-templates`, `GET /leads/email-blast/quota`, `POST /leads/email-blast`, `GET /leads/analytics`.
 

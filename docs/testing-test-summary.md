@@ -99,7 +99,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |
 | `unit/features/dashboard/build-sales-home-focus.test.ts` ✅ | Win/keep lists; no money fields | TC-DASH-07 |
 | `unit/features/dashboard/build-sales-home-highlights.test.ts` ✅ | Subscriptions / SmartRefill / Admin watch counts; no money | TC-DASH-07 |
-| `unit/features/lead-pipeline/lead-pipeline-display.test.ts` ✅ | Attempt tracks + content source labels; station name → data-management path; onboarded plan label | TC-LEAD-01, TC-LEAD-06 |
+| `unit/features/lead-pipeline/lead-pipeline-display.test.ts` ✅ | Attempt tracks + content source labels; station name → data-management path; onboarded plan label; manual add payload | TC-LEAD-01, TC-LEAD-06, TC-LEAD-07 |
 | `unit/features/lead-pipeline/lead-pipeline-insights.test.ts` ✅ | Queue mix incl. Content slice | TC-NAV-04 |
 | `unit/features/lead-pipeline/lead-referral-partners.test.ts` ✅ | Referral success rate: paid Starter–Scale only; Free/trial/unpaid Starter excluded; content referrer; stalled-warm close-deal | TC-LEAD-05, TC-SUB-09 |
 | `unit/lib/admin/plan-subscriber-roster.test.ts` ✅ | Plan / addon / voucher / affiliate station roster grouping | TC-SUB-01, TC-SUB-05, TC-SUB-06 |
