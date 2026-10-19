@@ -1,5 +1,29 @@
 import { getManagerTeamKey, type SalesActor } from "./sales-scope";
-import type { NewJoinersSummary } from "./build-new-joiners";
+import {
+  countJoinedOnManilaDay,
+  type NewJoinersSummary,
+  type NewSalesRepJoiner,
+} from "./build-new-joiners";
+
+function withScopedSalesPortalCount(
+  newJoiners: NewJoinersSummary,
+  salesReps: NewSalesRepJoiner[],
+): NewJoinersSummary {
+  if (!newJoiners.registeredToday) {
+    return { ...newJoiners, salesReps };
+  }
+  return {
+    ...newJoiners,
+    salesReps,
+    registeredToday: {
+      ...newJoiners.registeredToday,
+      salesPortal: countJoinedOnManilaDay(
+        salesReps,
+        newJoiners.registeredToday.dayKey,
+      ),
+    },
+  };
+}
 
 export async function filterNewJoinersForActor(
   newJoiners: NewJoinersSummary,
@@ -18,14 +42,8 @@ export async function filterNewJoinersForActor(
         ) :
         newJoiners.salesReps.filter((rep) => rep.id === actor.uid);
 
-    return {
-      ...newJoiners,
-      salesReps,
-    };
+    return withScopedSalesPortalCount(newJoiners, salesReps);
   }
 
-  return {
-    ...newJoiners,
-    salesReps: [],
-  };
+  return withScopedSalesPortalCount(newJoiners, []);
 }

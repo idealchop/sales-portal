@@ -29,6 +29,7 @@ import {
   type LeadSortDir,
   type LeadSortKey,
 } from "@/features/lead-pipeline/lib/lead-pipeline-list";
+import { buildAssigneeNameMap } from "@/features/lead-pipeline/lib/lead-assignees";
 import type { Lead, LeadQueue } from "@/lib/definitions";
 import type { TeamMemberSummary } from "@/lib/sales/api";
 import { cn } from "@/lib/utils";
@@ -137,12 +138,7 @@ export function LeadPipelineFilters({
   const active = isLeadListFilterActive(filters);
   const statusGroups = groupWarmStatusOptions(WARM_STATUS_OPTIONS, queue);
 
-  const assigneeNameByUid = new Map(
-    members.map((member) => [
-      member.id,
-      member.displayName || member.email || member.id,
-    ]),
-  );
+  const assigneeNameByUid = buildAssigneeNameMap(members);
   const chips = describeActiveLeadListFilters(filters, { assigneeNameByUid });
   const planOptions = useMemo(() => {
     const options = onboardedPlanFilterOptions(leads);

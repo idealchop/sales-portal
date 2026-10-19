@@ -27,11 +27,47 @@ export type NewPlatformUserJoiner = {
   joinedAt: string | null;
 };
 
+/** New accounts whose `createdAt` falls on one Asia/Manila calendar day. */
+export type NewRegistrationsToday = {
+  /** `YYYY-MM-DD` in Asia/Manila. */
+  dayKey: string;
+  /** SmartRefill user accounts created that day. */
+  smartrefill: number;
+  /** Sales Portal accounts created that day. */
+  salesPortal: number;
+};
+
 export type NewJoinersSummary = {
   salesReps: NewSalesRepJoiner[];
   businesses: NewBusinessJoiner[];
   platformUsers: NewPlatformUserJoiner[];
+  registeredToday?: NewRegistrationsToday;
 };
+
+const MANILA_TZ = "Asia/Manila";
+
+export function manilaDayKey(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: MANILA_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+export function countJoinedOnManilaDay(
+  rows: Array<{ joinedAt: string | null }>,
+  dayKey: string,
+): number {
+  let count = 0;
+  for (const row of rows) {
+    if (!row.joinedAt) continue;
+    const parsed = new Date(row.joinedAt);
+    if (Number.isNaN(parsed.getTime())) continue;
+    if (manilaDayKey(parsed) === dayKey) count += 1;
+  }
+  return count;
+}
 
 function toIso(value: unknown): string | null {
   if (!value) return null;
@@ -68,8 +104,10 @@ export function buildNewJoiners(input: {
   smartRefillUsers: Array<{ id: string; data: Record<string, unknown> }>;
   businessOwnerIds: Set<string>;
   limit?: number;
+  now?: Date;
 }): NewJoinersSummary {
   const limit = input.limit ?? 12;
+  const dayKey = manilaDayKey(input.now ?? new Date());
 
   const salesReps = sortByJoinedAtDesc(
     input.salesDocs.map((doc) => {
@@ -84,7 +122,7 @@ export function buildNewJoiners(input: {
         joinedAt: toIso(data.createdAt),
       };
     }),
-  ).slice(0, limit);
+  );
 
   const businesses = sortByJoinedAtDesc(
     input.recentBusinesses.map((row) => ({
@@ -95,7 +133,7 @@ export function buildNewJoiners(input: {
       onboardingComplete: row.onboardingComplete,
       joinedAt: row.createdAt,
     })),
-  ).slice(0, limit);
+  );
 
   const platformUsers = sortByJoinedAtDesc(
     input.smartRefillUsers.map(({ id, data }) => {
@@ -121,7 +159,16 @@ export function buildNewJoiners(input: {
         joinedAt: toIso(data.createdAt),
       };
     }),
-  ).slice(0, limit);
+  );
 
-  return { salesReps, businesses, platformUsers };
+  return {
+    salesReps: salesReps.slice(0, limit),
+    businesses: businesses.slice(0, limit),
+    platformUsers: platformUsers.slice(0, limit),
+    registeredToday: {
+      dayKey,
+      smartrefill: countJoinedOnManilaDay(platformUsers, dayKey),
+      salesPortal: countJoinedOnManilaDay(salesReps, dayKey),
+    },
+  };
 }

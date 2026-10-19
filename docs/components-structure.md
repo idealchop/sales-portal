@@ -42,7 +42,7 @@ frontend/src/
 | `components/sales-portal-dashboard.tsx` | `/dashboard`: Jump lists, then Your work today, then Also watch (5 KPIs one row), then collapsible Win more / Keep them charts |
 | `components/sales-home-focus-panel.tsx` | Win more / Keep them: chart + chance mix; expand to station list |
 | `lib/build-sales-home-focus-chart.ts` | Intent bars and low/mid/high chance mix for win/keep |
-| `components/sales-home-route-shortcuts.tsx` | Jump cards with counts; **New in {app}** badges for SmartRefill / Sales Portal |
+| `components/sales-home-route-shortcuts.tsx` | Jump cards with counts; **New today in {app}** badges for SmartRefill / Sales Portal, hidden when today’s count is zero |
 | `components/sales-home-station-list.tsx` | Full-width win/keep rows: chance rail, Now / Should be panels, If nobody acts, Why this chance |
 | `lib/estimate-sales-home-chance.ts` | Heuristic onboard / return / continue percent (5% steps, no AI) |
 | `lib/build-sales-home-focus.ts` | Win/keep rows: now, should-be, what-if, gap levels; merges subscription roster |
@@ -108,7 +108,7 @@ Uses a lightweight legacy station loader (no delivery scan).
 |------|---------|
 | `components/lead-pipeline-page.tsx` | Queue tabs, Table/Board/Insights, **Add lead**, edit |
 | `components/lead-pipeline-table.tsx` | Spreadsheet list — multi-select, mass assign, Compose email, Promote |
-| `components/lead-assignee-multi-select.tsx` | Per-lead multi-assignee picker |
+| `components/lead-assignee-multi-select.tsx` | Per-lead multi-assignee picker. Same display name collapses to one row (sign-in account); a sales-only duplicate stays as an alias |
 | `components/lead-email-blast-compose-dialog.tsx` | Saved templates + blast (25/day), optional attempt |
 | `components/lead-promote-offer-dialog.tsx` | Voucher / partner-code picker → email blast prefill |
 | `components/lead-pipeline-insights.tsx` | Funnel, source, assignee, trial-risk charts; **Who to reward** via `lead-referral-partners-panel.tsx` |

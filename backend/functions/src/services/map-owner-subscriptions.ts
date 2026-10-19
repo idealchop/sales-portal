@@ -190,6 +190,19 @@ export function pickLatestCurrentPlanSubscription(
       subscriptionActivityMs(sub) > subscriptionActivityMs(latest) ? sub : latest,
     );
   };
+  const pickCoveringPaid = (rows: OwnerSubscription[]) => {
+    if (rows.length === 0) return undefined;
+    return rows.reduce((best, sub) => {
+      const bestYearly =
+        String(best.billingCycle || "").toLowerCase() === "yearly" ? 1 : 0;
+      const subYearly =
+        String(sub.billingCycle || "").toLowerCase() === "yearly" ? 1 : 0;
+      if (subYearly !== bestYearly) return subYearly > bestYearly ? sub : best;
+      return subscriptionActivityMs(sub) > subscriptionActivityMs(best) ?
+        sub :
+        best;
+    });
+  };
 
   const activeNow = subscriptions.filter((sub) => {
     if (sub.status.toLowerCase() !== "active") return false;
@@ -198,6 +211,22 @@ export function pickLatestCurrentPlanSubscription(
     return true;
   });
   const fromActive = pickNewest(activeNow);
+  if (
+    fromActive &&
+    (Number(fromActive.price) <= 0 ||
+      String(fromActive.billingCycle || "").toLowerCase() === "trial" ||
+      String(fromActive.planCode || "").toLowerCase() === "free")
+  ) {
+    return fromActive;
+  }
+  const paidLive = activeNow.filter(
+    (sub) =>
+      !sub.needsApproval &&
+      Number(sub.price) > 0 &&
+      String(sub.billingCycle || "").toLowerCase() !== "trial",
+  );
+  const fromPaid = pickCoveringPaid(paidLive);
+  if (fromPaid) return fromPaid;
   if (fromActive) return fromActive;
 
   const current = subscriptions.find((sub) => sub.timeline === "current");
@@ -321,14 +350,36 @@ export function mapOwnerSubscriptions(
       row.status === "scheduled" ||
       (row._activatesMs > now && !isPastStatus(row.status)),
   );
+  const paidLive = rows.filter(
+    (row) =>
+      row.status.toLowerCase() === "active" &&
+      !row.needsApproval &&
+      Number(row.price) > 0 &&
+      String(row.billingCycle || "").toLowerCase() !== "trial" &&
+      !isExpiredByDate(row, now),
+  );
+  const longestPaid = paidLive.reduce<SubscriptionSortRow | undefined>(
+    (best, row) => {
+      if (!best) return row;
+      const bestYearly =
+        String(best.billingCycle || "").toLowerCase() === "yearly" ? 1 : 0;
+      const rowYearly =
+        String(row.billingCycle || "").toLowerCase() === "yearly" ? 1 : 0;
+      if (rowYearly !== bestYearly) return rowYearly > bestYearly ? row : best;
+      return row._createdMs > best._createdMs ? row : best;
+    },
+    undefined,
+  );
   const currentCandidate = rows.find(
     (row) =>
       !isPastStatus(row.status) &&
       row.status !== "scheduled" &&
+      !row.needsApproval &&
       !(row._activatesMs > now) &&
       !isExpiredByDate(row, now),
   );
-  if (currentCandidate) currentId = currentCandidate.id;
+  if (longestPaid) currentId = longestPaid.id;
+  else if (currentCandidate) currentId = currentCandidate.id;
   else if (futureCandidate) currentId = futureCandidate.id;
 
   return rows.map((row) => {
@@ -348,7 +399,8 @@ export function mapOwnerSubscriptions(
     } else if (!isPastStatus(subscription.status) && subscription.id === currentId) {
       timeline = "current";
     } else if (!isPastStatus(subscription.status) && subscription.needsApproval) {
-      timeline = subscription.status === "scheduled" ? "future" : "current";
+      timeline =
+        longestPaid || subscription.status === "scheduled" ? "future" : "current";
     }
 
     return { ...subscription, timeline };

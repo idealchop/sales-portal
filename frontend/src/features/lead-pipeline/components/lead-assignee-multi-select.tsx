@@ -2,7 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronsUpDown } from "lucide-react";
-import { resolveAssigneeUids } from "@/features/lead-pipeline/lib/lead-assignees";
+import {
+  canonicalizeAssigneeUids,
+  resolveAssigneeUids,
+} from "@/features/lead-pipeline/lib/lead-assignees";
 import { inputClassName } from "@/features/lead-pipeline/lib/lead-pipeline-display";
 import type { Lead } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
@@ -11,10 +14,22 @@ export type LeadAssigneeMember = {
   id: string;
   displayName?: string;
   email?: string;
+  aliasUids?: string[];
 };
 
 function memberLabel(member: LeadAssigneeMember) {
   return member.displayName || member.email || member.id;
+}
+
+function memberUids(member: LeadAssigneeMember) {
+  return [member.id, ...(member.aliasUids ?? [])];
+}
+
+function labelForUid(members: LeadAssigneeMember[], uid: string) {
+  const direct = members.find((row) => row.id === uid);
+  if (direct) return memberLabel(direct);
+  const viaAlias = members.find((row) => row.aliasUids?.includes(uid));
+  return viaAlias ? memberLabel(viaAlias) : uid;
 }
 
 export function LeadAssigneeMultiSelect({
@@ -50,10 +65,9 @@ export function LeadAssigneeMultiSelect({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open, lead]);
 
-  const labels = draft.map((uid) => {
-    const member = members.find((row) => row.id === uid);
-    return member ? memberLabel(member) : uid;
-  });
+  const labels = canonicalizeAssigneeUids(draft, members).map((uid) =>
+    labelForUid(members, uid),
+  );
   const summary =
     labels.length === 0 ? "Unassigned"
     : labels.length <= 2 ? labels.join(", ")
@@ -70,10 +84,13 @@ export function LeadAssigneeMultiSelect({
     }
   }
 
-  function toggleUid(uid: string) {
-    setDraft((prev) =>
-      prev.includes(uid) ? prev.filter((id) => id !== uid) : [...prev, uid],
-    );
+  function toggleMember(member: LeadAssigneeMember) {
+    const ids = memberUids(member);
+    setDraft((prev) => {
+      const selected = ids.some((uid) => prev.includes(uid));
+      const without = prev.filter((uid) => !ids.includes(uid));
+      return selected ? without : [...without, member.id];
+    });
   }
 
   return (
@@ -108,7 +125,9 @@ export function LeadAssigneeMultiSelect({
           {members.length === 0 ?
             <p className="px-3 py-2 text-xs text-zinc-500">No assignees</p>
           : members.map((member) => {
-              const checked = draft.includes(member.id);
+              const checked = memberUids(member).some((uid) =>
+                draft.includes(uid),
+              );
               return (
                 <label
                   key={member.id}
@@ -118,7 +137,7 @@ export function LeadAssigneeMultiSelect({
                     type="checkbox"
                     className="rounded border-zinc-300"
                     checked={checked}
-                    onChange={() => toggleUid(member.id)}
+                    onChange={() => toggleMember(member)}
                   />
                   <span className="truncate">{memberLabel(member)}</span>
                 </label>
@@ -140,7 +159,9 @@ export function LeadAssigneeMultiSelect({
               type="button"
               className="flex-1 rounded-md bg-teal-700 px-2 py-1 text-xs font-medium text-white hover:bg-teal-800 disabled:opacity-60"
               disabled={saving}
-              onClick={() => void commit(draft)}
+              onClick={() =>
+                void commit(canonicalizeAssigneeUids(draft, members))
+              }
             >
               {saving ? "Saving…" : "Save"}
             </button>

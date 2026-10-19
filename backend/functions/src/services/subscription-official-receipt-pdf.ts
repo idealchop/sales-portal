@@ -149,8 +149,8 @@ export function buildSubscriptionOfficialReceiptPdf(
         margin: 48,
         info: {
           Title: heading.startsWith("Official") ?
-            "Smart Refill Official Receipt"
-          : "Smart Refill Subscription",
+            "Smart Refill Official Receipt" :
+            "Smart Refill Subscription",
           Author: "Smart Refill Sales Portal",
         },
       });

@@ -71,7 +71,7 @@ All routes are mounted at the function root (no `/api` prefix).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes rules-based `dashboardForecasts`, `personalSales`, `todaysWork`, `lastContactedAt` on owners). **No Gemini.** Excludes owners with `authAccountTag: "test"` from station/user/login/MRR KPIs. `growthSalesMetrics.subscriptionOwners` is every production workspace for the Subscriptions tab; `activeOwners` stays the recently-active / live-plan subset |
+| `GET` | `/dashboard/analytics` | Portal | Platform analytics payload (scoped by role; includes rules-based `dashboardForecasts`, `personalSales`, `todaysWork`, `lastContactedAt` on owners). **No Gemini.** Excludes owners with `authAccountTag: "test"` from station/user/login/MRR KPIs. `growthSalesMetrics.subscriptionOwners` is every production workspace for the Subscriptions tab; `activeOwners` stays the recently-active / live-plan subset. `newJoiners.registeredToday` is the Asia/Manila calendar-day count of new SmartRefill accounts and new Sales Portal accounts (sales-portal count is team-scoped for managers and hidden for sales) |
 | `GET` | `/dashboard/smartrefill-old/analytics` | Portal | Legacy SmartRefill ops from `prod-smartrefill` (stations + charts) |
 | `GET` | `/dashboard/smartrefill-old/stations/:stationId` | Portal | Legacy station customers + paginated deliveries |
 | `POST` | `/dashboard/smartrefill-old/stations/:stationId/ignore` | Portal | Mark legacy station ignored (moves to Contacted / Ignored) |

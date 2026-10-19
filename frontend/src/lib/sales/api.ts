@@ -35,6 +35,10 @@ export type TeamMemberSummary = {
   proposalsCount: number;
   commissionsTotal: number;
   pendingCommissions: number;
+  /** True when this id can sign in to Sales Portal. */
+  portalUser?: boolean;
+  /** Hidden duplicate ids for the same person. */
+  aliasUids?: string[];
 };
 
 export type PublicProposalView = {

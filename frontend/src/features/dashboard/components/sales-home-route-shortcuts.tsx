@@ -26,7 +26,7 @@ export function SalesHomeRouteShortcuts({
               href={badge.href}
               className="inline-flex items-center rounded-full bg-teal-700 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-teal-800"
             >
-              {badge.count} new in {badge.appLabel}
+              {badge.count} new today in {badge.appLabel}
             </Link>
           ))}
         </div>

@@ -76,11 +76,11 @@ export async function generateSubscriptionOfficialReceipt(input: {
       dates.renewalAt ?? sub.renewalAt,
     ),
     documentHeading: officialReceipt ?
-      "Official Receipt — Subscription"
-    : "Subscription details",
+      "Official Receipt — Subscription" :
+      "Subscription details",
     watermarkCaption: officialReceipt ?
-      "Official subscription receipt"
-    : "Subscription details",
+      "Official subscription receipt" :
+      "Subscription details",
   });
 
   return {

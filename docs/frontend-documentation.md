@@ -80,7 +80,7 @@ All privileged reads/writes go through **salesPortalApi**, not direct Firestore 
 
 | Path | Role | Status |
 |------|------|--------|
-| `/dashboard` | sales, manager, admin | Live — Jump to a list first. Then **Your work today**. Then **Also watch** (5 KPIs, one row). Last: **Win more / Keep them** charts; expand to see station lists. New-user badges name the app. No ₱. |
+| `/dashboard` | sales, manager, admin | Live — Jump to a list first. Then **Your work today**. Then **Also watch** (5 KPIs, one row). Last: **Win more / Keep them** charts; expand to see station lists. New-user badges name the app and show how many accounts registered today (Asia/Manila); they hide when that count is zero. No ₱. |
 | `/webapp/smartrefill` | sales, manager, admin | Live — ops tabs: Subscriptions (all production workspaces; KPIs + grouped billing list including ended plans; sort by priority, station, plan, end date, amount, activity, or status; admin station name opens Data management), Analytics (KPIs, signals, charts); Config (admin) |
 | `/dashboard/smartrefill-old` | sales, manager, admin | Live — legacy station triage / contact (Brevo) / ignore; bulk actions |
 | `/dashboard/smartrefill` | sales, manager, admin | Redirects to `/webapp/smartrefill` |

@@ -128,30 +128,71 @@ export type SalesHomeNewUserBadge = {
   href: string;
 };
 
-function newUserCounts(analytics: DashboardAnalytics | null): {
+const MANILA_TZ = "Asia/Manila";
+
+/** Calendar day `YYYY-MM-DD` in Asia/Manila. */
+export function manilaDayKey(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: MANILA_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function countJoinedOnDay(
+  rows: Array<{ joinedAt: string | null }> | undefined,
+  dayKey: string,
+): number {
+  if (!rows) return 0;
+  let count = 0;
+  for (const row of rows) {
+    if (!row.joinedAt) continue;
+    const parsed = new Date(row.joinedAt);
+    if (Number.isNaN(parsed.getTime())) continue;
+    if (manilaDayKey(parsed) === dayKey) count += 1;
+  }
+  return count;
+}
+
+/**
+ * Accounts created today (Asia/Manila).
+ * Prefers the server total when it is still for today, so a capped joiner
+ * list cannot freeze the badge. Otherwise counts `joinedAt` on the lists,
+ * which drops yesterday as soon as the calendar day rolls over.
+ */
+function newUserCounts(
+  analytics: DashboardAnalytics | null,
+  now: Date,
+): {
   smartrefill: number;
   salesPortal: number;
 } {
+  const todayKey = manilaDayKey(now);
   const joiners = analytics?.newJoiners;
-  const registrations =
-    analytics?.platformAlerts.counts.new_user_registration ?? 0;
-  const smartrefillUsers = joiners?.platformUsers.length ?? 0;
-  const smartrefillStations = joiners?.businesses.length ?? 0;
+  const registered = joiners?.registeredToday;
+  if (registered && registered.dayKey === todayKey) {
+    return {
+      smartrefill: registered.smartrefill,
+      salesPortal: registered.salesPortal,
+    };
+  }
   return {
-    smartrefill:
-      smartrefillUsers + smartrefillStations || registrations,
-    salesPortal: joiners?.salesReps.length ?? 0,
+    smartrefill: countJoinedOnDay(joiners?.platformUsers, todayKey),
+    salesPortal: countJoinedOnDay(joiners?.salesReps, todayKey),
   };
 }
 
 /**
- * New people this period, labeled by app — SmartRefill vs Sales Portal.
+ * People who registered today, labeled by app — SmartRefill vs Sales Portal.
+ * Empty when nobody registered today.
  */
 export function buildSalesHomeNewUserBadges(
   analytics: DashboardAnalytics | null,
   role: SalesPortalRole | null,
+  now: Date = new Date(),
 ): SalesHomeNewUserBadge[] {
-  const counts = newUserCounts(analytics);
+  const counts = newUserCounts(analytics, now);
   const items: SalesHomeNewUserBadge[] = [];
   if (counts.smartrefill > 0) {
     items.push({
@@ -208,7 +249,7 @@ export function buildSalesHomeRouteShortcuts(
   const voucherProspects = extra.voucherProspects ?? 0;
   const voucherCount = voucherStations + voucherProspects;
 
-  const newUsers = newUserCounts(analytics);
+  const newUsers = newUserCounts(analytics, now);
 
   const items: SalesHomeRouteShortcut[] = [
     {
@@ -236,7 +277,7 @@ export function buildSalesHomeRouteShortcuts(
       tone: inactive > 0 ? "warn" : "default",
       badge:
         newUsers.smartrefill > 0 ?
-          `${newUsers.smartrefill} new · SmartRefill`
+          `${newUsers.smartrefill} new today · SmartRefill`
         : undefined,
     },
     {
@@ -264,9 +305,9 @@ export function buildSalesHomeRouteShortcuts(
       tone: "default",
       badge:
         newUsers.salesPortal > 0 ?
-          `${newUsers.salesPortal} new · Sales Portal`
+          `${newUsers.salesPortal} new today · Sales Portal`
         : newUsers.smartrefill > 0 ?
-          `${newUsers.smartrefill} new · SmartRefill`
+          `${newUsers.smartrefill} new today · SmartRefill`
         : undefined,
     });
   }

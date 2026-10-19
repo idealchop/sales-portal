@@ -184,19 +184,21 @@ export function SalesHomeHighlightLink({
     <Link
       href={href}
       className={cn(
-        "relative flex h-full min-h-[5rem] min-w-0 flex-col rounded-2xl border p-3 hover:border-teal-300 sm:p-4",
+        "flex h-full min-h-[5rem] min-w-0 flex-col rounded-2xl border p-3 hover:border-teal-300 sm:p-4",
         highlightToneClass(tone),
       )}
     >
-      {badge ?
-        <span className="absolute right-3 top-3 rounded-full bg-teal-700 px-2 py-0.5 text-[10px] font-medium text-white">
-          {badge}
-        </span>
-      : null}
-      <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
-        {area}
-      </p>
-      <p className={cn("mt-1 text-sm font-medium text-foreground", badge && "pr-24")}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+          {area}
+        </p>
+        {badge ?
+          <span className="shrink-0 rounded-full bg-teal-700 px-2 py-0.5 text-[10px] font-medium text-white">
+            {badge}
+          </span>
+        : null}
+      </div>
+      <p className="mt-1 text-sm font-medium text-foreground">
         {title}
       </p>
       <p className="mt-1 text-2xl font-medium tabular-nums text-foreground">

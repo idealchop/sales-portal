@@ -433,10 +433,21 @@ export type NewPlatformUserJoiner = {
   joinedAt: string | null;
 };
 
+/** New accounts created on one Asia/Manila calendar day. */
+export type NewRegistrationsToday = {
+  /** `YYYY-MM-DD` in Asia/Manila. */
+  dayKey: string;
+  /** SmartRefill user accounts created that day. */
+  smartrefill: number;
+  /** Sales Portal accounts created that day. Scoped by role. */
+  salesPortal: number;
+};
+
 export type NewJoinersSummary = {
   salesReps: NewSalesRepJoiner[];
   businesses: NewBusinessJoiner[];
   platformUsers: NewPlatformUserJoiner[];
+  registeredToday?: NewRegistrationsToday;
 };
 
 export type PlatformAlertKind =
@@ -704,6 +715,30 @@ export function normalizeDashboardSummary(
   };
 }
 
+function normalizeNewJoiners(
+  raw: Partial<NewJoinersSummary> | undefined,
+): NewJoinersSummary {
+  const salesReps = raw?.salesReps ?? [];
+  const businesses = raw?.businesses ?? [];
+  const platformUsers = raw?.platformUsers ?? [];
+  const today = raw?.registeredToday;
+  if (!today || typeof today.dayKey !== "string" || today.dayKey.length === 0) {
+    return { salesReps, businesses, platformUsers };
+  }
+  const smartrefill = Number(today.smartrefill);
+  const salesPortal = Number(today.salesPortal);
+  return {
+    salesReps,
+    businesses,
+    platformUsers,
+    registeredToday: {
+      dayKey: today.dayKey,
+      smartrefill: Number.isFinite(smartrefill) ? smartrefill : 0,
+      salesPortal: Number.isFinite(salesPortal) ? salesPortal : 0,
+    },
+  };
+}
+
 export function normalizeDashboardAnalytics(
   raw: PartialDashboardAnalytics,
 ): DashboardAnalytics {
@@ -760,7 +795,7 @@ export function normalizeDashboardAnalytics(
     })),
     aiSalesInsights: raw.aiSalesInsights ?? EMPTY_AI_SALES_INSIGHTS,
     dashboardForecasts: raw.dashboardForecasts ?? EMPTY_DASHBOARD_FORECASTS,
-    newJoiners: raw.newJoiners ?? EMPTY_NEW_JOINERS,
+    newJoiners: normalizeNewJoiners(raw.newJoiners),
     platformAlerts: raw.platformAlerts ?? EMPTY_PLATFORM_ALERTS,
     personalSales: raw.personalSales ?? EMPTY_PERSONAL_SALES,
     todaysWork: raw.todaysWork ?? [],

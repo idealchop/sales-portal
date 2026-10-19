@@ -203,7 +203,7 @@ export function SalesPortalDashboard() {
       <DashboardSection
         id="sales-jump"
         title="Jump to a list"
-        description="Subscriptions, SmartRefill, and Admin — with a badge when someone new joined an app."
+        description="Subscriptions, SmartRefill, and Admin — with a badge when someone registered today."
       >
         <SalesHomeRouteShortcuts
           items={shortcuts}

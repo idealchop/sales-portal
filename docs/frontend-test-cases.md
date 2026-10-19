@@ -43,7 +43,7 @@ Manual QA checklist for Sales Portal. Cross-reference automated tests in [testin
 | TC-DASH-04 | any | Business locations map | Pins load for businesses with coords; no test-account pins |
 | TC-DASH-05 | admin | Approve pending subscription | Approval succeeds; UI refreshes |
 | TC-DASH-06 | any | Open `/webapp/smartrefill` | Tabs: Subscriptions, Analytics; Config for admin. Subscriptions lists **all production workspaces** (not only live plans). KPIs: monthly billed, paying, trial, free, voucher, attention, ended. Group + plan + activity filters. Sort: priority (trials first), station, plan, ends soonest/latest, amount, activity, status — also by clicking those column headers. Admin station name opens `/admin/data-management/business/{id}` |
-| TC-DASH-07 | any | Open `/dashboard` | Jump to a list first. **Your work today** next. **Also watch** is one row of 5 KPIs below that. **Win more / Keep them** last: chart visible, expand to see station list. New-user badges name the app. No ₱ |
+| TC-DASH-07 | any | Open `/dashboard` | Jump to a list first. **Your work today** next. **Also watch** is one row of 5 KPIs below that. **Win more / Keep them** last: chart visible, expand to see station list. New-user badges name the app and count registrations for today (Asia/Manila) only; they are absent when nobody registered today. No ₱ |
 | TC-DASH-08 | any | Platform hub Actions \| Forecast tabs | Paginated forecast rows; actions inbox (if shown) |
 | TC-DASH-09 | admin | Subscription approval **View** | Detail dialog + receipt/attachment preview |
 | TC-DASH-10 | admin | Inactive owners list | Top 10 inactive (7d+); expand link shows remainder; Contact hides 7d |

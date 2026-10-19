@@ -208,6 +208,8 @@ export function buildLeadPipelineInsights(
   opts: {
     nowMs?: number;
     assigneeNames?: Record<string, string>;
+    /** Hidden duplicate uid → canonical assignee uid. */
+    assigneeAliases?: Record<string, string>;
   } = {},
 ): LeadPipelineInsightModel {
   const nowMs = opts.nowMs ?? Date.now();
@@ -293,7 +295,13 @@ export function buildLeadPipelineInsights(
     const stats = queueStats[queue];
     stats.total += 1;
 
-    const assigneeKeys = resolveAssigneeUids(lead);
+    const assigneeKeys = [
+      ...new Set(
+        resolveAssigneeUids(lead).map(
+          (uid) => opts.assigneeAliases?.[uid] ?? uid,
+        ),
+      ),
+    ];
     if (assigneeKeys.length === 0) unassigned += 1;
     else stats.assigned += 1;
 

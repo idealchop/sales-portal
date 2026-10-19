@@ -76,12 +76,59 @@ describe("buildUserSubscriptionsList", () => {
     expect(items).toHaveLength(1);
     expect(items[0]?.subscription.id).toBe("current");
     expect(items[0]?.lastActiveDay).toBeUndefined();
-    expect(items[0]?.activeSubscriptionCount).toBe(2);
+    expect(items[0]?.activeSubscriptionCount).toBe(1);
     expect(items[0]?.history.map((sub) => sub.id)).toEqual([
       "future",
       "current",
       "past",
     ]);
+  });
+
+  it("keeps a live yearly Scale as current over pending monthly invoices", () => {
+    const items = buildUserSubscriptionsList(
+      [
+        owner("oceanus", [
+          {
+            id: "monthly-pending",
+            planName: "Scale",
+            planCode: "scale",
+            status: "pending",
+            paymentStatus: "pending_verification",
+            billingCycle: "monthly",
+            price: 1949,
+            timeline: "current",
+            needsApproval: true,
+            cancelAtPeriodEnd: false,
+            isDowngrade: false,
+            isCancellation: false,
+            createdAt: "2026-10-17T00:00:00.000Z",
+            expiresAt: "2026-11-17T00:00:00.000Z",
+          },
+          {
+            id: "yearly-scale",
+            planName: "Scale",
+            planCode: "scale",
+            status: "active",
+            paymentStatus: "paid",
+            billingCycle: "yearly",
+            price: 16500,
+            timeline: "current",
+            needsApproval: false,
+            cancelAtPeriodEnd: false,
+            isDowngrade: false,
+            isCancellation: false,
+            createdAt: "2026-10-13T00:00:00.000Z",
+            activatedAt: "2026-10-13T00:00:00.000Z",
+            expiresAt: "2027-10-13T00:00:00.000Z",
+          },
+        ]),
+      ],
+      new Date("2026-10-19T00:00:00.000Z").getTime(),
+    );
+
+    expect(items[0]?.subscription.id).toBe("yearly-scale");
+    expect(items[0]?.activeSubscriptionCount).toBe(1);
+    expect(items[0]?.hasPendingPayment).toBe(true);
   });
 
   it("uses a newer Free row over an older Scale still marked active", () => {
@@ -486,11 +533,14 @@ describe("buildUserSubscriptionsList", () => {
     const counts = countUserSubscriptionsByFilter(items);
     expect(counts.all).toBe(2);
     expect(counts.pending).toBe(1);
-    expect(counts.upgrade).toBe(1);
-    expect(counts.renewal).toBe(1);
+    expect(counts.upgrade).toBe(0);
+    expect(counts.renewal).toBe(2);
 
     expect(filterUserSubscriptionsList(items, "pending")).toHaveLength(1);
-    expect(filterUserSubscriptionsList(items, "renewal")).toHaveLength(1);
+    expect(filterUserSubscriptionsList(items, "renewal")).toHaveLength(2);
+    expect(items.find((item) => item.businessId === "b1")?.subscription.id).toBe(
+      "renew",
+    );
   });
 
   it("excludes owners tagged with authAccountTag test", () => {

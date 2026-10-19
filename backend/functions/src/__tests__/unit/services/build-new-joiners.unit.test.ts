@@ -48,4 +48,49 @@ describe("buildNewJoiners", () => {
     expect(result.businesses[0]?.name).toBe("Acme Water");
     expect(result.platformUsers[0]?.role).toBe("owner");
   });
+
+  it("counts every registration on the Asia/Manila day, past the list cap", () => {
+    const result = buildNewJoiners({
+      now: new Date("2026-10-19T00:30:00+08:00"),
+      limit: 1,
+      salesDocs: [
+        {
+          id: "today-1",
+          data: () => ({
+            displayName: "A",
+            createdAt: "2026-10-18T16:00:00.000Z",
+          }),
+        },
+        {
+          id: "today-2",
+          data: () => ({
+            displayName: "B",
+            createdAt: "2026-10-18T18:00:00.000Z",
+          }),
+        },
+        {
+          id: "yesterday",
+          data: () => ({
+            displayName: "C",
+            createdAt: "2026-10-18T15:30:00.000Z",
+          }),
+        },
+      ],
+      recentBusinesses: [],
+      smartRefillUsers: [
+        { id: "u1", data: { createdAt: "2026-10-18T16:05:00.000Z" } },
+        { id: "u2", data: { createdAt: "2026-10-18T20:00:00.000Z" } },
+        { id: "u3", data: { createdAt: "2026-10-17T16:00:00.000Z" } },
+      ],
+      businessOwnerIds: new Set(),
+    });
+
+    expect(result.salesReps).toHaveLength(1);
+    expect(result.platformUsers).toHaveLength(1);
+    expect(result.registeredToday).toEqual({
+      dayKey: "2026-10-19",
+      smartrefill: 2,
+      salesPortal: 2,
+    });
+  });
 });

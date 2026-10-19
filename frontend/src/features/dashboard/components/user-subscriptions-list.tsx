@@ -345,7 +345,7 @@ function SubscriptionTableRows({
 }) {
   const periods =
     item.history.length > 0 ? item.history : [item.subscription];
-  const latest = periods[0];
+  const latest = item.subscription;
   const statementBusy = printingId === `statement:${item.businessId}`;
   const latestTrial = isTrialBillingCycle(latest.billingCycle);
   const latestCycle = formatBillingCycleLabel(latest.billingCycle);

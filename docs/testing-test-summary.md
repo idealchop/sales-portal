@@ -22,12 +22,12 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/services/clients-directory.unit.test.ts` ✅ | Platform user directory + app categorization | TC-PROP-02 |
 | `unit/services/generate-ai-sales-insights.unit.test.ts` | AI insight payload shaping | TC-DASH-01 |
 | `unit/services/generate-dashboard-forecasts.unit.test.ts` ✅ | Fallback forecasts + actor reshape | TC-DASH-08 |
-| `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline mapping; addon line items + voucher/affiliate attribution | TC-DASH-05, TC-DASH-09, TC-SUB-05, TC-SUB-06 |
+| `unit/services/map-owner-subscriptions.unit.test.ts` | Subscription timeline mapping; addon line items + voucher/affiliate attribution; **yearly Scale stays current over pending monthly** | TC-DASH-05, TC-DASH-09, TC-SUB-05, TC-SUB-06 |
 | `unit/services/build-platform-alerts.unit.test.ts` ✅ | Demo / new-user / subscription alerts | TC-DASH-13 |
 | `unit/services/inactive-owner-contacts.unit.test.ts` ✅ | Attach `lastContactedAt` to owners | TC-DASH-14 |
 | `unit/services/build-todays-work-inbox.unit.test.ts` | Today’s work dedupe | TC-DASH-07 |
-| `unit/services/build-new-joiners.unit.test.ts` | New joiners aggregation | TC-DASH-07 |
-| `unit/services/filter-new-joiners-for-actor.unit.test.ts` | Role-scoped joiners | TC-DASH-07 |
+| `unit/services/build-new-joiners.unit.test.ts` | New joiners aggregation; Asia/Manila today counts past the list cap | TC-DASH-07 |
+| `unit/services/filter-new-joiners-for-actor.unit.test.ts` | Role-scoped joiners and today’s Sales Portal count | TC-DASH-07 |
 | `unit/services/events-training-playback.unit.test.ts` ✅ | YouTube / iframe playback normalize | Events & Training videos |
 | `unit/services/events-training-visibility.unit.test.ts` ✅ | Visibility enum (`public`/`premium`/`private`) | Events & Training videos |
 | `unit/services/events-training-ops.unit.test.ts` ✅ | Registration transitions, capacity, analytics period clamp | Registrations / analytics |
@@ -84,7 +84,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/lib/business-profile-display.test.ts` ✅ | Workspace Other info hides email-sent / job idempotency noise | TC-ADM-03 |
 | `unit/lib/admin/business-insights-display.test.ts` ✅ | Insights charts: gallons vs other qty; order mix by channel | TC-ADM-03 |
 | `unit/lib/admin/sign-in-attendance-heatmap.test.ts` ✅ | Owner sign-in year heatmap from login_events days | TC-ADM-03 |
-| `unit/features/dashboard/build-user-subscriptions-list.test.ts` ✅ | Latest current plan; KPIs/groups (paying, voucher, trial, attention, ended); excludes test owners; table sort and data-management station path | TC-DASH-06, TC-DASH-15 |
+| `unit/features/dashboard/build-user-subscriptions-list.test.ts` ✅ | Latest current plan; yearly Scale over pending monthly; KPIs/groups (paying, voucher, trial, attention, ended); excludes test owners; table sort and data-management station path | TC-DASH-06, TC-DASH-15 |
 | `unit/features/dashboard/with-latest-live-plans.test.ts` ✅ | Latest current plan overlay; unpaid Starter → Free | TC-DASH-06 |
 | `unit/features/dashboard/sort-active-owners.test.ts` ✅ | Inactive sort + list cap | TC-DASH-10 |
 | `unit/features/dashboard/inactive-owner-contact.test.ts` ✅ | 7-day Contact cooldown | TC-DASH-14 |
@@ -98,7 +98,7 @@ Legend: ✅ implemented · 🔲 planned · ⏭ skipped
 | `unit/lib/dashboard-analytics-normalize.test.ts` ✅ | `newJoiners`, `dashboardForecasts` defaults | TC-DASH-01 |
 | `unit/lib/subscription-attachments.test.ts` ✅ | Receipt/attachment URL helpers | TC-DASH-09 |
 | `unit/features/dashboard/build-sales-home-focus.test.ts` ✅ | Win/keep lists; no money fields | TC-DASH-07 |
-| `unit/features/dashboard/build-sales-home-highlights.test.ts` ✅ | Subscriptions / SmartRefill / Admin watch counts; no money | TC-DASH-07 |
+| `unit/features/dashboard/build-sales-home-highlights.test.ts` ✅ | Subscriptions / SmartRefill / Admin watch counts; today-only new-user badges; no money | TC-DASH-07 |
 | `unit/features/lead-pipeline/lead-pipeline-display.test.ts` ✅ | Attempt tracks + content source labels; station name → data-management path; onboarded plan label; manual add payload | TC-LEAD-01, TC-LEAD-06, TC-LEAD-07 |
 | `unit/features/lead-pipeline/lead-pipeline-insights.test.ts` ✅ | Queue mix incl. Content slice | TC-NAV-04 |
 | `unit/features/lead-pipeline/lead-referral-partners.test.ts` ✅ | Referral success rate: paid Starter–Scale only; Free/trial/unpaid Starter excluded; content referrer; stalled-warm close-deal | TC-LEAD-05, TC-SUB-09 |

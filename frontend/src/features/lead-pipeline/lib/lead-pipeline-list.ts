@@ -20,6 +20,17 @@ import {
   resolveAssigneeUids,
 } from "@/features/lead-pipeline/lib/lead-assignees";
 
+function leadMatchesAssigneeFilter(
+  lead: { assignedToUids?: unknown; assignedToUid?: unknown },
+  uid: string,
+  assigneeAliases?: ReadonlyMap<string, readonly string[]>,
+): boolean {
+  if (leadHasAssignee(lead, uid)) return true;
+  const aliases = assigneeAliases?.get(uid);
+  if (!aliases) return false;
+  return aliases.some((alias) => leadHasAssignee(lead, alias));
+}
+
 export const LEAD_PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 export type LeadPageSize = (typeof LEAD_PAGE_SIZE_OPTIONS)[number];
 
@@ -573,6 +584,7 @@ export function filterLeadsForList(
   leads: Lead[],
   filters: LeadListFilters,
   now: Date = new Date(),
+  assigneeAliases?: ReadonlyMap<string, readonly string[]>,
 ): Lead[] {
   const q = filters.search.trim().toLowerCase();
   const inquireRange = resolveDateFilterRange(filters.inquiredAt, now);
@@ -597,7 +609,15 @@ export function filterLeadsForList(
     if (filters.assignedToUid === "unassigned") {
       if (!leadIsUnassigned(lead)) return false;
     } else if (filters.assignedToUid !== "all") {
-      if (!leadHasAssignee(lead, filters.assignedToUid)) return false;
+      if (
+        !leadMatchesAssigneeFilter(
+          lead,
+          filters.assignedToUid,
+          assigneeAliases,
+        )
+      ) {
+        return false;
+      }
     }
 
     if (filters.warmStatus !== "all") {
@@ -858,6 +878,11 @@ export function prepareLeadListRows(
   filters: LeadListFilters,
   sortKey: LeadSortKey,
   sortDir: LeadSortDir,
+  assigneeAliases?: ReadonlyMap<string, readonly string[]>,
 ): Lead[] {
-  return sortLeadsForList(filterLeadsForList(leads, filters), sortKey, sortDir);
+  return sortLeadsForList(
+    filterLeadsForList(leads, filters, new Date(), assigneeAliases),
+    sortKey,
+    sortDir,
+  );
 }

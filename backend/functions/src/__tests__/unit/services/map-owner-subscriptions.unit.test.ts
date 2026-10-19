@@ -124,6 +124,46 @@ describe("mapOwnerSubscriptions", () => {
     expect(rows.find((row) => row.id === "renewal-sub")?.timeline).toBe("current");
   });
 
+  it("keeps a covering yearly Scale current over pending monthly invoices", () => {
+    const now = Date.now();
+    const rows = mapOwnerSubscriptions([
+      {
+        id: "monthly-pending",
+        data: () => ({
+          planName: "Scale",
+          planCode: "scale",
+          status: "pending",
+          paymentStatus: "pending_verification",
+          price: 1949,
+          billingCycle: "monthly",
+          createdAt: new Date(now).toISOString(),
+          dates: {
+            expiresAt: new Date(now + 30 * 86400000).toISOString(),
+          },
+        }),
+      },
+      {
+        id: "yearly-scale",
+        data: () => ({
+          planName: "Scale",
+          planCode: "scale",
+          status: "active",
+          paymentStatus: "paid",
+          price: 16500,
+          billingCycle: "yearly",
+          createdAt: new Date(now - 6 * 86400000).toISOString(),
+          dates: {
+            activatedAt: new Date(now - 6 * 86400000).toISOString(),
+            expiresAt: new Date(now + 360 * 86400000).toISOString(),
+          },
+        }),
+      },
+    ]);
+
+    expect(pickLatestCurrentPlanSubscription(rows)?.id).toBe("yearly-scale");
+    expect(rows.find((row) => row.id === "yearly-scale")?.timeline).toBe("current");
+  });
+
   it("maps payment proof fields from subscription documents", () => {
     const rows = mapOwnerSubscriptions([
       {

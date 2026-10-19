@@ -23,7 +23,10 @@ import {
   resolveLeadLastSignIn,
 } from "@/features/lead-pipeline/lib/lead-pipeline-display";
 import { compareOnboardedLeadsDefault } from "@/features/lead-pipeline/lib/lead-pipeline-list";
-import { formatAssigneeLabels } from "@/features/lead-pipeline/lib/lead-assignees";
+import {
+  buildAssigneeNameMap,
+  formatAssigneeLabels,
+} from "@/features/lead-pipeline/lib/lead-assignees";
 import { useLeadAssignees } from "@/hooks/use-lead-assignees";
 import type { Lead, LeadPlatformSource, LeadQueue } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
@@ -242,13 +245,10 @@ export function LeadPipelineBoard({
   onFollowUpEmail: (lead: Lead) => void;
 }) {
   const { members } = useLeadAssignees();
-  const assigneeNameByUid = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const member of members) {
-      map.set(member.id, member.displayName || member.email || member.id);
-    }
-    return map;
-  }, [members]);
+  const assigneeNameByUid = useMemo(
+    () => buildAssigneeNameMap(members),
+    [members],
+  );
 
   const columns = useMemo(() => {
     const grouped: Record<Exclude<LeadQueue, "all" | "content">, Lead[]> = {

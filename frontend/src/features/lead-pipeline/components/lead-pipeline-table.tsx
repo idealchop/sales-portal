@@ -39,6 +39,10 @@ import {
   type LeadSortDir,
   type LeadSortKey,
 } from "@/features/lead-pipeline/lib/lead-pipeline-list";
+import {
+  assigneeAliasMap,
+  buildAssigneeNameMap,
+} from "@/features/lead-pipeline/lib/lead-assignees";
 import { useLeadAssignees } from "@/hooks/use-lead-assignees";
 import { LeadActionsMenu } from "@/features/lead-pipeline/components/lead-actions-menu";
 import { LeadAssigneeMultiSelect } from "@/features/lead-pipeline/components/lead-assignee-multi-select";
@@ -368,17 +372,18 @@ export function LeadPipelineTable({
     setMassError(null);
   }, [filters, queue]);
 
-  const assigneeNameByUid = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const member of members) {
-      map.set(member.id, member.displayName || member.email || member.id);
-    }
-    return map;
-  }, [members]);
+  const assigneeNameByUid = useMemo(
+    () => buildAssigneeNameMap(members),
+    [members],
+  );
+  const assigneeAliases = useMemo(
+    () => assigneeAliasMap(members),
+    [members],
+  );
 
   const prepared = useMemo(
-    () => prepareLeadListRows(leads, filters, sortKey, sortDir),
-    [leads, filters, sortKey, sortDir],
+    () => prepareLeadListRows(leads, filters, sortKey, sortDir, assigneeAliases),
+    [assigneeAliases, leads, filters, sortKey, sortDir],
   );
 
   const resetKey = `${JSON.stringify(filters)}:${sortKey}:${sortDir}:${pageSize}`;

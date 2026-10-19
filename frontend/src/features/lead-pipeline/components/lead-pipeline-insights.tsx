@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HorizontalBarChart } from "@/components/charts/distribution-chart";
+import { buildAssigneeNameMap } from "@/features/lead-pipeline/lib/lead-assignees";
 import { buildLeadPipelineInsights } from "@/features/lead-pipeline/lib/lead-pipeline-insights";
 import { LeadReferralPartnersPanel } from "@/features/lead-pipeline/components/lead-referral-partners-panel";
 import { useLeadAssignees } from "@/hooks/use-lead-assignees";
@@ -569,15 +570,22 @@ export function LeadPipelineInsights({
   const { members } = useLeadAssignees();
   const assigneeNames = useMemo(() => {
     const map: Record<string, string> = {};
+    for (const [uid, label] of buildAssigneeNameMap(members)) {
+      map[uid] = label;
+    }
+    return map;
+  }, [members]);
+  const assigneeAliases = useMemo(() => {
+    const map: Record<string, string> = {};
     for (const member of members) {
-      map[member.id] = member.displayName || member.email || member.id;
+      for (const alias of member.aliasUids ?? []) map[alias] = member.id;
     }
     return map;
   }, [members]);
 
   const model = useMemo(
-    () => buildLeadPipelineInsights(leads, { assigneeNames }),
-    [leads, assigneeNames],
+    () => buildLeadPipelineInsights(leads, { assigneeNames, assigneeAliases }),
+    [leads, assigneeNames, assigneeAliases],
   );
 
   const scopeLabel =

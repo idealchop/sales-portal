@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
+import { dedupeAssigneeRoster } from "@/features/lead-pipeline/lib/lead-assignees";
 import { fetchLeadAssignees, type TeamMemberSummary } from "@/lib/sales/api";
 import { usePromiseResource } from "@/hooks/use-promise-resource";
 
@@ -10,12 +11,14 @@ const EMPTY: TeamMemberSummary[] = [];
 export function useLeadAssignees() {
   const load = useCallback(() => fetchLeadAssignees(), []);
 
-  const { data: members, isLoading, isFetching, error, refresh } =
+  const { data, isLoading, isFetching, error, refresh } =
     usePromiseResource({
       load,
       initial: EMPTY,
       errorMessage: "Unable to load sales accounts.",
     });
+
+  const members = useMemo(() => dedupeAssigneeRoster(data), [data]);
 
   return { members, isLoading, isFetching, error, refresh };
 }

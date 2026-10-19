@@ -156,7 +156,8 @@ describe("buildSalesHomeHighlights", () => {
     expect(JSON.stringify(admin)).not.toMatch(/₱|commission|MRR|pipelineValue/i);
   });
 
-  it("labels new users by app", () => {
+  it("labels new users by app for the Manila day only", () => {
+    const now = new Date("2026-09-20T04:00:00+08:00");
     const analytics = normalizeDashboardAnalytics({
       newJoiners: {
         salesReps: [
@@ -164,7 +165,13 @@ describe("buildSalesHomeHighlights", () => {
             id: "r1",
             displayName: "Rep",
             onboardingComplete: false,
-            joinedAt: "2026-09-20T00:00:00.000Z",
+            joinedAt: "2026-09-19T18:00:00.000Z",
+          },
+          {
+            id: "r-old",
+            displayName: "Old",
+            onboardingComplete: true,
+            joinedAt: "2026-09-18T02:00:00.000Z",
           },
         ],
         businesses: [
@@ -172,25 +179,97 @@ describe("buildSalesHomeHighlights", () => {
             id: "n1",
             name: "New Fill",
             onboardingComplete: false,
-            joinedAt: "2026-09-20T00:00:00.000Z",
+            joinedAt: "2026-09-19T18:00:00.000Z",
           },
         ],
         platformUsers: [
           {
             id: "u1",
             role: "owner",
-            joinedAt: "2026-09-20T00:00:00.000Z",
+            joinedAt: "2026-09-19T16:30:00.000Z",
+          },
+          {
+            id: "u-old",
+            role: "owner",
+            joinedAt: "2026-09-01T00:00:00.000Z",
           },
         ],
       },
     });
 
-    const badges = buildSalesHomeNewUserBadges(analytics, "admin");
+    const badges = buildSalesHomeNewUserBadges(analytics, "admin", now);
     expect(badges.map((row) => row.appLabel)).toEqual([
       "SmartRefill",
       "Sales Portal",
     ]);
-    expect(badges.find((row) => row.appId === "smartrefill")?.count).toBe(2);
+    expect(badges.find((row) => row.appId === "smartrefill")?.count).toBe(1);
     expect(badges.find((row) => row.appId === "sales-portal")?.count).toBe(1);
+
+    const shortcuts = buildSalesHomeRouteShortcuts(analytics, "admin", {}, now);
+    expect(shortcuts.find((row) => row.id === "jump-smartrefill")?.badge).toBe(
+      "1 new today · SmartRefill",
+    );
+    expect(shortcuts.find((row) => row.id === "jump-admin")?.badge).toBe(
+      "1 new today · Sales Portal",
+    );
+  });
+
+  it("uses the server today total when that day is still today", () => {
+    const now = new Date("2026-10-19T12:00:00+08:00");
+    const analytics = normalizeDashboardAnalytics({
+      newJoiners: {
+        salesReps: [],
+        businesses: [],
+        platformUsers: [],
+        registeredToday: {
+          dayKey: "2026-10-19",
+          smartrefill: 20,
+          salesPortal: 0,
+        },
+      },
+    });
+
+    const badges = buildSalesHomeNewUserBadges(analytics, "admin", now);
+    expect(badges).toEqual([
+      expect.objectContaining({ appId: "smartrefill", count: 20 }),
+    ]);
+  });
+
+  it("hides badges when the stored day is stale and nobody joined today", () => {
+    const now = new Date("2026-10-19T12:00:00+08:00");
+    const analytics = normalizeDashboardAnalytics({
+      newJoiners: {
+        salesReps: [
+          {
+            id: "r1",
+            displayName: "Rep",
+            onboardingComplete: true,
+            joinedAt: "2026-10-18T02:00:00.000Z",
+          },
+        ],
+        businesses: [],
+        platformUsers: [
+          {
+            id: "u1",
+            role: "owner",
+            joinedAt: "2026-10-18T02:00:00.000Z",
+          },
+        ],
+        registeredToday: {
+          dayKey: "2026-10-18",
+          smartrefill: 24,
+          salesPortal: 6,
+        },
+      },
+    });
+
+    expect(buildSalesHomeNewUserBadges(analytics, "admin", now)).toEqual([]);
+    const shortcuts = buildSalesHomeRouteShortcuts(analytics, "admin", {}, now);
+    expect(
+      shortcuts.find((row) => row.id === "jump-smartrefill")?.badge,
+    ).toBeUndefined();
+    expect(
+      shortcuts.find((row) => row.id === "jump-admin")?.badge,
+    ).toBeUndefined();
   });
 });

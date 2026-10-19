@@ -11,6 +11,11 @@ vi.mock("../../../services/sales-scope", () => ({
 }));
 
 const sample: NewJoinersSummary = {
+  registeredToday: {
+    dayKey: "2026-06-01",
+    smartrefill: 4,
+    salesPortal: 9,
+  },
   salesReps: [
     {
       id: "rep-a",
@@ -70,6 +75,11 @@ describe("filterNewJoinersForActor", () => {
     expect(result.salesReps.map((rep) => rep.id)).toEqual(["rep-a"]);
     expect(result.businesses).toEqual(sample.businesses);
     expect(result.platformUsers).toEqual(sample.platformUsers);
+    expect(result.registeredToday).toEqual({
+      dayKey: "2026-06-01",
+      smartrefill: 4,
+      salesPortal: 1,
+    });
   });
 
   it("hides sales reps for sales role", async () => {
@@ -81,5 +91,7 @@ describe("filterNewJoinersForActor", () => {
     expect(result.salesReps).toEqual([]);
     expect(result.businesses).toEqual(sample.businesses);
     expect(result.platformUsers).toEqual(sample.platformUsers);
+    expect(result.registeredToday?.salesPortal).toBe(0);
+    expect(result.registeredToday?.smartrefill).toBe(4);
   });
 });

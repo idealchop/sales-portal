@@ -7,6 +7,7 @@ import {
   extractRiverUserProfile,
   getSalesPortalAccess,
 } from "./sales-portal-access";
+import { dedupeAssigneeRoster } from "../lib/dedupe-assignee-roster";
 
 export type TeamMemberSummary = {
   id: string;
@@ -17,6 +18,10 @@ export type TeamMemberSummary = {
   proposalsCount: number;
   commissionsTotal: number;
   pendingCommissions: number;
+  /** True when this id is a Sales Portal sign-in account. */
+  portalUser?: boolean;
+  /** Sales-only ids hidden behind this sign-in account. */
+  aliasUids?: string[];
 };
 
 function emptyStats(): Pick<
@@ -82,6 +87,7 @@ export async function listSalesPortalAccounts(): Promise<TeamMemberSummary[]> {
         typeof access.role === "string" && access.role.trim() ?
           access.role.trim() :
           undefined,
+      portalUser: true,
       ...emptyStats(),
     });
   }
@@ -105,6 +111,7 @@ export async function listSalesPortalAccounts(): Promise<TeamMemberSummary[]> {
         typeof data.role === "string" && data.role.trim() ?
           data.role.trim() :
           existing?.role,
+      portalUser: existing?.portalUser === true,
       ...emptyStats(),
     });
   }
@@ -126,6 +133,7 @@ export async function listLeadAssignees(
       id: actor.uid,
       displayName: "You",
       role: actor.role,
+      portalUser: true,
       ...emptyStats(),
     });
     accounts.sort((a, b) =>
@@ -134,7 +142,7 @@ export async function listLeadAssignees(
       }),
     );
   }
-  return accounts;
+  return dedupeAssigneeRoster(accounts);
 }
 
 export async function getManagerTeamSummary(

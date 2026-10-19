@@ -476,6 +476,8 @@ export function isSubscriptionActive(
   if (subscription.timeline === "past") return false;
   const status = subscription.status.toLowerCase();
   if (INACTIVE_SUBSCRIPTION_STATUSES.has(status)) return false;
+  if (status === "scheduled" || status === "pending") return false;
+  if (isPendingPaymentSubscription(subscription)) return false;
   if (isSubscriptionExpiredByDate(subscription, now)) return false;
   return true;
 }
@@ -484,9 +486,19 @@ export function countActiveSubscriptions(
   subscriptions: OwnerSubscription[],
   now = Date.now(),
 ): number {
-  return subscriptions.filter((subscription) =>
+  const live = subscriptions.filter((subscription) =>
     isSubscriptionActive(subscription, now),
-  ).length;
+  );
+  if (live.length > 0) return live.length;
+  const awaitingPayment = subscriptions.filter((subscription) => {
+    if (subscription.timeline === "past") return false;
+    if (INACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status.toLowerCase())) {
+      return false;
+    }
+    if (isSubscriptionExpiredByDate(subscription, now)) return false;
+    return isPendingPaymentSubscription(subscription);
+  });
+  return awaitingPayment.length > 0 ? 1 : 0;
 }
 
 export function resolveSubscriptionChangeKind(
@@ -577,6 +589,36 @@ export function pickLatestCurrentPlanSubscription(
     return true;
   });
   const fromActive = pickLatestSubscription(activeNow);
+  if (
+    fromActive &&
+    (Number(fromActive.price) <= 0 ||
+      isTrialBillingCycle(fromActive.billingCycle) ||
+      isFreeForeverPlan(fromActive))
+  ) {
+    return fromActive;
+  }
+  const paidLive = activeNow.filter(
+    (subscription) =>
+      !isPendingPaymentSubscription(subscription) &&
+      Number(subscription.price) > 0 &&
+      !isTrialBillingCycle(subscription.billingCycle),
+  );
+  if (paidLive.length > 0) {
+    return paidLive.reduce((best, subscription) => {
+      const bestYearly =
+        String(best.billingCycle || "").toLowerCase() === "yearly" ? 1 : 0;
+      const subYearly =
+        String(subscription.billingCycle || "").toLowerCase() === "yearly" ?
+          1 :
+          0;
+      if (subYearly !== bestYearly) {
+        return subYearly > bestYearly ? subscription : best;
+      }
+      return subscriptionActivityMs(subscription) > subscriptionActivityMs(best) ?
+        subscription :
+        best;
+    });
+  }
   if (fromActive) return fromActive;
 
   const current = subscriptions.find((sub) => sub.timeline === "current");

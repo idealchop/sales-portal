@@ -176,6 +176,15 @@ describe("lead-pipeline-list", () => {
 
     expect(
       filterLeadsForList(
+        [lead({ id: "alias-lead", assignedToUid: "sales-only" })],
+        filters({ assignedToUid: "login" }),
+        now,
+        new Map([["login", ["sales-only"]]]),
+      ).map((row) => row.id),
+    ).toEqual(["alias-lead"]);
+
+    expect(
+      filterLeadsForList(
         [
           ...rows,
           lead({
